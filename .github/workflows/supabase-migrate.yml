@@ -69,6 +69,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch PR base/head SHAs (migration diff)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+          echo "Fetched base=${{ github.event.pull_request.base.sha }}"
+          echo "Fetched head=${{ github.event.pull_request.head.sha }}"
+
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
@@ -91,15 +101,26 @@ jobs:
 
       - name: Detect migration file changes in PR
         id: mig_diff
+        env:
+          MIG_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          MIG_DIFF_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-          if git diff --name-only "$BASE" "$HEAD" -- 'supabase/migrations/**' | grep -q .; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+          node scripts/ci/detect-pr-migration-changes.mjs | tee /tmp/mig-detect.log
+          CHANGED="$(grep -o 'changed=\(true\|false\)' /tmp/mig-detect.log | tail -1 | cut -d= -f2)"
+          CANONICAL="$(git diff --name-only --diff-filter=ACMR "$MIG_DIFF_BASE...$MIG_DIFF_HEAD" -- supabase/migrations/ | grep -E '^supabase/migrations/[0-9][0-9]+_.*\.sql$' || true)"
+          if [ "$CHANGED" = "true" ] && [ -z "$CANONICAL" ]; then
+            echo "::error::Migration detector mismatch: changed=true but canonical diff empty"
+            exit 1
+          fi
+          if [ "$CHANGED" = "false" ] && [ -n "$CANONICAL" ]; then
+            echo "::error::Migration detector false-negative — canonical diff found:"
+            echo "$CANONICAL"
+            exit 1
+          fi
+          if [ "$CHANGED" = "true" ]; then
             echo "PR modifies supabase/migrations — staging apply eligible (non-draft)."
           else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No supabase/migrations changes in PR — staging db push skipped."
           fi
 
