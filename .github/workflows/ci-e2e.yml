@@ -48,7 +48,8 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm ci
+        shell: bash
+        run: bash scripts/ci/retry-npm-ci.sh
 
       - name: Typecheck
         run: npm run typecheck
