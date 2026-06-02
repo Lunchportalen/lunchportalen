@@ -25,6 +25,8 @@ export type ProviderTestFixtures = {
   regNull: string | null;
   providerAdminA: AuthUserFx;
   providerAdminB: AuthUserFx;
+  providerKitchenA: AuthUserFx | null;
+  providerViewerA: AuthUserFx | null;
   superadmin: AuthUserFx;
   outsider: AuthUserFx;
   employeeA: AuthUserFx;
@@ -171,6 +173,8 @@ export async function buildProviderTestFixtures(options?: {
   orderOwner?: "providerAdminA" | "employeeA";
   /** Patch 7 suspend cascade — fail fixture build if order cannot be created */
   requireOrder?: boolean;
+  /** Security: provider_kitchen + provider_viewer on provider A (non-admin RPC gate tests) */
+  includeProviderNonAdminRoles?: boolean;
   /** Patch 6 provider-RLS: company_admin on company A (avoids full buildRlsFixtures in parallel runs) */
   includeCompanyAdmin?: boolean;
 }): Promise<ProviderTestFixtures> {
@@ -178,6 +182,7 @@ export async function buildProviderTestFixtures(options?: {
   const includeRegistrations = options?.includeRegistrations ?? true;
   const orderOwner = options?.orderOwner ?? "providerAdminA";
   const requireOrder = options?.requireOrder ?? false;
+  const includeProviderNonAdminRoles = options?.includeProviderNonAdminRoles ?? false;
   const includeCompanyAdmin = options?.includeCompanyAdmin ?? false;
 
   const rid = crypto.randomUUID().slice(0, 8);
@@ -225,6 +230,19 @@ export async function buildProviderTestFixtures(options?: {
   });
   const superadmin = await mkUser("superadmin", "superadmin");
   const outsider = await mkUser("outsider", "employee");
+
+  let providerKitchenA: AuthUserFx | null = null;
+  let providerViewerA: AuthUserFx | null = null;
+  if (includeProviderNonAdminRoles) {
+    providerKitchenA = await mkUser("provkitchen-a", "employee", {
+      providerId: providerA,
+      providerRole: "provider_kitchen",
+    });
+    providerViewerA = await mkUser("provviewer-a", "employee", {
+      providerId: providerA,
+      providerRole: "provider_viewer",
+    });
+  }
 
   let employeeA = outsider;
   if (includeEmployee) {
@@ -286,6 +304,8 @@ export async function buildProviderTestFixtures(options?: {
     providerAdminB.user_id,
     superadmin.user_id,
     outsider.user_id,
+    ...(providerKitchenA ? [providerKitchenA.user_id] : []),
+    ...(providerViewerA ? [providerViewerA.user_id] : []),
     ...(includeEmployee && employeeA.user_id !== outsider.user_id ? [employeeA.user_id] : []),
     ...(companyAdminA ? [companyAdminA.user_id] : []),
   ];
@@ -336,6 +356,8 @@ export async function buildProviderTestFixtures(options?: {
     regNull,
     providerAdminA,
     providerAdminB,
+    providerKitchenA,
+    providerViewerA,
     superadmin,
     outsider,
     employeeA,
