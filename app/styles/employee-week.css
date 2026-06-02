@@ -40,20 +40,21 @@
 
 .ds-week-calendar-day-pill--idle {
   background-color: rgb(255 255 255 / 0.8);
-  color: #525252;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05);
+  color: var(--ds-text-soft);
+  box-shadow: 0 0 0 1px var(--ds-line);
 }
 
+/* Selected day — neutral (gold reserved for primary CTA) */
 .ds-week-calendar-day-pill--selected {
-  background-color: #fff6d6;
+  background-color: var(--ds-surface);
   color: var(--ds-text);
   box-shadow:
-    0 0 0 1px #f5c518,
-    0 10px 30px rgb(245 197 24 / 0.2);
+    0 0 0 2px var(--ds-text),
+    var(--ds-shadow-secondary);
 }
 
 .ds-week-calendar-day-pill--today {
-  outline: 2px solid var(--ds-accent);
+  outline: 2px solid var(--ds-line-strong);
   outline-offset: 2px;
 }
 
@@ -62,7 +63,7 @@
 }
 
 .ds-week-calendar-day-pill:focus-visible {
-  outline: 3px solid var(--ds-accent);
+  outline: 3px solid var(--ds-text);
   outline-offset: 3px;
   z-index: 1;
   position: relative;
@@ -80,7 +81,7 @@
 }
 
 .ds-week-calendar-day-pill--idle .ds-week-calendar-day-pill__weekday {
-  color: #404040;
+  color: var(--ds-text-soft);
 }
 
 .ds-week-calendar-day-pill--selected .ds-week-calendar-day-pill__weekday {
@@ -95,11 +96,11 @@
 }
 
 .ds-week-calendar-day-pill--idle .ds-week-calendar-day-pill__daynum {
-  color: #737373;
+  color: var(--ds-text-soft);
 }
 
 .ds-week-calendar-day-pill--selected .ds-week-calendar-day-pill__daynum {
-  color: rgb(82 82 82);
+  color: var(--ds-text-soft);
 }
 
 .ds-tier-pill {
@@ -122,15 +123,15 @@
 }
 
 .ds-tier-pill.is-luxus {
-  background: var(--ds-accent-soft);
-  color: #8a6800;
-  border: 1px solid rgba(245, 180, 0, 0.3);
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line-strong);
 }
 
 .ds-tier-pill.is-enterprise {
-  background: rgba(160, 124, 0, 0.12);
-  color: var(--lp-gold-dark);
-  border: 1px solid rgba(160, 124, 0, 0.3);
+  background: var(--ds-bg-soft);
+  color: var(--ds-text);
+  border: 1px solid var(--ds-line-strong);
 }
 
 .ds-tier-pill.is-unavailable {
@@ -164,23 +165,23 @@
 }
 
 .week-category-card:hover:not(:disabled) {
-  border-color: var(--ds-accent);
+  border-color: var(--ds-line-strong);
 }
 
 .week-category-card.is-selected {
-  border-color: var(--ds-accent);
-  background: var(--ds-accent-soft);
+  border-color: var(--ds-text);
+  background: var(--ds-bg-soft);
 }
 
-/* ACTIVE order — green marker (card stays interactive for SET-bytte) */
+/* ACTIVE order — neutral card; green only on status tag */
 .week-category-card.is-ordered {
-  border-color: var(--ds-green);
-  background: rgba(47, 122, 101, 0.1);
-  box-shadow: 0 0 0 1px rgba(47, 122, 101, 0.18);
+  border-color: var(--ds-line);
+  background: var(--ds-surface);
+  box-shadow: none;
 }
 
 .week-category-card.is-ordered .week-category-card__label {
-  color: var(--ds-green);
+  color: var(--ds-text-soft);
 }
 
 .week-category-card__ordered-tag {
@@ -190,7 +191,7 @@
   min-height: 24px;
   padding: 2px 10px;
   border-radius: var(--ds-radius-pill);
-  background: var(--ds-green);
+  background: var(--ds-status-success);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -199,7 +200,7 @@
 }
 
 .week-category-card.is-ordered:focus-visible {
-  outline: 3px solid var(--ds-accent);
+  outline: 3px solid var(--ds-text);
   outline-offset: 3px;
 }
 
@@ -209,7 +210,7 @@
 }
 
 .week-category-card:focus-visible {
-  outline: 3px solid var(--ds-accent);
+  outline: 3px solid var(--ds-text);
   outline-offset: 3px;
 }
 
@@ -218,7 +219,7 @@
   padding: clamp(12px, 2.5vw, 14px) clamp(14px, 3vw, 18px);
   border-radius: var(--ds-radius-md);
   border: 1.5px solid rgba(47, 122, 101, 0.35);
-  background: rgba(47, 122, 101, 0.08);
+  background: var(--ds-status-success-soft);
   color: var(--ds-text);
   font-size: var(--ds-body);
   line-height: 1.45;
@@ -227,14 +228,14 @@
 
 .ds-ordered-meal-line__prefix {
   font-weight: 700;
-  color: var(--ds-green);
+  color: var(--ds-status-success);
 }
 
 .ds-ordered-meal-line__body {
   font-weight: 600;
 }
 
-/* Habit insight — gold accent, distinct from ordered (green) and selection (yellow soft) */
+/* Habit insight — neutral (does not compete with primary CTA) */
 .ds-week-insight-pill {
   display: inline-flex;
   align-items: center;
@@ -242,12 +243,12 @@
   min-height: 28px;
   padding: 4px 12px;
   border-radius: var(--ds-radius-pill);
-  background: var(--ds-accent-soft);
-  color: var(--ds-text);
+  background: var(--ds-status-neutral-bg);
+  color: var(--ds-status-neutral-text);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  box-shadow: 0 0 0 1px rgba(245, 180, 0, 0.35);
+  box-shadow: 0 0 0 1px var(--ds-status-neutral-line);
 }
 
 .week-category-card__label {
@@ -393,7 +394,7 @@
 }
 
 .ds-week-item-btn:focus-visible {
-  outline: 3px solid var(--ds-accent);
+  outline: 3px solid var(--ds-text);
   outline-offset: 3px;
 }
 
@@ -403,13 +404,13 @@
 }
 
 .ds-week-item-btn--selected {
-  border-color: var(--ds-accent);
-  background: var(--ds-accent-soft);
+  border-color: var(--ds-text);
+  background: var(--ds-bg-soft);
   box-shadow: var(--ds-shadow-card);
 }
 
 .ds-week-item-btn--vegetarian {
-  border-color: rgba(47, 122, 101, 0.25);
+  border-color: var(--ds-line-strong);
 }
 
 .ds-week-item-btn__title {
@@ -431,13 +432,13 @@
   font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--ds-radius-pill);
-  background: rgba(245, 180, 0, 0.16);
-  color: #7a5a00;
+  background: var(--ds-warning-soft);
+  color: var(--ds-warning);
   white-space: nowrap;
 }
 
 .ds-allergen-badge--warning {
-  background: rgba(245, 180, 0, 0.22);
+  background: var(--ds-warning-soft);
 }
 
 .ds-vegetarian-badge {
@@ -448,8 +449,9 @@
   font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--ds-radius-pill);
-  background: rgba(47, 122, 101, 0.14);
-  color: var(--ds-green);
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line);
 }
 
 @media (prefers-reduced-motion: reduce) {

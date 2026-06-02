@@ -479,13 +479,14 @@ export function statusPresentation(day: DayRow): { label: string; className: str
   if (label === "Bestilt") {
     return {
       label,
-      className: "bg-[var(--ds-green)] text-white ring-1 ring-emerald-700/30 font-bold",
+      className: "bg-[var(--ds-status-success)] text-white ring-1 ring-emerald-700/30 font-bold",
     };
   }
   if (label === "Ikke bestilt") {
     return {
       label: "Ikke bestilt",
-      className: "bg-[var(--ds-accent)] text-[var(--ds-text)] ring-1 ring-black/10 font-bold",
+      className:
+        "bg-[var(--ds-status-neutral-bg)] text-[var(--ds-status-neutral-text)] ring-1 ring-neutral-200 font-semibold",
     };
   }
   if (label === "Avbestilt") {
@@ -968,7 +969,7 @@ function DayMenuSummary({
       <div className="flex flex-wrap items-center justify-center gap-2">
         <TierPill tier={day.tier} />
         {day.orderStatus !== "ACTIVE" && highlightLine.mode === "valgt_body" ? (
-          <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200">
+          <span className="inline-flex items-center rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700 ring-1 ring-neutral-200">
             Valgt: {highlightLine.body}
           </span>
         ) : highlightLine.mode === "variant_pending" ? (
@@ -1343,8 +1344,8 @@ const WeekDayCardMobile = memo(
         aria-label={formatMenuDateNO(day.date)}
         className={`rounded-lg bg-white/85 p-5 text-center shadow-soft ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
           isSelected
-            ? "motion-safe:scale-[1.01] ring-accent/45"
-            : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-accent/35 motion-safe:animate-pulse" : ""}`
+            ? "motion-safe:scale-[1.01] ring-neutral-900/15"
+            : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-neutral-300/60 motion-safe:animate-pulse" : ""}`
         }`}
       >
         <div
@@ -1360,7 +1361,7 @@ const WeekDayCardMobile = memo(
             if ((e.target as HTMLElement).closest("button")) return;
             onSelectDay();
           }}
-          className="cursor-pointer rounded-card outline-none transition-colors duration-100 active:bg-bg-soft focus-visible:ring-2 focus-visible:ring-accent/50"
+          className="cursor-pointer rounded-card outline-none transition-colors duration-100 active:bg-bg-soft focus-visible:ring-2 focus-visible:ring-neutral-900/40"
         >
           <div className="flex flex-wrap items-center justify-center gap-2">
             <TierPill tier={day.tier} />
