@@ -16,6 +16,25 @@ const hasDb = hasRemoteSupabaseIntegrationEnv({ requireAnon: true, requirePostgr
 const REASON_OK = "Integrasjonstest Patch7 — tilstrekkelig lang begrunnelse.";
 const REASON_SHORT = "for kort";
 
+const COMPANY_LIFECYCLE_RPCS = [
+  {
+    name: "lp_company_suspend",
+    args: (companyId: string) => ({ p_company_id: companyId, p_reason: REASON_OK }),
+  },
+  {
+    name: "lp_company_pause",
+    args: (companyId: string) => ({ p_company_id: companyId, p_reason: REASON_OK }),
+  },
+  {
+    name: "lp_company_delete",
+    args: (companyId: string) => ({ p_company_id: companyId, p_reason: REASON_OK }),
+  },
+  {
+    name: "lp_company_resume",
+    args: (companyId: string) => ({ p_company_id: companyId }),
+  },
+] as const;
+
 describe.skipIf(!hasDb)("suspend RPC (Patch 7)", () => {
   let fx: ProviderTestFixtures;
 
@@ -23,6 +42,7 @@ describe.skipIf(!hasDb)("suspend RPC (Patch 7)", () => {
     fx = await buildProviderTestFixtures({
       includeEmployee: true,
       includeRegistrations: false,
+      includeProviderNonAdminRoles: true,
       orderOwner: "employeeA",
       requireOrder: true,
     });
@@ -106,5 +126,35 @@ describe.skipIf(!hasDb)("suspend RPC (Patch 7)", () => {
     expect(error).toBeNull();
     expect(data?.ok).toBe(true);
     await (sb as any).rpc("lp_provider_resume", { p_provider_id: DEFAULT_PROVIDER_ID });
+  });
+
+  test("superadmin can suspend company via strict provider gate", async () => {
+    const sb = authenticatedClient(fx.superadmin.accessToken);
+    const { data, error } = await (sb as any).rpc("lp_company_suspend", {
+      p_company_id: fx.companyA,
+      p_reason: REASON_OK,
+    });
+    expect(error).toBeNull();
+    expect(data?.ok).toBe(true);
+    await (sb as any).rpc("lp_company_resume", { p_company_id: fx.companyA });
+  });
+
+  describe("non-admin provider roles blocked on company lifecycle RPCs", () => {
+    const nonAdminCases = [
+      { label: "provider_kitchen", token: () => fx.providerKitchenA!.accessToken },
+      { label: "provider_viewer", token: () => fx.providerViewerA!.accessToken },
+    ] as const;
+
+    for (const { label, token } of nonAdminCases) {
+      for (const { name, args } of COMPANY_LIFECYCLE_RPCS) {
+        test(`${label} cannot call ${name}`, async () => {
+          const sb = authenticatedClient(token());
+          const { error } = await (sb as any).rpc(name, args(fx.companyA));
+          expect(error).not.toBeNull();
+          expect(String(error?.message ?? "")).toMatch(/PERMISSION_DENIED/i);
+          expect(String(error?.code ?? "")).toMatch(/42501|PGRST/i);
+        });
+      }
+    }
   });
 });
