@@ -375,9 +375,7 @@ function CutoffSafetyHint({ day, className = "" }: { day: DayRow; className?: st
 
 function CutoffPassedBadge({ className = "" }: { className?: string }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 ${className}`}
-    >
+    <span className={`ds-week-status-pill is-cutoff ${className}`.trim()}>
       Frist passert 08:00
     </span>
   );
@@ -475,30 +473,18 @@ export function orderStatusLabel(day: DayRow) {
 
 export function statusPresentation(day: DayRow): { label: string; className: string } {
   const label = orderStatusLabel(day);
+  const base = "ds-week-status-pill";
 
   if (label === "Bestilt") {
-    return {
-      label,
-      className: "bg-[var(--ds-status-success)] text-white ring-1 ring-emerald-700/30 font-bold",
-    };
+    return { label, className: `${base} is-ordered` };
   }
   if (label === "Ikke bestilt") {
-    return {
-      label: "Ikke bestilt",
-      className:
-        "bg-[var(--ds-status-neutral-bg)] text-[var(--ds-status-neutral-text)] ring-1 ring-neutral-200 font-semibold",
-    };
+    return { label: "Ikke bestilt", className: `${base} is-open` };
   }
   if (label === "Avbestilt") {
-    return {
-      label,
-      className: "bg-transparent text-neutral-700 ring-1 ring-neutral-300 font-semibold",
-    };
+    return { label, className: `${base} is-cancelled` };
   }
-  return {
-    label,
-    className: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-200 font-semibold",
-  };
+  return { label, className: `${base} is-locked` };
 }
 
 function canOrderDay(day: DayRow, canAct: boolean, globalBusy: boolean) {
@@ -1131,14 +1117,10 @@ const WeekDayCardMobile = memo(
         >
           <div className="flex flex-wrap items-center justify-start gap-2">
             <TierPill tier={day.tier} />
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs ring-1 ${status.className}`}>
-              {status.label}
-            </span>
+            <span className={status.className}>{status.label}</span>
             {cutoffClosed ? <CutoffPassedBadge /> : null}
             {readOnlyPreview ? (
-              <span className="inline-flex items-center rounded-full bg-neutral-950 px-3 py-1 text-xs font-bold text-white">
-                Forhåndsvisning
-              </span>
+              <span className="ds-week-status-pill is-preview">Forhåndsvisning</span>
             ) : null}
           </div>
 
@@ -2234,9 +2216,7 @@ export default function EmployeeWeekClient({
                       <TierPill tier={day.tier} />
                     </span>
                   </span>
-                  <span className={`shrink-0 rounded-full px-3 py-1 text-xs ring-1 ${statusClass}`}>
-                    {statusLabel}
-                  </span>
+                  <span className={`${statusClass} shrink-0`}>{statusLabel}</span>
                 </button>
               );
             })}
