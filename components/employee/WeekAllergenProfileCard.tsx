@@ -93,7 +93,7 @@ export default function WeekAllergenProfileCard() {
 
   return (
     <section
-      className="mb-6 rounded-lg bg-white/90 px-4 py-5 text-left shadow-card ring-1 ring-black/5"
+      className="ds-week-surface ds-week-surface--panel mb-6 bg-white/90 text-left"
       aria-labelledby="week-allergen-heading"
     >
       <h2 id="week-allergen-heading" className="text-base font-semibold tracking-tight text-neutral-950 md:text-lg">

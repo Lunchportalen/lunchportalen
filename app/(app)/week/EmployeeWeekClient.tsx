@@ -1094,7 +1094,7 @@ const WeekDayCardMobile = memo(
       <div
         role="group"
         aria-label={formatMenuDateNO(day.date)}
-        className={`rounded-lg bg-white/85 p-5 shadow-soft ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
+        className={`ds-week-surface ds-week-surface--panel bg-white/85 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
           isSelected
             ? "motion-safe:scale-[1.01] ring-neutral-900/15"
             : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-neutral-300/60 motion-safe:animate-pulse" : ""}`
@@ -2206,7 +2206,7 @@ export default function EmployeeWeekClient({
                   data-date={day.date}
                   data-day-slide=""
                   onClick={() => selectDayFromTap(day.date)}
-                  className="flex min-h-day w-full items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 text-left text-sm ring-1 ring-black/5 transition-transform active:scale-[0.99]"
+                  className="ds-week-surface ds-week-surface--row flex min-h-day w-full items-center justify-between gap-3 bg-white/75 text-left text-sm transition-transform active:scale-[0.99]"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-bold capitalize text-neutral-950">
