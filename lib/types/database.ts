@@ -58,6 +58,29 @@ type SystemSettingsTable = {
   Relationships: [];
 };
 
+/** Typed subset of `public.lp_user_allergens` (migration 20260615120000 + subtypes). */
+type LpUserAllergensTable = {
+  Row: {
+    user_id: string;
+    codes: string[];
+    free_text: string;
+    updated_at: string;
+  };
+  Insert: {
+    user_id: string;
+    codes?: string[];
+    free_text?: string;
+    updated_at?: string;
+  };
+  Update: Partial<{
+    user_id: string;
+    codes: string[];
+    free_text: string;
+    updated_at: string;
+  }>;
+  Relationships: [];
+};
+
 type AiActionMemoryTable = {
   Row: {
     id: string;
@@ -177,6 +200,7 @@ const PUBLIC_TABLE_NAMES = [
   "kitchen_batch",
   "kitchen_batches",
   "lead_pipeline",
+  "lp_user_allergens",
   "location_audit",
   "media_items",
   "menu_visibility_days",
@@ -219,9 +243,11 @@ export type Database = {
     Tables: {
       [K in PublicTableName]: K extends "ai_action_memory"
         ? AiActionMemoryTable
-        : K extends "system_settings"
-          ? SystemSettingsTable
-          : LoosePublicTable;
+        : K extends "lp_user_allergens"
+          ? LpUserAllergensTable
+          : K extends "system_settings"
+            ? SystemSettingsTable
+            : LoosePublicTable;
     };
     Views: {
       /**

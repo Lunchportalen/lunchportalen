@@ -84,7 +84,7 @@ describe.skipIf(!enabled)("lp_user_allergens RLS (uigx)", () => {
   });
 
   test("self: upsert and read own row", async () => {
-    const { error: upErr } = await (employeeClient as any)
+    const { error: upErr } = await employeeClient
       .from("lp_user_allergens")
       .upsert(
         {
@@ -97,7 +97,7 @@ describe.skipIf(!enabled)("lp_user_allergens RLS (uigx)", () => {
       );
     expect(upErr).toBeNull();
 
-    const { data, error } = await (employeeClient as any)
+    const { data, error } = await employeeClient
       .from("lp_user_allergens")
       .select("user_id, codes, free_text")
       .eq("user_id", testUserId)
@@ -109,7 +109,7 @@ describe.skipIf(!enabled)("lp_user_allergens RLS (uigx)", () => {
   }, 60_000);
 
   test("self: cannot read other users via RLS filter", async () => {
-    const { data, error } = await (employeeClient as any).from("lp_user_allergens").select("user_id");
+    const { data, error } = await employeeClient.from("lp_user_allergens").select("user_id");
     expect(error).toBeNull();
     const rows = Array.isArray(data) ? data : [];
     expect(rows.every((r: { user_id: string }) => r.user_id === testUserId)).toBe(true);
@@ -117,7 +117,7 @@ describe.skipIf(!enabled)("lp_user_allergens RLS (uigx)", () => {
 
   test("anon: permission denied (fail-closed — no SELECT grant to anon)", async () => {
     const anon = anonClient();
-    const { data, error } = await (anon as any).from("lp_user_allergens").select("user_id").limit(5);
+    const { data, error } = await anon.from("lp_user_allergens").select("user_id").limit(5);
     expect(error?.code).toBe("42501");
     expect((data ?? []).length).toBe(0);
   }, 30_000);

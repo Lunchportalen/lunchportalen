@@ -117,6 +117,8 @@ umbraco17/*BACKUP*/
 
 # Post-audit PF.1 (2026-05-26) — local evidence, not repo truth
 .screenshots/
+_ci-snapshots/
+tmp-week-visual-baselines/
 scripts/k6/results/
 scripts/audit/*-dump-*.sql
 *.dump.sql
