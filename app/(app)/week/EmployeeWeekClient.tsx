@@ -581,7 +581,7 @@ function OrderedMealStatusLine({ day, className = "" }: { day: DayRow; className
   if (day.orderStatus !== "ACTIVE" || !body) return null;
   return (
     <p className={`ds-ordered-meal-line ${className}`.trim()} role="status">
-      <span className="ds-ordered-meal-line__prefix">Bestilt:</span>{" "}
+      <span className="sr-only">Bestilt:</span>
       <span className="ds-ordered-meal-line__body">{body}</span>
     </p>
   );
@@ -619,13 +619,6 @@ function categoriesItemsSignature(cats: DayCategory[]): string {
 
 function variantPickRequired(cat: DayCategory | undefined): boolean {
   return Boolean(cat?.items?.length && cat!.items!.length >= 2);
-}
-
-function tierChipMatchesSummary(summary: string | null, choiceLabel: string): boolean {
-  if (!summary || !choiceLabel) return false;
-  const s = summary.toLowerCase();
-  const c = choiceLabel.toLowerCase();
-  return s === c || s.startsWith(`${c} ·`);
 }
 
 function effectiveSelectedChoice(day: DayRow, stored: WeekChoiceStored): string | null {
@@ -931,75 +924,12 @@ export function WeekCategoryCards({
               title={!cat.available ? "Ikke tilgjengelig" : isOrdered ? "Bestilt" : undefined}
             >
               <span className="week-category-card__label">{cat.label}</span>
-              {isOrdered ? <span className="week-category-card__ordered-tag">Bestilt</span> : null}
               {!cat.available ? <span className="week-category-card__empty">Ikke tilgjengelig</span> : null}
             </button>
             {isPendingCat ? expandSection : null}
           </Fragment>
         );
       })}
-    </div>
-  );
-}
-
-function DayMenuSummary({
-  day,
-  storedChoice,
-  compact = false,
-}: {
-  day: DayRow;
-  storedChoice?: WeekChoiceStored;
-  compact?: boolean;
-}) {
-  if (isNoTierForDay(day)) {
-    return (
-      <div className={compact ? "mt-3" : "mt-4"}>
-        <NoTierForDayNotice />
-      </div>
-    );
-  }
-  const choices = getTierCategories(day);
-  const chipSummary = selectedChoiceSummaryLabel(day, storedChoice ?? null);
-  const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
-  const orderedLine = orderedMealDisplayLine(day);
-
-  return (
-    <div className={`${compact ? "mt-3" : "mt-4"} text-center md:text-center`}>
-      {orderedLine ? <OrderedMealStatusLine day={day} className={compact ? "mb-2" : "mb-3"} /> : null}
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <TierPill tier={day.tier} />
-        {day.orderStatus !== "ACTIVE" && highlightLine.mode === "valgt_body" ? (
-          <span className="inline-flex items-center rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700 ring-1 ring-neutral-200">
-            Valgt: {highlightLine.body}
-          </span>
-        ) : highlightLine.mode === "variant_pending" ? (
-          <span className="inline-flex min-h-chip items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200/80">
-            Velg variant for {highlightLine.categoryLabel}
-          </span>
-        ) : null}
-      </div>
-
-      {choices.length ? (
-        <div className="mt-3 flex flex-wrap justify-center gap-2">
-          {choices.map((choice) => (
-            <span
-              key={choice}
-              className={[
-                "rounded-full px-3 py-1 text-xs font-medium ring-1",
-                tierChipMatchesSummary(chipSummary, choice)
-                  ? "bg-neutral-950 text-white ring-neutral-950"
-                  : "bg-white/80 text-neutral-800 ring-black/10",
-              ].join(" ")}
-            >
-              {choice}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-sm text-neutral-600 ring-1 ring-black/10">
-          Menyen er ikke publisert ennå.
-        </p>
-      )}
     </div>
   );
 }
@@ -1134,167 +1064,6 @@ type RowBase = {
   readOnlyPreview?: boolean;
 };
 
-function WeekDayRowDesktop({
-  day,
-  canAct,
-  globalBusy,
-  busyThis,
-  storedChoice,
-  onRequestOrder,
-  onRequestCancel,
-  onSelectCategory,
-  onSelectItem,
-  insightRecommended,
-  insightPreferredMotion,
-  readOnlyPreview,
-}: RowBase) {
-  const ordered = day.orderStatus === "ACTIVE";
-  const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
-  const companyClosed = day.isLocked && day.lockReason === "COMPANY";
-  const notInAgreement = !day.isEnabled;
-  const noTierForDay = isNoTierForDay(day);
-  const canClick = canOrderDay(day, canAct, globalBusy);
-  const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
-  const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
-  const status = statusPresentation(day);
-
-  return (
-    <li
-      className={`rounded-2xl border border-black/10 bg-white/90 p-4 text-center shadow-sm md:text-left ${CARD_TRANSFORM} ${
-        insightPreferredMotion
-          ? "motion-safe:ring-1 motion-safe:ring-neutral-300/60 motion-safe:animate-pulse"
-          : ""
-      }`}
-    >
-      <div className="flex flex-col items-center gap-1 md:flex-row md:items-start md:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            <div className="text-base font-semibold capitalize text-neutral-900">
-              {formatMenuDateNO(day.date)}
-            </div>
-            <TierPill tier={day.tier} />
-          </div>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs ring-1 ${status.className}`}>
-              {status.label}
-            </span>
-            {cutoffClosed ? <CutoffPassedBadge /> : null}
-          </div>
-          <OrderedMealStatusLine day={day} className="mt-2" />
-          {insightRecommended ? (
-            <div className="mt-2 max-w-md space-y-0.5 text-center md:text-left">
-              <span className="ds-week-insight-pill">
-                Anbefalt for deg
-              </span>
-              <p className="text-[11px] text-neutral-600">Du bestiller ofte denne dagen</p>
-              <p className="text-[10px] text-neutral-400">Basert på dine tidligere bestillinger</p>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-3 border-t border-black/5 pt-3 text-center md:text-left">
-        {day.menuImages.length ? (
-          <div className="mb-2 flex flex-wrap justify-center gap-2 md:justify-start">
-            {day.menuImages.map((src) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={src}
-                src={src}
-                alt=""
-                className="h-24 max-w-full rounded-lg object-cover ring-1 ring-black/10"
-              />
-            ))}
-          </div>
-        ) : null}
-        <p className="text-sm font-semibold text-neutral-900">{noTierForDay ? "Ikke tilgjengelig" : day.menuTitle ?? "Menyen er ikke publisert ennå."}</p>
-        {day.menuDescription ? (
-          <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{day.menuDescription}</p>
-        ) : null}
-        {day.allergens.length > 0 ? (
-          <p className="mt-2 text-xs text-neutral-600">
-            <span className="font-semibold">Allergener: </span>
-            {day.allergens.join(", ")}
-          </p>
-        ) : null}
-        {noTierForDay ? null : (
-          <WeekCategoryCards
-            day={day}
-            storedChoice={storedChoice}
-            onSelectCategory={onSelectCategory}
-            onSelectItem={onSelectItem}
-            disabled={readOnlyPreview || globalBusy}
-          />
-        )}
-        <DayMenuSummary day={day} storedChoice={storedChoice} />
-      </div>
-
-      <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center md:justify-start">
-        {noTierForDay ? (
-          <span className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
-        ) : notInAgreement ? (
-          <span className="text-center text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
-        ) : cutoffClosed ? (
-          <div className="flex w-full flex-col sm:w-full md:w-auto">
-            <button
-              type="button"
-              disabled
-              className={`min-h-touch w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 sm:w-auto ${BTN_TOUCH}`}
-            >
-              Frist passert kl. 08:00
-            </button>
-            <CutoffSafetyHint day={day} className="text-center md:text-left" />
-          </div>
-        ) : companyClosed ? (
-          <span className="text-center text-sm text-neutral-600">Bestilling stengt for firma</span>
-        ) : ordered ? (
-          <div className="flex w-full flex-col sm:w-full md:w-auto">
-            <button
-              type="button"
-              disabled={readOnlyPreview || !canClick}
-              aria-disabled={readOnlyPreview || !canClick}
-              title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
-              onClick={readOnlyPreview ? undefined : onRequestCancel}
-              className={`flex min-h-cta items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
-            >
-              {busyThis ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Behandler…
-                </>
-              ) : (
-                "Avbestill lunsj"
-              )}
-            </button>
-            {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
-          </div>
-        ) : (
-          <div className="flex w-full flex-col sm:w-full md:w-auto">
-            <button
-              type="button"
-              disabled={readOnlyPreview || !canOrderClick}
-              aria-disabled={readOnlyPreview || !canOrderClick}
-              title={primaryTitle}
-              onClick={readOnlyPreview ? undefined : onRequestOrder}
-              className={`flex min-h-cta items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
-            >
-              {busyThis ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Behandler…
-                </>
-              ) : (
-                "Bestill lunsj"
-              )}
-            </button>
-            {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
-          </div>
-        )}
-      </div>
-    </li>
-  );
-}
-
 type MobileCardProps = RowBase & {
   isSelected: boolean;
   onSelectDay: () => void;
@@ -1327,15 +1096,12 @@ const WeekDayCardMobile = memo(
     const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
     const categories = getTierCategories(day);
     const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
-    const orderedLine = orderedMealDisplayLine(day);
     const mobileChoiceLine =
-      orderedLine
-        ? `Bestilt: ${orderedLine}`
-        : highlightLine.mode === "variant_pending"
-          ? `Velg variant for ${highlightLine.categoryLabel}`
-          : highlightLine.mode === "valgt_body"
-            ? `Valgt: ${highlightLine.body}`
-            : undefined;
+      highlightLine.mode === "variant_pending"
+        ? `Velg variant for ${highlightLine.categoryLabel}`
+        : highlightLine.mode === "valgt_body" && day.orderStatus !== "ACTIVE"
+          ? `Valgt: ${highlightLine.body}`
+          : undefined;
     const status = statusPresentation(day);
 
     return (
@@ -1377,8 +1143,7 @@ const WeekDayCardMobile = memo(
           </div>
 
           <div className="mt-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Valgt dag</p>
-            <h2 className="mt-1 text-2xl font-bold capitalize tracking-[-0.03em] text-neutral-950">
+            <h2 className="text-2xl font-bold capitalize tracking-[-0.03em] text-neutral-950">
               {selectedDayLabel(day)}
             </h2>
             {mobileChoiceLine ? (
@@ -2323,10 +2088,10 @@ export default function EmployeeWeekClient({
           Per-dag-status ("Fristen for dagens endring er passert") forblir
           ved valgt-dag-kortet. FASE 10B.1. */}
       <header className="mb-6 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">
-          Ansattflate
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl">
+        {readOnlyPreview ? (
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Ansattflate</p>
+        ) : null}
+        <h1 className={`text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl${readOnlyPreview ? " mt-2" : ""}`}>
           Bestill eller avbestill lunsj
         </h1>
         {companyName ? (
