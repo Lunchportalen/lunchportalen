@@ -286,14 +286,14 @@ describe("EmployeeWeekClient ordered vs insight styling", () => {
     expect(source).toMatch(/day\.orderStatus === "ACTIVE"\) return prev/);
   });
 
-  test("CSS: focus-visible nøytral outline 3px + offset; is-ordered uten grønn kort-ramme", () => {
+  test("CSS: slot focus-visible accent ring; ordered category uses --slot not green card frame", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).not.toMatch(/^\s*ring\s*:/m);
-    expect(css).toContain(".week-category-card.is-ordered:focus-visible");
-    expect(css).toMatch(/outline:\s*3px solid var\(--ds-text\)/);
+    expect(css).toContain(".ds-week-surface--slot:focus-visible");
+    expect(css).toMatch(/\.ds-week-surface--slot:focus-visible[\s\S]*outline:\s*2px solid var\(--ds-accent\)/);
     expect(css).toMatch(/outline-offset:\s*3px/);
-    expect(css).toMatch(/\.week-category-card\.is-ordered\s*\{[^}]*border-color:\s*var\(--ds-line\)/);
-    expect(css).not.toMatch(/\.week-category-card\.is-ordered\s*\{[^}]*var\(--ds-green\)/);
+    expect(css).toContain(".ds-week-surface--slot[aria-pressed=\"true\"]");
+    expect(css).not.toMatch(/\.week-category-card\.is-ordered::before/);
   });
 
   test("gull reservert til PRIMARY_CTA; dag-valg og insight uten accent", () => {

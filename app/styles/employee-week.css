@@ -230,48 +230,41 @@
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05);
 }
 
-.week-day__categories {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.week-category-card {
-  display: flex;
+/* Slot — selectable category / item choice on day card (STEG 5.4) */
+.ds-week-surface--slot {
+  box-sizing: border-box;
   min-height: 48px;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px;
-  border: 2px solid var(--ds-line);
-  border-radius: var(--ds-radius-md);
+  border-radius: var(--ds-radius-sm);
   background: var(--ds-surface);
+  border: 1px solid var(--ds-line);
+  box-shadow: none;
   color: var(--ds-text);
-  text-align: left;
   cursor: pointer;
   transition:
-    border-color 0.2s var(--ds-ease),
-    background 0.2s var(--ds-ease);
+    border-color 0.18s var(--ds-ease),
+    background 0.18s var(--ds-ease),
+    box-shadow 0.18s var(--ds-ease);
 }
 
-.week-category-card:hover:not(:disabled) {
-  border-color: var(--ds-line-strong);
+@media (prefers-reduced-motion: reduce) {
+  .ds-week-surface--slot {
+    transition: none;
+  }
 }
 
-.week-category-card.is-selected {
-  border-color: var(--ds-text);
-  background: var(--ds-bg-soft);
+/* E2E week-visual: deterministic computed-style probes (no slot transition mid-sample) */
+html.lp-week-visual-regression .ds-week-surface--slot {
+  transition: none !important;
 }
 
-/* ACTIVE order — neutral card; green only on status tag */
-.week-category-card.is-ordered {
-  position: relative;
-  border-color: var(--ds-line);
-  background: var(--ds-surface);
-  box-shadow: none;
+.ds-week-surface--slot[aria-pressed="true"],
+.ds-week-surface--slot.is-selected {
+  border-color: var(--ds-accent);
+  background: var(--ds-accent-soft);
 }
 
-.week-category-card.is-ordered::before {
+.ds-week-surface--slot[aria-pressed="true"]::after,
+.ds-week-surface--slot.is-selected::after {
   content: "✓";
   position: absolute;
   top: 12px;
@@ -282,30 +275,51 @@
   width: 22px;
   height: 22px;
   border-radius: var(--ds-radius-pill);
-  background: var(--ds-status-success);
-  color: #fff;
+  border: 1.5px solid var(--ds-accent);
+  background: var(--ds-surface);
+  color: var(--ds-text);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
 }
 
+.ds-week-surface--slot:focus {
+  outline: none;
+}
+
+.ds-week-surface--slot:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 3px;
+}
+
+.ds-week-surface--slot:disabled,
+.ds-week-surface--slot[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.week-day__categories {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.week-category-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  text-align: left;
+}
+
+.week-category-card:not([aria-pressed="true"]):not(.is-selected):hover:not(:disabled) {
+  border-color: var(--ds-line-strong);
+}
+
 .week-category-card.is-ordered .week-category-card__label {
   color: var(--ds-text-soft);
-}
-
-.week-category-card.is-ordered:focus-visible {
-  outline: 3px solid var(--ds-text);
-  outline-offset: 3px;
-}
-
-.week-category-card:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.week-category-card:focus-visible {
-  outline: 3px solid var(--ds-text);
-  outline-offset: 3px;
 }
 
 .ds-ordered-meal-line {
@@ -460,42 +474,17 @@
 }
 
 .ds-week-item-btn {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  min-height: 64px;
   padding: 14px 16px;
-  background: var(--ds-surface);
-  border: 1.5px solid var(--ds-line);
-  border-radius: var(--ds-radius-md);
   text-align: left;
-  cursor: pointer;
-  transition: border-color 0.18s var(--ds-ease), background 0.18s var(--ds-ease), box-shadow 0.18s var(--ds-ease),
-    transform 0.18s var(--ds-ease);
-  color: var(--ds-text);
 }
 
 .ds-week-item-btn:hover:not(:disabled) {
   border-color: var(--ds-line-strong);
-  transform: translateY(-1px);
-  box-shadow: var(--ds-shadow-card);
-}
-
-.ds-week-item-btn:focus-visible {
-  outline: 3px solid var(--ds-text);
-  outline-offset: 3px;
-}
-
-.ds-week-item-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.ds-week-item-btn--selected {
-  border-color: var(--ds-text);
-  background: var(--ds-bg-soft);
-  box-shadow: var(--ds-shadow-card);
 }
 
 .ds-week-item-btn--vegetarian {
