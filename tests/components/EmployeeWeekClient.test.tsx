@@ -238,7 +238,7 @@ describe("statusPresentation", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).toContain(".ds-week-status-pill {");
     expect(css).toMatch(/\.ds-week-status-pill[\s\S]*display:\s*inline-flex/);
-    expect(css).toMatch(/\.ds-week-status-pill[\s\S]*border:\s*1px solid var\(--ds-line\)/);
+    expect(css).toMatch(/\.ds-week-status-pill[\s\S]*box-shadow:\s*0 0 0 1px var\(--ds-line\)/);
     expect(css).toContain(".ds-week-status-pill.is-ordered");
     expect(css).toMatch(/\.ds-week-status-pill\.is-ordered[\s\S]*background:\s*var\(--ds-status-success\)/);
     expect(css).toContain(".ds-week-status-pill.is-open");

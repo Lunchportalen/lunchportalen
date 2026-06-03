@@ -148,7 +148,8 @@
   min-height: 24px;
   padding: 4px 12px;
   border-radius: var(--ds-radius-pill);
-  border: 1px solid var(--ds-line);
+  border: none;
+  box-shadow: 0 0 0 1px var(--ds-line);
   font-size: 12px;
   line-height: 16px;
 }
@@ -156,42 +157,42 @@
 .ds-week-status-pill.is-ordered {
   background: var(--ds-status-success);
   color: #fff;
-  border-color: rgb(4 120 87 / 0.3);
+  box-shadow: 0 0 0 1px rgb(4 120 87 / 0.3);
   font-weight: 700;
 }
 
 .ds-week-status-pill.is-open {
   background: var(--ds-status-neutral-bg);
   color: var(--ds-status-neutral-text);
-  border-color: #e5e5e5;
+  box-shadow: 0 0 0 1px #e5e5e5;
   font-weight: 600;
 }
 
 .ds-week-status-pill.is-cancelled {
   background: transparent;
   color: #404040;
-  border-color: #d4d4d4;
+  box-shadow: 0 0 0 1px #d4d4d4;
   font-weight: 600;
 }
 
 .ds-week-status-pill.is-locked {
   background: #f5f5f5;
   color: #404040;
-  border-color: #e5e5e5;
+  box-shadow: 0 0 0 1px #e5e5e5;
   font-weight: 600;
 }
 
 .ds-week-status-pill.is-cutoff {
   background: #fffbeb;
   color: #451a03;
-  border-color: #fde68a;
+  box-shadow: 0 0 0 1px #fde68a;
   font-weight: 600;
 }
 
 .ds-week-status-pill.is-preview {
   background: #0a0a0a;
   color: #fff;
-  border-color: transparent;
+  box-shadow: none;
   font-weight: 700;
 }
 
