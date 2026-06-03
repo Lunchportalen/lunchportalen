@@ -196,6 +196,23 @@
   font-weight: 700;
 }
 
+/* Surface — inset notice/card (STEG 5.2: dedup soft notice blocks) */
+.ds-week-surface {
+  box-sizing: border-box;
+  border: none;
+  box-shadow: 0 0 0 1px var(--ds-line);
+}
+
+.ds-week-surface--inset {
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-bg-soft);
+  padding: 1rem;
+}
+
+.ds-week-surface--inset.is-row {
+  padding-block: 0;
+}
+
 .week-day__categories {
   display: grid;
   grid-template-columns: 1fr;

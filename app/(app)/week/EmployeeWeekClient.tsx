@@ -419,7 +419,7 @@ function isNoTierForDay(day: DayRow) {
 
 function NoTierForDayNotice() {
   return (
-    <div className="rounded-2xl bg-bg-soft px-4 py-4 text-left ring-1 ring-black/5">
+    <div className="ds-week-surface ds-week-surface--inset text-left">
       <p className="text-sm font-semibold text-neutral-900">Denne dagen er ikke tilgjengelig for bestilling.</p>
       <p className="mt-1 text-sm text-neutral-600">Kontakt firmaadmin.</p>
     </div>
@@ -1173,7 +1173,7 @@ const WeekDayCardMobile = memo(
                 {categories.map((category) => (
                   <div
                     key={category}
-                    className="flex min-h-touch items-center gap-3 rounded-2xl bg-bg-soft px-4 text-sm font-semibold text-neutral-900 ring-1 ring-black/5"
+                    className="ds-week-surface ds-week-surface--inset is-row flex min-h-touch items-center gap-3 text-sm font-semibold text-neutral-900"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-sm ring-1 ring-black/5">
                       {category.slice(0, 1)}
@@ -1183,7 +1183,7 @@ const WeekDayCardMobile = memo(
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl bg-bg-soft px-4 py-4 text-left ring-1 ring-black/5">
+              <div className="ds-week-surface ds-week-surface--inset text-left">
                 <p className="text-sm font-semibold text-neutral-900">Menyen er ikke publisert ennå.</p>
                 <p className="mt-1 text-sm text-neutral-600">Denne dagen er ikke klar for bestilling.</p>
               </div>
