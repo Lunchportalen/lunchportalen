@@ -23,6 +23,7 @@ test.describe("Week slot probe", () => {
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
+    await page.mouse.move(0, 0);
 
     const resting = page.locator("button.ds-week-surface--slot[aria-pressed='false']").first();
     await expect(resting).toBeVisible();
@@ -50,14 +51,24 @@ test.describe("Week slot probe", () => {
     });
 
     const accentBorder = await selected.evaluate((el) => {
-      const probe = document.createElement("div");
+      const probe = document.createElement("button");
+      probe.className = "ds-week-surface ds-week-surface--slot week-category-card is-ordered";
+      probe.setAttribute("aria-pressed", "true");
       probe.style.cssText =
-        "position:absolute;visibility:hidden;pointer-events:none;border:1px solid var(--ds-accent);";
+        "position:absolute;left:-9999px;visibility:hidden;pointer-events:none;width:1px;height:48px;";
       document.body.appendChild(probe);
-      const expected = getComputedStyle(probe).borderTopColor;
+      const probeStyle = getComputedStyle(probe);
+      const actualStyle = getComputedStyle(el);
+      const result = {
+        expected: probeStyle.borderTopColor,
+        actual: actualStyle.borderTopColor,
+        matches: actualStyle.borderTopColor === probeStyle.borderTopColor,
+        bgExpected: probeStyle.backgroundColor,
+        bgActual: actualStyle.backgroundColor,
+        bgMatches: actualStyle.backgroundColor === probeStyle.backgroundColor,
+      };
       document.body.removeChild(probe);
-      const actual = getComputedStyle(el).borderTopColor;
-      return { expected, actual, matches: actual === expected };
+      return result;
     });
 
     // eslint-disable-next-line no-console
@@ -69,6 +80,7 @@ test.describe("Week slot probe", () => {
     expect(restingStyles.borderRadius).toBe("14px");
     expect(selectedStyles.borderRadius).toBe("14px");
     expect(accentBorder.matches).toBe(true);
+    expect(accentBorder.bgMatches).toBe(true);
     expect(selectedStyles.ariaPressed).toBe("true");
   });
 });

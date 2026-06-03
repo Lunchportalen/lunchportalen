@@ -309,7 +309,7 @@
   text-align: left;
 }
 
-.week-category-card:hover:not(:disabled) {
+.week-category-card:not([aria-pressed="true"]):not(.is-selected):hover:not(:disabled) {
   border-color: var(--ds-line-strong);
 }
 
