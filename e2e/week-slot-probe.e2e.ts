@@ -41,34 +41,34 @@ test.describe("Week slot probe", () => {
 
     const selectedStyles = await selected.evaluate((el) => {
       const cs = getComputedStyle(el);
-      const root = getComputedStyle(document.documentElement);
       return {
         borderRadius: cs.borderTopLeftRadius,
         borderColor: cs.borderColor,
-        accentToken: root.getPropertyValue("--ds-accent").trim(),
         className: el.className,
         ariaPressed: el.getAttribute("aria-pressed"),
       };
     });
 
-    const accentRgb = await page.evaluate(() => {
+    const accentBorder = await selected.evaluate((el) => {
       const probe = document.createElement("div");
-      probe.style.color = "var(--ds-accent)";
+      probe.style.cssText =
+        "position:absolute;visibility:hidden;pointer-events:none;border:1px solid var(--ds-accent);";
       document.body.appendChild(probe);
-      const rgb = getComputedStyle(probe).color;
+      const expected = getComputedStyle(probe).borderTopColor;
       document.body.removeChild(probe);
-      return rgb;
+      const actual = getComputedStyle(el).borderTopColor;
+      return { expected, actual, matches: actual === expected };
     });
 
     // eslint-disable-next-line no-console
     console.log(
       "WEEK_SLOT_PROBE",
-      JSON.stringify({ resting: restingStyles, selected: selectedStyles, accentRgb }),
+      JSON.stringify({ resting: restingStyles, selected: selectedStyles, accentBorder }),
     );
 
     expect(restingStyles.borderRadius).toBe("14px");
     expect(selectedStyles.borderRadius).toBe("14px");
-    expect(selectedStyles.borderColor).toBe(accentRgb);
+    expect(accentBorder.matches).toBe(true);
     expect(selectedStyles.ariaPressed).toBe("true");
   });
 });
