@@ -209,8 +209,7 @@ describe("statusPresentation", () => {
   test("Bestilt → grønn pill", () => {
     const p = statusPresentation(dayFixture({ orderStatus: "ACTIVE", isEnabled: true, isLocked: false }));
     expect(p.label).toBe("Bestilt");
-    expect(p.className).toContain("ds-status-success");
-    expect(p.className).toContain("text-white");
+    expect(p.className).toBe("ds-week-status-pill is-ordered");
   });
 
   test("Ikke bestilt → nøytral grå pill (tilstand, ikke merkeaksent)", () => {
@@ -218,16 +217,13 @@ describe("statusPresentation", () => {
       dayFixture({ orderStatus: null, isEnabled: true, isLocked: false, lockReason: null }),
     );
     expect(p.label).toBe("Ikke bestilt");
-    expect(p.className).toContain("ds-status-neutral-bg");
-    expect(p.className).toContain("ds-status-neutral-text");
-    expect(p.className).not.toContain("ds-accent");
+    expect(p.className).toBe("ds-week-status-pill is-open");
   });
 
   test("Avbestilt → transparent/outline", () => {
     const p = statusPresentation(dayFixture({ orderStatus: "CANCELLED", isEnabled: true, isLocked: false }));
     expect(p.label).toBe("Avbestilt");
-    expect(p.className).toContain("bg-transparent");
-    expect(p.className).toContain("ring-neutral-300");
+    expect(p.className).toBe("ds-week-status-pill is-cancelled");
   });
 
   test("Frist passert → nøytral grå", () => {
@@ -235,7 +231,22 @@ describe("statusPresentation", () => {
       dayFixture({ orderStatus: null, isEnabled: true, isLocked: true, lockReason: "CUTOFF" }),
     );
     expect(p.label).toBe("Frist passert");
-    expect(p.className).toContain("bg-neutral-100");
+    expect(p.className).toBe("ds-week-status-pill is-locked");
+  });
+
+  test("CSS: ds-week-status-pill struktur + farge-modifiers", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).toContain(".ds-week-status-pill {");
+    expect(css).toMatch(/\.ds-week-status-pill[\s\S]*display:\s*inline-flex/);
+    expect(css).toMatch(/\.ds-week-status-pill[\s\S]*box-shadow:\s*0 0 0 1px var\(--ds-line\)/);
+    expect(css).toContain(".ds-week-status-pill.is-ordered");
+    expect(css).toMatch(/\.ds-week-status-pill\.is-ordered[\s\S]*background:\s*var\(--ds-status-success\)/);
+    expect(css).toContain(".ds-week-status-pill.is-open");
+    expect(css).toMatch(/\.ds-week-status-pill\.is-open[\s\S]*var\(--ds-status-neutral-bg\)/);
+    expect(css).toContain(".ds-week-status-pill.is-cancelled");
+    expect(css).toContain(".ds-week-status-pill.is-locked");
+    expect(css).toContain(".ds-week-status-pill.is-cutoff");
+    expect(css).toContain(".ds-week-status-pill.is-preview");
   });
 
   test("Ikke bestilt grå oppfyller WCAG AA kontrast (4.5:1)", () => {
