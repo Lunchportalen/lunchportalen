@@ -213,6 +213,23 @@
   padding-block: 0;
 }
 
+/* Panel — primary surfaces (allergen card, active day card) */
+.ds-week-surface--panel {
+  border-radius: var(--ds-radius-lg);
+  padding: 1.25rem;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.05),
+    var(--ds-shadow-soft);
+}
+
+/* Row — upcoming day list item */
+.ds-week-surface--row {
+  border-radius: var(--ds-radius-md);
+  padding-inline: 1rem;
+  padding-block: 0;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+
 .week-day__categories {
   display: grid;
   grid-template-columns: 1fr;
