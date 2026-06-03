@@ -93,16 +93,16 @@ export default function WeekAllergenProfileCard() {
 
   return (
     <section
-      className="mb-6 rounded-lg bg-white/90 px-4 py-5 text-center shadow-card ring-1 ring-black/5"
+      className="mb-6 rounded-lg bg-white/90 px-4 py-5 text-left shadow-card ring-1 ring-black/5"
       aria-labelledby="week-allergen-heading"
     >
       <h2 id="week-allergen-heading" className="text-base font-semibold tracking-tight text-neutral-950 md:text-lg">
         Dine allergener
       </h2>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-neutral-700">
+      <p className="mt-3 max-w-md text-sm leading-6 text-neutral-700">
         Fortell oss hva du ikke tåler — så tar kjøkkenet hensyn til det når vi lager maten din.
       </p>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-600">
+      <p className="mt-2 max-w-md text-sm leading-6 text-neutral-600">
         Vi vil at alle skal kunne senke skuldrene og nyte lunsjen. Det du krysser av her følger rett til kjøkkenet vårt.
       </p>
 
@@ -155,7 +155,7 @@ export default function WeekAllergenProfileCard() {
               </button>
             ) : null}
             {declareError ? (
-              <p className="mb-3 text-center text-sm text-red-800" role="alert">
+              <p className="mb-3 text-left text-sm text-red-800" role="alert">
                 {declareError}
               </p>
             ) : null}

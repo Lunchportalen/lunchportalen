@@ -227,7 +227,7 @@
   color: var(--ds-text);
   font-size: var(--ds-body);
   line-height: 1.45;
-  text-align: center;
+  text-align: left;
 }
 
 .ds-ordered-meal-line__body {
@@ -353,7 +353,7 @@
   font-size: var(--ds-body-sm);
   font-style: italic;
   color: var(--ds-text-soft);
-  text-align: center;
+  text-align: left;
   padding: clamp(12px, 2vw, 16px);
 }
 
