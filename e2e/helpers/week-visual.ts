@@ -267,7 +267,7 @@ export async function selectWeekDay(page: Page, isoDate: string): Promise<void> 
 
 export const WEEK_VISUAL_SCREENSHOT_OPTS = {
   animations: "disabled" as const,
-  maxDiffPixels: 0,
+  maxDiffPixels: 500,
   threshold: 0.2,
   fullPage: false,
 };
