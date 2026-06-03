@@ -795,9 +795,10 @@ export function WeekCategoryCards({
                   type="button"
                   role="radio"
                   aria-checked={isItemSelected}
+                  aria-pressed={isItemSelected}
                   disabled={disabled || !day.isEnabled || !selectedCat.available}
                   onClick={() => onSelectItem(selectedCat.key, it.key, it.title)}
-                  className={`ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " ds-week-item-btn--selected" : ""}`}
+                  className={`ds-week-surface ds-week-surface--slot ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " is-selected ds-week-item-btn--selected" : ""}`}
                   aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian)}
                 >
                   <span className="ds-week-item-btn__title">{it.title}</span>
@@ -895,7 +896,7 @@ export function WeekCategoryCards({
             <button
               type="button"
               className={[
-                "week-category-card",
+                "ds-week-surface ds-week-surface--slot week-category-card",
                 isOrdered ? "is-ordered" : "",
                 isPendingCat ? "is-selected" : "",
               ]

@@ -182,7 +182,7 @@ jobs:
           PORT: 3000
           LP_DEBUG_AUTH: "1"
 
-      - name: STEG 5.3 upcoming row radius probe (computed style)
+      - name: STEG 5.3–5.4 surface computed-style probes (row radius + slot)
         run: npx playwright test --config playwright.week-row-probe.config.ts --project week-visual-desktop --reporter=list
 
       - name: Week visual regression (screenshot diff)
