@@ -252,6 +252,11 @@
   }
 }
 
+/* E2E week-visual: deterministic computed-style probes (no slot transition mid-sample) */
+html.lp-week-visual-regression .ds-week-surface--slot {
+  transition: none !important;
+}
+
 .ds-week-surface--slot[aria-pressed="true"],
 .ds-week-surface--slot.is-selected {
   border-color: var(--ds-accent);

@@ -24,6 +24,7 @@ test.describe("Week slot probe", () => {
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
     await page.mouse.move(0, 0);
+    await page.waitForTimeout(250);
 
     const resting = page.locator("button.ds-week-surface--slot[aria-pressed='false']").first();
     await expect(resting).toBeVisible();
@@ -31,56 +32,61 @@ test.describe("Week slot probe", () => {
     const selected = page.locator("button.ds-week-surface--slot[aria-pressed='true']").first();
     await expect(selected).toBeVisible();
 
-    const restingStyles = await resting.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      return {
-        borderRadius: cs.borderTopLeftRadius,
-        borderColor: cs.borderColor,
-        className: el.className,
+    const styles = await selected.evaluate((el) => {
+      const readSlot = (node: Element) => {
+        const cs = getComputedStyle(node);
+        return {
+          borderRadius: cs.borderTopLeftRadius,
+          borderTopColor: cs.borderTopColor,
+          backgroundColor: cs.backgroundColor,
+          className: node.className,
+        };
       };
-    });
 
-    const selectedStyles = await selected.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      return {
-        borderRadius: cs.borderTopLeftRadius,
-        borderColor: cs.borderColor,
-        className: el.className,
-        ariaPressed: el.getAttribute("aria-pressed"),
-      };
-    });
+      const restingEl = el
+        .closest(".week-day__categories")
+        ?.querySelector("button.ds-week-surface--slot[aria-pressed='false']");
+      const restingStyles = restingEl ? readSlot(restingEl) : null;
 
-    const accentBorder = await selected.evaluate((el) => {
+      const parent = el.parentElement;
       const probe = document.createElement("button");
-      probe.className = "ds-week-surface ds-week-surface--slot week-category-card is-ordered";
+      probe.className = el.className;
       probe.setAttribute("aria-pressed", "true");
       probe.style.cssText =
-        "position:absolute;left:-9999px;visibility:hidden;pointer-events:none;width:1px;height:48px;";
-      document.body.appendChild(probe);
-      const probeStyle = getComputedStyle(probe);
-      const actualStyle = getComputedStyle(el);
-      const result = {
-        expected: probeStyle.borderTopColor,
-        actual: actualStyle.borderTopColor,
-        matches: actualStyle.borderTopColor === probeStyle.borderTopColor,
-        bgExpected: probeStyle.backgroundColor,
-        bgActual: actualStyle.backgroundColor,
-        bgMatches: actualStyle.backgroundColor === probeStyle.backgroundColor,
+        "position:absolute;left:-9999px;visibility:hidden;pointer-events:none;width:1px;height:48px;margin:0;padding:16px;box-sizing:border-box;";
+      parent?.appendChild(probe);
+
+      const selectedStyles = {
+        ...readSlot(el),
+        ariaPressed: el.getAttribute("aria-pressed"),
+        matchesSelector: el.matches('.ds-week-surface--slot[aria-pressed="true"]'),
       };
-      document.body.removeChild(probe);
-      return result;
+      const probeStyles = readSlot(probe);
+      parent?.removeChild(probe);
+
+      const accentToken = getComputedStyle(document.documentElement)
+        .getPropertyValue("--ds-accent")
+        .trim();
+
+      return {
+        resting: restingStyles,
+        selected: selectedStyles,
+        probe: probeStyles,
+        borderMatchesProbe: selectedStyles.borderTopColor === probeStyles.borderTopColor,
+        bgMatchesProbe: selectedStyles.backgroundColor === probeStyles.backgroundColor,
+        accentToken,
+      };
     });
 
     // eslint-disable-next-line no-console
-    console.log(
-      "WEEK_SLOT_PROBE",
-      JSON.stringify({ resting: restingStyles, selected: selectedStyles, accentBorder }),
-    );
+    console.log("WEEK_SLOT_PROBE", JSON.stringify(styles));
 
-    expect(restingStyles.borderRadius).toBe("14px");
-    expect(selectedStyles.borderRadius).toBe("14px");
-    expect(accentBorder.matches).toBe(true);
-    expect(accentBorder.bgMatches).toBe(true);
-    expect(selectedStyles.ariaPressed).toBe("true");
+    expect(styles.resting?.borderRadius).toBe("14px");
+    expect(styles.selected.borderRadius).toBe("14px");
+    expect(styles.selected.ariaPressed).toBe("true");
+    expect(styles.selected.matchesSelector).toBe(true);
+    expect(styles.borderMatchesProbe).toBe(true);
+    expect(styles.bgMatchesProbe).toBe(true);
+    expect(styles.selected.borderTopColor).not.toBe(styles.resting?.borderTopColor);
   });
 });
