@@ -421,7 +421,7 @@ function isNoTierForDay(day: DayRow) {
 
 function NoTierForDayNotice() {
   return (
-    <div className="rounded-2xl bg-bg-soft px-4 py-4 text-center ring-1 ring-black/5">
+    <div className="rounded-2xl bg-bg-soft px-4 py-4 text-left ring-1 ring-black/5">
       <p className="text-sm font-semibold text-neutral-900">Denne dagen er ikke tilgjengelig for bestilling.</p>
       <p className="mt-1 text-sm text-neutral-600">Kontakt firmaadmin.</p>
     </div>
@@ -940,9 +940,9 @@ function WeekLoadingSkeleton({ mobileLayout }: { mobileLayout: boolean }) {
       {[0, 1, 2, 3, 4].map((i) => (
         <li
           key={i}
-          className="animate-pulse rounded-2xl border border-black/10 bg-white/90 p-4 text-center shadow-sm md:text-left"
+          className="animate-pulse rounded-2xl border border-black/10 bg-white/90 p-4 text-left shadow-sm"
         >
-          <div className="mx-auto mb-2 h-6 w-24 rounded bg-gray-200 md:mx-0" />
+          <div className="mb-2 h-6 w-24 rounded bg-gray-200" />
           <div className="mb-2 h-4 w-full rounded bg-gray-200" />
           <div className="mb-2 h-4 w-full rounded bg-gray-200" />
           <div className="h-10 w-full rounded bg-gray-200" />
@@ -1108,7 +1108,7 @@ const WeekDayCardMobile = memo(
       <div
         role="group"
         aria-label={formatMenuDateNO(day.date)}
-        className={`rounded-lg bg-white/85 p-5 text-center shadow-soft ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
+        className={`rounded-lg bg-white/85 p-5 shadow-soft ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
           isSelected
             ? "motion-safe:scale-[1.01] ring-neutral-900/15"
             : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-neutral-300/60 motion-safe:animate-pulse" : ""}`
@@ -1129,7 +1129,7 @@ const WeekDayCardMobile = memo(
           }}
           className="cursor-pointer rounded-card outline-none transition-colors duration-100 active:bg-bg-soft focus-visible:ring-2 focus-visible:ring-neutral-900/40"
         >
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-start gap-2">
             <TierPill tier={day.tier} />
             <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs ring-1 ${status.className}`}>
               {status.label}
@@ -1153,7 +1153,7 @@ const WeekDayCardMobile = memo(
 
           <OrderedMealStatusLine day={day} className="mt-3" />
           {insightRecommended ? (
-            <div className="mt-2 space-y-0.5 text-center">
+            <div className="mt-2 space-y-0.5 text-left">
               <span className="ds-week-insight-pill">
                 Anbefalt for deg
               </span>
@@ -1162,9 +1162,9 @@ const WeekDayCardMobile = memo(
             </div>
           ) : null}
 
-          <div className="mt-5 text-center">
+          <div className="mt-5">
             {day.menuImages.length ? (
-              <div className="mb-2 flex flex-wrap justify-center gap-2">
+              <div className="mb-2 flex flex-wrap justify-start gap-2">
                 {day.menuImages.map((src) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -1201,7 +1201,7 @@ const WeekDayCardMobile = memo(
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl bg-bg-soft px-4 py-4 text-center ring-1 ring-black/5">
+              <div className="rounded-2xl bg-bg-soft px-4 py-4 text-left ring-1 ring-black/5">
                 <p className="text-sm font-semibold text-neutral-900">Menyen er ikke publisert ennå.</p>
                 <p className="mt-1 text-sm text-neutral-600">Denne dagen er ikke klar for bestilling.</p>
               </div>
@@ -1211,9 +1211,9 @@ const WeekDayCardMobile = memo(
 
         <div className="mt-4 flex flex-col items-stretch gap-2">
           {noTierForDay ? (
-            <span className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
+            <span className="text-left text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
           ) : notInAgreement ? (
-            <span className="text-center text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
+            <span className="text-left text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
           ) : cutoffClosed ? (
             <>
               <button
@@ -1223,10 +1223,10 @@ const WeekDayCardMobile = memo(
               >
                 Frist passert kl. 08:00
               </button>
-              <CutoffSafetyHint day={day} className="text-center" />
+              <CutoffSafetyHint day={day} />
             </>
           ) : companyClosed ? (
-            <span className="text-center text-sm text-neutral-600">Bestilling stengt for firma</span>
+            <span className="text-left text-sm text-neutral-600">Bestilling stengt for firma</span>
           ) : ordered ? (
             <>
               <button
@@ -1246,7 +1246,7 @@ const WeekDayCardMobile = memo(
                   "Avbestill lunsj"
                 )}
               </button>
-              {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
+              {readOnlyPreview ? <ReadOnlyPreviewHint /> : <CutoffSafetyHint day={day} />}
             </>
           ) : (
             <>
@@ -1267,7 +1267,7 @@ const WeekDayCardMobile = memo(
                   "Bestill lunsj"
                 )}
               </button>
-              {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
+              {readOnlyPreview ? <ReadOnlyPreviewHint /> : <CutoffSafetyHint day={day} />}
             </>
           )}
         </div>
@@ -1978,7 +1978,7 @@ export default function EmployeeWeekClient({
 
   if (forbidden) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-left">
         <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
           <p className="font-semibold">Ingen tilgang til ukeplan</p>
           <p className="mt-2 text-neutral-600">
@@ -2007,7 +2007,7 @@ export default function EmployeeWeekClient({
 
   if (blocked) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-left">
         <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
           <p className="font-semibold">Bestilling er ikke tilgjengelig</p>
           <p className="mt-2 text-neutral-600">
@@ -2022,7 +2022,7 @@ export default function EmployeeWeekClient({
 
   if (sortedDays.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-left">
         <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
           <p className="font-semibold">Ingen synlige dager akkurat nå</p>
           <p className="mt-2 text-neutral-600">
@@ -2087,7 +2087,7 @@ export default function EmployeeWeekClient({
           (HeaderShell). Selskaps-navn er dynamisk fra /api/order/window.
           Per-dag-status ("Fristen for dagens endring er passert") forblir
           ved valgt-dag-kortet. FASE 10B.1. */}
-      <header className="mb-6 text-center">
+      <header className="mb-6 text-left">
         {readOnlyPreview ? (
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Ansattflate</p>
         ) : null}
@@ -2095,11 +2095,11 @@ export default function EmployeeWeekClient({
           Bestill eller avbestill lunsj
         </h1>
         {companyName ? (
-          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
+          <p className="mt-3 max-w-md text-base leading-7 text-neutral-600">
             {companyName} · Endringsfrist kl. 08:00
           </p>
         ) : (
-          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
+          <p className="mt-3 max-w-md text-base leading-7 text-neutral-600">
             Endringsfrist kl. 08:00
           </p>
         )}
@@ -2110,26 +2110,26 @@ export default function EmployeeWeekClient({
       <div className="mb-5 space-y-2" aria-live="polite">
         {menuSanityFetchFailed ? (
           <div
-            className="rounded-2xl bg-amber-50 px-3 py-2 text-center text-sm text-amber-950 ring-1 ring-amber-200"
+            className="rounded-2xl bg-amber-50 px-3 py-2 text-left text-sm text-amber-950 ring-1 ring-amber-200"
             role="status"
           >
             Menytekst kunne ikke lastes akkurat nå. Ordrestatus og bestilling/avbestilling vises som vanlig.
           </div>
         ) : null}
         {!readOnlyPreview && patterns.streakCount >= 2 ? (
-          <p className="text-center text-xs font-medium text-neutral-700">{patterns.streakCount} uker på rad</p>
+          <p className="text-left text-xs font-medium text-neutral-700">{patterns.streakCount} uker på rad</p>
         ) : null}
         {!readOnlyPreview && showHabitNudge ? (
-          <p className="text-center text-xs text-neutral-500">Du pleier å bestille denne dagen</p>
+          <p className="text-left text-xs text-neutral-500">Du pleier å bestille denne dagen</p>
         ) : null}
-        {!readOnlyPreview && demandHintLine ? <p className="text-center text-xs text-neutral-500">{demandHintLine}</p> : null}
+        {!readOnlyPreview && demandHintLine ? <p className="text-left text-xs text-neutral-500">{demandHintLine}</p> : null}
         {!readOnlyPreview && todayCutoffStatus === "TODAY_OPEN" && orderingUrgencyHint ? (
-          <p className="text-center text-xs font-medium text-amber-900/90">Bestill før kl. 08:00</p>
+          <p className="text-left text-xs font-medium text-amber-900/90">Bestill før kl. 08:00</p>
         ) : !readOnlyPreview && todayCutoffStatus === "TODAY_LOCKED" ? (
-          <p className="text-center text-xs font-medium text-neutral-600">Fristen for dagens endring er passert.</p>
+          <p className="text-left text-xs font-medium text-neutral-600">Fristen for dagens endring er passert.</p>
         ) : null}
         {errorBanner ? (
-          <div className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-50 px-3 py-2 text-center text-sm text-rose-900 ring-1 ring-rose-200">
+          <div className="inline-flex w-full items-start gap-2 rounded-2xl bg-rose-50 px-3 py-2 text-left text-sm text-rose-900 ring-1 ring-rose-200">
             {errorBanner.code === "CUTOFF_PASSED" ? <ClockIcon className="h-4 w-4 shrink-0" aria-hidden /> : null}
             <span>{errorBanner.message}</span>
           </div>
@@ -2213,7 +2213,7 @@ export default function EmployeeWeekClient({
 
       {upcomingDays.length > 0 ? (
         <section className="pb-2">
-          <h2 className="mb-3 text-center text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende dager</h2>
+          <h2 className="mb-3 text-left text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende dager</h2>
           <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label="Kommende dager">
             {upcomingDays.map((day) => {
               const { label: statusLabel, className: statusClass } = statusPresentation(day);
