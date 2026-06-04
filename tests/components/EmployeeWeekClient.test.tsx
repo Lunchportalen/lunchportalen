@@ -96,14 +96,12 @@ describe("weekCalendarDayPillClassNames (/week kalender-pill)", () => {
 
 describe("EmployeeWeekClient tier pill", () => {
   test("viser tier-pill for BASIS og LUXUS", () => {
-    expect(tierPillClass("BASIS")).toBe("ds-week-surface ds-week-surface--chip ds-tier-pill is-basis");
-    expect(tierPillClass("LUXUS")).toBe("ds-week-surface ds-week-surface--chip ds-tier-pill is-luxus");
+    expect(tierPillClass("BASIS")).toBe("ds-tier-pill is-basis");
+    expect(tierPillClass("LUXUS")).toBe("ds-tier-pill is-luxus");
   });
 
   test("viser tier-pill for ENTERPRISE", () => {
-    expect(tierPillClass("ENTERPRISE")).toBe(
-      "ds-week-surface ds-week-surface--chip ds-tier-pill is-enterprise",
-    );
+    expect(tierPillClass("ENTERPRISE")).toBe("ds-tier-pill is-enterprise");
   });
 
   test("CSS inneholder mobile-safe tier-pill-varianter", () => {
@@ -111,7 +109,9 @@ describe("EmployeeWeekClient tier pill", () => {
 
     expect(css).toContain(".ds-tier-pill");
     expect(css).toContain("font-size: 10px");
-    expect(css).toContain(".ds-week-surface--chip");
+    expect(css).toContain(".ds-tier-pill.is-basis");
+    expect(css).toContain(".ds-tier-pill.is-luxus");
+    expect(css).toContain(".ds-tier-pill.is-enterprise");
   });
 });
 

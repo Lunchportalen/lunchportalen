@@ -106,12 +106,38 @@
 .ds-tier-pill {
   display: inline-flex;
   align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--ds-radius-pill);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1;
   opacity: 0.85;
+}
+
+.ds-tier-pill.is-basis {
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line);
+}
+
+.ds-tier-pill.is-luxus {
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line-strong);
+}
+
+.ds-tier-pill.is-enterprise {
+  background: var(--ds-bg-soft);
+  color: var(--ds-text);
+  border: 1px solid var(--ds-line-strong);
+}
+
+.ds-tier-pill.is-unavailable {
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line);
 }
 
 /* Status pill — order/day state (STEG 5.1: single structural primitive) */
