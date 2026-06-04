@@ -130,6 +130,17 @@ function dayRow(
   };
 }
 
+/** Overstyr serverOsloDate for stabil V.W6 / dag-panel harness. */
+export function withWeekVisualServerOsloDate<T extends { data: Record<string, unknown> }>(
+  windowBody: T,
+  serverOsloDate: string,
+): T {
+  return {
+    ...windowBody,
+    data: { ...windowBody.data, serverOsloDate },
+  };
+}
+
 /** Tir 02.06 valgt, ikke bestilt — viser kategori-valg. */
 export function buildWeekVisualWindowDaySelected() {
   return {

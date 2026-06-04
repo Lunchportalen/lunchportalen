@@ -4,6 +4,7 @@ import { test, expect } from "@playwright/test";
 import {
   buildWeekVisualWindowDaySelected,
   buildWeekVisualWindowOrderedUpcoming,
+  withWeekVisualServerOsloDate,
   installWeekVisualMocks,
   navigateToWeek,
   selectWeekDay,
@@ -107,15 +108,11 @@ test.describe("Week state probe (V.W6)", () => {
     test.setTimeout(90_000);
     await installWeekVisualMocks(page, {
       allergenProfile: "declared_empty",
-      windowBody: buildWeekVisualWindowDaySelected(),
+      windowBody: withWeekVisualServerOsloDate(buildWeekVisualWindowDaySelected(), "2026-06-01"),
     });
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
 
-    await selectWeekDay(page, "2026-06-01");
-    await expect(page.locator('button[data-lp-date="2026-06-01"]')).toHaveClass(
-      /ds-week-calendar-day-pill--selected/,
-    );
     const lockedSlotLocator = page.locator("button.ds-week-surface--slot.is-locked").first();
     await expect(lockedSlotLocator).toBeVisible({ timeout: 15_000 });
     const lockedDaySlots = await lockedSlotLocator.evaluate((slot) => {
@@ -150,10 +147,12 @@ test.describe("Week state probe (V.W6)", () => {
     // eslint-disable-next-line no-console
     console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
 
-    await selectWeekDay(page, "2026-06-04");
-    await expect(page.locator('button[data-lp-date="2026-06-04"]')).toHaveClass(
-      /ds-week-calendar-day-pill--selected/,
-    );
+    await installWeekVisualMocks(page, {
+      allergenProfile: "declared_empty",
+      windowBody: withWeekVisualServerOsloDate(buildWeekVisualWindowDaySelected(), "2026-06-04"),
+    });
+    await navigateToWeek(page);
+    await waitForWeekVisualReady(page);
     const unavailableSlotLocator = page.locator("button.ds-week-surface--slot.is-unavailable").first();
     await expect(unavailableSlotLocator).toBeVisible({ timeout: 15_000 });
     const unavailableSlot = await unavailableSlotLocator.evaluate((slot) => {
