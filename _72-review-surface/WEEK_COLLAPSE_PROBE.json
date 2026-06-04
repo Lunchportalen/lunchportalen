@@ -1,33 +1,20 @@
 {
-  "ciRun": "26959487078",
+  "ciRun": "26966767704",
   "branch": "feat/week-steg-7-2-ordered-collapse",
-  "headBeforeFix": "f0ac4a67",
-  "fixScope": "GO-7.2-FIX — vacuous locked assertion, sr-only redundancy, perceivable locked-note height-gate",
-  "WEEK_COLLAPSE_PROBE_EDITABLE": {
-    "summaryText": "Bestilt: Påsmurt – Ost & skinke",
-    "editPresent": true,
-    "ariaExpandedBefore": "false",
-    "pickerHiddenBefore": true,
-    "ariaExpandedAfter": "true",
-    "slotProbe": {
-      "count": 3,
-      "anyAriaDisabled": false,
-      "allEditable": true
-    }
-  },
+  "head": "b9b4afff",
+  "WEEK_COLLAPSE_PROBE_EDITABLE": "see CI log (ordered before cutoff)",
   "WEEK_COLLAPSE_PROBE_LOCKED": {
-    "summaryText": "Påsmurt – Ost & skinke",
+    "summaryText": "Bestilt: Påsmurt – Ost & skinke",
     "endreCount": 0,
     "lockedNoteText": "Frist passert",
-    "lockedNoteVisibleHeight": ">0 (assertPerceivableAffordance on .ds-week-ordered-collapse__locked-note__label)",
-    "calendarLockedMarkHeight": ">0",
+    "lockedNoteVisibleHeight": 22.7249755859375,
+    "calendarLockedMarkHeight": 14,
     "pickerGate": {
       "pickerInDom": false,
       "pickerHidden": true,
       "editControlInDom": false,
       "ariaControlsTargetCount": 0,
       "visibleSlotControlsInCollapse": 0
-    },
-    "removedVacuous": "allSlotsAriaDisabled on slotCount:0 — not asserted after FIX"
+    }
   }
 }
