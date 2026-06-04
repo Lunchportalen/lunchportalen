@@ -139,8 +139,19 @@ export function buildWeekVisualWindowDaySelected() {
       days: [
         dayRow("2026-06-01", "Mandag", { isLocked: true, lockReason: "CUTOFF" }),
         dayRow("2026-06-02", "Tirsdag"),
-        dayRow("2026-06-03", "Onsdag"),
-        dayRow("2026-06-04", "Torsdag"),
+        dayRow("2026-06-03", "Onsdag", {
+          reason: "NO_TIER_FOR_DAY",
+          tier: null,
+          planTier: null,
+          isEnabled: false,
+          categories: [],
+          allowedChoices: [],
+        }),
+        dayRow("2026-06-04", "Torsdag", {
+          categories: CATEGORY_FIXTURE.map((c) =>
+            c.key === "varmrett" ? { ...c, available: false } : c,
+          ),
+        }),
         dayRow("2026-06-05", "Fredag"),
         dayRow("2026-06-08", "Mandag"),
         dayRow("2026-06-09", "Tirsdag"),
@@ -167,8 +178,19 @@ export function buildWeekVisualWindowOrderedUpcoming() {
           selectedItemKey: "ost-skinke",
           selectedItemTitleSnapshot: "Ost & skinke",
         }),
-        dayRow("2026-06-03", "Onsdag"),
-        dayRow("2026-06-04", "Torsdag"),
+        dayRow("2026-06-03", "Onsdag", {
+          reason: "NO_TIER_FOR_DAY",
+          tier: null,
+          planTier: null,
+          isEnabled: false,
+          categories: [],
+          allowedChoices: [],
+        }),
+        dayRow("2026-06-04", "Torsdag", {
+          categories: CATEGORY_FIXTURE.map((c) =>
+            c.key === "varmrett" ? { ...c, available: false } : c,
+          ),
+        }),
         dayRow("2026-06-05", "Fredag"),
         dayRow("2026-06-08", "Mandag"),
         dayRow("2026-06-09", "Tirsdag"),

@@ -103,6 +103,74 @@
   color: var(--ds-text-soft);
 }
 
+/* STEG 7.1 — kalender dag-celle livssyklus (token-drevet, ikke-farge affordance) */
+.ds-week-calendar-day-pill__state-mark {
+  display: block;
+  margin-top: 0.2rem;
+  line-height: 1;
+}
+
+.ds-week-calendar-day-pill__state-mark--ordered {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ds-accent);
+}
+
+.ds-week-calendar-day-pill__state-mark--locked,
+.ds-week-calendar-day-pill__state-mark--unavailable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 14px;
+}
+
+.ds-week-calendar-day-pill__state-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.ds-week-calendar-day-pill__state-mark--locked .ds-week-calendar-day-pill__state-icon {
+  color: var(--ds-text-soft);
+}
+
+.ds-week-calendar-day-pill__state-mark--unavailable {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ds-text);
+  letter-spacing: 0.08em;
+}
+
+.ds-week-calendar-day-pill--locked:not(.ds-week-calendar-day-pill--selected) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ds-week-calendar-day-pill--locked:hover:not(:focus-visible) {
+  background-color: rgb(255 255 255 / 0.8);
+  box-shadow: 0 0 0 1px var(--ds-line);
+}
+
+.ds-week-calendar-day-pill--locked.ds-week-calendar-day-pill--selected {
+  opacity: 0.5;
+}
+
+.ds-week-calendar-day-pill--unavailable:not(.ds-week-calendar-day-pill--selected) {
+  background-color: var(--ds-bg-soft);
+  box-shadow: 0 0 0 1px var(--ds-line);
+  border-style: dashed;
+  border-width: 1px;
+  border-color: var(--ds-line-strong);
+}
+
+.ds-week-calendar-day-pill--unavailable:hover:not(:focus-visible) {
+  background-color: var(--ds-bg-soft);
+}
+
+.ds-week-calendar-day-pill--ordered .ds-week-calendar-day-pill__daynum {
+  font-weight: 600;
+}
+
 .ds-tier-pill {
   display: inline-flex;
   align-items: center;
@@ -323,6 +391,83 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   cursor: not-allowed;
 }
 
+/* STEG 7.1 — slot livssyklus (locked vs unavailable distinkt) */
+.ds-week-surface--slot.is-locked,
+.ds-week-surface--slot.is-locked[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ds-week-surface--slot.is-locked:hover,
+.ds-week-surface--slot.is-locked[aria-disabled="true"]:hover {
+  border-color: var(--ds-line);
+  background: var(--ds-surface);
+  box-shadow: none;
+}
+
+.ds-week-surface--slot.is-unavailable:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+  background: var(--ds-bg-soft);
+  border-style: dashed;
+  border-color: var(--ds-line-strong);
+}
+
+.ds-week-surface--slot.is-unavailable:disabled:hover {
+  border-color: var(--ds-line-strong);
+  background: var(--ds-bg-soft);
+}
+
+.week-category-card.is-ordered[aria-pressed="true"] {
+  border-color: var(--ds-accent);
+  background: var(--ds-accent-soft);
+}
+
+.week-category-card.is-ordered[aria-pressed="true"]::after {
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ds-radius-pill);
+  border: 1.5px solid var(--ds-accent);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.week-category-card__state-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: var(--ds-body-xs, 12px);
+  font-weight: 600;
+  color: var(--ds-text-soft);
+  line-height: 1.2;
+}
+
+.week-category-card__state-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.week-category-card.is-locked .week-category-card__state-label {
+  color: var(--ds-text-soft);
+}
+
+.week-category-card.is-unavailable .week-category-card__state-label {
+  font-style: italic;
+}
+
 /* Chip — read-only status/metadata pill (STEG 5.5) */
 .ds-week-surface--chip {
   display: inline-flex;
@@ -361,7 +506,7 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   text-align: left;
 }
 
-.week-category-card:not([aria-pressed="true"]):not(.is-selected):hover:not(:disabled) {
+.week-category-card:not([aria-pressed="true"]):not(.is-selected):hover:not(:disabled):not(.is-locked):not(.is-unavailable) {
   border-color: var(--ds-line-strong);
 }
 
@@ -420,11 +565,6 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   font-size: var(--ds-body-sm);
 }
 
-.week-category-card__empty {
-  color: var(--ds-text-soft);
-  font-size: var(--ds-body-sm);
-  font-style: italic;
-}
 
 @media (min-width: 640px) {
   .week-day__categories {
