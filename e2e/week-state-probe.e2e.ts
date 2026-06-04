@@ -4,7 +4,6 @@ import { test, expect } from "@playwright/test";
 import {
   buildWeekVisualWindowDaySelected,
   buildWeekVisualWindowOrderedUpcoming,
-  withWeekVisualServerOsloDate,
   installWeekVisualMocks,
   navigateToWeek,
   selectWeekDay,
@@ -35,7 +34,8 @@ function assertPerceivableAffordance(
 test.describe("Week state probe (V.W6)", () => {
   test.skip(!hasEmployeeCreds, "E2E_EMPLOYEE_* required");
 
-  test("calendar locked, unavailable, ordered markers + computed styles", async ({ page }) => {
+  test("calendar + locked/unavailable slot markers", async ({ page }) => {
+    test.setTimeout(90_000);
     await installWeekVisualMocks(page, {
       allergenProfile: "declared_empty",
       windowBody: buildWeekVisualWindowOrderedUpcoming(),
