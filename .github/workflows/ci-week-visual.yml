@@ -266,7 +266,7 @@ jobs:
           exit $EXIT
 
       - name: Characterize screenshot red (read-only, no baseline)
-        if: failure()
+        if: failure() && steps.week_visual_screenshots.outcome == 'failure'
         run: node scripts/e2e/characterize-steg8-screenshot-red.mjs test-results
 
       - name: Dump full server log on failure

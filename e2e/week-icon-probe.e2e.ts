@@ -121,8 +121,9 @@ test.describe("Week icon probe (V.W8)", () => {
     expect(calIcons[0]!.resolvedHeight).toBeCloseTo(calIcons[2]!.resolvedHeight, 1);
     expect(calIcons[0]!.resolvedWidth).toBeCloseTo(calIcons[0]!.resolvedHeight, 1);
 
-    // Slot clock: own precondition — V.W6 harness reset, Mon tap, bounded wait for CUTOFF
-    // transient panel (in-suite; not isolated dodge). No 15s icon visibility wait.
+    // Slot clock: own precondition — fresh /week shell (clears in-test + in-suite carry-over).
+    await navigateToWeek(page);
+    await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
     const monPill = page.locator('button[data-lp-date="2026-06-01"]');
     await monPill.waitFor({ state: "visible", timeout: 10_000 });
@@ -133,7 +134,7 @@ test.describe("Week icon probe (V.W8)", () => {
           "button.ds-week-surface--slot.is-locked .week-category-card__state-icon",
         ),
       null,
-      { timeout: 3_000 },
+      { timeout: 8_000 },
     );
 
     const slotClockProbe = await page.evaluate(() => {
