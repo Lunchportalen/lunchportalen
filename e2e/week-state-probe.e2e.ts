@@ -103,10 +103,14 @@ test.describe("Week state probe (V.W6)", () => {
     expect(result.wed!.hasUnavailableMark).toBe(true);
     assertPerceivableAffordance(result.wed!.unavailableMark, "calendar Wed unavailable em-dash mark");
 
+    // CUTOFF-locked dag kan ikke bli stående valgt (useEffect i EmployeeWeekClient);
+    // les slot i samme vindu som etter tap — ikke toBeVisible (panel bytter til åpen dag).
     await selectWeekDay(page, "2026-06-01");
-    const lockedSlotLocator = page.locator("button.week-category-card.is-locked").first();
-    await expect(lockedSlotLocator).toBeVisible({ timeout: 15_000 });
-    const lockedDaySlots = await lockedSlotLocator.evaluate((slot) => {
+    const lockedDaySlots = await page.evaluate(() => {
+      const slot = document.querySelector(
+        "button.ds-week-surface--slot.is-locked",
+      ) as HTMLButtonElement | null;
+      if (!slot) return null;
       const cs = getComputedStyle(slot);
       const label = slot.querySelector(".week-category-card__state-label");
       let stateLabel: VisibleAffordanceProbe | null = null;
@@ -129,19 +133,22 @@ test.describe("Week state probe (V.W6)", () => {
         labelText: label?.textContent?.trim() ?? "",
       };
     });
-    expect(Number(lockedDaySlots.opacity)).toBeCloseTo(0.5, 1);
-    expect(lockedDaySlots.cursor).toBe("not-allowed");
-    expect(lockedDaySlots.ariaDisabled).toBe("true");
-    expect(lockedDaySlots.labelText).toMatch(/frist passert/i);
-    assertPerceivableAffordance(lockedDaySlots.stateLabel, "locked slot state label");
+    expect(lockedDaySlots, "locked slot present in DOM after Mon tap").not.toBeNull();
+    expect(Number(lockedDaySlots!.opacity)).toBeCloseTo(0.5, 1);
+    expect(lockedDaySlots!.cursor).toBe("not-allowed");
+    expect(lockedDaySlots!.ariaDisabled).toBe("true");
+    expect(lockedDaySlots!.labelText).toMatch(/frist passert/i);
+    assertPerceivableAffordance(lockedDaySlots!.stateLabel, "locked slot state label");
 
     // eslint-disable-next-line no-console
     console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
 
     await selectWeekDay(page, "2026-06-04");
-    const unavailableSlotLocator = page.locator("button.week-category-card.is-unavailable").first();
-    await expect(unavailableSlotLocator).toBeVisible({ timeout: 15_000 });
-    const unavailableSlot = await unavailableSlotLocator.evaluate((slot) => {
+    const unavailableSlot = await page.evaluate(() => {
+      const slot = document.querySelector(
+        "button.ds-week-surface--slot.is-unavailable",
+      ) as HTMLButtonElement | null;
+      if (!slot) return null;
       const cs = getComputedStyle(slot);
       const label = slot.querySelector(".week-category-card__state-label");
       let stateLabel: VisibleAffordanceProbe | null = null;
@@ -163,10 +170,11 @@ test.describe("Week state probe (V.W6)", () => {
         stateLabel,
       };
     });
-    expect(Number(unavailableSlot.opacity)).toBeGreaterThan(0.85);
-    expect(unavailableSlot.cursor).toBe("not-allowed");
-    expect(unavailableSlot.labelText).toMatch(/ikke tilgjengelig/i);
-    assertPerceivableAffordance(unavailableSlot.stateLabel, "unavailable slot state label");
+    expect(unavailableSlot, "unavailable slot present after Thu tap").not.toBeNull();
+    expect(Number(unavailableSlot!.opacity)).toBeGreaterThan(0.85);
+    expect(unavailableSlot!.cursor).toBe("not-allowed");
+    expect(unavailableSlot!.labelText).toMatch(/ikke tilgjengelig/i);
+    assertPerceivableAffordance(unavailableSlot!.stateLabel, "unavailable slot state label");
 
     // eslint-disable-next-line no-console
     console.log("WEEK_STATE_PROBE_UNAVAILABLE_SLOT", JSON.stringify(unavailableSlot));
