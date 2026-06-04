@@ -96,12 +96,14 @@ describe("weekCalendarDayPillClassNames (/week kalender-pill)", () => {
 
 describe("EmployeeWeekClient tier pill", () => {
   test("viser tier-pill for BASIS og LUXUS", () => {
-    expect(tierPillClass("BASIS")).toBe("ds-tier-pill is-basis");
-    expect(tierPillClass("LUXUS")).toBe("ds-tier-pill is-luxus");
+    expect(tierPillClass("BASIS")).toBe("ds-week-surface ds-week-surface--chip ds-tier-pill is-basis");
+    expect(tierPillClass("LUXUS")).toBe("ds-week-surface ds-week-surface--chip ds-tier-pill is-luxus");
   });
 
   test("viser tier-pill for ENTERPRISE", () => {
-    expect(tierPillClass("ENTERPRISE")).toBe("ds-tier-pill is-enterprise");
+    expect(tierPillClass("ENTERPRISE")).toBe(
+      "ds-week-surface ds-week-surface--chip ds-tier-pill is-enterprise",
+    );
   });
 
   test("CSS inneholder mobile-safe tier-pill-varianter", () => {
@@ -109,9 +111,40 @@ describe("EmployeeWeekClient tier pill", () => {
 
     expect(css).toContain(".ds-tier-pill");
     expect(css).toContain("font-size: 10px");
-    expect(css).toContain(".ds-tier-pill.is-basis");
-    expect(css).toContain(".ds-tier-pill.is-luxus");
-    expect(css).toContain(".ds-tier-pill.is-enterprise");
+    expect(css).toContain(".ds-week-surface--chip");
+  });
+});
+
+describe("EmployeeWeekClient chip surface (STEG 5.5)", () => {
+  test("CSS: --chip read-only pill uten states eller transition", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    const chipBlock = css.match(/\.ds-week-surface--chip\s*\{[^}]+\}/)?.[0] ?? "";
+    expect(css).toContain(".ds-week-surface--chip {");
+    expect(chipBlock).toMatch(/border-radius:\s*var\(--ds-radius-pill\)/);
+    expect(chipBlock).toMatch(/background:\s*var\(--ds-bg-soft\)/);
+    expect(chipBlock).toMatch(/color:\s*var\(--ds-text-soft\)/);
+    expect(chipBlock).toMatch(/font-size:\s*var\(--ds-body-sm\)/);
+    expect(chipBlock).toMatch(/box-shadow:\s*none/);
+    expect(chipBlock).toMatch(/transition:\s*none/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip:hover/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip:focus/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip\[aria-pressed/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip\[disabled/);
+  });
+
+  test("chip tekst på soft bg oppfyller WCAG AA kontrast (4.5:1)", () => {
+    function relLuminance(hex: string) {
+      const n = parseInt(hex.slice(1), 16);
+      const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * rgb[0]! + 0.7152 * rgb[1]! + 0.0722 * rgb[2]!;
+    }
+    const fg = relLuminance("#5f5f5f");
+    const bg = relLuminance("#eee9df");
+    const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 });
 

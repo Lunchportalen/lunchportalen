@@ -106,38 +106,12 @@
 .ds-tier-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: var(--ds-radius-pill);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1;
   opacity: 0.85;
-}
-
-.ds-tier-pill.is-basis {
-  background: var(--ds-bg-soft);
-  color: var(--ds-text-soft);
-  border: 1px solid var(--ds-line);
-}
-
-.ds-tier-pill.is-luxus {
-  background: var(--ds-bg-soft);
-  color: var(--ds-text-soft);
-  border: 1px solid var(--ds-line-strong);
-}
-
-.ds-tier-pill.is-enterprise {
-  background: var(--ds-bg-soft);
-  color: var(--ds-text);
-  border: 1px solid var(--ds-line-strong);
-}
-
-.ds-tier-pill.is-unavailable {
-  background: var(--ds-bg-soft);
-  color: var(--ds-text-soft);
-  border: 1px solid var(--ds-line);
 }
 
 /* Status pill — order/day state (STEG 5.1: single structural primitive) */
@@ -296,6 +270,28 @@ html.lp-week-visual-regression .ds-week-surface--slot {
 .ds-week-surface--slot[aria-disabled="true"] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Chip — read-only status/metadata pill (STEG 5.5) */
+.ds-week-surface--chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-bg-soft);
+  border: 1px solid var(--ds-line);
+  box-shadow: none;
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+  padding: 4px 10px;
+  line-height: 1.2;
+  transition: none;
+}
+
+.ds-week-surface--chip.ds-allergen-chip {
+  min-height: unset;
+  min-width: auto;
+  cursor: default;
+  pointer-events: none;
 }
 
 .week-day__categories {

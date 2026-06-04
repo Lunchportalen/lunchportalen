@@ -120,7 +120,7 @@ describe("WeekAllergenProfileCard disclosure", () => {
 
     expect(container.textContent).toMatch(/Gluten \(hvete\)/);
     expect(container.textContent).toMatch(/Melk/);
-    expect(container.querySelectorAll(".ds-allergen-chip--readonly").length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelectorAll(".ds-week-surface--chip").length).toBeGreaterThanOrEqual(2);
   });
 
   test("unknown summary viser hint", async () => {

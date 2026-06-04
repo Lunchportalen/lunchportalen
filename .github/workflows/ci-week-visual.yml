@@ -12,6 +12,10 @@ on:
       - "components/employee/**"
       - "app/styles/**"
       - "e2e/week-visual-regression.e2e.ts"
+      - "e2e/week-row-radius-probe.e2e.ts"
+      - "e2e/week-slot-probe.e2e.ts"
+      - "e2e/week-chip-probe.e2e.ts"
+      - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
       - "e2e/helpers/week-visual-auth.ts"
       - "e2e/global-setup/week-visual-auth.setup.ts"
@@ -29,6 +33,10 @@ on:
       - "components/employee/**"
       - "app/styles/**"
       - "e2e/week-visual-regression.e2e.ts"
+      - "e2e/week-row-radius-probe.e2e.ts"
+      - "e2e/week-slot-probe.e2e.ts"
+      - "e2e/week-chip-probe.e2e.ts"
+      - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
       - "e2e/helpers/week-visual-auth.ts"
       - "e2e/global-setup/week-visual-auth.setup.ts"
@@ -182,7 +190,7 @@ jobs:
           PORT: 3000
           LP_DEBUG_AUTH: "1"
 
-      - name: STEG 5.3–5.4 surface computed-style probes (row radius + slot)
+      - name: STEG 5.3–5.5 surface computed-style probes (row + slot + chip)
         run: npx playwright test --config playwright.week-row-probe.config.ts --project week-visual-desktop --reporter=list
 
       - name: Week visual regression (screenshot diff)

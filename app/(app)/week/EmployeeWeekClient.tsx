@@ -403,10 +403,11 @@ function tierPillText(tier: DayRow["tier"]) {
 }
 
 export function tierPillClass(tier: DayRow["tier"]) {
-  if (tier === "ENTERPRISE") return "ds-tier-pill is-enterprise";
-  if (tier === "LUXUS") return "ds-tier-pill is-luxus";
-  if (tier === "BASIS") return "ds-tier-pill is-basis";
-  return "ds-tier-pill is-unavailable";
+  const chip = "ds-week-surface ds-week-surface--chip";
+  if (tier === "ENTERPRISE") return `${chip} ds-tier-pill is-enterprise`;
+  if (tier === "LUXUS") return `${chip} ds-tier-pill is-luxus`;
+  if (tier === "BASIS") return `${chip} ds-tier-pill is-basis`;
+  return `${chip} ds-tier-pill is-unavailable`;
 }
 
 function TierPill({ tier }: { tier: DayRow["tier"] }) {
