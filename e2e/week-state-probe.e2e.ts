@@ -104,8 +104,10 @@ test.describe("Week state probe (V.W6)", () => {
     assertPerceivableAffordance(result.wed!.unavailableMark, "calendar Wed unavailable em-dash mark");
 
     // CUTOFF-locked dag kan ikke bli stående valgt (useEffect i EmployeeWeekClient);
-    // les slot i samme vindu som etter tap — ikke toBeVisible (panel bytter til åpen dag).
-    await selectWeekDay(page, "2026-06-01");
+    // les slot i samme vindu som etter tap — ikke selectWeekDay (--selected feiler).
+    const monPill = page.locator('button[data-lp-date="2026-06-01"]');
+    await monPill.waitFor({ state: "visible", timeout: 10_000 });
+    await monPill.click({ noWaitAfter: true });
     const lockedDaySlots = await page.evaluate(() => {
       const slot = document.querySelector(
         "button.ds-week-surface--slot.is-locked",
