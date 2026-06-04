@@ -121,12 +121,17 @@ test.describe("Week icon probe (V.W8)", () => {
     expect(calIcons[0]!.resolvedHeight).toBeCloseTo(calIcons[2]!.resolvedHeight, 1);
     expect(calIcons[0]!.resolvedWidth).toBeCloseTo(calIcons[0]!.resolvedHeight, 1);
 
-    // CUTOFF-locked Mon cannot stay selected (useEffect) — V.W6: tap + immediate DOM read (no waitFor race).
-    const monPill = page.locator('button[data-lp-date="2026-06-01"]');
-    await monPill.waitFor({ state: "visible", timeout: 10_000 });
-    await monPill.click({ noWaitAfter: true });
+    // Slot clock: own precondition — reset panel (V.W6 harness), then sync Mon tap + read in one
+    // evaluate window (CUTOFF revert runs after; must not inherit Tue panel / prior suite state).
+    await selectWeekDay(page, "2026-06-02");
 
     const slotClockProbe = await page.evaluate(() => {
+      const mon = document.querySelector(
+        'button[data-lp-date="2026-06-01"]',
+      ) as HTMLButtonElement | null;
+      if (!mon) return null;
+      mon.click();
+
       const slot = document.querySelector(
         "button.ds-week-surface--slot.is-locked",
       ) as HTMLElement | null;
