@@ -64,6 +64,7 @@ test.describe("Week icon probe (V.W8)", () => {
     });
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
+    await selectWeekDay(page, "2026-06-02");
 
     const calendarProbe = await page.evaluate((fontSizePx) => {
       const readCalendarIcon = (iso: string, selector: string): IconRectProbe | null => {
@@ -120,14 +121,10 @@ test.describe("Week icon probe (V.W8)", () => {
     expect(calIcons[0]!.resolvedHeight).toBeCloseTo(calIcons[2]!.resolvedHeight, 1);
     expect(calIcons[0]!.resolvedWidth).toBeCloseTo(calIcons[0]!.resolvedHeight, 1);
 
-    // CUTOFF-locked Mon cannot stay selected (EmployeeWeekClient useEffect) — same tap as V.W6.
+    // CUTOFF-locked Mon cannot stay selected (useEffect) — V.W6: tap + immediate DOM read (no waitFor race).
     const monPill = page.locator('button[data-lp-date="2026-06-01"]');
     await monPill.waitFor({ state: "visible", timeout: 10_000 });
     await monPill.click({ noWaitAfter: true });
-    await page
-      .locator("button.ds-week-surface--slot.is-locked .week-category-card__state-icon")
-      .first()
-      .waitFor({ state: "visible", timeout: 10_000 });
 
     const slotClockProbe = await page.evaluate(() => {
       const slot = document.querySelector(
@@ -153,10 +150,12 @@ test.describe("Week icon probe (V.W8)", () => {
         color: iconCs.color,
         stroke: svgCs.stroke || svgCs.color,
         labelFontSize: labelCs?.fontSize ?? "",
-      } satisfies SlotClockProbe;
+        labelText: label?.textContent?.trim() ?? "",
+      } satisfies SlotClockProbe & { labelText: string };
     });
 
     expect(slotClockProbe, "locked slot ClockIcon (V.W6, not ds-week-icon)").not.toBeNull();
+    expect(slotClockProbe!.labelText).toMatch(/frist passert/i);
     expect(slotClockProbe!.usesDsWeekIconPrimitive).toBe(false);
     expect(slotClockProbe!.ariaHidden).toBe("true");
     expect(slotClockProbe!.resolvedHeight).toBeGreaterThan(0);

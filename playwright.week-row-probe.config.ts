@@ -25,6 +25,7 @@ export default defineConfig({
     "**/week-state-probe.e2e.ts",
     "**/week-collapse-probe.e2e.ts",
     "**/week-icon-probe.e2e.ts",
+    "**/week-icon-eyes-on.e2e.ts",
   ],
   globalSetup: useEmployeeSession
     ? "./e2e/global-setup/week-visual-auth.setup.ts"
