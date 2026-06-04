@@ -93,7 +93,9 @@ test.describe("Week motion probe", () => {
     console.log("WEEK_MOTION_PROBE_REDUCE", JSON.stringify(styles));
 
     expect(styles).not.toBeNull();
-    expect(styles!.slot.transitionDuration).toBe("0s");
-    expect(styles!.row.transitionDuration).toBe("0s");
+    expect(styles!.slot.transitionProperty).toBe("none");
+    expect(styles!.row.transitionProperty).toBe("none");
+    expect(parseFloat(styles!.slot.transitionDuration)).toBeLessThan(0.001);
+    expect(parseFloat(styles!.row.transitionDuration)).toBeLessThan(0.001);
   });
 });
