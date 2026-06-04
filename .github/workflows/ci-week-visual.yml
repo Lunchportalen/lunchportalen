@@ -285,12 +285,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: steg8-review-surface
-          path: |
-            _8-review-surface/*-actual-crop.png
-            _8-review-surface/WEEK_ICON_PROBE.json
-            _8-review-surface/VW8_DETERMINISM.json
+          path: _8-review-surface/
           retention-days: 14
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
       - name: Upload week visual report on failure
         if: failure()
