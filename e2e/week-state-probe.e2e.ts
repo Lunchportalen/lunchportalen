@@ -119,9 +119,9 @@ test.describe("Week state probe (V.W6)", () => {
 
     // Locked/unavailable slots: pick a day with categories and unavailable category if present
     await selectWeekDay(page, "2026-06-01");
-    const lockedDaySlots = await page.evaluate(() => {
-      const slot = document.querySelector("button.ds-week-surface--slot.is-locked") as HTMLButtonElement | null;
-      if (!slot) return null;
+    const lockedSlotLocator = page.locator("button.ds-week-surface--slot.is-locked").first();
+    await expect(lockedSlotLocator).toBeVisible({ timeout: 15_000 });
+    const lockedDaySlots = await lockedSlotLocator.evaluate((slot) => {
       const cs = getComputedStyle(slot);
       const label = slot.querySelector(".week-category-card__state-label");
       let stateLabel: VisibleAffordanceProbe | null = null;
@@ -156,11 +156,9 @@ test.describe("Week state probe (V.W6)", () => {
     console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
 
     await selectWeekDay(page, "2026-06-04");
-    const unavailableSlot = await page.evaluate(() => {
-      const slot = document.querySelector(
-        "button.ds-week-surface--slot.is-unavailable",
-      ) as HTMLButtonElement | null;
-      if (!slot) return null;
+    const unavailableSlotLocator = page.locator("button.ds-week-surface--slot.is-unavailable").first();
+    await expect(unavailableSlotLocator).toBeVisible({ timeout: 15_000 });
+    const unavailableSlot = await unavailableSlotLocator.evaluate((slot) => {
       const cs = getComputedStyle(slot);
       const label = slot.querySelector(".week-category-card__state-label");
       let stateLabel: VisibleAffordanceProbe | null = null;
