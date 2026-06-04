@@ -33,6 +33,7 @@ test.describe("Week chip probe", () => {
           borderTopLeftRadius: cs.borderTopLeftRadius,
           backgroundColor: cs.backgroundColor,
           color: cs.color,
+          fontSize: cs.fontSize,
           className: node.className,
         };
       };
@@ -61,6 +62,7 @@ test.describe("Week chip probe", () => {
 
     expect(styles.chip.borderTopLeftRadius).toBe("999px");
     expect(styles.chip.borderRadius).toBe("999px");
+    expect(styles.chip.fontSize).toBe("15px");
     expect(styles.bgMatchesProbe).toBe(true);
     expect(styles.colorMatchesProbe).toBe(true);
   });
