@@ -121,21 +121,29 @@ test.describe("Week icon probe (V.W8)", () => {
     expect(calIcons[0]!.resolvedHeight).toBeCloseTo(calIcons[2]!.resolvedHeight, 1);
     expect(calIcons[0]!.resolvedWidth).toBeCloseTo(calIcons[0]!.resolvedHeight, 1);
 
-    // Slot clock: own precondition — fresh /week shell (clears in-test + in-suite carry-over).
+    // Slot clock: own precondition — fresh shell + poll Mon tap until CUTOFF locked slot mounts
+    // (calendar [active] on Mon ≠ Mon panel; useEffect reverts to Fre/Tir — transient slot DOM).
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
     const monPill = page.locator('button[data-lp-date="2026-06-01"]');
     await monPill.waitFor({ state: "visible", timeout: 10_000 });
-    await monPill.click({ noWaitAfter: true });
-    await page.waitForFunction(
-      () =>
-        document.querySelector(
-          "button.ds-week-surface--slot.is-locked .week-category-card__state-icon",
-        ),
-      null,
-      { timeout: 8_000 },
-    );
+
+    await expect
+      .poll(
+        async () => {
+          await monPill.click({ noWaitAfter: true });
+          return page.evaluate(() =>
+            Boolean(
+              document.querySelector(
+                "button.ds-week-surface--slot.is-locked .week-category-card__state-icon",
+              ),
+            ),
+          );
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true);
 
     const slotClockProbe = await page.evaluate(() => {
       const slot = document.querySelector(

@@ -7,13 +7,15 @@
 | **Isolert** `week-icon-probe.e2e.ts` | Grønn — fersk side, ingen forutgående prober |
 | **Full suite** (#104) | `slotClockProbe === null` etter at **andre prober** + **eyes-on** har kjørt, og/eller **Tir-panel** henger igjen |
 
-**Mekanisme:** Etter `selectWeekDay(Tir 02)` + kalender-ikon-les (Mon/Ons markører i DOM, ingen panel-bytt) kjørte **Playwright `monPill.click({ noWaitAfter: true })`** og deretter **separat** `page.evaluate`. Da hadde React tid til CUTOFF-`useEffect` (`setSelectedDate(null)` → default Tir) **før** slot-lesing — panelet viste **Tir 02** (ingen `.is-locked` slot).
+**Mekanisme (bekreftet via error-context #109):** Etter Mon-tap er kalender-pill **Man 01 `[active]`**, men hovedpanel er **Fre 05.06.2026** (åpen dag) — ikke Mon locked slots. CUTOFF-`useEffect` nullstiller valg; `pickDefault` lander på annen dag. Ingen `.is-locked` slot i DOM → `slotClockProbe === null`.
 
-**Ikke** bare «walk på Tir/Ons» (kun `evaluate` på markører), men **Tir-panel aktiv** + **React onClick asynkron**: synkron `mon.click()` + separat evaluate kommer **etter** CUTOFF-revert.
+Tidligere prober i samme Playwright-invokasjon (chip/collapse, alfabetisk før icon) + tregere CI gjør dette hyppigere enn isolert fil-kjøring.
+
+**Ikke** ikon-regresjon — **panel-/state-race** på slot-klokke-sub-proben.
 
 ## Fiks (kun probe)
 
-1. **Precondition:** `selectWeekDay("2026-06-02")` rett før slot-klokke.
-2. **Ett async `page.evaluate`:** `mon.click()` + microtask/`rAF`-poll (≤48 frames) for `.is-locked` slot — fortsatt in-suite, ingen ekstra `waitFor(15s)`.
+1. `navigateToWeek` + `selectWeekDay(Tir 02)` — reset shell.
+2. **`expect.poll`**: Mon-tap + slot-ikon i DOM inntil 10s (fanger CUTOFF-transient mount).
 
-Ingen flytting av sub-probe ut av suiten. Ingen ikon/CSS-endring.
+Ingen flytting ut av suiten. Ingen ikon/CSS-endring.
