@@ -1,0 +1,81 @@
+{
+  "source": "CI run 26973714860 — STEG 5.3–8 probe step",
+  "calendar": {
+    "locked": {
+      "markColor": "rgb(95, 95, 95)",
+      "fontSize": "12px",
+      "ariaHidden": "true",
+      "computedWidth": 12,
+      "computedHeight": 12,
+      "resolvedWidth": 12,
+      "resolvedHeight": 12,
+      "color": "rgb(95, 95, 95)",
+      "stroke": "rgb(95, 95, 95)"
+    },
+    "ordered": {
+      "markColor": "rgb(245, 197, 24)",
+      "fontSize": "12px",
+      "ariaHidden": "true",
+      "computedWidth": 12,
+      "computedHeight": 12,
+      "resolvedWidth": 12,
+      "resolvedHeight": 12,
+      "color": "rgb(245, 197, 24)",
+      "stroke": "rgb(245, 197, 24)"
+    },
+    "unavailable": {
+      "markColor": "rgb(95, 95, 95)",
+      "fontSize": "12px",
+      "ariaHidden": "true",
+      "computedWidth": 12,
+      "computedHeight": 12,
+      "resolvedWidth": 12,
+      "resolvedHeight": 12,
+      "color": "rgb(95, 95, 95)",
+      "stroke": "rgb(95, 95, 95)"
+    },
+    "fontSizeRawPx": 12
+  },
+  "resolvedPxReport": {
+    "locked": { "width": 12, "height": 12 },
+    "ordered": { "width": 12, "height": 12 },
+    "unavailable": { "width": 12, "height": 12 },
+    "fontSizeRawPx": 12,
+    "allCalendarIconsSameResolvedPx": true
+  },
+  "slotClockIcon": {
+    "usesDsWeekIconPrimitive": false,
+    "ariaHidden": "true",
+    "computedWidth": 12,
+    "computedHeight": 12,
+    "resolvedWidth": 12.1199951171875,
+    "resolvedHeight": 12.1199951171875,
+    "color": "rgb(95, 95, 95)",
+    "stroke": "rgb(95, 95, 95)",
+    "labelFontSize": "12px"
+  },
+  "slotClockVsCalendarLocked": {
+    "calendarLocked": { "width": 12, "height": 12 },
+    "slotLocked": { "width": 12.1199951171875, "height": 12.1199951171875 },
+    "treatmentsMatch": true,
+    "note": "calendar ds-week-icon (1em) and slot week-category-card__state-icon (12px) resolve to same px — acceptable convergence"
+  },
+  "slotCheckAfter": {
+    "content": "\"✓\"",
+    "position": "absolute",
+    "display": "flex",
+    "width": "22px",
+    "height": "22px",
+    "top": "12px",
+    "right": "12px",
+    "borderTopColor": "rgb(245, 197, 24)"
+  },
+  "slotCheckAfterBaseline": {
+    "content": "\"✓\"",
+    "position": "absolute",
+    "widthPx": 22,
+    "heightPx": 22,
+    "top": "12px",
+    "right": "12px"
+  }
+}

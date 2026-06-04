@@ -1,0 +1,21 @@
+{
+  "branch": "feat/week-steg-8-icon-consolidation",
+  "baseCommit": "98b517de",
+  "headCommit": "98b517de",
+  "steg": 8,
+  "checks": {
+    "mainTip98b517de": true,
+    "conventionsVW2throughVW7": true,
+    "conventionsSteg53to72String": true,
+    "supabaseMigrateYmlUntouched": true,
+    "ciWeekVisualVW8Wired": true
+  },
+  "gatesLocal": {
+    "typecheck": "pass",
+    "lint": "pass",
+    "buildEnterprise": "pass",
+    "vw2toVw8Probes": "skip_missing_E2E_EMPLOYEE_or_E2E_TEST_USER",
+    "weekVisual": "not_run_missing_employee_creds"
+  },
+  "generatedAt": "2026-06-04"
+}

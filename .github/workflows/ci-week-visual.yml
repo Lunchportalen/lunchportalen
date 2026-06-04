@@ -18,6 +18,7 @@ on:
       - "e2e/week-motion-probe.e2e.ts"
       - "e2e/week-state-probe.e2e.ts"
       - "e2e/week-collapse-probe.e2e.ts"
+      - "e2e/week-icon-probe.e2e.ts"
       - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
       - "e2e/helpers/week-visual-auth.ts"
@@ -42,6 +43,7 @@ on:
       - "e2e/week-motion-probe.e2e.ts"
       - "e2e/week-state-probe.e2e.ts"
       - "e2e/week-collapse-probe.e2e.ts"
+      - "e2e/week-icon-probe.e2e.ts"
       - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
       - "e2e/helpers/week-visual-auth.ts"
@@ -196,7 +198,7 @@ jobs:
           PORT: 3000
           LP_DEBUG_AUTH: "1"
 
-      - name: STEG 5.3–7.2 surface computed-style probes (row + slot + chip + motion + state + collapse)
+      - name: STEG 5.3–8 surface computed-style probes (row + slot + chip + motion + state + collapse + icon)
         run: npx playwright test --config playwright.week-row-probe.config.ts --project week-visual-desktop --reporter=list
 
       - name: Week visual regression (screenshot diff)
