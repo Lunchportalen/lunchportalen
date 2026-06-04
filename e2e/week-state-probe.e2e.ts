@@ -108,12 +108,18 @@ test.describe("Week state probe (V.W6)", () => {
     test.setTimeout(90_000);
     await installWeekVisualMocks(page, {
       allergenProfile: "declared_empty",
-      windowBody: withWeekVisualServerOsloDate(buildWeekVisualWindowDaySelected(), "2026-06-01"),
+      windowBody: buildWeekVisualWindowDaySelected(),
     });
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
 
-    const lockedSlotLocator = page.locator("button.ds-week-surface--slot.is-locked").first();
+    const monPill = page.locator('button[data-lp-date="2026-06-01"]');
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await monPill.click();
+      if ((await page.locator("button.week-category-card.is-locked").count()) > 0) break;
+      await page.waitForTimeout(400);
+    }
+    const lockedSlotLocator = page.locator("button.week-category-card.is-locked").first();
     await expect(lockedSlotLocator).toBeVisible({ timeout: 15_000 });
     const lockedDaySlots = await lockedSlotLocator.evaluate((slot) => {
       const cs = getComputedStyle(slot);
@@ -147,13 +153,13 @@ test.describe("Week state probe (V.W6)", () => {
     // eslint-disable-next-line no-console
     console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
 
-    await installWeekVisualMocks(page, {
-      allergenProfile: "declared_empty",
-      windowBody: withWeekVisualServerOsloDate(buildWeekVisualWindowDaySelected(), "2026-06-04"),
-    });
-    await navigateToWeek(page);
-    await waitForWeekVisualReady(page);
-    const unavailableSlotLocator = page.locator("button.ds-week-surface--slot.is-unavailable").first();
+    const thuPill = page.locator('button[data-lp-date="2026-06-04"]');
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await thuPill.click();
+      if ((await page.locator("button.week-category-card.is-unavailable").count()) > 0) break;
+      await page.waitForTimeout(400);
+    }
+    const unavailableSlotLocator = page.locator("button.week-category-card.is-unavailable").first();
     await expect(unavailableSlotLocator).toBeVisible({ timeout: 15_000 });
     const unavailableSlot = await unavailableSlotLocator.evaluate((slot) => {
       const cs = getComputedStyle(slot);
