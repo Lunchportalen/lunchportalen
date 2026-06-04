@@ -1,5 +1,4 @@
 {
-  "source": "CI run 26973714860 — STEG 5.3–8 probe step",
   "calendar": {
     "locked": {
       "markColor": "rgb(95, 95, 95)",
@@ -37,13 +36,23 @@
     "fontSizeRawPx": 12
   },
   "resolvedPxReport": {
-    "locked": { "width": 12, "height": 12 },
-    "ordered": { "width": 12, "height": 12 },
-    "unavailable": { "width": 12, "height": 12 },
+    "locked": {
+      "width": 12,
+      "height": 12
+    },
+    "ordered": {
+      "width": 12,
+      "height": 12
+    },
+    "unavailable": {
+      "width": 12,
+      "height": 12
+    },
     "fontSizeRawPx": 12,
     "allCalendarIconsSameResolvedPx": true
   },
   "slotClockIcon": {
+    "className": "lucide lucide-clock week-category-card__state-icon",
     "usesDsWeekIconPrimitive": false,
     "ariaHidden": "true",
     "computedWidth": 12,
@@ -52,11 +61,18 @@
     "resolvedHeight": 12.1199951171875,
     "color": "rgb(95, 95, 95)",
     "stroke": "rgb(95, 95, 95)",
-    "labelFontSize": "12px"
+    "labelFontSize": "12px",
+    "labelText": "Frist passert"
   },
   "slotClockVsCalendarLocked": {
-    "calendarLocked": { "width": 12, "height": 12 },
-    "slotLocked": { "width": 12.1199951171875, "height": 12.1199951171875 },
+    "calendarLocked": {
+      "width": 12,
+      "height": 12
+    },
+    "slotLocked": {
+      "width": 12.1199951171875,
+      "height": 12.1199951171875
+    },
     "treatmentsMatch": true,
     "note": "calendar ds-week-icon (1em) and slot week-category-card__state-icon (12px) resolve to same px — acceptable convergence"
   },

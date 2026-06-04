@@ -1,6 +1,7 @@
 // STEG 8 — authoritative Docker element clips for eyes-on (GO #114)
+import { access } from "node:fs/promises";
 import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { test, expect, type Locator } from "@playwright/test";
 
@@ -28,7 +29,9 @@ async function clipLocator(locator: Locator, fileName: string, outDir: string): 
   const box = await locator.boundingBox();
   expect(box?.width ?? 0, `${fileName}: width`).toBeGreaterThan(0);
   expect(box?.height ?? 0, `${fileName}: height`).toBeGreaterThan(0);
-  await locator.screenshot({ path: join(outDir, fileName) });
+  const outPath = resolve(outDir, fileName);
+  await locator.screenshot({ path: outPath });
+  await access(outPath);
 }
 
 test.describe("Week icon eyes-on clips @week-icon-eyes-on", () => {
@@ -81,5 +84,9 @@ test.describe("Week icon eyes-on clips @week-icon-eyes-on", () => {
       CROP_FILES.lockedCollapse,
       outDir,
     );
+
+    for (const file of Object.values(CROP_FILES)) {
+      await access(resolve(outDir, file));
+    }
   });
 });

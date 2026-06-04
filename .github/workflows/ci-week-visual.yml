@@ -241,6 +241,7 @@ jobs:
         run: |
           mkdir -p _8-review-surface
           npx playwright test e2e/week-icon-eyes-on.e2e.ts --config playwright.week-row-probe.config.ts --project week-visual-desktop --reporter=list
+          ls -la _8-review-surface/*-actual-crop.png
 
       - name: STEG 5.3–8 surface computed-style probes (row + slot + chip + motion + state + collapse + icon)
         env:
@@ -288,6 +289,7 @@ jobs:
           path: _8-review-surface/
           retention-days: 14
           if-no-files-found: warn
+          include-hidden-files: true
 
       - name: Upload week visual report on failure
         if: failure()
