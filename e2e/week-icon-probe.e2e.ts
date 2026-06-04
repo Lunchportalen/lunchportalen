@@ -120,23 +120,32 @@ test.describe("Week icon probe (V.W8)", () => {
     expect(calIcons[0]!.resolvedHeight).toBeCloseTo(calIcons[2]!.resolvedHeight, 1);
     expect(calIcons[0]!.resolvedWidth).toBeCloseTo(calIcons[0]!.resolvedHeight, 1);
 
-    await selectWeekDay(page, "2026-06-01");
+    // CUTOFF-locked Mon cannot stay selected (EmployeeWeekClient useEffect) — same tap as V.W6.
+    const monPill = page.locator('button[data-lp-date="2026-06-01"]');
+    await monPill.waitFor({ state: "visible", timeout: 10_000 });
+    await monPill.click({ noWaitAfter: true });
+    await page
+      .locator("button.ds-week-surface--slot.is-locked .week-category-card__state-icon")
+      .first()
+      .waitFor({ state: "visible", timeout: 10_000 });
+
     const slotClockProbe = await page.evaluate(() => {
       const slot = document.querySelector(
         "button.ds-week-surface--slot.is-locked",
       ) as HTMLElement | null;
-      const icon = slot?.querySelector(".week-category-card__state-icon") as SVGSVGElement | null;
+      const icon = slot?.querySelector(".week-category-card__state-icon");
       if (!slot || !icon) return null;
       const label = slot.querySelector(".week-category-card__state-label");
-      const iconCs = getComputedStyle(icon);
-      const svg = icon.tagName === "svg" ? icon : icon.querySelector("svg");
+      const iconEl = icon as HTMLElement;
+      const iconCs = getComputedStyle(iconEl);
+      const svg = iconEl.tagName === "svg" ? iconEl : iconEl.querySelector("svg");
       const svgCs = svg ? getComputedStyle(svg) : iconCs;
-      const rect = icon.getBoundingClientRect();
+      const rect = iconEl.getBoundingClientRect();
       const labelCs = label ? getComputedStyle(label) : null;
       return {
-        className: icon.className,
-        usesDsWeekIconPrimitive: icon.classList.contains("ds-week-icon"),
-        ariaHidden: icon.getAttribute("aria-hidden"),
+        className: iconEl.className,
+        usesDsWeekIconPrimitive: iconEl.classList.contains("ds-week-icon"),
+        ariaHidden: iconEl.getAttribute("aria-hidden"),
         computedWidth: parseFloat(iconCs.width),
         computedHeight: parseFloat(iconCs.height),
         resolvedWidth: rect.width,
