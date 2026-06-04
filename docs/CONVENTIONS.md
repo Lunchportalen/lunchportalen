@@ -125,9 +125,10 @@ Screenshot diff alene fanger ikke radius/border-token endringer (lav kontrast i 
 | **V.W2** — row radius | `e2e/week-row-radius-probe.e2e.ts` | `.ds-week-surface--row` `border-radius` = **22px** (`--ds-radius-md`) | `playwright.week-row-probe.config.ts` |
 | **V.W3** — slot surface | `e2e/week-slot-probe.e2e.ts` | Resting `.ds-week-surface--slot` radius = **14px** (`--ds-radius-sm`); valgt slot `border-top-color` = **`#f5c518`** (`--ds-accent`, is-ordered-gull på `/week`); bg = `--ds-accent-soft`; `aria-pressed="true"`; sibling reference i samme stacking context | `playwright.week-row-probe.config.ts` |
 | **V.W4** — chip surface | `e2e/week-chip-probe.e2e.ts` | Allergen readonly `.ds-week-surface--chip` radius = **999px** (`--ds-radius-pill`); bg = **`rgb(238, 233, 223)`** (`--ds-bg-soft`); color = **`rgb(95, 95, 95)`** (`--ds-text-soft`); **`font-size` = 15px** (`--ds-body-sm` — skiller seg fra tier-pill **10px**) | `playwright.week-row-probe.config.ts` |
+| **V.W5** — motion | `e2e/week-motion-probe.e2e.ts` | **no-preference:** slot `transition-duration` = **0.18s**, `transition-timing-function` = **`cubic-bezier(0.22, 0.61, 0.36, 1)`** (`--ds-ease`); `transition-property` dekker **border-color** og **background**; row `transform` **0.18s** `--ds-ease`. **reduce:** slot + row `transitionProperty` = **`none`** (assert: `property === "none"` + `duration < 0.001s` — headless Chrome rapporterer **`1e-05s`**, ikke `0s`) | `playwright.week-row-probe.config.ts` |
 
-- **CI-steg:** `.github/workflows/ci-week-visual.yml` → «STEG 5.3–5.5 surface computed-style probes (row + slot + chip)» — må passere **før** screenshot diff.
-- **Logg-prefix:** `WEEK_ROW_RADIUS_PROBE`, `WEEK_SLOT_PROBE`, `WEEK_CHIP_PROBE` (JSON i CI-logg).
+- **CI-steg:** `.github/workflows/ci-week-visual.yml` → «STEG 5.3–6 surface computed-style probes (row + slot + chip + motion)» — må passere **før** screenshot diff.
+- **Logg-prefix:** `WEEK_ROW_RADIUS_PROBE`, `WEEK_SLOT_PROBE`, `WEEK_CHIP_PROBE`, `WEEK_MOTION_PROBE_NO_PREFERENCE`, `WEEK_MOTION_PROBE_REDUCE` (JSON i CI-logg).
 - **Screenshot baseline:** Linux Docker only — se [e2e/week-visual-regression.md](./e2e/week-visual-regression.md).
 
 ## Endring av konvensjon
