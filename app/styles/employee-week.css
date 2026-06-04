@@ -530,6 +530,101 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   font-weight: 600;
 }
 
+/* STEG 7.2 — ordered dag: kompakt sammendrag + «Endre» disclosure */
+.ds-week-ordered-collapse {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: clamp(12px, 2.5vw, 14px) clamp(14px, 3vw, 18px);
+  border-radius: var(--ds-radius-md);
+  border: 1.5px solid rgba(47, 122, 101, 0.35);
+  background: var(--ds-status-success-soft);
+  text-align: left;
+}
+
+.ds-week-ordered-collapse__summary {
+  margin: 0;
+  color: var(--ds-text);
+  font-size: var(--ds-body);
+  line-height: 1.45;
+}
+
+.ds-week-ordered-collapse__label {
+  font-weight: 600;
+}
+
+.ds-week-ordered-collapse__meal {
+  font-weight: 600;
+}
+
+.ds-week-ordered-collapse__locked-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+  font-weight: 600;
+}
+
+.ds-week-ordered-collapse__locked-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.ds-week-ordered-collapse__edit {
+  display: inline-flex;
+  min-height: 48px;
+  min-width: 48px;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: 0 20px;
+  border-radius: var(--ds-radius-pill);
+  border: 1.5px solid var(--ds-line);
+  background: rgb(255, 255, 255);
+  color: var(--ds-text);
+  font-size: var(--ds-body-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ds-week-ordered-collapse__edit:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 3px;
+}
+
+.week-ordered-picker-region {
+  margin-top: 0;
+}
+
+.week-ordered-picker-region--open {
+  margin-top: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .week-ordered-picker-region--open {
+    animation: week-ordered-picker-reveal 0.18s var(--ds-ease);
+  }
+}
+
+@keyframes week-ordered-picker-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-ordered-picker-region--open {
+    animation: none;
+  }
+}
+
 /* Habit insight — neutral (does not compete with primary CTA) */
 .ds-week-insight-pill {
   display: inline-flex;
