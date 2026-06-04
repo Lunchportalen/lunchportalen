@@ -1,6 +1,6 @@
 "use client";
 
-import { ClockIcon, Loader2 } from "lucide-react";
+import { CheckIcon, ClockIcon, Loader2, MinusIcon } from "lucide-react";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +23,22 @@ import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayCont
 import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
 
 const API_ORDER = "/api/order";
+
+/** STEG 8 — dekorativt livssyklus-ikon (1em, currentColor, aria-hidden). */
+const DS_WEEK_ICON_STROKE = 2;
+
+type DsWeekIconVariant = "clock" | "minus" | "check";
+
+function DsWeekIcon({ variant }: { variant: DsWeekIconVariant }) {
+  const iconProps = {
+    className: "ds-week-icon",
+    "aria-hidden": true as const,
+    strokeWidth: DS_WEEK_ICON_STROKE,
+  };
+  if (variant === "clock") return <ClockIcon {...iconProps} />;
+  if (variant === "minus") return <MinusIcon {...iconProps} />;
+  return <CheckIcon {...iconProps} />;
+}
 
 function safeVibrate(ms: number) {
   try {
@@ -1199,7 +1215,7 @@ const WeekDayCardMobile = memo(
             </p>
             {orderedLockedCollapse ? (
               <p className="ds-week-ordered-collapse__locked-note">
-                <ClockIcon className="ds-week-ordered-collapse__locked-icon" aria-hidden />
+                <DsWeekIcon variant="clock" />
                 <span className="ds-week-ordered-collapse__locked-note__label">Frist passert</span>
                 <span className="sr-only">Bestillingen kan ikke endres etter kl. 08:00.</span>
               </p>
@@ -2269,7 +2285,7 @@ export default function EmployeeWeekClient({
                   className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--ordered"
                   aria-hidden="true"
                 >
-                  ✓
+                  <DsWeekIcon variant="check" />
                 </span>
               ) : null}
               {lifecycle === "locked" ? (
@@ -2278,7 +2294,7 @@ export default function EmployeeWeekClient({
                     className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--locked"
                     aria-hidden="true"
                   >
-                    <ClockIcon className="ds-week-calendar-day-pill__state-icon" aria-hidden />
+                    <DsWeekIcon variant="clock" />
                   </span>
                   <span className="sr-only">Frist passert</span>
                 </>
@@ -2289,7 +2305,7 @@ export default function EmployeeWeekClient({
                     className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--unavailable"
                     aria-hidden="true"
                   >
-                    —
+                    <DsWeekIcon variant="minus" />
                   </span>
                   <span className="sr-only">Ikke tilgjengelig</span>
                 </>

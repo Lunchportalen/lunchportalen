@@ -110,35 +110,38 @@
   line-height: 1;
 }
 
-.ds-week-calendar-day-pill__state-mark--ordered {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ds-accent);
+/* STEG 8 — felles livssyklus-ikon (1em, currentColor; tekst-label bærer mening) */
+.ds-week-icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  color: currentColor;
+  vertical-align: -0.125em;
 }
 
+.ds-week-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ds-week-calendar-day-pill__state-mark--ordered,
 .ds-week-calendar-day-pill__state-mark--locked,
 .ds-week-calendar-day-pill__state-mark--unavailable {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 14px;
+  font-size: 12px;
 }
 
-.ds-week-calendar-day-pill__state-icon {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
+.ds-week-calendar-day-pill__state-mark--ordered {
+  color: var(--ds-accent);
 }
 
-.ds-week-calendar-day-pill__state-mark--locked .ds-week-calendar-day-pill__state-icon {
-  color: var(--ds-text-soft);
-}
-
+.ds-week-calendar-day-pill__state-mark--locked,
 .ds-week-calendar-day-pill__state-mark--unavailable {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ds-text);
-  letter-spacing: 0.08em;
+  color: var(--ds-text-soft);
 }
 
 .ds-week-calendar-day-pill--locked:not(.ds-week-calendar-day-pill--selected) {
@@ -572,9 +575,7 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   display: inline-block;
 }
 
-.ds-week-ordered-collapse__locked-icon {
-  width: 14px;
-  height: 14px;
+.ds-week-ordered-collapse__locked-note .ds-week-icon {
   flex-shrink: 0;
 }
 

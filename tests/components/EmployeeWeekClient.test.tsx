@@ -128,12 +128,17 @@ describe("weekCalendarDayPillClassNames (/week kalender-pill)", () => {
     expect(source).toContain("ds-week-calendar-day-pill__state-mark--ordered");
     expect(source).toContain("ds-week-calendar-day-pill__state-mark--locked");
     expect(source).toContain("ds-week-calendar-day-pill__state-mark--unavailable");
+    expect(source).toContain("DsWeekIcon");
+    expect(source).toContain('className: "ds-week-icon"');
   });
 
   test("CSS: dagens dato outline nøytral (gull reservert til primær-CTA)", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).toContain(".ds-week-calendar-day-pill--today");
     expect(css).toContain("outline: 2px solid var(--ds-line-strong)");
+    expect(css).toContain(".ds-week-icon");
+    expect(css).toMatch(/width:\s*1em/);
+    expect(css).toContain("color: currentColor");
   });
 });
 
