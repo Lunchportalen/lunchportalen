@@ -143,7 +143,7 @@ test.describe("Week icon probe (V.W8)", () => {
       const rect = iconEl.getBoundingClientRect();
       const labelCs = label ? getComputedStyle(label) : null;
       return {
-        className: iconEl.className,
+        className: iconEl.getAttribute("class") ?? String(iconEl.className),
         usesDsWeekIconPrimitive: iconEl.classList.contains("ds-week-icon"),
         ariaHidden: iconEl.getAttribute("aria-hidden"),
         computedWidth: parseFloat(iconCs.width),

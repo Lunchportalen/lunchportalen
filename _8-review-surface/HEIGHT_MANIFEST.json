@@ -1,0 +1,34 @@
+[
+  {
+    "snapshot": "week-ordered-upcoming-week-visual-desktop",
+    "project": "desktop",
+    "ciRun": 26973714860,
+    "playwrightResult": "pass",
+    "note": "8/8 screenshots green in CI; diff may be below maxDiffPixels:500 — eyes-on still required per STEG 8 protocol"
+  },
+  {
+    "snapshot": "week-ordered-upcoming-week-visual-mobile",
+    "project": "mobile",
+    "ciRun": 26973714860,
+    "playwrightResult": "pass",
+    "note": "see desktop"
+  },
+  {
+    "snapshot": "week-allergen-declared-empty-week-visual-desktop",
+    "leakGuard": true,
+    "playwrightResult": "pass",
+    "diffPixels": 0
+  },
+  {
+    "snapshot": "week-allergen-has-data-week-visual-desktop",
+    "leakGuard": true,
+    "playwrightResult": "pass",
+    "diffPixels": 0
+  },
+  {
+    "snapshot": "week-day-selected-tue-02-week-visual-desktop",
+    "leakGuard": true,
+    "playwrightResult": "pass",
+    "diffPixels": 0
+  }
+]

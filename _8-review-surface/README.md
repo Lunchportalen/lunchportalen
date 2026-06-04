@@ -1,8 +1,10 @@
 # STEG 8 review surface — ds-week icon consolidation (eyes-on STOP)
 
+**PR:** https://github.com/Lunchportalen/lunchportalen/pull/113  
 **Branch:** `feat/week-steg-8-icon-consolidation` · **base:** `98b517de`  
+**CI (authoritative):** run `26973714860` — V.W2–V.W8 + week-visual **8/8 pass**  
 **Scope:** presentation only — `employee-week.css` + `EmployeeWeekClient.tsx`  
-**Ikke merge her** — egen GO `#-MERGE` etter baseline + 0-diff leak-guard.
+**Ikke merge her** — egen GO `#-MERGE` etter eyes-on + baseline-protokoll.
 
 ---
 
