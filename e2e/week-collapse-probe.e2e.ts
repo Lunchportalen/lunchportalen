@@ -13,6 +13,24 @@ import { getCredentialsForRole } from "./helpers/auth";
 
 const hasEmployeeCreds = !!getCredentialsForRole("employee");
 
+type VisibleAffordanceProbe = {
+  display: string;
+  visibility: string;
+  height: number;
+  width: number;
+};
+
+/** Perceivable layout gate — visible affordance node only (never sr-only). */
+function assertPerceivableAffordance(
+  probe: VisibleAffordanceProbe | null,
+  label: string,
+): asserts probe is VisibleAffordanceProbe {
+  expect(probe, `${label}: affordance node missing`).not.toBeNull();
+  expect(probe!.display, `${label}: display:none`).not.toBe("none");
+  expect(probe!.visibility, `${label}: visibility:hidden`).not.toBe("hidden");
+  expect(probe!.height, `${label}: zero rendered height`).toBeGreaterThan(0);
+}
+
 test.describe("Week collapse probe (V.W7)", () => {
   test.skip(!hasEmployeeCreds, "E2E_EMPLOYEE_* required");
 
@@ -100,10 +118,22 @@ test.describe("Week collapse probe (V.W7)", () => {
     expect(endreCount).toBe(0);
     await expect(page.getByRole("button", { name: /endre bestilling/i })).toHaveCount(0);
 
-    const lockedNoteText = (
-      await page.locator(".ds-week-ordered-collapse__locked-note").innerText()
-    ).replace(/\s+/g, " ");
-    expect(lockedNoteText).toMatch(/frist passert/i);
+    const lockedNoteLabel = page.locator(".ds-week-ordered-collapse__locked-note__label").first();
+    await expect(lockedNoteLabel).toBeVisible();
+    const lockedNoteText = (await lockedNoteLabel.innerText()).replace(/\s+/g, " ").trim();
+    expect(lockedNoteText).toBe("Frist passert");
+
+    const lockedNoteVisibleProbe = await lockedNoteLabel.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return {
+        display: cs.display,
+        visibility: cs.visibility,
+        height: rect.height,
+        width: rect.width,
+      };
+    });
+    assertPerceivableAffordance(lockedNoteVisibleProbe, "locked collapse visible Frist passert label");
 
     const monPill = page.locator('button[data-lp-date="2026-06-01"]');
     await expect(monPill).toHaveAttribute("data-lp-lifecycle", "locked");
@@ -113,19 +143,30 @@ test.describe("Week collapse probe (V.W7)", () => {
     const markBox = await lockedMark.boundingBox();
     expect(markBox?.height ?? 0).toBeGreaterThan(0);
 
-    const slotProbe = await page.evaluate(() => {
+    const pickerGate = await page.evaluate(() => {
+      const collapse = document.querySelector(".ds-week-ordered-collapse");
       const picker = document.querySelector(".week-ordered-picker-region");
-      const slots = Array.from(
-        document.querySelectorAll("button.week-category-card"),
-      ) as HTMLButtonElement[];
+      const editInDom = document.querySelector(".ds-week-ordered-collapse__edit");
+      const ariaControlsTargets = Array.from(
+        document.querySelectorAll("[aria-controls^='week-ordered-picker-']"),
+      );
+      const visibleSlotControls = collapse
+        ? Array.from(collapse.querySelectorAll("button.week-category-card")).filter((el) => {
+            const cs = getComputedStyle(el);
+            const rect = el.getBoundingClientRect();
+            return cs.display !== "none" && cs.visibility !== "hidden" && rect.height > 0;
+          })
+        : [];
       return {
-        pickerHidden: picker?.hasAttribute("hidden") ?? picker == null,
-        pickerDisplay: picker ? getComputedStyle(picker).display : null,
-        slotCount: slots.length,
-        slotsAriaDisabled: slots.map((s) => s.getAttribute("aria-disabled")),
-        allSlotsAriaDisabled:
-          slots.length === 0 ||
-          slots.every((s) => s.getAttribute("aria-disabled") === "true"),
+        pickerInDom: picker !== null,
+        pickerHidden:
+          picker === null ||
+          picker.hasAttribute("hidden") ||
+          getComputedStyle(picker).display === "none" ||
+          getComputedStyle(picker).visibility === "hidden",
+        editControlInDom: editInDom !== null,
+        ariaControlsTargetCount: ariaControlsTargets.length,
+        visibleSlotControlsInCollapse: visibleSlotControls.length,
       };
     });
 
@@ -133,14 +174,17 @@ test.describe("Week collapse probe (V.W7)", () => {
       summaryText,
       endreCount,
       lockedNoteText,
+      lockedNoteVisibleHeight: lockedNoteVisibleProbe.height,
       calendarLockedMarkHeight: markBox?.height ?? 0,
-      slotProbe,
+      pickerGate,
     };
 
     // eslint-disable-next-line no-console
     console.log("WEEK_COLLAPSE_PROBE_LOCKED", JSON.stringify(lockedPayload));
 
-    expect(slotProbe.pickerHidden).toBe(true);
-    expect(slotProbe.allSlotsAriaDisabled).toBe(true);
+    expect(pickerGate.editControlInDom).toBe(false);
+    expect(pickerGate.ariaControlsTargetCount).toBe(0);
+    expect(pickerGate.pickerHidden).toBe(true);
+    expect(pickerGate.visibleSlotControlsInCollapse).toBe(0);
   });
 });

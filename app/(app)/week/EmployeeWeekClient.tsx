@@ -1200,10 +1200,8 @@ const WeekDayCardMobile = memo(
             {orderedLockedCollapse ? (
               <p className="ds-week-ordered-collapse__locked-note">
                 <ClockIcon className="ds-week-ordered-collapse__locked-icon" aria-hidden />
-                <span aria-hidden="true">Frist passert</span>
-                <span className="sr-only">
-                  Frist passert. Bestillingen kan ikke endres etter kl. 08:00.
-                </span>
+                <span className="ds-week-ordered-collapse__locked-note__label">Frist passert</span>
+                <span className="sr-only">Bestillingen kan ikke endres etter kl. 08:00.</span>
               </p>
             ) : null}
             {orderedEditableCollapse ? (

@@ -568,6 +568,10 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   font-weight: 600;
 }
 
+.ds-week-ordered-collapse__locked-note__label {
+  display: inline-block;
+}
+
 .ds-week-ordered-collapse__locked-icon {
   width: 14px;
   height: 14px;
