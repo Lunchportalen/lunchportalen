@@ -1097,6 +1097,9 @@ type RowBase = {
 type MobileCardProps = RowBase & {
   isSelected: boolean;
   onSelectDay: () => void;
+  /** STEG 7.2 — efemær disclosure for ordered dag (før cutoff). */
+  orderedPickerExpanded: boolean;
+  onToggleOrderedPicker: () => void;
 };
 
 const WeekDayCardMobile = memo(
@@ -1115,8 +1118,18 @@ const WeekDayCardMobile = memo(
     insightRecommended,
     insightPreferredMotion,
     readOnlyPreview,
+    orderedPickerExpanded,
+    onToggleOrderedPicker,
   }: MobileCardProps) {
     const ordered = day.orderStatus === "ACTIVE";
+    const lifecycle = weekDayLifecycleState(day);
+    const mealLine = orderedMealDisplayLine(day);
+    const orderedEditableCollapse = lifecycle === "ordered" && ordered && Boolean(mealLine);
+    const orderedLockedCollapse = lifecycle === "locked" && ordered && Boolean(mealLine);
+    const showOrderedCollapse = orderedEditableCollapse || orderedLockedCollapse;
+    const showOrderedPicker =
+      !showOrderedCollapse || (orderedEditableCollapse && orderedPickerExpanded);
+    const orderedPickerId = `week-ordered-picker-${day.date}`;
     const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
     const companyClosed = day.isLocked && day.lockReason === "COMPANY";
     const notInAgreement = !day.isEnabled;
@@ -1176,9 +1189,38 @@ const WeekDayCardMobile = memo(
               <p className="mt-1 text-sm font-medium text-neutral-600">{mobileChoiceLine}</p>
             ) : null}
           </div>
+        </div>
 
+        {showOrderedCollapse ? (
+          <div className="ds-week-ordered-collapse mt-3">
+            <p className="ds-week-ordered-collapse__summary" role="status">
+              <span className="ds-week-ordered-collapse__label">Bestilt:</span>{" "}
+              <span className="ds-week-ordered-collapse__meal">{mealLine}</span>
+            </p>
+            {orderedLockedCollapse ? (
+              <p className="ds-week-ordered-collapse__locked-note">
+                <ClockIcon className="ds-week-ordered-collapse__locked-icon" aria-hidden />
+                <span className="ds-week-ordered-collapse__locked-note__label">Frist passert</span>
+                <span className="sr-only">Bestillingen kan ikke endres etter kl. 08:00.</span>
+              </p>
+            ) : null}
+            {orderedEditableCollapse ? (
+              <button
+                type="button"
+                className="ds-week-ordered-collapse__edit"
+                aria-expanded={orderedPickerExpanded}
+                aria-controls={orderedPickerId}
+                aria-label={`Endre bestilling: ${mealLine}`}
+                onClick={onToggleOrderedPicker}
+              >
+                Endre
+              </button>
+            ) : null}
+          </div>
+        ) : (
           <OrderedMealStatusLine day={day} className="mt-3" />
-          {insightRecommended ? (
+        )}
+        {insightRecommended ? (
             <div className="mt-2 space-y-0.5 text-left">
               <span className="ds-week-insight-pill">
                 Anbefalt for deg
@@ -1205,13 +1247,21 @@ const WeekDayCardMobile = memo(
             {noTierForDay ? (
               <NoTierForDayNotice />
             ) : day.categories.length ? (
-              <WeekCategoryCards
-                day={day}
-                storedChoice={storedChoice}
-                onSelectCategory={onSelectCategory}
-                onSelectItem={onSelectItem}
-                disabled={readOnlyPreview || globalBusy}
-              />
+              showOrderedPicker ? (
+                <div
+                  id={orderedPickerId}
+                  className={`week-ordered-picker-region${orderedEditableCollapse && orderedPickerExpanded ? " week-ordered-picker-region--open" : ""}`}
+                  hidden={showOrderedCollapse && !orderedPickerExpanded}
+                >
+                  <WeekCategoryCards
+                    day={day}
+                    storedChoice={storedChoice}
+                    onSelectCategory={onSelectCategory}
+                    onSelectItem={onSelectItem}
+                    disabled={readOnlyPreview || globalBusy}
+                  />
+                </div>
+              ) : null
             ) : categories.length ? (
               <div className="space-y-2 text-left">
                 {categories.map((category) => (
@@ -1233,7 +1283,6 @@ const WeekDayCardMobile = memo(
               </div>
             )}
           </div>
-        </div>
 
         <div className="mt-4 flex flex-col items-stretch gap-2">
           {noTierForDay ? (
@@ -1319,7 +1368,8 @@ const WeekDayCardMobile = memo(
     prev.canAct === next.canAct &&
     prev.insightRecommended === next.insightRecommended &&
     prev.insightPreferredMotion === next.insightPreferredMotion &&
-    prev.readOnlyPreview === next.readOnlyPreview,
+    prev.readOnlyPreview === next.readOnlyPreview &&
+    prev.orderedPickerExpanded === next.orderedPickerExpanded,
 );
 
 export default function EmployeeWeekClient({
@@ -1352,6 +1402,8 @@ export default function EmployeeWeekClient({
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedChoices, setSelectedChoices] = useState<Record<string, WeekChoiceStored | null>>({});
+  /** STEG 7.2 — efemær «Endre»-disclosure per dag (default kollapset). */
+  const [orderedPickerExpanded, setOrderedPickerExpanded] = useState<Record<string, boolean>>({});
   const [contentVisible, setContentVisible] = useState(false);
   /** Server-side etterspørselssignal (firma-scope) — kun informasjon. */
   const [demandHintLine, setDemandHintLine] = useState<string | null>(null);
@@ -1745,6 +1797,20 @@ export default function EmployeeWeekClient({
     setSelectedDate(date);
   }, []);
 
+  const toggleOrderedPicker = useCallback((date: string) => {
+    setOrderedPickerExpanded((prev) => ({
+      ...prev,
+      [date]: !prev[date],
+    }));
+  }, []);
+
+  const collapseOrderedPicker = useCallback((date: string) => {
+    setOrderedPickerExpanded((prev) => {
+      if (prev[date] === false) return prev;
+      return { ...prev, [date]: false };
+    });
+  }, []);
+
   const showSuccessToast = useCallback((msg: string) => {
     setToastSuccess(msg);
     if (successTimerRef.current) clearTimeout(successTimerRef.current);
@@ -1856,6 +1922,7 @@ export default function EmployeeWeekClient({
           const wk = weekdayKeyFromDateISO(date);
           recordSuccessfulOrder(date, wk);
           setPatternTick((t) => t + 1);
+          collapseOrderedPicker(date);
         }
         safeVibrate(12);
         showSuccessToast(wantsLunch ? "Bestilling registrert ✔" : "Avbestilling registrert ✔");
@@ -1865,7 +1932,17 @@ export default function EmployeeWeekClient({
         return false;
       }
     },
-    [days, ensureIdemKey, loadWindow, readOnlyPreview, resetIdemKey, selectedChoices, showErrorBanner, showSuccessToast],
+    [
+      collapseOrderedPicker,
+      days,
+      ensureIdemKey,
+      loadWindow,
+      readOnlyPreview,
+      resetIdemKey,
+      selectedChoices,
+      showErrorBanner,
+      showSuccessToast,
+    ],
   );
 
   const applyActiveOrderChange = useCallback(
@@ -2265,6 +2342,8 @@ export default function EmployeeWeekClient({
             insightRecommended={Boolean(!readOnlyPreview && recommendedDate && activeDay.date === recommendedDate && preferredWeekday)}
             insightPreferredMotion={false}
             readOnlyPreview={readOnlyPreview}
+            orderedPickerExpanded={Boolean(orderedPickerExpanded[activeDay.date])}
+            onToggleOrderedPicker={() => toggleOrderedPicker(activeDay.date)}
           />
         </section>
       ) : null}

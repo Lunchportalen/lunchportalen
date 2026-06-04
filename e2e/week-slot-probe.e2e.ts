@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 
 import {
   buildWeekVisualWindowOrderedUpcoming,
+  expandOrderedWeekPicker,
   installWeekVisualMocks,
   navigateToWeek,
   selectWeekDay,
@@ -23,6 +24,7 @@ test.describe("Week slot probe", () => {
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
+    await expandOrderedWeekPicker(page);
     await page.mouse.move(0, 0);
     await page.waitForTimeout(250);
 

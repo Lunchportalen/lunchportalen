@@ -1,0 +1,25 @@
+{
+  "source": "CI run 26959487078 + characterize-week-diff-regions.mjs (desktop CI artifacts)",
+  "week-ordered-upcoming": {
+    "desktop": {
+      "expected": { "w": 1280, "h": 1546 },
+      "actual": { "w": 1280, "h": 1546 },
+      "deltaH": 0,
+      "playwrightDiffPixels": 8240,
+      "playwrightDiffRatio": 0.01,
+      "regionCharacterization": {
+        "diffPixelsPixelmatch": 12809,
+        "globalTopShift": false,
+        "verdict": "LOCALIZED_ORDERED_DAY_REGION",
+        "boundingBox": { "minX": 321, "minY": 675, "maxX": 939, "maxY": 1500 }
+      }
+    },
+    "mobile": {
+      "expected": { "w": 375, "h": 1687 },
+      "actual": { "w": 375, "h": 1549 },
+      "deltaH": -138,
+      "playwrightDiffPixels": 15672,
+      "playwrightDiffRatio": 0.03
+    }
+  }
+}

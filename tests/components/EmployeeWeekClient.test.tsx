@@ -382,6 +382,18 @@ describe("EmployeeWeekClient ordered vs insight styling", () => {
     expect(source).toMatch(/day\.orderStatus === "ACTIVE"\) return prev/);
   });
 
+  test("STEG 7.2: ordered collapse summary + Endre disclosure (Modell A)", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(source).toContain("ds-week-ordered-collapse");
+    expect(source).toContain("orderedPickerExpanded");
+    expect(source).toContain("collapseOrderedPicker");
+    expect(source).toContain('aria-label={`Endre bestilling: ${mealLine}`}');
+    expect(source).toContain("weekDayLifecycleState(day)");
+    expect(css).toContain(".ds-week-ordered-collapse__edit:focus-visible");
+    expect(css).toMatch(/min-height:\s*48px/);
+  });
+
   test("CSS: slot focus-visible accent ring; ordered category uses --slot not green card frame", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).not.toMatch(/^\s*ring\s*:/m);

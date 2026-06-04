@@ -174,6 +174,34 @@ export function buildWeekVisualWindowDaySelected() {
   };
 }
 
+/** Mandag bestilt + cutoff — read-only kollaps (STEG 7.2 / V.W7 locked-gren). */
+export function buildWeekVisualWindowOrderedLockedCutoff() {
+  return withWeekVisualServerOsloDate(
+    {
+      ...baseWindow,
+      data: {
+        ...baseWindow.data,
+        days: [
+          dayRow("2026-06-01", "Mandag", {
+            isLocked: true,
+            lockReason: "CUTOFF",
+            orderStatus: "ACTIVE",
+            wantsLunch: true,
+            selectedChoiceKey: "paasmurt",
+            selectedItemKey: "ost-skinke",
+            selectedItemTitleSnapshot: "Ost & skinke",
+          }),
+          dayRow("2026-06-02", "Tirsdag", { isLocked: true, lockReason: "CUTOFF" }),
+          dayRow("2026-06-03", "Onsdag", { isLocked: true, lockReason: "CUTOFF" }),
+          dayRow("2026-06-04", "Torsdag", { isLocked: true, lockReason: "CUTOFF" }),
+          dayRow("2026-06-05", "Fredag", { isLocked: true, lockReason: "CUTOFF" }),
+        ],
+      },
+    },
+    "2026-06-01",
+  );
+}
+
 /** Tir 02.06 bestilt + kommende dager-liste. */
 export function buildWeekVisualWindowOrderedUpcoming() {
   return {
@@ -296,6 +324,14 @@ export async function selectWeekDay(page: Page, isoDate: string): Promise<void> 
   await pill.waitFor({ state: "visible", timeout: 10_000 });
   await pill.click();
   await expect(pill).toHaveAttribute("class", /ds-week-calendar-day-pill--selected/);
+}
+
+/** STEG 7.2 — åpne kategori-picker på bestilt dag (kollapset som standard). */
+export async function expandOrderedWeekPicker(page: Page): Promise<void> {
+  const editBtn = page.locator(".ds-week-ordered-collapse__edit").first();
+  await expect(editBtn).toBeVisible({ timeout: 10_000 });
+  await editBtn.click();
+  await expect(editBtn).toHaveAttribute("aria-expanded", "true");
 }
 
 export const WEEK_VISUAL_SCREENSHOT_OPTS = {
