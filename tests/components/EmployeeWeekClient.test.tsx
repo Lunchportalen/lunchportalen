@@ -148,6 +148,26 @@ describe("EmployeeWeekClient chip surface (STEG 5.5)", () => {
   });
 });
 
+describe("EmployeeWeekClient motion surface (STEG 6)", () => {
+  test("CSS: row press + reduce gate; calendar bruker --ds-ease 180ms", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: no-preference\)[\s\S]*\.ds-week-surface--row[\s\S]*transition:\s*transform 180ms var\(--ds-ease\)/,
+    );
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.ds-week-surface--row[\s\S]*transition:\s*none/,
+    );
+    expect(css).toContain("html.lp-week-visual-regression .ds-week-surface--row");
+    expect(css).toMatch(/transform 180ms var\(--ds-ease\)/);
+  });
+
+  test("kilde: row uten Tailwind active:scale uten motion-safe", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("ds-week-surface--row flex min-h-day");
+    expect(source).not.toMatch(/ds-week-surface--row[\s\S]*active:scale-\[0\.99\]/);
+  });
+});
+
 describe("EmployeeWeekClient NO_TIER_FOR_DAY UI", () => {
   test("viser fail-closed tekst og skjuler kategori-knapper for dager uten tier", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");

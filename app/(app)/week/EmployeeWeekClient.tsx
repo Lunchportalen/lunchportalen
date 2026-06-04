@@ -2207,7 +2207,7 @@ export default function EmployeeWeekClient({
                   data-date={day.date}
                   data-day-slide=""
                   onClick={() => selectDayFromTap(day.date)}
-                  className="ds-week-surface ds-week-surface--row flex min-h-day w-full items-center justify-between gap-3 bg-white/75 text-left text-sm transition-transform active:scale-[0.99]"
+                  className="ds-week-surface ds-week-surface--row flex min-h-day w-full items-center justify-between gap-3 bg-white/75 text-left text-sm"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-bold capitalize text-neutral-950">

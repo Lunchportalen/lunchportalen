@@ -21,6 +21,7 @@ export default defineConfig({
     "**/week-row-radius-probe.e2e.ts",
     "**/week-slot-probe.e2e.ts",
     "**/week-chip-probe.e2e.ts",
+    "**/week-motion-probe.e2e.ts",
   ],
   globalSetup: useEmployeeSession
     ? "./e2e/global-setup/week-visual-auth.setup.ts"
