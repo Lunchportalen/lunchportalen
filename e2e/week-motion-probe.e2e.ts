@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 
 import {
   buildWeekVisualWindowOrderedUpcoming,
+  expandOrderedWeekPicker,
   installWeekVisualMocks,
   navigateToWeek,
   selectWeekDay,
@@ -34,6 +35,7 @@ test.describe("Week motion probe", () => {
     await navigateToWeek(page);
     await waitForWeekMotionProbeReady(page);
     await selectWeekDay(page, "2026-06-02");
+    await expandOrderedWeekPicker(page);
 
     const styles = await page.evaluate(() => {
       const slot = document.querySelector("button.ds-week-surface--slot");
@@ -73,6 +75,7 @@ test.describe("Week motion probe", () => {
     await navigateToWeek(page);
     await waitForWeekMotionProbeReady(page);
     await selectWeekDay(page, "2026-06-02");
+    await expandOrderedWeekPicker(page);
 
     const styles = await page.evaluate(() => {
       const slot = document.querySelector("button.ds-week-surface--slot");

@@ -1189,42 +1189,40 @@ const WeekDayCardMobile = memo(
               <p className="mt-1 text-sm font-medium text-neutral-600">{mobileChoiceLine}</p>
             ) : null}
           </div>
+        </div>
 
-          {showOrderedCollapse ? (
-            <div className="ds-week-ordered-collapse mt-3">
-              <p className="ds-week-ordered-collapse__summary" role="status">
-                <span className="ds-week-ordered-collapse__label">Bestilt:</span>{" "}
-                <span className="ds-week-ordered-collapse__meal">{mealLine}</span>
+        {showOrderedCollapse ? (
+          <div className="ds-week-ordered-collapse mt-3">
+            <p className="ds-week-ordered-collapse__summary" role="status">
+              <span className="ds-week-ordered-collapse__label">Bestilt:</span>{" "}
+              <span className="ds-week-ordered-collapse__meal">{mealLine}</span>
+            </p>
+            {orderedLockedCollapse ? (
+              <p className="ds-week-ordered-collapse__locked-note">
+                <ClockIcon className="ds-week-ordered-collapse__locked-icon" aria-hidden />
+                <span aria-hidden="true">Frist passert</span>
+                <span className="sr-only">
+                  Frist passert. Bestillingen kan ikke endres etter kl. 08:00.
+                </span>
               </p>
-              {orderedLockedCollapse ? (
-                <p className="ds-week-ordered-collapse__locked-note">
-                  <ClockIcon className="ds-week-ordered-collapse__locked-icon" aria-hidden />
-                  <span aria-hidden="true">Frist passert</span>
-                  <span className="sr-only">
-                    Frist passert. Bestillingen kan ikke endres etter kl. 08:00.
-                  </span>
-                </p>
-              ) : null}
-              {orderedEditableCollapse ? (
-                <button
-                  type="button"
-                  className="ds-week-ordered-collapse__edit"
-                  aria-expanded={orderedPickerExpanded}
-                  aria-controls={orderedPickerId}
-                  aria-label={`Endre bestilling: ${mealLine}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleOrderedPicker();
-                  }}
-                >
-                  Endre
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            <OrderedMealStatusLine day={day} className="mt-3" />
-          )}
-          {insightRecommended ? (
+            ) : null}
+            {orderedEditableCollapse ? (
+              <button
+                type="button"
+                className="ds-week-ordered-collapse__edit"
+                aria-expanded={orderedPickerExpanded}
+                aria-controls={orderedPickerId}
+                aria-label={`Endre bestilling: ${mealLine}`}
+                onClick={onToggleOrderedPicker}
+              >
+                Endre
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <OrderedMealStatusLine day={day} className="mt-3" />
+        )}
+        {insightRecommended ? (
             <div className="mt-2 space-y-0.5 text-left">
               <span className="ds-week-insight-pill">
                 Anbefalt for deg
@@ -1287,7 +1285,6 @@ const WeekDayCardMobile = memo(
               </div>
             )}
           </div>
-        </div>
 
         <div className="mt-4 flex flex-col items-stretch gap-2">
           {noTierForDay ? (

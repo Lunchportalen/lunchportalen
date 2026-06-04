@@ -326,6 +326,14 @@ export async function selectWeekDay(page: Page, isoDate: string): Promise<void> 
   await expect(pill).toHaveAttribute("class", /ds-week-calendar-day-pill--selected/);
 }
 
+/** STEG 7.2 — åpne kategori-picker på bestilt dag (kollapset som standard). */
+export async function expandOrderedWeekPicker(page: Page): Promise<void> {
+  const editBtn = page.locator(".ds-week-ordered-collapse__edit").first();
+  await expect(editBtn).toBeVisible({ timeout: 10_000 });
+  await editBtn.click();
+  await expect(editBtn).toHaveAttribute("aria-expanded", "true");
+}
+
 export const WEEK_VISUAL_SCREENSHOT_OPTS = {
   animations: "disabled" as const,
   maxDiffPixels: 500,
