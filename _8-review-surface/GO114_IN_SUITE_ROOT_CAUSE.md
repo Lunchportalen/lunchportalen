@@ -9,11 +9,11 @@
 
 **Mekanisme:** Etter `selectWeekDay(Tir 02)` + kalender-ikon-les (Mon/Ons markører i DOM, ingen panel-bytt) kjørte **Playwright `monPill.click({ noWaitAfter: true })`** og deretter **separat** `page.evaluate`. Da hadde React tid til CUTOFF-`useEffect` (`setSelectedDate(null)` → default Tir) **før** slot-lesing — panelet viste **Tir 02** (ingen `.is-locked` slot).
 
-**Ikke** «walk på Tir/Ons» alene (kun `evaluate` på piller), men **panel-state arvet fra Tir** + **async gap** mellom tap og les.
+**Ikke** bare «walk på Tir/Ons» (kun `evaluate` på markører), men **Tir-panel aktiv** + **React onClick asynkron**: synkron `mon.click()` + separat evaluate kommer **etter** CUTOFF-revert.
 
 ## Fiks (kun probe)
 
-1. **Precondition:** `selectWeekDay("2026-06-02")` umiddelbart før slot-klokke (V.W6 reset).
-2. **Samme evaluate-vindu:** `mon.click()` + `querySelector(.is-locked slot)` i **ett** `page.evaluate` (synkron i browser — før useEffect).
+1. **Precondition:** `selectWeekDay("2026-06-02")` rett før slot-klokke.
+2. **Ett async `page.evaluate`:** `mon.click()` + microtask/`rAF`-poll (≤48 frames) for `.is-locked` slot — fortsatt in-suite, ingen ekstra `waitFor(15s)`.
 
 Ingen flytting av sub-probe ut av suiten. Ingen ikon/CSS-endring.

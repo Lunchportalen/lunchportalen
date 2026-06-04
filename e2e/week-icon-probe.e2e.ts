@@ -121,42 +121,53 @@ test.describe("Week icon probe (V.W8)", () => {
     expect(calIcons[0]!.resolvedHeight).toBeCloseTo(calIcons[2]!.resolvedHeight, 1);
     expect(calIcons[0]!.resolvedWidth).toBeCloseTo(calIcons[0]!.resolvedHeight, 1);
 
-    // Slot clock: own precondition — reset panel (V.W6 harness), then sync Mon tap + read in one
-    // evaluate window (CUTOFF revert runs after; must not inherit Tue panel / prior suite state).
+    // Slot clock: own precondition (V.W6 harness reset) + Mon tap + microtask poll inside one
+    // evaluate (React onClick is async; separate Playwright click/evaluate races CUTOFF revert).
     await selectWeekDay(page, "2026-06-02");
 
-    const slotClockProbe = await page.evaluate(() => {
+    const slotClockProbe = await page.evaluate(async () => {
+      const readSlot = () => {
+        const slot = document.querySelector(
+          "button.ds-week-surface--slot.is-locked",
+        ) as HTMLElement | null;
+        const icon = slot?.querySelector(".week-category-card__state-icon");
+        if (!slot || !icon) return null;
+        const label = slot.querySelector(".week-category-card__state-label");
+        const iconEl = icon as HTMLElement;
+        const iconCs = getComputedStyle(iconEl);
+        const svg = iconEl.tagName === "svg" ? iconEl : iconEl.querySelector("svg");
+        const svgCs = svg ? getComputedStyle(svg) : iconCs;
+        const rect = iconEl.getBoundingClientRect();
+        const labelCs = label ? getComputedStyle(label) : null;
+        return {
+          className: iconEl.getAttribute("class") ?? String(iconEl.className),
+          usesDsWeekIconPrimitive: iconEl.classList.contains("ds-week-icon"),
+          ariaHidden: iconEl.getAttribute("aria-hidden"),
+          computedWidth: parseFloat(iconCs.width),
+          computedHeight: parseFloat(iconCs.height),
+          resolvedWidth: rect.width,
+          resolvedHeight: rect.height,
+          color: iconCs.color,
+          stroke: svgCs.stroke || svgCs.color,
+          labelFontSize: labelCs?.fontSize ?? "",
+          labelText: label?.textContent?.trim() ?? "",
+        };
+      };
+
       const mon = document.querySelector(
         'button[data-lp-date="2026-06-01"]',
       ) as HTMLButtonElement | null;
       if (!mon) return null;
       mon.click();
 
-      const slot = document.querySelector(
-        "button.ds-week-surface--slot.is-locked",
-      ) as HTMLElement | null;
-      const icon = slot?.querySelector(".week-category-card__state-icon");
-      if (!slot || !icon) return null;
-      const label = slot.querySelector(".week-category-card__state-label");
-      const iconEl = icon as HTMLElement;
-      const iconCs = getComputedStyle(iconEl);
-      const svg = iconEl.tagName === "svg" ? iconEl : iconEl.querySelector("svg");
-      const svgCs = svg ? getComputedStyle(svg) : iconCs;
-      const rect = iconEl.getBoundingClientRect();
-      const labelCs = label ? getComputedStyle(label) : null;
-      return {
-        className: iconEl.getAttribute("class") ?? String(iconEl.className),
-        usesDsWeekIconPrimitive: iconEl.classList.contains("ds-week-icon"),
-        ariaHidden: iconEl.getAttribute("aria-hidden"),
-        computedWidth: parseFloat(iconCs.width),
-        computedHeight: parseFloat(iconCs.height),
-        resolvedWidth: rect.width,
-        resolvedHeight: rect.height,
-        color: iconCs.color,
-        stroke: svgCs.stroke || svgCs.color,
-        labelFontSize: labelCs?.fontSize ?? "",
-        labelText: label?.textContent?.trim() ?? "",
-      } satisfies SlotClockProbe & { labelText: string };
+      for (let i = 0; i < 48; i++) {
+        const probe = readSlot();
+        if (probe) return probe;
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+      }
+      return null;
     });
 
     expect(slotClockProbe, "locked slot ClockIcon (V.W6, not ds-week-icon)").not.toBeNull();
