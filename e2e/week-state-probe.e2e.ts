@@ -113,9 +113,9 @@ test.describe("Week state probe (V.W6)", () => {
     await waitForWeekVisualReady(page);
 
     await selectWeekDay(page, "2026-06-01");
-    await expect(page.getByRole("heading", { name: /man 01\.06\.2026/i })).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.locator('button[data-lp-date="2026-06-01"]')).toHaveClass(
+      /ds-week-calendar-day-pill--selected/,
+    );
     const lockedSlotLocator = page.locator("button.ds-week-surface--slot.is-locked").first();
     await expect(lockedSlotLocator).toBeVisible({ timeout: 15_000 });
     const lockedDaySlots = await lockedSlotLocator.evaluate((slot) => {
@@ -151,9 +151,9 @@ test.describe("Week state probe (V.W6)", () => {
     console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
 
     await selectWeekDay(page, "2026-06-04");
-    await expect(page.getByRole("heading", { name: /tor 04\.06\.2026/i })).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.locator('button[data-lp-date="2026-06-04"]')).toHaveClass(
+      /ds-week-calendar-day-pill--selected/,
+    );
     const unavailableSlotLocator = page.locator("button.ds-week-surface--slot.is-unavailable").first();
     await expect(unavailableSlotLocator).toBeVisible({ timeout: 15_000 });
     const unavailableSlot = await unavailableSlotLocator.evaluate((slot) => {
