@@ -17,7 +17,11 @@ const externalServer =
 /** STEG 5.3 — row radius computed-style probe only. */
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: ["**/week-row-radius-probe.e2e.ts", "**/week-slot-probe.e2e.ts"],
+  testMatch: [
+    "**/week-row-radius-probe.e2e.ts",
+    "**/week-slot-probe.e2e.ts",
+    "**/week-chip-probe.e2e.ts",
+  ],
   globalSetup: useEmployeeSession
     ? "./e2e/global-setup/week-visual-auth.setup.ts"
     : undefined,

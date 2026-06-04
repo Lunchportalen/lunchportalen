@@ -127,7 +127,11 @@ export default function WeekAllergenProfileCard() {
             {status === "has_data" ? (
               <span className="ds-allergen-disclosure__summary-chips" role="list" aria-label="Valgte allergener">
                 {summaryItems.map((item) => (
-                  <span key={item} className="ds-allergen-chip ds-allergen-chip--readonly" role="listitem">
+                  <span
+                    key={item}
+                    className="ds-week-surface ds-week-surface--chip ds-allergen-chip ds-allergen-chip--readonly"
+                    role="listitem"
+                  >
                     {item}
                   </span>
                 ))}

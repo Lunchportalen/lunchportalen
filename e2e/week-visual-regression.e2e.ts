@@ -50,7 +50,7 @@ test.describe("Week visual regression @week-visual", () => {
 
     const summary = page.locator(".ds-allergen-disclosure__summary");
     await expect(summary).toHaveAttribute("aria-expanded", "false");
-    await expect(page.locator(".ds-allergen-chip--readonly").first()).toBeVisible();
+    await expect(page.locator(".ds-week-surface--chip").first()).toBeVisible();
 
     await expect(weekMainLocator(page)).toHaveScreenshot(
       `week-allergen-has-data-${testInfo.project.name}.png`,

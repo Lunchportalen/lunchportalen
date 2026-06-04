@@ -298,6 +298,28 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   cursor: not-allowed;
 }
 
+/* Chip — read-only status/metadata pill (STEG 5.5) */
+.ds-week-surface--chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-bg-soft);
+  border: 1px solid var(--ds-line);
+  box-shadow: none;
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+  padding: 4px 10px;
+  line-height: 1.2;
+  transition: none;
+}
+
+.ds-week-surface--chip.ds-allergen-chip {
+  min-height: unset;
+  min-width: auto;
+  cursor: default;
+  pointer-events: none;
+}
+
 .week-day__categories {
   display: grid;
   grid-template-columns: 1fr;
