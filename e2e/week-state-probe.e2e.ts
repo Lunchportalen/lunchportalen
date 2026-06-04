@@ -99,6 +99,9 @@ test.describe("Week state probe (V.W6)", () => {
     expect(lockedDaySlots!.ariaDisabled).toBe("true");
     expect(lockedDaySlots!.hasStateLabel).toBe(true);
 
+    // eslint-disable-next-line no-console
+    console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
+
     await selectWeekDay(page, "2026-06-04");
     const unavailableSlot = await page.evaluate(() => {
       const slot = document.querySelector(
@@ -118,6 +121,9 @@ test.describe("Week state probe (V.W6)", () => {
     expect(unavailableSlot!.cursor).toBe("not-allowed");
     expect(unavailableSlot!.hasStateLabel).toBe(true);
     expect(unavailableSlot!.labelText).toMatch(/ikke tilgjengelig/i);
+
+    // eslint-disable-next-line no-console
+    console.log("WEEK_STATE_PROBE_UNAVAILABLE_SLOT", JSON.stringify(unavailableSlot));
   });
 
   test("unavailable day panel + distinct slot when category unavailable", async ({ page }) => {

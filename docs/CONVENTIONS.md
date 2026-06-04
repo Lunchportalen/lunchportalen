@@ -129,7 +129,7 @@ Screenshot diff alene fanger ikke radius/border-token endringer (lav kontrast i 
 | **V.W6** — lifecycle state | `e2e/week-state-probe.e2e.ts` | Kalender: **locked** pill `opacity` ≈ **0.5**, `cursor: not-allowed`, clock-markør + `data-lp-lifecycle=locked`; **ordered** ✓-markør; **unavailable** em-dash-markør (≠ locked). Slot: **locked** `is-locked`, `aria-disabled=true`, opacity ≈ **0.5**, tekstlabel «Frist passert»; **unavailable** `is-unavailable`, opacity **> 0.85**, stiplet ramme, label «Ikke tilgjengelig» | `playwright.week-row-probe.config.ts` |
 
 - **CI-steg:** `.github/workflows/ci-week-visual.yml` → «STEG 5.3–7.1 surface computed-style probes (row + slot + chip + motion + state)» — må passere **før** screenshot diff.
-- **Logg-prefix:** `WEEK_ROW_RADIUS_PROBE`, `WEEK_SLOT_PROBE`, `WEEK_CHIP_PROBE`, `WEEK_MOTION_PROBE_NO_PREFERENCE`, `WEEK_MOTION_PROBE_REDUCE`, `WEEK_STATE_PROBE`, `WEEK_STATE_PROBE_UNAVAILABLE_DAY` (JSON i CI-logg).
+- **Logg-prefix:** `WEEK_ROW_RADIUS_PROBE`, `WEEK_SLOT_PROBE`, `WEEK_CHIP_PROBE`, `WEEK_MOTION_PROBE_NO_PREFERENCE`, `WEEK_MOTION_PROBE_REDUCE`, `WEEK_STATE_PROBE`, `WEEK_STATE_PROBE_LOCKED_SLOTS`, `WEEK_STATE_PROBE_UNAVAILABLE_SLOT`, `WEEK_STATE_PROBE_UNAVAILABLE_DAY` (JSON i CI-logg).
 - **Screenshot baseline:** Linux Docker only — se [e2e/week-visual-regression.md](./e2e/week-visual-regression.md).
 
 ## Endring av konvensjon
