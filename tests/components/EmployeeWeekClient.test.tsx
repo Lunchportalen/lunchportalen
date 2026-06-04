@@ -9,6 +9,7 @@ import {
   statusPresentation,
   tierPillClass,
   weekCalendarDayPillClassNames,
+  weekDayLifecycleState,
   type DayRow,
 } from "@/app/(app)/week/EmployeeWeekClient";
 
@@ -79,12 +80,54 @@ describe("weekCalendarDayPillClassNames (/week kalender-pill)", () => {
     );
   });
 
+  test("livssyklus: ordered, locked, unavailable modifikatorer", () => {
+    expect(weekCalendarDayPillClassNames(false, false, "ordered")).toContain(
+      "ds-week-calendar-day-pill--ordered",
+    );
+    expect(weekCalendarDayPillClassNames(false, false, "locked")).toContain("ds-week-calendar-day-pill--locked");
+    expect(weekCalendarDayPillClassNames(false, false, "unavailable")).toContain(
+      "ds-week-calendar-day-pill--unavailable",
+    );
+  });
+
+  test("weekDayLifecycleState: CUTOFF, ACTIVE, NO_TIER_FOR_DAY", () => {
+    const base: DayRow = {
+      date: "2026-06-01",
+      weekday: "Mandag",
+      tier: "BASIS",
+      planTier: "BASIS",
+      allowedChoices: [],
+      categories: [],
+      selectedChoiceKey: null,
+      selectedItemKey: null,
+      selectedItemTitleSnapshot: null,
+      isLocked: false,
+      isEnabled: true,
+      orderStatus: null,
+      wantsLunch: false,
+      menuDescription: "",
+      allergens: [],
+      menuImages: [],
+    };
+    expect(
+      weekDayLifecycleState({ ...base, isLocked: true, lockReason: "CUTOFF" }),
+    ).toBe("locked");
+    expect(weekDayLifecycleState({ ...base, orderStatus: "ACTIVE" })).toBe("ordered");
+    expect(
+      weekDayLifecycleState({ ...base, reason: "NO_TIER_FOR_DAY", isEnabled: false }),
+    ).toBe("unavailable");
+  });
+
   test("kilde: knapp bruker data-lp-date, aria-current og weekCalendarDayPillClassNames(active, isToday)", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     expect(source).toContain("data-lp-date={day.date}");
     expect(source).toContain('aria-current={isToday ? "date" : undefined}');
     expect(source).toContain("const isToday = Boolean(serverOsloDate && day.date === serverOsloDate);");
-    expect(source).toContain("className={weekCalendarDayPillClassNames(active, isToday)}");
+    expect(source).toContain("className={weekCalendarDayPillClassNames(active, isToday, lifecycle)}");
+    expect(source).toContain("data-lp-lifecycle={lifecycle}");
+    expect(source).toContain("ds-week-calendar-day-pill__state-mark--ordered");
+    expect(source).toContain("ds-week-calendar-day-pill__state-mark--locked");
+    expect(source).toContain("ds-week-calendar-day-pill__state-mark--unavailable");
   });
 
   test("CSS: dagens dato outline nøytral (gull reservert til primær-CTA)", () => {
@@ -347,6 +390,11 @@ describe("EmployeeWeekClient ordered vs insight styling", () => {
     expect(css).toMatch(/outline-offset:\s*3px/);
     expect(css).toContain(".ds-week-surface--slot[aria-pressed=\"true\"]");
     expect(css).not.toMatch(/\.week-category-card\.is-ordered::before/);
+    expect(css).toContain(".week-category-card.is-ordered[aria-pressed=\"true\"]");
+    expect(css).toContain(".ds-week-calendar-day-pill--locked");
+    expect(css).toContain(".ds-week-calendar-day-pill--unavailable");
+    expect(css).toContain(".ds-week-surface--slot.is-locked");
+    expect(css).toContain(".ds-week-surface--slot.is-unavailable");
   });
 
   test("gull reservert til PRIMARY_CTA; dag-valg og insight uten accent", () => {

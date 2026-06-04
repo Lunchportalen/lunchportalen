@@ -737,6 +737,7 @@ export function WeekCategoryCards({
 }) {
   if (isNoTierForDay(day)) return null;
   if (!day.categories.length) return null;
+  const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
   const selectedKey = effectiveSelectedChoice(day, storedChoice);
   const orderedChoiceKey =
     day.orderStatus === "ACTIVE" && day.selectedChoiceKey
@@ -891,6 +892,9 @@ export function WeekCategoryCards({
         const isOrdered = Boolean(orderedChoiceKey && orderedChoiceKey === keyLower);
         const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === keyLower);
         const isPendingCat = isSelected && !isOrdered;
+        const slotLocked = cutoffClosed;
+        const slotUnavailable = !cat.available;
+        const slotDisabled = Boolean(disabled || slotUnavailable || !day.isEnabled || slotLocked);
         return (
           <Fragment key={cat.key}>
             <button
@@ -899,19 +903,39 @@ export function WeekCategoryCards({
                 "ds-week-surface ds-week-surface--slot week-category-card",
                 isOrdered ? "is-ordered" : "",
                 isPendingCat ? "is-selected" : "",
+                slotLocked ? "is-locked" : "",
+                slotUnavailable ? "is-unavailable" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
               onClick={() => onSelectCategory(cat.key)}
-              disabled={disabled || !cat.available || !day.isEnabled}
+              disabled={slotDisabled}
+              aria-disabled={slotLocked && !slotUnavailable ? true : undefined}
               aria-pressed={isOrdered || isPendingCat}
               aria-label={
-                isOrdered ? `${cat.label}, bestilt` : isPendingCat ? `${cat.label}, valgt` : cat.label
+                slotLocked
+                  ? `${cat.label}, frist passert`
+                  : slotUnavailable
+                    ? `${cat.label}, ikke tilgjengelig`
+                    : isOrdered
+                      ? `${cat.label}, bestilt`
+                      : isPendingCat
+                        ? `${cat.label}, valgt`
+                        : cat.label
               }
-              title={!cat.available ? "Ikke tilgjengelig" : isOrdered ? "Bestilt" : undefined}
+              title={
+                slotUnavailable ? "Ikke tilgjengelig" : slotLocked ? "Frist passert" : isOrdered ? "Bestilt" : undefined
+              }
             >
               <span className="week-category-card__label">{cat.label}</span>
-              {!cat.available ? <span className="week-category-card__empty">Ikke tilgjengelig</span> : null}
+              {slotLocked ? (
+                <span className="week-category-card__state-label">
+                  <ClockIcon className="week-category-card__state-icon" aria-hidden />
+                  Frist passert
+                </span>
+              ) : slotUnavailable ? (
+                <span className="week-category-card__state-label">Ikke tilgjengelig</span>
+              ) : null}
             </button>
             {isPendingCat ? expandSection : null}
           </Fragment>
@@ -963,11 +987,30 @@ type Props = {
   previewHarness?: { calendarDates: string[]; osloToday: string } | null;
 };
 
-/** Eksportert for klassenavnkontrakttester på /week-kalenderen (FASE 12A). */
-export function weekCalendarDayPillClassNames(active: boolean, isToday: boolean): string {
+/** Livssyklus-tilstand for dag (STEG 7.1 — presentasjon, ikke bestillingslogikk). */
+export type WeekDayLifecycleState = "available" | "ordered" | "locked" | "unavailable";
+
+export function weekDayLifecycleState(
+  day: Pick<DayRow, "reason" | "isEnabled" | "isLocked" | "lockReason" | "orderStatus">,
+): WeekDayLifecycleState {
+  if (day.reason === "NO_TIER_FOR_DAY" || !day.isEnabled) return "unavailable";
+  if (day.isLocked && day.lockReason === "CUTOFF") return "locked";
+  if (day.orderStatus === "ACTIVE") return "ordered";
+  return "available";
+}
+
+/** Eksportert for klassenavnkontrakttester på /week-kalenderen (FASE 12A + STEG 7.1). */
+export function weekCalendarDayPillClassNames(
+  active: boolean,
+  isToday: boolean,
+  lifecycle: WeekDayLifecycleState = "available",
+): string {
   const base = ["ds-week-calendar-day-pill"];
   base.push(active ? "ds-week-calendar-day-pill--selected" : "ds-week-calendar-day-pill--idle");
   if (isToday) base.push("ds-week-calendar-day-pill--today");
+  if (lifecycle === "ordered") base.push("ds-week-calendar-day-pill--ordered");
+  if (lifecycle === "locked") base.push("ds-week-calendar-day-pill--locked");
+  if (lifecycle === "unavailable") base.push("ds-week-calendar-day-pill--unavailable");
   return base.join(" ");
 }
 
@@ -2128,20 +2171,52 @@ export default function EmployeeWeekClient({
         {sortedDays.map((day, index) => {
           const active = activeDay?.date === day.date;
           const isToday = Boolean(serverOsloDate && day.date === serverOsloDate);
+          const lifecycle = weekDayLifecycleState(day);
           const weekday = (formatWeekdayNO(day.date) || day.weekday).slice(0, 3);
           return (
             <button
               key={day.date}
               type="button"
               data-lp-date={day.date}
+              data-lp-lifecycle={lifecycle}
               aria-current={isToday ? "date" : undefined}
               style={selectorGridPosition(day, selectorWeekRows, index)}
               onClick={() => selectDayFromTap(day.date)}
-              className={weekCalendarDayPillClassNames(active, isToday)}
+              className={weekCalendarDayPillClassNames(active, isToday, lifecycle)}
               aria-pressed={active}
             >
               <span className="ds-week-calendar-day-pill__weekday">{weekday}</span>
               <span className="ds-week-calendar-day-pill__daynum">{formatDateNO(day.date).split(".")[0]}</span>
+              {lifecycle === "ordered" ? (
+                <span
+                  className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--ordered"
+                  aria-hidden="true"
+                >
+                  ✓
+                </span>
+              ) : null}
+              {lifecycle === "locked" ? (
+                <>
+                  <span
+                    className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--locked"
+                    aria-hidden="true"
+                  >
+                    <ClockIcon className="ds-week-calendar-day-pill__state-icon" aria-hidden />
+                  </span>
+                  <span className="sr-only">Frist passert</span>
+                </>
+              ) : null}
+              {lifecycle === "unavailable" ? (
+                <>
+                  <span
+                    className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--unavailable"
+                    aria-hidden="true"
+                  >
+                    —
+                  </span>
+                  <span className="sr-only">Ikke tilgjengelig</span>
+                </>
+              ) : null}
             </button>
           );
         })}
