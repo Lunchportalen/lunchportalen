@@ -102,23 +102,8 @@ test.describe("Week state probe (V.W6)", () => {
     expect(result.wed!.lifecycle).toBe("unavailable");
     expect(result.wed!.hasUnavailableMark).toBe(true);
     assertPerceivableAffordance(result.wed!.unavailableMark, "calendar Wed unavailable em-dash mark");
-  });
 
-  test("locked and unavailable category slots", async ({ page }) => {
-    test.setTimeout(90_000);
-    await installWeekVisualMocks(page, {
-      allergenProfile: "declared_empty",
-      windowBody: buildWeekVisualWindowDaySelected(),
-    });
-    await navigateToWeek(page);
-    await waitForWeekVisualReady(page);
-
-    const monPill = page.locator('button[data-lp-date="2026-06-01"]');
-    for (let attempt = 0; attempt < 5; attempt++) {
-      await monPill.click();
-      if ((await page.locator("button.week-category-card.is-locked").count()) > 0) break;
-      await page.waitForTimeout(400);
-    }
+    await selectWeekDay(page, "2026-06-01");
     const lockedSlotLocator = page.locator("button.week-category-card.is-locked").first();
     await expect(lockedSlotLocator).toBeVisible({ timeout: 15_000 });
     const lockedDaySlots = await lockedSlotLocator.evaluate((slot) => {
@@ -153,12 +138,7 @@ test.describe("Week state probe (V.W6)", () => {
     // eslint-disable-next-line no-console
     console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
 
-    const thuPill = page.locator('button[data-lp-date="2026-06-04"]');
-    for (let attempt = 0; attempt < 5; attempt++) {
-      await thuPill.click();
-      if ((await page.locator("button.week-category-card.is-unavailable").count()) > 0) break;
-      await page.waitForTimeout(400);
-    }
+    await selectWeekDay(page, "2026-06-04");
     const unavailableSlotLocator = page.locator("button.week-category-card.is-unavailable").first();
     await expect(unavailableSlotLocator).toBeVisible({ timeout: 15_000 });
     const unavailableSlot = await unavailableSlotLocator.evaluate((slot) => {
