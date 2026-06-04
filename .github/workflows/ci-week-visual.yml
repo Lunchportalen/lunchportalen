@@ -248,6 +248,7 @@ jobs:
           ls -la _8-review-surface/*-actual-crop.png
 
       - name: Week visual regression (screenshot diff)
+        id: week_visual_screenshots
         shell: bash
         run: |
           FLAGS=""
