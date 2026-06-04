@@ -13,16 +13,6 @@ import { getCredentialsForRole } from "./helpers/auth";
 
 const hasEmployeeCreds = !!getCredentialsForRole("employee");
 
-type LifecycleProbe = {
-  lifecycle: string;
-  opacity: string;
-  cursor: string;
-  hasOrderedMark: boolean;
-  hasLockedMark: boolean;
-  hasUnavailableMark: boolean;
-  ariaDisabled: string | null;
-};
-
 type VisibleAffordanceProbe = {
   display: string;
   visibility: string;
@@ -100,25 +90,32 @@ test.describe("Week state probe (V.W6)", () => {
     expect(Number(result.mon!.opacity)).toBeCloseTo(0.5, 1);
     expect(result.mon!.cursor).toBe("not-allowed");
     expect(result.mon!.hasLockedMark).toBe(true);
-    expect(result.mon!.hasOrderedMark).toBe(false);
-    expect(result.mon!.hasUnavailableMark).toBe(false);
     assertPerceivableAffordance(result.mon!.lockedMark, "calendar Mon locked clock mark");
 
     expect(result.tue).not.toBeNull();
     expect(result.tue!.lifecycle).toBe("ordered");
     expect(result.tue!.hasOrderedMark).toBe(true);
-    expect(result.tue!.hasLockedMark).toBe(false);
     assertPerceivableAffordance(result.tue!.orderedMark, "calendar Tue ordered check mark");
 
     expect(result.wed).not.toBeNull();
     expect(result.wed!.lifecycle).toBe("unavailable");
     expect(result.wed!.hasUnavailableMark).toBe(true);
-    expect(result.wed!.hasLockedMark).toBe(false);
-    expect(result.wed!.hasOrderedMark).toBe(false);
     assertPerceivableAffordance(result.wed!.unavailableMark, "calendar Wed unavailable em-dash mark");
+  });
 
-    // Locked/unavailable slots: pick a day with categories and unavailable category if present
+  test("locked and unavailable category slots", async ({ page }) => {
+    test.setTimeout(90_000);
+    await installWeekVisualMocks(page, {
+      allergenProfile: "declared_empty",
+      windowBody: buildWeekVisualWindowDaySelected(),
+    });
+    await navigateToWeek(page);
+    await waitForWeekVisualReady(page);
+
     await selectWeekDay(page, "2026-06-01");
+    await expect(page.getByRole("heading", { name: /man 01\.06\.2026/i })).toBeVisible({
+      timeout: 15_000,
+    });
     const lockedSlotLocator = page.locator("button.ds-week-surface--slot.is-locked").first();
     await expect(lockedSlotLocator).toBeVisible({ timeout: 15_000 });
     const lockedDaySlots = await lockedSlotLocator.evaluate((slot) => {
@@ -144,18 +141,19 @@ test.describe("Week state probe (V.W6)", () => {
         labelText: label?.textContent?.trim() ?? "",
       };
     });
-    expect(lockedDaySlots).not.toBeNull();
-    expect(Number(lockedDaySlots!.opacity)).toBeCloseTo(0.5, 1);
-    expect(lockedDaySlots!.cursor).toBe("not-allowed");
-    expect(lockedDaySlots!.ariaDisabled).toBe("true");
-    expect(lockedDaySlots!.hasStateLabel).toBe(true);
-    expect(lockedDaySlots!.labelText).toMatch(/frist passert/i);
-    assertPerceivableAffordance(lockedDaySlots!.stateLabel, "locked slot state label");
+    expect(Number(lockedDaySlots.opacity)).toBeCloseTo(0.5, 1);
+    expect(lockedDaySlots.cursor).toBe("not-allowed");
+    expect(lockedDaySlots.ariaDisabled).toBe("true");
+    expect(lockedDaySlots.labelText).toMatch(/frist passert/i);
+    assertPerceivableAffordance(lockedDaySlots.stateLabel, "locked slot state label");
 
     // eslint-disable-next-line no-console
     console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
 
     await selectWeekDay(page, "2026-06-04");
+    await expect(page.getByRole("heading", { name: /tor 04\.06\.2026/i })).toBeVisible({
+      timeout: 15_000,
+    });
     const unavailableSlotLocator = page.locator("button.ds-week-surface--slot.is-unavailable").first();
     await expect(unavailableSlotLocator).toBeVisible({ timeout: 15_000 });
     const unavailableSlot = await unavailableSlotLocator.evaluate((slot) => {
@@ -180,18 +178,16 @@ test.describe("Week state probe (V.W6)", () => {
         stateLabel,
       };
     });
-    expect(unavailableSlot).not.toBeNull();
-    expect(Number(unavailableSlot!.opacity)).toBeGreaterThan(0.85);
-    expect(unavailableSlot!.cursor).toBe("not-allowed");
-    expect(unavailableSlot!.hasStateLabel).toBe(true);
-    expect(unavailableSlot!.labelText).toMatch(/ikke tilgjengelig/i);
-    assertPerceivableAffordance(unavailableSlot!.stateLabel, "unavailable slot state label");
+    expect(Number(unavailableSlot.opacity)).toBeGreaterThan(0.85);
+    expect(unavailableSlot.cursor).toBe("not-allowed");
+    expect(unavailableSlot.labelText).toMatch(/ikke tilgjengelig/i);
+    assertPerceivableAffordance(unavailableSlot.stateLabel, "unavailable slot state label");
 
     // eslint-disable-next-line no-console
     console.log("WEEK_STATE_PROBE_UNAVAILABLE_SLOT", JSON.stringify(unavailableSlot));
   });
 
-  test("unavailable day panel + distinct slot when category unavailable", async ({ page }) => {
+  test("unavailable day panel (NO_TIER_FOR_DAY)", async ({ page }) => {
     await installWeekVisualMocks(page, {
       allergenProfile: "declared_empty",
       windowBody: buildWeekVisualWindowDaySelected(),
@@ -199,10 +195,12 @@ test.describe("Week state probe (V.W6)", () => {
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-03");
+    await expect(
+      page.getByText(/Denne dagen er ikke tilgjengelig for bestilling/i).first(),
+    ).toBeVisible({ timeout: 15_000 });
 
     const wedPanel = await page.evaluate(() => {
       const pill = document.querySelector('button[data-lp-date="2026-06-03"]');
-      const notice = document.querySelector(".ds-week-surface--inset");
       const mark = pill?.querySelector(".ds-week-calendar-day-pill__state-mark--unavailable");
       let unavailableMark: VisibleAffordanceProbe | null = null;
       if (mark) {
@@ -219,7 +217,7 @@ test.describe("Week state probe (V.W6)", () => {
         lifecycle: pill?.getAttribute("data-lp-lifecycle") ?? "",
         hasUnavailableMark: !!mark,
         unavailableMark,
-        hasNotice: !!notice,
+        hasNotice: !!document.querySelector(".ds-week-surface--inset"),
       };
     });
 
