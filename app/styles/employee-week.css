@@ -125,23 +125,44 @@
   height: 100%;
 }
 
-.ds-week-calendar-day-pill__state-mark--ordered,
+/* Legacy glyph footprints (✓ 11px / clock 12px in 14px / — 14px) — font-size 12px keeps V.W8 probe */
+.ds-week-calendar-day-pill__state-mark--ordered {
+  display: block;
+  height: 11px;
+  line-height: 11px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ds-accent);
+}
+
 .ds-week-calendar-day-pill__state-mark--locked,
 .ds-week-calendar-day-pill__state-mark--unavailable {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 14px;
+  height: 14px;
+  line-height: 14px;
   font-size: 12px;
 }
 
-.ds-week-calendar-day-pill__state-mark--ordered {
-  color: var(--ds-accent);
+.ds-week-calendar-day-pill__state-mark--locked {
+  color: var(--ds-text-soft);
 }
 
-.ds-week-calendar-day-pill__state-mark--locked,
 .ds-week-calendar-day-pill__state-mark--unavailable {
-  color: var(--ds-text-soft);
+  font-weight: 600;
+  color: var(--ds-text);
+  letter-spacing: 0.08em;
+}
+
+.ds-week-calendar-day-pill__state-mark--ordered .ds-week-icon,
+.ds-week-calendar-day-pill__state-mark--locked .ds-week-icon,
+.ds-week-calendar-day-pill__state-mark--unavailable .ds-week-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  vertical-align: 0;
 }
 
 .ds-week-calendar-day-pill--locked:not(.ds-week-calendar-day-pill--selected) {

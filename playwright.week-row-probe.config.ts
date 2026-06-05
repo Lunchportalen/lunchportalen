@@ -18,13 +18,14 @@ const externalServer =
 export default defineConfig({
   testDir: "./e2e",
   testMatch: [
+    "**/week-icon-probe.e2e.ts",
     "**/week-row-radius-probe.e2e.ts",
     "**/week-slot-probe.e2e.ts",
     "**/week-chip-probe.e2e.ts",
     "**/week-motion-probe.e2e.ts",
     "**/week-state-probe.e2e.ts",
     "**/week-collapse-probe.e2e.ts",
-    "**/week-icon-probe.e2e.ts",
+    "**/week-icon-eyes-on.e2e.ts",
   ],
   globalSetup: useEmployeeSession
     ? "./e2e/global-setup/week-visual-auth.setup.ts"

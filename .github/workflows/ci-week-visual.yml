@@ -19,6 +19,7 @@ on:
       - "e2e/week-state-probe.e2e.ts"
       - "e2e/week-collapse-probe.e2e.ts"
       - "e2e/week-icon-probe.e2e.ts"
+      - "e2e/week-icon-eyes-on.e2e.ts"
       - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
       - "e2e/helpers/week-visual-auth.ts"
@@ -44,6 +45,7 @@ on:
       - "e2e/week-state-probe.e2e.ts"
       - "e2e/week-collapse-probe.e2e.ts"
       - "e2e/week-icon-probe.e2e.ts"
+      - "e2e/week-icon-eyes-on.e2e.ts"
       - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
       - "e2e/helpers/week-visual-auth.ts"
@@ -198,10 +200,55 @@ jobs:
           PORT: 3000
           LP_DEBUG_AUTH: "1"
 
-      - name: STEG 5.3–8 surface computed-style probes (row + slot + chip + motion + state + collapse + icon)
-        run: npx playwright test --config playwright.week-row-probe.config.ts --project week-visual-desktop --reporter=list
+      - name: Full suite probe determinism (V.20 — 3× Linux, real gate)
+        shell: bash
+        env:
+          LP_REVIEW_SURFACE_OUT: _8-review-surface
+        run: |
+          set -euo pipefail
+          mkdir -p _8-review-surface
+          python3 - <<'PY'
+          import json, os, subprocess, sys
+          runs = []
+          env = {**os.environ, "LP_REVIEW_SURFACE_OUT": "_8-review-surface"}
+          for i in range(1, 4):
+              print(f"::group::Full suite probe run {i}/3")
+              p = subprocess.run(
+                  [
+                      "npx", "playwright", "test",
+                      "--config", "playwright.week-row-probe.config.ts",
+                      "--project", "week-visual-desktop",
+                      "--reporter=line",
+                      "--grep-invert", "@week-icon-eyes-on",
+                  ],
+                  env=env,
+              )
+              print("::endgroup::")
+              runs.append({"run": i, "exitCode": p.returncode, "pass": p.returncode == 0})
+              if p.returncode != 0:
+                  break
+          payload = {
+              "gate": "full_suite_probe",
+              "runs": runs,
+              "allPass": len(runs) == 3 and all(r["pass"] for r in runs),
+          }
+          with open("_8-review-surface/FULL_SUITE_PROBE_DETERMINISM.json", "w", encoding="utf-8") as f:
+              json.dump(payload, f, indent=2)
+              f.write("\n")
+          if not payload["allPass"]:
+              sys.exit(1)
+          PY
+
+      - name: STEG 8 eyes-on element clips (Docker)
+        env:
+          LP_REVIEW_SURFACE_OUT: _8-review-surface
+        run: |
+          mkdir -p _8-review-surface
+          npx playwright test e2e/week-icon-eyes-on.e2e.ts --config playwright.week-row-probe.config.ts --project week-visual-desktop --reporter=list
+          ls -la _8-review-surface/*-actual-crop.png
 
       - name: Week visual regression (screenshot diff)
+        id: week_visual_screenshots
         shell: bash
         run: |
           FLAGS=""
@@ -233,6 +280,16 @@ jobs:
           name: week-visual-snapshots-linux
           path: e2e/week-visual-regression.e2e.ts-snapshots/
           retention-days: 7
+
+      - name: Upload STEG 8 review surface (eyes-on + probe)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: steg8-review-surface
+          path: _8-review-surface/
+          retention-days: 14
+          if-no-files-found: warn
+          include-hidden-files: true
 
       - name: Upload week visual report on failure
         if: failure()

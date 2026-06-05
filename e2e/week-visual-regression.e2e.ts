@@ -2,12 +2,15 @@
 import { test, expect } from "@playwright/test";
 
 import {
+  buildWeekVisualWindowAllergenCollapsed,
   buildWeekVisualWindowDaySelected,
   buildWeekVisualWindowOrderedUpcoming,
   installWeekVisualMocks,
+  installWeekVisualOsloClock,
   navigateToWeek,
   selectWeekDay,
   waitForWeekVisualReady,
+  WEEK_VISUAL_ALLERGEN_PINNED_OSLO_DATE,
   WEEK_VISUAL_SCREENSHOT_OPTS,
   weekMainLocator,
 } from "./helpers/week-visual";
@@ -23,12 +26,14 @@ test.describe("Week visual regression @week-visual", () => {
   });
 
   test("allergen declared_empty — collapsed", async ({ page }, testInfo) => {
+    await installWeekVisualOsloClock(page, WEEK_VISUAL_ALLERGEN_PINNED_OSLO_DATE);
     await installWeekVisualMocks(page, {
       allergenProfile: "declared_empty",
-      windowBody: buildWeekVisualWindowDaySelected(),
+      windowBody: buildWeekVisualWindowAllergenCollapsed(),
     });
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
+    await expect(page.getByRole("heading", { name: /tor 04\.06\.2026/i })).toBeVisible();
 
     const summary = page.locator(".ds-allergen-disclosure__summary");
     await expect(summary).toHaveAttribute("aria-expanded", "false");
@@ -41,12 +46,14 @@ test.describe("Week visual regression @week-visual", () => {
   });
 
   test("allergen has_data — collapsed", async ({ page }, testInfo) => {
+    await installWeekVisualOsloClock(page, WEEK_VISUAL_ALLERGEN_PINNED_OSLO_DATE);
     await installWeekVisualMocks(page, {
       allergenProfile: "has_data",
-      windowBody: buildWeekVisualWindowDaySelected(),
+      windowBody: buildWeekVisualWindowAllergenCollapsed(),
     });
     await navigateToWeek(page);
     await waitForWeekVisualReady(page);
+    await expect(page.getByRole("heading", { name: /tor 04\.06\.2026/i })).toBeVisible();
 
     const summary = page.locator(".ds-allergen-disclosure__summary");
     await expect(summary).toHaveAttribute("aria-expanded", "false");
