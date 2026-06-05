@@ -19,6 +19,7 @@ export default defineConfig({
   testDir: "./e2e",
   testMatch: [
     "**/week-icon-probe.e2e.ts",
+    "**/week-typography-probe.e2e.ts",
     "**/week-row-radius-probe.e2e.ts",
     "**/week-slot-probe.e2e.ts",
     "**/week-chip-probe.e2e.ts",

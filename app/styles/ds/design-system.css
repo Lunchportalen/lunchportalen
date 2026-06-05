@@ -73,6 +73,8 @@
   --ds-body-lg:clamp(18px,round(2.2vw,1px),25px);
   --ds-body:18px;
   --ds-body-sm:15px;
+  --ds-body-xs:12px;
+  --ds-body-xxs:11px;
 }
 
 *,*::before,*::after{box-sizing:border-box;}

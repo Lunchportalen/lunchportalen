@@ -26,8 +26,6 @@ const SLOT_ORDERED_CHECK_AFTER_BASELINE = {
   right: "12px",
 } as const;
 
-const CALENDAR_MARK_FONT_SIZE_PX = 12;
-
 type IconRectProbe = {
   markColor: string;
   fontSize: string;
@@ -66,7 +64,11 @@ test.describe("Week icon probe (V.W8)", () => {
     await waitForWeekVisualReady(page);
     await selectWeekDay(page, "2026-06-02");
 
-    const calendarProbe = await page.evaluate((fontSizePx) => {
+    const calendarProbe = await page.evaluate(() => {
+      const dsBodyXs = getComputedStyle(document.documentElement)
+        .getPropertyValue("--ds-body-xs")
+        .trim();
+
       const readCalendarIcon = (iso: string, selector: string): IconRectProbe | null => {
         const pill = document.querySelector(`button[data-lp-date="${iso}"]`);
         const mark = pill?.querySelector(selector);
@@ -97,9 +99,9 @@ test.describe("Week icon probe (V.W8)", () => {
           "2026-06-03",
           ".ds-week-calendar-day-pill__state-mark--unavailable",
         ),
-        fontSizeRawPx: fontSizePx,
+        dsBodyXs,
       };
-    }, CALENDAR_MARK_FONT_SIZE_PX);
+    });
 
     expect(calendarProbe.locked, "Mon locked calendar icon").not.toBeNull();
     expect(calendarProbe.ordered, "Tue ordered calendar icon").not.toBeNull();
@@ -112,8 +114,8 @@ test.describe("Week icon probe (V.W8)", () => {
       expect(icon.resolvedHeight, "calendar icon perceivable height").toBeGreaterThan(0);
       expect(icon.resolvedWidth, "calendar icon perceivable width").toBeGreaterThan(0);
       expect(icon.color, "icon color follows mark currentColor").toBe(icon.markColor);
-      expect(parseFloat(icon.fontSize), "calendar mark font-size 12px (raw, not token)").toBe(
-        CALENDAR_MARK_FONT_SIZE_PX,
+      expect(icon.fontSize, "calendar mark font-size === --ds-body-xs token").toBe(
+        calendarProbe.dsBodyXs,
       );
     }
 
@@ -220,7 +222,7 @@ test.describe("Week icon probe (V.W8)", () => {
           width: calendarProbe.unavailable!.resolvedWidth,
           height: calendarProbe.unavailable!.resolvedHeight,
         },
-        fontSizeRawPx: CALENDAR_MARK_FONT_SIZE_PX,
+        dsBodyXs: calendarProbe.dsBodyXs,
         allCalendarIconsSameResolvedPx:
           calIcons[0]!.resolvedWidth === calIcons[1]!.resolvedWidth &&
           calIcons[0]!.resolvedHeight === calIcons[2]!.resolvedHeight,
