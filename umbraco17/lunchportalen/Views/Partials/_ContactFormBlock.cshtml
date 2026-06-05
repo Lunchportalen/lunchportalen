@@ -1,22 +1,14 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using Umbraco.Extensions
 
 @{
     var heading = Model.Value<string>("heading") ?? "Send oss en forespørsel";
     var text = Model.Value<string>("text");
-    var nameLabel = Model.Value<string>("nameLabel") ?? "Navn";
-    var emailLabel = Model.Value<string>("emailLabel") ?? "E-post";
-    var phoneLabel = Model.Value<string>("phoneLabel") ?? "Telefon";
-    var companyLabel = Model.Value<string>("companyLabel") ?? "Bedrift";
-    var orgNumberLabel = Model.Value<string>("orgNumberLabel") ?? "Organisasjonsnummer";
-    var messageLabel = Model.Value<string>("messageLabel") ?? "Hva ønsker dere hjelp med?";
     var buttonLabel = Model.Value<string>("buttonLabel") ?? "Send forespørsel";
 
     var currentPath = Context.Request.Path.ToString().ToLowerInvariant();
     var isDemoPage = currentPath.Contains("/demo");
-
-    var formSource = isDemoPage ? "demo" : "kontakt";
-    var formAction = isDemoPage ? "/demo/" : "/kontakt/";
+    var source = isDemoPage ? "demo-page" : "kontakt-page";
     var eyebrow = isDemoPage ? "Demo" : "Kontakt";
 }
 
@@ -39,48 +31,14 @@
             </div>
         </div>
 
-        <form class="lp-contact-form" method="post" action="@formAction">
-            <input type="hidden" name="source" value="@formSource" />
-
-            <div class="lp-contact-form__grid">
-                <label>
-                    <span>@nameLabel</span>
-                    <input type="text" name="name" autocomplete="name" required />
-                </label>
-
-                <label>
-                    <span>@emailLabel</span>
-                    <input type="email" name="email" autocomplete="email" required />
-                </label>
-
-                <label>
-                    <span>@phoneLabel</span>
-                    <input type="tel" name="phone" autocomplete="tel" />
-                </label>
-
-                <label>
-                    <span>@companyLabel</span>
-                    <input type="text" name="company" autocomplete="organization" />
-                </label>
-
-                <label>
-                    <span>@orgNumberLabel</span>
-                    <input type="text" name="orgNumber" inputmode="numeric" pattern="[0-9]{9}" placeholder="9 siffer" />
-                </label>
-            </div>
-
-            <label class="lp-contact-form__message">
-                <span>@messageLabel</span>
-                <textarea name="message" rows="6" required></textarea>
-            </label>
-
-            <button type="submit">
+        <div class="lp-contact-form lp-contact-form--cta">
+            <a href="@AppUrls.Demo(source)"
+               class="lp-contact-form__cta"
+               aria-label="@buttonLabel – åpner kontaktskjema i Lunchportalen-appen">
                 @buttonLabel
                 <span aria-hidden="true">→</span>
-            </button>
-        </form>
+            </a>
+        </div>
 
     </div>
 </section>
-
-

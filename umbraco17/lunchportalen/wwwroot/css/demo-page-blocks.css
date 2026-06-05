@@ -331,6 +331,10 @@ body {
     transform: translateY(0);
 }
 
+.lp-reveal--delay-100 {
+    --delay: 100ms;
+}
+
 /* Progressive enhancement: native scroll animation for
    browsers that support it (Chrome 115+). The JS fallback
    above still works — whichever fires first wins. */
@@ -551,6 +555,69 @@ body {
     font-size: .82rem;
     font-weight: 900;
     line-height: 1;
+}
+
+.lp-demo-booking-cta {
+    padding: 28px;
+    display: grid;
+    gap: 16px;
+    border: 1px solid rgba(17, 17, 17, .11);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, .85);
+    box-shadow: 0 24px 64px rgba(17, 17, 17, .08);
+}
+
+@media (min-width: 980px) {
+    .lp-demo-booking-cta {
+        position: sticky;
+        top: calc(var(--lp-nav-h) + 24px);
+    }
+}
+
+.lp-demo-booking-cta__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 54px;
+    min-width: 48px;
+    border-radius: 999px;
+    padding: 0 28px;
+    width: 100%;
+    background: linear-gradient(135deg, #f5c518 0%, #ffd43b 100%);
+    color: #111;
+    border: 1px solid rgba(255, 255, 255, .50);
+    box-shadow:
+        0 16px 40px var(--lp-gold-glow),
+        inset 0 1px 0 rgba(255, 255, 255, .55);
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: .01em;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        transform  .22s cubic-bezier(.22, .8, .22, 1),
+        box-shadow .22s ease;
+}
+
+.lp-demo-booking-cta__btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 20px 48px var(--lp-gold-glow),
+        inset 0 1px 0 rgba(255, 255, 255, .55);
+}
+
+.lp-demo-booking-cta__btn:focus-visible {
+    outline: 3px solid rgba(245, 197, 24, .65);
+    outline-offset: 3px;
+}
+
+.lp-demo-booking-cta__note {
+    margin: 0;
+    font-size: .92rem;
+    line-height: 1.5;
+    color: rgba(17, 17, 17, .62);
+    text-align: center;
 }
 
 /* Form card */

@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using System.Linq
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
@@ -21,7 +21,7 @@
     var secondaryCta      = secondaryCtaLinks?.FirstOrDefault();
     var heroImage         = content.Value<IPublishedContent>("heroImage");
     var heroImageUrl      = heroImage?.Url() ?? "";
-    var primaryUrl        = !string.IsNullOrWhiteSpace(primaryCta?.Url)   ? primaryCta.Url   : "/kom-i-gang/";
+    var primaryUrl        = AppUrls.ResolveLeadCapture(primaryCta?.Url, "hero");
     var secondaryUrl      = !string.IsNullOrWhiteSpace(secondaryCta?.Url) ? secondaryCta.Url : "/losningen/";
     var stats             = content.Value<IEnumerable<BlockListItem>>("stats");
     var logos             = content.Value<IEnumerable<string>>("logos");

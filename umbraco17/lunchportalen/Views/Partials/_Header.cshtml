@@ -1,4 +1,4 @@
-﻿@using Umbraco.Extensions
+@using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Cms.Web.Common
@@ -12,8 +12,8 @@
         .FirstOrDefault(x => x.ContentType.Alias == "siteSettings");
 
     var ctaLabel = siteSettings?.Value<string>("ctaTekst") ?? "Kom i gang";
-    var ctaUrl = siteSettings?.Value<string>("ctaLenke") ?? "/kom-i-gang/";
-    var orderUrl = "/login";
+    var ctaUrl = AppUrls.ResolveLeadCapture(siteSettings?.Value<string>("ctaLenke"), "header-cta");
+    var orderUrl = AppUrls.Login;
 
     var headerLogo = siteSettings?.Value<MediaWithCrops>("headerLogo");
     IPublishedContent? logoMedia = headerLogo?.Content;

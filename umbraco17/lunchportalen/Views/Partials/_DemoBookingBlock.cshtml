@@ -1,25 +1,16 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
-@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
-@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 
 @{
     var eyebrow = Model.Value<string>("eyebrow") ?? "Book demo";
     var heading = Model.Value<string>("heading") ?? "Se hvordan dere kan få kontroll på firmalunsj";
     var text    = Model.Value<string>("text")    ?? "Vi viser hvordan Lunchportalen fungerer i praksis, og hvordan løsningen kan settes opp for deres ansatte, leveringsdager og behov – uten forpliktelser.";
-    var action  = Model.Value<string>("formAction") ?? "/kontakt/";
     var btnText = Model.Value<string>("buttonText") ?? "Book demo";
 
     var checkBlocks   = Model.Value<BlockListModel>("checks");
     var defaultChecks = new[] { "15 minutter", "Ingen forpliktelser", "Passer bedrifter med 20+ ansatte" };
     bool hasChecks    = checkBlocks != null && checkBlocks.Any();
-
-    var tokens    = Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!);
-    var csrfToken = tokens.RequestToken ?? "";
-
-    var formId = $"lp-booking-{Guid.NewGuid():N}";
-    var hpId   = $"{formId}-hp";
 }
 
 <section class="lp-demo-booking" id="book-demo">
@@ -52,174 +43,15 @@
             </ul>
         </div>
 
-        <form class="lp-demo-form lp-reveal"
-              style="--delay: 100ms"
-              id="@formId"
-              method="post"
-              action="@action"
-              novalidate
-              aria-label="Bookingskjema for demo">
-
-            <input type="hidden" name="@tokens.FormFieldName" value="@csrfToken" />
-
-            <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden" aria-hidden="true">
-                <label for="@hpId">La dette stå tomt</label>
-                <input type="text" id="@hpId" name="__hp" tabindex="-1" autocomplete="off" />
-            </div>
-
-            <label for="@(formId)-name">
-                Navn
-                <input type="text"
-                       id="@(formId)-name"
-                       name="name"
-                       placeholder="Ditt navn"
-                       autocomplete="name"
-                       required
-                       aria-required="true"
-                       aria-describedby="@(formId)-name-err" />
-                <span class="lp-demo-form__err" id="@(formId)-name-err" role="alert" aria-live="polite"></span>
-            </label>
-
-            <label for="@(formId)-company">
-                Firma
-                <input type="text"
-                       id="@(formId)-company"
-                       name="company"
-                       placeholder="Firmanavn"
-                       autocomplete="organization"
-                       required
-                       aria-required="true"
-                       aria-describedby="@(formId)-company-err" />
-                <span class="lp-demo-form__err" id="@(formId)-company-err" role="alert" aria-live="polite"></span>
-            </label>
-
-            <label for="@(formId)-employees">
-                Antall ansatte
-                <input type="number"
-                       id="@(formId)-employees"
-                       name="employees"
-                       placeholder="F.eks. 45"
-                       min="1"
-                       step="1"
-                       required
-                       aria-required="true"
-                       aria-describedby="@(formId)-employees-err" />
-                <span class="lp-demo-form__err" id="@(formId)-employees-err" role="alert" aria-live="polite"></span>
-            </label>
-
-            <label for="@(formId)-contact">
-                Telefon eller e-post
-                <input type="text"
-                       id="@(formId)-contact"
-                       name="contact"
-                       placeholder="Hvordan kan vi nå deg?"
-                       autocomplete="email"
-                       required
-                       aria-required="true"
-                       aria-describedby="@(formId)-contact-err" />
-                <span class="lp-demo-form__err" id="@(formId)-contact-err" role="alert" aria-live="polite"></span>
-            </label>
-
-            <button type="submit" aria-describedby="@(formId)-status">
-                <span class="lp-demo-form__btn-text">@btnText</span>
-                <span class="lp-demo-form__btn-spinner" aria-hidden="true"></span>
-            </button>
-
-            <p class="lp-demo-form__status" id="@(formId)-status" role="status" aria-live="polite"></p>
-
-        </form>
+        <div class="lp-demo-booking-cta lp-reveal lp-reveal--delay-100">
+            <a href="@AppUrls.Demo("demo-booking")"
+               class="lp-demo-booking-cta__btn"
+               aria-label="@btnText – åpner demo-skjema i Lunchportalen-appen">
+                @btnText
+            </a>
+            <p class="lp-demo-booking-cta__note">
+                Vi tar kontakt innen én virkedag. Ingen forpliktelser.
+            </p>
+        </div>
     </div>
 </section>
-
-<script>
-(function () {
-    var form = document.getElementById('@formId');
-    if (!form) return;
-
-    var btn     = form.querySelector('button[type="submit"]');
-    var btnText = form.querySelector('.lp-demo-form__btn-text');
-    var status  = form.querySelector('.lp-demo-form__status');
-
-    var messages = {
-        name:      { valueMissing: 'Vennligst oppgi navnet ditt.' },
-        company:   { valueMissing: 'Vennligst oppgi firmanavnet.' },
-        employees: { valueMissing: 'Oppgi antall ansatte.', rangeUnderflow: 'Minimum 1 ansatt.' },
-        contact:   { valueMissing: 'Oppgi telefonnummer eller e-postadresse.' }
-    };
-
-    function validate(input) {
-        var errEl = document.getElementById(input.id + '-err');
-        if (!errEl) return input.checkValidity();
-
-        if (!input.checkValidity()) {
-            var fieldMsgs = messages[input.name] || {};
-            var msg = '';
-            for (var key in fieldMsgs) {
-                if (input.validity[key]) { msg = fieldMsgs[key]; break; }
-            }
-            errEl.textContent = msg || input.validationMessage;
-            input.setAttribute('aria-invalid', 'true');
-            input.classList.add('is-invalid');
-            return false;
-        }
-
-        errEl.textContent = '';
-        input.removeAttribute('aria-invalid');
-        input.classList.remove('is-invalid');
-        input.classList.add('is-valid');
-        return true;
-    }
-
-    form.querySelectorAll('input[required]').forEach(function (input) {
-        input.addEventListener('blur', function () { validate(input); });
-        input.addEventListener('input', function () {
-            if (input.classList.contains('is-invalid')) validate(input);
-        });
-    });
-
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        var hp = form.querySelector('input[name="__hp"]');
-        if (hp && hp.value) return;
-
-        var valid = true;
-        form.querySelectorAll('input[required]').forEach(function (input) {
-            if (!validate(input)) valid = false;
-        });
-        if (!valid) {
-            form.querySelector('.is-invalid').focus();
-            return;
-        }
-
-        btn.disabled = true;
-        btn.classList.add('is-loading');
-        btnText.textContent = 'Sender…';
-        status.textContent  = '';
-
-        fetch(form.action, {
-            method:  'POST',
-            body:    new FormData(form),
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(function (res) {
-            if (!res.ok) throw new Error('server');
-        })
-        .then(function () {
-            btn.classList.remove('is-loading');
-            btn.classList.add('is-success');
-            btnText.textContent = '✓ Sendt!';
-            status.textContent  = 'Takk! Vi tar kontakt med deg innen én virkedag.';
-            status.className    = 'lp-demo-form__status is-success';
-            form.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
-        })
-        .catch(function () {
-            btn.disabled = false;
-            btn.classList.remove('is-loading');
-            btnText.textContent = '@btnText';
-            status.textContent  = 'Noe gikk galt. Prøv igjen eller send oss en e-post på post@lunchportalen.no.';
-            status.className    = 'lp-demo-form__status is-error';
-        });
-    });
-})();
-</script>

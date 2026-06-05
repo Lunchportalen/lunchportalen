@@ -1,4 +1,4 @@
-﻿@using System.Linq
+@using System.Linq
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.Blocks
@@ -287,7 +287,7 @@
 
         var ctaLink  = GetFirstLink(content.Value("ctaLink"));
         var ctaLabel = ctaLink?.Name ?? "Kom i gang";
-        var ctaUrl   = ctaLink?.Url ?? "/registrer-firma/";
+        var ctaUrl   = AppUrls.ResolveLeadCapture(ctaLink?.Url, "hero-banner");
 
         <section class="lp-hero">
             <div class="ds-container lp-hero__inner">
@@ -313,7 +313,7 @@
 
                     <div class="lp-hero__actions">
                         <a class="lp-hero__btn lp-hero__btn--primary" href="@ctaUrl">@ctaLabel</a>
-                        <a class="lp-hero__btn lp-hero__btn--secondary" href="/login/">Logg inn</a>
+                        <a class="lp-hero__btn lp-hero__btn--secondary" href="@AppUrls.Login">Logg inn</a>
                     </div>
 
                     <div class="lp-hero__trust">

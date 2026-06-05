@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using System.Linq
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
@@ -14,6 +14,7 @@
     var formTitle             = Model.Value<string>("formTitle");
     var submitLabel           = Model.Value<string>("submitLabel");
     var submitNote            = Model.Value<string>("submitNote");
+    var ctaLabel              = string.IsNullOrWhiteSpace(submitLabel) ? "Book demo" : submitLabel;
 }
 
 <section class="kig-form-section" id="kig-form">
@@ -83,68 +84,21 @@
             </div>
 
             <div class="kig-form-card">
-                <div id="kig-form-fields">
-                    @if (!string.IsNullOrWhiteSpace(formTitle))
-                    {
-                        <div class="kig-form-card__title">@formTitle</div>
-                    }
-                    <form class="kig-form" id="kigBookingForm" novalidate>
-                        <div class="kig-form__field">
-                            <label class="kig-form__label" for="kig-name">Navn</label>
-                            <input class="kig-form__input" id="kig-name" name="name" type="text" placeholder="Ditt navn" required />
-                        </div>
-                        <div class="kig-form__field">
-                            <label class="kig-form__label" for="kig-firma">Firma</label>
-                            <input class="kig-form__input" id="kig-firma" name="firma" type="text" placeholder="Firmanavn" required />
-                        </div>
-                        <div class="kig-form__field">
-                            <label class="kig-form__label" for="kig-ansatte">Antall ansatte</label>
-                            <input class="kig-form__input" id="kig-ansatte" name="ansatte" type="text" placeholder="F.eks. 45" />
-                        </div>
-                        <div class="kig-form__field">
-                            <label class="kig-form__label" for="kig-kontakt">Telefon eller e-post</label>
-                            <input class="kig-form__input" id="kig-kontakt" name="kontakt" type="text" placeholder="Hvordan kan vi nå deg?" required />
-                        </div>
-                        <button class="kig-btn kig-btn--yellow kig-btn--full" type="submit">
-                            @(string.IsNullOrWhiteSpace(submitLabel) ? "Book demo" : submitLabel)
-                        </button>
-                        @if (!string.IsNullOrWhiteSpace(submitNote))
-                        {
-                            <div class="kig-form__note">@submitNote</div>
-                        }
-                    </form>
-                </div>
-                <div id="kig-form-success" class="kig-form-success" hidden>
-                    <div class="kig-form-success__icon" aria-hidden="true">
-                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                            <path d="M5 14l7 7 11-11" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <div class="kig-form-success__title">Vi er i gang!</div>
-                    <p class="kig-form-success__text">Vi kontakter deg innen 24 timer. Din utløpsdato og varslingsfrist vil alltid være synlig i portalen.</p>
-                </div>
+                @if (!string.IsNullOrWhiteSpace(formTitle))
+                {
+                    <div class="kig-form-card__title">@formTitle</div>
+                }
+                <a href="@AppUrls.Demo("kom-i-gang")"
+                   class="kig-btn kig-btn--yellow kig-btn--full"
+                   aria-label="@ctaLabel – åpner demo-skjema i Lunchportalen-appen">
+                    @ctaLabel
+                </a>
+                @if (!string.IsNullOrWhiteSpace(submitNote))
+                {
+                    <div class="kig-form__note">@submitNote</div>
+                }
             </div>
 
         </div>
     </div>
 </section>
-
-<script>
-(function () {
-    var form    = document.getElementById('kigBookingForm');
-    var fields  = document.getElementById('kig-form-fields');
-    var success = document.getElementById('kig-form-success');
-    if (!form) return;
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var valid = true;
-        form.querySelectorAll('[required]').forEach(function (el) {
-            if (!el.value.trim()) { el.classList.add('kig-form__input--error'); valid = false; }
-            else { el.classList.remove('kig-form__input--error'); }
-        });
-        if (!valid) return;
-        fields.hidden  = true;
-        success.hidden = false;
-    });
-})();
-</script>
