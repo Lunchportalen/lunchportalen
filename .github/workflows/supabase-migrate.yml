@@ -171,12 +171,23 @@ jobs:
           set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
+      # ✅ Guard verify: capture pinned CLI 2.102.0 dry-run output against uigx (fail-closed)
+      - name: Staging dry-run (guard verify, pinned CLI)
+        run: |
+          set -euo pipefail
+          set +e
+          OUT="$(supabase db push --dry-run --db-url "$STAGING_DATABASE_URL" 2>&1)"
+          DRY_EXIT=$?
+          set -e
+          echo "$OUT" | tee "$EVIDENCE_DIR/db-push-dry-run-staging.log"
+          node scripts/ci/db-push-preflight-guard.mjs --exit "$DRY_EXIT" < "$EVIDENCE_DIR/db-push-dry-run-staging.log"
+
       # ✅ Apply migrations to staging only when this PR changes migrations (fail-closed on apply)
       - name: Apply migrations (staging, session pooler)
         if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
         run: |
           set -euo pipefail
-          npx supabase@beta db push --db-url "$STAGING_DATABASE_URL" --yes \
+          supabase db push --db-url "$STAGING_DATABASE_URL" --yes \
             2>&1 | tee "$EVIDENCE_DIR/db-push.log"
 
       - name: Verify migration actually applied (staging)
@@ -321,7 +332,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          OUT="$(npx supabase@beta db push --dry-run --db-url "$PROD_DATABASE_URL" 2>&1)"
+          OUT="$(supabase db push --dry-run --db-url "$PROD_DATABASE_URL" 2>&1)"
           DRY_EXIT=$?
           set -e
           echo "$OUT" | tee "$EVIDENCE_DIR/db-push-dry-run.log"
@@ -330,7 +341,7 @@ jobs:
       - name: Apply migrations (prod, session pooler)
         run: |
           set -euo pipefail
-          npx supabase@beta db push --db-url "$PROD_DATABASE_URL" --yes \
+          supabase db push --db-url "$PROD_DATABASE_URL" --yes \
             2>&1 | tee "$EVIDENCE_DIR/db-push.log"
 
       - name: Verify migration actually applied (prod)

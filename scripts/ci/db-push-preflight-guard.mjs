@@ -1,6 +1,6 @@
 /**
  * Prod db push preflight: interpret `supabase db push --dry-run` output.
- * Patterns match verbatim CLI output (supabase@beta 2.103.x dry-run).
+ * Patterns match verbatim CLI output (setup-cli pinned supabase 2.102.0 dry-run).
  */
 
 /** @typedef {"proceed" | "abort"} PreflightDecision */
