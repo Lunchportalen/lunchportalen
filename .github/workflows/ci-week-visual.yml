@@ -32,6 +32,7 @@ on:
       - "scripts/ci/retry-npm-ci.sh"
       - "scripts/ci/retry-transient-network.sh"
       - ".github/workflows/ci-week-visual.yml"
+      - "vercel.json"
   pull_request:
     branches: ["main"]
     paths:
@@ -59,6 +60,7 @@ on:
       - "scripts/ci/retry-npm-ci.sh"
       - "scripts/ci/retry-transient-network.sh"
       - ".github/workflows/ci-week-visual.yml"
+      - "vercel.json"
   workflow_dispatch:
     inputs:
       update_snapshots:
