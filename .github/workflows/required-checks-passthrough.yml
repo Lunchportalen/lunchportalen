@@ -1,0 +1,100 @@
+# Docs-only / non-gated PR deadlock fix: emit the five path-filtered required checks
+# when no gated path changed. e2e is always-on (ci-e2e.yml) — not duplicated here.
+name: Required checks passthrough (docs-only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      # nextjs_ci_paths (ci.yml, ci-enterprise.yml, ci-agents.yml)
+      - "app/**"
+      - "components/**"
+      - "lib/**"
+      - "public/**"
+      - "studio/**"
+      - "supabase/**"
+      - "scripts/**"
+      - "tests/**"
+      - "e2e/**"
+      - "middleware.ts"
+      - "next.config.ts"
+      - "instrumentation.ts"
+      - "vercel.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - "playwright.config.ts"
+      - "tailwind.config.cjs"
+      - "postcss.config.cjs"
+      - ".eslintrc.cjs"
+      - "eslint.config.*"
+      - "AGENTS.md"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/ci-enterprise.yml"
+      - ".github/workflows/ci-agents.yml"
+      # supabase_ci_paths extras (supabase-migrate.yml)
+      - ".github/workflows/supabase-migrate.yml"
+      - "scripts/ci/migration-gate.mjs"
+      - "scripts/ci/db-contracts.mjs"
+      - "scripts/ci/assert-db-target.mjs"
+      - "scripts/smoke/cron-smoke.sh"
+      # ci-week-visual.yml paths (explicit union — bias include over dedupe)
+      - "app/(app)/week/**"
+      - "components/employee/**"
+      - "app/styles/**"
+      - "e2e/week-visual-regression.e2e.ts"
+      - "e2e/week-row-radius-probe.e2e.ts"
+      - "e2e/week-slot-probe.e2e.ts"
+      - "e2e/week-chip-probe.e2e.ts"
+      - "e2e/week-motion-probe.e2e.ts"
+      - "e2e/week-state-probe.e2e.ts"
+      - "e2e/week-collapse-probe.e2e.ts"
+      - "e2e/week-icon-probe.e2e.ts"
+      - "e2e/week-typography-probe.e2e.ts"
+      - "e2e/week-icon-eyes-on.e2e.ts"
+      - "playwright.week-row-probe.config.ts"
+      - "e2e/helpers/week-visual.ts"
+      - "e2e/helpers/week-visual-auth.ts"
+      - "e2e/global-setup/week-visual-auth.setup.ts"
+      - "e2e/fixtures/week-visual-window.base.json"
+      - "playwright.week-visual.config.ts"
+      - "e2e/week-visual-regression.e2e.ts-snapshots/**"
+      - "scripts/e2e/retry-seed-with-backoff.sh"
+      - "scripts/ci/retry-npm-ci.sh"
+      - "scripts/ci/retry-transient-network.sh"
+      - ".github/workflows/ci-week-visual.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+
+  enterprise:
+    name: enterprise
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+
+  agents_gate:
+    name: agents_gate
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+
+  staging:
+    name: staging
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+
+  week-visual:
+    name: week-visual
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
