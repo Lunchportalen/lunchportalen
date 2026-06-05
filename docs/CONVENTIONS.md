@@ -116,6 +116,18 @@ Hver hub har egen README.md som index.
 - **Pre-merge**: `npm run check:links` verifiserer at alle relative .md-lenker peker på eksisterende filer (etablert E.1, scaffold i scripts/check-doc-links.mjs)
 - **Weekly**: `.github/workflows/weekly-repo-intelligence-refresh.yml` — repo-intelligence + audit JSON refresh med auto-PR ved drift
 
+## Required-checks passthrough (docs-only)
+
+Fil `.github/workflows/required-checks-passthrough.yml`. Emitter Actions check-runs `build` / `enterprise` / `agents_gate` / `staging` / `week-visual` (exit 0) på PR-er som rører **ingen gated path** (`paths-ignore` = unionen av de 5 gatenes globs). Løser deadlocken der path-filtrerte required checks aldri rapporterer på docs/config-only PR-er.
+
+Required checks er **app-pinnet til GitHub Actions** (`app_id` **15368**) → kun Actions check-runs lukker dem; legacy commit-status duger ikke.
+
+**Determinisme:** ren-docs → passthrough gir de 5; ren-kode → passthrough skipper, ekte gater eier navnene. Verifisert: #119 (docs-only), #120 (`lib/**`).
+
+**Atomær-PR-regel (caveat):** en blandet PR (gated + ikke-gated paths) trigger **BÅDE** passthrough og ekte gate på samme navn → GitHub bruker sist-fullførte → timing-avhengig. Hold PR-er atomære: aldri bland kode og docs/config i samme PR.
+
+`e2e` er **ikke** passed through (always-on via `ci-e2e.yml`).
+
 ## Week visual computed-style gates (V.W*)
 
 Screenshot diff alene fanger ikke radius/border-token endringer (lav kontrast i pixel-diff). CI Week Visual kjører derfor **computed-style-prober** før screenshot-steg.
