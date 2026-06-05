@@ -19,6 +19,7 @@ on:
       - "e2e/week-state-probe.e2e.ts"
       - "e2e/week-collapse-probe.e2e.ts"
       - "e2e/week-icon-probe.e2e.ts"
+      - "e2e/week-typography-probe.e2e.ts"
       - "e2e/week-icon-eyes-on.e2e.ts"
       - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
@@ -45,6 +46,7 @@ on:
       - "e2e/week-state-probe.e2e.ts"
       - "e2e/week-collapse-probe.e2e.ts"
       - "e2e/week-icon-probe.e2e.ts"
+      - "e2e/week-typography-probe.e2e.ts"
       - "e2e/week-icon-eyes-on.e2e.ts"
       - "playwright.week-row-probe.config.ts"
       - "e2e/helpers/week-visual.ts"
@@ -200,7 +202,7 @@ jobs:
           PORT: 3000
           LP_DEBUG_AUTH: "1"
 
-      - name: Full suite probe determinism (V.20 — 3× Linux, real gate)
+      - name: STEG 5.3–9 surface computed-style probes (row + slot + chip + motion + state + collapse + icon + typography)
         shell: bash
         env:
           LP_REVIEW_SURFACE_OUT: _8-review-surface

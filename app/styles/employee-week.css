@@ -74,7 +74,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--ds-body-xs, 12px);
+  font-size: var(--ds-body-xs);
   font-weight: 700;
   line-height: 1.2;
   text-transform: capitalize;
@@ -91,7 +91,7 @@
 .ds-week-calendar-day-pill__daynum {
   display: block;
   margin-top: 0.25rem;
-  font-size: var(--ds-body-xxs, 11px);
+  font-size: var(--ds-body-xxs);
   font-weight: 500;
 }
 
@@ -130,7 +130,7 @@
   display: block;
   height: 11px;
   line-height: 11px;
-  font-size: 12px;
+  font-size: var(--ds-body-xs);
   font-weight: 700;
   color: var(--ds-accent);
 }
@@ -143,7 +143,7 @@
   min-height: 14px;
   height: 14px;
   line-height: 14px;
-  font-size: 12px;
+  font-size: var(--ds-body-xs);
 }
 
 .ds-week-calendar-day-pill__state-mark--locked {
@@ -242,7 +242,7 @@
   border-radius: var(--ds-radius-pill);
   border: none;
   box-shadow: 0 0 0 1px var(--ds-line);
-  font-size: 12px;
+  font-size: var(--ds-body-xs);
   line-height: 16px;
 }
 
@@ -472,7 +472,7 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   align-items: center;
   gap: 4px;
   margin-top: 4px;
-  font-size: var(--ds-body-xs, 12px);
+  font-size: var(--ds-body-xs);
   font-weight: 600;
   color: var(--ds-text-soft);
   line-height: 1.2;
@@ -661,7 +661,7 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   border-radius: var(--ds-radius-pill);
   background: var(--ds-status-neutral-bg);
   color: var(--ds-status-neutral-text);
-  font-size: 11px;
+  font-size: var(--ds-body-xxs);
   font-weight: 600;
   letter-spacing: 0.02em;
   box-shadow: 0 0 0 1px var(--ds-status-neutral-line);
@@ -814,7 +814,7 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--ds-body-xs);
   font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--ds-radius-pill);
@@ -831,7 +831,7 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--ds-body-xs);
   font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--ds-radius-pill);
