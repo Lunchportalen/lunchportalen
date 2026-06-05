@@ -130,6 +130,9 @@ function dayRow(
   };
 }
 
+/** Fast Oslo-dato for allergen week-visual (baseline = Tor 04.06.2026). */
+export const WEEK_VISUAL_ALLERGEN_PINNED_OSLO_DATE = "2026-06-04";
+
 /** Overstyr serverOsloDate for stabil V.W6 / dag-panel harness. */
 export function withWeekVisualServerOsloDate<T extends { data: Record<string, unknown> }>(
   windowBody: T,
@@ -137,8 +140,25 @@ export function withWeekVisualServerOsloDate<T extends { data: Record<string, un
 ): T {
   return {
     ...windowBody,
-    data: { ...windowBody.data, serverOsloDate },
+    data: {
+      ...windowBody.data,
+      serverOsloDate,
+      serverNow: `${serverOsloDate}T07:30:00.000+02:00`,
+    },
   };
+}
+
+/** Allergen collapsed screenshots — pinned default day (not browser «nå»). */
+export function buildWeekVisualWindowAllergenCollapsed() {
+  return withWeekVisualServerOsloDate(
+    buildWeekVisualWindowDaySelected(),
+    WEEK_VISUAL_ALLERGEN_PINNED_OSLO_DATE,
+  );
+}
+
+/** Playwright-klokke = mock serverOsloDate slik at pickDefaultDateFromPatterns er deterministisk. */
+export async function installWeekVisualOsloClock(page: Page, serverOsloDate: string): Promise<void> {
+  await page.clock.install({ time: new Date(`${serverOsloDate}T07:30:00+02:00`) });
 }
 
 /** Tir 02.06 valgt, ikke bestilt — viser kategori-valg. */
