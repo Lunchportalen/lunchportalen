@@ -1,5 +1,6 @@
 /**
  * Read-only: classify STEG 8 screenshot red (actual vs committed baseline).
+ * On-demand only — NOT run in CI. Requires local: npm install --no-save pngjs pixelmatch
  * Usage: node scripts/e2e/characterize-steg8-screenshot-red.mjs [actualRoot]
  */
 import fs from "node:fs";
