@@ -45,7 +45,7 @@ if (guard.decision !== "proceed") {
 
 console.log(`guarded-db-push: target verified (${expect}) — running supabase db push`);
 
-const proc = spawn("npx", ["supabase@beta", "db", "push", "--db-url", databaseUrl, "--yes"], {
+const proc = spawn("supabase", ["db", "push", "--db-url", databaseUrl, "--yes"], {
   cwd: process.cwd(),
   stdio: "inherit",
   shell: true,
