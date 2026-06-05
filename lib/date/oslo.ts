@@ -1,4 +1,5 @@
 // lib/date/oslo.ts
+// passthrough-noop-verify: throwaway Fase 2 bevis — ingen funksjonell endring
 
 /**
  * =========================================================
