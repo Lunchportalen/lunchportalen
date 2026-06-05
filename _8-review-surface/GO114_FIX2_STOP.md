@@ -9,17 +9,9 @@
 
 ## B. Reflow-fiks (kun CSS, markør-box)
 
-`app/styles/employee-week.css` — per-variant footprint som pre-STEG 8 glyfer:
+`app/styles/employee-week.css` — skjult glyf-strut (`::after` ✓ 11px / 14px min / — 14px) + absolutt sentrert `.ds-week-icon` 12×12. `font-size: 12px` på markør beholdes for V.W8.
 
-| Variant | Wrapper | Ikon |
-|---------|---------|------|
-| ordered | block, 11px høyde, font-size 12px (probe) | 12×12px |
-| locked | inline-flex 14px | 12×12px |
-| unavailable | 14px høyde + letter-spacing 0.08em, font-size 12px | 12×12px |
-
-Rad-høyde i kalender uendret vs. blandet uke-rad (max 14px markør-linje). Ingen probe-endring.
-
-**Re-karakterisering:** Kjør på **nye** Linux actuals etter deploy (gamle #105 actuals reflekterer pre-fix CSS). Forventet: `heightDeltaPx ≈ 0`, `globalTopShift: false`, diff konsentrert i `calendar_band` (ikon-delta).
+**Re-karakterisering:** `npm run e2e:characterize-screenshot-red tmp-ci-fix2-report/test-results` etter ny CI (run 213e4831+).
 
 ## C. Full suite probe 3×
 
