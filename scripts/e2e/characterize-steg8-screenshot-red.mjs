@@ -78,13 +78,14 @@ function readPng(p) {
 }
 
 function characterize(expected, actual) {
-  const width = expected.width;
-  const height = expected.height;
-  if (actual.width !== width || actual.height !== height) {
-    return { dimensionMismatch: true, globalTopShift: null, regions: [] };
-  }
+  const width = Math.max(expected.width, actual.width);
+  const height = Math.max(expected.height, actual.height);
+  const padExpected = new PNG({ width, height });
+  const padActual = new PNG({ width, height });
+  PNG.bitblt(expected, padExpected, 0, 0, expected.width, expected.height, 0, 0);
+  PNG.bitblt(actual, padActual, 0, 0, actual.width, actual.height, 0, 0);
   const diffOut = new PNG({ width, height });
-  const diffPixels = matchPixels(expected.data, actual.data, diffOut.data, width, height, {
+  const diffPixels = matchPixels(padExpected.data, padActual.data, diffOut.data, width, height, {
     threshold: 0.2,
     includeAA: true,
     diffColor: [255, 0, 0],
@@ -128,6 +129,7 @@ function characterize(expected, actual) {
     regions[0].identical && regions[1].diffPixels > 0 && markerFree.identical;
   return {
     dimensionMismatch: false,
+    heightDeltaPx: actual.height - expected.height,
     diffPixels,
     diffRatio: diffPixels / (width * height),
     bbox:
