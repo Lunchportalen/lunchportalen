@@ -9,7 +9,7 @@ import {
   buildWeekVisualWindowDaySelected,
   installWeekVisualMocks,
   navigateToWeek,
-  waitForWeekVisualReady,
+  waitForWeekPageReady,
 } from "./helpers/week-visual";
 
 const hasEmployeeCreds = !!getCredentialsForRole("employee");
@@ -45,12 +45,12 @@ test.describe("Week navigate self-heal", () => {
     });
 
     await navigateToWeek(page);
-    await waitForWeekVisualReady(page);
+    await waitForWeekPageReady(page);
     await expect(page).toHaveURL(/\/week/);
 
     expect(loginPosts.length).toBeGreaterThan(postsBeforeInvalidate);
-    expect(
+    await expect(
       page.getByRole("heading", { name: /bestill eller avbestill lunsj/i }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 20_000 });
   });
 });
