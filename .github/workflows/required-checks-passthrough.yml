@@ -2,7 +2,8 @@
 # Complement to path-filtered real workflows — closes mixed-app orphan (week-visual) and
 # duplicate-context holes. e2e stays pathless in ci-e2e.yml (not duplicated here).
 #
-# Operator follow-up: promote job `required-check-path-drift` to branch-protection required.
+# Drift-vakt is parallel (no downstream needs) — promote to branch-protection required
+# so filter drift blocks merge explicitly without skipping detect/emits.
 name: Required checks passthrough
 
 on:
@@ -35,7 +36,6 @@ jobs:
           node scripts/ci/verify-required-check-path-drift.test.mjs
 
   detect:
-    needs: required-check-path-drift
     runs-on: ubuntu-latest
     outputs:
       build_touched: ${{ steps.scope.outputs.build_touched }}
