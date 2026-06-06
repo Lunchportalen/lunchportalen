@@ -1,100 +1,104 @@
-# Docs-only / non-gated PR deadlock fix: emit the five path-filtered required checks
-# when no gated path changed. e2e is always-on (ci-e2e.yml) — not duplicated here.
-name: Required checks passthrough (docs-only)
+# Per-check passthrough: emit required status when that check's paths were NOT touched.
+# Complement to path-filtered real workflows — closes mixed-app orphan (week-visual) and
+# duplicate-context holes. e2e stays pathless in ci-e2e.yml (not duplicated here).
+#
+# Operator follow-up: promote job `required-check-path-drift` to branch-protection required.
+name: Required checks passthrough
 
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      # nextjs_ci_paths (ci.yml, ci-enterprise.yml, ci-agents.yml)
-      - "app/**"
-      - "components/**"
-      - "lib/**"
-      - "public/**"
-      - "studio/**"
-      - "supabase/**"
-      - "scripts/**"
-      - "tests/**"
-      - "e2e/**"
-      - "middleware.ts"
-      - "next.config.ts"
-      - "instrumentation.ts"
-      - "vercel.json"
-      - "package.json"
-      - "package-lock.json"
-      - "tsconfig.json"
-      - "vitest.config.ts"
-      - "playwright.config.ts"
-      - "tailwind.config.cjs"
-      - "postcss.config.cjs"
-      - ".eslintrc.cjs"
-      - "eslint.config.*"
-      - "AGENTS.md"
-      - ".github/workflows/ci.yml"
-      - ".github/workflows/ci-enterprise.yml"
-      - ".github/workflows/ci-agents.yml"
-      # supabase_ci_paths extras (supabase-migrate.yml)
-      - ".github/workflows/supabase-migrate.yml"
-      - "scripts/ci/migration-gate.mjs"
-      - "scripts/ci/db-contracts.mjs"
-      - "scripts/ci/assert-db-target.mjs"
-      - "scripts/smoke/cron-smoke.sh"
-      # ci-week-visual.yml paths (explicit union — bias include over dedupe)
-      - "app/(app)/week/**"
-      - "components/employee/**"
-      - "app/styles/**"
-      - "e2e/week-visual-regression.e2e.ts"
-      - "e2e/week-row-radius-probe.e2e.ts"
-      - "e2e/week-slot-probe.e2e.ts"
-      - "e2e/week-chip-probe.e2e.ts"
-      - "e2e/week-motion-probe.e2e.ts"
-      - "e2e/week-state-probe.e2e.ts"
-      - "e2e/week-collapse-probe.e2e.ts"
-      - "e2e/week-icon-probe.e2e.ts"
-      - "e2e/week-typography-probe.e2e.ts"
-      - "e2e/week-icon-eyes-on.e2e.ts"
-      - "playwright.week-row-probe.config.ts"
-      - "e2e/helpers/week-visual.ts"
-      - "e2e/helpers/week-visual-auth.ts"
-      - "e2e/global-setup/week-visual-auth.setup.ts"
-      - "e2e/fixtures/week-visual-window.base.json"
-      - "playwright.week-visual.config.ts"
-      - "e2e/week-visual-regression.e2e.ts-snapshots/**"
-      - "scripts/e2e/retry-seed-with-backoff.sh"
-      - "scripts/ci/retry-npm-ci.sh"
-      - "scripts/ci/retry-transient-network.sh"
-      - ".github/workflows/ci-week-visual.yml"
+
+concurrency:
+  group: required-checks-passthrough-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    name: build
+  required-check-path-drift:
+    name: required-check-path-drift
     runs-on: ubuntu-latest
     steps:
-      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Verify passthrough paths match workflow on.pull_request.paths
+        run: node scripts/ci/verify-required-check-path-drift.mjs
+
+      - name: Unit tests (path parser, drift guard, scope detect)
+        run: |
+          node scripts/ci/github-path-filter.test.mjs
+          node scripts/ci/parse-workflow-pr-paths.test.mjs
+          node scripts/ci/detect-required-check-scope.test.mjs
+          node scripts/ci/verify-required-check-path-drift.test.mjs
+
+  detect:
+    needs: required-check-path-drift
+    runs-on: ubuntu-latest
+    outputs:
+      build_touched: ${{ steps.scope.outputs.build_touched }}
+      enterprise_touched: ${{ steps.scope.outputs.enterprise_touched }}
+      agents_gate_touched: ${{ steps.scope.outputs.agents_gate_touched }}
+      staging_touched: ${{ steps.scope.outputs.staging_touched }}
+      week_visual_touched: ${{ steps.scope.outputs.week_visual_touched }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch PR base/head (scope detect)
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+
+      - name: Detect per-check path scope (git diff)
+        id: scope
+        env:
+          GATE_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          GATE_DIFF_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci/detect-required-check-scope.mjs
+
+  build:
+    name: build
+    needs: detect
+    if: needs.detect.outputs.build_touched != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "passthrough — build paths ikke rørt; ekte CI er eneste meningsfulle kontekst når rørt."
 
   enterprise:
     name: enterprise
+    needs: detect
+    if: needs.detect.outputs.enterprise_touched != 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+      - run: echo "passthrough — enterprise paths ikke rørt; ekte CI er eneste meningsfulle kontekst når rørt."
 
   agents_gate:
     name: agents_gate
+    needs: detect
+    if: needs.detect.outputs.agents_gate_touched != 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+      - run: echo "passthrough — agents_gate paths ikke rørt; ekte CI er eneste meningsfulle kontekst når rørt."
 
   staging:
     name: staging
+    needs: detect
+    if: needs.detect.outputs.staging_touched != 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+      - run: echo "passthrough — staging paths ikke rørt; ekte supabase-migrate er eneste meningsfulle kontekst når rørt."
 
   week-visual:
     name: week-visual
+    needs: detect
+    if: needs.detect.outputs.week_visual_touched != 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "docs-only PR — ingen gated path endret; passthrough lukker required check."
+      - run: echo "passthrough — week-visual paths ikke rørt; ekte ci-week-visual er eneste meningsfulle kontekst når rørt."
