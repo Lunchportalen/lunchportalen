@@ -77,9 +77,9 @@ const API_KEY_AUTH = /(x-api-key|API_KEY|apiKey|v1\/public\/orders)/i;
 describe("api-allowlist-regression (DC-011)", () => {
   const routeFiles = walkRouteFiles(API_ROOT);
 
-  test("allowlist size matches canonical count (83)", () => {
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(83);
-    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(83);
+  test("allowlist size matches canonical count (84)", () => {
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(84);
+    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(84);
   });
 
   test("every allowlisted static path maps to a route file with category auth evidence", () => {

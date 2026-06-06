@@ -2,7 +2,7 @@
  * DC-011 / Fase 3 — explicit API auth allowlist (no wildcards in Set).
  * Dynamic App Router segments are matched via ALLOWLIST_DYNAMIC (documented exceptions).
  *
- * Total: 83 routes (78 path + 2 GET-only + 3 dynamic). GET-only: global header/footer public read.
+ * Total: 84 routes (79 path + 2 GET-only + 3 dynamic). GET-only: global header/footer public read.
  */
 
 /** Exact paths only — verified fail-closed / anon (a)–(d) / api-key in route files. */
@@ -69,6 +69,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/public/ai-demo-cta/assign",
   "/api/public/analytics",
   "/api/public/demo-interest",
+  "/api/public/leads/capture",
   "/api/public/onboarding/register",
   "/api/public/register",
   "/api/public/register-company",

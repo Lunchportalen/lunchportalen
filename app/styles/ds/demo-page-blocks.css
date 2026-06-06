@@ -575,9 +575,11 @@ body {
     color: var(--lp-text);
 }
 
-.lp-demo-form input {
+.lp-demo-form input,
+.lp-demo-form select,
+.lp-demo-form textarea {
     width: 100%;
-    height: 52px;
+    min-height: 52px;
     border: 1px solid rgba(17, 17, 17, .11);
     border-radius: 14px;
     padding: 0 15px;
@@ -590,14 +592,97 @@ body {
     appearance: none;
 }
 
-.lp-demo-form input:focus {
+.lp-demo-form textarea {
+    padding: 14px 15px;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.lp-demo-form select {
+    cursor: pointer;
+}
+
+.lp-demo-form input:focus,
+.lp-demo-form select:focus,
+.lp-demo-form textarea:focus {
     outline: none;
     border-color: var(--lp-gold);
     box-shadow: 0 0 0 3px rgba(245, 197, 24, .28);
 }
 
-.lp-demo-form input::placeholder {
+.lp-demo-form input::placeholder,
+.lp-demo-form textarea::placeholder {
     color: rgba(17, 17, 17, .35);
+}
+
+.lp-demo-form__honeypot {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lp-demo-form__consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-align: left;
+    font-weight: 500;
+    min-height: 48px;
+}
+
+.lp-demo-form__consent input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--lp-gold);
+    cursor: pointer;
+}
+
+.lp-demo-capture-page {
+    background: var(--lp-bg);
+    min-height: 100dvh;
+}
+
+.lp-demo-capture-card {
+    text-align: center;
+}
+
+.lp-demo-capture-card h1 {
+    margin: 0 0 12px;
+    font-size: clamp(1.6rem, 4vw, 2rem);
+    font-weight: 900;
+    color: var(--lp-text);
+}
+
+.lp-demo-capture-card > p {
+    margin: 0 auto 24px;
+    max-width: 520px;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--lp-muted);
+}
+
+.lp-demo-capture-card__brand {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.lp-demo-capture-card__logo {
+    height: 64px;
+    width: auto;
+}
+
+@media (min-width: 768px) {
+    .lp-demo-capture-card__logo {
+        height: 120px;
+    }
 }
 
 /* ── CTA buttons ────────────────────────────────────────── */
@@ -1147,12 +1232,16 @@ body {
 }
 
 /* Input states */
-.lp-demo-form input.is-invalid {
+.lp-demo-form input.is-invalid,
+.lp-demo-form select.is-invalid,
+.lp-demo-form textarea.is-invalid {
     border-color: #e74c3c;
     box-shadow: 0 0 0 3px rgba(231, 76, 60, .18);
 }
 
-.lp-demo-form input.is-valid {
+.lp-demo-form input.is-valid,
+.lp-demo-form select.is-valid,
+.lp-demo-form textarea.is-valid {
     border-color: #27ae60;
     box-shadow: 0 0 0 3px rgba(39, 174, 96, .14);
 }
