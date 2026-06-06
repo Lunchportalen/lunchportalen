@@ -2,6 +2,7 @@ namespace Lunchportalen.Helpers;
 
 /// <summary>
 /// Canonical cross-domain links to the Next.js app (presentation-only in Umbraco).
+/// Routing is intent-driven: call sites choose the resolver method, not URL substring guessing.
 /// </summary>
 public static class AppUrls
 {
@@ -9,13 +10,14 @@ public static class AppUrls
 
     private const string DemoBase = "https://app.lunchportalen.no/demo";
 
-    private static readonly HashSet<string> LeadCapturePaths = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "/demo",
-        "/kom-i-gang",
-        "/kontakt",
-        "/registrer-firma",
-    };
+    private static readonly string[] LoginPaths = ["/login", "/logg-inn"];
+
+    private static readonly string[] SameOriginHosts =
+    [
+        "lunchportalen.no",
+        "www.lunchportalen.no",
+        "app.lunchportalen.no",
+    ];
 
     public static string Demo(string source)
     {
@@ -25,6 +27,10 @@ public static class AppUrls
             : $"{DemoBase}?source={Uri.EscapeDataString(normalized)}";
     }
 
+    /// <summary>Lead-capture intent: always routes to the app demo form.</summary>
+    public static string ResolveLeadCapture(string source) => Demo(source);
+
+    /// <summary>Login intent: case-insensitive login paths; same-origin fail-closed to app login.</summary>
     public static string ResolveLogin(string? url = null)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -32,64 +38,125 @@ public static class AppUrls
             return Login;
         }
 
-        return IsLoginPath(ExtractPath(url)) ? Login : url;
-    }
-
-    /// <summary>
-    /// Maps marketing capture intents (demo, kom-i-gang, kontakt, anchors) to the app demo form.
-    /// Non-capture URLs (e.g. /priser/) pass through unchanged.
-    /// </summary>
-    public static string ResolveLeadCapture(string? url, string source)
-    {
-        if (string.IsNullOrWhiteSpace(url) || ShouldRedirectToDemo(url))
+        if (IsMailOrTel(url))
         {
-            return Demo(source);
+            return url;
         }
 
-        return url;
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absolute) && !IsSameOrigin(absolute))
+        {
+            return url;
+        }
+
+        if (IsLoginPath(ExtractPath(url)))
+        {
+            return Login;
+        }
+
+        return Login;
     }
 
-    private static bool ShouldRedirectToDemo(string url)
+    /// <summary>Marketing SEO demo page: only /demo/ on lunchportalen.no (relative).</summary>
+    public static string ResolveMarketingDemoPage(string? url = null, string fallback = "/demo/")
     {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return NormalizeMarketingDemoPath(fallback);
+        }
+
+        if (IsMailOrTel(url))
+        {
+            return url;
+        }
+
+        var path = NormalizePath(ExtractPath(url));
+        if (IsMarketingDemoPath(path))
+        {
+            return "/demo/";
+        }
+
+        return NormalizeMarketingDemoPath(fallback);
+    }
+
+    /// <summary>Internal marketing navigation — never used for lead/login routing.</summary>
+    public static string ResolveNavigation(string? url, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return NormalizeNavPath(fallback);
+        }
+
+        if (IsMailOrTel(url))
+        {
+            return url;
+        }
+
         if (url.StartsWith("#", StringComparison.Ordinal))
         {
-            return url.StartsWith("#book-demo", StringComparison.OrdinalIgnoreCase);
-        }
-
-        if (url.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase)
-            || url.StartsWith("tel:", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
+            return url.Trim();
         }
 
         if (Uri.TryCreate(url, UriKind.Absolute, out var absolute))
         {
-            if (absolute.Host.Equals("app.lunchportalen.no", StringComparison.OrdinalIgnoreCase)
-                && absolute.AbsolutePath.StartsWith("/demo", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            if (absolute.Host is "lunchportalen.no" or "www.lunchportalen.no")
-            {
-                return IsLeadCapturePath(absolute.AbsolutePath);
-            }
-
-            return false;
+            return IsSameOrigin(absolute)
+                ? NormalizeNavPath(absolute.AbsolutePath)
+                : url;
         }
 
-        return IsLeadCapturePath(ExtractPath(url));
+        return NormalizeNavPath(url);
     }
 
-    private static bool IsLeadCapturePath(string path)
+    /// <summary>Same-page fragment anchors (#kontakt, #demo-video).</summary>
+    public static string ResolveSamePageAnchor(string? url, string fallback)
     {
-        return LeadCapturePaths.Contains(NormalizePath(path));
+        if (!string.IsNullOrWhiteSpace(url) && url.StartsWith("#", StringComparison.Ordinal))
+        {
+            return url.Trim();
+        }
+
+        return fallback;
     }
+
+    private static bool IsMarketingDemoPath(string path) =>
+        string.Equals(NormalizePath(path), "/demo", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsLoginPath(string path)
     {
         var normalized = NormalizePath(path);
-        return normalized is "/login" or "/logg-inn";
+        return LoginPaths.Any(p => string.Equals(normalized, p, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsMailOrTel(string url) =>
+        url.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase)
+        || url.StartsWith("tel:", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSameOrigin(Uri absolute) =>
+        SameOriginHosts.Any(h => absolute.Host.Equals(h, StringComparison.OrdinalIgnoreCase));
+
+    private static string NormalizeMarketingDemoPath(string path)
+    {
+        if (IsMarketingDemoPath(ExtractPath(path)))
+        {
+            return "/demo/";
+        }
+
+        return "/demo/";
+    }
+
+    private static string NormalizeNavPath(string path)
+    {
+        var trimmed = path.Trim();
+        if (!trimmed.StartsWith('/'))
+        {
+            trimmed = "/" + trimmed;
+        }
+
+        if (trimmed.Length > 1 && !trimmed.EndsWith('/'))
+        {
+            trimmed += "/";
+        }
+
+        return trimmed;
     }
 
     private static string ExtractPath(string url)

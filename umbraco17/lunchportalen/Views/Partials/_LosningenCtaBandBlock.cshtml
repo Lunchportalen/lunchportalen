@@ -13,12 +13,12 @@
     var primaryCtaLinks = Model.Value<IEnumerable<Link>>("primaryCtaLink");
     var primaryCta      = primaryCtaLinks?.FirstOrDefault();
     var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Prøv gratis i 5 dager";
-    var primaryUrl      = AppUrls.ResolveLeadCapture(primaryCta?.Url, "losningen-primary");
+    var primaryUrl      = AppUrls.ResolveLeadCapture("losningen-primary");
 
     var secCtaLinks = Model.Value<IEnumerable<Link>>("secCtaLink");
     var secCta      = secCtaLinks?.FirstOrDefault();
     var secCtaText  = Model.Value<string>("secCtaText") ?? "Book demo";
-    var secUrl      = AppUrls.ResolveLeadCapture(secCta?.Url, "losningen-book-demo");
+    var secUrl      = AppUrls.ResolveLeadCapture("losningen-book-demo");
 
     bool hasSecCta = !string.IsNullOrWhiteSpace(secCtaText);
 }

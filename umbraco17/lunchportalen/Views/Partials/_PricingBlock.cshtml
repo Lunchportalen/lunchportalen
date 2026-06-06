@@ -49,7 +49,7 @@
                     var priceYearly  = block.Content.Value<string>("priceYearly")  ?? "";
                     var priceUnit    = block.Content.Value<string>("priceUnit")    ?? "";
                     var ctaText      = block.Content.Value<string>("ctaText")      ?? "Kom i gang";
-                    var ctaUrl       = AppUrls.ResolveLeadCapture(block.Content.Value<string>("ctaUrl"), "pricing-plan");
+                    var ctaUrl       = AppUrls.ResolveLeadCapture("pricing-plan");
                     var featured     = block.Content.Value<bool>("featured");
                     var featuresRaw  = block.Content.Value<string>("features")     ?? "";
                     var featureList  = featuresRaw.Split('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();

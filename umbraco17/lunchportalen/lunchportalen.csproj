@@ -38,4 +38,10 @@
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Lunchportalen.AppUrls.Tests/**" />
+    <Content Remove="Lunchportalen.AppUrls.Tests/**" />
+    <None Remove="Lunchportalen.AppUrls.Tests/**" />
+  </ItemGroup>
+
 </Project>
