@@ -22,10 +22,7 @@
     var heroImage         = content.Value<IPublishedContent>("heroImage");
     var heroImageUrl      = heroImage?.Url() ?? "";
     var primaryUrl        = AppUrls.ResolveLeadCapture("hero");
-    var secondaryRaw      = secondaryCta?.Url;
-    var secondaryUrl      = !string.IsNullOrWhiteSpace(secondaryRaw) && secondaryRaw.StartsWith("#", StringComparison.Ordinal)
-        ? AppUrls.ResolveSamePageAnchor(secondaryRaw, "#demo-video")
-        : AppUrls.ResolveNavigation(secondaryRaw, "/losningen/");
+    var secondaryUrl      = AppUrls.ResolveGenericHeroSecondary(secondaryCta?.Url, "hero-secondary");
     var stats             = content.Value<IEnumerable<BlockListItem>>("stats");
     var logos             = content.Value<IEnumerable<string>>("logos");
 }

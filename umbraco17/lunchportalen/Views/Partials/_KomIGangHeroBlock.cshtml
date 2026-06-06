@@ -14,10 +14,10 @@
     var primaryUrl     = AppUrls.ResolveLeadCapture("kom-i-gang-hero-primary");
     var secondaryLabel = Model.Value<string>("secondaryCtaLabel");
     var secondaryLinks = Model.Value<IEnumerable<Link>>("secondaryCtaUrl");
-    var secondaryRaw   = secondaryLinks?.FirstOrDefault()?.Url;
-    var secondaryUrl   = !string.IsNullOrWhiteSpace(secondaryRaw) && secondaryRaw.StartsWith("#", StringComparison.Ordinal)
-        ? AppUrls.ResolveSamePageAnchor(secondaryRaw, "#kom-i-gang")
-        : AppUrls.ResolveNavigation(secondaryRaw, "/demo/");
+    var secondaryUrl   = AppUrls.ResolveGenericHeroSecondary(
+        secondaryLinks?.FirstOrDefault()?.Url,
+        "kom-i-gang-hero-secondary",
+        "#kom-i-gang");
 }
 
 <section class="kig-hero">

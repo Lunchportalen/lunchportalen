@@ -12,6 +12,16 @@ public static class AppUrls
 
     private static readonly string[] LoginPaths = ["/login", "/logg-inn"];
 
+    private static readonly string[] LeadCapturePaths =
+    [
+        "/demo",
+        "/kom-i-gang",
+        "/kontakt",
+        "/registrer-firma",
+    ];
+
+    public const string LosningenPath = "/loesningen/";
+
     private static readonly string[] SameOriginHosts =
     [
         "lunchportalen.no",
@@ -29,6 +39,33 @@ public static class AppUrls
 
     /// <summary>Lead-capture intent: always routes to the app demo form.</summary>
     public static string ResolveLeadCapture(string source) => Demo(source);
+
+    /// <summary>
+    /// Generic landing-hero secondary slot: lead paths → app, # → anchor, else → internal nav.
+    /// Marketing /demo/ page routing is footer-only — never resolved here.
+    /// </summary>
+    public static string ResolveGenericHeroSecondary(
+        string? url,
+        string leadCaptureSource,
+        string anchorFallback = "#demo-video")
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return ResolveNavigation(null, LosningenPath);
+        }
+
+        if (url.StartsWith("#", StringComparison.Ordinal))
+        {
+            return ResolveSamePageAnchor(url, anchorFallback);
+        }
+
+        if (IsLeadCapturePath(ExtractPath(url)))
+        {
+            return ResolveLeadCapture(leadCaptureSource);
+        }
+
+        return ResolveNavigation(url, LosningenPath);
+    }
 
     /// <summary>Login intent: case-insensitive login paths; same-origin fail-closed to app login.</summary>
     public static string ResolveLogin(string? url = null)
@@ -117,6 +154,9 @@ public static class AppUrls
         return fallback;
     }
 
+    private static bool IsLeadCapturePath(string path) =>
+        LeadCapturePaths.Any(p => string.Equals(NormalizePath(path), p, StringComparison.OrdinalIgnoreCase));
+
     private static bool IsMarketingDemoPath(string path) =>
         string.Equals(NormalizePath(path), "/demo", StringComparison.OrdinalIgnoreCase);
 
@@ -154,6 +194,11 @@ public static class AppUrls
         if (trimmed.Length > 1 && !trimmed.EndsWith('/'))
         {
             trimmed += "/";
+        }
+
+        if (string.Equals(NormalizePath(trimmed), "/losningen", StringComparison.OrdinalIgnoreCase))
+        {
+            return LosningenPath;
         }
 
         return trimmed;

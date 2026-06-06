@@ -61,12 +61,27 @@ public class AppUrlsTests
     }
 
     [Theory]
-    [InlineData(null, "/losningen/", "/losningen/")]
+    [InlineData(null, "/loesningen/", "/loesningen/")]
     [InlineData("/priser", "/priser/", "/priser/")]
-    [InlineData("/losningen", "/losningen/", "/losningen/")]
+    [InlineData("/loesningen", "/loesningen/", "/loesningen/")]
+    [InlineData("/losningen", "/loesningen/", "/loesningen/")]
+    [InlineData("/losningen/", "/loesningen/", "/loesningen/")]
     public void ResolveNavigation_NormalizesInternalRelative(string? url, string fallback, string expected)
     {
         Assert.Equal(expected, AppUrls.ResolveNavigation(url, fallback));
+    }
+
+    [Theory]
+    [InlineData("/Demo/", "hero-secondary", "https://app.lunchportalen.no/demo?source=hero-secondary")]
+    [InlineData("/kontakt/", "hero-secondary", "https://app.lunchportalen.no/demo?source=hero-secondary")]
+    [InlineData("/kom-i-gang", "kom-i-gang-hero-secondary", "https://app.lunchportalen.no/demo?source=kom-i-gang-hero-secondary")]
+    [InlineData("#demo-video", "hero-secondary", "#demo-video")]
+    [InlineData(null, "hero-secondary", "/loesningen/")]
+    [InlineData("/loesningen/", "hero-secondary", "/loesningen/")]
+    [InlineData("/losningen/", "hero-secondary", "/loesningen/")]
+    public void ResolveGenericHeroSecondary_ClassifiesIntent(string? url, string source, string expected)
+    {
+        Assert.Equal(expected, AppUrls.ResolveGenericHeroSecondary(url, source));
     }
 
     [Theory]
