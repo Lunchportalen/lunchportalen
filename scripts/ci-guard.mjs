@@ -30,6 +30,8 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/smoke/seed-e2e-users.mjs",
   // #92 standing authz gate — validates staging integration env before vitest (no service-role usage here).
   "scripts/ci/run-suspend-rpc-integration.mjs",
+  // E2E self-heal probe — admin password-sync invalidates session (uigx only).
+  "scripts/e2e/",
   "app/api/cron/",
   "app/api/superadmin/",
   "app/api/system/",

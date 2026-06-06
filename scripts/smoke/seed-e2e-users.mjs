@@ -6,10 +6,19 @@
  *
  * Prerequisite chain: migrations → seed-staging-tenant.sql → seed-smoke-menu-fixture.mjs → this script.
  * See docs/e2e/UIGX-RESEED-CHAIN.md
+ *
+ * Session note: auth.admin.updateUserById (password) revokes active refresh tokens.
+ * Re-seeding an unchanged password during parallel CI (e.g. week-visual + E2E) invalidates
+ * in-flight browser sessions — skip sync when password grant already succeeds.
  */
 import { createClient } from "@supabase/supabase-js";
 import fs from "node:fs";
 import path from "node:path";
+
+import {
+  shouldSkipAuthPasswordSync,
+  tryVerifyLogin,
+} from "../e2e/seed-e2e-auth-sync.mjs";
 
 const UIGX_REF = "uigxsboqeruxflgzqztl";
 const PROD_REF = "hkpokyapzarefrgqzkos";
@@ -113,7 +122,7 @@ async function findUserByEmail(admin, email) {
   );
 }
 
-async function upsertAuthUser(admin, email, password) {
+async function upsertAuthUser(admin, url, anonKey, email, password) {
   let user = await findUserByEmail(admin, email);
   if (!user) {
     const created = await admin.auth.admin.createUser({
@@ -127,14 +136,29 @@ async function upsertAuthUser(admin, email, password) {
     user = created.data.user;
     console.log(`auth created ${email}`);
   } else {
-    const updated = await admin.auth.admin.updateUserById(user.id, {
-      password,
-      email_confirm: true,
-    });
-    if (updated.error) {
-      throw new Error(`updateUser ${email}: ${updated.error.message}`);
+    const emailConfirmed = Boolean(user.email_confirmed_at ?? user.confirmed_at);
+    const loginVerified = await tryVerifyLogin(url, anonKey, email, password);
+
+    if (
+      shouldSkipAuthPasswordSync({
+        userExists: true,
+        loginVerified,
+        emailConfirmed,
+      })
+    ) {
+      console.log(
+        `auth unchanged ${email} (skip updateUserById — preserves active sessions)`,
+      );
+    } else {
+      const updated = await admin.auth.admin.updateUserById(user.id, {
+        password,
+        email_confirm: true,
+      });
+      if (updated.error) {
+        throw new Error(`updateUser ${email}: ${updated.error.message}`);
+      }
+      console.log(`auth password synced ${email}`);
     }
-    console.log(`auth password synced ${email}`);
   }
   if (!user?.id) throw new Error(`no user id for ${email}`);
   return user.id;
@@ -240,7 +264,7 @@ async function main() {
   for (const spec of ROLE_SPECS) {
     const email = E2E_CANONICAL_EMAILS[spec.key];
     const password = String(env[spec.passwordEnv] ?? "");
-    const userId = await upsertAuthUser(admin, email, password);
+    const userId = await upsertAuthUser(admin, url, anonKey, email, password);
     await upsertProfile(admin, userId, spec, email);
     await upsertMemberships(admin, userId, spec);
     await verifyLogin(url, anonKey, email, password);
