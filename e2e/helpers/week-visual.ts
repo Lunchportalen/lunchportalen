@@ -4,8 +4,45 @@ import { join } from "node:path";
 
 import { expect, type Page } from "@playwright/test";
 
-import { waitForPostLoginNavigation } from "./auth";
+import {
+  getCredentialsForRole,
+  loginViaForm,
+  waitForPostLoginNavigation,
+} from "./auth";
 import { waitForFontsReady } from "./ready";
+
+export const NAVIGATE_TO_WEEK_MAX_ATTEMPTS = 3;
+export const NAVIGATE_TO_WEEK_REAUTH_MAX_ATTEMPTS = 3;
+
+function isLoginPath(pathname: string): boolean {
+  return /^\/login(?:\/|$)/.test(pathname);
+}
+
+/** Bounded re-auth when storageState session is stale (e.g. concurrent seed invalidation). */
+async function reauthEmployeeToWeek(page: Page): Promise<void> {
+  const creds = getCredentialsForRole("employee");
+  if (!creds) {
+    throw new Error("E2E_EMPLOYEE_EMAIL/PASSWORD required for week visual navigation.");
+  }
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= NAVIGATE_TO_WEEK_REAUTH_MAX_ATTEMPTS; attempt++) {
+    try {
+      await loginViaForm(page, creds.email, creds.password, "/week");
+      await waitForPostLoginNavigation(page, { timeout: 15_000 });
+      await waitForWeekVisualReady(page);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < NAVIGATE_TO_WEEK_REAUTH_MAX_ATTEMPTS) {
+        await page.waitForTimeout(1000 * attempt);
+      }
+    }
+  }
+
+  throw lastError;
+}
 
 export type WeekAllergenVisualProfile = "declared_empty" | "has_data";
 
@@ -298,19 +335,30 @@ export async function installWeekVisualMocks(
   });
 }
 
-/** Reuses employee session from global-setup storageState — no per-test login. */
+/**
+ * Reuses employee session from global-setup storageState when valid; self-heals via
+ * loginViaForm when middleware redirects to /login (stale session after concurrent seed).
+ */
 export async function navigateToWeek(page: Page): Promise<void> {
   let lastError: unknown;
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= NAVIGATE_TO_WEEK_MAX_ATTEMPTS; attempt++) {
     try {
       await page.goto("/week", { waitUntil: "commit", timeout: 30_000 });
-      await waitForPostLoginNavigation(page, { timeout: 15_000 });
+      const pathname = new URL(page.url()).pathname;
+
+      if (isLoginPath(pathname)) {
+        await reauthEmployeeToWeek(page);
+        await expect(page).toHaveURL(/\/week/);
+        return;
+      }
+
+      await waitForWeekVisualReady(page);
       await expect(page).toHaveURL(/\/week/);
       return;
     } catch (error) {
       lastError = error;
-      if (attempt < 3) {
+      if (attempt < NAVIGATE_TO_WEEK_MAX_ATTEMPTS) {
         await page.waitForTimeout(1000 * attempt);
       }
     }
