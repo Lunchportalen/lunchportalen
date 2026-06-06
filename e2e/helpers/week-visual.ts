@@ -31,7 +31,7 @@ async function reauthEmployeeToWeek(page: Page): Promise<void> {
     try {
       await loginViaForm(page, creds.email, creds.password, "/week");
       await waitForPostLoginNavigation(page, { timeout: 15_000 });
-      await waitForWeekVisualReady(page);
+      await waitForWeekPageReady(page);
       return;
     } catch (error) {
       lastError = error;
@@ -353,7 +353,7 @@ export async function navigateToWeek(page: Page): Promise<void> {
         return;
       }
 
-      await waitForWeekVisualReady(page);
+      await waitForWeekPageReady(page);
       await expect(page).toHaveURL(/\/week/);
       return;
     } catch (error) {
@@ -367,12 +367,9 @@ export async function navigateToWeek(page: Page): Promise<void> {
   throw lastError;
 }
 
-export async function waitForWeekVisualReady(page: Page): Promise<void> {
+/** Landmark + fonts only — no rendering side effects (motion probes, navigateToWeek, self-heal). */
+export async function waitForWeekPageReady(page: Page): Promise<void> {
   await page.getByRole("heading", { name: /bestill eller avbestill lunsj/i }).waitFor({
-    state: "visible",
-    timeout: 20_000,
-  });
-  await page.getByRole("heading", { name: /dine allergener/i }).waitFor({
     state: "visible",
     timeout: 20_000,
   });
@@ -380,10 +377,19 @@ export async function waitForWeekVisualReady(page: Page): Promise<void> {
     state: "visible",
     timeout: 20_000,
   });
+  await waitForFontsReady(page);
+}
+
+/** Screenshot/computed-style probes — adds lp-week-visual-regression for deterministic captures. */
+export async function waitForWeekVisualReady(page: Page): Promise<void> {
+  await waitForWeekPageReady(page);
+  await page.getByRole("heading", { name: /dine allergener/i }).waitFor({
+    state: "visible",
+    timeout: 20_000,
+  });
   await page.evaluate(() => {
     document.documentElement.classList.add("lp-week-visual-regression");
   });
-  await waitForFontsReady(page);
   await page.waitForTimeout(150);
 }
 
