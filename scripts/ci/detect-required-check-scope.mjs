@@ -39,7 +39,11 @@ export function listPullRequestChangedFiles(base, head, options = {}) {
   try {
     raw = runDiff(`${base}...${head}`);
   } catch {
-    raw = runDiff(`${base}..${head}`);
+    try {
+      raw = runDiff(`${base}..${head}`);
+    } catch {
+      return [];
+    }
   }
 
   return raw ? raw.split("\n").filter(Boolean) : [];
@@ -56,18 +60,15 @@ export function isCheckPathTouched(changedFiles, patterns) {
 }
 
 /**
- * @param {string} base
- * @param {string} head
- * @param {{ cwd?: string, fetch?: boolean }} [options]
+ * @param {string[]} changedFiles
  * @returns {Record<string, { touched: boolean, matched: string[] }>}
  */
-export function detectRequiredCheckScope(base, head, options = {}) {
-  const changed = listPullRequestChangedFiles(base, head, options);
+export function detectRequiredCheckScopeFromChanged(changedFiles) {
   /** @type {Record<string, { touched: boolean, matched: string[] }>} */
   const result = {};
 
   for (const [checkKey, config] of Object.entries(REQUIRED_CHECK_PATH_CONFIG)) {
-    const matched = changed.filter((file) =>
+    const matched = changedFiles.filter((file) =>
       pathMatchesAnyGitHubFilter(file, config.paths),
     );
     result[checkKey] = {
@@ -77,6 +78,17 @@ export function detectRequiredCheckScope(base, head, options = {}) {
   }
 
   return result;
+}
+
+/**
+ * @param {string} base
+ * @param {string} head
+ * @param {{ cwd?: string, fetch?: boolean }} [options]
+ * @returns {Record<string, { touched: boolean, matched: string[] }>}
+ */
+export function detectRequiredCheckScope(base, head, options = {}) {
+  const changed = listPullRequestChangedFiles(base, head, options);
+  return detectRequiredCheckScopeFromChanged(changed);
 }
 
 /**

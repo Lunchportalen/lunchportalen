@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
 import {
-  detectRequiredCheckScope,
+  detectRequiredCheckScopeFromChanged,
   isCheckPathTouched,
 } from "./detect-required-check-scope.mjs";
 import { REQUIRED_CHECK_PATH_CONFIG } from "./required-check-path-patterns.mjs";
@@ -27,18 +27,8 @@ assert.equal(
   false,
 );
 
-const live = detectRequiredCheckScope("origin/main", "HEAD", { fetch: false });
-assert.equal(typeof live.build.touched, "boolean");
-assert.equal(typeof live.week_visual.touched, "boolean");
+const synthetic = detectRequiredCheckScopeFromChanged(["lib/demo/leads.ts", "docs/foo.md"]);
+assert.equal(synthetic.build.touched, true);
+assert.equal(synthetic.week_visual.touched, false);
 
-console.log(
-  JSON.stringify(
-    {
-      ok: true,
-      local_build_touched: live.build.touched,
-      local_week_visual_touched: live.week_visual.touched,
-    },
-    null,
-    2,
-  ),
-);
+console.log(JSON.stringify({ ok: true, module: "detect-required-check-scope" }, null, 2));
