@@ -204,7 +204,7 @@
         var ctaLink   = ctaLinks?.FirstOrDefault();
         var ctaLabel  = content.Value<string>("ctaLabel");
         if (string.IsNullOrWhiteSpace(ctaLabel)) ctaLabel = ctaLink?.Name ?? "";
-        var ctaHref   = ctaLink?.Url ?? "#";
+        var ctaHref   = AppUrls.ResolveLeadCapture("hero");
         var ctaTarget = ctaLink?.Target ?? "";
 
         var trustPills = content.Value<IEnumerable<string>>("trustPills");
@@ -287,7 +287,7 @@
 
         var ctaLink  = GetFirstLink(content.Value("ctaLink"));
         var ctaLabel = ctaLink?.Name ?? "Kom i gang";
-        var ctaUrl   = AppUrls.ResolveLeadCapture(ctaLink?.Url, "hero-banner");
+        var ctaUrl   = AppUrls.ResolveLeadCapture("hero-banner");
 
         <section class="lp-hero">
             <div class="ds-container lp-hero__inner">
@@ -424,7 +424,7 @@
                             var stepCtaLink   = stepCtaLinks?.FirstOrDefault();
                             var stepCtaLabel  = s.Value<string>("ctaLabel");
                             if (string.IsNullOrWhiteSpace(stepCtaLabel)) stepCtaLabel = stepCtaLink?.Name ?? "";
-                            var stepCtaHref   = stepCtaLink?.Url ?? "#";
+                            var stepCtaHref   = AppUrls.ResolveLeadCapture("how-it-works-step");
                             var stepCtaTarget = stepCtaLink?.Target ?? "";
 
                             var rowClass = i % 2 == 1
@@ -525,7 +525,7 @@
         var ctaLink  = ctaLinks?.FirstOrDefault();
         var ctaLabel = content.Value<string>("ctaLabel");
         if (string.IsNullOrWhiteSpace(ctaLabel)) ctaLabel = ctaLink?.Name ?? "";
-        var ctaHref   = ctaLink?.Url ?? "#";
+        var ctaHref   = AppUrls.ResolveLeadCapture("cta-band");
         var ctaTarget = ctaLink?.Target ?? "";
 
         <section class="lp-cta-band">

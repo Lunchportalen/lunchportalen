@@ -37,7 +37,7 @@
                     var ctaLink   = ctaLinks?.FirstOrDefault();
                     var ctaLabel  = s.Value<string>("ctaLabel");
                     if (string.IsNullOrWhiteSpace(ctaLabel)) ctaLabel = ctaLink?.Name ?? "";
-                    var ctaHref   = ctaLink?.Url ?? "#";
+                    var ctaHref   = AppUrls.ResolveLeadCapture("how-it-works");
                     var ctaTarget = ctaLink?.Target ?? "";
                     var rowClass  = i % 2 == 1 ? "ds-how-row ds-how-row--reverse ds-fade-up" : "ds-how-row ds-fade-up";
                     <li class="@rowClass">

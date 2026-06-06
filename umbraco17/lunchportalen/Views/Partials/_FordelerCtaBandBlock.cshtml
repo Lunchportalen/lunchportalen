@@ -11,13 +11,13 @@
     var primaryLinks = Model.Value<IEnumerable<Link>>("primaryCta");
     var primary = primaryLinks?.FirstOrDefault();
     var primaryText = primary?.Name ?? "Kom i gang";
-    var primaryUrl = AppUrls.ResolveLeadCapture(primary?.Url, "fordeler-primary");
+    var primaryUrl = AppUrls.ResolveLeadCapture("fordeler-primary");
     var primaryTarget = primary?.Target;
 
     var secondaryLinks = Model.Value<IEnumerable<Link>>("secondaryCta");
     var secondary = secondaryLinks?.FirstOrDefault();
     var secondaryText = secondary?.Name ?? "Kontakt oss";
-    var secondaryUrl = AppUrls.ResolveLeadCapture(secondary?.Url, "fordeler-kontakt");
+    var secondaryUrl = AppUrls.ResolveLeadCapture("fordeler-kontakt");
     var secondaryTarget = secondary?.Target;
 
     var trustSignal = "Ingen binding · Klar på få dager · Trondheim, Norge";

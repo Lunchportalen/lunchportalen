@@ -12,12 +12,12 @@
     var primaryCtaLinks = Model.Value<IEnumerable<Link>>("primaryCtaLink");
     var primaryCta      = primaryCtaLinks?.FirstOrDefault();
     var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Kom i gang →";
-    var primaryUrl      = AppUrls.ResolveLeadCapture(primaryCta?.Url, "priser-primary");
+    var primaryUrl      = AppUrls.ResolveLeadCapture("priser-primary");
 
     var secCtaLinks = Model.Value<IEnumerable<Link>>("secCtaLink");
     var secCta      = secCtaLinks?.FirstOrDefault();
     var secCtaText  = Model.Value<string>("secCtaText") ?? "Se en demo";
-    var secUrl      = AppUrls.ResolveLeadCapture(secCta?.Url, "priser-demo");
+    var secUrl      = AppUrls.ResolveLeadCapture("priser-demo");
 
     bool hasSecCta = !string.IsNullOrWhiteSpace(secCtaText);
 }

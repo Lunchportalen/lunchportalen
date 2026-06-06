@@ -4,9 +4,9 @@
     var heading            = Model.Value<string>("heading");
     var text               = Model.Value<string>("text");
     var ctaLabel           = Model.Value<string>("ctaLabel");
-    var ctaUrl             = AppUrls.ResolveLeadCapture(Model.Value<string>("ctaUrl"), "cta-band-primary");
+    var ctaUrl             = AppUrls.ResolveLeadCapture("cta-band-primary");
     var ctaSecondaryLabel  = Model.Value<string>("ctaSecondaryLabel");
-    var ctaSecondaryUrl    = AppUrls.ResolveLeadCapture(Model.Value<string>("ctaSecondaryUrl"), "cta-band-secondary");
+    var ctaSecondaryUrl    = AppUrls.ResolveLeadCapture("cta-band-secondary");
 }
 <section class="lp-cta-band ds-fade-up">
     <div class="lp-cta-band__inner">

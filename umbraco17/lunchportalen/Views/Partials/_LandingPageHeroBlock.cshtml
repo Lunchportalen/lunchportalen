@@ -21,8 +21,11 @@
     var secondaryCta      = secondaryCtaLinks?.FirstOrDefault();
     var heroImage         = content.Value<IPublishedContent>("heroImage");
     var heroImageUrl      = heroImage?.Url() ?? "";
-    var primaryUrl        = AppUrls.ResolveLeadCapture(primaryCta?.Url, "hero");
-    var secondaryUrl      = !string.IsNullOrWhiteSpace(secondaryCta?.Url) ? secondaryCta.Url : "/losningen/";
+    var primaryUrl        = AppUrls.ResolveLeadCapture("hero");
+    var secondaryRaw      = secondaryCta?.Url;
+    var secondaryUrl      = !string.IsNullOrWhiteSpace(secondaryRaw) && secondaryRaw.StartsWith("#", StringComparison.Ordinal)
+        ? AppUrls.ResolveSamePageAnchor(secondaryRaw, "#demo-video")
+        : AppUrls.ResolveNavigation(secondaryRaw, "/losningen/");
     var stats             = content.Value<IEnumerable<BlockListItem>>("stats");
     var logos             = content.Value<IEnumerable<string>>("logos");
 }

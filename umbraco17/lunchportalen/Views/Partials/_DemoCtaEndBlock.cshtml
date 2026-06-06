@@ -6,7 +6,7 @@
     var heading      = Model.Value<string>("heading")      ?? "Fjern kaoset rundt firmalunsj";
     var text         = Model.Value<string>("text")         ?? "Dropp manuelle bestillinger, usikker produksjon og unødvendig matsvinn. Lunchportalen gir en strukturert og forutsigbar løsning for hele bedriften – uten daglig oppfølging.";
     var ctaLabel     = Model.Value<string>("ctaLabel")     ?? "Book demo";
-    var ctaUrl       = AppUrls.ResolveLeadCapture(Model.Value<string>("ctaUrl"), "demo-cta-end");
+    var ctaUrl       = AppUrls.ResolveLeadCapture("demo-cta-end");
     var secLabel     = Model.Value<string>("secLabel")     ?? "Logg inn";
     var secUrl       = AppUrls.ResolveLogin(Model.Value<string>("secUrl"));
     var trustSignal  = Model.Value<string>("trustSignal")  ?? "15 minutter · Ingen forpliktelser · Passer bedrifter med 20+ ansatte";

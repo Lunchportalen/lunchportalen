@@ -7,7 +7,7 @@
     var image         = Model.Value<IPublishedContent>("image");
     var imagePosition = Model.Value<string>("imagePosition") ?? "right";
     var ctaLabel      = Model.Value<string>("ctaLabel");
-    var ctaUrl        = Model.Value<string>("ctaUrl");
+    var ctaUrl        = AppUrls.ResolveLeadCapture("feature");
     var modifier      = imagePosition == "left" ? "lp-feature-block--image-left" : "lp-feature-block--image-right";
 }
 <section class="lp-feature-block @modifier ds-fade-up">

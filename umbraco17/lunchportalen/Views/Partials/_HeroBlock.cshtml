@@ -13,6 +13,7 @@
     var trustPills      = Model.Content.Value<IEnumerable<string>>("trustPills");
     var ctaLinks        = Model.Content.Value<IEnumerable<Link>>("ctaUrl");
     var cta             = ctaLinks?.FirstOrDefault();
+    var ctaUrl          = AppUrls.ResolveLeadCapture("hero-block");
 }
 
 <section class="lp-hero ds-fade-up">
@@ -56,10 +57,10 @@
                     <p class="lp-hero__body">@bodyText</p>
                 }
 
-                @if (cta != null && !string.IsNullOrWhiteSpace(cta.Url))
+                @if (cta != null && !string.IsNullOrWhiteSpace(cta.Name))
                 {
                     <div class="lp-hero__actions">
-                        <a href="@cta.Url"
+                        <a href="@ctaUrl"
                            class="ds-btn ds-btn--primary"
                            @(cta.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
                             @(!string.IsNullOrWhiteSpace(cta.Name) ? cta.Name : "Kom i gang")

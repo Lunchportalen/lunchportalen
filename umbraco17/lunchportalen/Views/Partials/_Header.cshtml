@@ -12,7 +12,7 @@
         .FirstOrDefault(x => x.ContentType.Alias == "siteSettings");
 
     var ctaLabel = siteSettings?.Value<string>("ctaTekst") ?? "Kom i gang";
-    var ctaUrl = AppUrls.ResolveLeadCapture(siteSettings?.Value<string>("ctaLenke"), "header-cta");
+    var ctaUrl = AppUrls.ResolveLeadCapture("header-cta");
     var orderUrl = AppUrls.Login;
 
     var headerLogo = siteSettings?.Value<MediaWithCrops>("headerLogo");
