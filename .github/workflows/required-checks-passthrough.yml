@@ -25,7 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: "[kast-PR] forced drift fail — decouple proof"
+        run: exit 1
+
       - name: Verify passthrough paths match workflow on.pull_request.paths
+        if: false
         run: node scripts/ci/verify-required-check-path-drift.mjs
 
       - name: Unit tests (path parser, drift guard, scope detect)
