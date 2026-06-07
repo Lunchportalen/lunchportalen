@@ -285,16 +285,17 @@ async function runPolicyShadowChecks() {
   );
 
   const baselineRaw = String(process.env.TENANT_POLICY_COUNT_BASELINE ?? "").trim();
-  if (baselineRaw) {
-    const baseline = Number(baselineRaw);
-    if (tenantPolicyCount !== baseline) {
-      fail(`tenant pg_policies ${tenantPolicyCount} != baseline ${baseline}`);
-    } else {
-      ok(`tenant pg_policies unchanged = ${tenantPolicyCount}`);
-    }
-  } else {
-    ok(`tenant pg_policies count = ${tenantPolicyCount} (set TENANT_POLICY_COUNT_BASELINE to enforce delta=0)`);
+  if (!baselineRaw) {
+    fail("TENANT_POLICY_COUNT_BASELINE must be set (locked at 53 until FASE 3 RLS policy bump)");
   }
+  const baseline = Number(baselineRaw);
+  if (!Number.isFinite(baseline)) {
+    fail(`TENANT_POLICY_COUNT_BASELINE invalid: ${baselineRaw}`);
+  }
+  if (tenantPolicyCount !== baseline) {
+    fail(`tenant pg_policies ${tenantPolicyCount} != baseline ${baseline}`);
+  }
+  ok(`tenant pg_policies unchanged = ${tenantPolicyCount}`);
 }
 
 async function runExplainChecks() {
