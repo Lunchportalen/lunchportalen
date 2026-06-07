@@ -302,19 +302,24 @@ async function runExplainChecks() {
 
   const sampleUser = await findPersonaUserId("orderer_single");
 
-  const { rows: membershipExplain } = await client.query(
-    `SET LOCAL enable_seqscan = off;
-     EXPLAIN (FORMAT TEXT)
-     SELECT 1
-     FROM public.memberships m
-     WHERE m.user_id = $1::uuid
-       AND m.status = 'active'::public.membership_status`,
-    [sampleUser],
-  );
-  const membershipPlan = membershipExplain
-    .map((r) => r["QUERY PLAN"])
-    .filter(Boolean)
-    .join("\n");
+  await client.query("BEGIN");
+  let membershipPlan = "";
+  try {
+    await client.query("SET LOCAL enable_seqscan = off");
+    const { rows: membershipExplain } = await client.query(
+      `EXPLAIN (FORMAT TEXT)
+       SELECT 1
+       FROM public.memberships m
+       WHERE m.user_id = $1::uuid
+         AND m.status = 'active'::public.membership_status`,
+      [sampleUser],
+    );
+    membershipPlan = membershipExplain.map((r) => r["QUERY PLAN"]).join("\n");
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  }
   console.log(membershipPlan);
   if (!/memberships_user_id_status_idx|Index Scan|Bitmap Index Scan/i.test(membershipPlan)) {
     fail("memberships active lookup plan does not use memberships_user_id_status_idx");
