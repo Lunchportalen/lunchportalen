@@ -9,9 +9,9 @@ import { join } from "node:path";
 const HERO_PATH = join(process.cwd(), "components", "Hero.tsx");
 
 describe("Hero CTA — no literal \\r\\n in CTA text", () => {
-  test("Hero.tsx CTA link for /registrering does not contain literal \\r\\n or \\n in source", () => {
+  test("Hero.tsx CTA link for geography-first register does not contain literal \\r\\n or \\n in source", () => {
     const source = readFileSync(HERO_PATH, "utf-8");
-    const registrerFirmaLink = source.includes("href=\"/registrering\"");
+    const registrerFirmaLink = source.includes('href="/start?intent=register&source=hero"');
     expect(registrerFirmaLink).toBe(true);
     expect(source).toContain("Registrer firma");
     expect(source).not.toContain("\\r\\n");
