@@ -219,6 +219,12 @@ jobs:
           set -euo pipefail
           node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
 
+      - name: Verify FASE 2 auth hook shadow (staging)
+        if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs 2>&1 | tee "$EVIDENCE_DIR/fase2-auth-hook-verify.log"
+
       # ✅ Optional: run your smoke scripts (cron/auth/RPC etc.)
       - name: Smoke tests (staging)
         run: |

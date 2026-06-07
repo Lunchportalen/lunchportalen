@@ -8,6 +8,7 @@
  * Run AFTER:
  *   20260703120000_fundament_identity_spine_phase1.sql
  *   20260707120000_fundament_identity_spine_phase1_review_adjustments.sql
+ *   20260708120000_fundament_identity_spine_phase2_auth_hook_shadow.sql
  *
  * CI green alone is NOT sufficient — verify via live katalog post-deploy.
  *
@@ -46,7 +47,7 @@ const EXPECT = {
   revokedBackfilled: 0,
   revokedOnSpine: 0,
   spineRlsPolicies: 0,
-  authHookFunctions: 0,
+  authHookFunctions: 1,
 };
 
 function mustEnv(name) {
@@ -507,9 +508,9 @@ try {
     ),
   );
   if (authHooks !== EXPECT.authHookFunctions) {
-    fail(`custom_access_token_hook functions = ${authHooks}`);
+    fail(`custom_access_token_hook functions = ${authHooks} (expected ${EXPECT.authHookFunctions})`);
   }
-  ok(`custom_access_token_hook absent`);
+  ok(`custom_access_token_hook present (Fase 2 shadow)`);
 
   const invalidRole = Number(
     await scalar(
