@@ -63,6 +63,8 @@ jobs:
       # HTTP cron smoke needs staging.app (uigx-backed deploy); POSTDEPLOY_BASE_URL not wired yet — owner fixes secret.
       STAGING_SMOKE_SKIP: "1"
       EVIDENCE_DIR: evidence/staging
+      # Locked shadow baseline — bump intentionally in FASE 3 when RLS policies are added.
+      TENANT_POLICY_COUNT_BASELINE: "53"
 
     steps:
       - name: Checkout
@@ -220,7 +222,6 @@ jobs:
           node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
 
       - name: Verify FASE 2 auth hook shadow (staging)
-        if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
         run: |
           set -euo pipefail
           node scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs 2>&1 | tee "$EVIDENCE_DIR/fase2-auth-hook-verify.log"
