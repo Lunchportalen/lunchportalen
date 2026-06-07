@@ -190,4 +190,3 @@ jobs:
           labels: |
             design
             codex
-            risk:low
