@@ -4,8 +4,10 @@ env:
   ONNXRUNTIME_NODE_INSTALL: skip
 
 on:
+  # Run only after Umbraco Azure deploy completes (www.lunchportalen.no target).
+  # Decoupled from CI (AGENTS gate) to avoid racing Azure stop/start + warm-up.
   workflow_run:
-    workflows: ["CI (AGENTS gate)"]
+    workflows: ["Umbraco CMS — Azure Web App deploy"]
     types: [completed]
   workflow_dispatch:
 
@@ -21,7 +23,7 @@ jobs:
          github.event.workflow_run.head_branch == 'main')
       }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -29,7 +31,7 @@ jobs:
       - name: Checkout (workflow_run commit)
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -55,6 +57,8 @@ jobs:
       - name: Run postdeploy gate
         shell: bash
         env:
-          POSTDEPLOY_TIMEOUT_MS: "12000"
+          POSTDEPLOY_TIMEOUT_MS: "15000"
+          POSTDEPLOY_RETRIES: "12"
+          POSTDEPLOY_RETRY_DELAY_MS: "15000"
           POSTDEPLOY_JSON_CHECKS: "0"
         run: npm run postdeploy
