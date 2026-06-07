@@ -37,7 +37,7 @@ export default function RegisterGate() {
     }
 
     // Canonical intake krever full firmadata (org.nr., adresse m.m.) — samme API som `/registrering`.
-    router.push("/registrering");
+    router.push("/start?intent=register&source=register-gate");
   }
 
   return (

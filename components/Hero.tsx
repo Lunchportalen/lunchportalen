@@ -23,7 +23,7 @@ export default function Hero() {
               Se hvordan det fungerer
             </Link>
 
-            <Link href="/registrering" className="lp-btn lp-btn-ghost">
+            <Link href="/start?intent=register&source=hero" className="lp-btn lp-btn-ghost">
                 Registrer firma
               </Link>
           </div>

@@ -34,6 +34,20 @@ export const leadsCaptureBodySchema = z.object({
     z.enum(companySizeValues, { errorMap: () => ({ message: "Ugyldig antall ansatte" }) }).optional(),
   ),
   message: z.preprocess(emptyToUndefined, z.string().max(4000, "Meldingen er for lang").optional()),
+  postal_code: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .regex(/^\d{4}$/, "Ugyldig postnummer")
+      .optional(),
+  ),
+  city: z.preprocess(
+    emptyToUndefined,
+    z.string().min(1, "Poststed er påkrevd").max(128, "Poststed er for langt").optional(),
+  ),
+  region: z.preprocess(emptyToUndefined, z.string().max(64, "Region er for lang").optional()),
+  coverage_wish: z.boolean().optional(),
+  lead_type: z.enum(["customer", "provider"]).optional(),
   website: z.string().optional(),
 });
 

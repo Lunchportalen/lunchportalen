@@ -96,6 +96,11 @@ type LeadsTable = {
     status: string;
     processed_at: string | null;
     created_at: string;
+    postal_code: string | null;
+    city: string | null;
+    region: string | null;
+    coverage_wish: boolean;
+    lead_type: string;
   };
   Insert: {
     id?: string;
@@ -110,6 +115,11 @@ type LeadsTable = {
     status?: string;
     processed_at?: string | null;
     created_at?: string;
+    postal_code?: string | null;
+    city?: string | null;
+    region?: string | null;
+    coverage_wish?: boolean;
+    lead_type?: string;
   };
   Update: Partial<{
     id: string;
@@ -326,6 +336,11 @@ export type Database = {
           p_phone?: string | null;
           p_company_size?: string | null;
           p_message?: string | null;
+          p_postal_code?: string | null;
+          p_city?: string | null;
+          p_region?: string | null;
+          p_coverage_wish?: boolean;
+          p_lead_type?: string;
         };
         Returns: string;
       };
