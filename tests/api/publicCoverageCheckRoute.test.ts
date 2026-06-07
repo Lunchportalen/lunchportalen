@@ -1,8 +1,8 @@
 /**
  * POST /api/public/coverage/check — geography gate unit tests.
  */
-// @ts-nocheck
 
+import type { NextRequest } from "next/server";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const rpcMock = vi.hoisted(() => vi.fn());
@@ -17,10 +17,10 @@ vi.mock("@/lib/supabase/admin", () => ({
   hasSupabaseAdminConfig: hasConfigMock,
 }));
 
-function postReq(body: Record<string, unknown>) {
+function postReq(body: Record<string, unknown>): NextRequest {
   return {
     json: () => Promise.resolve(body),
-  };
+  } as unknown as NextRequest;
 }
 
 describe("POST /api/public/coverage/check", () => {
