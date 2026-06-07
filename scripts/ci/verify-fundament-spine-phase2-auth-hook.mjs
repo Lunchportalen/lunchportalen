@@ -114,8 +114,7 @@ async function findPersonaUserId(kind) {
       const id = await scalar(
         `SELECT pa.user_id::text AS c
          FROM public.platform_admins pa
-         JOIN auth.users u ON u.id = pa.user_id
-         WHERE lower(u.email) = 'superadmin@lunchportalen.no'
+         ORDER BY pa.created_at
          LIMIT 1`,
       );
       if (!id) throw new Error("no platform_admin persona found");
@@ -171,10 +170,18 @@ async function runPersonaChecks() {
     },
     {
       key: "platform_admin",
-      assert: (claims) => {
+      assert: (claims, ctx) => {
         if (claims.is_platform_admin !== true) return "is_platform_admin must be true";
-        if (claims.active_org_id) return "platform_admin must not get active_org_id without active membership";
-        if (claims.active_role) return "platform_admin must not get active_role without active membership";
+        if (ctx.activeMembershipCount === 0) {
+          if (claims.active_org_id) {
+            return "platform_admin with 0 active memberships must omit active_org_id";
+          }
+          if (claims.active_role) {
+            return "platform_admin with 0 active memberships must omit active_role";
+          }
+        } else if (!claims.active_org_id || !claims.active_role) {
+          return "platform_admin with active memberships must include active_org_id and active_role";
+        }
         return null;
       },
     },
@@ -195,12 +202,21 @@ async function runPersonaChecks() {
 
   for (const persona of personas) {
     const userId = await findPersonaUserId(persona.key);
+    const activeMembershipCount = Number(
+      await scalar(
+        `SELECT COUNT(*)::int AS c
+         FROM public.memberships
+         WHERE user_id = $1::uuid
+           AND status = 'active'::public.membership_status`,
+        [userId],
+      ),
+    );
     const { rows } = await client.query(
       `SELECT public.custom_access_token_hook($1::jsonb) AS result`,
       [sampleEvent(userId)],
     );
     const claims = claimsOf(rows[0]?.result);
-    const err = persona.assert(claims);
+    const err = persona.assert(claims, { activeMembershipCount });
     if (err) {
       fail(`${persona.key} (${userId}): ${err}`);
       console.error(JSON.stringify(claims, null, 2));
