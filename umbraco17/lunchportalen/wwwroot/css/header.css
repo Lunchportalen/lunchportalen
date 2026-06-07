@@ -350,8 +350,10 @@ main,
     justify-content:center;
     flex-direction:column;
     gap:5px;
-    width:43px;
-    height:43px;
+    width:48px;
+    height:48px;
+    min-width:48px;
+    min-height:48px;
     padding:0;
     border-radius:13px;
     border:1px solid rgba(255,255,255,.72);
@@ -375,6 +377,11 @@ main,
     transition:
       transform .22s ease,
       opacity .18s ease;
+  }
+
+  .lp-hamburger:focus-visible{
+    outline:3px solid #f5c518;
+    outline-offset:3px;
   }
 
   /* Animasjon når åpen */

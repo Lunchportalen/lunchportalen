@@ -1,13 +1,42 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.PublishedContent
 @{
-    var heading    = Model.Value<string>("heading");
-    var subheading = Model.Value<string>("subheading");
-    var steps      = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("steps");
+    var preset   = ViewData["StepsPreset"] as string ?? "";
+    var sectionId = Model?.Value<string>("sectionId") ?? "howitworks-caterer";
+    var heading    = Model?.Value<string>("heading");
+    var subheading = Model?.Value<string>("subheading");
+    var steps      = Model?.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("steps");
+
+    if (string.IsNullOrWhiteSpace(heading))
+    {
+        heading = preset == "caterer"
+            ? "Slik kommer caterere på plattformen"
+            : heading;
+    }
+
+    if (string.IsNullOrWhiteSpace(subheading))
+    {
+        subheading = preset == "caterer"
+            ? "Lunchportalen leverer registrering, bestilling og drift — dere leverer maten."
+            : subheading;
+    }
+
+    var defaultSteps = preset switch
+    {
+        "caterer" => new (string Title, string Description)[]
+        {
+            ("Book demo", "Vi går gjennom hvordan plattformen støtter produksjon, kunder og leveringsplan."),
+            ("Sett opp område og meny", "Definer hvor dere leverer og hvordan uken ser ut for bedriftskundene."),
+            ("Ta imot bedrifter", "Nye kunder registreres gjennom plattformen — dere drifter i samme system.")
+        },
+        _ => Array.Empty<(string Title, string Description)>()
+    };
+
+    var hasSteps = steps != null && steps.Any();
     int stepNumber = 1;
 }
-<section class="lp-steps-block ds-fade-up">
+<section class="lp-steps-block ds-fade-up" id="@sectionId">
     <div class="lp-steps-inner">
         @if (!string.IsNullOrWhiteSpace(heading))
         {
@@ -17,10 +46,10 @@
         {
             <p class="lp-steps-subheading">@subheading</p>
         }
-        @if (steps != null && steps.Any())
+        @if (hasSteps)
         {
             <div class="lp-steps-grid">
-                @foreach (var step in steps)
+                @foreach (var step in steps!)
                 {
                     var title       = step.Content.Value<string>("title");
                     var description = step.Content.Value<string>("description");
@@ -40,6 +69,23 @@
                     stepNumber++;
                 }
             </div>
+        }
+        else if (defaultSteps.Length > 0)
+        {
+            <div class="lp-steps-grid">
+                @foreach (var step in defaultSteps)
+                {
+                    <div class="lp-step-item">
+                        <div class="lp-step-number">@stepNumber</div>
+                        <h3 class="lp-step-title">@step.Title</h3>
+                        <p class="lp-step-desc">@step.Description</p>
+                    </div>
+                    stepNumber++;
+                }
+            </div>
+            <p class="lp-steps-cta">
+                <a href="@AppUrls.Demo("forside-caterer")" class="ds-btn ds-btn--primary">Book demo for caterer</a>
+            </p>
         }
     </div>
 </section>

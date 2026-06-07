@@ -5,21 +5,14 @@
 @{
     Layout = "~/Views/Partials/_Layout.cshtml";
 
-    var grid = Model.Value<BlockGridModel>("contentBlocks");
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
 }
 
-@if (grid != null && grid.Any())
+@if (blocks != null && blocks.Any())
 {
-    @await Html.GetBlockGridHtmlAsync(Model, "contentBlocks")
+    @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
 }
 else
 {
-    <section class="ds-section">
-        <div class="ds-container">
-            <div class="ds-surface">
-                <h1>Home OK</h1>
-                <p>Ingen blokker funnet i contentBlocks.</p>
-            </div>
-        </div>
-    </section>
+    @await Html.PartialAsync("~/Views/Partials/_ForsideDefaultComposition.cshtml")
 }

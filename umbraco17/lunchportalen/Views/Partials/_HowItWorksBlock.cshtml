@@ -1,15 +1,43 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using System.Linq
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Cms.Core.Models.PublishedContent
 @{
-    var eyebrow = Model.Value<string>("eyebrow");
-    var heading = Model.Value<string>("heading");
-    var steps   = Model.Value<IEnumerable<BlockListItem>>("steps");
+    var preset  = ViewData["HowItWorksPreset"] as string ?? "";
+    var eyebrow = Model?.Value<string>("eyebrow");
+    var heading = Model?.Value<string>("heading");
+    var steps   = Model?.Value<IEnumerable<BlockListItem>>("steps");
+    var sectionId = Model?.Value<string>("sectionId") ?? "howitworks-kunde";
+
+    if (string.IsNullOrWhiteSpace(eyebrow))
+    {
+        eyebrow = "Slik fungerer det";
+    }
+
+    if (string.IsNullOrWhiteSpace(heading))
+    {
+        heading = preset == "customer" || string.IsNullOrEmpty(preset)
+            ? "Firmalunsj for bedriften — koblet til caterer i området"
+            : heading;
+    }
+
+    var defaultSteps = preset switch
+    {
+        "customer" => new (string Num, string Title, string Text, string Cta)[]
+        {
+            ("01", "Send interesse", "Fortell oss om bedriften og lokasjon. Vi tar kontakt og kobler dere med riktig caterer.", "Send interesse"),
+            ("02", "Ansatte bestiller selv", "Teamet velger lunsj innen cutoff. Plattformen samler bestillinger deterministisk.", ""),
+            ("03", "Caterer produserer og leverer", "Deres caterer produserer etter avtale. Dere betaler kun for det som spises.", "Book demo")
+        },
+        _ => Array.Empty<(string Num, string Title, string Text, string Cta)>()
+    };
+
+    var stepList = steps?.ToList() ?? new List<BlockListItem>();
+    var useDefaults = stepList.Count == 0 && defaultSteps.Length > 0;
 }
-<section class="ds-section" id="howitworks">
+<section class="ds-section" id="@sectionId">
     <div class="ds-container">
         <div class="ds-text-limit ds-fade-up">
             @if (!string.IsNullOrWhiteSpace(eyebrow))
@@ -22,9 +50,30 @@
             }
         </div>
         <ul class="ds-how-list">
-            @if (steps != null)
+            @if (useDefaults)
             {
-                var stepList = steps.ToList();
+                for (int i = 0; i < defaultSteps.Length; i++)
+                {
+                    var step     = defaultSteps[i];
+                    var ctaHref  = AppUrls.Demo(i == 0 ? "forside-kunde-interesse" : "forside-kunde");
+                    var rowClass = i % 2 == 1 ? "ds-how-row ds-how-row--reverse ds-fade-up" : "ds-how-row ds-fade-up";
+                    <li class="@rowClass">
+                        <div class="ds-how-text">
+                            <div class="ds-step__number">@step.Num</div>
+                            <h3 class="ds-how-title">@step.Title</h3>
+                            <p class="ds-how-body">@step.Text</p>
+                            @if (!string.IsNullOrWhiteSpace(step.Cta))
+                            {
+                                <div class="ds-how-button">
+                                    <a class="ds-btn ds-btn--primary" href="@ctaHref">@step.Cta</a>
+                                </div>
+                            }
+                        </div>
+                    </li>
+                }
+            }
+            else if (stepList.Count > 0)
+            {
                 for (int i = 0; i < stepList.Count; i++)
                 {
                     var s         = stepList[i].Content;
@@ -37,7 +86,7 @@
                     var ctaLink   = ctaLinks?.FirstOrDefault();
                     var ctaLabel  = s.Value<string>("ctaLabel");
                     if (string.IsNullOrWhiteSpace(ctaLabel)) ctaLabel = ctaLink?.Name ?? "";
-                    var ctaHref   = AppUrls.ResolveLeadCapture("how-it-works");
+                    var ctaHref   = AppUrls.Demo("how-it-works");
                     var ctaTarget = ctaLink?.Target ?? "";
                     var rowClass  = i % 2 == 1 ? "ds-how-row ds-how-row--reverse ds-fade-up" : "ds-how-row ds-fade-up";
                     <li class="@rowClass">

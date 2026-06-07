@@ -1,15 +1,16 @@
-@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
 
 @{
-    var eyebrow = Model.Value<string>("eyebrow") ?? "Book demo";
-    var heading = Model.Value<string>("heading") ?? "Se hvordan dere kan få kontroll på firmalunsj";
-    var text    = Model.Value<string>("text")    ?? "Vi viser hvordan Lunchportalen fungerer i praksis, og hvordan løsningen kan settes opp for deres ansatte, leveringsdager og behov – uten forpliktelser.";
-    var btnText = Model.Value<string>("buttonText") ?? "Book demo";
+    var eyebrow = Model?.Value<string>("eyebrow") ?? "Book demo eller send interesse";
+    var heading = Model?.Value<string>("heading") ?? "Vil du se hvordan plattformen fungerer for dere?";
+    var text    = Model?.Value<string>("text")
+        ?? "Book en uforpliktende demo — eller send interesse som bedrift. Vi tar kontakt og kobler dere videre når det passer.";
+    var btnText = Model?.Value<string>("buttonText") ?? "Book demo / send interesse";
 
-    var checkBlocks   = Model.Value<BlockListModel>("checks");
-    var defaultChecks = new[] { "15 minutter", "Ingen forpliktelser", "Passer bedrifter med 20+ ansatte" };
+    var checkBlocks   = Model?.Value<BlockListModel>("checks");
+    var defaultChecks = new[] { "15 minutter", "Ingen forpliktelser", "For bedrifter og caterere" };
     bool hasChecks    = checkBlocks != null && checkBlocks.Any();
 }
 
@@ -24,7 +25,7 @@
             <ul class="lp-demo-checks" aria-label="Hva du får">
                 @if (hasChecks)
                 {
-                    foreach (var block in checkBlocks)
+                    foreach (var block in checkBlocks!)
                     {
                         var checkText = block.Content.Value<string>("text") ?? "";
                         if (!string.IsNullOrWhiteSpace(checkText))
@@ -44,7 +45,7 @@
         </div>
 
         <div class="lp-demo-booking-cta lp-reveal lp-reveal--delay-100">
-            <a href="@AppUrls.Demo("demo-booking")"
+            <a href="@AppUrls.Demo("forside-interesse")"
                class="lp-demo-booking-cta__btn"
                aria-label="@btnText – åpner demo-skjema i Lunchportalen-appen">
                 @btnText

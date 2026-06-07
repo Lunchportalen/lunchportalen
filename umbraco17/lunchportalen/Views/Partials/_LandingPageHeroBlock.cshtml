@@ -1,4 +1,4 @@
-@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using System.Linq
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
@@ -7,29 +7,37 @@
 
 @{
     var content           = Model;
-    var eyebrow           = content.Value<string>("eyebrow")        ?? "Lunsj til bedrifter i Norge";
-    var heading           = content.Value<string>("heading")        ?? "Lunsj";
-    var headingOutline    = content.Value<string>("headingOutline") ?? "uten";
-    var headingGold       = content.Value<string>("headingGold")    ?? "matsvinn.";
-    var leadText          = content.Value<string>("leadText")
-        ?? "Ansatte bestiller selv innen kl. 08:00 — vi leverer etter avtale med bedriften. Dere betaler kun for det som faktisk spises.";
-    var primaryCtaText    = content.Value<string>("primaryCtaText")  ?? "Prøv gratis i 5 dager";
-    var primaryCtaLinks   = content.Value<IEnumerable<Link>>("primaryCtaLink");
+    var eyebrow           = content?.Value<string>("eyebrow")        ?? "Driftsplattform for firmalunsj i Norge";
+    var heading           = content?.Value<string>("heading")        ?? "Finn firmalunsj";
+    var headingOutline    = content?.Value<string>("headingOutline") ?? "via caterer";
+    var headingGold       = content?.Value<string>("headingGold")    ?? "nær dere.";
+    var leadText          = content?.Value<string>("leadText")
+        ?? "Ansatte bestiller selv innen kl. 08:00. Plattformen kobler bedriften med caterere i ditt område — dere betaler kun for det som faktisk spises.";
+    var primaryCtaText    = content?.Value<string>("primaryCtaText")  ?? "Book demo som bedrift";
+    var primaryCtaLinks   = content?.Value<IEnumerable<Link>>("primaryCtaLink");
     var primaryCta        = primaryCtaLinks?.FirstOrDefault();
-    var secondaryCtaText  = content.Value<string>("secondaryCtaText") ?? "Se hvordan det fungerer";
-    var secondaryCtaLinks = content.Value<IEnumerable<Link>>("secondaryCtaLink");
+    var secondaryCtaText  = content?.Value<string>("secondaryCtaText") ?? "For caterere";
+    var secondaryCtaLinks = content?.Value<IEnumerable<Link>>("secondaryCtaLink");
     var secondaryCta      = secondaryCtaLinks?.FirstOrDefault();
-    var heroImage         = content.Value<IPublishedContent>("heroImage");
+    var heroImage         = content?.Value<IPublishedContent>("heroImage");
     var heroImageUrl      = heroImage?.Url() ?? "";
-    var primaryUrl        = AppUrls.ResolveLeadCapture("hero");
-    var secondaryUrl      = AppUrls.ResolveGenericHeroSecondary(secondaryCta?.Url, "hero-secondary");
-    var stats             = content.Value<IEnumerable<BlockListItem>>("stats");
-    var logos             = content.Value<IEnumerable<string>>("logos");
+    var primaryUrl        = AppUrls.Demo("forside-kunde");
+    var secondaryUrl      = AppUrls.Demo("forside-caterer");
+    if (secondaryCta != null && !string.IsNullOrWhiteSpace(secondaryCta.Url))
+    {
+        secondaryUrl = AppUrls.ResolveGenericHeroSecondary(secondaryCta.Url, "forside-caterer", "#howitworks-caterer");
+    }
+    var stats             = content?.Value<IEnumerable<BlockListItem>>("stats");
+    var logos             = content?.Value<IEnumerable<string>>("logos");
+    if (logos == null || !logos.Any())
+    {
+        logos = new[] { "Bedrifter i hele Norge", "Caterere på plattformen", "Drift i sanntid" };
+    }
 }
 
 <section class="lp-lp-hero">
-  <div class="lp-lp-deco-circle" style="width:480px;height:480px;background:rgba(245,197,24,.07);top:-160px;right:-80px;"></div>
-  <div class="lp-lp-deco-circle" style="width:200px;height:200px;background:rgba(245,197,24,.05);bottom:-60px;left:20%;"></div>
+  <div class="lp-lp-deco-circle lp-lp-deco-circle--tr" aria-hidden="true"></div>
+  <div class="lp-lp-deco-circle lp-lp-deco-circle--bl" aria-hidden="true"></div>
 
   <div class="lp-lp-hero__inner">
 
@@ -65,12 +73,12 @@
            class="lp-lp-btn-primary"
            @(primaryCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
           @primaryCtaText
-          <span class="lp-lp-btn-arrow">→</span>
+          <span class="lp-lp-btn-arrow" aria-hidden="true">→</span>
         </a>
         <a href="@secondaryUrl"
            class="lp-lp-btn-ghost"
            @(secondaryCta?.Target == "_blank" ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
-          <span class="lp-lp-play-icon">▶</span>
+          <span class="lp-lp-play-icon" aria-hidden="true">▶</span>
           @secondaryCtaText
         </a>
       </div>
@@ -109,9 +117,9 @@
 
           <div class="lp-lp-app-window">
             <div class="lp-lp-win-bar">
-              <div class="lp-lp-win-dot" style="background:#FF5F57"></div>
-              <div class="lp-lp-win-dot" style="background:#FEBC2E"></div>
-              <div class="lp-lp-win-dot" style="background:#28C840"></div>
+              <div class="lp-lp-win-dot lp-lp-win-dot--red"></div>
+              <div class="lp-lp-win-dot lp-lp-win-dot--yellow"></div>
+              <div class="lp-lp-win-dot lp-lp-win-dot--green"></div>
               <div class="lp-lp-win-url">app.lunchportalen.no</div>
             </div>
             <div class="lp-lp-win-body">
@@ -162,7 +170,7 @@
               </div>
               <div class="lp-lp-win-delivery">
                 <span class="lp-lp-delivery-dot"></span>
-                <span class="lp-lp-delivery-txt">Levering etter avtale med din bedrift</span>
+                <span class="lp-lp-delivery-txt">Levert av caterer etter avtale med bedriften</span>
               </div>
             </div>
           </div>
