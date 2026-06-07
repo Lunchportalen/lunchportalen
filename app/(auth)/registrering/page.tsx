@@ -1,9 +1,17 @@
 // app/(auth)/registrering/page.tsx — app onboarding; form → POST /api/public/register-company (operational truth). No marketing CMS pipeline.
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import PageShell from "@/components/PageShell";
 import PublicRegistrationFlow from "@/components/registration/PublicRegistrationFlow";
+import {
+  buildStartRedirectPath,
+  hasGeographyParams,
+  normalizeCity,
+  normalizePostalCode,
+  resolveSource,
+} from "@/lib/public/geographyParams";
 
 export const metadata: Metadata = {
   title: "Registrer firma | Lunchportalen",
@@ -44,11 +52,27 @@ function LoadingShell() {
   );
 }
 
-export default function RegistreringPage() {
+export default async function RegistreringPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const postalCode = normalizePostalCode(String(Array.isArray(params.postal_code) ? params.postal_code[0] : params.postal_code ?? ""));
+  const city = normalizeCity(String(Array.isArray(params.city) ? params.city[0] : params.city ?? ""));
+  const source = resolveSource(
+    String(Array.isArray(params.source) ? params.source[0] : params.source ?? ""),
+    "register-direct",
+  );
+
+  if (!hasGeographyParams(postalCode, city)) {
+    redirect(buildStartRedirectPath("register", { source, postalCode, city }));
+  }
+
   return (
     <PageShell>
       <Suspense fallback={<LoadingShell />}>
-        <PublicRegistrationFlow />
+        <PublicRegistrationFlow initialPostalCode={postalCode} initialPostalCity={city} />
       </Suspense>
     </PageShell>
   );

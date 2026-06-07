@@ -68,6 +68,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/pitch",
   "/api/public/ai-demo-cta/assign",
   "/api/public/analytics",
+  "/api/public/coverage/check",
   "/api/public/demo-interest",
   "/api/public/leads/capture",
   "/api/public/onboarding/register",

@@ -9,10 +9,10 @@ public class AppUrlsTests
     [InlineData("hero")]
     [InlineData("cta-band")]
     [InlineData("header-cta")]
-    public void ResolveLeadCapture_AlwaysReturnsAppDemoWithSource(string source)
+    public void ResolveLeadCapture_AlwaysReturnsAppStartWithSource(string source)
     {
         var result = AppUrls.ResolveLeadCapture(source);
-        Assert.Equal($"https://app.lunchportalen.no/demo?source={source}", result);
+        Assert.Equal($"https://app.lunchportalen.no/start?source={source}&intent=demo", result);
     }
 
     [Fact]
@@ -22,9 +22,21 @@ public class AppUrlsTests
         {
             _ = ignored;
             var result = AppUrls.ResolveLeadCapture("test-source");
-            Assert.StartsWith("https://app.lunchportalen.no/demo?source=", result);
+            Assert.StartsWith("https://app.lunchportalen.no/start?source=", result);
+            Assert.Contains("intent=demo", result);
             Assert.DoesNotContain("lunchportalen.no/demo/", result);
         }
+    }
+
+    [Theory]
+    [InlineData("login-register", "register")]
+    [InlineData("hero", "demo")]
+    public void Start_ResolvesIntent(string source, string intent)
+    {
+        var result = AppUrls.Start(source, intent);
+        Assert.Contains($"source={source}", result);
+        Assert.Contains($"intent={intent}", result);
+        Assert.StartsWith("https://app.lunchportalen.no/start?", result);
     }
 
     [Theory]
@@ -72,9 +84,9 @@ public class AppUrlsTests
     }
 
     [Theory]
-    [InlineData("/Demo/", "hero-secondary", "https://app.lunchportalen.no/demo?source=hero-secondary")]
-    [InlineData("/kontakt/", "hero-secondary", "https://app.lunchportalen.no/demo?source=hero-secondary")]
-    [InlineData("/kom-i-gang", "kom-i-gang-hero-secondary", "https://app.lunchportalen.no/demo?source=kom-i-gang-hero-secondary")]
+    [InlineData("/Demo/", "hero-secondary", "https://app.lunchportalen.no/start?source=hero-secondary&intent=demo")]
+    [InlineData("/kontakt/", "hero-secondary", "https://app.lunchportalen.no/start?source=hero-secondary&intent=demo")]
+    [InlineData("/kom-i-gang", "kom-i-gang-hero-secondary", "https://app.lunchportalen.no/start?source=kom-i-gang-hero-secondary&intent=demo")]
     [InlineData("#demo-video", "hero-secondary", "#demo-video")]
     [InlineData(null, "hero-secondary", "/loesningen/")]
     [InlineData("/loesningen/", "hero-secondary", "/loesningen/")]

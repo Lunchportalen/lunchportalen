@@ -53,6 +53,10 @@ export type LeadSalesAlertPayload = {
   phone?: string;
   company_size?: string;
   message?: string;
+  postal_code?: string;
+  city?: string;
+  coverage_wish?: boolean;
+  lead_type?: string;
 };
 
 /**
@@ -62,14 +66,20 @@ export async function sendLeadSalesAlert(payload: LeadSalesAlertPayload): Promis
   try {
     const to = pickSystemEmail(process.env.CONTACT_TO, SUPPORT_EMAIL);
     const from = pickSystemEmail(process.env.CONTACT_FROM, SUPPORT_EMAIL);
-    const { rid, leadId, name, email, company, source, phone, company_size, message } = payload;
+    const { rid, leadId, name, email, company, source, phone, company_size, message, postal_code, city, coverage_wish, lead_type } =
+      payload;
 
-    const subject = `Ny demo-forespørsel: ${company} (RID: ${rid})`;
+    const subject = coverage_wish
+      ? `Dekningsønske: ${company} (${postal_code ?? "?"} ${city ?? ""}) — RID: ${rid}`
+      : `Ny demo-forespørsel: ${company} (RID: ${rid})`;
     const text =
-      `Ny demo-forespørsel\n\n` +
+      (coverage_wish ? `Dekningsønske\n\n` : `Ny demo-forespørsel\n\n`) +
       `RID: ${rid}\n` +
       `Lead-ID: ${leadId}\n` +
       `Kilde: ${source}\n` +
+      (lead_type ? `Type: ${lead_type}\n` : "") +
+      (postal_code ? `Postnummer: ${postal_code}\n` : "") +
+      (city ? `Poststed: ${city}\n` : "") +
       `Navn: ${name}\n` +
       `E-post: ${email}\n` +
       `Bedrift: ${company}\n` +
@@ -79,11 +89,14 @@ export async function sendLeadSalesAlert(payload: LeadSalesAlertPayload): Promis
 
     const html = `
       <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5">
-        <h2 style="margin:0 0 12px 0">Ny demo-forespørsel</h2>
+        <h2 style="margin:0 0 12px 0">${coverage_wish ? "Dekningsønske" : "Ny demo-forespørsel"}</h2>
         <div style="padding:12px 14px;border:1px solid #eee;border-radius:12px;background:#fafafa">
           <div><strong>RID:</strong> ${escapeHtml(rid)}</div>
           <div><strong>Lead-ID:</strong> ${escapeHtml(leadId)}</div>
           <div><strong>Kilde:</strong> ${escapeHtml(source)}</div>
+          ${lead_type ? `<div><strong>Type:</strong> ${escapeHtml(lead_type)}</div>` : ""}
+          ${postal_code ? `<div><strong>Postnummer:</strong> ${escapeHtml(postal_code)}</div>` : ""}
+          ${city ? `<div><strong>Poststed:</strong> ${escapeHtml(city)}</div>` : ""}
           <div><strong>Navn:</strong> ${escapeHtml(name)}</div>
           <div><strong>E-post:</strong> ${escapeHtml(email)}</div>
           <div><strong>Bedrift:</strong> ${escapeHtml(company)}</div>

@@ -23,6 +23,10 @@ const RPC_FIELD_MAP: Record<string, string> = {
   invalid_phone: "phone",
   invalid_company_size: "company_size",
   invalid_message: "message",
+  invalid_postal_code: "postal_code",
+  invalid_city: "city",
+  invalid_region: "region",
+  invalid_lead_type: "lead_type",
 };
 
 function rpcErrorCode(message: string): string | null {
@@ -75,7 +79,8 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Tjenesten er midlertidig utilgjengelig", 503, "CONFIG_UNAVAILABLE");
   }
 
-  const { name, email, company, source, phone, company_size, message } = parsed.data;
+  const { name, email, company, source, phone, company_size, message, postal_code, city, region, coverage_wish, lead_type } =
+    parsed.data;
 
   let leadId: string;
   try {
@@ -90,6 +95,11 @@ export async function POST(req: NextRequest) {
       p_phone: phone ?? null,
       p_company_size: company_size ?? null,
       p_message: message ?? null,
+      p_postal_code: postal_code ?? null,
+      p_city: city ?? null,
+      p_region: region ?? null,
+      p_coverage_wish: coverage_wish ?? false,
+      p_lead_type: lead_type ?? "customer",
     });
 
     if (error) {
@@ -142,6 +152,10 @@ export async function POST(req: NextRequest) {
     phone,
     company_size,
     message,
+    postal_code,
+    city,
+    coverage_wish,
+    lead_type,
   });
 
   return jsonOk(rid, { leadId }, 200);

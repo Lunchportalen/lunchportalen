@@ -6,7 +6,13 @@ import CompanyRegistrationForm from "@/components/auth/CompanyRegistrationForm";
 import { RegistrationDemoFunnelBeacon } from "@/components/registration/RegistrationDemoFunnelBeacon";
 import RoleGate from "@/components/registration/RoleGate";
 
-export default function PublicRegistrationFlow() {
+export default function PublicRegistrationFlow({
+  initialPostalCode = "",
+  initialPostalCity = "",
+}: {
+  initialPostalCode?: string;
+  initialPostalCity?: string;
+}) {
   const [started, setStarted] = useState(false);
 
   if (!started) {
@@ -26,7 +32,10 @@ export default function PublicRegistrationFlow() {
         <RegistrationDemoFunnelBeacon />
       </Suspense>
       <div className="w-full max-w-none px-0 py-0">
-        <CompanyRegistrationForm />
+        <CompanyRegistrationForm
+          initialPostalCode={initialPostalCode}
+          initialPostalCity={initialPostalCity}
+        />
       </div>
     </>
   );

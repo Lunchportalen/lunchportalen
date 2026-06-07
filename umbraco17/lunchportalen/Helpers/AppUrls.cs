@@ -8,12 +8,14 @@ public static class AppUrls
 {
     public const string Login = "https://app.lunchportalen.no/login";
 
+    private const string StartBase = "https://app.lunchportalen.no/start";
     private const string DemoBase = "https://app.lunchportalen.no/demo";
 
     private static readonly string[] LoginPaths = ["/login", "/logg-inn"];
 
     private static readonly string[] LeadCapturePaths =
     [
+        "/start",
         "/demo",
         "/kom-i-gang",
         "/kontakt",
@@ -31,14 +33,24 @@ public static class AppUrls
 
     public static string Demo(string source)
     {
-        var normalized = NormalizeSource(source);
-        return string.IsNullOrEmpty(normalized)
-            ? DemoBase
-            : $"{DemoBase}?source={Uri.EscapeDataString(normalized)}";
+        return Start(source, "demo");
     }
 
-    /// <summary>Lead-capture intent: always routes to the app demo form.</summary>
-    public static string ResolveLeadCapture(string source) => Demo(source);
+    /// <summary>Geography-first entry: always routes to app /start before demo or registration.</summary>
+    public static string Start(string source, string intent = "demo")
+    {
+        var normalized = NormalizeSource(source);
+        var normalizedIntent = string.Equals(intent, "register", StringComparison.OrdinalIgnoreCase)
+            ? "register"
+            : "demo";
+        var qs = string.IsNullOrEmpty(normalized)
+            ? $"?intent={Uri.EscapeDataString(normalizedIntent)}"
+            : $"?source={Uri.EscapeDataString(normalized)}&intent={Uri.EscapeDataString(normalizedIntent)}";
+        return $"{StartBase}{qs}";
+    }
+
+    /// <summary>Lead-capture intent: geography gate before demo/registration.</summary>
+    public static string ResolveLeadCapture(string source) => Start(source, "demo");
 
     /// <summary>
     /// Generic landing-hero secondary slot: lead paths → app, # → anchor, else → internal nav.
