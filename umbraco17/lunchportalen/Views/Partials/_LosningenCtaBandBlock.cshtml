@@ -7,12 +7,12 @@
 @{
     var eyebrow     = Model.Value<string>("eyebrow")     ?? "Klar til å prøve?";
     var heading     = Model.Value<string>("heading")     ?? "Klar for en lunsjordning som faktisk fungerer?";
-    var text        = Model.Value<string>("text")        ?? "Prøv Lunchportalen gratis i 5 dager. Ingen forpliktelser, ingen kredittkort.";
-    var trustSignal = Model.Value<string>("trustSignal") ?? "5 dager gratis · Ingen kredittkort · Kom i gang på 15 min";
+    var text        = Model.Value<string>("text")        ?? "Book demo av Lunchportalen. Ingen forpliktelser, ingen kredittkort.";
+    var trustSignal = Model.Value<string>("trustSignal") ?? "Uforpliktende demo · Ingen kredittkort · Kom i gang på 15 min";
 
     var primaryCtaLinks = Model.Value<IEnumerable<Link>>("primaryCtaLink");
     var primaryCta      = primaryCtaLinks?.FirstOrDefault();
-    var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Prøv gratis i 5 dager";
+    var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Book demo";
     var primaryUrl      = AppUrls.ResolveLeadCapture("losningen-primary");
 
     var secCtaLinks = Model.Value<IEnumerable<Link>>("secCtaLink");

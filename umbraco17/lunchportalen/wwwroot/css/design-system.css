@@ -184,6 +184,11 @@ main{
 
 .ds-btn:hover{transform:translateY(-2px);}
 
+.ds-btn:focus-visible{
+  outline:3px solid var(--ds-accent);
+  outline-offset:3px;
+}
+
 .ds-btn::after{
   content:"";
   position:absolute;

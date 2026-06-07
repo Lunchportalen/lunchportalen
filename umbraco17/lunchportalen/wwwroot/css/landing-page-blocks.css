@@ -6,7 +6,7 @@
   --lp-cream-page: #f6f3ed;
   --lp-black: #0D0D0D;
   --lp-gold-cta: #f5c518;
-  --lp-gold-dark: #C99D00;
+  --lp-gold-dark: #a07c00;
   --lp-text: #111;
   --lp-border: rgba(0, 0, 0, .09);
   --lp-r-pill: 999px;
@@ -37,6 +37,22 @@
   pointer-events: none;
 }
 
+.lp-lp-deco-circle--tr {
+  width: 480px;
+  height: 480px;
+  background: rgba(245, 197, 24, .07);
+  top: -160px;
+  right: -80px;
+}
+
+.lp-lp-deco-circle--bl {
+  width: 200px;
+  height: 200px;
+  background: rgba(245, 197, 24, .05);
+  bottom: -60px;
+  left: 20%;
+}
+
 .lp-lp-hero__inner {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.6fr);
@@ -57,7 +73,7 @@
   background: rgba(13,13,13,.06);
   margin-bottom: 20px;
 }
-.lp-lp-tag__dot { width: 6px; height: 6px; border-radius: 50%; background: #C99D00; flex-shrink: 0; }
+.lp-lp-tag__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lp-gold-dark); flex-shrink: 0; }
 .lp-lp-tag__text { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #777; }
 
 .lp-lp-hero__title {
@@ -73,7 +89,7 @@
   -webkit-text-stroke: 2.5px #0D0D0D;
   color: transparent;
 }
-.lp-lp-hero__title-gold { display: block; color: #C99D00; }
+.lp-lp-hero__title-gold { display: block; color: var(--lp-gold-dark); }
 
 .lp-lp-hero__lead {
   font-size: 15px;
@@ -96,6 +112,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 48px;
   padding: 13px 24px;
   border-radius: 999px;
   background: #0D0D0D;
@@ -118,6 +135,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  min-height: 48px;
   padding: 13px 20px;
   border-radius: 999px;
   background: transparent;
@@ -194,6 +212,9 @@
   border-bottom: 0.5px solid rgba(13,13,13,.08);
 }
 .lp-lp-win-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.lp-lp-win-dot--red { background: #FF5F57; }
+.lp-lp-win-dot--yellow { background: #FEBC2E; }
+.lp-lp-win-dot--green { background: #28C840; }
 .lp-lp-win-url {
   flex: 1; margin-left: 8px;
   background: rgba(13,13,13,.07);
@@ -337,6 +358,17 @@
 .lp-step-number { width: 42px; height: 42px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--ds-color-primary); color: #111; font-size: 1.1rem; font-weight: 950; }
 .lp-step-title { margin-bottom: .5rem; color: var(--ds-text-primary); font-size: 1.05rem; font-weight: 900; }
 .lp-step-desc { color: var(--ds-text-secondary); font-size: 1rem; line-height: 1.65; }
+.lp-steps-subheading {
+  max-width: 640px;
+  margin: 0 auto 2rem;
+  color: var(--ds-text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+.lp-steps-cta {
+  margin-top: 2.5rem;
+  text-align: center;
+}
 
 /* ============================================================
    SOCIAL PROOF
@@ -399,6 +431,13 @@
 .lp-cta-band__inner { max-width: 760px; margin: 0 auto; }
 .lp-cta-band__heading { margin: 0 0 1rem; color: #fff; font-size: clamp(2rem,4vw,3.25rem); font-weight: 950; line-height: 1.05; letter-spacing: -.05em; }
 .lp-cta-band__text { margin: 0 0 2.5rem; color: rgba(255,255,255,.72); font-size: 1.05rem; line-height: 1.7; }
+.lp-cta-band__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
 
 /* ============================================================
    RESPONSIV
@@ -515,4 +554,11 @@
         font-size: clamp(1.9rem, 8.5vw, 3rem);
         line-height: 1;
     }
+}
+
+/* Focus-visible — keyboard nav (AA gold ring on cream/dark) */
+.lp-lp-btn-primary:focus-visible,
+.lp-lp-btn-ghost:focus-visible {
+  outline: 3px solid var(--lp-gold-cta);
+  outline-offset: 3px;
 }
