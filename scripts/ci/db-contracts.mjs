@@ -108,6 +108,22 @@ async function assertFunction(name) {
   console.log(`OK: function public.${name}()`);
 }
 
+async function assertFunctionWithArgs(name, argTypesSql) {
+  const { rowCount } = await client.query(
+    `SELECT 1
+     FROM pg_proc p
+     JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public'
+       AND p.proname = $1
+       AND pg_get_function_identity_arguments(p.oid) = $2`,
+    [name, argTypesSql],
+  );
+  if (!rowCount) {
+    throw new Error(`missing function public.${name}(${argTypesSql})`);
+  }
+  console.log(`OK: function public.${name}(${argTypesSql})`);
+}
+
 async function assertTrigger(table, triggerName) {
   const { rowCount } = await client.query(
     `SELECT 1
@@ -192,11 +208,45 @@ async function verifySpineSchemaInvariants() {
   await assertMapStatusNoRevokedToSuspended();
 }
 
+async function verifySpinePhase2AuthHookShadow() {
+  console.log("\n-- Fundament identity spine (FASE 2 shadow — hook + helpers, no RLS wiring) --");
+
+  await assertColumn("profiles", "preferred_spine_membership_id");
+  await assertForeignKey(
+    "profiles",
+    "profiles_preferred_spine_membership_id_fkey",
+    "memberships",
+  );
+
+  await assertFunctionWithArgs("custom_access_token_hook", "event jsonb");
+  for (const fn of [
+    "app_active_org",
+    "app_active_role",
+    "app_is_platform_admin",
+    "app_active_location_id",
+  ]) {
+    await assertFunction(fn);
+  }
+
+  const { rows: indexRows } = await client.query(
+    `SELECT 1
+     FROM pg_indexes
+     WHERE schemaname = 'public'
+       AND tablename = 'memberships'
+       AND indexname = 'memberships_user_id_status_idx'`,
+  );
+  if (!indexRows.length) {
+    throw new Error("missing index public.memberships_user_id_status_idx");
+  }
+  console.log("OK: index public.memberships_user_id_status_idx");
+}
+
 async function main() {
   await client.connect();
   try {
     await verifyCoreContracts();
     await verifySpineSchemaInvariants();
+    await verifySpinePhase2AuthHookShadow();
     console.log("\nOK: DB contracts verified");
   } catch (error) {
     console.error(`FAIL: ${error.message}`);
