@@ -14,7 +14,7 @@
  *   (v)  EXPLAIN plans for hook hot paths (index use)
  */
 
-import { Client } from "node:pg";
+import { Client } from "pg";
 
 const TENANT_TABLES = [
   "agreements",
