@@ -252,4 +252,3 @@ jobs:
           body-path: ${{ steps.report.outputs.body_path }}
           labels: |
             autofix
-            risk:low
