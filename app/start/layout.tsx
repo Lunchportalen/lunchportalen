@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 
-import "@/app/styles/ds/demo-page-blocks.css";
+import "@/app/styles/ds/start-gate.css";
 
 export default function StartLayout({ children }: { children: ReactNode }) {
-  return (
-    <div className="lp-demo-capture-page lp-start-page mx-auto w-full max-w-xl px-4 py-10 text-center">{children}</div>
-  );
+  return <div className="lp-start-page">{children}</div>;
 }
