@@ -23,6 +23,10 @@ npm run check:rls-drift
 
 `SUPABASE_POSTGRES_URL` slår `DATABASE_URL` hvis begge er satt (samme som snapshot-script og parity-test). Skriptet laster `.env.local` / `.env` via `dotenv`.
 
+**URL-prioritet (drift + snapshot):** `RLS_DRIFT_DATABASE_URL` → `DATABASE_URL` → `SUPABASE_POSTGRES_URL`. Dette unngår at staging-`SUPABASE_POSTGRES_URL` overskriver prod-`DATABASE_URL` i `.env.local`.
+
+**Identity guard (fail-closed):** Før diff/skriving verifiseres at tilkoblet ref (fra `postgres.<ref>` i URL) matcher pinnede `RLS_DRIFT_EXPECTED_REF` (default `hkpokyapzarefrgqzkos`), og at `golden.project_ref` matcher samme pin (kun drift-sjekk). Feil instans → exit 2 med tydelig melding — golden kan ikke regenereres mot staging ved et uhell.
+
 ## GitHub Actions
 
 Workflow: **`.github/workflows/rls-drift-check.yml`**

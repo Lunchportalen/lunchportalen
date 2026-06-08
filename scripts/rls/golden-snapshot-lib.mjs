@@ -217,3 +217,86 @@ export function createSupabasePoolConfig(url, max = 2) {
     connectionTimeoutMillis: 10_000,
   };
 }
+
+/** Pinned prod ref for RLS golden / drift (override via RLS_DRIFT_EXPECTED_REF). */
+export const DEFAULT_RLS_DRIFT_EXPECTED_REF = "hkpokyapzarefrgqzkos";
+
+/**
+ * @returns {string}
+ */
+export function resolveExpectedRlsProjectRef() {
+  return (process.env.RLS_DRIFT_EXPECTED_REF ?? DEFAULT_RLS_DRIFT_EXPECTED_REF)
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * RLS tooling URL: explicit override, then DATABASE_URL (CI prod), then SUPABASE_POSTGRES_URL.
+ * Avoids staging SUPABASE_POSTGRES_URL overriding prod DATABASE_URL in .env.local.
+ * @returns {string}
+ */
+export function resolveRlsDatabaseUrl() {
+  const dedicated = (process.env.RLS_DRIFT_DATABASE_URL ?? "").trim();
+  if (dedicated) return dedicated;
+  const db = (process.env.DATABASE_URL ?? "").trim();
+  if (db) return db;
+  return (process.env.SUPABASE_POSTGRES_URL ?? "").trim();
+}
+
+/**
+ * Parse Supabase project ref from pooler/direct Postgres URL.
+ * @param {string | null | undefined} url
+ * @returns {string | null}
+ */
+export function parseProjectRefFromDatabaseUrl(url) {
+  const raw = String(url ?? "").trim();
+  if (!raw) return null;
+
+  try {
+    const normalized = raw.replace(/^postgres(ql)?:\/\//i, "https://");
+    const u = new URL(normalized);
+    const user = decodeURIComponent(u.username || "");
+    const fromUser = user.match(/^postgres\.([a-z0-9]{20})$/i);
+    if (fromUser) return fromUser[1].toLowerCase();
+
+    const fromHost = u.hostname.match(/^db\.([a-z0-9]{20})\.supabase\.co$/i);
+    if (fromHost) return fromHost[1].toLowerCase();
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Fail-closed identity guard for RLS drift check and golden snapshot generation.
+ * @param {{ databaseUrl: string, goldenProjectRef?: string | null, expectedRef?: string }} input
+ * @returns {{ ok: true, connectedRef: string, expectedRef: string } | { ok: false, error: string }}
+ */
+export function assertRlsDriftDbIdentity(input) {
+  const expectedRef = (input.expectedRef ?? resolveExpectedRlsProjectRef()).trim().toLowerCase();
+  const connectedRef = parseProjectRefFromDatabaseUrl(input.databaseUrl);
+
+  if (!connectedRef) {
+    return { ok: false, error: "Could not verify DB identity for RLS drift check" };
+  }
+
+  if (connectedRef !== expectedRef) {
+    return {
+      ok: false,
+      error: `RLS drift target mismatch: expected ${expectedRef}, got ${connectedRef}`,
+    };
+  }
+
+  if (input.goldenProjectRef != null && input.goldenProjectRef !== "") {
+    const goldenRef = String(input.goldenProjectRef).trim().toLowerCase();
+    if (goldenRef !== expectedRef) {
+      return {
+        ok: false,
+        error: `golden generated against wrong instance: ${input.goldenProjectRef}`,
+      };
+    }
+  }
+
+  return { ok: true, connectedRef, expectedRef };
+}
