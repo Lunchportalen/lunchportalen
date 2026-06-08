@@ -147,10 +147,10 @@ function makeChainAdmin(seed: { orders: any[]; day_choices?: any[]; errors?: Rec
 }
 
 describe("normKitchenSlot", () => {
-  it("normaliserer tomt til lunch og lowercaser", () => {
-    expect(normKitchenSlot(null)).toBe("lunch");
-    expect(normKitchenSlot("")).toBe("lunch");
-    expect(normKitchenSlot("Lunch")).toBe("lunch");
+  it("normaliserer tomt til default og lowercaser", () => {
+    expect(normKitchenSlot(null)).toBe("default");
+    expect(normKitchenSlot("")).toBe("default");
+    expect(normKitchenSlot("Lunch")).toBe("default");
   });
 });
 
@@ -983,7 +983,7 @@ describe("production_operative_snapshots — radidentitet, overwrite og limit(1)
     });
     expect(live.ok).toBe(true);
     if (live.ok !== true) return;
-    expect(live.operative.every((r) => normKitchenSlot(r.slot) === "lunch")).toBe(true);
+    expect(live.operative.every((r) => normKitchenSlot(r.slot) === "default")).toBe(true);
 
     const mat = await materializeProductionOperativeSnapshot(admin as any, { dateISO: DATE, companyId: CID });
     expect(mat.ok).toBe(true);

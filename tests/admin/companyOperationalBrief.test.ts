@@ -117,7 +117,7 @@ describe("summarizeOperativeOrdersForBrief", () => {
     expect(s.ok).toBe(true);
     if (!s.ok) return;
     expect(s.total_operative).toBe(2);
-    expect(s.by_slot.lunch).toBe(2);
+    expect(s.by_slot.default).toBe(2);
     expect(s.by_location[0]?.count).toBe(2);
     expect(s.order_notes_nonempty).toBe(1);
     expect(s.day_choice_notes_nonempty).toBe(1);
