@@ -1,8 +1,18 @@
 ﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Cms.Core.Models.Blocks
 @using Umbraco.Extensions
 
 @{
     Layout = "~/Views/Partials/_Layout.cshtml";
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
 }
 
-@await Html.GetBlockGridHtmlAsync(Model, "blocks")
+@if (blocks != null && blocks.Any())
+{
+    @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
+}
+else
+{
+    @await Html.PartialAsync("~/Views/Partials/_ForsideDefaultComposition.cshtml")
+}
