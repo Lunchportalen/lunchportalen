@@ -1,0 +1,44 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var items = Model.Content.Value<IEnumerable<BlockListItem>>("items");
+}
+
+@if (items != null && items.Any())
+{
+    <section class="fp-pillars">
+        <div class="fp-container">
+            <div class="fp-pillars__grid">
+                @foreach (var item in items)
+                {
+                    var pillar = item.Content;
+                    var icon = pillar.Value<string>("icon");
+                    var pillarTitle = pillar.Value<string>("title");
+                    var text = pillar.Value<string>("text");
+
+                    if (string.IsNullOrWhiteSpace(icon) && string.IsNullOrWhiteSpace(pillarTitle) && string.IsNullOrWhiteSpace(text))
+                    {
+                        continue;
+                    }
+
+                    <article class="fp-pillar">
+                        @if (!string.IsNullOrWhiteSpace(icon))
+                        {
+                            <div class="fp-pillar__icon" aria-hidden="true">@icon</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(pillarTitle))
+                        {
+                            <h2 class="fp-pillar__title">@pillarTitle</h2>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            <p class="fp-pillar__text">@text</p>
+                        }
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+}

@@ -1,21 +1,6 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
-@using System.Linq
 @using Umbraco.Extensions
-@using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.Blocks
-@using Umbraco.Cms.Core.Models.PublishedContent
-
-@functions {
-    private static Link? FirstLink(object? value)
-    {
-        if (value is Link single) return single;
-        if (value is IEnumerable<Link> many) return many.FirstOrDefault();
-        return null;
-    }
-
-    private static string LinkTarget(Link? link) =>
-        link?.Target == "_blank" ? "target=\"_blank\" rel=\"noopener noreferrer\"" : "";
-}
 
 @{
     var content = Model.Content;
@@ -24,69 +9,55 @@
     var items = content.Value<IEnumerable<BlockListItem>>("items");
 }
 
-<section class="ds-section" id="howitworks">
-    <div class="ds-container">
-        <div class="ds-text-limit ds-fade-up">
+<section class="fp-how fp-section" id="howitworks">
+    <div class="fp-container">
+        <div class="fp-how__header">
             @if (!string.IsNullOrWhiteSpace(eyebrow))
             {
-                <p class="ds-eyebrow">@eyebrow</p>
+                <div class="fp-eyebrow">
+                    <span class="fp-eyebrow__dot" aria-hidden="true"></span>
+                    <span>@eyebrow</span>
+                </div>
             }
             @if (!string.IsNullOrWhiteSpace(heading))
             {
-                <h2 class="ds-h2">@heading</h2>
+                <h2 class="fp-heading fp-heading--center">@heading</h2>
             }
         </div>
 
         @if (items != null && items.Any())
         {
-            var stepList = items.ToList();
-            <ul class="ds-how-list">
-                @for (var i = 0; i < stepList.Count; i++)
+            <ol class="fp-how__steps">
+                @foreach (var item in items)
                 {
-                    var step = stepList[i].Content;
+                    var step = item.Content;
                     var stepNumber = step.Value<string>("stepNumber");
+                    var icon = step.Value<string>("icon");
                     var title = step.Value<string>("title");
                     var body = step.Value<string>("body");
-                    var media = step.Value<IPublishedContent>("media");
-                    var cta = FirstLink(step.Value("cta"));
-                    var rowClass = i % 2 == 1
-                        ? "ds-how-row ds-how-row--reverse ds-fade-up"
-                        : "ds-how-row ds-fade-up";
 
-                    <li class="@rowClass">
-                        <div class="ds-how-text">
+                    <li class="fp-step">
+                        <div class="fp-step__top">
                             @if (!string.IsNullOrWhiteSpace(stepNumber))
                             {
-                                <div class="ds-step__number">@stepNumber</div>
+                                <span class="fp-step__number">@stepNumber</span>
                             }
-                            @if (!string.IsNullOrWhiteSpace(title))
+                            @if (!string.IsNullOrWhiteSpace(icon))
                             {
-                                <h3 class="ds-how-title">@title</h3>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(body))
-                            {
-                                <p class="ds-how-body">@body</p>
-                            }
-                            @if (cta != null && !string.IsNullOrWhiteSpace(cta.Url))
-                            {
-                                <div class="ds-how-button">
-                                    <a href="@cta.Url"
-                                       class="ds-btn ds-btn--primary"
-                                       @Html.Raw(LinkTarget(cta))>
-                                        @(!string.IsNullOrWhiteSpace(cta.Name) ? cta.Name : cta.Url)
-                                    </a>
-                                </div>
+                                <span class="fp-step__icon" aria-hidden="true">@icon</span>
                             }
                         </div>
-                        @if (media != null)
+                        @if (!string.IsNullOrWhiteSpace(title))
                         {
-                            <div class="ds-how-media">
-                                <img src="@media.Url()" alt="@title" loading="lazy" />
-                            </div>
+                            <h3 class="fp-step__title">@title</h3>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(body))
+                        {
+                            <p class="fp-step__body">@body</p>
                         }
                     </li>
                 }
-            </ul>
+            </ol>
         }
     </div>
 </section>

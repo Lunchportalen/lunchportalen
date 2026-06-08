@@ -21,64 +21,60 @@
     var eyebrow = content.Value<string>("eyebrow");
     var title = content.Value<string>("title");
     var lead = content.Value<string>("lead");
-    var size = content.Value<string>("size") ?? "lg";
-    var backgroundImage = content.Value<IPublishedContent>("backgroundImage");
+    var heroMedia = content.Value<IPublishedContent>("heroMedia");
     var primaryCta = FirstLink(content.Value("primaryCta"));
     var secondaryCta = FirstLink(content.Value("secondaryCta"));
-    var sizeClass = size switch
-    {
-        "md" => "lp-hero--size-md",
-        "xl" => "lp-hero--size-xl",
-        _ => "lp-hero--size-lg"
-    };
+    var titleLines = (title ?? "")
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToList();
 }
 
-<section class="lp-hero @sizeClass ds-fade-up">
-    @if (backgroundImage != null)
-    {
-        <div class="lp-hero__bg">
-            <img src="@backgroundImage.Url()" alt="" role="presentation" loading="eager" fetchpriority="high" />
-        </div>
-    }
-
-    <div class="lp-hero__overlay" aria-hidden="true"></div>
-
-    <div class="lp-container">
-        <div class="lp-hero__inner">
-            <div class="lp-hero__content">
+<section class="fp-hero">
+    <div class="fp-container">
+        <div class="fp-hero__inner">
+            <div class="fp-hero__content">
                 @if (!string.IsNullOrWhiteSpace(eyebrow))
                 {
-                    <div class="lp-eyebrow">
-                        <span class="lp-eyebrow__dot" aria-hidden="true"></span>
-                        @eyebrow
+                    <div class="fp-eyebrow">
+                        <span class="fp-eyebrow__dot" aria-hidden="true"></span>
+                        <span>@eyebrow</span>
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(title))
+                @if (titleLines.Count > 0)
                 {
-                    <h1 class="lp-hero__heading">@title</h1>
+                    <h1 class="fp-hero__title">
+                        @for (var i = 0; i < titleLines.Count; i++)
+                        {
+                            var lineClass = i == titleLines.Count - 1
+                                ? "fp-hero__title-line fp-hero__title-line--accent"
+                                : "fp-hero__title-line";
+                            <span class="@lineClass">@titleLines[i]</span>
+                        }
+                    </h1>
                 }
 
                 @if (!string.IsNullOrWhiteSpace(lead))
                 {
-                    <p class="lp-hero__body">@lead</p>
+                    <p class="fp-hero__lead">@lead</p>
                 }
 
                 @if (primaryCta != null || secondaryCta != null)
                 {
-                    <div class="lp-hero__actions">
+                    <div class="fp-hero__actions">
                         @if (primaryCta != null && !string.IsNullOrWhiteSpace(primaryCta.Url))
                         {
                             <a href="@primaryCta.Url"
-                               class="ds-btn ds-btn--primary"
+                               class="fp-btn fp-btn--primary"
                                @Html.Raw(LinkTarget(primaryCta))>
                                 @(!string.IsNullOrWhiteSpace(primaryCta.Name) ? primaryCta.Name : primaryCta.Url)
+                                <span class="fp-btn__arrow" aria-hidden="true">→</span>
                             </a>
                         }
                         @if (secondaryCta != null && !string.IsNullOrWhiteSpace(secondaryCta.Url))
                         {
                             <a href="@secondaryCta.Url"
-                               class="ds-btn ds-btn--outline"
+                               class="fp-btn fp-btn--ghost"
                                @Html.Raw(LinkTarget(secondaryCta))>
                                 @(!string.IsNullOrWhiteSpace(secondaryCta.Name) ? secondaryCta.Name : secondaryCta.Url)
                             </a>
@@ -86,6 +82,20 @@
                     </div>
                 }
             </div>
+
+            @if (heroMedia != null)
+            {
+                <div class="fp-hero__visual">
+                    <div class="fp-hero__media-wrap">
+                        <div class="fp-hero__media">
+                            <img src="@heroMedia.Url()"
+                                 alt=""
+                                 loading="eager"
+                                 fetchpriority="high" />
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </section>

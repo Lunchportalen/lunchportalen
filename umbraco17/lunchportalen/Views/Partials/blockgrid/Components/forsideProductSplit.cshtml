@@ -1,0 +1,82 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@functions {
+    private static Link? FirstLink(object? value)
+    {
+        if (value is Link single) return single;
+        if (value is IEnumerable<Link> many) return many.FirstOrDefault();
+        return null;
+    }
+
+    private static string LinkTarget(Link? link) =>
+        link?.Target == "_blank" ? "target=\"_blank\" rel=\"noopener noreferrer\"" : "";
+}
+
+@{
+    var content = Model.Content;
+    var eyebrow = content.Value<string>("eyebrow");
+    var heading = content.Value<string>("heading");
+    var lead = content.Value<string>("lead");
+    var media = content.Value<IPublishedContent>("media");
+    var videoLabel = content.Value<string>("videoLabel");
+    var cta = FirstLink(content.Value("ctaUrl"));
+    var headingLines = (heading ?? "")
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
+
+<section class="fp-product-split fp-section">
+    <div class="fp-container">
+        <div class="fp-product-split__inner">
+            <div class="fp-product-split__copy">
+                @if (!string.IsNullOrWhiteSpace(eyebrow))
+                {
+                    <div class="fp-eyebrow">
+                        <span class="fp-eyebrow__dot" aria-hidden="true"></span>
+                        <span>@eyebrow</span>
+                    </div>
+                }
+                @if (headingLines.Length > 0)
+                {
+                    <h2 class="fp-heading">
+                        @foreach (var line in headingLines)
+                        {
+                            @line<br />
+                        }
+                    </h2>
+                }
+                @if (!string.IsNullOrWhiteSpace(lead))
+                {
+                    <p class="fp-lead">@lead</p>
+                }
+                @if (cta != null && !string.IsNullOrWhiteSpace(cta.Url))
+                {
+                    <div class="fp-product-split__cta">
+                        <a href="@cta.Url"
+                           class="fp-btn fp-btn--primary"
+                           @Html.Raw(LinkTarget(cta))>
+                            @(!string.IsNullOrWhiteSpace(cta.Name) ? cta.Name : cta.Url)
+                        </a>
+                    </div>
+                }
+            </div>
+
+            @if (media != null)
+            {
+                <div class="fp-product-split__media">
+                    <img src="@media.Url()" alt="" loading="lazy" />
+                    @if (!string.IsNullOrWhiteSpace(videoLabel))
+                    {
+                        <span class="fp-product-split__video-label">
+                            <span class="fp-product-split__video-icon" aria-hidden="true">▶</span>
+                            @videoLabel
+                        </span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>

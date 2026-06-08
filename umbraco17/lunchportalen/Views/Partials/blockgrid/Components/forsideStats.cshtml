@@ -1,0 +1,39 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models.Blocks
+
+@{
+    var items = Model.Content.Value<IEnumerable<BlockListItem>>("items");
+}
+
+@if (items != null && items.Any())
+{
+    <section class="fp-stats" aria-label="Nøkkeltall">
+        <div class="fp-container">
+            <div class="fp-stats__grid">
+                @foreach (var item in items)
+                {
+                    var stat = item.Content;
+                    var value = stat.Value<string>("value");
+                    var label = stat.Value<string>("label");
+
+                    if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(label))
+                    {
+                        continue;
+                    }
+
+                    <div class="fp-stat">
+                        @if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            <strong class="fp-stat__value">@value</strong>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(label))
+                        {
+                            <span class="fp-stat__label">@label</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}

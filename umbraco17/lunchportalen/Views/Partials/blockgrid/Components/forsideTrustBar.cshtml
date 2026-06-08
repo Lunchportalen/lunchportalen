@@ -9,20 +9,20 @@
     var items = content.Value<IEnumerable<BlockListItem>>("items");
 }
 
-<section class="ds-trust-bar ds-fade-up">
-    <div class="ds-trust-bar__inner">
+<section class="fp-trust">
+    <div class="fp-container fp-trust__inner">
         @if (!string.IsNullOrWhiteSpace(heading))
         {
-            <h2 class="ds-trust-bar__heading">@heading</h2>
+            <h2 class="fp-trust__heading">@heading</h2>
         }
         @if (!string.IsNullOrWhiteSpace(lead))
         {
-            <p class="ds-trust-bar__lead">@lead</p>
+            <p class="fp-trust__lead">@lead</p>
         }
 
         @if (items != null && items.Any())
         {
-            <ul class="ds-trust-bar__list">
+            <ul class="fp-trust__list">
                 @foreach (var item in items)
                 {
                     var label = item.Content.Value<string>("label");
@@ -31,9 +31,9 @@
                         continue;
                     }
 
-                    <li class="ds-trust-bar__item">
-                        <span class="ds-trust-bar__check" aria-hidden="true">✓</span>
-                        <span class="ds-trust-bar__label">@label</span>
+                    <li class="fp-trust__item">
+                        <span class="fp-trust__check" aria-hidden="true">✓</span>
+                        <span>@label</span>
                     </li>
                 }
             </ul>

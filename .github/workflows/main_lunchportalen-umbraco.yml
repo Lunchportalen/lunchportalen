@@ -391,31 +391,42 @@ jobs:
 
           echo "V.27a OK — prod disk deploy-stamp sha matches GITHUB_SHA"
 
-      - name: V.27b — Poll prod homepage (authoritative)
+      - name: V.27b — Post-deploy smoke (forside + landing)
         if: always() && steps.start_app.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
 
-          URL="${{ env.PROD_HOME_URL }}"
-          TIMEOUT_SEC=300
-          INTERVAL_SEC=10
-          ELAPSED=0
+          check_url() {
+            local url="$1"
+            local label="$2"
+            local timeout_sec=300
+            local interval_sec=10
+            local elapsed=0
 
-          echo "Polling ${URL} for HTTP 200 (timeout ${TIMEOUT_SEC}s)..."
+            echo "Polling ${label} (${url}) for HTTP 200 (timeout ${timeout_sec}s)..."
 
-          while [[ "$ELAPSED" -lt "$TIMEOUT_SEC" ]]; do
-            HTTP_CODE="$(curl -sS -o /dev/null -w "%{http_code}" "$URL" || true)"
-            echo "  t=${ELAPSED}s → HTTP ${HTTP_CODE}"
+            while [[ "$elapsed" -lt "$timeout_sec" ]]; do
+              http_code="$(curl -sS -o /dev/null -w "%{http_code}" "$url" || true)"
+              echo "  t=${elapsed}s → HTTP ${http_code}"
 
-            if [[ "$HTTP_CODE" == "200" ]]; then
-              echo "V.27b OK — ${URL} returned 200"
-              exit 0
-            fi
+              if [[ "$http_code" == "500" ]]; then
+                echo "::error::V.27b FAIL — ${label} returned HTTP 500 (prod incident gate)"
+                exit 1
+              fi
 
-            sleep "$INTERVAL_SEC"
-            ELAPSED=$((ELAPSED + INTERVAL_SEC))
-          done
+              if [[ "$http_code" == "200" ]]; then
+                echo "V.27b OK — ${label} returned 200"
+                return 0
+              fi
 
-          echo "::error::V.27b FAIL — ${URL} did not return 200 within ${TIMEOUT_SEC}s"
-          exit 1
+              sleep "$interval_sec"
+              elapsed=$((elapsed + interval_sec))
+            done
+
+            echo "::error::V.27b FAIL — ${label} did not return 200 within ${timeout_sec}s"
+            exit 1
+          }
+
+          check_url "${{ env.PROD_HOME_URL }}" "Forside"
+          check_url "https://www.lunchportalen.no/demo/" "Landing demo"

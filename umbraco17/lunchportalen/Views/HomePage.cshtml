@@ -6,6 +6,14 @@
     Layout = "~/Views/Partials/_Layout.cshtml";
 }
 
+@section Head {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&amp;family=Schibsted+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/forside.css" />
+}
+
+<div class="fp-page">
 @try {
   var grid = Model.Value<BlockGridModel>("forsideBlocks");
   if (grid?.Any() == true) {
@@ -16,3 +24,4 @@
 } catch {
   @await Html.PartialAsync("~/Views/Partials/_ForsideDefaultComposition.cshtml")
 }
+</div>
