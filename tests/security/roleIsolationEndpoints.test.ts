@@ -170,6 +170,31 @@ vi.mock("@/lib/audit/auditWrite", () => ({
   auditWriteMust: vi.fn(async () => true),
 }));
 
+vi.mock("@/lib/kitchen/batchPackedOutbox", () => ({
+  enqueueBatchPackedOutbox: vi.fn(async () => undefined),
+}));
+
+vi.mock("@/lib/kitchen/batchTransitionRpc", () => ({
+  batchTransitionAndSyncOrders: vi.fn(async (_admin, input) => ({
+    data: {
+      ok: true,
+      batch_updated: true,
+      batch: {
+        id: "b1",
+        delivery_date: input.deliveryDate,
+        delivery_window: input.deliveryWindow,
+        company_location_id: input.companyLocationId,
+        status: "PACKED",
+        packed_at: new Date().toISOString(),
+        delivered_at: null,
+      },
+      sync: { advanced: 0, skipped: 0, already: 0, order_ids: [] },
+      provider_id: "prov1",
+    },
+    error: null,
+  })),
+}));
+
 vi.mock("@/lib/date/oslo", () => ({
   osloTodayISODate: () => "2026-01-29",
   cutoffStatusForDate0805: () => "TODAY_LOCKED",
@@ -193,7 +218,7 @@ beforeEach(() => {
       { id: "u_cookie", user_id: "u_cookie", role: "kitchen", disabled_at: null, is_active: true, company_id: "c_test", location_id: "l_test" },
     ],
     kitchen_batch: [
-      { id: "b1", delivery_date: "2026-01-29", delivery_window: "lunch", company_location_id: "l_test", status: "QUEUED", packed_at: null, delivered_at: null },
+      { id: "b1", delivery_date: "2026-01-29", delivery_window: "default", company_location_id: "l_test", status: "QUEUED", packed_at: null, delivered_at: null },
     ],
     company_locations: [{ id: "l_test", company_id: "c_test" }],
   });
