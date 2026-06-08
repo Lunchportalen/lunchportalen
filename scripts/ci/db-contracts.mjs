@@ -93,6 +93,36 @@ async function assertForeignKey(table, conname, referencedTable) {
   console.log(`OK: FK public.${table}.${conname} → ${referencedTable}`);
 }
 
+async function assertForeignKeyToTableAbsent(table, column, forbiddenRefTable) {
+  const { rows } = await client.query(
+    `SELECT c.conname, pg_get_constraintdef(c.oid) AS def
+     FROM pg_constraint c
+     JOIN pg_class t ON t.oid = c.conrelid
+     JOIN pg_namespace n ON n.oid = t.relnamespace
+     JOIN pg_class ref ON ref.oid = c.confrelid
+     JOIN pg_namespace refn ON refn.oid = ref.relnamespace
+     WHERE n.nspname = 'public'
+       AND t.relname = $1
+       AND c.contype = 'f'
+       AND refn.nspname = 'public'
+       AND ref.relname = $2
+       AND EXISTS (
+         SELECT 1
+         FROM unnest(c.conkey) AS col(attnum)
+         JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = col.attnum
+         WHERE a.attname = $3 AND NOT a.attisdropped
+       )`,
+    [table, forbiddenRefTable, column],
+  );
+  if (rows.length) {
+    const detail = rows.map((r) => `${r.conname}: ${r.def}`).join("; ");
+    throw new Error(
+      `public.${table}.${column} must NOT reference ${forbiddenRefTable} (half-reconciled FK): ${detail}`,
+    );
+  }
+  console.log(`OK: no FK public.${table}.${column} → ${forbiddenRefTable}`);
+}
+
 async function assertFunction(name) {
   const { rowCount } = await client.query(
     `SELECT 1
@@ -208,88 +238,6 @@ async function verifySpineSchemaInvariants() {
   await assertMapStatusNoRevokedToSuspended();
 }
 
-/** Idempotent repair when staging applied an earlier revision of 20260710120000 (providers FK). */
-async function repairProviderConfigProviderIdFk() {
-  await client.query(`
-    DO $$
-    DECLARE
-      v_tbl text;
-      v_fk text;
-      v_old_fk text;
-    BEGIN
-      FOREACH v_tbl IN ARRAY ARRAY[
-        'provider_price_rules',
-        'provider_settings',
-        'provider_package_entitlements'
-      ] LOOP
-        IF to_regclass(format('public.%I', v_tbl)) IS NULL THEN
-          CONTINUE;
-        END IF;
-
-        EXECUTE format(
-          'ALTER TABLE public.%I ALTER COLUMN provider_id SET NOT NULL',
-          v_tbl
-        );
-
-        FOR v_old_fk IN
-          SELECT c.conname
-          FROM pg_constraint c
-          JOIN pg_class t ON t.oid = c.conrelid
-          JOIN pg_namespace n ON n.oid = t.relnamespace
-          JOIN pg_class ref ON ref.oid = c.confrelid
-          JOIN pg_namespace refn ON refn.oid = ref.relnamespace
-          WHERE n.nspname = 'public'
-            AND t.relname = v_tbl
-            AND c.contype = 'f'
-            AND refn.nspname = 'public'
-            AND ref.relname = 'providers'
-            AND EXISTS (
-              SELECT 1
-              FROM unnest(c.conkey) AS col(attnum)
-              JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = col.attnum
-              WHERE a.attname = 'provider_id' AND NOT a.attisdropped
-            )
-        LOOP
-          EXECUTE format('ALTER TABLE public.%I DROP CONSTRAINT %I', v_tbl, v_old_fk);
-        END LOOP;
-
-        v_fk := v_tbl || '_provider_id_fkey';
-        IF EXISTS (
-          SELECT 1
-          FROM pg_constraint c
-          JOIN pg_class t ON t.oid = c.conrelid
-          JOIN pg_class ref ON ref.oid = c.confrelid
-          WHERE t.relname = v_tbl
-            AND c.conname = v_fk
-            AND ref.relname IS DISTINCT FROM 'organizations'
-        ) THEN
-          EXECUTE format('ALTER TABLE public.%I DROP CONSTRAINT %I', v_tbl, v_fk);
-        END IF;
-
-        IF NOT EXISTS (
-          SELECT 1
-          FROM pg_constraint c
-          JOIN pg_class t ON t.oid = c.conrelid
-          JOIN pg_class ref ON ref.oid = c.confrelid
-          JOIN pg_namespace n ON n.oid = t.relnamespace
-          WHERE n.nspname = 'public'
-            AND t.relname = v_tbl
-            AND c.conname = v_fk
-            AND ref.relname = 'organizations'
-        ) THEN
-          EXECUTE format(
-            'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (provider_id) REFERENCES public.organizations (id) ON DELETE CASCADE',
-            v_tbl,
-            v_fk
-          );
-        END IF;
-      END LOOP;
-    END
-    $$;
-  `);
-  console.log("OK: provider-config provider_id FK repair (idempotent)");
-}
-
 async function verifyProviderConfigFoundation() {
   console.log("\n-- Provider-config foundation (ADR-016 inert skin) --");
 
@@ -300,8 +248,6 @@ async function verifyProviderConfigFoundation() {
   ]) {
     await assertTable(t);
   }
-
-  await repairProviderConfigProviderIdFk();
 
   await assertColumn("provider_settings", "cutoff_time");
   await assertColumn("provider_settings", "kitchen_buffer_minutes");
@@ -324,6 +270,14 @@ async function verifyProviderConfigFoundation() {
       throw new Error(`public.${t}.provider_id must be NOT NULL`);
     }
     console.log(`OK: column public.${t}.provider_id NOT NULL`);
+  }
+
+  for (const t of [
+    "provider_price_rules",
+    "provider_settings",
+    "provider_package_entitlements",
+  ]) {
+    await assertForeignKeyToTableAbsent(t, "provider_id", "providers");
   }
 
   await assertForeignKey(
