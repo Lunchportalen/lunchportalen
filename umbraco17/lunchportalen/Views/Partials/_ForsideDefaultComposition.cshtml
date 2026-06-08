@@ -1,0 +1,35 @@
+@* Canonical forside block-list fallback when CMS contentBlocks is empty. Reuses existing partials only. *@
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@await Html.PartialAsync("~/Views/Partials/_LandingPageHeroBlock.cshtml", (IPublishedElement?)null)
+
+@{
+    ViewData["ValuePropsPreset"] = "platform";
+}
+@await Html.PartialAsync("~/Views/Partials/_ValuePropsBlock.cshtml", (IPublishedElement?)null)
+
+@{
+    ViewData["ValuePropsPreset"] = "customer";
+}
+@await Html.PartialAsync("~/Views/Partials/_ValuePropsBlock.cshtml", (IPublishedElement?)null)
+
+@{
+    ViewData["ValuePropsPreset"] = "caterer";
+}
+@await Html.PartialAsync("~/Views/Partials/_ValuePropsBlock.cshtml", (IPublishedElement?)null)
+
+@{
+    ViewData["HowItWorksPreset"] = "customer";
+}
+@await Html.PartialAsync("~/Views/Partials/_HowItWorksBlock.cshtml", (IPublishedElement?)null)
+
+@{
+    ViewData["StepsPreset"] = "caterer";
+}
+@await Html.PartialAsync("~/Views/Partials/_StepsBlock.cshtml", (IPublishedElement?)null)
+
+@await Html.PartialAsync("~/Views/Partials/_SocialProofBlock.cshtml", (IPublishedElement?)null)
+
+@await Html.PartialAsync("~/Views/Partials/_DemoBookingBlock.cshtml", (IPublishedElement?)null)
+
+@await Html.PartialAsync("~/Views/Partials/_CtaBandBlock.cshtml", (IPublishedElement?)null)
