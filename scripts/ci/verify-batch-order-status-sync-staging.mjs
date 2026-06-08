@@ -178,10 +178,20 @@ try {
     try {
       await client.query(`update public.orders set note = 'employee-cutoff-probe' where id = $1`, [orderId]);
     } catch (e) {
-      if (String(e?.message ?? "").includes("orders locked after 08:00")) cutoffBlocked = true;
-      else failures.push(`employee cutoff unexpected error: ${e?.message ?? e}`);
+      const msg = String(e?.message ?? "");
+      // Cutoff trigger or guard_order_mutation — both fail-closed without app.batch_derived_advance.
+      if (
+        msg.includes("orders locked after 08:00") ||
+        msg.includes("Order is locked and cannot be changed")
+      ) {
+        cutoffBlocked = true;
+      } else {
+        failures.push(`employee cutoff unexpected error: ${msg || e}`);
+      }
     }
-    if (!cutoffBlocked) failures.push("employee path should be blocked by orders_cutoff_0800 after 08:00 (no GUC flag)");
+    if (!cutoffBlocked) {
+      failures.push("employee path should be blocked after 08:00 Oslo without batch_derived_advance GUC");
+    }
   } else {
     console.log("EMPLOYEE_CUTOFF_SKIP", "before 08:00 Oslo — cutoff probe deferred");
   }
