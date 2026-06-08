@@ -93,6 +93,36 @@ async function assertForeignKey(table, conname, referencedTable) {
   console.log(`OK: FK public.${table}.${conname} → ${referencedTable}`);
 }
 
+async function assertForeignKeyToTableAbsent(table, column, forbiddenRefTable) {
+  const { rows } = await client.query(
+    `SELECT c.conname, pg_get_constraintdef(c.oid) AS def
+     FROM pg_constraint c
+     JOIN pg_class t ON t.oid = c.conrelid
+     JOIN pg_namespace n ON n.oid = t.relnamespace
+     JOIN pg_class ref ON ref.oid = c.confrelid
+     JOIN pg_namespace refn ON refn.oid = ref.relnamespace
+     WHERE n.nspname = 'public'
+       AND t.relname = $1
+       AND c.contype = 'f'
+       AND refn.nspname = 'public'
+       AND ref.relname = $2
+       AND EXISTS (
+         SELECT 1
+         FROM unnest(c.conkey) AS col(attnum)
+         JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = col.attnum
+         WHERE a.attname = $3 AND NOT a.attisdropped
+       )`,
+    [table, forbiddenRefTable, column],
+  );
+  if (rows.length) {
+    const detail = rows.map((r) => `${r.conname}: ${r.def}`).join("; ");
+    throw new Error(
+      `public.${table}.${column} must NOT reference ${forbiddenRefTable} (half-reconciled FK): ${detail}`,
+    );
+  }
+  console.log(`OK: no FK public.${table}.${column} → ${forbiddenRefTable}`);
+}
+
 async function assertFunction(name) {
   const { rowCount } = await client.query(
     `SELECT 1
@@ -208,6 +238,124 @@ async function verifySpineSchemaInvariants() {
   await assertMapStatusNoRevokedToSuspended();
 }
 
+async function verifyProviderConfigFoundation() {
+  console.log("\n-- Provider-config foundation (ADR-016 inert skin) --");
+
+  for (const t of [
+    "provider_price_rules",
+    "provider_settings",
+    "provider_package_entitlements",
+  ]) {
+    await assertTable(t);
+  }
+
+  await assertColumn("provider_settings", "cutoff_time");
+  await assertColumn("provider_settings", "kitchen_buffer_minutes");
+  await assertColumn("provider_package_entitlements", "entitlement_key");
+  for (const t of [
+    "provider_price_rules",
+    "provider_settings",
+    "provider_package_entitlements",
+  ]) {
+    const { rowCount } = await client.query(
+      `SELECT 1
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = $1
+         AND column_name = 'provider_id'
+         AND is_nullable = 'NO'`,
+      [t],
+    );
+    if (!rowCount) {
+      throw new Error(`public.${t}.provider_id must be NOT NULL`);
+    }
+    console.log(`OK: column public.${t}.provider_id NOT NULL`);
+  }
+
+  for (const t of [
+    "provider_price_rules",
+    "provider_settings",
+    "provider_package_entitlements",
+  ]) {
+    await assertForeignKeyToTableAbsent(t, "provider_id", "providers");
+  }
+
+  await assertForeignKey(
+    "provider_price_rules",
+    "provider_price_rules_provider_id_fkey",
+    "organizations",
+  );
+  await assertForeignKey(
+    "provider_settings",
+    "provider_settings_provider_id_fkey",
+    "organizations",
+  );
+  await assertForeignKey(
+    "provider_package_entitlements",
+    "provider_package_entitlements_provider_id_fkey",
+    "organizations",
+  );
+
+  const { rows: melhusRows } = await client.query(
+    `SELECT p.id AS provider_id
+     FROM public.providers p
+     WHERE p.slug = 'melhus-catering'
+       AND p.deleted_at IS NULL
+     LIMIT 1`,
+  );
+  const melhusId = melhusRows[0]?.provider_id;
+  if (!melhusId) {
+    throw new Error("Melhus provider (slug melhus-catering) missing — seed prerequisite");
+  }
+
+  const { rows: settingsRows } = await client.query(
+    `SELECT default_currency, default_country_code, timezone, cutoff_time,
+            kitchen_buffer_minutes, delivery_days, locale
+     FROM public.provider_settings
+     WHERE provider_id = $1`,
+    [melhusId],
+  );
+  if (!settingsRows.length) {
+    throw new Error("provider_settings seed missing for Melhus provider");
+  }
+  const s = settingsRows[0];
+  if (s.cutoff_time !== "08:00" || s.timezone !== "Europe/Oslo" || Number(s.kitchen_buffer_minutes) !== 5) {
+    throw new Error("provider_settings Melhus seed values mismatch (expected 08:00 / Europe/Oslo / buffer 5)");
+  }
+  console.log("OK: provider_settings Melhus seed present");
+
+  const { rows: priceCount } = await client.query(
+    `SELECT COUNT(*)::int AS c
+     FROM public.provider_price_rules
+     WHERE provider_id = $1
+       AND customer_id IS NULL
+       AND agreement_id IS NULL
+       AND is_active = true
+       AND tier IN ('BASIS', 'LUXUS', 'ENTERPRISE')`,
+    [melhusId],
+  );
+  if (Number(priceCount[0]?.c) < 3) {
+    throw new Error("provider_price_rules Melhus seed expected 3 active tier rows");
+  }
+  console.log("OK: provider_price_rules Melhus tier seed (>=3 rows)");
+
+  const { rows: entCount } = await client.query(
+    `SELECT package_key, COUNT(*)::int AS c
+     FROM public.provider_package_entitlements
+     WHERE provider_id = $1
+     GROUP BY package_key
+     ORDER BY package_key`,
+    [melhusId],
+  );
+  const byPkg = Object.fromEntries(entCount.map((r) => [r.package_key, Number(r.c)]));
+  if (byPkg.BASIS !== 4 || byPkg.LUXUS !== 7 || byPkg.ENTERPRISE !== 7) {
+    throw new Error(
+      `provider_package_entitlements Melhus seed mismatch: expected BASIS=4 LUXUS=7 ENTERPRISE=7, got ${JSON.stringify(byPkg)}`,
+    );
+  }
+  console.log("OK: provider_package_entitlements Melhus seed (BASIS=4, LUXUS=7, ENTERPRISE=7)");
+}
+
 async function verifySpinePhase2AuthHookShadow() {
   console.log("\n-- Fundament identity spine (FASE 2 shadow — hook + helpers, no RLS wiring) --");
 
@@ -247,6 +395,7 @@ async function main() {
     await verifyCoreContracts();
     await verifySpineSchemaInvariants();
     await verifySpinePhase2AuthHookShadow();
+    await verifyProviderConfigFoundation();
     console.log("\nOK: DB contracts verified");
   } catch (error) {
     console.error(`FAIL: ${error.message}`);
