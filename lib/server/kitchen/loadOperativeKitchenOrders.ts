@@ -4,6 +4,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { normOperativeSlot } from "@/lib/kitchen/operativeSlot";
 import { KITCHEN_OPERATIVE_ORDER_COLUMNS } from "@/lib/orders/projection";
 
 function safeStr(v: unknown) {
@@ -19,8 +20,7 @@ function isUuid(v: unknown) {
 
 /** Aligner med GET /api/kitchen — operativ grouping på leveringsvindu. */
 export function normKitchenSlot(v: unknown) {
-  const s = safeStr(v).toLowerCase();
-  return s || "lunch";
+  return normOperativeSlot(v);
 }
 
 export type OperativeKitchenOrderRow = {
