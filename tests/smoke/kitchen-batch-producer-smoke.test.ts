@@ -1,11 +1,11 @@
 /**
  * Stage 4-B — PACKED batches via live POST /api/kitchen/batch/start → kitchen_batches (not delivery_batches).
- * Opt-in: DATABASE_URL must point at uigx scratch (not prod).
+ * Opt-in: uigx DATABASE_URL + Supabase service credentials (never runs in default CI).
  */
 import { createHash } from "node:crypto";
 
-import { createClient } from "@supabase/supabase-js";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   SMOKE_COMPANY_ID,
@@ -15,9 +15,16 @@ import {
   SMOKE_KITCHEN_USER_A,
 } from "./stage4-realistic-fixture.constants";
 
-const dbUrl = String(process.env.DATABASE_URL ?? "");
-const isUigx = dbUrl.includes("uigxsboqeruxflgzqztl") || dbUrl.includes("uigx");
-const skip = !isUigx || dbUrl.includes("hkpoky");
+function shouldRunUigxProducerSmoke(): boolean {
+  const dbUrl = String(process.env.DATABASE_URL ?? "");
+  if (!dbUrl.includes("uigxsboqeruxflgzqztl")) return false;
+  if (dbUrl.includes("hkpoky")) return false;
+  const url = String(process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
+  const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  return Boolean(url && key);
+}
+
+const skip = !shouldRunUigxProducerSmoke();
 
 const kitchenUserId = vi.hoisted(() => ({ current: "d1111111-1111-4111-8111-111111111111" }));
 
@@ -73,7 +80,7 @@ function mkReq(body: Record<string, unknown>) {
   }) as any;
 }
 
-function adminClient() {
+function adminClient(): SupabaseClient {
   const url = String(process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
   const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
   if (!url || !key) throw new Error("SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY required for uigx producer smoke");
@@ -81,18 +88,15 @@ function adminClient() {
 }
 
 describe.skipIf(skip)("Stage 4-B kitchen batch producer (uigx integration)", () => {
-  const admin = adminClient();
+  let admin: SupabaseClient;
 
   beforeAll(async () => {
+    admin = adminClient();
     await admin
       .from("kitchen_batches")
       .delete()
       .eq("delivery_date", SMOKE_ORDER_DATE)
       .eq("company_location_id", SMOKE_LOCATION_ID);
-  });
-
-  afterAll(async () => {
-    // leave batches for driver-manifest smoke
   });
 
   it("batch/start → kitchen_batches PACKED (location A)", async () => {
@@ -143,7 +147,6 @@ describe.skipIf(skip)("Stage 4-B kitchen batch producer (uigx integration)", () 
     const payload = JSON.stringify(data ?? []);
     const hash = createHash("sha256").update(payload).digest("hex");
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
-    // snapshot within run
     const hash2 = createHash("sha256").update(JSON.stringify(data ?? [])).digest("hex");
     expect(hash2).toBe(hash);
   });

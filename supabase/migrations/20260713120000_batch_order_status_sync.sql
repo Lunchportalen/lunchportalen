@@ -127,7 +127,7 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- Single order advance (batch-derived; auth checked at batch level)
+-- Single order advance (batch-derived; auth + GUC flag checked at batch RPC level)
 -- ---------------------------------------------------------------------------
 create or replace function private.lp_order_advance_one_step_for_batch(
   p_order_id uuid,
@@ -144,6 +144,10 @@ declare
   v_old text;
   v_target text;
 begin
+  if coalesce(current_setting('app.batch_derived_advance', true), '') <> '1' then
+    raise exception 'BATCH_DERIVED_FLAG_REQUIRED' using errcode = '42501';
+  end if;
+
   v_target := upper(btrim(coalesce(p_target, '')));
   if v_target not in ('PREPARED', 'DISPATCHED', 'DELIVERED') then
     raise exception 'INVALID_TARGET_STATUS' using errcode = '22023';
@@ -176,21 +180,13 @@ begin
     raise exception 'INVALID_STATUS_TRANSITION' using errcode = '22023';
   end if;
 
-  alter table public.orders disable trigger guard_order_mutation;
-  alter table public.orders disable trigger orders_cutoff_0800;
-  alter table public.orders disable trigger order_status_history;
+  perform set_config('app.batch_derived_actor', p_actor::text, true);
+  perform set_config('app.batch_derived_note', coalesce(nullif(btrim(p_note), ''), ''), true);
 
   update public.orders
   set status = v_target::public.order_status,
       updated_at = now()
   where id = p_order_id;
-
-  alter table public.orders enable trigger order_status_history;
-  alter table public.orders enable trigger orders_cutoff_0800;
-  alter table public.orders enable trigger guard_order_mutation;
-
-  insert into public.order_status_history (order_id, from_status, to_status, changed_by, note)
-  values (p_order_id, v_old::public.order_status, v_target::public.order_status, p_actor, nullif(btrim(p_note), ''));
 
   return jsonb_build_object('ok', true, 'from_status', v_old, 'to_status', v_target);
 end;
@@ -390,6 +386,8 @@ begin
     perform private.lp_assert_provider_batch_delivered_actor(v_provider_id, p_actor_user_id);
   end if;
 
+  perform set_config('app.batch_derived_advance', '1', true);
+
   select *
   into v_batch
   from public.kitchen_batches kb
@@ -486,5 +484,110 @@ comment on function public.lp_batch_transition_and_sync_orders(date, text, uuid,
   'Model B: atomically transition kitchen_batches and derive orders.status (PACKED→DISPATCHED, DELIVERED→DELIVERED). ESG/Tripletex out of scope v1.';
 
 grant execute on function public.lp_batch_transition_and_sync_orders(date, text, uuid, text, uuid, text) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- Batch-derived advance: transaction-scoped GUC bypass (no ALTER TABLE trigger toggles)
+-- app.batch_derived_advance=1 set only inside lp_batch_transition_and_sync_orders.
+-- ---------------------------------------------------------------------------
+create or replace function public.tg_orders_cutoff_0800() returns trigger
+    language plpgsql
+    set search_path to public
+    as $$
+declare
+  role public.user_role;
+  today date;
+  now_t time;
+begin
+  if coalesce(current_setting('app.batch_derived_advance', true), '') = '1' then
+    return new;
+  end if;
+
+  role := (select coalesce((select p.role from public.profiles p where p.id=auth.uid()), 'employee'::public.user_role));
+  if role='superadmin' then return new; end if;
+
+  today := public.oslo_today();
+  now_t := public.oslo_time();
+
+  if new.date < today then
+    raise exception 'orders locked: cannot write past' using errcode='23514';
+  end if;
+
+  if new.date = today and now_t >= time '08:00' then
+    raise exception 'orders locked after 08:00 Oslo for today' using errcode='23514';
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.tg_guard_order_mutation() returns trigger
+    language plpgsql
+    set search_path to public
+    as $$
+begin
+  if coalesce(current_setting('app.batch_derived_advance', true), '') = '1' then
+    return new;
+  end if;
+
+  if tg_op = 'DELETE' then
+    perform public.assert_order_mutable(old.id);
+    return old;
+  end if;
+
+  if upper((new.status)::text) is distinct from upper((old.status)::text) then
+    if upper((old.status)::text) in ('LOCKED', 'PREPARED', 'DISPATCHED')
+       and upper((new.status)::text) in ('PREPARED', 'DISPATCHED', 'DELIVERED', 'CANCELLED')
+       and (
+         (select private.can_manage_location(old.location_id))
+         or (select private.has_platform_role(array[
+           'platform_admin'::public.platform_role,
+           'platform_ops'::public.platform_role,
+           'kitchen'::public.platform_role,
+           'courier'::public.platform_role
+         ]))
+       )
+    then
+      return new;
+    end if;
+  end if;
+
+  perform public.assert_order_mutable(old.id);
+  return new;
+end;
+$$;
+
+create or replace function public.tg_order_status_history() returns trigger
+    language plpgsql security definer
+    set search_path to public
+    as $$
+begin
+  if coalesce(current_setting('app.batch_derived_advance', true), '') = '1' then
+    if tg_op = 'UPDATE' and new.status is distinct from old.status then
+      insert into public.order_status_history (order_id, from_status, to_status, changed_by, note)
+      values (
+        new.id,
+        old.status,
+        new.status,
+        nullif(current_setting('app.batch_derived_actor', true), '')::uuid,
+        nullif(current_setting('app.batch_derived_note', true), '')
+      );
+    end if;
+    return new;
+  end if;
+
+  if tg_op = 'INSERT' then
+    insert into public.order_status_history (order_id, from_status, to_status, changed_by, note)
+    values (new.id, null, new.status, auth.uid(), 'Order created');
+    return new;
+  end if;
+
+  if new.status is distinct from old.status then
+    insert into public.order_status_history (order_id, from_status, to_status, changed_by, note)
+    values (new.id, old.status, new.status, auth.uid(), null);
+  end if;
+
+  return new;
+end;
+$$;
 
 commit;
