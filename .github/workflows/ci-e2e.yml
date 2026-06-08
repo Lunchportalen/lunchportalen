@@ -250,7 +250,24 @@ jobs:
 
       - name: Start server and run E2E
         run: |
+          set -euo pipefail
+          # cancel-in-progress can leave stale listeners on :3000; teardown before bind.
+          if command -v fuser >/dev/null 2>&1; then
+            fuser -k 3000/tcp 2>/dev/null || true
+          elif command -v lsof >/dev/null 2>&1; then
+            pids="$(lsof -ti :3000 -sTCP:LISTEN 2>/dev/null || true)"
+            if [ -n "$pids" ]; then kill -9 $pids 2>/dev/null || true; fi
+          fi
+          sleep 1
           npm run start &
+          server_pid=$!
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+            if command -v fuser >/dev/null 2>&1; then
+              fuser -k 3000/tcp 2>/dev/null || true
+            fi
+          }
+          trap cleanup EXIT
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 http://localhost:3000/ || true)
             if [[ "$code" =~ ^[23][0-9][0-9]$ ]]; then echo "Server ready ($code)"; break; fi
@@ -272,6 +289,7 @@ jobs:
         env:
           PORT: 3000
           CI: "true"
+          LP_E2E_EXTERNAL_SERVER: "1"
           PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results.json
 
       - name: Assert E2E tests executed
