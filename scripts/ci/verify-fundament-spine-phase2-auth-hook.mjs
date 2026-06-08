@@ -31,6 +31,13 @@ const TENANT_TABLES = [
   "provider_memberships",
 ];
 
+/** ADR-016 inert provider-config skin — may use spine JWT helpers before tenant cutover (Fase 3). */
+const PROVIDER_CONFIG_TABLES = [
+  "provider_price_rules",
+  "provider_settings",
+  "provider_package_entitlements",
+];
+
 function mustEnv(name) {
   const v = String(process.env[name] ?? "").trim();
   if (!v) throw new Error(`Missing env: ${name}`);
@@ -261,18 +268,22 @@ async function runPolicyShadowChecks() {
     await scalar(
       `SELECT COUNT(*)::int AS c FROM pg_policies
        WHERE schemaname = 'public'
+         AND tablename <> ALL($1::text[])
          AND (
            COALESCE(qual::text, '') ILIKE '%app_active_%'
            OR COALESCE(with_check::text, '') ILIKE '%app_active_%'
            OR COALESCE(qual::text, '') ILIKE '%active_org_id%'
            OR COALESCE(with_check::text, '') ILIKE '%active_org_id%'
          )`,
+      [PROVIDER_CONFIG_TABLES],
     ),
   );
   if (hookPolicyRefs !== 0) {
-    fail(`policies referencing hook claim helpers/claims = ${hookPolicyRefs} (expected 0)`);
+    fail(
+      `policies outside provider-config referencing hook claim helpers/claims = ${hookPolicyRefs} (expected 0)`,
+    );
   } else {
-    ok("no tenant RLS policies reference Fase 2 claim helpers yet");
+    ok("no tenant RLS policies reference Fase 2 claim helpers yet (provider-config exempt per ADR-016)");
   }
 
   const tenantPolicyCount = Number(

@@ -281,6 +281,36 @@ Kjøkken kan bruke snapshot-struktur fremfor live-query hvis nødvendig.
 
 ---
 
+# ADR-016 – Provider-scoped configurable core (inert foundation)
+
+## Context
+Priser (90/130/170), cutoff (08:00 Europe/Oslo), tier-meny og pakke-entitlements er hardkodet i TypeScript, Sanity-seed og SQL-RPC (`lp_order_set`). Hardkode-audit (2026-06) viste dupliserte kilder og skjulte avhengigheter — uten én provider-scoped konfigurasjonsmodell kan ikke nye leverandører on-boardes uten kodeendring.
+
+## Decision
+Introduiser **additiv**, **inert** provider-config i databasen:
+
+- `provider_price_rules` — tier-/pakkepriser og fremtidige overrides (customer/agreement/category)
+- `provider_settings` — valuta, land, tidssone, cutoff, kjøkkenbuffer, leveringsdager, locale
+- `provider_package_entitlements` — pakke-nøkkel (BASIS/LUXUS/ENTERPRISE) → entitlement_key + `default_value`
+
+Første seed: **Melhus Catering AS** (Trondheim), oppslag via `providers.slug` / spine `organizations` — ingen hardkodet UUID.
+
+RLS på nye tabeller bruker spine-hjelpere `app_active_org()` og `app_is_platform_admin()` (les/skriv platform admin; les provider-org for authenticated).
+
+**Ingen runtime-leser** fra disse tabellene i denne changeset. Eksisterende konstanter, RPC, onboarding (FROZEN A1.5) og Sanity forblir uendret.
+
+Uke-synlighet (torsdag 14:00 / fredag 15:00) modelleres **ikke** her — uløst inkonsistens i app-lag; egen patch senere.
+
+## Consequences
++ Deterministisk fremtidig kilde for provider-parametre (database-first, ADR-001-aligned)
++ Melhus/Trondheim-seed speiler dagens `PLAN_CATEGORIES` og prisfasit
++ Fail-closed seed hvis provider eller spine-org mangler
+− Dual maintenance inntil resolver-patches kobler runtime
+− Spine RLS på config-tabeller krever JWT hook (Fase 3) for provider-admin lesing uten platform admin
+− `lp_order_set` og TS-priskilder forblir autoritative inntil eksplisitt cutover-ADR
+
+---
+
 # KONKLUSJON
 
 Lunchportalen sin arkitektur er basert på:
