@@ -874,6 +874,74 @@
     }
 }
 
+/* ── Forside pricing cards (ds-card variant) ─────────────── */
+.ds-card--featured{
+  border-color:rgba(245,180,0,.45);
+  box-shadow:
+    0 24px 60px rgba(245,180,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.ds-card__badge{
+  display:inline-block;
+  margin-bottom:16px;
+  padding:6px 14px;
+  border-radius:999px;
+  background:var(--lp-gold-cta, #f5b400);
+  color:#111;
+  font-size:.75rem;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
+.ds-card__price{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:8px;
+  margin:20px 0 24px;
+}
+
+.ds-card__price-value{
+  font-size:clamp(1.75rem,3vw,2.5rem);
+  font-weight:950;
+  letter-spacing:-.04em;
+  color:var(--ds-text-primary, #111);
+}
+
+.ds-card__price-suffix{
+  font-size:.95rem;
+  color:var(--ds-text-soft, rgba(17,17,17,.62));
+}
+
+.ds-card__list{
+  margin:24px 0 0;
+  padding:0;
+  list-style:none;
+}
+
+.ds-card__list li{
+  position:relative;
+  padding:8px 0 8px 28px;
+  font-size:.98rem;
+  line-height:1.55;
+  color:var(--ds-text-soft, rgba(17,17,17,.72));
+}
+
+.ds-card__list li::before{
+  content:"✓";
+  position:absolute;
+  left:0;
+  top:8px;
+  color:var(--lp-gold-dark, #c49200);
+  font-weight:900;
+}
+
+.ds-card__cta{
+  margin-top:8px;
+  min-height:48px;
+}
+
 /* ── Accessibility ──────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
     *,

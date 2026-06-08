@@ -1,0 +1,91 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
+
+@functions {
+    private static Link? FirstLink(object? value)
+    {
+        if (value is Link single) return single;
+        if (value is IEnumerable<Link> many) return many.FirstOrDefault();
+        return null;
+    }
+
+    private static string LinkTarget(Link? link) =>
+        link?.Target == "_blank" ? "target=\"_blank\" rel=\"noopener noreferrer\"" : "";
+}
+
+@{
+    var content = Model.Content;
+    var eyebrow = content.Value<string>("eyebrow");
+    var title = content.Value<string>("title");
+    var lead = content.Value<string>("lead");
+    var size = content.Value<string>("size") ?? "lg";
+    var backgroundImage = content.Value<IPublishedContent>("backgroundImage");
+    var primaryCta = FirstLink(content.Value("primaryCta"));
+    var secondaryCta = FirstLink(content.Value("secondaryCta"));
+    var sizeClass = size switch
+    {
+        "md" => "lp-hero--size-md",
+        "xl" => "lp-hero--size-xl",
+        _ => "lp-hero--size-lg"
+    };
+}
+
+<section class="lp-hero @sizeClass ds-fade-up">
+    @if (backgroundImage != null)
+    {
+        <div class="lp-hero__bg">
+            <img src="@backgroundImage.Url()" alt="" role="presentation" loading="eager" fetchpriority="high" />
+        </div>
+    }
+
+    <div class="lp-hero__overlay" aria-hidden="true"></div>
+
+    <div class="lp-container">
+        <div class="lp-hero__inner">
+            <div class="lp-hero__content">
+                @if (!string.IsNullOrWhiteSpace(eyebrow))
+                {
+                    <div class="lp-eyebrow">
+                        <span class="lp-eyebrow__dot" aria-hidden="true"></span>
+                        @eyebrow
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(title))
+                {
+                    <h1 class="lp-hero__heading">@title</h1>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(lead))
+                {
+                    <p class="lp-hero__body">@lead</p>
+                }
+
+                @if (primaryCta != null || secondaryCta != null)
+                {
+                    <div class="lp-hero__actions">
+                        @if (primaryCta != null && !string.IsNullOrWhiteSpace(primaryCta.Url))
+                        {
+                            <a href="@primaryCta.Url"
+                               class="ds-btn ds-btn--primary"
+                               @Html.Raw(LinkTarget(primaryCta))>
+                                @(!string.IsNullOrWhiteSpace(primaryCta.Name) ? primaryCta.Name : primaryCta.Url)
+                            </a>
+                        }
+                        @if (secondaryCta != null && !string.IsNullOrWhiteSpace(secondaryCta.Url))
+                        {
+                            <a href="@secondaryCta.Url"
+                               class="ds-btn ds-btn--outline"
+                               @Html.Raw(LinkTarget(secondaryCta))>
+                                @(!string.IsNullOrWhiteSpace(secondaryCta.Name) ? secondaryCta.Name : secondaryCta.Url)
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
