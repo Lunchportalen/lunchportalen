@@ -11,7 +11,7 @@ BEGIN;
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.provider_price_rules (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  provider_id uuid NOT NULL REFERENCES public.providers (id) ON DELETE CASCADE,
+  provider_id uuid NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
   customer_id uuid NULL REFERENCES public.companies (id) ON DELETE CASCADE,
   agreement_id uuid NULL REFERENCES public.agreements (id) ON DELETE CASCADE,
   tier text NULL,
@@ -59,7 +59,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS provider_price_rules_provider_tier_default_uni
 -- 2) provider_settings (one row per provider)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.provider_settings (
-  provider_id uuid PRIMARY KEY REFERENCES public.providers (id) ON DELETE CASCADE,
+  provider_id uuid PRIMARY KEY REFERENCES public.organizations (id) ON DELETE CASCADE,
   default_currency text NOT NULL DEFAULT 'NOK',
   default_country_code text NOT NULL DEFAULT 'NO',
   timezone text NOT NULL DEFAULT 'Europe/Oslo',
@@ -85,7 +85,7 @@ COMMENT ON TABLE public.provider_settings IS
 CREATE TABLE IF NOT EXISTS public.provider_package_entitlements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   package_key text NOT NULL,
-  provider_id uuid NOT NULL REFERENCES public.providers (id) ON DELETE CASCADE,
+  provider_id uuid NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
   entitlement_key text NOT NULL,
   is_enabled boolean NOT NULL DEFAULT true,
   default_value jsonb NULL,
@@ -106,6 +106,85 @@ COMMENT ON TABLE public.provider_package_entitlements IS
 
 CREATE INDEX IF NOT EXISTS provider_package_entitlements_provider_pkg_idx
   ON public.provider_package_entitlements (provider_id, package_key);
+
+-- ---------------------------------------------------------------------------
+-- 3b) provider_id NOT NULL + FK → organizations(id) (repair prior staging apply)
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_tbl text;
+  v_fk text;
+  v_old_fk text;
+BEGIN
+  FOREACH v_tbl IN ARRAY ARRAY[
+    'provider_price_rules',
+    'provider_settings',
+    'provider_package_entitlements'
+  ] LOOP
+    IF to_regclass(format('public.%I', v_tbl)) IS NULL THEN
+      CONTINUE;
+    END IF;
+
+    EXECUTE format(
+      'ALTER TABLE public.%I ALTER COLUMN provider_id SET NOT NULL',
+      v_tbl
+    );
+
+    FOR v_old_fk IN
+      SELECT c.conname
+      FROM pg_constraint c
+      JOIN pg_class t ON t.oid = c.conrelid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      JOIN pg_class ref ON ref.oid = c.confrelid
+      JOIN pg_namespace refn ON refn.oid = ref.relnamespace
+      WHERE n.nspname = 'public'
+        AND t.relname = v_tbl
+        AND c.contype = 'f'
+        AND refn.nspname = 'public'
+        AND ref.relname = 'providers'
+        AND EXISTS (
+          SELECT 1
+          FROM unnest(c.conkey) AS col(attnum)
+          JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = col.attnum
+          WHERE a.attname = 'provider_id' AND NOT a.attisdropped
+        )
+    LOOP
+      EXECUTE format('ALTER TABLE public.%I DROP CONSTRAINT %I', v_tbl, v_old_fk);
+    END LOOP;
+
+    v_fk := v_tbl || '_provider_id_fkey';
+    IF EXISTS (
+      SELECT 1
+      FROM pg_constraint c
+      JOIN pg_class t ON t.oid = c.conrelid
+      JOIN pg_class ref ON ref.oid = c.confrelid
+      WHERE t.relname = v_tbl
+        AND c.conname = v_fk
+        AND ref.relname IS DISTINCT FROM 'organizations'
+    ) THEN
+      EXECUTE format('ALTER TABLE public.%I DROP CONSTRAINT %I', v_tbl, v_fk);
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_constraint c
+      JOIN pg_class t ON t.oid = c.conrelid
+      JOIN pg_class ref ON ref.oid = c.confrelid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      WHERE n.nspname = 'public'
+        AND t.relname = v_tbl
+        AND c.conname = v_fk
+        AND ref.relname = 'organizations'
+    ) THEN
+      EXECUTE format(
+        'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (provider_id) REFERENCES public.organizations (id) ON DELETE CASCADE',
+        v_tbl,
+        v_fk
+      );
+    END IF;
+  END LOOP;
+END
+$$;
 
 -- ---------------------------------------------------------------------------
 -- 4) updated_at triggers

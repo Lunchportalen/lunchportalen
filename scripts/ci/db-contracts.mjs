@@ -222,20 +222,40 @@ async function verifyProviderConfigFoundation() {
   await assertColumn("provider_settings", "cutoff_time");
   await assertColumn("provider_settings", "kitchen_buffer_minutes");
   await assertColumn("provider_package_entitlements", "entitlement_key");
+  for (const t of [
+    "provider_price_rules",
+    "provider_settings",
+    "provider_package_entitlements",
+  ]) {
+    const { rowCount } = await client.query(
+      `SELECT 1
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = $1
+         AND column_name = 'provider_id'
+         AND is_nullable = 'NO'`,
+      [t],
+    );
+    if (!rowCount) {
+      throw new Error(`public.${t}.provider_id must be NOT NULL`);
+    }
+    console.log(`OK: column public.${t}.provider_id NOT NULL`);
+  }
+
   await assertForeignKey(
     "provider_price_rules",
     "provider_price_rules_provider_id_fkey",
-    "providers",
+    "organizations",
   );
   await assertForeignKey(
     "provider_settings",
     "provider_settings_provider_id_fkey",
-    "providers",
+    "organizations",
   );
   await assertForeignKey(
     "provider_package_entitlements",
     "provider_package_entitlements_provider_id_fkey",
-    "providers",
+    "organizations",
   );
 
   const { rows: melhusRows } = await client.query(
