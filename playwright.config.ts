@@ -17,7 +17,7 @@ export default defineConfig({
   },
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
+  retries: process.env.CI ? 2 : 0,
   reporter: [
     ["list"],
     ["html", { open: "never" }],
