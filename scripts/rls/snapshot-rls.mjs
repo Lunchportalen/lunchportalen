@@ -1,5 +1,8 @@
 /**
- * Generer tests/rls/golden-rls-snapshot.json fra Postgres (DATABASE_URL / SUPABASE_POSTGRES_URL).
+ * Generer tests/rls/golden-rls-snapshot.json fra Postgres.
+ *
+ * URL priority: RLS_DRIFT_DATABASE_URL > DATABASE_URL > SUPABASE_POSTGRES_URL
+ * Pinned ref: RLS_DRIFT_EXPECTED_REF (default hkpokyapzarefrgqzkos)
  */
 import { writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -13,6 +16,8 @@ import {
   SQL_RLS_ENABLED_TABLES,
   buildGoldenPayload,
   createSupabasePoolConfig,
+  resolveRlsDatabaseUrl,
+  assertRlsDriftDbIdentity,
 } from "./golden-snapshot-lib.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -22,23 +27,20 @@ const outPath = join(root, "tests", "rls", "golden-rls-snapshot.json");
 dotenv.config({ path: join(root, ".env.local") });
 dotenv.config({ path: join(root, ".env") });
 
-function dbUrl() {
-  const u = process.env.SUPABASE_POSTGRES_URL ?? process.env.DATABASE_URL ?? "";
-  return u.trim() || null;
-}
-
-const DEFAULT_PROJECT_REF = "hkpokyapzarefrgqzkos";
-
 async function main() {
-  const url = dbUrl();
+  const url = resolveRlsDatabaseUrl();
   if (!url) {
     console.error(
-      "Mangler SUPABASE_POSTGRES_URL eller DATABASE_URL (sett i miljø eller .env / .env.local).",
+      "Mangler RLS_DRIFT_DATABASE_URL, DATABASE_URL eller SUPABASE_POSTGRES_URL.",
     );
     process.exit(1);
   }
 
-  const projectRef = (process.env.RLS_GOLDEN_PROJECT_REF ?? DEFAULT_PROJECT_REF).trim();
+  const identity = assertRlsDriftDbIdentity({ databaseUrl: url });
+  if (!identity.ok) {
+    console.error(identity.error);
+    process.exit(1);
+  }
 
   const pool = new pg.Pool(createSupabasePoolConfig(url, 2));
   try {
@@ -54,7 +56,7 @@ async function main() {
       ]);
 
     const payload = buildGoldenPayload({
-      project_ref: projectRef,
+      project_ref: identity.connectedRef,
       postgres_version,
       policyRows,
       functionRows,
@@ -66,6 +68,9 @@ async function main() {
     const np = payload.policies.length;
     const nf = payload.private_functions.length;
     const nt = payload.rls_enabled_tables.length;
+    console.log(
+      `RLS golden snapshot: project_ref=${identity.connectedRef} (verified expected ${identity.expectedRef})`,
+    );
     console.log(`Snapshot generert: ${np} policies, ${nf} functions, ${nt} tables`);
     console.log(`Skrev: ${outPath}`);
   } catch (e) {

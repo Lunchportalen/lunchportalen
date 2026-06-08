@@ -13,8 +13,8 @@
 ## Hvordan oppdatere
 
 1. Gjør endringen (via migration, MCP, etc.)
-2. Eksporter `DATABASE_URL` for prod (eller legg det i `.env` / `.env.local` som ikke committes)
-3. Kjør: `npm run rls:snapshot`
+2. Eksporter prod `DATABASE_URL` (ref `hkpokyapzarefrgqzkos`) — **ikke** staging `SUPABASE_POSTGRES_URL` alene
+3. Kjør: `npm run rls:snapshot` (identity guard verifiserer ref før skriving)
 4. Verifiser diff i `tests/rls/golden-rls-snapshot.json`
 5. Kjør test:
 

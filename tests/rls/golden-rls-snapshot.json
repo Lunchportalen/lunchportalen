@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-06-02T18:17:05.724Z",
+  "generated_at": "2026-06-08T10:13:31.518Z",
   "project_ref": "hkpokyapzarefrgqzkos",
   "postgres_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
   "policies": [
@@ -1483,6 +1483,18 @@
     },
     {
       "schema": "public",
+      "table": "leads",
+      "name": "leads_service_role_full",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "lifecycle_audit_log",
       "name": "lifecycle_audit_log_insert_via_rpc",
       "command": "INSERT",
@@ -2329,6 +2341,78 @@
     },
     {
       "schema": "public",
+      "table": "provider_package_entitlements",
+      "name": "provider_package_entitlements_select_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(app_is_platform_admin() OR (provider_id = app_active_org()))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_package_entitlements",
+      "name": "provider_package_entitlements_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_package_entitlements",
+      "name": "provider_package_entitlements_write_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "app_is_platform_admin()",
+      "check_expr": "app_is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_price_rules",
+      "name": "provider_price_rules_select_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(app_is_platform_admin() OR (provider_id = app_active_org()))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_price_rules",
+      "name": "provider_price_rules_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_price_rules",
+      "name": "provider_price_rules_write_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "app_is_platform_admin()",
+      "check_expr": "app_is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "provider_service_areas",
       "name": "provider_service_areas_superadmin_all",
       "command": "ALL",
@@ -2371,6 +2455,42 @@
       ],
       "using_expr": "((EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_service_areas.provider_id) AND (pm.role = 'provider_admin'::provider_role)))) OR is_platform_admin())",
       "check_expr": "((EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_service_areas.provider_id) AND (pm.role = 'provider_admin'::provider_role)))) OR is_platform_admin())",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_settings",
+      "name": "provider_settings_select_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(app_is_platform_admin() OR (provider_id = app_active_org()))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_settings",
+      "name": "provider_settings_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_settings",
+      "name": "provider_settings_write_platform_admin",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "app_is_platform_admin()",
+      "check_expr": "app_is_platform_admin()",
       "permissive": true
     },
     {
@@ -3595,6 +3715,11 @@
     },
     {
       "schema": "public",
+      "name": "leads",
+      "policy_count": 1
+    },
+    {
+      "schema": "public",
       "name": "lifecycle_audit_log",
       "policy_count": 3
     },
@@ -3627,6 +3752,11 @@
       "schema": "public",
       "name": "media_items",
       "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "memberships",
+      "policy_count": 0
     },
     {
       "schema": "public",
@@ -3665,8 +3795,18 @@
     },
     {
       "schema": "public",
+      "name": "organizations",
+      "policy_count": 0
+    },
+    {
+      "schema": "public",
       "name": "outbox",
       "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "platform_admins",
+      "policy_count": 0
     },
     {
       "schema": "public",
@@ -3730,8 +3870,23 @@
     },
     {
       "schema": "public",
+      "name": "provider_package_entitlements",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
+      "name": "provider_price_rules",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
       "name": "provider_service_areas",
       "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "provider_settings",
+      "policy_count": 3
     },
     {
       "schema": "public",
