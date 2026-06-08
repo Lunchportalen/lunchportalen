@@ -8,6 +8,7 @@
  * Run AFTER:
  *   20260703120000_fundament_identity_spine_phase1.sql
  *   20260707120000_fundament_identity_spine_phase1_review_adjustments.sql
+ *   20260712120000_fundament_identity_spine_phase1_review_reconcile.sql
  *   20260708120000_fundament_identity_spine_phase2_auth_hook_shadow.sql
  *
  * CI green alone is NOT sufficient — verify via live katalog post-deploy.
@@ -535,7 +536,7 @@ try {
 
   console.log("");
   console.log(
-    "IDEMPOTENCY: re-apply 20260707120000_fundament_identity_spine_phase1_review_adjustments.sql, then re-run this script.",
+    "IDEMPOTENCY: re-apply 20260712120000_fundament_identity_spine_phase1_review_reconcile.sql (or 20260707120000), then re-run this script.",
   );
   console.log("Expected: all counts unchanged, all diff checks remain 0.");
 

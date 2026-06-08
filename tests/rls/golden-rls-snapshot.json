@@ -3062,12 +3062,28 @@
       "body_hash": "00b6f7841699204ce4a5045f0554bea5"
     },
     {
+      "name": "lp_assert_provider_batch_delivered_actor",
+      "args": "p_provider_id uuid, p_user_id uuid",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "98769b4727f0c56f84fedc1c88f4662a"
+    },
+    {
       "name": "lp_assert_provider_kitchen_access",
       "args": "p_provider_id uuid",
       "result_type": "void",
       "is_security_definer": true,
       "volatility": "volatile",
       "body_hash": "5c6312a9e5017b8eee9318129f2f2a09"
+    },
+    {
+      "name": "lp_assert_provider_kitchen_access_for",
+      "args": "p_provider_id uuid, p_user_id uuid",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "2c22398c7653b9d42fb34464adf40a97"
     },
     {
       "name": "lp_assert_provider_member_read",
@@ -3142,6 +3158,14 @@
       "body_hash": "e2681e4b597991099a446ca8fbd3c640"
     },
     {
+      "name": "lp_order_advance_one_step_for_batch",
+      "args": "p_order_id uuid, p_target text, p_actor uuid, p_note text",
+      "result_type": "jsonb",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "2c6af16ff22f95c6c1028de92fa14ec9"
+    },
+    {
       "name": "lp_orders_cancel_active",
       "args": "p_company_id uuid, p_provider_id uuid",
       "result_type": "integer",
@@ -3180,6 +3204,22 @@
       "is_security_definer": true,
       "volatility": "volatile",
       "body_hash": "1be376e1969e4fd8126b6a01df94d5d4"
+    },
+    {
+      "name": "lp_resolve_provider_for_location",
+      "args": "p_location_id uuid",
+      "result_type": "uuid",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "06474306cf4ed9ce2de6697ffdb61f2e"
+    },
+    {
+      "name": "lp_sync_orders_for_batch_scope",
+      "args": "p_delivery_date date, p_delivery_window text, p_company_location_id uuid, p_order_target text, p_batch_id uuid, p_batch_status text, p_actor uuid",
+      "result_type": "jsonb",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "cd653bb000238c769a11efc501078d61"
     },
     {
       "name": "lp_tripletex_allowed_transition",

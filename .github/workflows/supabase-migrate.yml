@@ -173,6 +173,11 @@ jobs:
           set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
+      - name: Repair MCP ledger drift (staging, idempotent)
+        run: |
+          set -euo pipefail
+          node scripts/ci/repair-staging-mcp-batch-ledger.mjs | tee "$EVIDENCE_DIR/ledger-repair.log"
+
       # ✅ Guard verify: capture pinned CLI 2.102.0 dry-run output against uigx (fail-closed)
       - name: Staging dry-run (guard verify, pinned CLI)
         run: |
@@ -215,7 +220,12 @@ jobs:
           fi
           echo "Migration $LATEST_LOCAL verified applied on staging."
 
-      # ✅ Verify DB contracts (fail-closed)
+      - name: Verify batch order status sync (staging, Model B loop)
+        if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-batch-order-status-sync-staging.mjs 2>&1 | tee "$EVIDENCE_DIR/batch-order-status-sync-verify.log"
+
       - name: Verify DB contracts (staging)
         run: |
           set -euo pipefail

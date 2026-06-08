@@ -134,15 +134,66 @@ vi.mock("@/lib/audit/auditWrite", () => ({
   auditWriteMust: vi.fn(async () => true),
 }));
 
+vi.mock("@/lib/kitchen/batchPackedOutbox", () => ({
+  enqueueBatchPackedOutbox: vi.fn(async () => undefined),
+}));
+
+const batchStore: Array<Record<string, unknown>> = [];
+
+vi.mock("@/lib/kitchen/batchTransitionRpc", () => ({
+  batchTransitionAndSyncOrders: vi.fn(async (_admin, input) => {
+    const slot = input.deliveryWindow === "lunch" ? "default" : input.deliveryWindow;
+    const exists = batchStore.some(
+      (b) =>
+        b.delivery_date === input.deliveryDate &&
+        b.delivery_window === slot &&
+        b.company_location_id === input.companyLocationId,
+    );
+    if (input.mode === "create" && exists) {
+      return { data: null, error: { message: "BATCH_EXISTS", code: "23505" } };
+    }
+    if (input.mode === "create") {
+      batchStore.push({
+        id: "batch_1",
+        delivery_date: input.deliveryDate,
+        delivery_window: slot,
+        company_location_id: input.companyLocationId,
+        status: "PACKED",
+        packed_at: new Date().toISOString(),
+        delivered_at: null,
+      });
+    }
+    return {
+      data: {
+        ok: true,
+        batch_updated: true,
+        batch: {
+          id: "batch_1",
+          delivery_date: input.deliveryDate,
+          delivery_window: slot,
+          company_location_id: input.companyLocationId,
+          status: input.targetBatchStatus,
+          packed_at: new Date().toISOString(),
+          delivered_at: null,
+        },
+        sync: { advanced: 1, skipped: 0, already: 0, order_ids: ["o1"] },
+        provider_id: "prov1",
+      },
+      error: null,
+    };
+  }),
+}));
+
 import { POST as batchStartPOST } from "../app/api/kitchen/batch/start/route";
 
 beforeEach(() => {
+  batchStore.length = 0;
   mockRole = "kitchen";
   mockCutoff = "TODAY_LOCKED";
   adminDb = makeAdminMock({
     profiles: [{ id: "p1", user_id: "u1", company_id: COMPANY_ID, location_id: LOCATION_ID, disabled_at: null, is_active: true }],
     company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
-    orders: [{ id: "o1", company_id: COMPANY_ID, location_id: LOCATION_ID, date: "2026-02-02", status: "ACTIVE", slot: "lunch" }],
+    orders: [{ id: "o1", company_id: COMPANY_ID, location_id: LOCATION_ID, date: "2026-02-02", status: "ACTIVE", slot: "default" }],
     company_current_agreement: [{ id: "a1", company_id: COMPANY_ID, status: "ACTIVE" }],
     kitchen_batch: [],
   });
@@ -192,7 +243,7 @@ describe("kitchen batch/start", () => {
     adminDb = makeAdminMock({
       profiles: [{ id: "p1", user_id: "u1", company_id: "c-other", location_id: "l-other", disabled_at: null, is_active: true }],
       company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
-      orders: [{ id: "o1", company_id: COMPANY_ID, location_id: LOCATION_ID, date: "2026-02-02", status: "ACTIVE", slot: "lunch" }],
+      orders: [{ id: "o1", company_id: COMPANY_ID, location_id: LOCATION_ID, date: "2026-02-02", status: "ACTIVE", slot: "default" }],
       company_current_agreement: [{ id: "a1", company_id: COMPANY_ID, status: "ACTIVE" }],
       kitchen_batch: [],
     });
