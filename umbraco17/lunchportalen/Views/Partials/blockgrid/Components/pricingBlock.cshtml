@@ -1,0 +1,108 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockGridItem>
+@using System.Linq
+@using Umbraco.Extensions
+@using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.Blocks
+
+@functions {
+    private static Link? FirstLink(object? value)
+    {
+        if (value is Link single) return single;
+        if (value is IEnumerable<Link> many) return many.FirstOrDefault();
+        return null;
+    }
+
+    private static string LinkTarget(Link? link) =>
+        link?.Target == "_blank" ? "target=\"_blank\" rel=\"noopener noreferrer\"" : "";
+}
+
+@{
+    var content = Model.Content;
+    var eyebrow = content.Value<string>("eyebrow");
+    var heading = content.Value<string>("heading");
+    var lead = content.Value<string>("lead");
+    var items = content.Value<IEnumerable<BlockListItem>>("items");
+}
+
+<section class="ds-section lp-pricing-section ds-fade-up">
+    <div class="ds-container">
+        <div class="ds-text-limit">
+            @if (!string.IsNullOrWhiteSpace(eyebrow))
+            {
+                <p class="ds-eyebrow">@eyebrow</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(heading))
+            {
+                <h2 class="ds-h2">@heading</h2>
+            }
+            @if (!string.IsNullOrWhiteSpace(lead))
+            {
+                <p class="ds-lead">@lead</p>
+            }
+        </div>
+
+        @if (items != null && items.Any())
+        {
+            <div class="ds-cards-3">
+                @foreach (var item in items)
+                {
+                    var plan = item.Content;
+                    var name = plan.Value<string>("name");
+                    var description = plan.Value<string>("description");
+                    var price = plan.Value<string>("price");
+                    var priceSuffix = plan.Value<string>("priceSuffix");
+                    var badge = plan.Value<string>("badge");
+                    var featured = plan.Value<bool>("featured");
+                    var featuresRaw = plan.Value<string>("features") ?? "";
+                    var featureList = featuresRaw
+                        .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Where(line => !string.IsNullOrWhiteSpace(line))
+                        .ToList();
+                    var cta = FirstLink(plan.Value("cta"));
+
+                    <article class="ds-card @(featured ? "ds-card--featured" : "")">
+                        @if (!string.IsNullOrWhiteSpace(badge))
+                        {
+                            <div class="ds-card__badge">@badge</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(name))
+                        {
+                            <h3 class="ds-card__title">@name</h3>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(description))
+                        {
+                            <p class="ds-card__text">@description</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(price))
+                        {
+                            <div class="ds-card__price">
+                                <span class="ds-card__price-value">@price</span>
+                                @if (!string.IsNullOrWhiteSpace(priceSuffix))
+                                {
+                                    <span class="ds-card__price-suffix">@priceSuffix</span>
+                                }
+                            </div>
+                        }
+                        @if (cta != null && !string.IsNullOrWhiteSpace(cta.Url))
+                        {
+                            <a href="@cta.Url"
+                               class="ds-btn ds-btn--primary ds-card__cta"
+                               @Html.Raw(LinkTarget(cta))>
+                                @(!string.IsNullOrWhiteSpace(cta.Name) ? cta.Name : cta.Url)
+                            </a>
+                        }
+                        @if (featureList.Count > 0)
+                        {
+                            <ul class="ds-card__list">
+                                @foreach (var feature in featureList)
+                                {
+                                    <li>@feature</li>
+                                }
+                            </ul>
+                        }
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>
