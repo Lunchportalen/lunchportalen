@@ -34,6 +34,17 @@ export function hasGeographyParams(postalCode: string | null | undefined, city: 
   return isValidPostalCode(String(postalCode ?? "")) && isValidCity(String(city ?? ""));
 }
 
+/** True when /start should skip role chooser and go straight to bedrift/geografi-flyt. */
+export function shouldSkipStartRoleGate(
+  intent: string | null | undefined,
+  postalCode?: string | null | undefined,
+  city?: string | null | undefined,
+): boolean {
+  const normalizedIntent = String(intent ?? "").trim().toLowerCase();
+  if (normalizedIntent === "demo" || normalizedIntent === "register") return true;
+  return hasGeographyParams(postalCode, city);
+}
+
 export function buildContinuationPath(
   intent: StartIntent,
   params: { postalCode: string; city: string; source: string },

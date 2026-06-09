@@ -1,0 +1,136 @@
+/* =========================================================
+   LUNCHPORTALEN — Design foundation (app.lunchportalen.no)
+   Bridges --lp-* and --ds-*; shared app shell + control surfaces.
+   Loaded after globals.css.
+========================================================= */
+
+:root {
+  /* Align DS layer to canonical LP cream/gold tokens */
+  --ds-bg: #f8f4ea;
+  --ds-bg-soft: #f2ece0;
+
+  /* App shell — control tower / premium admin chrome */
+  --lp-shell-outer: #f7f1e7;
+  --lp-shell-frame: #f5ecdf;
+  --lp-shell-sidebar: rgb(255 255 255 / 0.74);
+  --lp-shell-main: rgb(255 255 255 / 0.86);
+  --lp-shell-ring: rgb(0 0 0 / 0.04);
+  --lp-shell-shadow: 0 24px 80px rgb(35 28 18 / 0.08);
+
+  /* Dark control surfaces (dashboards, control panels) */
+  --lp-control-bg: #111111;
+  --lp-control-bg-soft: #1b1712;
+  --lp-control-text: #ffffff;
+  --lp-control-muted: rgb(255 255 255 / 0.62);
+  --lp-control-border: rgb(255 255 255 / 0.10);
+
+  /* App shell rhythm */
+  --lp-shell-gap: 12px;
+  --lp-shell-radius-outer: 2rem;
+  --lp-shell-radius-sidebar: 1.65rem;
+  --lp-shell-radius-main: 1.75rem;
+  --lp-shell-pad-header: 27px;
+}
+
+/* =========================================================
+   App shell — superadmin / control surfaces
+========================================================= */
+.lp-app-shell {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--lp-shell-outer);
+  padding: 1rem 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .lp-app-shell {
+    padding: 1rem 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lp-app-shell {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.lp-app-shell__inner {
+  max-width: 1500px;
+  margin-inline: auto;
+  padding-top: var(--lp-shell-pad-header);
+  padding-bottom: 4rem;
+}
+
+.lp-app-shell__frame {
+  display: grid;
+  gap: var(--lp-shell-gap);
+  padding: 0.5rem;
+  border-radius: var(--lp-shell-radius-outer);
+  background: var(--lp-shell-frame);
+  box-shadow: var(--lp-shell-shadow);
+  outline: 1px solid var(--lp-shell-ring);
+}
+
+@media (min-width: 1024px) {
+  .lp-app-shell__frame {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+
+.lp-app-shell__sidebar {
+  border-radius: var(--lp-shell-radius-sidebar);
+  background: var(--lp-shell-sidebar);
+  padding: 0.75rem;
+  outline: 1px solid rgb(255 255 255 / 0.85);
+}
+
+@media (min-width: 1024px) {
+  .lp-app-shell__sidebar {
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+  }
+}
+
+.lp-app-shell__main {
+  min-width: 0;
+  border-radius: var(--lp-shell-radius-main);
+  background: var(--lp-shell-main);
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .lp-app-shell__main {
+    padding: 1.5rem;
+  }
+}
+
+/* =========================================================
+   Shared panel primitives (complements .lp-card)
+========================================================= */
+.lp-panel {
+  background: rgb(var(--lp-surface));
+  border: 1px solid rgb(var(--lp-border) / 0.85);
+  border-radius: var(--lp-radius-card);
+  box-shadow: var(--lp-shadow-soft);
+  padding: 1.25rem;
+}
+
+.lp-panel--soft {
+  background: rgb(var(--lp-surface-alt));
+  box-shadow: none;
+}
+
+.lp-panel--elevated {
+  box-shadow: var(--lp-shadow-card);
+}
+
+/* Dark control surface utility */
+.lp-control-surface {
+  background: var(--lp-control-bg);
+  color: var(--lp-control-text);
+  border-radius: var(--ds-radius-md, 22px);
+  border: 1px solid var(--lp-control-border);
+  box-shadow: var(--lp-shadow-md);
+}

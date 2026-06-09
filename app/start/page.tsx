@@ -2,19 +2,35 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Image from "next/image";
 
-import GeographyGateForm from "@/components/start/GeographyGateForm";
+import StartRoleChooser from "@/components/start/StartRoleChooser";
+import { shouldSkipStartRoleGate } from "@/lib/public/geographyParams";
 
 export const metadata: Metadata = {
-  title: "Hvor holder bedriften til?",
+  title: "Kom i gang",
   description:
-    "Fortell oss hvor dere er, så finner vi caterere som leverer lunsj til dere.",
+    "Velg om du er bedrift som ønsker firmalunsj, eller caterer som vil bli leverandør i Lunchportalen.",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default function StartPage() {
+function paramValue(v: string | string[] | undefined): string {
+  return String(Array.isArray(v) ? v[0] : v ?? "").trim();
+}
+
+export default async function StartPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const skipRoleGate = shouldSkipStartRoleGate(
+    paramValue(params.intent),
+    paramValue(params.postal_code),
+    paramValue(params.city),
+  );
+
   return (
     <div className="lp-start-shell">
       <section className="lp-start-card" aria-labelledby="start-page-title">
@@ -29,17 +45,8 @@ export default function StartPage() {
           />
         </div>
 
-        <header className="lp-start-card__header">
-          <h1 id="start-page-title" className="lp-start-card__title">
-            Hvor holder bedriften til?
-          </h1>
-          <p className="lp-start-card__lead">
-            Fortell oss hvor dere er, så finner vi caterere som leverer lunsj til dere.
-          </p>
-        </header>
-
         <Suspense fallback={<p className="lp-start-form__reassurance">Laster …</p>}>
-          <GeographyGateForm />
+          <StartRoleChooser skipRoleGate={skipRoleGate} />
         </Suspense>
       </section>
     </div>

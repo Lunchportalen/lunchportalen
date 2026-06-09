@@ -69,11 +69,19 @@ export async function sendLeadSalesAlert(payload: LeadSalesAlertPayload): Promis
     const { rid, leadId, name, email, company, source, phone, company_size, message, postal_code, city, coverage_wish, lead_type } =
       payload;
 
+    const isProvider = lead_type === "provider";
     const subject = coverage_wish
       ? `Dekningsønske: ${company} (${postal_code ?? "?"} ${city ?? ""}) — RID: ${rid}`
-      : `Ny demo-forespørsel: ${company} (RID: ${rid})`;
+      : isProvider
+        ? `Ny leverandørinteresse: ${company} (RID: ${rid})`
+        : `Ny demo-forespørsel: ${company} (RID: ${rid})`;
+    const heading = coverage_wish
+      ? "Dekningsønske"
+      : isProvider
+        ? "Ny leverandørinteresse"
+        : "Ny demo-forespørsel";
     const text =
-      (coverage_wish ? `Dekningsønske\n\n` : `Ny demo-forespørsel\n\n`) +
+      `${heading}\n\n` +
       `RID: ${rid}\n` +
       `Lead-ID: ${leadId}\n` +
       `Kilde: ${source}\n` +
@@ -89,7 +97,7 @@ export async function sendLeadSalesAlert(payload: LeadSalesAlertPayload): Promis
 
     const html = `
       <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5">
-        <h2 style="margin:0 0 12px 0">${coverage_wish ? "Dekningsønske" : "Ny demo-forespørsel"}</h2>
+        <h2 style="margin:0 0 12px 0">${heading}</h2>
         <div style="padding:12px 14px;border:1px solid #eee;border-radius:12px;background:#fafafa">
           <div><strong>RID:</strong> ${escapeHtml(rid)}</div>
           <div><strong>Lead-ID:</strong> ${escapeHtml(leadId)}</div>
