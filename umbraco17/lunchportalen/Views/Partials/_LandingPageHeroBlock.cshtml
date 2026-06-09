@@ -21,6 +21,8 @@
     var secondaryCta      = secondaryCtaLinks?.FirstOrDefault();
     var heroImage         = content?.Value<IPublishedContent>("heroImage");
     var heroImageUrl      = heroImage?.Url() ?? "";
+    var visualBackground  = content?.Value<IPublishedContent>("backgroundImage");
+    var visualBackgroundUrl = visualBackground?.Url() ?? "";
     var primaryUrl        = AppUrls.Demo("forside-kunde");
     var secondaryUrl      = AppUrls.Demo("forside-caterer");
     if (secondaryCta != null && !string.IsNullOrWhiteSpace(secondaryCta.Url))
@@ -36,6 +38,13 @@
 }
 
 <section class="lp-lp-hero">
+  @if (!string.IsNullOrWhiteSpace(visualBackgroundUrl))
+  {
+    <div class="lp-lp-hero__background" aria-hidden="true">
+      <img src="@visualBackgroundUrl" alt="" role="presentation" loading="eager" fetchpriority="high" />
+    </div>
+  }
+
   <div class="lp-lp-deco-circle lp-lp-deco-circle--tr" aria-hidden="true"></div>
   <div class="lp-lp-deco-circle lp-lp-deco-circle--bl" aria-hidden="true"></div>
 
