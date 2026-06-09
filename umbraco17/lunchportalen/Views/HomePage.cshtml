@@ -4,15 +4,23 @@
 
 @{
     Layout = "~/Views/Partials/_Layout.cshtml";
+
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
 }
 
-@try {
-  var grid = Model.Value<BlockGridModel>("forsideBlocks");
-  if (grid?.Any() == true) {
-    @await Html.GetBlockGridHtmlAsync(Model, "forsideBlocks")
-  } else {
-    @await Html.PartialAsync("~/Views/Partials/_ForsideDefaultComposition.cshtml")
-  }
-} catch {
-  @await Html.PartialAsync("~/Views/Partials/_ForsideDefaultComposition.cshtml")
+@* Forsiden rendres fra Umbraco contentBlocks. Ikke hardkod seksjoner her. *@
+@if (blocks != null && blocks.Any())
+{
+    @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
+}
+else
+{
+    <section class="ds-section">
+        <div class="ds-container">
+            <div class="ds-surface">
+                <h1>Forside</h1>
+                <p>Ingen blokker funnet i «Content Blocks». Legg til blokker i Umbraco-backoffice.</p>
+            </div>
+        </div>
+    </section>
 }
