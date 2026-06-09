@@ -110,88 +110,12 @@
 
     </div>
 
-    <div class="lp-lp-hero__visual">
-      @if (!string.IsNullOrWhiteSpace(heroImageUrl))
-      {
+    @if (!string.IsNullOrWhiteSpace(heroImageUrl))
+    {
+      <div class="lp-lp-hero__visual">
         <img src="@heroImageUrl" alt="@heading" class="lp-lp-hero__image" />
-      }
-      else
-      {
-        <div class="lp-lp-mockup-wrap">
-
-          <div class="lp-lp-badge lp-lp-badge--tl">
-            <div class="lp-lp-badge__num">4.9 &#9733;</div>
-            <div class="lp-lp-badge__lbl">Snitt &middot; 1&nbsp;200+ bedrifter</div>
-          </div>
-
-          <div class="lp-lp-app-window">
-            <div class="lp-lp-win-bar">
-              <div class="lp-lp-win-dot lp-lp-win-dot--red"></div>
-              <div class="lp-lp-win-dot lp-lp-win-dot--yellow"></div>
-              <div class="lp-lp-win-dot lp-lp-win-dot--green"></div>
-              <div class="lp-lp-win-url">app.lunchportalen.no</div>
-            </div>
-            <div class="lp-lp-win-body">
-              <div class="lp-lp-win-head">
-                <span class="lp-lp-win-title">Dagens lunsj</span>
-                <span class="lp-lp-win-date">Onsdag 30. april</span>
-              </div>
-              <div class="lp-lp-win-deadline">
-                <span class="lp-lp-deadline-lbl">Bestillingsfrist</span>
-                <span class="lp-lp-deadline-val">kl. 08:00 i dag</span>
-              </div>
-              <div class="lp-lp-menu-section">
-                <div class="lp-lp-menu-label">Velg din lunsj</div>
-                <div class="lp-lp-menu-item lp-lp-menu-item--selected">
-                  <div class="lp-lp-menu-left">
-                    <div class="lp-lp-menu-icon">&#x1F957;</div>
-                    <div>
-                      <div class="lp-lp-menu-name">Salatbar</div>
-                      <div class="lp-lp-menu-sub">Fersk salat med dagens tilbehør</div>
-                    </div>
-                  </div>
-                  <div class="lp-lp-menu-check">&#10003;</div>
-                </div>
-                <div class="lp-lp-menu-item">
-                  <div class="lp-lp-menu-left">
-                    <div class="lp-lp-menu-icon">&#x1F96A;</div>
-                    <div>
-                      <div class="lp-lp-menu-name">P&aring;smurt</div>
-                      <div class="lp-lp-menu-sub">Dagens br&oslash;dskiver med p&aring;legg</div>
-                    </div>
-                  </div>
-                  <div class="lp-lp-menu-check"></div>
-                </div>
-                <div class="lp-lp-menu-item">
-                  <div class="lp-lp-menu-left">
-                    <div class="lp-lp-menu-icon">&#x1F372;</div>
-                    <div>
-                      <div class="lp-lp-menu-name">Varmmat</div>
-                      <div class="lp-lp-menu-sub">Dagens varme rett</div>
-                    </div>
-                  </div>
-                  <div class="lp-lp-menu-check"></div>
-                </div>
-              </div>
-              <div class="lp-lp-win-cta">
-                <button class="lp-lp-win-cta__order" type="button">Bestill</button>
-                <button class="lp-lp-win-cta__cancel" type="button">Avbestill</button>
-              </div>
-              <div class="lp-lp-win-delivery">
-                <span class="lp-lp-delivery-dot"></span>
-                <span class="lp-lp-delivery-txt">Levert av caterer etter avtale med bedriften</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="lp-lp-badge lp-lp-badge--br">
-            <div class="lp-lp-badge__num">&minus;32%</div>
-            <div class="lp-lp-badge__lbl">matsvinn vs. kantine</div>
-          </div>
-
-        </div>
-      }
-    </div>
+      </div>
+    }
 
   </div>
 
