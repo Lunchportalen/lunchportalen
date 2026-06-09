@@ -12,68 +12,83 @@ type Props = {
   skipRoleGate: boolean;
 };
 
+const TRUST_POINTS = [
+  "Ingen forpliktelser",
+  "Riktig flyt fra start",
+  "For bedrifter og caterere",
+] as const;
+
 export default function StartRoleChooser({ skipRoleGate }: Props) {
   const [role, setRole] = useState<Role | null>(null);
   const activeRole = role ?? (skipRoleGate ? "business" : null);
 
   if (activeRole === null) {
     return (
-      <>
-        <header className="lp-start-card__header">
-          <h1 id="start-page-title" className="lp-start-card__title font-heading">
-            Kom i gang med Lunchportalen
+      <div className="lp-start-gate lp-start-step" aria-labelledby="start-page-title">
+        <div className="lp-start-gate__intro">
+          <p className="lp-start-eyebrow">Start</p>
+          <h1 id="start-page-title" className="lp-start-gate__title font-heading">
+            Hva ønsker du å gjøre?
           </h1>
-          <p className="lp-start-card__lead font-body">
-            Velg hva som passer deg — vi hjelper deg videre med neste steg.
+          <p className="lp-start-gate__lead font-body">
+            Finn firmalunsj til bedriften – eller bli leverandør på plattformen. Vi hjelper deg videre med
+            riktig flyt.
           </p>
-        </header>
+          <ul className="lp-start-trust" aria-label="Dette kan du forvente">
+            {TRUST_POINTS.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </div>
 
-        <div className="lp-start-choices lp-start-step" role="group" aria-label="Velg din rolle">
+        <div className="lp-start-gate__paths" role="group" aria-label="Velg din rolle">
           <button
             type="button"
-            className="lp-start-choice lp-start-choice--business"
+            className="lp-start-path lp-start-path--business"
             onClick={() => setRole("business")}
           >
-            <span className="lp-start-choice__icon" aria-hidden="true">
-              B
-            </span>
-            <span className="lp-start-choice__title">Jeg ønsker lunsj til bedriften</span>
-            <span className="lp-start-choice__body">
-              Finn caterere i ditt område og kom i gang med firmalunsj uten matsvinn.
-            </span>
-            <span className="lp-start-choice__cta">Finn caterere →</span>
+            <span className="lp-start-path__kicker">For bedrifter</span>
+            <span className="lp-start-path__subtitle">Jeg ønsker lunsj til bedriften</span>
+            <p className="lp-start-path__text">
+              Finn caterere som leverer til deres område. Ansatte bestiller selv, og bedriften får bedre
+              kontroll på lunsjflyten.
+            </p>
+            <span className="lp-start-path__cta">Finn caterere nær oss</span>
           </button>
 
           <button
             type="button"
-            className="lp-start-choice lp-start-choice--caterer"
+            className="lp-start-path lp-start-path--caterer"
             onClick={() => setRole("caterer")}
           >
-            <span className="lp-start-choice__icon" aria-hidden="true">
-              C
-            </span>
-            <span className="lp-start-choice__title">Jeg er caterer</span>
-            <span className="lp-start-choice__body">
-              Bli leverandør i Lunchportalen og få kontroll på produksjon, levering og kunder.
-            </span>
-            <span className="lp-start-choice__cta">Meld interesse →</span>
+            <span className="lp-start-path__kicker">For caterere</span>
+            <span className="lp-start-path__subtitle">Jeg er caterer</span>
+            <p className="lp-start-path__text">
+              Bli leverandør på Lunchportalen og få en strukturert flyt for avtaler, bestillinger, cutoff og
+              produksjonsgrunnlag.
+            </p>
+            <span className="lp-start-path__cta">Meld interesse som caterer</span>
           </button>
         </div>
-      </>
+      </div>
     );
   }
 
   if (activeRole === "caterer") {
-    return <ProviderIntakeForm onBack={skipRoleGate ? undefined : () => setRole(null)} />;
+    return (
+      <div className="lp-start-panel lp-start-step">
+        <ProviderIntakeForm onBack={skipRoleGate ? undefined : () => setRole(null)} />
+      </div>
+    );
   }
 
   return (
-    <>
-      <header className="lp-start-card__header">
-        <h1 id="start-page-title" className="lp-start-card__title font-heading">
+    <div className="lp-start-panel lp-start-step">
+      <header className="lp-start-panel__header">
+        <h1 id="start-page-title" className="lp-start-panel__title font-heading">
           Hvor holder bedriften til?
         </h1>
-        <p className="lp-start-card__lead font-body">
+        <p className="lp-start-panel__lead font-body">
           Fortell oss hvor dere er, så finner vi caterere som leverer lunsj til dere.
         </p>
       </header>
@@ -85,6 +100,6 @@ export default function StartRoleChooser({ skipRoleGate }: Props) {
       ) : null}
 
       <GeographyGateForm />
-    </>
+    </div>
   );
 }
