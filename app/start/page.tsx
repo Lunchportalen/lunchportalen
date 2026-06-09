@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import Image from "next/image";
 
 import StartRoleChooser from "@/components/start/StartRoleChooser";
+import { DEFAULT_START_LOCALE, getStartCopy } from "@/lib/i18n/startCopy";
 import { shouldSkipStartRoleGate } from "@/lib/public/geographyParams";
 
+const copy = getStartCopy(DEFAULT_START_LOCALE);
+
 export const metadata: Metadata = {
-  title: "Kom i gang",
-  description:
-    "Velg om du er bedrift som ønsker firmalunsj, eller caterer som vil bli leverandør i Lunchportalen.",
+  title: copy.meta.title,
+  description: copy.meta.description,
   robots: { index: false, follow: false },
 };
 
@@ -33,19 +36,22 @@ export default async function StartPage({
 
   return (
     <div className="lp-start-shell">
-      <header className="lp-start-topbar">
-        <Image
-          src="/brand/LP-logo-uten-bakgrunn.png"
-          alt="Lunchportalen"
-          width={120}
-          height={64}
-          className="lp-start-topbar__logo"
-          priority
-        />
+      <header className="lp-start-brand lp-start-reveal lp-start-reveal--0">
+        <Link href="/" className="lp-start-brand__link">
+          <Image
+            src="/brand/LP-logo-uten-bakgrunn.png"
+            alt={copy.brand.name}
+            width={180}
+            height={96}
+            className="lp-start-brand__logo"
+            priority
+          />
+          <span className="lp-start-brand__name font-heading">{copy.brand.name}</span>
+        </Link>
       </header>
 
-      <Suspense fallback={<p className="lp-start-form__reassurance">Laster …</p>}>
-        <StartRoleChooser skipRoleGate={skipRoleGate} />
+      <Suspense fallback={<p className="lp-start-form__reassurance">{copy.loading}</p>}>
+        <StartRoleChooser skipRoleGate={skipRoleGate} locale={DEFAULT_START_LOCALE} />
       </Suspense>
     </div>
   );
