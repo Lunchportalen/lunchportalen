@@ -81,6 +81,10 @@
   --lp-section-py: clamp(72px, round(8vw, 1px), 124px);
   --lp-gap: 18px;
   --lp-hook: 1;
+
+  /* Foundation aliases (see app/styles/ds/foundation.css for shell + control tokens) */
+  --lp-accent: rgb(var(--lp-gold));
+  --lp-accent-soft: rgb(var(--lp-gold-soft));
 }
 
 html[data-resolved-theme="dark"] {

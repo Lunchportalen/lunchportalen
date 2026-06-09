@@ -28,7 +28,7 @@ export default function AuthShell({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(255,0,127,0.07) 0%, rgba(255,0,127,0.00) 55%)",
+              "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(245,197,24,0.10) 0%, rgba(245,197,24,0.00) 55%)",
           }}
         />
         <div className="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-3xl items-center justify-center">
@@ -71,7 +71,7 @@ export default function AuthShell({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(255,0,127,0.07) 0%, rgba(255,0,127,0.00) 55%)",
+            "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(245,197,24,0.10) 0%, rgba(245,197,24,0.00) 55%)",
         }}
       />
 
@@ -98,7 +98,7 @@ export default function AuthShell({
                 aria-hidden="true"
                 className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full"
                 style={{
-                  background: "radial-gradient(circle at 30% 30%, rgba(255,0,127,0.10), rgba(255,0,127,0.00) 65%)",
+                  background: "radial-gradient(circle at 30% 30%, rgba(245,197,24,0.12), rgba(245,197,24,0.00) 65%)",
                   filter: "blur(2px)",
                 }}
               />

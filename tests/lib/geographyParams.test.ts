@@ -8,6 +8,7 @@ import {
   isValidPostalCode,
   normalizePostalCode,
   resolveStartIntent,
+  shouldSkipStartRoleGate,
 } from "@/lib/public/geographyParams";
 
 describe("geographyParams", () => {
@@ -46,5 +47,14 @@ describe("geographyParams", () => {
 
   test("buildStartRedirectPath", () => {
     expect(buildStartRedirectPath("demo", { source: "hero" })).toBe("/start?intent=demo&source=hero");
+  });
+
+  test("shouldSkipStartRoleGate", () => {
+    expect(shouldSkipStartRoleGate(null, null, null)).toBe(false);
+    expect(shouldSkipStartRoleGate(undefined, "", "")).toBe(false);
+    expect(shouldSkipStartRoleGate("demo", null, null)).toBe(true);
+    expect(shouldSkipStartRoleGate("register", null, null)).toBe(true);
+    expect(shouldSkipStartRoleGate(null, "0150", "Oslo")).toBe(true);
+    expect(shouldSkipStartRoleGate("hero", null, null)).toBe(false);
   });
 });

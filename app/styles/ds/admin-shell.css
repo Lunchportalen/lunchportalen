@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   background: var(--ds-bg);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--lp-font-body, "Segoe UI"), system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   color: var(--ds-text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
