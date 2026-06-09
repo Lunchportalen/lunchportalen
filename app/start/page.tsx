@@ -33,22 +33,20 @@ export default async function StartPage({
 
   return (
     <div className="lp-start-shell">
-      <section className="lp-start-card" aria-labelledby="start-page-title">
-        <div className="lp-start-card__brand">
-          <Image
-            src="/brand/LP-logo-uten-bakgrunn.png"
-            alt="Lunchportalen"
-            width={120}
-            height={64}
-            className="lp-start-card__logo"
-            priority
-          />
-        </div>
+      <header className="lp-start-topbar">
+        <Image
+          src="/brand/LP-logo-uten-bakgrunn.png"
+          alt="Lunchportalen"
+          width={120}
+          height={64}
+          className="lp-start-topbar__logo"
+          priority
+        />
+      </header>
 
-        <Suspense fallback={<p className="lp-start-form__reassurance">Laster …</p>}>
-          <StartRoleChooser skipRoleGate={skipRoleGate} />
-        </Suspense>
-      </section>
+      <Suspense fallback={<p className="lp-start-form__reassurance">Laster …</p>}>
+        <StartRoleChooser skipRoleGate={skipRoleGate} />
+      </Suspense>
     </div>
   );
 }
