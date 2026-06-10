@@ -10,10 +10,12 @@ import { redirect } from "next/navigation";
 
 import ProviderBrandColor from "@/components/providers/ProviderBrandColor";
 import ProviderLogoUploader from "@/components/providers/ProviderLogoUploader";
+import ProviderOperationsForm from "@/components/providers/ProviderOperationsForm";
 import ProviderSettingsForm from "@/components/providers/ProviderSettingsForm";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
 
 export default async function LeverandorInnstillingerPage() {
   const auth = await getAuthContext();
@@ -24,6 +26,7 @@ export default async function LeverandorInnstillingerPage() {
   if (!provider) redirect("/leverandor");
 
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
+  const operationalSettings = canEdit ? await loadProviderOperationalSettings(provider.id) : null;
   if (!canEdit) {
     return (
       <div className="ds-container">
@@ -65,6 +68,16 @@ export default async function LeverandorInnstillingerPage() {
       <section className="ds-section">
         <ProviderSettingsForm provider={provider} />
       </section>
+      {operationalSettings ? (
+        <section className="ds-section">
+          <h2 className="ds-h3">Drift og varsling</h2>
+          <p className="ds-body">
+            Velg hvor ordre, kjøkkenvarsler og leveringsinformasjon skal sendes. Disse innstillingene gjelder kun
+            for dette cateringfirmaet.
+          </p>
+          <ProviderOperationsForm providerId={provider.id} initial={operationalSettings} />
+        </section>
+      ) : null}
       <section className="ds-section">
         <h2 className="ds-h3">Regnskap</h2>
         <p className="ds-body">Koble Tripletex for automatisk fakturering og betalingsstatus.</p>
