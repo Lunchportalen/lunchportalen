@@ -2,7 +2,7 @@
 import "server-only";
 
 import { getAgreementStatus } from "@/lib/auth/agreementStatus";
-import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { getAuthContext, isProviderAuthRole } from "@/lib/auth/getAuthContext";
 import { supabaseServer } from "@/lib/supabase/server";
 import { ScopeError, type Scope, type Role as ScopeRole } from "@/lib/auth/scope";
 
@@ -109,6 +109,11 @@ export async function getScopeServer(): Promise<{ user: any; scope: Scope & { ag
 
   if (!auth.ok || !auth.role) {
     throw new ScopeError("Kunne ikke hente profil", 503, "PROFILE_LOOKUP_FAILED");
+  }
+
+  // Fail-closed: provider-roller har ikke company-scope og skal aldri få Scope her.
+  if (isProviderAuthRole(auth.role)) {
+    throw new ScopeError("Leverandørbruker har ikke firmascope", 403, "PROVIDER_SCOPE_NOT_SUPPORTED");
   }
 
   const user = { id: auth.userId, email: auth.email };

@@ -25,6 +25,9 @@ export type AuthRole =
   | "employee"
   | "kitchen"
   | "driver"
+  | "provider_admin"
+  | "provider_kitchen"
+  | "provider_viewer"
   | null;
 export type AuthReason = "OK" | "UNAUTHENTICATED" | "NO_PROFILE" | "BLOCKED" | "ERROR";
 export type AuthMode = "ANONYMOUS" | "SUPERADMIN_ALLOWLIST" | "DB_LOOKUP" | "CACHE" | "DEV_BYPASS";
@@ -296,6 +299,37 @@ function errorCtx(
   return ctx(rid, "ERROR", "DB_LOOKUP", user, null, null, null, layer);
 }
 
+const PROVIDER_AUTH_ROLES = ["provider_admin", "provider_kitchen", "provider_viewer"] as const;
+export type ProviderAuthRole = (typeof PROVIDER_AUTH_ROLES)[number];
+
+/** Provider-roller har tenant-scope via provider_memberships, aldri company-scope. */
+export function isProviderAuthRole(role: AuthRole): role is ProviderAuthRole {
+  return role !== null && (PROVIDER_AUTH_ROLES as readonly string[]).includes(role);
+}
+
+function normalizeProviderAuthRole(v: unknown): ProviderAuthRole | null {
+  const r = safeStr(v).toLowerCase();
+  return (PROVIDER_AUTH_ROLES as readonly string[]).includes(r) ? (r as ProviderAuthRole) : null;
+}
+
+/**
+ * Presence check against the session-bound client (RLS-scoped: users can read
+ * their own provider_memberships rows). Fail-closed on any error.
+ */
+async function hasProviderMembershipRow(sb: unknown, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await (sb as any)
+      .from("provider_memberships")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+    if (error) return false;
+    return Array.isArray(data) && data.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** Map DB/RPC membership role til AuthRole (allowlistSuperadmin reservert for fremtidig bruk). */
 function mapMembershipRoleToAuthRole(opts: {
   allowlistSuperadmin: boolean;
@@ -477,6 +511,26 @@ async function resolveAuthContext(explicitRid?: string, reqHeaders?: Headers | n
       if (membership.reason === "BLOCKED") return blocked(userRef, rid, "DB_LOOKUP", successLayer);
       if (membership.reason === "NO_PROFILE") return noProfile(userRef, rid, "DB_LOOKUP", successLayer);
       return errorCtx(rid, userRef, successLayer);
+    }
+
+    // Provider users: tenant scope lives in provider_memberships, not
+    // profiles.company_id, so no company is required. The profile role alone
+    // grants nothing — a real membership row is required (fail-closed), which
+    // also prevents a /leverandor redirect loop for orphaned provider profiles.
+    const providerRole = normalizeProviderAuthRole(membership.role);
+    if (providerRole) {
+      if (isBlockedStatus(membership.status)) return blocked(userRef, rid, "DB_LOOKUP", successLayer);
+
+      const hasMembership = await hasProviderMembershipRow(sb, user.id);
+      if (!hasMembership) {
+        authLog(rid, "provider_role_without_membership", { user_id: user.id });
+        return noProfile(userRef, rid, "DB_LOOKUP", successLayer);
+      }
+
+      authLog(rid, "provider_membership_ok", { role: providerRole });
+      // No auth-cache write: cached claims are company-scoped and would be
+      // rejected by isUsableCachedClaims, causing invalidate churn.
+      return ctx(rid, "OK", "DB_LOOKUP", userRef, providerRole, null, null, successLayer);
     }
 
     const role = mapMembershipRoleToAuthRole({ allowlistSuperadmin: false, membershipRoleRaw: membership.role });
