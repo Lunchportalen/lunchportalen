@@ -5,9 +5,12 @@ import { useCallback, useState } from "react";
 
 import { type LeadsCaptureBody } from "@/lib/public/leadsCaptureSchema";
 import { normalizeCity, normalizePostalCode } from "@/lib/public/geographyParams";
+import { DEFAULT_START_LOCALE, getStartCopy, type StartLocale } from "@/lib/i18n/startCopy";
 
 type Props = {
   onBack?: () => void;
+  /** Locale for UI copy; defaults to Norwegian until app-wide resolver exists. */
+  locale?: StartLocale;
 };
 
 type FormState = {
@@ -34,7 +37,8 @@ const INITIAL: FormState = {
 
 const SOURCE = "start-provider-intake";
 
-export default function ProviderIntakeForm({ onBack }: Props) {
+export default function ProviderIntakeForm({ onBack, locale = DEFAULT_START_LOCALE }: Props) {
+  const copy = getStartCopy(locale).provider;
   const [form, setForm] = useState<FormState>(INITIAL);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -61,7 +65,7 @@ export default function ProviderIntakeForm({ onBack }: Props) {
 
       if (!form.consented) {
         setStatus("error");
-        setErrorMsg("Du må samtykke for å sende inn.");
+        setErrorMsg(copy.consentError);
         setFieldError("consented");
         return;
       }
@@ -107,49 +111,54 @@ export default function ProviderIntakeForm({ onBack }: Props) {
         }
 
         setStatus("error");
-        setErrorMsg(json.message ?? "Noe gikk galt. Prøv igjen om litt.");
+        setErrorMsg(json.message ?? copy.errorGeneric);
         const field = json.detail?.field;
         if (field) setFieldError(field);
       } catch {
         setStatus("error");
-        setErrorMsg("Kunne ikke sende skjemaet. Sjekk nettverket og prøv igjen.");
+        setErrorMsg(copy.errorGeneric);
       }
     },
-    [form],
+    [form, copy],
   );
 
   if (status === "success") {
     return (
-      <div className="lp-start-step" role="status" aria-live="polite">
-        <h2 className="lp-start-step__heading">Takk — vi har mottatt forespørselen.</h2>
-        <p className="lp-start-step__body">
-          Vi tar kontakt når vi har sett på leverandørprofilen deres. Ingen forpliktelser er opprettet.
-        </p>
-        <p className="lp-start-secondary-link">
-          Allerede leverandør? <Link href="/login?next=/leverandor">Logg inn</Link>
-        </p>
-        {onBack ? (
-          <button type="button" className="lp-start-btn-secondary" onClick={onBack}>
-            Tilbake til valg
-          </button>
-        ) : null}
+      <div className="lp-start-intake lp-start-step" role="status" aria-live="polite">
+        <div className="lp-start-intake__success">
+          <span className="lp-start-intake__success-mark" aria-hidden="true" />
+          <h2 className="lp-start-step__heading">{copy.successTitle}</h2>
+          <p className="lp-start-step__body">{copy.successText}</p>
+          {onBack ? (
+            <button type="button" className="lp-start-btn-secondary" onClick={onBack}>
+              {copy.back}
+            </button>
+          ) : null}
+          <p className="lp-start-secondary-link">
+            {copy.loginPrompt} <Link href="/login?next=/leverandor">{copy.loginLinkLabel}</Link>
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="lp-start-step">
-      <header className="lp-start-card__header lp-start-card__header--step">
-        <h1 id="start-page-title" className="lp-start-card__title font-heading">
-          Jeg er caterer
+    <div className="lp-start-intake lp-start-step">
+      {onBack ? (
+        <button type="button" className="lp-start-back" onClick={onBack}>
+          ← {copy.back}
+        </button>
+      ) : null}
+
+      <header className="lp-start-intake__header">
+        <h1 id="start-page-title" className="lp-start-intake__title font-heading">
+          {copy.title}
         </h1>
-        <p className="lp-start-card__lead font-body">
-          Lunchportalen er et driftsystem for caterere som leverer firmalunsj. Fortell oss litt om dere, så tar vi
-          kontakt.
-        </p>
+        <p className="lp-start-intake__lead font-body">{copy.lead}</p>
+        <p className="lp-start-intake__note">{copy.reassurance}</p>
       </header>
 
-      <form className="lp-start-form" onSubmit={onSubmit} noValidate>
+      <form className="lp-start-form lp-start-intake__form" onSubmit={onSubmit} noValidate>
         <input
           type="text"
           name="website"
@@ -159,124 +168,126 @@ export default function ProviderIntakeForm({ onBack }: Props) {
           aria-hidden="true"
         />
 
-        <div className="lp-start-field">
-          <label className="lp-start-field__label" htmlFor="provider-name">
-            Kontaktperson *
-          </label>
-          <input
-            id="provider-name"
-            type="text"
-            name="name"
-            required
-            autoComplete="name"
-            value={form.name}
-            onChange={(e) => update("name", e.target.value)}
-            className={`lp-start-field__input${fieldError === "name" ? " is-invalid" : ""}`}
-            maxLength={200}
-          />
-        </div>
+        <div className="lp-start-intake__grid">
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="provider-name">
+              {copy.fields.name} *
+            </label>
+            <input
+              id="provider-name"
+              type="text"
+              name="name"
+              required
+              autoComplete="name"
+              value={form.name}
+              onChange={(e) => update("name", e.target.value)}
+              className={`lp-start-field__input${fieldError === "name" ? " is-invalid" : ""}`}
+              maxLength={200}
+            />
+          </div>
 
-        <div className="lp-start-field">
-          <label className="lp-start-field__label" htmlFor="provider-email">
-            E-post *
-          </label>
-          <input
-            id="provider-email"
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            value={form.email}
-            onChange={(e) => update("email", e.target.value)}
-            className={`lp-start-field__input${fieldError === "email" ? " is-invalid" : ""}`}
-            maxLength={254}
-          />
-        </div>
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="provider-email">
+              {copy.fields.email} *
+            </label>
+            <input
+              id="provider-email"
+              type="email"
+              name="email"
+              required
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => update("email", e.target.value)}
+              className={`lp-start-field__input${fieldError === "email" ? " is-invalid" : ""}`}
+              maxLength={254}
+            />
+          </div>
 
-        <div className="lp-start-field">
-          <label className="lp-start-field__label" htmlFor="provider-phone">
-            Telefon
-          </label>
-          <input
-            id="provider-phone"
-            type="tel"
-            name="phone"
-            autoComplete="tel"
-            inputMode="tel"
-            value={form.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            className={`lp-start-field__input${fieldError === "phone" ? " is-invalid" : ""}`}
-            maxLength={32}
-          />
-        </div>
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="provider-phone">
+              {copy.fields.phone}
+            </label>
+            <input
+              id="provider-phone"
+              type="tel"
+              name="phone"
+              autoComplete="tel"
+              inputMode="tel"
+              value={form.phone}
+              onChange={(e) => update("phone", e.target.value)}
+              className={`lp-start-field__input${fieldError === "phone" ? " is-invalid" : ""}`}
+              maxLength={32}
+            />
+          </div>
 
-        <div className="lp-start-field">
-          <label className="lp-start-field__label" htmlFor="provider-company">
-            Caterer / firmanavn *
-          </label>
-          <input
-            id="provider-company"
-            type="text"
-            name="company"
-            required
-            autoComplete="organization"
-            value={form.company}
-            onChange={(e) => update("company", e.target.value)}
-            className={`lp-start-field__input${fieldError === "company" ? " is-invalid" : ""}`}
-            maxLength={300}
-          />
-        </div>
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="provider-company">
+              {copy.fields.company} *
+            </label>
+            <input
+              id="provider-company"
+              type="text"
+              name="company"
+              required
+              autoComplete="organization"
+              value={form.company}
+              onChange={(e) => update("company", e.target.value)}
+              className={`lp-start-field__input${fieldError === "company" ? " is-invalid" : ""}`}
+              maxLength={300}
+            />
+          </div>
 
-        <div className="lp-start-field">
-          <label className="lp-start-field__label" htmlFor="provider-postal">
-            Postnummer
-          </label>
-          <input
-            id="provider-postal"
-            type="text"
-            name="postal_code"
-            inputMode="numeric"
-            autoComplete="postal-code"
-            value={form.postalCode}
-            onChange={(e) => update("postalCode", e.target.value)}
-            className={`lp-start-field__input${fieldError === "postal_code" ? " is-invalid" : ""}`}
-            maxLength={4}
-            aria-describedby="provider-postal-hint"
-          />
-          <p id="provider-postal-hint" className="lp-start-field__hint">
-            Valgfritt — der dere leverer fra
-          </p>
-        </div>
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="provider-postal">
+              {copy.fields.postalCode}
+            </label>
+            <input
+              id="provider-postal"
+              type="text"
+              name="postal_code"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              value={form.postalCode}
+              onChange={(e) => update("postalCode", e.target.value)}
+              className={`lp-start-field__input${fieldError === "postal_code" ? " is-invalid" : ""}`}
+              maxLength={4}
+              aria-describedby="provider-postal-hint"
+            />
+            <p id="provider-postal-hint" className="lp-start-field__hint">
+              {copy.fields.postalCodeHint}
+            </p>
+          </div>
 
-        <div className="lp-start-field">
-          <label className="lp-start-field__label" htmlFor="provider-city">
-            Sted
-          </label>
-          <input
-            id="provider-city"
-            type="text"
-            name="city"
-            autoComplete="address-level2"
-            value={form.city}
-            onChange={(e) => update("city", e.target.value)}
-            className={`lp-start-field__input${fieldError === "city" ? " is-invalid" : ""}`}
-            maxLength={128}
-          />
-        </div>
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="provider-city">
+              {copy.fields.city}
+            </label>
+            <input
+              id="provider-city"
+              type="text"
+              name="city"
+              autoComplete="address-level2"
+              value={form.city}
+              onChange={(e) => update("city", e.target.value)}
+              className={`lp-start-field__input${fieldError === "city" ? " is-invalid" : ""}`}
+              maxLength={128}
+            />
+          </div>
 
-        <div className="lp-start-field">
-          <label className="lp-start-field__label" htmlFor="provider-message">
-            Melding
-          </label>
-          <textarea
-            id="provider-message"
-            name="message"
-            rows={3}
-            value={form.message}
-            onChange={(e) => update("message", e.target.value)}
-            className={`lp-start-field__input lp-start-field__textarea${fieldError === "message" ? " is-invalid" : ""}`}
-            maxLength={4000}
-          />
+          <div className="lp-start-field lp-start-intake__field--full">
+            <label className="lp-start-field__label" htmlFor="provider-message">
+              {copy.fields.message}
+            </label>
+            <textarea
+              id="provider-message"
+              name="message"
+              rows={3}
+              value={form.message}
+              onChange={(e) => update("message", e.target.value)}
+              className={`lp-start-field__input lp-start-field__textarea${fieldError === "message" ? " is-invalid" : ""}`}
+              maxLength={4000}
+            />
+          </div>
         </div>
 
         <label className="lp-start-consent">
@@ -288,9 +299,7 @@ export default function ProviderIntakeForm({ onBack }: Props) {
             className={fieldError === "consented" ? "is-invalid" : undefined}
             required
           />
-          <span>
-            Jeg samtykker til at Lunchportalen kontakter meg om leverandøravtale og onboarding. *
-          </span>
+          <span>{copy.consent} *</span>
         </label>
 
         {errorMsg ? (
@@ -304,21 +313,13 @@ export default function ProviderIntakeForm({ onBack }: Props) {
           className={`ds-btn ds-btn--primary lp-start-btn${status === "loading" ? " is-loading" : ""}`}
           disabled={status === "loading"}
         >
-          {status === "loading" ? "Sender …" : "Send interesse"}
+          {status === "loading" ? copy.ctaLoading : copy.cta}
         </button>
-
-        <p className="lp-start-form__reassurance">Ingen forpliktelser — vi tar kontakt manuelt.</p>
       </form>
 
       <p className="lp-start-secondary-link">
-        Allerede leverandør? <Link href="/login?next=/leverandor">Logg inn</Link>
+        {copy.loginPrompt} <Link href="/login?next=/leverandor">{copy.loginLinkLabel}</Link>
       </p>
-
-      {onBack ? (
-        <button type="button" className="lp-start-btn-secondary" onClick={onBack}>
-          Tilbake til valg
-        </button>
-      ) : null}
     </div>
   );
 }

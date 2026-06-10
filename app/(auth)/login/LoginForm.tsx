@@ -123,12 +123,12 @@ export default function LoginForm({
   return (
     <form className="space-y-5" onSubmit={onLoginSubmit} noValidate>
       <div>
-        <label className="block text-sm font-bold text-[rgb(var(--lp-text))]" htmlFor="login-email">
+        <label className="block text-sm font-semibold text-[rgb(var(--lp-text))]" htmlFor="login-email">
           E-post
         </label>
         <input
           id="login-email"
-          className="mt-2 h-14 w-full rounded-2xl border border-white/70 bg-white/85 px-4 text-base text-[rgb(var(--lp-text))] shadow-[var(--lp-shadow-inset)] transition duration-200 placeholder:text-[rgb(var(--lp-muted))] focus:border-[rgb(var(--lp-gold))] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgb(var(--lp-gold)/0.20)] disabled:bg-white/55 disabled:text-[rgb(var(--lp-muted))]"
+          className="mt-1.5 h-12 w-full rounded-[14px] border border-[rgb(var(--lp-text)/0.16)] bg-white px-4 text-base text-[rgb(var(--lp-text))] transition duration-200 placeholder:text-[rgb(var(--lp-muted))] focus:border-[rgb(var(--lp-gold))] focus:outline-none focus:ring-[3px] focus:ring-[rgb(var(--lp-gold)/0.22)] disabled:bg-white/60 disabled:text-[rgb(var(--lp-muted))]"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={busy}
@@ -138,12 +138,12 @@ export default function LoginForm({
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-[rgb(var(--lp-text))]" htmlFor="login-password">
+        <label className="block text-sm font-semibold text-[rgb(var(--lp-text))]" htmlFor="login-password">
           Passord
         </label>
         <input
           id="login-password"
-          className="mt-2 h-14 w-full rounded-2xl border border-white/70 bg-white/85 px-4 text-base text-[rgb(var(--lp-text))] shadow-[var(--lp-shadow-inset)] transition duration-200 placeholder:text-[rgb(var(--lp-muted))] focus:border-[rgb(var(--lp-gold))] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgb(var(--lp-gold)/0.20)] disabled:bg-white/55 disabled:text-[rgb(var(--lp-muted))]"
+          className="mt-1.5 h-12 w-full rounded-[14px] border border-[rgb(var(--lp-text)/0.16)] bg-white px-4 text-base text-[rgb(var(--lp-text))] transition duration-200 placeholder:text-[rgb(var(--lp-muted))] focus:border-[rgb(var(--lp-gold))] focus:outline-none focus:ring-[3px] focus:ring-[rgb(var(--lp-gold)/0.22)] disabled:bg-white/60 disabled:text-[rgb(var(--lp-muted))]"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -166,7 +166,7 @@ export default function LoginForm({
 
       <button
         type="submit"
-        className="min-h-14 w-full rounded-full border border-white/15 bg-[linear-gradient(135deg,rgb(17_17_17)_0%,rgb(36_28_40)_100%)] px-6 py-4 text-base font-extrabold tracking-tight text-white shadow-[0_18px_44px_rgb(17_17_17/0.24),inset_0_1px_0_rgb(255_255_255/0.14)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_58px_rgb(17_17_17/0.30),inset_0_1px_0_rgb(255_255_255/0.18)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[rgb(var(--lp-gold)/0.65)] disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
+        className="min-h-[52px] w-full rounded-full border border-[rgb(var(--lp-gold)/0.35)] bg-[linear-gradient(135deg,rgb(28_26_31)_0%,rgb(36_28_40)_55%,rgb(24_22_26)_100%)] px-6 text-base font-extrabold tracking-tight text-white shadow-[0_14px_36px_rgb(17_17_17/0.22),inset_0_1px_0_rgb(255_255_255/0.12)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--lp-gold)/0.6)] hover:shadow-[0_20px_48px_rgb(17_17_17/0.28),0_0_24px_rgb(var(--lp-gold-glow)/0.18),inset_0_1px_0_rgb(255_255_255/0.16)] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-[rgb(var(--lp-gold))] active:translate-y-0 disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
         disabled={loginDisabled}
       >
         {busyAction === "login" ? "Logger inn…" : "Logg inn"}

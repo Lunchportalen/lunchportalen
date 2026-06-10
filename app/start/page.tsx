@@ -36,17 +36,16 @@ export default async function StartPage({
 
   return (
     <div className="lp-start-shell">
-      <header className="lp-start-brand lp-start-reveal lp-start-reveal--0">
-        <Link href="/" className="lp-start-brand__link">
+      <header className="lp-start-brand lp-start-enter lp-start-enter--logo">
+        <Link href="/" className="lp-start-brand__link" aria-label={copy.brand.name}>
           <Image
             src="/brand/LP-logo-uten-bakgrunn.png"
-            alt={copy.brand.name}
-            width={180}
-            height={96}
+            alt=""
+            width={220}
+            height={118}
             className="lp-start-brand__logo"
             priority
           />
-          <span className="lp-start-brand__name font-heading">{copy.brand.name}</span>
         </Link>
       </header>
 

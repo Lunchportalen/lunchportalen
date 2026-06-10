@@ -10,7 +10,7 @@ const VIEWPORTS = [
   { name: "mobile-640", width: 640, height: 900 },
 ] as const;
 
-const ENTRY_TITLE = "Hvor holder bedriften til?";
+const ENTRY_TITLE = "Hvor skal lunsjen leveres?";
 
 async function mockCoverage(page: import("@playwright/test").Page, covered: boolean) {
   await page.route("**/api/public/coverage/check", async (route) => {
@@ -40,7 +40,7 @@ async function submitLocation(page: import("@playwright/test").Page, postal: str
   await expect(page.getByLabel(/^Postnummer/i)).toBeVisible();
   await page.getByLabel(/^Postnummer/i).fill(postal);
   await page.getByLabel(/^Poststed/i).fill(city);
-  await page.getByRole("button", { name: /finn caterere nær oss/i }).click();
+  await page.getByRole("button", { name: /finn leverandører nær oss/i }).click();
 }
 
 test.describe("/start gate elevation", () => {
@@ -57,10 +57,10 @@ test.describe("/start gate elevation", () => {
     await page.goto("/start?source=e2e-covered&intent=demo");
     await submitLocation(page, "0150", "Oslo");
 
-    await expect(page.getByRole("heading", { name: /vi leverer til oslo/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /vi dekker oslo/i })).toBeVisible();
     await Promise.all([
       page.waitForURL(/\/demo\?.*postal_code=0150.*city=Oslo/),
-      page.getByRole("link", { name: /^book demo$/i }).click(),
+      page.getByRole("link", { name: /^book gjennomgang$/i }).click(),
     ]);
   });
 
@@ -113,7 +113,7 @@ test.describe("/start gate elevation", () => {
     await page.goto("/start?source=e2e-register&intent=register");
     await submitLocation(page, "0150", "Oslo");
 
-    await expect(page.getByRole("heading", { name: /vi leverer til oslo/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /vi dekker oslo/i })).toBeVisible();
     await Promise.all([
       page.waitForURL(/\/registrering\?.*postal_code=0150/),
       page.getByRole("link", { name: /registrer bedriften/i }).click(),
@@ -155,9 +155,9 @@ test.describe("/start gate elevation", () => {
         } else {
           await page.getByLabel(/^Postnummer/i).fill(state === "covered" ? "0150" : "9999");
           await page.getByLabel(/^Poststed/i).fill(state === "covered" ? "Oslo" : "Testby");
-          await page.getByRole("button", { name: /finn caterere nær oss/i }).click();
+          await page.getByRole("button", { name: /finn leverandører nær oss/i }).click();
           if (state === "covered") {
-            await expect(page.getByRole("heading", { name: /vi leverer til oslo/i })).toBeVisible();
+            await expect(page.getByRole("heading", { name: /vi dekker oslo/i })).toBeVisible();
           } else {
             await expect(page.getByRole("heading", { name: /vi er ikke i testby ennå/i })).toBeVisible();
           }

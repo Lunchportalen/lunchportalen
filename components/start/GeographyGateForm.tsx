@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import CoverageWishForm from "@/components/start/CoverageWishForm";
@@ -15,6 +15,7 @@ import {
   resolveStartIntent,
 } from "@/lib/public/geographyParams";
 import { resolveCityFromPostal } from "@/lib/public/resolveCityFromPostal";
+import { DEFAULT_START_LOCALE, getStartCopy, type StartLocale } from "@/lib/i18n/startCopy";
 
 type Step = "entry" | "checking" | "covered" | "uncovered";
 
@@ -23,7 +24,13 @@ type LocationForm = {
   city: string;
 };
 
-export default function GeographyGateForm() {
+type Props = {
+  /** Locale for UI copy; defaults to Norwegian until app-wide resolver exists. */
+  locale?: StartLocale;
+};
+
+export default function GeographyGateForm({ locale = DEFAULT_START_LOCALE }: Props) {
+  const copy = getStartCopy(locale).geography;
   const searchParams = useSearchParams();
 
   const intent = useMemo(() => resolveStartIntent(searchParams.get("intent")), [searchParams]);
@@ -92,7 +99,7 @@ export default function GeographyGateForm() {
         if (!res.ok || json.ok === false) {
           setStep("entry");
           setStatus("error");
-          setErrorMsg(json.message ?? "Kunne ikke sjekke dekning. Prøv igjen.");
+          setErrorMsg(json.message ?? copy.errorGeneric);
           const field = json.detail?.field;
           if (field === "postal_code") setFieldError("postalCode");
           if (field === "city") setFieldError("city");
@@ -106,10 +113,10 @@ export default function GeographyGateForm() {
       } catch {
         setStep("entry");
         setStatus("error");
-        setErrorMsg("Kunne ikke sjekke dekning. Sjekk nettverket og prøv igjen.");
+        setErrorMsg(copy.errorGeneric);
       }
     },
-    [],
+    [copy.errorGeneric],
   );
 
   const onSubmitEntry = useCallback(
@@ -121,25 +128,25 @@ export default function GeographyGateForm() {
 
       if (!isValidPostalCode(postal_code)) {
         setStatus("error");
-        setErrorMsg("Postnummer må være 4 siffer.");
+        setErrorMsg(copy.errorPostal);
         setFieldError("postalCode");
         return;
       }
 
       if (!isValidCity(city)) {
         setStatus("error");
-        setErrorMsg("Poststed må fylles ut.");
+        setErrorMsg(copy.errorCity);
         setFieldError("city");
         return;
       }
 
       await runCoverageCheck(postal_code, city);
     },
-    [location.city, location.postalCode, runCoverageCheck],
+    [location.city, location.postalCode, runCoverageCheck, copy.errorPostal, copy.errorCity],
   );
 
   if (step === "checking") {
-    return <StartCoverageChecking city={location.city || "området ditt"} />;
+    return <StartCoverageChecking label={copy.checking} />;
   }
 
   if (step === "covered") {
@@ -149,6 +156,12 @@ export default function GeographyGateForm() {
         postalCode={location.postalCode}
         source={source}
         intent={intent}
+        locale={locale}
+        onBack={() => {
+          setStep("entry");
+          setStatus("idle");
+          setErrorMsg("");
+        }}
       />
     );
   }
@@ -169,61 +182,83 @@ export default function GeographyGateForm() {
   }
 
   return (
-    <form className="lp-start-form lp-start-step" onSubmit={onSubmitEntry} noValidate>
-      <div className="lp-start-field">
-        <label className="lp-start-field__label" htmlFor="start-postal-code">
-          Postnummer
-        </label>
-        <input
-          id="start-postal-code"
-          type="text"
-          name="postal_code"
-          inputMode="numeric"
-          autoComplete="postal-code"
-          required
-          value={location.postalCode}
-          onChange={(e) => updateLocation("postalCode", e.target.value)}
-          className={`lp-start-field__input${fieldError === "postalCode" ? " is-invalid" : ""}`}
-          maxLength={4}
-          aria-describedby="start-postal-hint"
-        />
-        <p id="start-postal-hint" className="lp-start-field__hint">
-          4 siffer, f.eks. 0150
-        </p>
+    <div className="lp-start-step">
+      <header className="lp-start-intake__header">
+        <h1 id="start-page-title" className="lp-start-intake__title font-heading">
+          {copy.title}
+        </h1>
+        <p className="lp-start-intake__lead font-body">{copy.lead}</p>
+        <p className="lp-start-intake__note">{copy.reassurance}</p>
+      </header>
+
+      <div className="lp-start-flow lp-start-flow--panel" aria-label={copy.matchingLabel}>
+        {copy.matchingSteps.map((s, i) => (
+          <Fragment key={s}>
+            {i > 0 ? <span className="lp-start-flow__rail" aria-hidden="true" /> : null}
+            <span className="lp-start-flow__node">
+              <span className="lp-start-flow__dot" aria-hidden="true" />
+              {s}
+            </span>
+          </Fragment>
+        ))}
       </div>
 
-      <div className="lp-start-field">
-        <label className="lp-start-field__label" htmlFor="start-city">
-          Poststed
-        </label>
-        <input
-          id="start-city"
-          type="text"
-          name="city"
-          autoComplete="address-level2"
-          required
-          value={location.city}
-          onChange={(e) => updateLocation("city", e.target.value)}
-          className={`lp-start-field__input${fieldError === "city" ? " is-invalid" : ""}`}
-          maxLength={128}
-        />
-      </div>
+      <form className="lp-start-form lp-start-intake__form" onSubmit={onSubmitEntry} noValidate>
+        <div className="lp-start-intake__grid">
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="start-postal-code">
+              {copy.fields.postalCode}
+            </label>
+            <input
+              id="start-postal-code"
+              type="text"
+              name="postal_code"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              required
+              value={location.postalCode}
+              onChange={(e) => updateLocation("postalCode", e.target.value)}
+              className={`lp-start-field__input${fieldError === "postalCode" ? " is-invalid" : ""}`}
+              maxLength={4}
+              aria-describedby="start-postal-hint"
+            />
+            <p id="start-postal-hint" className="lp-start-field__hint">
+              {copy.fields.postalCodeHint}
+            </p>
+          </div>
 
-      {errorMsg ? (
-        <p className="lp-start-form__status" role="alert">
-          {errorMsg}
-        </p>
-      ) : null}
+          <div className="lp-start-field">
+            <label className="lp-start-field__label" htmlFor="start-city">
+              {copy.fields.city}
+            </label>
+            <input
+              id="start-city"
+              type="text"
+              name="city"
+              autoComplete="address-level2"
+              required
+              value={location.city}
+              onChange={(e) => updateLocation("city", e.target.value)}
+              className={`lp-start-field__input${fieldError === "city" ? " is-invalid" : ""}`}
+              maxLength={128}
+            />
+          </div>
+        </div>
 
-      <button
-        type="submit"
-        className={`ds-btn ds-btn--primary lp-start-btn${status === "loading" ? " is-loading" : ""}`}
-        disabled={status === "loading"}
-      >
-        Finn caterere nær oss
-      </button>
+        {errorMsg ? (
+          <p className="lp-start-form__status" role="alert">
+            {errorMsg}
+          </p>
+        ) : null}
 
-      <p className="lp-start-form__reassurance">Tar et øyeblikk — ingen forpliktelser.</p>
-    </form>
+        <button
+          type="submit"
+          className={`ds-btn ds-btn--primary lp-start-btn${status === "loading" ? " is-loading" : ""}`}
+          disabled={status === "loading"}
+        >
+          {copy.cta}
+        </button>
+      </form>
+    </div>
   );
 }

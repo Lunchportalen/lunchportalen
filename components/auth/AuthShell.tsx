@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import AuthBrand from "./AuthBrand";
+import { ADMIN_LOGO_SRC } from "@/lib/admin/constants";
 
 type AuthShellProps = {
   title?: string;
@@ -22,7 +24,7 @@ export default function AuthShell({
 }: AuthShellProps) {
   if (bare) {
     return (
-      <main className="relative min-h-screen w-full overflow-hidden bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
+      <main className="relative min-h-screen w-full overflow-clip bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -40,23 +42,27 @@ export default function AuthShell({
 
   if (variant === "loginPremium") {
     return (
-      <main className="lp-registration-page">
-        <div className="lp-registration-inner">
-          <div className="lp-registration-card">
-            <AuthBrand subtitle={brandSubtitle} />
+      <main className="lp-login-page">
+        <div className="lp-login-inner">
+          <header className="lp-login-brand lp-login-enter lp-login-enter--brand">
+            <Image
+              src={ADMIN_LOGO_SRC}
+              alt="Lunchportalen"
+              width={168}
+              height={90}
+              priority
+              className="lp-login-brand__logo"
+            />
+            {brandSubtitle ? <p className="lp-login-brand__tag">{brandSubtitle}</p> : null}
+          </header>
 
-            <div className="mt-8">
-              {title ? <h1 className="lp-registration-title font-heading">{title}</h1> : null}
-              {subtitle ? <p className="lp-registration-lead font-body">{subtitle}</p> : null}
-            </div>
+          <div className="lp-login-card lp-login-enter lp-login-enter--card">
+            {title ? <h1 className="lp-login-title font-heading">{title}</h1> : null}
+            {subtitle ? <p className="lp-login-lead font-body">{subtitle}</p> : null}
 
-            <div>{children}</div>
+            <div className="lp-login-body">{children}</div>
 
-            {footer ? (
-              <div className="mt-7 border-t border-[rgb(var(--lp-text)/0.08)] pt-5 text-center text-sm text-[rgb(var(--lp-muted))]">
-                {footer}
-              </div>
-            ) : null}
+            {footer ? <div className="lp-login-footer">{footer}</div> : null}
           </div>
         </div>
       </main>
@@ -64,7 +70,7 @@ export default function AuthShell({
   }
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
+    <main className="relative min-h-screen w-full overflow-clip bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
       {/* Soft spotlight (premium) */}
       <div
         aria-hidden="true"
@@ -88,7 +94,7 @@ export default function AuthShell({
           >
             {/* Card */}
             <div
-              className="relative overflow-hidden rounded-3xl bg-white p-8"
+              className="relative overflow-clip rounded-3xl bg-white p-8"
               style={{
                 boxShadow: "var(--lp-shadow-card)",
               }}
@@ -130,7 +136,7 @@ export default function AuthShell({
 
           {/* tiny trust line (optional but premium, unobtrusive) */}
           <div className="mt-6 text-center text-xs text-[rgba(var(--lp-muted),0.95)]">
-            Én sannhetskilde · Cut-off 08:00 · Admin-kontroll
+            Ã‰n sannhetskilde Â· Cut-off 08:00 Â· Admin-kontroll
           </div>
         </div>
       </div>
