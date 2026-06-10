@@ -10,6 +10,8 @@ let eqCalls: Array<{ table: string; key: string; value: string }> = [];
 const COMPANY_ID = "d60b2b4c-ac90-44a4-bbbe-45d3dfd89ea7";
 
 vi.mock("@/lib/auth/getAuthContext", () => ({
+  isProviderAuthRole: (role: unknown) =>
+    role === "provider_admin" || role === "provider_kitchen" || role === "provider_viewer",
   getAuthContext: async () => ({
     ok: true,
     isAuthenticated: true,
