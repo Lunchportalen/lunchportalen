@@ -45,25 +45,21 @@ export default async function LeverandorInnstillingerPage() {
       <section className="ds-section">
         <h2 className="ds-h3">Logo og merkevare</h2>
         <p className="ds-body">
-          Last opp cateringfirmaets logo og velg en kontrollert merkevarefarge. Lunchportalen beholder layout,
-          typografi og produktuttrykk, mens leverandørens logo og aksentfarge brukes innenfor faste rammer.
+          Last opp logo og velg en kontrollert aksentfarge. Lunchportalen beholder layout, typografi og
+          produktuttrykk.
         </p>
 
         <h3 className="ds-provider-brand-heading">Logo</h3>
         <p className="ds-body">
-          Last opp cateringfirmaets logo slik den skal vises i leverandørmenyen. Bruk helst PNG eller WebP med
-          transparent bakgrunn.
+          Bruk en ren logo med transparent bakgrunn. Logoen vises kontrollert i leverandørmenyen.
         </p>
         <ProviderLogoUploader providerId={provider.id} providerName={provider.name} logoUrl={provider.logoUrl} />
         <p className="ds-provider-brand-note">
-          Lunchportalen kan avvise logoer som ikke følger plattformens visuelle standard.
+          Logoer som ikke følger plattformens visuelle standard kan bli avvist.
         </p>
 
         <h3 className="ds-provider-brand-heading">Primærfarge</h3>
-        <p className="ds-body">
-          Velg leverandørens aksentfarge. Fargen brukes kontrollert i detaljer og må passe inn i Lunchportalen sitt
-          premium designsystem.
-        </p>
+        <p className="ds-body">Velg leverandørens aksentfarge. Fargen brukes kun i kontrollerte detaljer.</p>
         <ProviderBrandColor providerId={provider.id} primaryColor={provider.primaryColor} />
       </section>
       <section className="ds-section">

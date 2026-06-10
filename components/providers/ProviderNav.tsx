@@ -155,22 +155,28 @@ function NavLink({
   );
 }
 
+function roleLabel(role: ProviderRole | null): string {
+  if (role === "provider_admin") return "Administrator";
+  if (role === "provider_kitchen") return "Kjøkken";
+  return "Leverandør";
+}
+
 function BrandBlock({
   providerName,
   logoUrl,
   accentColor,
-  userEmail,
   userRole,
 }: {
   providerName: string;
   logoUrl: string | null;
   accentColor: string | null;
-  userEmail: string | null;
   userRole: ProviderRole | null;
 }) {
   return (
     <div className="ds-admin-sidebar__brand">
-      <div className="ds-admin-sidebar__mark ds-provider-nav__mark">
+      <div
+        className={`ds-admin-sidebar__mark ds-provider-nav__mark${logoUrl ? " ds-provider-nav__mark--logo" : ""}`}
+      >
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" width={40} height={40} />
@@ -183,10 +189,7 @@ function BrandBlock({
         {accentColor ? (
           <span className="ds-provider-nav__accent" style={{ background: accentColor }} aria-hidden="true" />
         ) : null}
-        <div className="ds-admin-sidebar__sub">
-          {userRole ? userRole.replace("provider_", "") : "leverandør"}
-          {userEmail ? ` · ${userEmail}` : ""}
-        </div>
+        <div className="ds-admin-sidebar__sub">{roleLabel(userRole)}</div>
       </div>
     </div>
   );
@@ -215,7 +218,8 @@ export type ProviderNavProps = {
   logoUrl: string | null;
   /** Validated accent color (server truth via safeBrandAccent) — small details only. */
   accentColor?: string | null;
-  userEmail: string | null;
+  /** Accepted for API stability; not rendered (no technical identity in provider UI). */
+  userEmail?: string | null;
   userRole: ProviderRole | null;
   /** Kitchen-only members: Ordrer as home, no admin dashboard link. */
   kitchenOnly?: boolean;
@@ -227,7 +231,6 @@ export default function ProviderNav({
   providerName,
   logoUrl,
   accentColor = null,
-  userEmail,
   userRole,
   kitchenOnly = false,
   providerAdmin = false,
@@ -252,13 +255,7 @@ export default function ProviderNav({
   return (
     <>
       <aside className="ds-admin-sidebar" aria-label="Leverandør (desktop)">
-        <BrandBlock
-          providerName={providerName}
-          logoUrl={logoUrl}
-          accentColor={accentColor}
-          userEmail={userEmail}
-          userRole={userRole}
-        />
+        <BrandBlock providerName={providerName} logoUrl={logoUrl} accentColor={accentColor} userRole={userRole} />
         <SidebarNav pathname={pathname} items={navItems} />
       </aside>
 
@@ -283,13 +280,7 @@ export default function ProviderNav({
             onClick={() => setDrawerOpen(false)}
           />
           <div className={`ds-provider-drawer is-open`} role="dialog" aria-modal="true" aria-label="Leverandørmeny">
-            <BrandBlock
-              providerName={providerName}
-              logoUrl={logoUrl}
-              accentColor={accentColor}
-              userEmail={userEmail}
-              userRole={userRole}
-            />
+            <BrandBlock providerName={providerName} logoUrl={logoUrl} accentColor={accentColor} userRole={userRole} />
             <SidebarNav pathname={pathname} items={navItems} onNavigate={() => setDrawerOpen(false)} />
           </div>
         </>
