@@ -20,7 +20,6 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
       name: String(fd.get("name") ?? ""),
       contactEmail: String(fd.get("contactEmail") ?? ""),
       contactPhone: String(fd.get("contactPhone") ?? "") || null,
-      primaryColor: String(fd.get("primaryColor") ?? "") || null,
     };
 
     setState("loading");
@@ -44,9 +43,6 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
   return (
     <form className="lp-demo-form" onSubmit={onSubmit} noValidate>
       <p className="ds-lead">Profil for {provider.name}</p>
-      <p className="ds-body">
-        Slug: <strong>{provider.slug}</strong> (kan ikke endres her)
-      </p>
 
       <label htmlFor="provider-name">Navn</label>
       <input id="provider-name" name="name" defaultValue={provider.name} required autoComplete="organization" />
@@ -63,15 +59,6 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
 
       <label htmlFor="provider-phone">Kontakt telefon</label>
       <input id="provider-phone" name="contactPhone" type="tel" defaultValue={provider.contactPhone ?? ""} />
-
-      <label htmlFor="provider-color">Primærfarge (hex)</label>
-      <input id="provider-color" name="primaryColor" defaultValue={provider.primaryColor ?? ""} placeholder="#f5c518" />
-
-      {provider.logoUrl ? (
-        <p className="ds-body">
-          Logo-URL: {provider.logoUrl} (opplasting kommer i senere patch)
-        </p>
-      ) : null}
 
       {message ? (
         <p className={`lp-demo-form__status ${statusClass}`} role="status" aria-live="polite">

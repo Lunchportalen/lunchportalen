@@ -12,7 +12,6 @@ export type ProviderSettingsInput = {
   name: string;
   contactEmail: string;
   contactPhone: string | null;
-  primaryColor: string | null;
 };
 
 export type ProviderSettingsResult =
@@ -53,7 +52,6 @@ export async function saveProviderSettings(input: ProviderSettingsInput): Promis
         name,
         contact_email: contactEmail,
         contact_phone: safeStr(input.contactPhone) || null,
-        primary_color: safeStr(input.primaryColor) || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", providerId);

@@ -17,6 +17,7 @@ import { canAccessProvider } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { roleHome } from "@/lib/auth/roleHome";
+import { safeBrandAccent } from "@/lib/providers/brandColor";
 
 function safeNextPath(next: string | null) {
   const fallback = "/leverandor";
@@ -82,6 +83,7 @@ export default async function LeverandorLayout({ children }: { children: ReactNo
       <ProviderNav
         providerName={provider.name}
         logoUrl={provider.logoUrl}
+        accentColor={safeBrandAccent(provider.primaryColor)}
         userEmail={ctx.user.email}
         userRole={ctx.role}
         kitchenOnly={kitchenOnly}

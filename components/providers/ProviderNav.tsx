@@ -158,11 +158,13 @@ function NavLink({
 function BrandBlock({
   providerName,
   logoUrl,
+  accentColor,
   userEmail,
   userRole,
 }: {
   providerName: string;
   logoUrl: string | null;
+  accentColor: string | null;
   userEmail: string | null;
   userRole: ProviderRole | null;
 }) {
@@ -178,6 +180,9 @@ function BrandBlock({
       </div>
       <div>
         <div className="ds-admin-sidebar__name">{providerName}</div>
+        {accentColor ? (
+          <span className="ds-provider-nav__accent" style={{ background: accentColor }} aria-hidden="true" />
+        ) : null}
         <div className="ds-admin-sidebar__sub">
           {userRole ? userRole.replace("provider_", "") : "leverandør"}
           {userEmail ? ` · ${userEmail}` : ""}
@@ -208,6 +213,8 @@ function SidebarNav({
 export type ProviderNavProps = {
   providerName: string;
   logoUrl: string | null;
+  /** Validated accent color (server truth via safeBrandAccent) — small details only. */
+  accentColor?: string | null;
   userEmail: string | null;
   userRole: ProviderRole | null;
   /** Kitchen-only members: Ordrer as home, no admin dashboard link. */
@@ -219,6 +226,7 @@ export type ProviderNavProps = {
 export default function ProviderNav({
   providerName,
   logoUrl,
+  accentColor = null,
   userEmail,
   userRole,
   kitchenOnly = false,
@@ -244,7 +252,13 @@ export default function ProviderNav({
   return (
     <>
       <aside className="ds-admin-sidebar" aria-label="Leverandør (desktop)">
-        <BrandBlock providerName={providerName} logoUrl={logoUrl} userEmail={userEmail} userRole={userRole} />
+        <BrandBlock
+          providerName={providerName}
+          logoUrl={logoUrl}
+          accentColor={accentColor}
+          userEmail={userEmail}
+          userRole={userRole}
+        />
         <SidebarNav pathname={pathname} items={navItems} />
       </aside>
 
@@ -269,7 +283,13 @@ export default function ProviderNav({
             onClick={() => setDrawerOpen(false)}
           />
           <div className={`ds-provider-drawer is-open`} role="dialog" aria-modal="true" aria-label="Leverandørmeny">
-            <BrandBlock providerName={providerName} logoUrl={logoUrl} userEmail={userEmail} userRole={userRole} />
+            <BrandBlock
+              providerName={providerName}
+              logoUrl={logoUrl}
+              accentColor={accentColor}
+              userEmail={userEmail}
+              userRole={userRole}
+            />
             <SidebarNav pathname={pathname} items={navItems} onNavigate={() => setDrawerOpen(false)} />
           </div>
         </>
