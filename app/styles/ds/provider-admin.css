@@ -789,3 +789,205 @@
   font-size: 14px;
   line-height: 1.6;
 }
+
+/* ---------- Provider logo (innstillinger) ---------- */
+
+.ds-provider-logo {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.5vw, 24px);
+  flex-wrap: wrap;
+}
+
+.ds-provider-logo__preview {
+  width: 96px;
+  height: 96px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  border-radius: var(--ds-radius-md, 22px);
+  border: 1px solid var(--ds-line);
+  /* Subtil checkerboard: viser transparens uten å bli rotete. */
+  background:
+    repeating-conic-gradient(rgba(17, 17, 17, 0.035) 0% 25%, transparent 0% 50%) 0 0 / 16px 16px,
+    var(--ds-surface, #fff);
+  box-shadow: var(--ds-shadow-card, 0 20px 60px rgba(17, 17, 17, 0.06));
+}
+
+.ds-provider-logo__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+
+.ds-provider-logo__initials {
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-logo__body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ds-provider-logo__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-logo__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ds-provider-logo__remove {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 10px 4px;
+  min-height: 44px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.18s ease;
+}
+
+.ds-provider-logo__remove:hover:not(:disabled) {
+  color: var(--ds-text, #111);
+}
+
+.ds-provider-logo__remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ds-provider-logo__status {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-logo__status.is-success {
+  color: #1e8449;
+  font-weight: 600;
+}
+
+.ds-provider-logo__status.is-error {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.ds-provider-logo__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ds-provider-brand-heading {
+  margin: clamp(20px, 3vw, 30px) 0 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--ds-text, #111);
+}
+
+.ds-provider-brand-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+/* ---------- Provider primærfarge (kontrollert aksent) ---------- */
+
+.ds-provider-brand-color {
+  display: grid;
+  gap: 12px;
+}
+
+.ds-provider-brand-color__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ds-provider-brand-color__swatch {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  border: 1px solid var(--ds-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.ds-provider-brand-color__field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.ds-provider-brand-color__label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ds-text, #111);
+}
+
+.ds-provider-brand-color__field input {
+  width: 140px;
+  min-height: 44px;
+  border: 1px solid rgba(17, 17, 17, 0.11);
+  border-radius: 14px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text, #111);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ds-provider-brand-color__field input:focus {
+  outline: none;
+  border-color: var(--lp-gold, #f5c518);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.28);
+}
+
+.ds-provider-brand-color__sample {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-brand-color__sample-line {
+  width: 28px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+/* Kontrollert leverandøraksent i sidebar-brand: liten linje, aldri flater. */
+.ds-provider-nav__accent {
+  display: block;
+  width: 24px;
+  height: 3px;
+  margin: 4px 0 4px;
+  border-radius: 999px;
+}
