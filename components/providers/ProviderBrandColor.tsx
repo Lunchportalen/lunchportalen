@@ -73,8 +73,7 @@ export default function ProviderBrandColor({ providerId, primaryColor }: Provide
       </p>
 
       <p className="ds-provider-logo__hint">
-        Bruk HEX-format, for eksempel #F5C518. Farger med dårlig kontrast kan bli avvist eller erstattet med
-        standardfarge.
+        Bruk HEX-format, for eksempel #F5C518. Ved dårlig kontrast brukes standardfarge.
       </p>
 
       <p
