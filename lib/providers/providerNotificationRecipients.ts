@@ -19,10 +19,14 @@ import "server-only";
 import { ORDER_EMAIL } from "@/lib/system/emailAddresses";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+export type ProviderOperationsEmailSource = "provider_settings" | "provider_contact" | "system_fallback";
+
 export type ProviderNotificationRecipients = {
   providerId: string;
   /** Hovedmottaker for ordre-/driftsvarsler. */
   operationsEmail: string;
+  /** Hvor operationsEmail ble hentet fra (sporbarhet i logg/payload). */
+  operationsEmailSource: ProviderOperationsEmailSource;
   /** Mottaker for produksjonsgrunnlag/kjøkkenvarsler. */
   kitchenEmail: string;
   /** Mottaker for leverings-/sjåførvarsler. */
@@ -60,15 +64,24 @@ export function resolveProviderNotificationRecipients(
   source: ProviderNotificationSourceRows,
 ): ProviderNotificationRecipients {
   const settings = source.settings ?? {};
-  const fallbackEmail = cleanEmail(source.providerContactEmail) ?? ORDER_EMAIL;
+  const providerContactEmail = cleanEmail(source.providerContactEmail);
+  const fallbackEmail = providerContactEmail ?? ORDER_EMAIL;
 
-  const operationsEmail = cleanEmail(settings.operations_email) ?? fallbackEmail;
+  const settingsOperationsEmail = cleanEmail(settings.operations_email);
+  const operationsEmail = settingsOperationsEmail ?? fallbackEmail;
+  const operationsEmailSource: ProviderOperationsEmailSource = settingsOperationsEmail
+    ? "provider_settings"
+    : providerContactEmail
+      ? "provider_contact"
+      : "system_fallback";
+
   const kitchenEmail = cleanEmail(settings.kitchen_email) ?? operationsEmail;
   const deliveryEmail = cleanEmail(settings.delivery_email) ?? operationsEmail;
 
   return {
     providerId: source.providerId,
     operationsEmail,
+    operationsEmailSource,
     kitchenEmail,
     deliveryEmail,
     fallbackEmail,

@@ -75,6 +75,7 @@ describe("resolveProviderNotificationRecipients", () => {
     expect(res).toEqual({
       providerId: PROVIDER_A,
       operationsEmail: "ordre@provider-a.no",
+      operationsEmailSource: "provider_settings",
       kitchenEmail: "kjokken@provider-a.no",
       deliveryEmail: "levering@provider-a.no",
       fallbackEmail: "post@provider-a.no",
@@ -103,6 +104,7 @@ describe("resolveProviderNotificationRecipients", () => {
     });
 
     expect(res.operationsEmail).toBe("post@provider-a.no");
+    expect(res.operationsEmailSource).toBe("provider_contact");
     expect(res.kitchenEmail).toBe("post@provider-a.no");
     expect(res.deliveryEmail).toBe("post@provider-a.no");
     expect(res.fallbackEmail).toBe("post@provider-a.no");
@@ -116,6 +118,7 @@ describe("resolveProviderNotificationRecipients", () => {
     });
 
     expect(res.operationsEmail).toBe(ORDER_EMAIL);
+    expect(res.operationsEmailSource).toBe("system_fallback");
     expect(res.fallbackEmail).toBe(ORDER_EMAIL);
   });
 
