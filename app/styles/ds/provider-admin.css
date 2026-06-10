@@ -919,6 +919,37 @@
   color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
 }
 
+/* ---------- Drift og varsling (provider-eide mottakere) ---------- */
+
+.ds-provider-ops__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+}
+
+@media (max-width: 720px) {
+  .ds-provider-ops__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ds-provider-ops__field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ds-provider-ops__field label {
+  margin: 0;
+}
+
+.ds-provider-ops__hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
 /* ---------- Provider primærfarge (kontrollert aksent) ---------- */
 
 .ds-provider-brand-color {

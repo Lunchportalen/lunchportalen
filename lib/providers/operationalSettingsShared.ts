@@ -1,0 +1,50 @@
+// lib/providers/operationalSettingsShared.ts
+// Client-safe typer og validering for provider-eide driftsinnstillinger.
+// Ingen Supabase/server-avhengigheter her (brukes av både UI og server action).
+
+export type ProviderOperationalSettings = {
+  operationsEmail: string | null;
+  kitchenEmail: string | null;
+  deliveryEmail: string | null;
+  locale: string;
+};
+
+export type ProviderLocaleOption = { value: string; label: string };
+
+/**
+ * Kontrollert allowlist. provider_settings.locale er foreløpig inert i runtime,
+ * men verdien valideres slik at fremtidig språkstøtte kan stole på den.
+ */
+export const PROVIDER_LOCALE_OPTIONS: ProviderLocaleOption[] = [
+  { value: "nb-NO", label: "Norsk (bokmål)" },
+  { value: "en-GB", label: "English" },
+  { value: "sv-SE", label: "Svenska" },
+  { value: "da-DK", label: "Dansk" },
+];
+
+export const DEFAULT_PROVIDER_LOCALE = "nb-NO";
+
+export function isSupportedProviderLocale(value: unknown): value is string {
+  return PROVIDER_LOCALE_OPTIONS.some((o) => o.value === value);
+}
+
+const EMAIL_RE = /^[a-z0-9][a-z0-9._%+-]*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
+const MAX_EMAIL_LENGTH = 254;
+
+export type NormalizedEmailResult = { ok: true; value: string | null } | { ok: false; error: string };
+
+/**
+ * Normaliserer en valgfri e-post: trim + lowercase.
+ * Tomt felt er gyldig og betyr null (= bruk fallback-kjeden).
+ */
+export function normalizeOperationalEmail(input: unknown): NormalizedEmailResult {
+  const raw = String(input ?? "").trim().toLowerCase();
+  if (!raw) return { ok: true, value: null };
+  if (raw.length > MAX_EMAIL_LENGTH) {
+    return { ok: false, error: "E-postadressen er for lang." };
+  }
+  if (!EMAIL_RE.test(raw)) {
+    return { ok: false, error: "Ugyldig e-postadresse." };
+  }
+  return { ok: true, value: raw };
+}
