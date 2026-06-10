@@ -4562,3 +4562,146 @@ html[data-resolved-theme="dark"] .lp-profile-menu__logout:hover {
     height: 28px;
   }
 }
+
+/* =========================================================
+   LOGIN — premium portal entrance (scoped lp-login-*)
+   Matches /start: warm cream base, directional gold light,
+   one surface layer, graphite CTA accent. No box-in-box.
+========================================================= */
+
+.lp-login-page {
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: clamp(28px, 5vw, 56px) 20px;
+  color: rgb(var(--lp-text));
+  background-color: rgb(var(--lp-bg));
+  background-image:
+    radial-gradient(ellipse 110% 90% at 8% -25%, rgb(var(--lp-gold) / 0.16) 0%, transparent 48%),
+    radial-gradient(ellipse 75% 70% at 110% 105%, rgb(var(--lp-text) / 0.05) 0%, transparent 52%),
+    linear-gradient(152deg, rgb(var(--lp-surface-alt)) 0%, rgb(var(--lp-bg)) 55%);
+}
+
+.lp-login-inner {
+  width: min(440px, 100%);
+}
+
+/* Brand row — deliberate, above the surface (not a small mark inside the card) */
+
+.lp-login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: clamp(20px, 3.5vw, 30px);
+  text-align: center;
+}
+
+.lp-login-brand__logo {
+  width: auto;
+  height: clamp(64px, 10vw, 84px);
+}
+
+.lp-login-brand__tag {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(var(--lp-text) / 0.55);
+}
+
+/* Surface — one calm layer, gold hairline, controlled width */
+
+.lp-login-card {
+  border: 1px solid rgb(var(--lp-gold) / 0.3);
+  border-radius: 24px;
+  padding: clamp(26px, 4.5vw, 36px) clamp(22px, 4vw, 32px);
+  background: linear-gradient(172deg, rgb(var(--lp-surface) / 0.98) 0%, rgb(var(--lp-surface-alt) / 0.96) 100%);
+  box-shadow: 0 20px 48px rgb(var(--lp-text) / 0.07);
+}
+
+.lp-login-title {
+  margin: 0 0 8px;
+  font-size: clamp(1.5rem, 4.5vw, 1.875rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 900;
+  color: rgb(var(--lp-text));
+}
+
+.lp-login-lead {
+  margin: 0 0 22px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: rgb(var(--lp-muted));
+}
+
+.lp-login-footer {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgb(var(--lp-text) / 0.08);
+}
+
+/* Quiet secondary links — no default underline feel */
+
+.lp-login-link {
+  font-weight: 600;
+  color: rgb(var(--lp-text) / 0.62);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.lp-login-link:hover {
+  color: rgb(var(--lp-text));
+  border-bottom-color: rgb(var(--lp-gold));
+}
+
+.lp-login-link:focus-visible {
+  outline: 3px solid rgb(var(--lp-gold));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.lp-login-link-sep {
+  color: rgb(var(--lp-text) / 0.3);
+}
+
+/* Entrance — calm settle, brand first, surface after */
+
+.lp-login-enter {
+  opacity: 0;
+  animation: lp-login-enter-rise 560ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.lp-login-enter--brand {
+  animation-delay: 0ms;
+}
+
+.lp-login-enter--card {
+  animation-delay: 120ms;
+}
+
+@keyframes lp-login-enter-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+    filter: blur(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .lp-login-enter {
+    animation: none;
+    opacity: 1;
+  }
+}

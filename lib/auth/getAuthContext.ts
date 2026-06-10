@@ -416,14 +416,6 @@ async function resolveAuthContext(explicitRid?: string, reqHeaders?: Headers | n
 
     const sb = reqHeaders != null ? supabaseFromHeaders(cookieStore, reqHeaders) : await supabaseServer();
     const { data, error } = await sb.auth.getUser();
-    console.error("[GETUSER-DEBUG]", {
-      hasUser: Boolean(data?.user?.id),
-      userId: data?.user?.id ?? null,
-      error: error?.message ?? null,
-      errorCode: (error as any)?.code ?? null,
-      cookieCount: cookieStore.getAll().length,
-      hasSsrCookie: hasSupabaseSsrAuthCookieInJar(cookieStore.getAll()),
-    });
     const user = data?.user ?? null;
 
     const layer = buildAuthLayer({
