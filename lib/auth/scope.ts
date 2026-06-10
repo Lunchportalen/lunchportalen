@@ -4,7 +4,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getAgreementStatus } from "@/lib/auth/agreementStatus";
-import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { getAuthContext, isProviderAuthRole } from "@/lib/auth/getAuthContext";
 import type { Database } from "@/lib/types/database";
 
 export type Role =
@@ -264,6 +264,11 @@ export async function getScope(req: NextRequest): Promise<Scope> {
 
   if (!auth.ok || !auth.role) {
     throw new ScopeError("Kunne ikke hente profil", 503, "PROFILE_LOOKUP_FAILED");
+  }
+
+  // Fail-closed: provider-roller har ikke company-scope og skal aldri få Scope her.
+  if (isProviderAuthRole(auth.role)) {
+    throw new ScopeError("Leverandørbruker har ikke firmascope", 403, "PROVIDER_SCOPE_NOT_SUPPORTED");
   }
 
   if (auth.mode === "DEV_BYPASS") {
