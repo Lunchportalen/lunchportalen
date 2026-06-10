@@ -67,10 +67,13 @@ function isOrderWriteRoleAllowed(role: string | null | undefined): boolean {
 async function readOrdersRowForReceipt(
   supa: any,
   params: { user_id: string; company_id: string; location_id: string; date: string }
-): Promise<{ ok: true; id: string; status: string; updated_at: string | null } | { ok: false }> {
+): Promise<
+  | { ok: true; id: string; status: string; provider_id: string | null; updated_at: string | null }
+  | { ok: false }
+> {
   const { data, error } = await supa
     .from("orders")
-    .select("id,status,updated_at")
+    .select("id,status,provider_id,updated_at")
     .eq("user_id", params.user_id)
     .eq("company_id", params.company_id)
     .eq("location_id", params.location_id)
@@ -85,6 +88,7 @@ async function readOrdersRowForReceipt(
     ok: true,
     id: String((data as any).id),
     status: String((data as any).status ?? ""),
+    provider_id: (data as any).provider_id != null ? String((data as any).provider_id) : null,
     updated_at: (data as any).updated_at != null ? String((data as any).updated_at) : null,
   };
 }
@@ -282,7 +286,7 @@ export async function POST(req: Request) {
       return jsonOrderWriteErr(rid, 404, "ORDER_NOT_FOUND", "Ingen bestilling å avbestille for denne dagen.");
     }
 
-    const persistCancelOutboxOrErr = async (ordRow: { id: string; status: string }) => {
+    const persistCancelOutboxOrErr = async (ordRow: { id: string; status: string; provider_id: string | null }) => {
       try {
         await persistDayChoiceOrderCancelOutbox({
           dbEventKey: `order.cancel.day_choice:${user_id}:${date}`,
@@ -294,6 +298,7 @@ export async function POST(req: Request) {
           userEmail: null,
           date,
           orderStatus: ordRow.status,
+          providerId: ordRow.provider_id,
         });
       } catch (e) {
         logApiError("POST /api/order/cancel outbox persist failed", e, { rid, user_id, date });
@@ -308,7 +313,7 @@ export async function POST(req: Request) {
       if (!ord.ok) {
         return jsonOrderWriteErr(rid, 404, "ORDER_NOT_FOUND", "Allerede avbestilt; fant ikke verifiserbar ordre.");
       }
-      const obErr = await persistCancelOutboxOrErr({ id: ord.id, status: ord.status });
+      const obErr = await persistCancelOutboxOrErr({ id: ord.id, status: ord.status, provider_id: ord.provider_id });
       if (obErr) return obErr;
       return jsonOrderWriteOk(rid, {
         orderId: ord.id,
@@ -336,7 +341,7 @@ export async function POST(req: Request) {
       return jsonOrderWriteErr(rid, 500, "ORDER_READ_FAILED", "Avbestilling utført, men ordre kunne ikke verifiseres.");
     }
 
-    const obErr2 = await persistCancelOutboxOrErr({ id: ord.id, status: ord.status });
+    const obErr2 = await persistCancelOutboxOrErr({ id: ord.id, status: ord.status, provider_id: ord.provider_id });
     if (obErr2) return obErr2;
 
     return jsonOrderWriteOk(rid, {
