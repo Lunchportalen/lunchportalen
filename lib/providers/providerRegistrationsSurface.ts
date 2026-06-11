@@ -11,7 +11,8 @@ import { DEFAULT_PROVIDER_LOCALE } from "@/lib/providers/operationalSettingsShar
 
 export const PROVIDER_REGISTRATIONS_COPY = {
   eyebrow: "Leverandør",
-  heading: "Bedriftsforespørsler",
+  // Kort H1 som ikke brekker på desktop-breakpoints; subheading bærer domenekonteksten.
+  heading: "Forespørsler",
   subheading:
     "Se nye bedrifter som ønsker lunsjordning, og vurder leveringsområde, kontaktinformasjon og ønsket avtale før behandling.",
   tableHeaders: {

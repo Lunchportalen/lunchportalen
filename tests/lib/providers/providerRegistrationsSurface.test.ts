@@ -9,8 +9,9 @@ import {
 } from "@/lib/providers/providerRegistrationsSurface";
 
 describe("PROVIDER_REGISTRATIONS_COPY — enterprise page context", () => {
-  it("bruker «Bedriftsforespørsler» som domenebegrep", () => {
-    expect(PROVIDER_REGISTRATIONS_COPY.heading).toBe("Bedriftsforespørsler");
+  it("kort H1 «Forespørsler» med tydelig bedriftskontekst i subheading", () => {
+    expect(PROVIDER_REGISTRATIONS_COPY.heading).toBe("Forespørsler");
+    expect(PROVIDER_REGISTRATIONS_COPY.subheading).toContain("nye bedrifter");
     expect(PROVIDER_REGISTRATIONS_COPY.subheading).toContain("leveringsområde");
   });
 
