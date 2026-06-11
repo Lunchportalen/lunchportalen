@@ -33,6 +33,54 @@
   gap: 10px;
 }
 
+/* «Må følges opp» — rolige operasjonelle kort (samme flate som ds-card). */
+.ds-provider-followup-grid {
+  display: grid;
+  gap: clamp(12px, 2vw, 18px);
+  grid-template-columns: 1fr;
+}
+
+.ds-provider-followup {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.ds-provider-followup--warning {
+  border-color: rgba(245, 180, 0, .45);
+}
+
+.ds-provider-followup__action {
+  justify-self: start;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ds-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ds-provider-activity__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: var(--ds-text-soft);
+}
+
+.ds-provider-activity__dot--success {
+  background: rgba(47, 122, 101, .85);
+}
+
+.ds-provider-activity__dot--warning {
+  background: rgba(245, 180, 0, .9);
+}
+
 .ds-provider-activity__row {
   display: grid;
   gap: 4px;
@@ -124,7 +172,8 @@
 }
 
 @media (min-width: 640px) {
-  .ds-provider-quick-grid {
+  .ds-provider-quick-grid,
+  .ds-provider-followup-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -140,7 +189,8 @@
 }
 
 @media (min-width: 980px) {
-  .ds-provider-quick-grid {
+  .ds-provider-quick-grid,
+  .ds-provider-followup-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 
