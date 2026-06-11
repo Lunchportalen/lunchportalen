@@ -916,6 +916,41 @@
   max-width: 960px;
 }
 
+/* Rolige status cards øverst på /leverandor/faktura (oppgjør/provisjon/neste oppgjør). */
+.ds-provider-billing-status-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 12px;
+}
+
+.ds-provider-billing-status-card {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+}
+
+.ds-provider-billing-status-card__value {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* Produktcopy om provisjonsmodellen — informasjon, ikke beregning. */
+.ds-provider-billing-model-note {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--ds-text-soft);
+}
+
+/* Kontrollert «ikke aktivert»-panel når oppgjørsavtale mangler. */
+.ds-provider-billing-inactive {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
 .ds-provider-billing-summary {
   display: grid;
   gap: 14px;
