@@ -5,6 +5,7 @@ import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import { normalizeKitchenOrderStatus, type KitchenOrderStatus } from "@/lib/providers/kitchenOrderStatus";
+import { buildKitchenStatusCounts, type KitchenStatusCounts } from "@/lib/providers/providerOrdersSurface";
 
 export type KitchenOrderItem = {
   productName: string;
@@ -28,7 +29,11 @@ export type KitchenOrdersBundle = {
   dateTo: string;
   orders: KitchenOrderRow[];
   companies: Array<{ id: string; name: string }>;
+  /** Statuschip-tellinger for valgt periode (+ evt. bedriftsfilter), uavhengig av aktivt statusfilter. */
+  statusCounts: KitchenStatusCounts;
 };
+
+const EMPTY_STATUS_COUNTS: KitchenStatusCounts = { "": 0, ACTIVE: 0, PREPARED: 0, DISPATCHED: 0, DELIVERED: 0 };
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -60,7 +65,7 @@ export async function loadKitchenOrders(
 ): Promise<KitchenOrdersBundle> {
   const pid = safeStr(providerId);
   const { from, toExclusive, displayTo } = parseDateRange(opts?.dateMode ?? "today", osloTodayISODate());
-  if (!pid) return { dateFrom: from, dateTo: displayTo, orders: [], companies: [] };
+  if (!pid) return { dateFrom: from, dateTo: displayTo, orders: [], companies: [], statusCounts: EMPTY_STATUS_COUNTS };
 
   const sb = await supabaseServer();
   let q = sb
@@ -72,18 +77,25 @@ export async function loadKitchenOrders(
     .order("date", { ascending: true })
     .order("slot", { ascending: true });
 
-  const statusFilter = safeStr(opts?.statusFilter).toUpperCase();
-  if (statusFilter) q = q.eq("status", statusFilter);
-
   const companyFilter = safeStr(opts?.companyId);
   if (companyFilter) q = q.eq("company_id", companyFilter);
 
-  const { data: orderRows, error } = await q;
-  if (error || !Array.isArray(orderRows)) {
-    return { dateFrom: from, dateTo: displayTo, orders: [], companies: [] };
+  const { data: allRows, error } = await q;
+  if (error || !Array.isArray(allRows)) {
+    return { dateFrom: from, dateTo: displayTo, orders: [], companies: [], statusCounts: EMPTY_STATUS_COUNTS };
   }
 
-  const companyIds = [...new Set(orderRows.map((r) => safeStr((r as { company_id?: string }).company_id)).filter(Boolean))];
+  // Statuschip-tellinger fra hele perioden (samme periode/bedriftsfilter som visningen).
+  const statusCounts = buildKitchenStatusCounts(allRows.map((r) => safeStr((r as { status?: string }).status)));
+
+  // Statusfilter: raw uppercase equality — identisk semantikk som tidligere DB-filter
+  // (.eq("status", statusFilter)), nå i minne slik at counts kan beregnes uten ekstra query.
+  const statusFilter = safeStr(opts?.statusFilter).toUpperCase();
+  const orderRows = statusFilter
+    ? allRows.filter((r) => safeStr((r as { status?: string }).status).toUpperCase() === statusFilter)
+    : allRows;
+
+  const companyIds = [...new Set(allRows.map((r) => safeStr((r as { company_id?: string }).company_id)).filter(Boolean))];
   const companyNames = new Map<string, string>();
 
   if (companyIds.length) {
@@ -138,5 +150,5 @@ export async function loadKitchenOrders(
 
   const companies = companyIds.map((id) => ({ id, name: companyNames.get(id) ?? id })).sort((a, b) => a.name.localeCompare(b.name, "nb"));
 
-  return { dateFrom: from, dateTo: displayTo, orders, companies };
+  return { dateFrom: from, dateTo: displayTo, orders, companies, statusCounts };
 }

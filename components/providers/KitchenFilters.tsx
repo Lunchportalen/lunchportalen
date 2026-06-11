@@ -3,23 +3,22 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
 
+import {
+  PROVIDER_ORDERS_COPY,
+  PROVIDER_ORDERS_DATE_MODES,
+  PROVIDER_ORDERS_STATUS_FILTERS,
+  type KitchenStatusCounts,
+} from "@/lib/providers/providerOrdersSurface";
+
 type CompanyOption = { id: string; name: string };
 
-const DATE_MODES = [
-  { id: "today", label: "I dag" },
-  { id: "tomorrow", label: "I morgen" },
-  { id: "week", label: "Hele uken" },
-] as const;
-
-const STATUS_FILTERS = [
-  { id: "", label: "Alle" },
-  { id: "ACTIVE", label: "Mottatt" },
-  { id: "PREPARED", label: "Produksjon" },
-  { id: "DISPATCHED", label: "Klar" },
-  { id: "DELIVERED", label: "Levert" },
-] as const;
-
-export default function KitchenFilters({ companies }: { companies: CompanyOption[] }) {
+export default function KitchenFilters({
+  companies,
+  statusCounts,
+}: {
+  companies: CompanyOption[];
+  statusCounts?: KitchenStatusCounts;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -44,8 +43,8 @@ export default function KitchenFilters({ companies }: { companies: CompanyOption
 
   return (
     <div className="ds-provider-kitchen-filters" aria-busy={pending}>
-      <div className="ds-provider-kitchen-filters__row" role="group" aria-label="Dato">
-        {DATE_MODES.map((d) => (
+      <div className="ds-provider-kitchen-filters__row" role="group" aria-label={PROVIDER_ORDERS_COPY.dateGroupAria}>
+        {PROVIDER_ORDERS_DATE_MODES.map((d) => (
           <button
             key={d.id}
             type="button"
@@ -58,8 +57,8 @@ export default function KitchenFilters({ companies }: { companies: CompanyOption
         ))}
       </div>
 
-      <div className="ds-provider-kitchen-filters__row" role="group" aria-label="Status">
-        {STATUS_FILTERS.map((s) => (
+      <div className="ds-provider-kitchen-filters__row" role="group" aria-label={PROVIDER_ORDERS_COPY.statusGroupAria}>
+        {PROVIDER_ORDERS_STATUS_FILTERS.map((s) => (
           <button
             key={s.id || "all"}
             type="button"
@@ -68,20 +67,23 @@ export default function KitchenFilters({ companies }: { companies: CompanyOption
             onClick={() => push({ status: s.id })}
           >
             {s.label}
+            {statusCounts ? (
+              <span className="ds-provider-status-pill__count">{statusCounts[s.id] ?? 0}</span>
+            ) : null}
           </button>
         ))}
       </div>
 
       <div className="ds-provider-kitchen-filters__row">
         <label className="ds-provider-kitchen-filters__select">
-          <span className="ds-eyebrow">Firma</span>
+          <span className="ds-eyebrow">{PROVIDER_ORDERS_COPY.companyFilterLabel}</span>
           <select
             className="ds-admin-search"
             value={companyId}
             onChange={(e) => push({ company: e.target.value })}
-            aria-label="Filtrer på firma"
+            aria-label={PROVIDER_ORDERS_COPY.companyFilterAria}
           >
-            <option value="">Alle firma</option>
+            <option value="">{PROVIDER_ORDERS_COPY.companyFilterAll}</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -90,14 +92,14 @@ export default function KitchenFilters({ companies }: { companies: CompanyOption
           </select>
         </label>
 
-        <div role="group" aria-label="Gruppering" className="ds-provider-kitchen-filters__row">
+        <div role="group" aria-label={PROVIDER_ORDERS_COPY.groupingAria} className="ds-provider-kitchen-filters__row">
           <button
             type="button"
             className={`ds-btn ds-btn--ghost ds-btn--sm${group === "company" ? " is-active" : ""}`}
             aria-pressed={group === "company"}
             onClick={() => push({ group: "company" })}
           >
-            Per firma
+            {PROVIDER_ORDERS_COPY.groupByCompany}
           </button>
           <button
             type="button"
@@ -105,7 +107,7 @@ export default function KitchenFilters({ companies }: { companies: CompanyOption
             aria-pressed={group === "slot"}
             onClick={() => push({ group: "slot" })}
           >
-            Per tid
+            {PROVIDER_ORDERS_COPY.groupByTime}
           </button>
         </div>
       </div>
