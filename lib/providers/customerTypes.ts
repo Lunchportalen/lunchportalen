@@ -17,6 +17,8 @@ export type ProviderCustomersPage = {
   currentPage: number;
   totalPages: number;
   pageSize: number;
+  /** Statuschip-tellinger for hele det søk-filtrerte datasettet (uavhengig av aktivt statusfilter). */
+  statusCounts: Record<ProviderCustomerFilter, number>;
 };
 
 export function providerCustomerStatusLabel(status: ProviderCustomerStatus): string {

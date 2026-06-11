@@ -320,6 +320,27 @@
   color: var(--ds-text-soft);
 }
 
+/* Tellinger på statusfilter-chips (/leverandor/kunder). */
+.ds-provider-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  background: var(--ds-bg-soft, rgba(17, 17, 17, .06));
+  color: var(--ds-text);
+}
+
+/* Rolig oppsummering når pagination-kontroller er skjult (én side). */
+.ds-provider-pagination__summary {
+  color: var(--ds-text-soft);
+}
+
 .ds-provider-pagination {
   display: flex;
   align-items: center;

@@ -10,14 +10,13 @@ import {
   type ProviderCustomerRow,
   type ProviderCustomersPage,
 } from "@/lib/providers/customerTypes";
-
-const FILTERS: Array<{ id: ProviderCustomerFilter; label: string }> = [
-  { id: "all", label: "Alle" },
-  { id: "active", label: "Aktive" },
-  { id: "paused", label: "Pauset" },
-  { id: "suspended", label: "Suspendert" },
-  { id: "deleted", label: "Slettet" },
-];
+import {
+  PROVIDER_CUSTOMERS_COPY,
+  PROVIDER_CUSTOMER_FILTERS,
+  buildCustomersPaginationModel,
+  formatProviderCustomerUpdated,
+  providerCustomersEmptyState,
+} from "@/lib/providers/providerCustomersSurface";
 
 function statusBadgeClass(status: ProviderCustomerRow["status"]) {
   if (status === "ACTIVE") return "ds-provider-status-badge ds-provider-status-badge--active";
@@ -26,18 +25,7 @@ function statusBadgeClass(status: ProviderCustomerRow["status"]) {
   return "ds-provider-status-badge ds-provider-status-badge--deleted";
 }
 
-function formatUpdated(iso: string | null) {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("nb-NO", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Oslo" }).format(
-      new Date(iso),
-    );
-  } catch {
-    return iso;
-  }
-}
-
-export default function CustomerList({ initial }: { initial: ProviderCustomersPage }) {
+export default function CustomerList({ initial, locale }: { initial: ProviderCustomersPage; locale?: string | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -62,23 +50,30 @@ export default function CustomerList({ initial }: { initial: ProviderCustomersPa
   );
 
   const rows = useMemo(() => initial.customers, [initial.customers]);
+  const emptyState = providerCustomersEmptyState({ hasSearch: Boolean(search.trim()), filter });
+  const pagination = buildCustomersPaginationModel({
+    currentPage: initial.currentPage,
+    totalPages: initial.totalPages,
+    totalCount: initial.totalCount,
+  });
+  const copy = PROVIDER_CUSTOMERS_COPY;
 
   return (
     <div className="ds-section">
       <div className="ds-provider-list-toolbar">
         <label className="ds-provider-list-toolbar__search">
-          <span className="ds-eyebrow">Søk</span>
+          <span className="ds-eyebrow">{copy.searchLabel}</span>
           <input
             type="search"
             name="q"
             defaultValue={search}
-            placeholder="Firmanavn"
+            placeholder={copy.searchPlaceholder}
             className="ds-admin-search"
             onChange={(e) => pushParams({ q: e.target.value, page: "1" })}
           />
         </label>
-        <div className="ds-provider-list-toolbar__filters" role="group" aria-label="Statusfilter">
-          {FILTERS.map((f) => (
+        <div className="ds-provider-list-toolbar__filters" role="group" aria-label={copy.statusGroupAria}>
+          {PROVIDER_CUSTOMER_FILTERS.map((f) => (
             <button
               key={f.id}
               type="button"
@@ -88,11 +83,12 @@ export default function CustomerList({ initial }: { initial: ProviderCustomersPa
               onClick={() => pushParams({ filter: f.id, page: "1" })}
             >
               {f.label}
+              <span className="ds-provider-filter-count">{initial.statusCounts?.[f.id] ?? 0}</span>
             </button>
           ))}
         </div>
-        <Link href="/leverandor/kunder/ny" className="ds-btn ds-btn--primary">
-          Legg til kunde
+        <Link href="/leverandor/kunder/ny" className="ds-btn ds-btn--secondary" title={copy.ctaTitle}>
+          {copy.cta}
         </Link>
       </div>
 
@@ -100,19 +96,19 @@ export default function CustomerList({ initial }: { initial: ProviderCustomersPa
         <table className="ds-provider-customer-table">
           <thead>
             <tr>
-              <th scope="col">Navn</th>
-              <th scope="col">Status</th>
-              <th scope="col">Ansatte</th>
-              <th scope="col">Ordrer uke</th>
-              <th scope="col">Sist endret</th>
+              <th scope="col">{copy.tableHeaders.name}</th>
+              <th scope="col">{copy.tableHeaders.status}</th>
+              <th scope="col">{copy.tableHeaders.employees}</th>
+              <th scope="col">{copy.tableHeaders.ordersThisWeek}</th>
+              <th scope="col">{copy.tableHeaders.lastUpdated}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={5} className="ds-provider-reg-empty">
-                  Ingen kunder matcher valgt filter eller søk.
-                  <span className="ds-provider-reg-meta">Juster filteret, eller legg til en ny kunde.</span>
+                  {emptyState.title}
+                  <span className="ds-provider-reg-meta">{emptyState.text}</span>
                 </td>
               </tr>
             ) : (
@@ -128,7 +124,7 @@ export default function CustomerList({ initial }: { initial: ProviderCustomersPa
                   </td>
                   <td>{row.employeesCount}</td>
                   <td>{row.ordersThisWeek}</td>
-                  <td>{formatUpdated(row.updatedAt)}</td>
+                  <td>{formatProviderCustomerUpdated(row.updatedAt, locale)}</td>
                 </tr>
               ))
             )}
@@ -139,43 +135,45 @@ export default function CustomerList({ initial }: { initial: ProviderCustomersPa
       <div className="ds-provider-customer-list ds-provider-customer-list--mobile" aria-busy={pending}>
         {rows.length === 0 ? (
           <div className="ds-provider-empty">
-            <p className="ds-provider-empty__title">Ingen kunder matcher valgt filter eller søk</p>
-            <p className="ds-provider-empty__text">Juster filteret, eller legg til en ny kunde.</p>
+            <p className="ds-provider-empty__title">{emptyState.title}</p>
+            <p className="ds-provider-empty__text">{emptyState.text}</p>
           </div>
         ) : (
           rows.map((row) => (
             <Link key={row.id} href={`/leverandor/kunder/${row.id}`} className="ds-card ds-provider-customer-card">
               <div className="ds-card__title">{row.name}</div>
               <span className={statusBadgeClass(row.status)}>{providerCustomerStatusLabel(row.status)}</span>
-              <p className="ds-card__text">
-                {row.employeesCount} ansatte · {row.ordersThisWeek} ordrer denne uken
+              <p className="ds-card__text">{copy.mobileMeta(row.employeesCount, row.ordersThisWeek)}</p>
+              <p className="ds-provider-activity__meta">
+                {copy.mobileUpdatedPrefix} {formatProviderCustomerUpdated(row.updatedAt, locale)}
               </p>
-              <p className="ds-provider-activity__meta">Sist endret {formatUpdated(row.updatedAt)}</p>
             </Link>
           ))
         )}
       </div>
 
-      <nav className="ds-provider-pagination" aria-label="Paginering">
-        <button
-          type="button"
-          className="ds-btn ds-btn--ghost ds-btn--sm"
-          disabled={page <= 1 || pending}
-          onClick={() => pushParams({ page: String(page - 1) })}
-        >
-          Forrige
-        </button>
-        <span className="ds-body">
-          Side {initial.currentPage} av {initial.totalPages} ({initial.totalCount} totalt)
-        </span>
-        <button
-          type="button"
-          className="ds-btn ds-btn--ghost ds-btn--sm"
-          disabled={page >= initial.totalPages || pending}
-          onClick={() => pushParams({ page: String(page + 1) })}
-        >
-          Neste
-        </button>
+      <nav className="ds-provider-pagination" aria-label={copy.paginationAria}>
+        {pagination.showControls ? (
+          <button
+            type="button"
+            className="ds-btn ds-btn--ghost ds-btn--sm"
+            disabled={pagination.prevDisabled || pending}
+            onClick={() => pushParams({ page: String(page - 1) })}
+          >
+            {copy.paginationPrev}
+          </button>
+        ) : null}
+        <span className="ds-body ds-provider-pagination__summary">{pagination.summary}</span>
+        {pagination.showControls ? (
+          <button
+            type="button"
+            className="ds-btn ds-btn--ghost ds-btn--sm"
+            disabled={pagination.nextDisabled || pending}
+            onClick={() => pushParams({ page: String(page + 1) })}
+          >
+            {copy.paginationNext}
+          </button>
+        ) : null}
       </nav>
     </div>
   );
