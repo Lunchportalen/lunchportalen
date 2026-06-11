@@ -2,6 +2,7 @@
 import "server-only";
 
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { activeProviderCompanyIds } from "@/lib/providers/providerDashboardKpis";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type ProviderDashboardStats = {
@@ -76,9 +77,7 @@ export async function loadProviderDashboard(providerId: string): Promise<Provide
       .is("paused_at", null),
   );
 
-  const activeAgreementsP = countExact(
-    sb.from("agreements").select("id", { count: "exact", head: true }).eq("provider_id", pid).eq("status", "ACTIVE"),
-  );
+  const activeAgreementsP = loadActiveCustomerAgreementsCount(sb, pid);
 
   const ordersWeekP = countExact(
     sb
@@ -102,6 +101,40 @@ export async function loadProviderDashboard(providerId: string): Promise<Provide
     stats: { activeCustomers, activeAgreements, ordersThisWeek, revenueLast30DaysNok },
     recentActivity,
   };
+}
+
+/**
+ * Aktive kundeavtaler: aktive agreements for provider-bedrifter som fortsatt er
+ * aktive (ikke slettet/suspendert/pauset) — samme lifecycle-definisjon som
+ * «Aktive kunder». Avtaler på soft-slettede companies telles aldri (fail-closed 0).
+ */
+async function loadActiveCustomerAgreementsCount(
+  sb: Awaited<ReturnType<typeof supabaseServer>>,
+  providerId: string,
+): Promise<number> {
+  try {
+    const { data, error } = await sb
+      .from("companies")
+      .select("id, deleted_at, suspended_at, paused_at")
+      .eq("provider_id", providerId)
+      .limit(1000);
+
+    if (error || !Array.isArray(data)) return 0;
+
+    const companyIds = activeProviderCompanyIds(data);
+    if (companyIds.length === 0) return 0;
+
+    return countExact(
+      sb
+        .from("agreements")
+        .select("id", { count: "exact", head: true })
+        .eq("provider_id", providerId)
+        .in("company_id", companyIds)
+        .eq("status", "ACTIVE"),
+    );
+  } catch {
+    return 0;
+  }
 }
 
 async function loadRevenueLast30(sb: Awaited<ReturnType<typeof supabaseServer>>, providerId: string, from: string, to: string) {

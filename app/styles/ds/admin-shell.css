@@ -624,6 +624,19 @@
   box-shadow: var(--ds-shadow-card-hover);
 }
 
+/* KPI som drilldown-lenke: samme visuelle card, men klikkbar og fokusbar. */
+.ds-admin-kpi--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ds-admin-kpi--link:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+
 .ds-admin-kpi__top {
   display: flex;
   justify-content: flex-end;
