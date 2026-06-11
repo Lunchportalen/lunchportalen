@@ -53,8 +53,8 @@ export const KITCHEN_DAY_DATA_ORDER_COLUMNS =
 export const KITCHEN_REPORT_ORDER_COLUMNS =
   "id, user_id, date, status, note, company_id, location_id, slot";
 
-/** Cron: daglig ordre-e-postsammendrag. */
-export const CRON_DAILY_ORDER_SUMMARY_COLUMNS = "id, company_id, location_id, user_id, slot";
+/** Cron: daglig ordre-e-postsammendrag (provider_id for provider-routet utsendelse). */
+export const CRON_DAILY_ORDER_SUMMARY_COLUMNS = "id, company_id, location_id, user_id, slot, provider_id";
 
 /** Cron: meal-learning felt for aggregat. */
 export const CRON_MEAL_LEARNING_ORDER_COLUMNS = "id, date, status, company_id, location_id";
