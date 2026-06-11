@@ -5,27 +5,29 @@ import { useMemo, useState } from "react";
 
 import RegistrationApproveDialog from "@/components/providers/RegistrationApproveDialog";
 import type { ProviderRegistrationRow } from "@/lib/providers/loadProviderRegistrations";
-
-function statusLabel(status: string) {
-  const s = status.toUpperCase();
-  if (s === "PENDING") return "Venter";
-  if (s === "APPROVED") return "Godkjent";
-  if (s === "REJECTED") return "Avvist";
-  return status;
-}
+import {
+  PROVIDER_REGISTRATIONS_COPY,
+  PROVIDER_REGISTRATIONS_EMPTY_STATE,
+  formatProviderRegistrationReceived,
+  providerRegistrationStatusLabel,
+  providerRegistrationsSummary,
+} from "@/lib/providers/providerRegistrationsSurface";
 
 export default function ProviderRegistrationsQueue({
   providerId,
   rows,
+  locale,
 }: {
   providerId: string;
   rows: ProviderRegistrationRow[];
+  locale?: string | null;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<ProviderRegistrationRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const pending = useMemo(() => rows.filter((r) => r.status.toUpperCase() === "PENDING"), [rows]);
+  const copy = PROVIDER_REGISTRATIONS_COPY;
 
   function openRow(row: ProviderRegistrationRow) {
     setSelected(row);
@@ -34,29 +36,34 @@ export default function ProviderRegistrationsQueue({
 
   return (
     <>
-      <div className="ds-provider-reg-table-wrap">
-        <table className="ds-provider-reg-table">
-          <thead>
-            <tr>
-              <th>Bedrift</th>
-              <th>Område</th>
-              <th>Kontakt</th>
-              <th>Status</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {pending.length === 0 ? (
+      <p className="ds-provider-reg-summary">{providerRegistrationsSummary(pending.length)}</p>
+
+      {pending.length === 0 ? (
+        <div className="ds-provider-empty">
+          <p className="ds-provider-empty__title">{PROVIDER_REGISTRATIONS_EMPTY_STATE.title}</p>
+          <p className="ds-provider-empty__text">{PROVIDER_REGISTRATIONS_EMPTY_STATE.text}</p>
+          <ul className="ds-provider-empty__steps">
+            {PROVIDER_REGISTRATIONS_EMPTY_STATE.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="ds-provider-reg-table-wrap">
+          <table className="ds-provider-reg-table">
+            <thead>
               <tr>
-                <td colSpan={5} className="ds-provider-reg-empty">
-                  Ingen ventende registreringer akkurat nå.
-                  <span className="ds-provider-reg-meta">
-                    Når en bedrift i ditt dekningsområde melder interesse, vises den her for behandling.
-                  </span>
-                </td>
+                <th>{copy.tableHeaders.company}</th>
+                <th>{copy.tableHeaders.area}</th>
+                <th>{copy.tableHeaders.contact}</th>
+                <th>{copy.tableHeaders.employees}</th>
+                <th>{copy.tableHeaders.received}</th>
+                <th>{copy.tableHeaders.status}</th>
+                <th />
               </tr>
-            ) : (
-              pending.map((row) => (
+            </thead>
+            <tbody>
+              {pending.map((row) => (
                 <tr key={row.id}>
                   <td>
                     <button type="button" className="ds-provider-reg-link" onClick={() => openRow(row)}>
@@ -71,18 +78,20 @@ export default function ProviderRegistrationsQueue({
                     {row.contact_name}
                     <span className="ds-provider-reg-meta">{row.contact_email}</span>
                   </td>
-                  <td>{statusLabel(row.status)}</td>
+                  <td>{row.employee_count ?? "—"}</td>
+                  <td>{formatProviderRegistrationReceived(row.created_at, locale)}</td>
+                  <td>{providerRegistrationStatusLabel(row.status)}</td>
                   <td>
                     <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openRow(row)}>
-                      Behandle
+                      {copy.reviewAction}
                     </button>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <RegistrationApproveDialog
         open={dialogOpen}

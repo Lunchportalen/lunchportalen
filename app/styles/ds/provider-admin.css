@@ -603,6 +603,15 @@
 }
 
 /* Provider registration queue (/leverandor/registreringer) — Patch 13 */
+/* Rolig statuslinje over bedriftsforespørsler (/leverandor/registreringer). */
+.ds-provider-reg-summary {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ds-text-soft);
+}
+
 .ds-provider-reg-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
