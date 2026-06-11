@@ -155,12 +155,12 @@ export default function CustomerDetailClient({
       </div>
 
       {!canManage ? (
-        <p className="ds-body ds-section">Du har lesetilgang. Handlinger krever provider-admin.</p>
+        <p className="ds-body ds-section">Du har lesetilgang. Endringer krever administratortilgang.</p>
       ) : null}
 
       <section className="ds-section">
         <h2 className="ds-h2">Ansatte</h2>
-        <p className="ds-body">Kommer i Patch 11.</p>
+        <p className="ds-body">Oversikt over ansatte er ikke tilgjengelig ennå.</p>
       </section>
 
       <section className="ds-section">

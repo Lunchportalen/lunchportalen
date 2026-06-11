@@ -77,7 +77,7 @@ export default function ServiceAreasManager({
             Legg til område
           </button>
         ) : (
-          <p className="ds-body">Du har lesetilgang. Endringer krever provider-admin.</p>
+          <p className="ds-body">Du har lesetilgang. Endringer krever administratortilgang.</p>
         )}
       </div>
 
@@ -89,7 +89,12 @@ export default function ServiceAreasManager({
 
       <div className="ds-provider-service-area-list">
         {rows.length === 0 ? (
-          <p className="ds-provider-reg-empty">Ingen dekningsområder er registrert ennå.</p>
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">Ingen dekningsområder ennå</p>
+            <p className="ds-provider-empty__text">
+              Legg til ditt første område for å bli synlig for bedrifter i nærheten.
+            </p>
+          </div>
         ) : (
           rows.map((row) => (
             <article
@@ -144,7 +149,10 @@ export default function ServiceAreasManager({
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={canEdit ? 6 : 5} className="ds-provider-reg-empty">
-                  Ingen dekningsområder.
+                  Ingen dekningsområder ennå.
+                  <span className="ds-provider-reg-meta">
+                    Legg til ditt første område for å bli synlig for bedrifter i nærheten.
+                  </span>
                 </td>
               </tr>
             ) : (

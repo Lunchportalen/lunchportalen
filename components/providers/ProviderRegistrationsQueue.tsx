@@ -49,7 +49,10 @@ export default function ProviderRegistrationsQueue({
             {pending.length === 0 ? (
               <tr>
                 <td colSpan={5} className="ds-provider-reg-empty">
-                  Ingen ventende registreringer.
+                  Ingen ventende registreringer akkurat nå.
+                  <span className="ds-provider-reg-meta">
+                    Når en bedrift i ditt dekningsområde melder interesse, vises den her for behandling.
+                  </span>
                 </td>
               </tr>
             ) : (

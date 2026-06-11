@@ -31,7 +31,7 @@ export default async function LeverandorInnstillingerPage() {
     return (
       <div className="ds-container">
         <h1 className="ds-h2">Innstillinger</h1>
-        <p className="ds-body">Kun provider-admin kan endre profilen.</p>
+        <p className="ds-body">Du har lesetilgang. Innstillinger kan kun endres av administrator.</p>
       </div>
     );
   }

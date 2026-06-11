@@ -47,13 +47,13 @@ export default async function LeverandorDashboardPage() {
   const { stats, recentActivity } = await loadProviderDashboard(provider.id);
 
   const kpis = [
-    { label: "Aktive kunder", value: String(stats.activeCustomers), foot: "Ikke suspendert eller pauset" },
-    { label: "Aktive avtaler", value: String(stats.activeAgreements), foot: "Status ACTIVE" },
-    { label: "Ordrer denne uken", value: String(stats.ordersThisWeek), foot: "ISO-uke, status ACTIVE" },
+    { label: "Aktive kunder", value: String(stats.activeCustomers), foot: "Bedrifter med løpende lunsjordning" },
+    { label: "Aktive avtaler", value: String(stats.activeAgreements), foot: "Løpende leveranseavtaler" },
+    { label: "Ordrer denne uken", value: String(stats.ordersThisWeek), foot: "Bestillinger i inneværende uke" },
     {
       label: "Omsetning siste 30 dager",
       value: formatProviderRevenue(stats.revenueLast30DaysNok),
-      foot: "Sum line_total på ordrer",
+      foot: "Samlet ordreverdi",
     },
   ];
 
@@ -84,7 +84,7 @@ export default async function LeverandorDashboardPage() {
         <div className="ds-provider-quick-grid">
           <Link href="/leverandor/kunder/ny" className="ds-card">
             <h3 className="ds-card__title">Legg til kunde</h3>
-            <p className="ds-card__text">Registrer ny bedrift (Patch 13).</p>
+            <p className="ds-card__text">Registrer en ny bedrift og sett opp lunsjordning.</p>
           </Link>
           <Link href="/leverandor/kunder" className="ds-card">
             <h3 className="ds-card__title">Se kunder</h3>
@@ -92,17 +92,22 @@ export default async function LeverandorDashboardPage() {
               {stats.ordersThisWeek} ordrer denne uken · administrer kunder.
             </p>
           </Link>
-          <div className="ds-card ds-provider-nav__item is-disabled">
+          <Link href="/leverandor/meny" className="ds-card">
             <h3 className="ds-card__title">Oppdater meny</h3>
-            <p className="ds-card__text">Meny-redigering kommer i Patch 11.</p>
-          </div>
+            <p className="ds-card__text">Administrer menyinnholdet som vises for bedriftene dine.</p>
+          </Link>
         </div>
       </section>
 
       <section className="ds-section" aria-label="Siste aktivitet">
         <h2 className="ds-h2">Siste aktivitet</h2>
         {recentActivity.length === 0 ? (
-          <p className="ds-body">Ingen registrerte hendelser ennå.</p>
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">Ingen hendelser ennå</p>
+            <p className="ds-provider-empty__text">
+              Når kunder, avtaler eller ordrer endres, vises de siste hendelsene her.
+            </p>
+          </div>
         ) : (
           <div className="ds-provider-activity">
             {recentActivity.map((row) => (

@@ -95,7 +95,7 @@ export default function KitchenOrderCard({
         </button>
       ) : null}
 
-      {!canAdvance ? <p className="ds-provider-activity__meta">Kun visning (mangler kjøkken-rolle).</p> : null}
+      {!canAdvance ? <p className="ds-provider-activity__meta">Kun visning — du har lesetilgang til ordrene.</p> : null}
     </article>
   );
 }
