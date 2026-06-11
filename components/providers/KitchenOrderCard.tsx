@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { advanceKitchenOrder } from "@/app/leverandor/ordrer/actions";
+import { formatDateNO } from "@/lib/date/format";
 import {
   kitchenStatusLabel,
   kitchenStatusPillClass,
@@ -13,6 +14,7 @@ import {
   type KitchenOrderStatus,
 } from "@/lib/providers/kitchenOrderStatus";
 import type { KitchenOrderRow } from "@/lib/providers/loadKitchenOrders";
+import { PROVIDER_ORDERS_COPY } from "@/lib/providers/providerOrdersSurface";
 
 export default function KitchenOrderCard({
   order,
@@ -58,7 +60,7 @@ export default function KitchenOrderCard({
         <div>
           <h3 className="ds-provider-order-card__title">{row.companyName}</h3>
           <p className="ds-provider-order-card__meta">
-            {row.date}
+            {formatDateNO(row.date) || row.date}
             {row.slot ? ` · ${row.slot}` : ""}
           </p>
         </div>
@@ -95,7 +97,7 @@ export default function KitchenOrderCard({
         </button>
       ) : null}
 
-      {!canAdvance ? <p className="ds-provider-activity__meta">Kun visning — du har lesetilgang til ordrene.</p> : null}
+      {!canAdvance ? <p className="ds-provider-activity__meta">{PROVIDER_ORDERS_COPY.readOnlyNote}</p> : null}
     </article>
   );
 }

@@ -666,6 +666,46 @@
   color: var(--ds-text-soft);
 }
 
+/* Operasjonell micro-guidance i empty state (/leverandor/ordrer). */
+.ds-provider-empty__steps {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-empty__steps li::before {
+  content: "·";
+  margin-right: 8px;
+  font-weight: 800;
+  color: var(--ds-text);
+}
+
+/* Tellinger på statuschips. */
+.ds-provider-status-pill__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  background: var(--ds-bg-soft, rgba(17, 17, 17, .06));
+  color: var(--ds-text);
+}
+
+.ds-provider-status-pill.is-active .ds-provider-status-pill__count {
+  background: rgba(255, 255, 255, .85);
+}
+
 .ds-provider-reg-detail {
   display: grid;
   gap: 10px;
