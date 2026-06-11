@@ -12,6 +12,8 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadProviderCustomers, type ProviderCustomerFilter } from "@/lib/providers/loadProviderCustomers";
+import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
+import { PROVIDER_CUSTOMERS_COPY, providerCustomersSubheading } from "@/lib/providers/providerCustomersSurface";
 
 function parseFilter(raw: string | undefined): ProviderCustomerFilter {
   const v = String(raw ?? "all").toLowerCase();
@@ -39,18 +41,21 @@ export default async function LeverandorKunderPage({
   const search = typeof sp.q === "string" ? sp.q : "";
   const page = typeof sp.page === "string" ? Number(sp.page) : 1;
 
-  const list = await loadProviderCustomers(provider.id, filter, search, page);
+  const [list, settings] = await Promise.all([
+    loadProviderCustomers(provider.id, filter, search, page),
+    loadProviderOperationalSettings(provider.id),
+  ]);
 
   return (
     <div className="ds-container">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">Leverandør</p>
-          <h1 className="ds-h2">Kunder</h1>
-          <p className="ds-lead">Administrer bedrifter under {provider.name}.</p>
+          <p className="ds-eyebrow">{PROVIDER_CUSTOMERS_COPY.eyebrow}</p>
+          <h1 className="ds-h2">{PROVIDER_CUSTOMERS_COPY.heading}</h1>
+          <p className="ds-lead">{providerCustomersSubheading(provider.name)}</p>
         </div>
       </header>
-      <CustomerList initial={list} />
+      <CustomerList initial={list} locale={settings.locale} />
     </div>
   );
 }
