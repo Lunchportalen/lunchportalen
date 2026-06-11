@@ -30,6 +30,17 @@ export type ProviderAgreementRow = {
   id: string;
   status: string;
   createdAt: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  deliveryDays: string[];
+  locationId: string | null;
+  tier: string | null;
+};
+
+export type ProviderCompanyLocationRow = {
+  id: string;
+  name: string;
+  address: string | null;
 };
 
 export type ProviderOrderRow = {
@@ -43,6 +54,7 @@ export type ProviderCustomerDetail = {
   company: ProviderCompanyDetail;
   stats: ProviderCompanyStats;
   agreements: ProviderAgreementRow[];
+  locations: ProviderCompanyLocationRow[];
   orders: ProviderOrderRow[];
   activity: ProviderActivityItem[];
 };
@@ -109,11 +121,17 @@ export async function loadProviderCustomerDetail(
   const today = osloTodayISODate();
   const monthStart = addDaysISO(today, -30);
 
-  const [employeesP, ordersActiveP, ordersMonthP, agreementsP, ordersP, activityP] = await Promise.all([
+  const [employeesP, ordersActiveP, ordersMonthP, agreementsP, locationsP, ordersP, activityP] = await Promise.all([
     sb.from("profiles").select("id", { count: "exact", head: true }).eq("company_id", cid).is("disabled_at", null),
     sb.from("orders").select("id", { count: "exact", head: true }).eq("company_id", cid).eq("status", "ACTIVE"),
     sb.from("orders").select("line_total").eq("company_id", cid).gte("date", monthStart).lte("date", today).in("status", ["ACTIVE", "PAUSED"]),
-    sb.from("agreements").select("id, status, created_at").eq("company_id", cid).order("created_at", { ascending: false }).limit(10),
+    sb
+      .from("agreements")
+      .select("id, status, created_at, starts_at, ends_at, delivery_days, location_id, tier")
+      .eq("company_id", cid)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    sb.from("company_locations").select("id, name, address").eq("company_id", cid).limit(50),
     sb.from("orders").select("id, date, status, line_total").eq("company_id", cid).order("date", { ascending: false }).limit(20),
     (sb as any)
       .from("lifecycle_audit_log")
@@ -140,6 +158,21 @@ export async function loadProviderCustomerDetail(
       id: safeStr(a.id),
       status: safeStr(a.status) || "UNKNOWN",
       createdAt: a.created_at != null ? String(a.created_at) : null,
+      startsAt: a.starts_at != null ? String(a.starts_at) : null,
+      endsAt: a.ends_at != null ? String(a.ends_at) : null,
+      deliveryDays: Array.isArray(a.delivery_days)
+        ? a.delivery_days.map((d) => safeStr(d).toLowerCase()).filter(Boolean)
+        : [],
+      locationId: a.location_id != null ? safeStr(a.location_id) : null,
+      tier: a.tier != null ? safeStr(a.tier) : null,
+    }),
+  );
+
+  const locations: ProviderCompanyLocationRow[] = (Array.isArray(locationsP.data) ? locationsP.data : []).map(
+    (l: Record<string, unknown>) => ({
+      id: safeStr(l.id),
+      name: safeStr(l.name),
+      address: l.address != null ? safeStr(l.address) : null,
     }),
   );
 
@@ -160,5 +193,5 @@ export async function loadProviderCustomerDetail(
     }),
   );
 
-  return { company, stats, agreements, orders, activity };
+  return { company, stats, agreements, locations, orders, activity };
 }

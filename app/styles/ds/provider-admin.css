@@ -736,6 +736,45 @@
   background: rgba(255, 255, 255, .85);
 }
 
+/* Avtale-kort på kundedetalj (/leverandor/kunder/[id]). */
+.ds-provider-agreement-card {
+  display: grid;
+  gap: 8px;
+  padding: 20px 22px;
+  margin-bottom: 12px;
+}
+
+.ds-provider-agreement-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ds-provider-agreement-card__head .ds-h4 {
+  margin: 0;
+}
+
+.ds-provider-agreement-card .ds-provider-reg-detail {
+  margin: 4px 0 0;
+}
+
+/* Kontrollert avvik (f.eks. leveringsdager utenfor man-fre) — rolig, ikke alarm. */
+.ds-provider-agreement-warning {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(178, 80, 0, 0.3);
+  background: rgba(178, 80, 0, 0.06);
+  color: #b25000;
+  font-size: 14px;
+}
+
+.ds-provider-agreement-card .ds-provider-agreement-warning {
+  margin: 4px 0 0;
+}
+
 .ds-provider-reg-detail {
   display: grid;
   gap: 10px;
