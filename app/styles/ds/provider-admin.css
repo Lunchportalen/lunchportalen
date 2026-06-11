@@ -776,6 +776,11 @@
   margin-bottom: 16px;
 }
 
+/* Summary venstrejustert, CTA høyrejustert — rolig kontrollflate. */
+.ds-provider-service-areas-toolbar .ds-provider-reg-summary {
+  margin: 0 auto 0 0;
+}
+
 .ds-provider-service-area-list {
   display: grid;
   gap: 12px;
