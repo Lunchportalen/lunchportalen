@@ -90,7 +90,7 @@ function line(value: string) {
   return value ? value : "-";
 }
 
-export async function POST(req: NextRequest) {
+async function handler(req: NextRequest) {
   const rid = makeRid("cron_daily_order_summary");
 
   try {
@@ -382,3 +382,8 @@ export async function POST(req: NextRequest) {
     });
   }
 }
+
+// Vercel cron kaller cron-paths med GET; POST beholdes for manuell/eksisterende trigger.
+// Samme handler og auth (requireCronAuth er header-basert og metode-agnostisk).
+export const GET = handler;
+export const POST = handler;
