@@ -34,6 +34,7 @@ import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
 import type { StoredMealContract } from "@/lib/server/agreements/mealContract";
 import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
@@ -931,6 +932,20 @@ export async function GET(req: NextRequest) {
       lunchCategoryRows = [];
     }
 
+    // Provider-scope for menuDay (server truth: companies.provider_id → providers.slug).
+    // fail-closed: provider finnes men kan ikke scopes trygt → ingen menuDay-henting
+    // (statisk katalog-fallback beholdes). Aldri en annen providers meny.
+    const menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(admin, sc.company_id));
+    if (menuScope.mode !== "scoped") {
+      opsLog("window.menuScope", {
+        rid,
+        company_id: sc.company_id,
+        mode: menuScope.mode,
+        reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
+      });
+    }
+    const menuDayOpts = menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined;
+
     const days = await Promise.all(
       legacyDays.map(async (day) => {
         const planTier = asPlanTier((day as any).planTier ?? (day as any).tier);
@@ -940,7 +955,8 @@ export async function GET(req: NextRequest) {
         const hasStaticCatalog = Object.keys(staticItemsByCategory).length > 0;
 
         try {
-          const menus = await getMenuForDateAndPlan(day.date, planTier);
+          const menus =
+            menuScope.mode === "fail-closed" ? [] : await getMenuForDateAndPlan(day.date, planTier, menuDayOpts);
           if (menus.length > 0) {
             return {
               ...day,

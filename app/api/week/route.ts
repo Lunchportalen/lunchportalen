@@ -15,6 +15,7 @@ import { opsLog } from "@/lib/ops/log";
 import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import type { MenuDay } from "@/lib/cms/menuDay";
 
 type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
@@ -171,14 +172,32 @@ export async function GET(req: Request) {
       return jsonError(500, _rid, "WEEK_RANGE_INVALID", "Ugyldig ukeintervall.");
     }
 
+    // Provider-scope for menuDay (server truth: companies.provider_id → providers.slug).
+    // fail-closed: provider finnes men kan ikke scopes trygt → ingen menuDay-henting.
+    // Aldri en annen providers meny.
+    const menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(admin, companyId));
+    if (menuScope.mode !== "scoped") {
+      opsLog("week.menuScope", {
+        rid: _rid,
+        company_id: companyId,
+        mode: menuScope.mode,
+        reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
+      });
+    }
+
     const menuByDate = new Map<string, MenuDay>();
     let menuFetchFailed = false;
     try {
-      const { getMenuForDates } = await import("@/lib/cms/menuDay");
-      const menus = await getMenuForDates(dates);
-      for (const m of menus ?? []) {
-        const dt = String((m as MenuDay).date ?? "").slice(0, 10);
-        if (dt) menuByDate.set(dt, m as MenuDay);
+      if (menuScope.mode !== "fail-closed") {
+        const { getMenuForDates } = await import("@/lib/cms/menuDay");
+        const menus = await getMenuForDates(
+          dates,
+          menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined,
+        );
+        for (const m of menus ?? []) {
+          const dt = String((m as MenuDay).date ?? "").slice(0, 10);
+          if (dt) menuByDate.set(dt, m as MenuDay);
+        }
       }
     } catch (e: unknown) {
       menuFetchFailed = true;
