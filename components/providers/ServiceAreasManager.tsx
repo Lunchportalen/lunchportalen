@@ -5,24 +5,15 @@ import { useRouter } from "next/navigation";
 
 import { toggleServiceArea } from "@/app/leverandor/omrader/actions";
 import ServiceAreaEditor from "@/components/providers/ServiceAreaEditor";
+import type { ServiceAreaRow } from "@/lib/providers/serviceAreaShared";
 import {
-  WEEKDAY_KEYS,
-  WEEKDAY_LABELS,
-  type ServiceAreaRow,
-} from "@/lib/providers/serviceAreaShared";
-
-function formatDays(days: string[]) {
-  return WEEKDAY_KEYS.filter((d) => days.includes(d))
-    .map((d) => WEEKDAY_LABELS[d])
-    .join(", ");
-}
-
-function formatEmployees(min: number | null, max: number | null) {
-  if (min != null && max != null) return `${min}–${max}`;
-  if (min != null) return `${min}+`;
-  if (max != null) return `≤${max}`;
-  return "—";
-}
+  PROVIDER_COVERAGE_COPY,
+  PROVIDER_COVERAGE_EMPTY_STATE,
+  coverageStatusLabel,
+  formatCoverageDays,
+  formatCoverageEmployees,
+  providerCoverageSummary,
+} from "@/lib/providers/providerCoverageSurface";
 
 export default function ServiceAreasManager({
   providerId,
@@ -38,6 +29,8 @@ export default function ServiceAreasManager({
   const [selected, setSelected] = useState<ServiceAreaRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const copy = PROVIDER_COVERAGE_COPY;
 
   const citySuggestions = useMemo(
     () => [...new Set(rows.map((r) => r.city).filter(Boolean))].sort(),
@@ -69,15 +62,30 @@ export default function ServiceAreasManager({
     });
   }
 
+  function toggleButton(row: ServiceAreaRow) {
+    return (
+      <button
+        type="button"
+        className="ds-btn ds-btn--secondary"
+        disabled={pending}
+        title={row.active ? copy.actions.deactivateTitle : copy.actions.activateTitle}
+        onClick={() => onToggle(row)}
+      >
+        {row.active ? copy.actions.deactivate : copy.actions.activate}
+      </button>
+    );
+  }
+
   return (
     <>
       <div className="ds-provider-service-areas-toolbar">
+        <p className="ds-provider-reg-summary">{providerCoverageSummary(rows)}</p>
         {canEdit ? (
-          <button type="button" className="ds-btn ds-btn--primary" onClick={openCreate}>
-            Legg til område
+          <button type="button" className="ds-btn ds-btn--primary" title={copy.ctaTitle} onClick={openCreate}>
+            {copy.cta}
           </button>
         ) : (
-          <p className="ds-body">Du har lesetilgang. Endringer krever administratortilgang.</p>
+          <p className="ds-body">{copy.readOnlyNote}</p>
         )}
       </div>
 
@@ -87,105 +95,90 @@ export default function ServiceAreasManager({
         </p>
       ) : null}
 
-      <div className="ds-provider-service-area-list">
-        {rows.length === 0 ? (
-          <div className="ds-provider-empty">
-            <p className="ds-provider-empty__title">Ingen dekningsområder ennå</p>
-            <p className="ds-provider-empty__text">
-              Legg til ditt første område for å bli synlig for bedrifter i nærheten.
-            </p>
-          </div>
-        ) : (
-          rows.map((row) => (
-            <article
-              key={row.id}
-              className={`ds-provider-service-area-row${row.active ? "" : " is-inactive"}`}
-            >
-              <div className="ds-provider-service-area-row__main">
-                <h2 className="ds-h4">{row.city}</h2>
-                <p className="ds-provider-reg-meta">
-                  {row.postal_code_from}–{row.postal_code_to} · {formatEmployees(row.min_employees, row.max_employees)}
-                </p>
-                <p className="ds-provider-reg-meta">{formatDays(row.available_days)}</p>
-              </div>
-              <div className="ds-provider-service-area-row__meta">
-                <span className={`ds-provider-status-pill${row.active ? " is-active" : ""}`}>
-                  {row.active ? "Aktiv" : "Inaktiv"}
-                </span>
-              </div>
-              {canEdit ? (
-                <div className="ds-provider-service-area-row__actions">
-                  <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openEdit(row)}>
-                    Rediger
-                  </button>
-                  <button
-                    type="button"
-                    className="ds-btn ds-btn--secondary"
-                    disabled={pending}
-                    onClick={() => onToggle(row)}
-                  >
-                    {row.active ? "Deaktiver" : "Aktiver"}
-                  </button>
+      {rows.length === 0 ? (
+        <div className="ds-provider-empty">
+          <p className="ds-provider-empty__title">{PROVIDER_COVERAGE_EMPTY_STATE.title}</p>
+          <p className="ds-provider-empty__text">{PROVIDER_COVERAGE_EMPTY_STATE.text}</p>
+          <ul className="ds-provider-empty__steps">
+            {PROVIDER_COVERAGE_EMPTY_STATE.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <>
+          <div className="ds-provider-service-area-list">
+            {rows.map((row) => (
+              <article
+                key={row.id}
+                className={`ds-provider-service-area-row${row.active ? "" : " is-inactive"}`}
+              >
+                <div className="ds-provider-service-area-row__main">
+                  <h2 className="ds-h4">{row.city}</h2>
+                  <p className="ds-provider-reg-meta">
+                    {row.postal_code_from}–{row.postal_code_to} ·{" "}
+                    {formatCoverageEmployees(row.min_employees, row.max_employees)}
+                  </p>
+                  <p className="ds-provider-reg-meta">{formatCoverageDays(row.available_days)}</p>
                 </div>
-              ) : null}
-            </article>
-          ))
-        )}
-      </div>
-
-      <div className="ds-provider-reg-table-wrap ds-provider-reg-table-wrap--desktop">
-        <table className="ds-provider-reg-table">
-          <thead>
-            <tr>
-              <th>By</th>
-              <th>Postnr</th>
-              <th>Ansatte</th>
-              <th>Dager</th>
-              <th>Status</th>
-              {canEdit ? <th /> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={canEdit ? 6 : 5} className="ds-provider-reg-empty">
-                  Ingen dekningsområder ennå.
-                  <span className="ds-provider-reg-meta">
-                    Legg til ditt første område for å bli synlig for bedrifter i nærheten.
+                <div className="ds-provider-service-area-row__meta">
+                  <span className={`ds-provider-status-pill${row.active ? " is-active" : ""}`}>
+                    {coverageStatusLabel(row.active)}
                   </span>
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => (
-                <tr key={row.id} className={row.active ? "" : "is-inactive"}>
-                  <td>{row.city}</td>
-                  <td>
-                    {row.postal_code_from}–{row.postal_code_to}
-                  </td>
-                  <td>{formatEmployees(row.min_employees, row.max_employees)}</td>
-                  <td>{formatDays(row.available_days)}</td>
-                  <td>{row.active ? "Aktiv" : "Inaktiv"}</td>
-                  {canEdit ? (
-                    <td className="ds-provider-service-area-row__actions-inline">
-                      <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openEdit(row)}>
-                        Rediger
-                      </button>
-                      <button
-                        type="button"
-                        className="ds-btn ds-btn--secondary"
-                        disabled={pending}
-                        onClick={() => onToggle(row)}
-                      >
-                        {row.active ? "Deaktiver" : "Aktiver"}
-                      </button>
-                    </td>
-                  ) : null}
+                </div>
+                {canEdit ? (
+                  <div className="ds-provider-service-area-row__actions">
+                    <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openEdit(row)}>
+                      {copy.actions.edit}
+                    </button>
+                    {toggleButton(row)}
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+
+          <div className="ds-provider-reg-table-wrap ds-provider-reg-table-wrap--desktop">
+            <table className="ds-provider-reg-table">
+              <thead>
+                <tr>
+                  <th>{copy.tableHeaders.area}</th>
+                  <th>{copy.tableHeaders.postalCodes}</th>
+                  <th>{copy.tableHeaders.minEmployees}</th>
+                  <th>{copy.tableHeaders.deliveryDays}</th>
+                  <th>{copy.tableHeaders.status}</th>
+                  {canEdit ? <th /> : null}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id} className={row.active ? "" : "is-inactive"}>
+                    <td>{row.city}</td>
+                    <td>
+                      {row.postal_code_from}–{row.postal_code_to}
+                    </td>
+                    <td>{formatCoverageEmployees(row.min_employees, row.max_employees)}</td>
+                    <td>{formatCoverageDays(row.available_days)}</td>
+                    <td>
+                      <span className={`ds-provider-status-pill${row.active ? " is-active" : ""}`}>
+                        {coverageStatusLabel(row.active)}
+                      </span>
+                    </td>
+                    {canEdit ? (
+                      <td className="ds-provider-service-area-row__actions-inline">
+                        <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openEdit(row)}>
+                          {copy.actions.edit}
+                        </button>
+                        {toggleButton(row)}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <ServiceAreaEditor
         open={editorOpen}
