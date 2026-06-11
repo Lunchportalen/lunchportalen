@@ -18,6 +18,7 @@ import {
   buildProviderFollowUps,
   mapProviderDashboardActivity,
 } from "@/lib/providers/providerDashboardActivity";
+import { PROVIDER_AGREEMENTS_KPI_COPY } from "@/lib/providers/providerDashboardKpis";
 
 export default async function LeverandorDashboardPage() {
   const auth = await getAuthContext();
@@ -46,9 +47,15 @@ export default async function LeverandorDashboardPage() {
     revenueLast30DaysNok: stats.revenueLast30DaysNok,
   });
 
-  const kpis = [
+  const kpis: Array<{ label: string; value: string; foot: string; href?: string; linkTitle?: string }> = [
     { label: "Aktive kunder", value: String(stats.activeCustomers), foot: "Bedrifter med aktiv lunsjordning" },
-    { label: "Aktive avtaler", value: String(stats.activeAgreements), foot: "Løpende leveranseavtaler" },
+    {
+      label: PROVIDER_AGREEMENTS_KPI_COPY.label,
+      value: String(stats.activeAgreements),
+      foot: PROVIDER_AGREEMENTS_KPI_COPY.foot,
+      href: PROVIDER_AGREEMENTS_KPI_COPY.href,
+      linkTitle: PROVIDER_AGREEMENTS_KPI_COPY.linkTitle,
+    },
     { label: "Ordrer denne uken", value: String(stats.ordersThisWeek), foot: "Bestillinger i inneværende uke" },
     {
       label: "Ordreverdi siste 30 dager",
@@ -89,13 +96,26 @@ export default async function LeverandorDashboardPage() {
 
       <section className="ds-section" aria-label="Nøkkeltall">
         <div className="ds-admin-kpi-row">
-          {kpis.map((item) => (
-            <div className="ds-admin-kpi" key={item.label}>
-              <div className="ds-admin-kpi__label">{item.label}</div>
-              <div className="ds-admin-kpi__value">{item.value}</div>
-              <div className="ds-admin-kpi__foot">{item.foot}</div>
-            </div>
-          ))}
+          {kpis.map((item) =>
+            item.href ? (
+              <Link
+                href={item.href}
+                title={item.linkTitle}
+                className="ds-admin-kpi ds-admin-kpi--link"
+                key={item.label}
+              >
+                <div className="ds-admin-kpi__label">{item.label}</div>
+                <div className="ds-admin-kpi__value">{item.value}</div>
+                <div className="ds-admin-kpi__foot">{item.foot}</div>
+              </Link>
+            ) : (
+              <div className="ds-admin-kpi" key={item.label}>
+                <div className="ds-admin-kpi__label">{item.label}</div>
+                <div className="ds-admin-kpi__value">{item.value}</div>
+                <div className="ds-admin-kpi__foot">{item.foot}</div>
+              </div>
+            ),
+          )}
         </div>
       </section>
 
