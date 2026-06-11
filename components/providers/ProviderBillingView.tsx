@@ -34,7 +34,7 @@ export default function ProviderBillingView({
     <div className="ds-provider-billing">
       {sub ? (
         <section className="ds-card ds-provider-billing-summary">
-          <p className="ds-eyebrow">Aktiv lisens</p>
+          <p className="ds-eyebrow">Aktiv avtale</p>
           <h2 className="ds-h3">{PLAN_LABELS[sub.plan] ?? sub.plan}</h2>
           <dl className="ds-provider-billing-kpis">
             <div>
@@ -59,7 +59,8 @@ export default function ProviderBillingView({
       ) : (
         <section className="ds-card">
           <p className="ds-body">
-            Ingen aktiv SaaS-lisens er registrert ennå. Kontakt Lunchportalen for å aktivere fakturering.
+            Ingen aktiv avtale er registrert ennå. Kontakt Lunchportalen for å komme i gang med oppgjør og
+            fakturering.
           </p>
         </section>
       )}
@@ -67,7 +68,12 @@ export default function ProviderBillingView({
       <section className="ds-section">
         <h2 className="ds-h3">Fakturahistorikk</h2>
         {bundle.invoices.length === 0 ? (
-          <p className="ds-body">Ingen fakturaer generert ennå.</p>
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">Ingen fakturagrunnlag er generert ennå</p>
+            <p className="ds-provider-empty__text">
+              Når oppgjør og plattformkostnader er klare, vises fakturaene her med beløp, status og forfall.
+            </p>
+          </div>
         ) : (
           <>
             <div className="ds-provider-service-area-list">

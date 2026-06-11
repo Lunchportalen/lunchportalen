@@ -33,7 +33,7 @@ export default async function LeverandorOmraderPage() {
           <p className="ds-eyebrow">Leverandør</p>
           <h1 className="ds-h2">Dekningsområder</h1>
           <p className="ds-lead">
-            Postnummer-intervaller styrer hvilke bedrifter som matches til {provider.name} ved registrering.
+            Dekningsområdene avgjør hvilke bedrifter som kan velge {provider.name} når de registrerer seg.
           </p>
         </div>
       </header>

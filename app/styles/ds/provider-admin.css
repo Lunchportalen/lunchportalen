@@ -189,6 +189,11 @@
 
 .ds-provider-customer-list--desktop {
   display: none;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px;
+  border: 1px solid var(--ds-border, rgba(17, 17, 17, 0.1));
+  background: var(--ds-surface, #fff);
 }
 
 .ds-provider-customer-table {
@@ -199,9 +204,20 @@
 
 .ds-provider-customer-table th,
 .ds-provider-customer-table td {
-  padding: 12px 10px;
+  padding: 14px 16px;
   text-align: left;
   border-bottom: 1px solid var(--ds-line);
+}
+
+.ds-provider-customer-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-customer-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .ds-provider-customer-table__link {
@@ -568,6 +584,36 @@
   text-align: center;
   color: var(--ds-text-soft);
   padding: 28px 16px !important;
+}
+
+.ds-provider-reg-empty .ds-provider-reg-meta {
+  margin-top: 6px;
+}
+
+/* Rolig, felles tomtilstand for leverandørflatene. */
+.ds-provider-empty {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(28px, 5vw, 44px) 20px;
+  border-radius: var(--ds-radius-md, 22px);
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface, #fff);
+}
+
+.ds-provider-empty__title {
+  margin: 0;
+  font-weight: 800;
+  color: var(--ds-text);
+}
+
+.ds-provider-empty__text {
+  margin: 0;
+  max-width: 48ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ds-text-soft);
 }
 
 .ds-provider-reg-detail {

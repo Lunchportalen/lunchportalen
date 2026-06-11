@@ -40,7 +40,13 @@ export default function KitchenOrdersView({
       <KitchenFilters companies={bundle.companies} />
 
       {bundle.orders.length === 0 ? (
-        <p className="ds-body">Ingen ordrer i valgt periode.</p>
+        <div className="ds-provider-empty">
+          <p className="ds-provider-empty__title">Ingen ordrer i valgt periode</p>
+          <p className="ds-provider-empty__text">
+            Det finnes ingen ordrer for valgt periode. Når bedrifter har aktive bestillinger, vises de her som
+            produksjonsgrunnlag.
+          </p>
+        </div>
       ) : (
         <div className="ds-provider-kitchen-grid">
           {groups.map(([key, orders]) => (

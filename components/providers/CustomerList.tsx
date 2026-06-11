@@ -110,8 +110,9 @@ export default function CustomerList({ initial }: { initial: ProviderCustomersPa
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="ds-body">
-                  Ingen kunder matcher filteret.
+                <td colSpan={5} className="ds-provider-reg-empty">
+                  Ingen kunder matcher valgt filter eller søk.
+                  <span className="ds-provider-reg-meta">Juster filteret, eller legg til en ny kunde.</span>
                 </td>
               </tr>
             ) : (
@@ -137,7 +138,10 @@ export default function CustomerList({ initial }: { initial: ProviderCustomersPa
 
       <div className="ds-provider-customer-list ds-provider-customer-list--mobile" aria-busy={pending}>
         {rows.length === 0 ? (
-          <p className="ds-body">Ingen kunder matcher filteret.</p>
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">Ingen kunder matcher valgt filter eller søk</p>
+            <p className="ds-provider-empty__text">Juster filteret, eller legg til en ny kunde.</p>
+          </div>
         ) : (
           rows.map((row) => (
             <Link key={row.id} href={`/leverandor/kunder/${row.id}`} className="ds-card ds-provider-customer-card">

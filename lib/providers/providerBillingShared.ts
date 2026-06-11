@@ -36,8 +36,8 @@ export type ProviderBillingBundle = {
 };
 
 export const PLAN_LABELS: Record<string, string> = {
-  SAAS_FIXED: "Fast SaaS-lisens",
-  SAAS_PER_COMPANY: "Per bedrift",
+  SAAS_FIXED: "Fast månedspris",
+  SAAS_PER_COMPANY: "Pris per bedrift",
   CUSTOM: "Tilpasset avtale",
 };
 

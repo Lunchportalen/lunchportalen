@@ -30,32 +30,28 @@ export default async function LeverandorMenyPage() {
         <div>
           <p className="ds-eyebrow">Leverandør</p>
           <h1 className="ds-h2">Meny</h1>
-          <p className="ds-lead">Meny og ukens retter administreres i Sanity Studio — én sannhetskilde for innhold.</p>
+          <p className="ds-lead">Administrer menyinnholdet som vises for bedriftene dine.</p>
         </div>
       </header>
 
       <section className="ds-card ds-provider-meny-card">
-        <h2 className="ds-h3">Sanity Studio</h2>
+        <h2 className="ds-h3">Menyinnhold redigeres i Sanity Studio</h2>
         <p className="ds-body">
-          Lunchportalen henter meny fra Sanity. Som leverandør redigerer du <strong>menuDay</strong> og relatert
-          innhold i Studio, filtrert på din provider.
+          Lunchportalen bruker Sanity som innholdskilde for ukens retter. Når menyen publiseres, synkroniseres den
+          til portalen.
         </p>
         <ol className="ds-provider-meny-steps">
-          <li>Åpne Sanity Studio (ny fane).</li>
-          <li>Finn dokumenttypen <strong>Menydag (menuDay)</strong>.</li>
-          <li>Velg riktig dato og provider — publiser når uken er klar.</li>
+          <li>Åpne menyredigering (åpnes i ny fane).</li>
+          <li>Velg <strong>Menydag</strong> og riktig dato.</li>
+          <li>Publiser når uken er klar — endringene blir synlige for bedriftene dine.</li>
         </ol>
-        <p className="ds-body">
-          Endringer i Studio synkroniseres til portalen etter publisering. Det finnes ingen separat in-app
-          meny-editor i leverandørportalen.
-        </p>
         <a
           href={studioUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="ds-btn ds-btn--primary"
         >
-          Åpne Sanity Studio
+          Åpne menyredigering
         </a>
       </section>
     </div>

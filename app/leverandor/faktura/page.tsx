@@ -31,8 +31,8 @@ export default async function LeverandorFakturaPage() {
       <header className="ds-provider-topbar">
         <div>
           <p className="ds-eyebrow">Leverandør</p>
-          <h1 className="ds-h2">Faktura og lisens</h1>
-          <p className="ds-lead">SaaS-lisens til Lunchportalen og oversikt over månedlige fakturaer.</p>
+          <h1 className="ds-h2">Faktura og oppgjør</h1>
+          <p className="ds-lead">Oversikt over fakturagrunnlag, provisjon og eventuelle plattformkostnader.</p>
         </div>
       </header>
       <ProviderBillingView bundle={bundle} providerId={provider.id} canEditContact={canEditContact} />
