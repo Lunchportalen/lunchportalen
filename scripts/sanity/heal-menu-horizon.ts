@@ -12,6 +12,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 import dotenv from "dotenv";
 import path from "node:path";
 
+import { MELHUS_PROVIDER_SANITY_ID, MELHUS_PROVIDER_SLUG } from "@/lib/cms/providerSanityConstants";
 import {
   runMenuWeekRollout,
   validateRolloutWeekMondayIso,
@@ -94,6 +95,21 @@ const argv = process.argv.slice(2);
 const dryRun = argv.includes("--dry-run");
 const dateArg = argv.find((a) => /^\d{4}-\d{2}-\d{2}$/.test(a));
 
+// Eksplisitt provider-scope (singleProviderSeedMode): standard = Melhus seed-provider,
+// overstyrbart med --provider-ref <uuid>. Kjernen feiler fail-closed uten provider.
+let sanityProviderRef = MELHUS_PROVIDER_SANITY_ID;
+let providerSlug: string | null = MELHUS_PROVIDER_SLUG;
+const prIdx = argv.findIndex((a) => a === "--provider-ref");
+if (prIdx !== -1) {
+  const ref = String(argv[prIdx + 1] ?? "").trim();
+  if (!ref) {
+    console.error("Bruk: --provider-ref <sanity provider _id / supabase providers.id>");
+    process.exit(1);
+  }
+  sanityProviderRef = ref;
+  providerSlug = null;
+}
+
 if (!dateArg) {
   console.error("Bruk: npm run sanity:heal-menu-horizon -- 2026-05-18 [--dry-run]");
   console.error("Argument må være mandag i ønsket uke (YYYY-MM-DD).");
@@ -110,7 +126,10 @@ try {
 }
 
 console.log(`Heal: kjører menu-week-rollout for uke som starter ${mondayDate}${dryRun ? " (DRY-RUN)" : ""}`);
-console.log("(Idempotent: skipper menuDay-docs som allerede finnes.)");
+console.log(
+  `Provider-scope: ${sanityProviderRef}${sanityProviderRef === MELHUS_PROVIDER_SANITY_ID ? " (Melhus seed-provider)" : ""}`,
+);
+console.log("(Idempotent: skipper menuDay-docs som allerede finnes for provideren.)");
 console.log("");
 
 let sanityRead: SanityClient;
@@ -124,6 +143,8 @@ try {
 }
 
 const result = await runMenuWeekRollout({
+  sanityProviderRef,
+  providerSlug,
   supabaseAdmin: () => buildSupabaseAdmin(),
   sanityRead,
   getSanityWrite: dryRun

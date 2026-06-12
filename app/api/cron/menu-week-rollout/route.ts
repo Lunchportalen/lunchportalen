@@ -5,6 +5,7 @@ export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
 
+import { MELHUS_PROVIDER_SANITY_ID, MELHUS_PROVIDER_SLUG } from "@/lib/cms/providerSanityConstants";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -12,6 +13,16 @@ import { runMenuWeekRollout } from "@/lib/menu-publish/runMenuWeekRollout";
 import { requireSanityWrite } from "@/lib/sanity/client";
 import { sanityServer } from "@/lib/sanity/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+
+/**
+ * singleProviderSeedMode (EKSPLISITT — ikke fallback):
+ * Menyen er fortsatt plattformstyrt, og cron ruller i dag kun ut for seed-provideren Melhus.
+ * Rollout-kjernen krever eksplisitt provider-scope og feiler uten (fail-closed).
+ * Multi-provider cron-rollout krever eksplisitt provider-rollout-konfig (egen senere patch) —
+ * vi looper bevisst IKKE blindt over alle providere.
+ */
+const SEED_PROVIDER_SANITY_REF = MELHUS_PROVIDER_SANITY_ID;
+const SEED_PROVIDER_SLUG = MELHUS_PROVIDER_SLUG;
 
 export async function GET(req: NextRequest) {
   const rid = makeRid("cron_mwr");
@@ -42,6 +53,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const data = await runMenuWeekRollout({
+      sanityProviderRef: SEED_PROVIDER_SANITY_REF,
+      providerSlug: SEED_PROVIDER_SLUG,
       supabaseAdmin,
       sanityRead: sanityServer,
       getSanityWrite: requireSanityWrite,

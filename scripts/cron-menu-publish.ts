@@ -9,6 +9,7 @@ import { createClient as createSupabaseClient, type SupabaseClient } from "@supa
 import dotenv from "dotenv";
 import path from "node:path";
 
+import { MELHUS_PROVIDER_SANITY_ID, MELHUS_PROVIDER_SLUG } from "@/lib/cms/providerSanityConstants";
 import {
   runMenuWeekRollout,
   validateRolloutWeekMondayIso,
@@ -112,6 +113,21 @@ if (twIdx !== -1 && argv[twIdx + 1]) {
   targetWeek = argv[twIdx + 1];
 }
 
+// Eksplisitt provider-scope (singleProviderSeedMode): standard = Melhus seed-provider,
+// overstyrbart med --provider-ref <uuid>. Kjernen feiler fail-closed uten provider.
+let sanityProviderRef = MELHUS_PROVIDER_SANITY_ID;
+let providerSlug: string | null = MELHUS_PROVIDER_SLUG;
+const prIdx = argv.findIndex((a) => a === "--provider-ref");
+if (prIdx !== -1) {
+  const ref = String(argv[prIdx + 1] ?? "").trim();
+  if (!ref) {
+    console.error("Bruk: --provider-ref <sanity provider _id / supabase providers.id>");
+    process.exit(1);
+  }
+  sanityProviderRef = ref;
+  providerSlug = null;
+}
+
 if (!targetWeek || !/^\d{4}-\d{2}-\d{2}$/.test(targetWeek)) {
   console.error("Bruk: npm run cron:menu-publish -- --target-week 2026-05-18 [--dry-run]");
   process.exit(1);
@@ -137,9 +153,14 @@ if (!dryRun) {
 }
 
 console.log(`Rollout ${dryRun ? "(DRY-RUN) " : ""}uke ${mondayDate}`);
+console.log(
+  `Provider-scope: ${sanityProviderRef}${sanityProviderRef === MELHUS_PROVIDER_SANITY_ID ? " (Melhus seed-provider)" : ""}`,
+);
 console.log("");
 
 const result = await runMenuWeekRollout({
+  sanityProviderRef,
+  providerSlug,
   supabaseAdmin: () => buildSupabaseAdmin(),
   sanityRead,
   getSanityWrite: dryRun

@@ -1,10 +1,6 @@
 import "server-only";
 
-import {
-  MELHUS_PROVIDER_SANITY_ID,
-  MELHUS_PROVIDER_NAME,
-  MELHUS_PROVIDER_SLUG,
-} from "@/lib/cms/providerSanityConstants";
+import { MELHUS_PROVIDER_SANITY_ID } from "@/lib/cms/providerSanityConstants";
 import { requireSanityWrite } from "@/lib/sanity/client";
 import { supabaseServer } from "@/lib/supabase/server";
 import type { Provider, ProviderStatus } from "@/lib/providers/types";
@@ -27,8 +23,14 @@ function mapStatus(raw: unknown): ProviderStatus {
 }
 
 function toSanityProviderDoc(row: Pick<Provider, "id" | "name" | "slug" | "logoUrl" | "primaryColor" | "status">) {
-  const name = safeStr(row.name) || MELHUS_PROVIDER_NAME;
-  const slug = safeStr(row.slug) || MELHUS_PROVIDER_SLUG;
+  // Fail-closed: aldri Melhus (eller annen default) som erstatning for tomme providerfelt.
+  const name = safeStr(row.name);
+  const slug = safeStr(row.slug);
+  if (!name || !slug) {
+    throw new Error(
+      `syncProviderToSanity: provider ${safeStr(row.id) || "(ukjent id)"} mangler ${!name ? "name" : "slug"} — fail-closed, ingen Melhus-fallback.`,
+    );
+  }
   return {
     _id: row.id,
     _type: "provider" as const,
