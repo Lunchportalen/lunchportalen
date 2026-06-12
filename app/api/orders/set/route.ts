@@ -10,6 +10,9 @@ import { isIsoDate } from "@/lib/date/oslo";
 import { coerceOrderWriteErrorResponse, jsonOrderWriteErr, jsonOrderWriteOk, orderWriteStatusFromDb } from "@/lib/http/respond";
 import { companyIdFromCtx, readJson, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
 import { getPublishedMenuForDate } from "@/lib/cms/menuDay";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
+import { opsLog } from "@/lib/ops/log";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
 import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
 import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
@@ -132,10 +135,36 @@ export async function POST(req: NextRequest) {
 
   const rpcAction = action === "ORDER" ? "SET" : "CANCEL";
 
+  const companyId = companyIdFromCtx(auth.ctx);
+
   // Fail-closed menu gate kun ved ny bestilling — avbestilling skal ikke blokkeres av CMS.
+  // Provider-scope for menuDay (server truth: companies.provider_id → providers.slug).
+  // fail-closed: provider/company kan ikke scopes trygt → aldri en annen providers meny.
   if (action === "ORDER") {
+    let menuScope: MenuScopeDecision = { mode: "fail-closed", reason: "COMPANY_SCOPE_MISSING" };
+    if (companyId) {
+      try {
+        menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(supabaseAdmin(), companyId));
+      } catch (e: unknown) {
+        menuScope = { mode: "fail-closed", reason: safeStr((e as { message?: string })?.message) || "SCOPE_LOOKUP_FAILED" };
+      }
+    }
+    if (menuScope.mode !== "scoped") {
+      opsLog("orders.set.menuScope", {
+        rid,
+        company_id: companyId || null,
+        mode: menuScope.mode,
+        reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
+      });
+    }
+    if (menuScope.mode === "fail-closed") {
+      return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Kunne ikke verifisere meny-status.");
+    }
     try {
-      const menu = await getPublishedMenuForDate(date);
+      const menu = await getPublishedMenuForDate(
+        date,
+        menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined,
+      );
       if (!menu) {
         return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Meny er ikke publisert for datoen.");
       }
@@ -150,7 +179,6 @@ export async function POST(req: NextRequest) {
   }
 
   const sb = await supabaseServer();
-  const companyId = companyIdFromCtx(auth.ctx);
   if (action === "ORDER" || action === "CANCEL") {
     if (!companyId) {
       return jsonOrderWriteErr(rid, 403, "COMPANY_SCOPE_REQUIRED", "Mangler firmatilknytning for bestilling.");
