@@ -91,7 +91,9 @@ export default function ProviderOperationsForm({
             autoComplete="off"
             inputMode="email"
           />
-          <p className="ds-provider-ops__hint">Brukes for leveringsinformasjon og sjåfør-/utleveringsvarsler.</p>
+          <p className="ds-provider-ops__hint">
+            Brukes for leveringsrelaterte varsler og meldinger når ordre er klare for levering.
+          </p>
         </div>
 
         <div className="ds-provider-ops__field">
