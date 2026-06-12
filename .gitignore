@@ -122,3 +122,12 @@ tmp-week-visual-baselines/
 scripts/k6/results/
 scripts/audit/*-dump-*.sql
 *.dump.sql
+
+# Repo hygiene (2026-06-12) — lokale debug-/engangsartefakter, ikke repo-sannhet
+.audit-publish-out/
+tmp-*/
+tmp-*.txt
+_ci-snapshots-*/
+_ci-steg*/
+playwright-week-visual-report/
+.smoke-provision.*
