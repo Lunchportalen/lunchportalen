@@ -15,6 +15,28 @@ vi.mock("@/lib/menu-publish/syncMenuServiceDaysFromMenuDay", () => ({
   deleteMenuServiceDaysForMenuDay: (...args: unknown[]) => deleteMock(...args),
 }));
 
+const resolveProviderMock = vi.fn();
+
+vi.mock("@/lib/menu-publish/resolveMenuDayProvider", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/menu-publish/resolveMenuDayProvider")>();
+  return {
+    ...actual,
+    resolveMenuDayProviderScope: (...args: unknown[]) => resolveProviderMock(...args),
+  };
+});
+
+const opsLogMock = vi.fn();
+
+vi.mock("@/lib/ops/log", () => ({
+  opsLog: (...args: unknown[]) => opsLogMock(...args),
+}));
+
+const PROVIDER_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+function providerOk(providerId: string) {
+  return { ok: true as const, scope: { providerId, providerSlug: "provider-a" } };
+}
+
 function webhookRequest(opts: { body: string; signature?: string }) {
   return new Request("http://test.local/api/webhooks/sanity/menu-day", {
     method: "POST",
@@ -36,6 +58,9 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
   beforeEach(() => {
     syncMock.mockReset();
     deleteMock.mockReset();
+    resolveProviderMock.mockReset();
+    opsLogMock.mockReset();
+    resolveProviderMock.mockResolvedValue(providerOk(PROVIDER_A));
     process.env.SANITY_WEBHOOK_SECRET = secret;
   });
 
@@ -60,7 +85,7 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
     expect(syncMock).not.toHaveBeenCalled();
   });
 
-  it("UPSERT ved publishbar menuDay og returnerer tellere", async () => {
+  it("UPSERT ved publishbar menuDay og returnerer tellere — sync får provider-scope", async () => {
     syncMock.mockResolvedValue({
       locationCount: 3,
       inserted: 1,
@@ -74,6 +99,7 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
       _type: "menuDay",
       date: "2026-05-18",
       planTier: "BASIS",
+      provider: { _type: "reference", _ref: PROVIDER_A },
       customerVisible: true,
       approvedForPublish: true,
     });
@@ -86,17 +112,91 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
     expect(json.data.updated).toBe(2);
     expect(json.data.locations).toBe(3);
     expect(syncMock).toHaveBeenCalledTimes(1);
-    expect(syncMock.mock.calls[0][1]).toEqual({ date: "2026-05-18", planTier: "BASIS" });
+    expect(syncMock.mock.calls[0][1]).toEqual({
+      date: "2026-05-18",
+      planTier: "BASIS",
+      providerId: PROVIDER_A,
+    });
     expect(json.data.msdiRowsUpserted).toBe(18);
     expect(json.data.msdiLocationsSkippedNoTier).toBe(0);
   });
 
-  it("synlighetsfilter=false → ingen UPSERT men slett forsøkes", async () => {
+  it("fail-closed: menuDay uten provider-ref → skip uten sync + kontrollert logg", async () => {
+    const body = JSON.stringify({
+      _type: "menuDay",
+      _id: "menuDay-2026-05-18-basis",
+      date: "2026-05-18",
+      planTier: "BASIS",
+      customerVisible: true,
+      approvedForPublish: true,
+    });
+    const sig = await webhook.encodeSignatureHeader(body, Date.now(), secret);
+    const res = await POST(webhookRequest({ body, signature: sig }) as any);
+    expect(res.status).toBe(200);
+    const json = await readJson(res);
+    expect(json.ok).toBe(true);
+    expect(json.data.skipped).toBe(true);
+    expect(json.data.reason).toBe("MISSING_PROVIDER_SCOPE");
+    expect(syncMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(opsLogMock).toHaveBeenCalledWith(
+      "menu_day_sync.skipped",
+      expect.objectContaining({
+        reason: "missing_provider_scope",
+        sanity_menu_day_id: "menuDay-2026-05-18-basis",
+        date: "2026-05-18",
+        plan_tier: "BASIS",
+      }),
+    );
+  });
+
+  it("fail-closed: ukjent provider → skip uten sync + kontrollert logg", async () => {
+    resolveProviderMock.mockResolvedValue({ ok: false, reason: "PROVIDER_NOT_FOUND" });
+    const body = JSON.stringify({
+      _type: "menuDay",
+      date: "2026-05-18",
+      planTier: "BASIS",
+      provider: { _type: "reference", _ref: "ffffffff-ffff-ffff-ffff-ffffffffffff" },
+      customerVisible: true,
+      approvedForPublish: true,
+    });
+    const sig = await webhook.encodeSignatureHeader(body, Date.now(), secret);
+    const res = await POST(webhookRequest({ body, signature: sig }) as any);
+    expect(res.status).toBe(200);
+    const json = await readJson(res);
+    expect(json.data.skipped).toBe(true);
+    expect(json.data.reason).toBe("PROVIDER_NOT_FOUND");
+    expect(syncMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(opsLogMock).toHaveBeenCalledWith(
+      "menu_day_sync.skipped",
+      expect.objectContaining({ reason: "provider_not_found" }),
+    );
+  });
+
+  it("transient provider-lookup-feil → 500 (Sanity retry + reconcile self-heal)", async () => {
+    resolveProviderMock.mockResolvedValue({ ok: false, reason: "LOOKUP_FAILED", detail: "connection refused" });
+    const body = JSON.stringify({
+      _type: "menuDay",
+      date: "2026-05-18",
+      planTier: "BASIS",
+      provider: { _type: "reference", _ref: PROVIDER_A },
+      customerVisible: true,
+      approvedForPublish: true,
+    });
+    const sig = await webhook.encodeSignatureHeader(body, Date.now(), secret);
+    const res = await POST(webhookRequest({ body, signature: sig }) as any);
+    expect(res.status).toBe(500);
+    expect(syncMock).not.toHaveBeenCalled();
+  });
+
+  it("synlighetsfilter=false → ingen UPSERT men provider-scoped slett forsøkes", async () => {
     deleteMock.mockResolvedValue({ deleted: 2 });
     const body = JSON.stringify({
       _type: "menuDay",
       date: "2026-05-18",
       planTier: "BASIS",
+      provider: { _type: "reference", _ref: PROVIDER_A },
       customerVisible: false,
       approvedForPublish: true,
     });
@@ -106,6 +206,11 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
     const json = await readJson(res);
     expect(json.data.unpublished).toBe(true);
     expect(deleteMock).toHaveBeenCalledTimes(1);
+    expect(deleteMock.mock.calls[0][1]).toEqual({
+      date: "2026-05-18",
+      planTier: "BASIS",
+      providerId: PROVIDER_A,
+    });
     expect(syncMock).not.toHaveBeenCalled();
   });
 
@@ -121,6 +226,7 @@ describe("POST /api/webhooks/sanity/menu-day", () => {
       _type: "menuDay",
       date: "2026-05-18",
       planTier: "BASIS",
+      provider: { _type: "reference", _ref: PROVIDER_A },
       customerVisible: true,
       approvedForPublish: true,
     });
