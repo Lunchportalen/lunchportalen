@@ -28,6 +28,7 @@ import { GET as OrdersTodayGET } from "@/app/api/orders/today/route";
 import { trackOrderAiConversion } from "@/lib/revenue/trackOrderAiConversion";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
 import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
 import { resolveOrderDayItemPersist } from "@/lib/orders/resolveOrderDayItemPersist";
 import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 import { orderWriteBodySchema } from "@/lib/validation/schemas";
@@ -281,12 +282,30 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
           });
         }
 
+        // Provider-scope for menuDay-validering (server truth: companies.provider_id).
+        // fail-closed: aldri en annen providers meny — kun statisk katalog gjenstår.
+        let menuScope: MenuScopeDecision;
+        try {
+          menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(supabaseAdmin(), cid));
+        } catch (e: unknown) {
+          menuScope = { mode: "fail-closed", reason: safeStr((e as { message?: string })?.message) || "SCOPE_LOOKUP_FAILED" };
+        }
+        if (menuScope.mode !== "scoped") {
+          opsLog("orders.menuScope", {
+            rid,
+            company_id: cid,
+            mode: menuScope.mode,
+            reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
+          });
+        }
+
         const itemBody = validated.data as unknown as Record<string, unknown>;
         const itemResolved = await resolveOrderDayItemPersist({
           date,
           planTier: resolvedTier,
           choiceKey: finalChoiceKey,
           clientItemKey: sanitizeItemKeyFromBody(itemBody),
+          menuScope,
         });
         if (itemResolved.ok === false) {
           return jsonOrderWriteErr(rid, itemResolved.status, itemResolved.code, itemResolved.message);

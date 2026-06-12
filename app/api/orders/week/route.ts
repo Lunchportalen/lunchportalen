@@ -12,6 +12,8 @@ import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
 import { showOrderPricesForApiRole } from "@/lib/orders/projectionRole";
 import { getMenuForDates, menuDayHasDisplayableCopy } from "@/lib/cms/menuDay";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
+import { opsLog } from "@/lib/ops/log";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -48,19 +50,28 @@ function isAnyMissingColumnError(error: any, columns: string[]) {
   return columns.some((column) => isMissingColumnError(error, column));
 }
 
-function weekMenuCacheKey(days: string[]) {
-  return days.join("|");
+function weekMenuCacheKey(days: string[], menuScope: MenuScopeDecision) {
+  const scopeKey = menuScope.mode === "scoped" ? `scoped:${menuScope.providerSlug}` : "legacy";
+  return `${scopeKey}|${days.join("|")}`;
 }
 
-async function getPublishedDatesCached(days: string[]): Promise<Set<string>> {
-  const key = weekMenuCacheKey(days);
+async function getPublishedDatesCached(days: string[], menuScope: MenuScopeDecision): Promise<Set<string>> {
+  // fail-closed: provider finnes men kan ikke scopes trygt → aldri global meny.
+  if (menuScope.mode === "fail-closed") {
+    return new Set<string>();
+  }
+
+  const key = weekMenuCacheKey(days, menuScope);
   const now = Date.now();
   const hit = weekMenuCache.get(key);
   if (hit && hit.expiresAt > now) {
     return new Set(hit.publishedDates);
   }
 
-  const menus = await getMenuForDates(days);
+  const menus = await getMenuForDates(
+    days,
+    menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined,
+  );
   const publishedDates = (menus ?? [])
     .filter((menu: any) => menu?.isPublished === true && menuDayHasDisplayableCopy(menu))
     .map((menu: any) => safeStr(menu?.date))
@@ -239,8 +250,21 @@ export async function GET(req: NextRequest) {
     return jsonErr(rid, "Kunne ikke hente ukebestillinger.", 500, "DB_ERROR", { message: error.message });
   }
 
+  // Provider-scope for menuDay (server truth: companies.provider_id → providers.slug).
+  // fail-closed: provider finnes men kan ikke scopes trygt → ingen menuDay-henting.
+  // Aldri en annen providers meny.
+  const menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(supabaseAdmin(), companyId));
+  if (menuScope.mode !== "scoped") {
+    opsLog("orders.week.menuScope", {
+      rid,
+      company_id: companyId,
+      mode: menuScope.mode,
+      reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
+    });
+  }
+
   // Max one Sanity call per request, or a server-side cache hit.
-  const published = await getPublishedDatesCached(days).catch(() => new Set<string>());
+  const published = await getPublishedDatesCached(days, menuScope).catch(() => new Set<string>());
 
   const bestByDate = foldOrdersByDate(((data ?? []) as unknown) as WeekOrderRow[], (row) => {
     const date = safeStr(row?.date);

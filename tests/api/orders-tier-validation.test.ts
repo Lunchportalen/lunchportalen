@@ -168,6 +168,16 @@ describe("POST /api/orders tier-per-day validation", () => {
     expect(lastLpOrderSetParams?.p_item_key).toBe("kylling");
   });
 
+  test("SET sender server-resolvet menuScope til resolveOrderDayItemPersist", async () => {
+    // supabaseAdmin-mocken har ingen provider_id på company → legacy-unscoped.
+    const res = await POST(mkReq({ date: "2026-05-18", action: "set", choice_key: "salatboks", itemKey: "kylling" }));
+
+    expect(res.status).toBe(200);
+    expect(resolveOrderDayItemPersist).toHaveBeenCalledWith(
+      expect.objectContaining({ menuScope: { mode: "legacy-unscoped" } }),
+    );
+  });
+
   test("SET returnerer 400 ITEM_CHOICE_REQUIRED når resolver sier manglende variant", async () => {
     resolveOrderDayItemPersist.mockResolvedValueOnce({
       ok: false,

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import { osloTodayISODate } from "@/lib/date/oslo";
@@ -13,7 +14,9 @@ import {
   getMenuForDates,
   type Announcement,
   type MenuDay,
+  type MenuDayQueryOptions,
 } from "@/lib/cms/menuDay";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 
 function severityCard(sev: Announcement["severity"]) {
   if (sev === "critical") return "bg-red-50 border-red-200 text-red-900";
@@ -92,6 +95,27 @@ export default async function Page() {
   const thisWeekDates = weekRangeISO(0);
   const nextWeekDates = weekRangeISO(1);
 
+  // Provider-scope for menuDay (server truth: profiles.company_id → companies.provider_id).
+  // fail-closed: ingen company/provider-kontekst → ingen operasjonell meny.
+  // Aldri en annen providers meny.
+  let menuOpts: MenuDayQueryOptions | undefined;
+  let menuBlocked = true;
+  try {
+    const pRes = await sb.from("profiles").select("company_id").eq("id", user.id).maybeSingle();
+    const companyId = String(pRes.data?.company_id ?? "").trim();
+    if (!pRes.error && companyId) {
+      const menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(supabaseAdmin(), companyId));
+      if (menuScope.mode === "scoped") {
+        menuOpts = { providerSlug: menuScope.providerSlug };
+        menuBlocked = false;
+      } else if (menuScope.mode === "legacy-unscoped") {
+        menuBlocked = false;
+      }
+    }
+  } catch {
+    menuBlocked = true;
+  }
+
   let announcement: Announcement | null = null;
   let todayMenu: MenuDay | null = null;
   let thisWeekMenuRaw: MenuDay[] = [];
@@ -100,9 +124,9 @@ export default async function Page() {
   try {
     const [a, t, w0, w1] = await Promise.all([
       getActiveAnnouncement(),
-      getMenuForDate(today),
-      getMenuForDates(thisWeekDates),
-      getMenuForDates(nextWeekDates),
+      menuBlocked ? Promise.resolve(null) : getMenuForDate(today, menuOpts),
+      menuBlocked ? Promise.resolve([] as MenuDay[]) : getMenuForDates(thisWeekDates, menuOpts),
+      menuBlocked ? Promise.resolve([] as MenuDay[]) : getMenuForDates(nextWeekDates, menuOpts),
     ]);
 
     announcement = a;
@@ -122,12 +146,15 @@ export default async function Page() {
     (m) => m.isPublished === true
   );
 
-  const sanityOk = Boolean(
-    (thisWeekMenuRaw && thisWeekMenuRaw.length) ||
-      (nextWeekMenuRaw && nextWeekMenuRaw.length) ||
-      todayMenu ||
-      announcement
-  );
+  // menuBlocked = bevisst tom meny (fail-closed provider-scope), ikke datafeil.
+  const sanityOk =
+    menuBlocked ||
+    Boolean(
+      (thisWeekMenuRaw && thisWeekMenuRaw.length) ||
+        (nextWeekMenuRaw && nextWeekMenuRaw.length) ||
+        todayMenu ||
+        announcement
+    );
 
   return (
     <div className="lp-container">

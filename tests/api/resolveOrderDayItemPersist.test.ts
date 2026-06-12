@@ -142,6 +142,68 @@ describe("resolveOrderDayItemPersist", () => {
     }
   });
 
+  test("scoped menuScope sender providerSlug til getMenuForDateAndPlan", async () => {
+    getMenuForDateAndPlanMock.mockResolvedValue([]);
+
+    await resolveOrderDayItemPersist({
+      date: "2026-05-19",
+      planTier: "BASIS",
+      choiceKey: "salatboks",
+      clientItemKey: null,
+      menuScope: { mode: "scoped", providerId: "prov-a-id", providerSlug: "provider-a" },
+    });
+
+    expect(getMenuForDateAndPlanMock).toHaveBeenCalledWith("2026-05-19", "BASIS", { providerSlug: "provider-a" });
+  });
+
+  test("A/B-isolasjon: Provider B-scope spør aldri med Provider A-slug", async () => {
+    getMenuForDateAndPlanMock.mockResolvedValue([]);
+
+    await resolveOrderDayItemPersist({
+      date: "2026-05-19",
+      planTier: "BASIS",
+      choiceKey: "salatboks",
+      clientItemKey: null,
+      menuScope: { mode: "scoped", providerId: "prov-b-id", providerSlug: "provider-b" },
+    });
+
+    expect(getMenuForDateAndPlanMock).toHaveBeenCalledTimes(1);
+    expect(getMenuForDateAndPlanMock).toHaveBeenCalledWith("2026-05-19", "BASIS", { providerSlug: "provider-b" });
+  });
+
+  test("fail-closed menuScope henter aldri menuDay — statisk katalog brukes alene", async () => {
+    getLunchCategoryStaticItemsByPlanTierMock.mockResolvedValue({
+      salat: [
+        { key: "skinke", title: "Skinke", allergens: [], isVegetarian: false, available: true },
+        { key: "kylling", title: "Kylling", allergens: [], isVegetarian: false, available: true },
+      ],
+    });
+
+    const r = await resolveOrderDayItemPersist({
+      date: "2026-05-19",
+      planTier: "BASIS",
+      choiceKey: "salatboks",
+      clientItemKey: "kylling",
+      menuScope: { mode: "fail-closed", reason: "LOOKUP_FAILED" },
+    });
+
+    expect(getMenuForDateAndPlanMock).not.toHaveBeenCalled();
+    expect(r).toEqual({ ok: true, item_key: "kylling", item_title_snapshot: "Kylling" });
+  });
+
+  test("uten menuScope beholdes dagens (legacy) lesing", async () => {
+    getMenuForDateAndPlanMock.mockResolvedValue([]);
+
+    await resolveOrderDayItemPersist({
+      date: "2026-05-19",
+      planTier: "BASIS",
+      choiceKey: "salatboks",
+      clientItemKey: null,
+    });
+
+    expect(getMenuForDateAndPlanMock).toHaveBeenCalledWith("2026-05-19", "BASIS", undefined);
+  });
+
   test("statiske lunchCategory-items overstyrer menuDay når flere varianter", async () => {
     getMenuForDateAndPlanMock.mockResolvedValue([
       {
