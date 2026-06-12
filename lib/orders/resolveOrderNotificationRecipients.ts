@@ -3,11 +3,13 @@
 //
 // Prinsipp:
 // - Operative ordrevarsler rutes til riktig cateringfirma (provider.operationsEmail).
-// - Lunchportalen beholder plattformkopi (ORDER_EMAIL) i samme varsling.
+// - Lunchportalen beholder EKSPLISITT plattformkopi (ORDER_EMAIL) i samme varsling
+//   — plattformadressen er aldri providerens driftsmottaker.
 // - Provider A sine ordre sendes aldri til provider B: alt utledes fra ordrens
 //   eksplisitte provider_id via getProviderNotificationRecipients.
-// - Fail-safe: hvis provider ikke kan resolves, går varselet kun til plattform
-//   (aldri til en annen provider, aldri stille bortfall).
+// - Fail-closed for provider-mottaker: hvis provider mangler konfigurert e-post
+//   (eller ikke kan resolves), er providerRecipients tom og varselet går kun til
+//   plattformkopien. Avviket er sporbart via recipientSource ("missing").
 
 import "server-only";
 
@@ -20,12 +22,12 @@ import { ORDER_EMAIL } from "@/lib/system/emailAddresses";
 export type OrderNotificationRecipientSource =
   | "provider_settings"
   | "provider_contact"
-  | "system_fallback"
+  | "missing"
   | "platform_only";
 
 export type OrderNotificationRouting = {
   providerId: string | null;
-  /** Provider-eide operative mottakere (tom kun når provider ikke kunne resolves). */
+  /** Provider-eide operative mottakere (tom når provider mangler e-post eller ikke kunne resolves). */
   providerRecipients: string[];
   /** Plattformkopi/backup-mottakere (beholdes alltid). */
   platformRecipients: string[];

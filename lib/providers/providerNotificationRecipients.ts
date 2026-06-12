@@ -1,38 +1,39 @@
 // lib/providers/providerNotificationRecipients.ts
 // Resolver for provider-spesifikke varslingsmottakere.
 //
-// Hver provider eier sine egne operative e-poster (provider_settings).
-// Fallback-kjede (deterministisk, aldri på tvers av providere):
-//   1. provider_settings.<felt>_email
-//   2. providers.contact_email
-//   3. ORDER_EMAIL (plattformens systemadresse) — KUN som siste nødregel,
-//      slik at en varsling aldri forsvinner stille.
+// LÅST FORRETNINGSREGEL: Cateringfirmaet/provideren eier sine egne operative
+// e-poster (provider_settings). Lunchportalen-adresser er ALDRI fallback for
+// providerens drift — manglende provider-e-post er et konfigurasjonsavvik
+// (fail-closed), ikke en grunn til å rute providerens drift til plattformen.
 //
-// VIKTIG: Resolveren er IKKE koblet inn i eksisterende ordre-/backup-e-postflyt
-// i denne patchen. Dagens flows (lib/orders/orderBackup.ts, lib/orderBackup/*,
-// app/api/cron/daily-order-summary) er plattform-globale backup-/summary-flows
-// med env-styrte mottakere og skal kobles mot denne resolveren i en egen,
-// kartlagt patch per flow.
+// Fallback-kjede (deterministisk, kun provider-eide adresser, aldri på tvers
+// av providere):
+//   1. provider_settings.<felt>_email
+//   2. provider_settings.operations_email (for kitchen/delivery)
+//   3. providers.contact_email
+//   4. null → missing (caller skipper provider-varsling / rapporterer avvik)
+//
+// Plattformkopi/-overvåking håndteres separat og eksplisitt av callerne
+// (platform-scope events) — den blandes aldri inn som provider-mottaker her.
 
 import "server-only";
 
-import { ORDER_EMAIL } from "@/lib/system/emailAddresses";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-export type ProviderOperationsEmailSource = "provider_settings" | "provider_contact" | "system_fallback";
+export type ProviderOperationsEmailSource = "provider_settings" | "provider_contact" | "missing";
 
 export type ProviderNotificationRecipients = {
   providerId: string;
-  /** Hovedmottaker for ordre-/driftsvarsler. */
-  operationsEmail: string;
+  /** Hovedmottaker for ordre-/driftsvarsler. null = konfigurasjonsavvik (fail-closed). */
+  operationsEmail: string | null;
   /** Hvor operationsEmail ble hentet fra (sporbarhet i logg/payload). */
   operationsEmailSource: ProviderOperationsEmailSource;
-  /** Mottaker for produksjonsgrunnlag/kjøkkenvarsler. */
-  kitchenEmail: string;
-  /** Mottaker for leverings-/sjåførvarsler. */
-  deliveryEmail: string;
-  /** Adressen som ble brukt som fallback-basis (contact_email eller systemadresse). */
-  fallbackEmail: string;
+  /** Mottaker for produksjonsgrunnlag/kjøkkenvarsler. null = mangler. */
+  kitchenEmail: string | null;
+  /** Mottaker for leverings-/sjåførvarsler. null = mangler. */
+  deliveryEmail: string | null;
+  /** Provider-eid fallback-basis (contact_email) — aldri en plattformadresse. */
+  fallbackEmail: string | null;
   locale: string;
   timezone: string;
   currency: string;
@@ -65,7 +66,8 @@ export function resolveProviderNotificationRecipients(
 ): ProviderNotificationRecipients {
   const settings = source.settings ?? {};
   const providerContactEmail = cleanEmail(source.providerContactEmail);
-  const fallbackEmail = providerContactEmail ?? ORDER_EMAIL;
+  // Kun provider-eide adresser — aldri Lunchportalen som skjult fallback.
+  const fallbackEmail = providerContactEmail;
 
   const settingsOperationsEmail = cleanEmail(settings.operations_email);
   const operationsEmail = settingsOperationsEmail ?? fallbackEmail;
@@ -73,7 +75,7 @@ export function resolveProviderNotificationRecipients(
     ? "provider_settings"
     : providerContactEmail
       ? "provider_contact"
-      : "system_fallback";
+      : "missing";
 
   const kitchenEmail = cleanEmail(settings.kitchen_email) ?? operationsEmail;
   const deliveryEmail = cleanEmail(settings.delivery_email) ?? operationsEmail;

@@ -9,6 +9,15 @@ export type ProviderOperationalSettings = {
   locale: string;
 };
 
+/**
+ * Låst forretningsregel (provider-eid e-postrouting): cateringfirmaet må selv
+ * legge inn sine operative e-poster. Vises i provider settings og håndheves
+ * i resolveren (Lunchportalen er aldri fallback for providerens drift).
+ */
+export const PROVIDER_EMAIL_OWNERSHIP_NOTE =
+  "Cateringfirmaet må selv legge inn e-postadressene som skal motta ordre, kjøkkenlister og leveringsvarsler. " +
+  "Lunchportalen sender ikke leverandørens operative e-poster til plattformen som standard — manglende e-post må fylles ut her.";
+
 export type ProviderLocaleOption = { value: string; label: string };
 
 /**

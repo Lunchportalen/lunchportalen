@@ -16,6 +16,7 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
+import { PROVIDER_EMAIL_OWNERSHIP_NOTE } from "@/lib/providers/operationalSettingsShared";
 
 export default async function LeverandorInnstillingerPage() {
   const auth = await getAuthContext();
@@ -72,9 +73,10 @@ export default async function LeverandorInnstillingerPage() {
         <section className="ds-section">
           <h2 className="ds-h3">Drift og varsling</h2>
           <p className="ds-body">
-            Velg hvor ordre, kjøkkenvarsler og leveringsinformasjon skal sendes. Disse innstillingene gjelder kun
-            for dette cateringfirmaet.
+            Legg inn e-postadressene som skal motta ordre, kjøkkenlister og leveringsvarsler for denne
+            leverandøren. Disse innstillingene gjelder kun for dette cateringfirmaet.
           </p>
+          <p className="ds-body">{PROVIDER_EMAIL_OWNERSHIP_NOTE}</p>
           <ProviderOperationsForm providerId={provider.id} initial={operationalSettings} />
         </section>
       ) : null}
