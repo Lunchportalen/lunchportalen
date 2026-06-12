@@ -25,6 +25,8 @@ describe("GET /api/cron/menu-week-rollout", () => {
     process.env.CRON_SECRET = "cron-test-secret-value";
     vi.mocked(runMenuWeekRollout).mockResolvedValue({
       targetWeek: "2026-06-01",
+      providerRef: "11111111-1111-1111-1111-111111111111",
+      providerSlug: "melhus-catering",
       tiersProcessed: ["BASIS"],
       menuDaysCreated: 1,
       menuDaysSkipped: 4,
@@ -45,6 +47,24 @@ describe("GET /api/cron/menu-week-rollout", () => {
     expect(json.rid).toMatch(/^cron_mwr_/);
     expect(json.data.menuDaysCreated).toBe(1);
     expect(json.data.errors).toEqual([]);
+  });
+
+  it("singleProviderSeedMode: ruten sender ALLTID eksplisitt Melhus seed-provider til core (ingen uscopet rollout)", async () => {
+    await GET(cronRequest());
+    expect(runMenuWeekRollout).toHaveBeenCalledTimes(1);
+    expect(runMenuWeekRollout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sanityProviderRef: "11111111-1111-1111-1111-111111111111",
+        providerSlug: "melhus-catering",
+      }),
+    );
+  });
+
+  it("respons eksponerer provider-scope (sporbarhet)", async () => {
+    const res = await GET(cronRequest());
+    const json = await res.json();
+    expect(json.data.providerRef).toBe("11111111-1111-1111-1111-111111111111");
+    expect(json.data.providerSlug).toBe("melhus-catering");
   });
 
   it("403 uten gyldig secret", async () => {
