@@ -11,6 +11,8 @@ vi.mock("@/lib/sanity/server", () => ({
 
 import { sanityServer } from "@/lib/sanity/server";
 
+const PROVIDER_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
 type Seed = {
   locations: Array<{ id: string; company_id: string }>;
   msds: Array<{ id: string; location_id: string }>;
@@ -115,8 +117,9 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
   };
 
   it("UPSERTer MSDI med tier-pris, VAT 0.15 og snapshots fra Sanity", async () => {
+    const varmrettCalls: Array<Record<string, unknown>> = [];
     (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
-      async (q: string) => {
+      async (q: string, params?: Record<string, unknown>) => {
       if (q.includes("lunchCategory")) {
         return [
           {
@@ -130,6 +133,7 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
         ];
       }
       if (q.includes("menuDay")) {
+        varmrettCalls.push({ query: q, params: params ?? {} });
         return {
           mealTitle: "Dagens varmrett",
           meal: { title: "Laks", description: "Med ris", allergens: ["fisk"] },
@@ -142,10 +146,16 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     const stats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
       serviceDate: "2026-05-18",
       locationIds: ["loc1"],
+      providerId: PROVIDER_A,
     });
 
     expect(stats.msdiRowsUpserted).toBe(3);
     expect(stats.msdiLocationsSkippedNoTier).toBe(0);
+
+    // Varmrett-snapshot må være provider-scoped i GROQ (aldri annen providers innhold)
+    expect(varmrettCalls).toHaveLength(1);
+    expect(String(varmrettCalls[0].query)).toContain("provider._ref == $providerRef");
+    expect((varmrettCalls[0].params as Record<string, unknown>).providerRef).toBe(PROVIDER_A);
 
     const upserts = admin.getUpserts();
     expect(upserts).toHaveLength(1);
@@ -185,10 +195,12 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
       serviceDate: "2026-05-18",
       locationIds: ["loc1"],
+      providerId: PROVIDER_A,
     });
     await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
       serviceDate: "2026-05-18",
       locationIds: ["loc1"],
+      providerId: PROVIDER_A,
     });
 
     const upserts = admin.getUpserts();
@@ -243,10 +255,25 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     const stats = await syncMenuServiceDayItemsAfterMenuDayPublish(captured, {
       serviceDate: "2026-05-18",
       locationIds: ["loc1"],
+      providerId: PROVIDER_A,
     });
 
     expect(stats.msdiLocationsSkippedNoTier).toBe(1);
     expect(stats.msdiRowsUpserted).toBe(0);
     expect(upserts).toHaveLength(0);
+  });
+
+  it("fail-closed: uten provider-scope skrives ingen MSDI-rader", async () => {
+    const admin = makeAdmin(seed);
+    const stats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
+      serviceDate: "2026-05-18",
+      locationIds: ["loc1"],
+      providerId: "",
+    });
+
+    expect(stats.msdiRowsUpserted).toBe(0);
+    expect(stats.msdiLocationsSkippedNoTier).toBe(0);
+    expect(admin.getUpserts()).toHaveLength(0);
+    expect(sanityServer.fetch).not.toHaveBeenCalled();
   });
 });
