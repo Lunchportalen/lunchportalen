@@ -211,15 +211,9 @@ ON CONFLICT (user_id, location_id) DO UPDATE SET
   }
   console.log("LOGIN_VERIFY OK");
 
-  // Write one-line password file for agent-only merge (gitignored pattern .smoke-*)
-  fs.writeFileSync(path.join(process.cwd(), ".smoke-provision.meta.json"), JSON.stringify({
-    userId,
-    companyId: COMPANY_ID,
-    companyName: COMPANY_NAME,
-    email: EMAIL,
-    password,
-    sqlPath,
-  }), "utf8");
+  // Security: password lives ONLY in .env.local (PLAYWRIGHT_TEST_PASSWORD).
+  // Never write it to any other file and never log it.
+  console.log(`PROVISIONED userId=${userId} company=${COMPANY_NAME} (password only in .env.local)`);
 }
 
 main().catch((e) => {
