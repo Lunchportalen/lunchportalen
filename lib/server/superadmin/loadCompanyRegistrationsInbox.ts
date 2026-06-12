@@ -13,9 +13,16 @@ function isUuid(v: string) {
 
 /** Kjerne felter fra `company_registrations` (+ join `companies`). */
 export type CompanyRegistrationInboxCore = {
+  /** PK i `company_registrations` — identitet også når company_id mangler. */
+  registration_id: string;
   agreement_id: string | null;
   registration_status: string | null;
-  company_id: string;
+  /** NULL for provider-intake/waitlist-rader som ikke har materialisert company. */
+  company_id: string | null;
+  /** Server-matchet provider, eller NULL for waitlist (ingen dekning ved innsending). */
+  provider_id: string | null;
+  /** Kilde fra submitted_payload.source (f.eks. provider_registration_intake). */
+  source: string | null;
   company_name: string | null;
   company_orgnr: string | null;
   company_status: string | null;
@@ -43,14 +50,54 @@ export type CompanyRegistrationInboxPipeline = {
   pipeline_next_label: string;
   pipeline_next_href: string | null;
   pipeline_primary_href: string;
+  /** Navn på matchet provider (kun oppslag — ingen fabrikkering når provider mangler). */
+  provider_name: string | null;
 };
+
+/**
+ * Presentasjon for rader uten materialisert company (provider-intake/waitlist).
+ * Ingen actions støttes i superadmin-innboksen for slike rader i dag —
+ * godkjenning skjer i provider-portalen (eller manuelt). Ren og testbar.
+ */
+export function deriveCompanylessRegistrationPresentation(opts: {
+  provider_id: string | null;
+  provider_name: string | null;
+  source: string | null;
+}): {
+  badge_label: string;
+  review_copy: string;
+  provider_label: string;
+  source_label: string;
+  actions_supported: false;
+} {
+  const src = safeStr(opts.source).toLowerCase();
+  let source_label = "Ukjent kilde";
+  if (src === "provider_registration_intake") source_label = "Provider-intake";
+  else if (src === "public_register_company") source_label = "Firmaregistrering";
+  else if (src.includes("coverage")) source_label = "Dekningsforespørsel";
+
+  const providerName = safeStr(opts.provider_name);
+  const provider_label = opts.provider_id
+    ? providerName || "Provider matchet"
+    : "Ingen provider matchet";
+
+  return {
+    badge_label: "Ikke materialisert",
+    review_copy: "Denne forespørselen er ikke koblet til en aktiv bedrift ennå. Den må vurderes manuelt.",
+    provider_label,
+    source_label,
+    actions_supported: false,
+  };
+}
 
 export type CompanyRegistrationInboxItem = CompanyRegistrationInboxCore & CompanyRegistrationInboxPipeline;
 
 /** Ren, deterministisk mapping for tester og API. */
 export function mapCompanyRegistrationInboxRow(raw: Record<string, unknown>): CompanyRegistrationInboxCore | null {
-  const company_id = safeStr(raw.company_id);
-  if (!company_id) return null;
+  const registration_id = safeStr(raw.id);
+  const company_id = safeStr(raw.company_id) || null;
+  // Rader uten både registrerings-id og company-id kan ikke identifiseres trygt.
+  if (!registration_id && !company_id) return null;
 
   const comp = raw.companies;
   let company_name: string | null = null;
@@ -68,13 +115,26 @@ export function mapCompanyRegistrationInboxRow(raw: Record<string, unknown>): Co
     company_status = safeStr(c.status).toUpperCase() || null;
   }
 
+  // Fallback til registreringsradens egne felter når company-relasjonen mangler.
+  if (!company_name) company_name = safeStr(raw.company_name) || null;
+  if (!company_orgnr) company_orgnr = safeStr(raw.orgnr) || null;
+
+  let source: string | null = null;
+  const payload = raw.submitted_payload;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    source = safeStr((payload as Record<string, unknown>).source) || null;
+  }
+
   const ec = Number(raw.employee_count);
   const employee_count = Number.isFinite(ec) ? Math.floor(ec) : 0;
 
   return {
+    registration_id: registration_id || company_id || "",
     agreement_id: safeStr(raw.agreement_id) || null,
     registration_status: safeStr(raw.status).toUpperCase() || null,
     company_id,
+    provider_id: safeStr(raw.provider_id) || null,
+    source,
     company_name,
     company_orgnr,
     company_status,
@@ -102,7 +162,7 @@ export async function loadCompanyRegistrationsInbox(): Promise<
   const { data, error } = await admin
     .from("company_registrations")
     .select(
-      "agreement_id,status,company_id,employee_count,contact_name,contact_email,contact_phone,address_line,postal_code,city,created_at,updated_at,weekday_meal_tiers,delivery_window_from,delivery_window_to,terms_binding_months,terms_notice_months,companies:company_id ( id, name, orgnr, status )"
+      "id,agreement_id,status,company_id,provider_id,company_name,orgnr,submitted_payload,employee_count,contact_name,contact_email,contact_phone,address_line,postal_code,city,created_at,updated_at,weekday_meal_tiers,delivery_window_from,delivery_window_to,terms_binding_months,terms_notice_months,companies:company_id ( id, name, orgnr, status )"
     )
     .eq("status", "PENDING")
     .order("created_at", { ascending: false })
@@ -118,7 +178,25 @@ export async function loadCompanyRegistrationsInbox(): Promise<
     if (m) cores.push(m);
   }
 
-  const ids = cores.map((c) => c.company_id).filter(Boolean);
+  const providerIds = Array.from(new Set(cores.map((c) => c.provider_id).filter((v): v is string => !!v)));
+  const providerNameById = new Map<string, string>();
+  if (providerIds.length) {
+    const { data: provRows, error: provErr } = await admin.from("providers").select("id,name").in("id", providerIds);
+    if (provErr) {
+      return {
+        ok: false,
+        message: provErr.message || "Kunne ikke hente leverandørnavn for innboks.",
+        code: safeStr(provErr.code) || "DB_ERROR",
+      };
+    }
+    for (const p of provRows ?? []) {
+      const pid = safeStr((p as { id?: unknown }).id);
+      const pname = safeStr((p as { name?: unknown }).name);
+      if (pid && pname) providerNameById.set(pid, pname);
+    }
+  }
+
+  const ids = cores.map((c) => c.company_id).filter((v): v is string => !!v);
   let pendingIdByCompany = new Map<string, string>();
   let activeIdByCompany = new Map<string, string>();
 
@@ -142,6 +220,28 @@ export async function loadCompanyRegistrationsInbox(): Promise<
   }
 
   const items: CompanyRegistrationInboxItem[] = cores.map((core) => {
+    const provider_name = core.provider_id ? providerNameById.get(core.provider_id) ?? null : null;
+
+    if (!core.company_id) {
+      // Provider-intake/waitlist uten materialisert company: synlig, men uten
+      // agreement-actions (godkjenning skjer i provider-portalen eller manuelt).
+      const pres = deriveCompanylessRegistrationPresentation({
+        provider_id: core.provider_id,
+        provider_name,
+        source: core.source,
+      });
+      return {
+        ...core,
+        ledger_pending_agreement_id: null,
+        ledger_active_agreement_id: null,
+        pipeline_stage_label: pres.badge_label,
+        pipeline_next_label: pres.review_copy,
+        pipeline_next_href: null,
+        pipeline_primary_href: "/superadmin/registrations",
+        provider_name,
+      };
+    }
+
     const ledger_pending_agreement_id = pendingIdByCompany.get(core.company_id) ?? null;
     const ledger_active_agreement_id = activeIdByCompany.get(core.company_id) ?? null;
     const pipe = deriveSuperadminRegistrationPipelineNext({
@@ -165,6 +265,7 @@ export async function loadCompanyRegistrationsInbox(): Promise<
       pipeline_next_label: pipe.next_label,
       pipeline_next_href: pipe.next_href,
       pipeline_primary_href,
+      provider_name,
     };
   });
 
@@ -188,7 +289,9 @@ export async function loadCompanyRegistrationsInbox(): Promise<
   return { ok: true, items };
 }
 
-export type CompanyRegistrationDetail = CompanyRegistrationInboxCore & {
+export type CompanyRegistrationDetail = Omit<CompanyRegistrationInboxCore, "company_id"> & {
+  /** Detaljvisning er keyet på company — alltid satt her. */
+  company_id: string;
   company_created_at: string | null;
   company_updated_at: string | null;
   /** Canonical operative registreringsplan (man–fre BASIS/LUXUS). */
@@ -387,7 +490,9 @@ export function indexLedgerAgreementsByCompanyId(
 /** Eksponert for enhetstest (samme operativ mapping som detalj-GET). */
 export function mapCompanyRegistrationDetailRow(raw: Record<string, unknown>): CompanyRegistrationDetail | null {
   const base = mapCompanyRegistrationInboxRow(raw);
-  if (!base) return null;
+  // Detaljflaten er keyet på company_id — rader uten company har ingen detaljside.
+  if (!base || !base.company_id) return null;
+  const company_id = base.company_id;
 
   const comp = raw.companies;
   let company_created_at: string | null = null;
@@ -407,6 +512,7 @@ export function mapCompanyRegistrationDetailRow(raw: Record<string, unknown>): C
 
   return {
     ...base,
+    company_id,
     company_created_at,
     company_updated_at,
     weekday_meal_tiers: parseWeekdayMealTiersFromJson(raw.weekday_meal_tiers),

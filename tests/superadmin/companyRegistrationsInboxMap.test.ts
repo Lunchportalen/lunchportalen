@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  deriveCompanylessRegistrationPresentation,
   deriveSuperadminAgreementListRowPresentation,
   deriveSuperadminRegistrationPipelineNext,
   deriveSuperadminRegistrationPipelinePrimaryHref,
@@ -76,8 +77,75 @@ describe("mapCompanyRegistrationInboxRow", () => {
     expect(m?.employee_count).toBe(42);
   });
 
-  it("returnerer null uten company_id", () => {
+  it("returnerer null kun når både registrerings-id og company_id mangler", () => {
     expect(mapCompanyRegistrationInboxRow({ company_id: "" })).toBeNull();
+    expect(mapCompanyRegistrationInboxRow({})).toBeNull();
+  });
+
+  it("mapper provider-intake-rad uten company_id (fallback til registreringens egne felter)", () => {
+    const m = mapCompanyRegistrationInboxRow({
+      id: "reg-1",
+      company_id: null,
+      provider_id: "prov-1",
+      company_name: "Intake AS",
+      orgnr: "999888777",
+      submitted_payload: { source: "provider_registration_intake" },
+      employee_count: 30,
+      contact_name: "Kari Intake",
+      contact_email: "kari@intake.no",
+      contact_phone: "98765432",
+      address_line: "Intakegate 2",
+      postal_code: "7000",
+      city: "Trondheim",
+      created_at: "2026-06-10T10:00:00Z",
+      updated_at: null,
+      companies: null,
+    });
+    expect(m).not.toBeNull();
+    expect(m?.registration_id).toBe("reg-1");
+    expect(m?.company_id).toBeNull();
+    expect(m?.provider_id).toBe("prov-1");
+    expect(m?.source).toBe("provider_registration_intake");
+    expect(m?.company_name).toBe("Intake AS");
+    expect(m?.company_orgnr).toBe("999888777");
+    expect(m?.company_status).toBeNull();
+    expect(m?.contact_email).toBe("kari@intake.no");
+  });
+
+  it("mapper waitlist-rad uten company_id og uten provider_id", () => {
+    const m = mapCompanyRegistrationInboxRow({
+      id: "reg-2",
+      company_id: null,
+      provider_id: null,
+      company_name: "Waitlist AS",
+      orgnr: "111222333",
+      submitted_payload: { source: "provider_registration_intake", expand_my_area: true },
+      employee_count: 25,
+      contact_name: "Per Venter",
+      contact_email: "per@venter.no",
+      contact_phone: "91234567",
+      address_line: "Ventevei 1",
+      postal_code: "9999",
+      city: "Utenfor",
+      created_at: "2026-06-11T10:00:00Z",
+      companies: null,
+    });
+    expect(m).not.toBeNull();
+    expect(m?.company_id).toBeNull();
+    expect(m?.provider_id).toBeNull();
+    expect(m?.company_name).toBe("Waitlist AS");
+  });
+
+  it("mapCompanyRegistrationDetailRow avviser rader uten company_id (detalj er company-keyet)", () => {
+    expect(
+      mapCompanyRegistrationDetailRow({
+        id: "reg-3",
+        company_id: null,
+        company_name: "Intake AS",
+        employee_count: 22,
+        created_at: "2026-06-11T10:00:00Z",
+      }),
+    ).toBeNull();
   });
 
   it("mapCompanyRegistrationDetailRow legger på firmatidsstempler", () => {
@@ -113,6 +181,47 @@ describe("mapCompanyRegistrationInboxRow", () => {
     expect(d?.terms_binding_months).toBe(12);
     expect(d?.ledger_pending_agreement_id).toBeNull();
     expect(d?.ledger_active_agreement_id).toBeNull();
+  });
+});
+
+describe("deriveCompanylessRegistrationPresentation", () => {
+  it("provider matchet med navn: viser providernavn og trygg badge/copy uten actions", () => {
+    const p = deriveCompanylessRegistrationPresentation({
+      provider_id: "prov-1",
+      provider_name: "Melhus Catering",
+      source: "provider_registration_intake",
+    });
+    expect(p.badge_label).toBe("Ikke materialisert");
+    expect(p.review_copy).toContain("ikke koblet til en aktiv bedrift");
+    expect(p.provider_label).toBe("Melhus Catering");
+    expect(p.source_label).toBe("Provider-intake");
+    expect(p.actions_supported).toBe(false);
+  });
+
+  it("ingen provider matchet: eksplisitt label, ingen fabrikkert provider", () => {
+    const p = deriveCompanylessRegistrationPresentation({
+      provider_id: null,
+      provider_name: null,
+      source: "provider_registration_intake",
+    });
+    expect(p.provider_label).toBe("Ingen provider matchet");
+    expect(p.actions_supported).toBe(false);
+  });
+
+  it("ukjent kilde: fallback-label uten rå enum", () => {
+    const p = deriveCompanylessRegistrationPresentation({ provider_id: null, provider_name: null, source: null });
+    expect(p.source_label).toBe("Ukjent kilde");
+  });
+
+  it("kjente kilder mappes til norsk label", () => {
+    expect(
+      deriveCompanylessRegistrationPresentation({ provider_id: null, provider_name: null, source: "public_register_company" })
+        .source_label,
+    ).toBe("Firmaregistrering");
+    expect(
+      deriveCompanylessRegistrationPresentation({ provider_id: null, provider_name: null, source: "start-coverage-wish" })
+        .source_label,
+    ).toBe("Dekningsforespørsel");
   });
 });
 
