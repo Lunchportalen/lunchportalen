@@ -146,15 +146,21 @@ describe("buildDailySummaryDispatchPlan", () => {
     expect(kitchen?.to).toBe("ordre@provider-a.no");
   });
 
-  it("fallback: provider helt uten e-post ender på trygg systemadresse", () => {
+  it("provider helt uten e-post: fail-closed konfigurasjonsavvik — ALDRI Lunchportalen som mottaker", () => {
     const fallbackResolved = new Map<string, ProviderNotificationRecipients | null>([
       [PROVIDER_A, recipientsFor(PROVIDER_A, {})],
     ]);
     const plan = planFor([order("a1", PROVIDER_A)], fallbackResolved);
 
-    const ops = plan.entries.find((e) => e.providerId === PROVIDER_A && e.kind === "order_summary");
-    expect(ops?.to).toBe(ORDER_EMAIL);
-    expect(ops?.recipientSource).toBe("system_fallback");
+    // Ingen provider-rader, avviket rapporteres, og plattformkopien dekker ordrene.
+    expect(plan.entries.filter((e) => e.scope === "provider")).toHaveLength(0);
+    expect(plan.missingRecipientProviderIds).toEqual([PROVIDER_A]);
+
+    const providerTos = plan.entries.filter((e) => e.scope === "provider").map((e) => e.to);
+    expect(providerTos).not.toContain(ORDER_EMAIL);
+
+    const platformOrder = plan.entries.find((e) => e.scope === "platform" && e.kind === "order_summary");
+    expect(platformOrder?.orders.map((o) => o.id)).toEqual(["a1"]);
   });
 
   it("uresolvbar provider dekkes kun av plattformkopi — aldri en annen provider", () => {

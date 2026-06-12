@@ -5,6 +5,7 @@ import {
   DEFAULT_PROVIDER_LOCALE,
   isSupportedProviderLocale,
   normalizeOperationalEmail,
+  PROVIDER_EMAIL_OWNERSHIP_NOTE,
 } from "@/lib/providers/operationalSettingsShared";
 import { resolveProviderNotificationRecipients } from "@/lib/providers/providerNotificationRecipients";
 import { ORDER_EMAIL } from "@/lib/system/emailAddresses";
@@ -110,16 +111,19 @@ describe("resolveProviderNotificationRecipients", () => {
     expect(res.fallbackEmail).toBe("post@provider-a.no");
   });
 
-  it("bruker systemadresse KUN som siste nødregel", () => {
+  it("manglende provider-e-post gir ALDRI Lunchportalen som mottaker (fail-closed)", () => {
     const res = resolveProviderNotificationRecipients({
       providerId: PROVIDER_A,
       settings: null,
       providerContactEmail: null,
     });
 
-    expect(res.operationsEmail).toBe(ORDER_EMAIL);
-    expect(res.operationsEmailSource).toBe("system_fallback");
-    expect(res.fallbackEmail).toBe(ORDER_EMAIL);
+    expect(res.operationsEmail).toBeNull();
+    expect(res.kitchenEmail).toBeNull();
+    expect(res.deliveryEmail).toBeNull();
+    expect(res.operationsEmailSource).toBe("missing");
+    expect(res.fallbackEmail).toBeNull();
+    expect(JSON.stringify(res)).not.toContain(ORDER_EMAIL);
   });
 
   it("bruker trygge defaults for locale/timezone/currency", () => {
@@ -152,7 +156,16 @@ describe("resolveProviderNotificationRecipients", () => {
     const aEmails = [a.operationsEmail, a.kitchenEmail, a.deliveryEmail, a.fallbackEmail];
     const bEmails = [b.operationsEmail, b.kitchenEmail, b.deliveryEmail, b.fallbackEmail];
 
-    expect(aEmails.every((e) => e.endsWith("provider-a.no"))).toBe(true);
-    expect(bEmails.every((e) => e.endsWith("provider-b.no"))).toBe(true);
+    expect(aEmails.every((e) => e != null && e.endsWith("provider-a.no"))).toBe(true);
+    expect(bEmails.every((e) => e != null && e.endsWith("provider-b.no"))).toBe(true);
+  });
+});
+
+describe("PROVIDER_EMAIL_OWNERSHIP_NOTE — provider-eid e-postansvar", () => {
+  it("settings-copy sier at cateringfirmaet selv må legge inn e-postene", () => {
+    expect(PROVIDER_EMAIL_OWNERSHIP_NOTE).toContain("Cateringfirmaet må selv legge inn");
+    expect(PROVIDER_EMAIL_OWNERSHIP_NOTE).toContain(
+      "Lunchportalen sender ikke leverandørens operative e-poster til plattformen som standard",
+    );
   });
 });

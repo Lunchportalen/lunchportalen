@@ -2,12 +2,17 @@
 // Provider-routet utsendingsplan for daglig ordre-/kjøkkenoppsummering.
 //
 // Prinsipp:
-// - Plattformkopi beholdes uendret (samlet oppsummering til plattformadressene).
+// - Plattformkopi beholdes uendret (samlet oppsummering til plattformadressene)
+//   — dette er eksplisitt platform-scope, ikke providerens driftsmottaker.
 // - I tillegg får hver provider sin egen oppsummering, bygget KUN på providerens
 //   egne ordre (orders.provider_id er sannheten — provider A ser aldri provider B).
 // - Ordreoppsummering rutes til provider operationsEmail.
 // - Produksjons-/kjøkkengrunnlag rutes til provider kitchenEmail.
-// - Fallback skjer i resolveren (kitchen → operations → contact → systemadresse).
+// - Fallback skjer i resolveren og er kun provider-eid (kitchen → operations →
+//   contact). Lunchportalen-adresser brukes ALDRI som provider-mottaker.
+// - Provider uten konfigurert e-post gir IKKE provider-rader (fail-closed):
+//   provideren rapporteres som konfigurasjonsavvik, og ordrene dekkes uansett
+//   av plattformkopien.
 // - Providere som ikke kan resolves dekkes av plattformkopien (aldri feil provider).
 //
 // Modulen er ren (ingen I/O) slik at routing kan testes deterministisk.
@@ -30,7 +35,7 @@ export type DailySummaryDispatchEntry = {
   eventKey: string;
   /** Deduplisert, lowercased, kommaseparert mottakerliste for outbox-payload. */
   to: string;
-  recipientSource: "platform" | "provider_settings" | "provider_contact" | "system_fallback";
+  recipientSource: "platform" | "provider_settings" | "provider_contact";
   /** Ordrene oppsummeringen skal bygges på (provider-isolert for provider-scope). */
   orders: DailySummaryOrderRow[];
 };
@@ -39,6 +44,11 @@ export type DailySummaryDispatchPlan = {
   entries: DailySummaryDispatchEntry[];
   /** Providere med ordre som ikke kunne resolves — dekkes kun av plattformkopien. */
   unresolvedProviderIds: string[];
+  /**
+   * Providere med ordre, men uten konfigurert provider-e-post (konfigurasjonsavvik).
+   * Får ingen provider-rader (fail-closed) — dekkes kun av plattformkopien.
+   */
+  missingRecipientProviderIds: string[];
 };
 
 function cleanEmail(v: unknown): string | null {
@@ -83,6 +93,7 @@ export function buildDailySummaryDispatchPlan(args: {
 }): DailySummaryDispatchPlan {
   const entries: DailySummaryDispatchEntry[] = [];
   const unresolvedProviderIds: string[] = [];
+  const missingRecipientProviderIds: string[] = [];
 
   // Plattformkopi (uendret atferd): samlet oppsummering for alle ordre.
   entries.push({
@@ -120,6 +131,13 @@ export function buildDailySummaryDispatchPlan(args: {
       continue;
     }
 
+    // Fail-closed: uten provider-eid e-post sendes INGEN provider-rader.
+    // Lunchportalen-adressene er aldri fallback — avviket rapporteres til caller.
+    if (resolved.operationsEmailSource === "missing" || !resolved.operationsEmail) {
+      missingRecipientProviderIds.push(providerId);
+      continue;
+    }
+
     entries.push({
       kind: "order_summary",
       scope: "provider",
@@ -134,11 +152,11 @@ export function buildDailySummaryDispatchPlan(args: {
       scope: "provider",
       providerId,
       eventKey: `daily_kitchen_production:${args.date}:${providerId}`,
-      to: dedupeJoin([resolved.kitchenEmail]),
+      to: dedupeJoin([resolved.kitchenEmail ?? resolved.operationsEmail]),
       recipientSource: resolved.operationsEmailSource,
       orders: providerOrders,
     });
   }
 
-  return { entries, unresolvedProviderIds };
+  return { entries, unresolvedProviderIds, missingRecipientProviderIds };
 }

@@ -59,13 +59,15 @@ describe("buildOrderNotificationRouting", () => {
     expect(routing.recipientSource).toBe("provider_contact");
   });
 
-  it("fallback til systemadresse når provider mangler all e-post", () => {
+  it("provider uten e-post: providerRecipients er tom — Lunchportalen er ALDRI provider-mottaker", () => {
     const routing = buildOrderNotificationRouting(PROVIDER_A, recipientsFor(PROVIDER_A, null, null));
 
-    expect(routing.providerRecipients).toEqual([ORDER_EMAIL]);
-    expect(routing.recipientSource).toBe("system_fallback");
-    // Dedupe: provider-fallback og plattformkopi er samme adresse → én mottaker.
+    expect(routing.providerRecipients).toEqual([]);
+    expect(routing.recipientSource).toBe("missing");
+    expect(routing.operationsEmail).toBeNull();
+    // Varselet går kun til eksplisitt plattformkopi (aldri stille bortfall).
     expect(routing.recipients).toEqual([ORDER_EMAIL]);
+    expect(routing.platformRecipients).toEqual([ORDER_EMAIL]);
   });
 
   it("provider som ikke kan resolves gir plattformkopi alene (aldri annen provider)", () => {

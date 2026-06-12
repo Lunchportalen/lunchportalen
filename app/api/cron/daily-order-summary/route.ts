@@ -369,6 +369,9 @@ async function handler(req: NextRequest) {
           withOrders: providerIds.length,
           dispatchedEntries: dispatched.filter((d) => d.scope === "provider").length,
           unresolved: plan.unresolvedProviderIds,
+          // Konfigurasjonsavvik: providere med ordre, men uten provider-eid e-post.
+          // Fail-closed (ingen provider-rader) — dekkes av plattformkopien.
+          missingRecipients: plan.missingRecipientProviderIds,
           failures: providerFailures,
         },
         outbox: { dispatched },
