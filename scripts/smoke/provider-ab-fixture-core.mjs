@@ -15,6 +15,60 @@ import {
 
 export { STAGING_PROJECT_REF, PROD_PROJECT_REF, PROVIDER_A, PROVIDER_B };
 
+/** uigx/post-R3 organizations link column (customer org → provider org). */
+export const ORGANIZATION_PROVIDER_LINK_COLUMN = "legacy_provider_id";
+
+/** Columns used by provider-ab fixture organization INSERTs (metadata omitted — DB default). */
+export const ORGANIZATION_FIXTURE_INSERT_COLUMNS = [
+  "id",
+  "type",
+  "name",
+  "slug",
+  "org_number",
+  "status",
+  "legacy_source",
+  ORGANIZATION_PROVIDER_LINK_COLUMN,
+  "created_at",
+  "updated_at",
+];
+
+/**
+ * Pure validation — fixture SQL must match staging organizations contract (no I/O).
+ * @param {string} sql
+ */
+export function validateOrganizationFixtureSql(sql) {
+  const errors = [];
+  const text = String(sql ?? "");
+  if (text.includes("customer_provider_org_id")) {
+    errors.push("must not reference customer_provider_org_id (renamed to legacy_provider_id in R3)");
+  }
+  if (!text.includes(ORGANIZATION_PROVIDER_LINK_COLUMN)) {
+    errors.push(`must reference ${ORGANIZATION_PROVIDER_LINK_COLUMN}`);
+  }
+  const providerOrgBlock = text.match(
+    /insert into public\.organizations[\s\S]*?'provider'::public\.org_type[\s\S]*?on conflict \(id\)/i,
+  );
+  if (providerOrgBlock && !/'provider',\s*\n\s*null,/i.test(providerOrgBlock[0])) {
+    errors.push("provider org insert must set legacy_provider_id NULL");
+  }
+  const customerOrgBlock = text.match(
+    /insert into public\.organizations[\s\S]*?'customer'::public\.org_type[\s\S]*?on conflict \(id\) do update set[\s\S]*?updated_at = now\(\);/i,
+  );
+  if (
+    customerOrgBlock &&
+    !new RegExp(`legacy_provider_id = excluded\\.${ORGANIZATION_PROVIDER_LINK_COLUMN}`).test(customerOrgBlock[0])
+  ) {
+    errors.push("customer org upsert must update legacy_provider_id on conflict");
+  }
+  if (
+    customerOrgBlock &&
+    !new RegExp(`'company',\\s*\\n\\s*'${PROVIDER_B.providerId}'::uuid`).test(customerOrgBlock[0])
+  ) {
+    errors.push("customer org must link legacy_provider_id to fixture provider B id");
+  }
+  return { ok: errors.length === 0, errors };
+}
+
 /**
  * Fail-closed staging URL guard. Never uses raw DATABASE_URL when it points at prod.
  * @param {{ key: string, url: string } | null} picked
@@ -73,7 +127,7 @@ export function buildProviderAbFixtureSql() {
   const agreementStart = "2026-04-23";
   const agreementEnd = "2026-08-21";
 
-  return `
+  const sql = `
 -- provider-ab-staging-fixture (deterministic, idempotent, uigx only)
 
 -- ── A) Provider A correction (scoped fixture IDs only) ─────────────────────
@@ -166,7 +220,7 @@ on conflict (id) do update set
   updated_at = now();
 
 insert into public.organizations (
-  id, type, name, slug, org_number, status, legacy_source, customer_provider_org_id, created_at, updated_at
+  id, type, name, slug, org_number, status, legacy_source, legacy_provider_id, created_at, updated_at
 )
 values (
   '${b.providerId}'::uuid,
@@ -209,7 +263,7 @@ on conflict (id) do update set
   updated_at = now();
 
 insert into public.organizations (
-  id, type, name, slug, org_number, status, legacy_source, customer_provider_org_id, created_at, updated_at
+  id, type, name, slug, org_number, status, legacy_source, legacy_provider_id, created_at, updated_at
 )
 values (
   '${b.companyId}'::uuid,
@@ -226,7 +280,7 @@ values (
 on conflict (id) do update set
   name = excluded.name,
   status = excluded.status,
-  customer_provider_org_id = excluded.customer_provider_org_id,
+  legacy_provider_id = excluded.legacy_provider_id,
   updated_at = now();
 
 insert into public.company_locations (
@@ -476,4 +530,11 @@ on conflict (menu_service_day_id, product_id) do update set
   offered_price_cents_ex_vat = excluded.offered_price_cents_ex_vat,
   updated_at = now();
 `;
+
+  const orgValidation = validateOrganizationFixtureSql(sql);
+  if (!orgValidation.ok) {
+    throw new Error(`organization fixture contract invalid: ${orgValidation.errors.join("; ")}`);
+  }
+
+  return sql;
 }
