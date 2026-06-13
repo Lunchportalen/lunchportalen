@@ -1,11 +1,11 @@
 import "server-only";
 
-import type { PlanTier } from "@/lib/cms/menuDayContract";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { sanityServer } from "@/lib/sanity/server";
 
 import { filterLunchCategoryItemsRawForPlanTier } from "@/lib/cms/lunchCategory";
+import { CATEGORY_LABELS, PLAN_CATEGORIES, type Category, type PlanTier } from "@/lib/cms/menuDayContract";
 import { isoDateToAgreementDayKey, normalizeMenuPlanTier } from "@/lib/menu-publish/menuDaySyncShared";
 import { TIER_PRICE_CENTS, VAT_RATE } from "./tierPricing";
 
@@ -86,6 +86,33 @@ function formatVarmrettSnapshot(projection: VarmrettMenuProjection): string {
     }
   }
   return parts.filter(Boolean).join(" · ") || "Varmrett";
+}
+
+/** Sanity lunchCategory key for product lookup (PLAN category salat/thai differ from SKU keys). */
+const PLAN_CATEGORY_TO_LUNCH_KEY: Partial<Record<Category, string>> = {
+  salat: "salatboks",
+  thai: "thaimat",
+};
+
+function lunchKeyForPlanCategory(category: Category): string {
+  return PLAN_CATEGORY_TO_LUNCH_KEY[category] ?? category;
+}
+
+function buildFallbackLunchCategoriesForTier(tier: PlanTier): LunchCatRow[] {
+  const planCats = PLAN_CATEGORIES[tier] ?? [];
+  const rows: LunchCatRow[] = [];
+  for (let i = 0; i < planCats.length; i += 1) {
+    const category = planCats[i];
+    const key = lunchKeyForPlanCategory(category);
+    if (!LUNCH_CATEGORY_KEY_TO_DB_NAME[key]) continue;
+    rows.push({
+      key,
+      title: CATEGORY_LABELS[category] ?? LUNCH_CATEGORY_KEY_TO_DB_NAME[key],
+      displayOrder: i + 1,
+      items: [],
+    });
+  }
+  return rows;
 }
 
 async function fetchLunchCategoriesForTier(tier: PlanTier): Promise<LunchCatRow[]> {
@@ -256,13 +283,25 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
     const menuServiceDayId = msdIdByLocation.get(locationId);
     if (!companyId || !menuServiceDayId) continue;
 
+    const { data: companyRow, error: companyErr } = await admin
+      .from("companies")
+      .select("id, provider_id")
+      .eq("id", companyId)
+      .maybeSingle();
+
+    if (companyErr) {
+      throw new Error(`companies (msdi): ${companyErr.message}`);
+    }
+    if (safeTrim((companyRow as { provider_id?: string } | null)?.provider_id) !== providerId) {
+      continue;
+    }
+
     const { data: agr, error: agrErr } = await admin
       .from("agreements")
       .select("id")
       .eq("company_id", companyId)
       .eq("location_id", locationId)
       .eq("status", "ACTIVE")
-      .eq("provider_id", providerId)
       .order("starts_at", { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
@@ -293,9 +332,12 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
 
     let cached = tierCache.get(tier);
     if (!cached) {
-      const categories = await fetchLunchCategoriesForTier(tier);
+      let categories = await fetchLunchCategoriesForTier(tier);
       if (categories.length === 0) {
-        throw new Error(`MSDI_SYNC_EMPTY_SANITY_LUNCH_CATEGORIES:${tier}`);
+        categories = buildFallbackLunchCategoriesForTier(tier);
+      }
+      if (categories.length === 0) {
+        throw new Error(`MSDI_SYNC_EMPTY_LUNCH_CATEGORIES:${tier}`);
       }
       const varmrett = await fetchVarmrettMenuProjection(serviceDate, tier, providerId);
       cached = { categories, varmrett };

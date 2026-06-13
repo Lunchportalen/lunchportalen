@@ -153,7 +153,10 @@ describe("resolveOrderDayItemPersist", () => {
       menuScope: { mode: "scoped", providerId: "prov-a-id", providerSlug: "provider-a" },
     });
 
-    expect(getMenuForDateAndPlanMock).toHaveBeenCalledWith("2026-05-19", "BASIS", { providerSlug: "provider-a" });
+    expect(getMenuForDateAndPlanMock).toHaveBeenCalledWith("2026-05-19", "BASIS", {
+      providerSlug: "provider-a",
+      providerRef: "prov-a-id",
+    });
   });
 
   test("A/B-isolasjon: Provider B-scope spør aldri med Provider A-slug", async () => {
@@ -168,7 +171,10 @@ describe("resolveOrderDayItemPersist", () => {
     });
 
     expect(getMenuForDateAndPlanMock).toHaveBeenCalledTimes(1);
-    expect(getMenuForDateAndPlanMock).toHaveBeenCalledWith("2026-05-19", "BASIS", { providerSlug: "provider-b" });
+    expect(getMenuForDateAndPlanMock).toHaveBeenCalledWith("2026-05-19", "BASIS", {
+      providerSlug: "provider-b",
+      providerRef: "prov-b-id",
+    });
   });
 
   test("fail-closed menuScope henter aldri menuDay — statisk katalog brukes alene", async () => {

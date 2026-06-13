@@ -12,7 +12,7 @@ import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
 import { showOrderPricesForApiRole } from "@/lib/orders/projectionRole";
 import { getMenuForDates, menuDayHasDisplayableCopy } from "@/lib/cms/menuDay";
-import { menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
+import { menuDayQueryOptsFromScope, menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
 import { opsLog } from "@/lib/ops/log";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -51,7 +51,10 @@ function isAnyMissingColumnError(error: any, columns: string[]) {
 }
 
 function weekMenuCacheKey(days: string[], menuScope: MenuScopeDecision) {
-  const scopeKey = menuScope.mode === "scoped" ? `scoped:${menuScope.providerSlug}` : "legacy";
+  const scopeKey =
+    menuScope.mode === "scoped"
+      ? `scoped:${menuScope.providerId}:${menuScope.providerSlug ?? ""}`
+      : "legacy";
   return `${scopeKey}|${days.join("|")}`;
 }
 
@@ -68,10 +71,7 @@ async function getPublishedDatesCached(days: string[], menuScope: MenuScopeDecis
     return new Set(hit.publishedDates);
   }
 
-  const menus = await getMenuForDates(
-    days,
-    menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined,
-  );
+  const menus = await getMenuForDates(days, menuDayQueryOptsFromScope(menuScope));
   const publishedDates = (menus ?? [])
     .filter((menu: any) => menu?.isPublished === true && menuDayHasDisplayableCopy(menu))
     .map((menu: any) => safeStr(menu?.date))

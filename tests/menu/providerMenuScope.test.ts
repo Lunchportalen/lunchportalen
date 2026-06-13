@@ -130,12 +130,16 @@ describe("menuScopeDecision", () => {
     });
   });
 
-  it("provider uten slug → fail-closed (aldri unscoped)", () => {
+  it("provider uten slug → scoped via providerRef (aldri unscoped)", () => {
     const result: ProviderMenuScopeResult = {
       ok: true,
       scope: { providerId: "prov-a", providerSlug: null, providerName: "Provider A AS" },
     };
-    expect(menuScopeDecision(result)).toEqual({ mode: "fail-closed", reason: "PROVIDER_MISSING_SLUG" });
+    expect(menuScopeDecision(result)).toEqual({
+      mode: "scoped",
+      providerId: "prov-a",
+      providerSlug: null,
+    });
   });
 
   it("NO_PROVIDER → legacy unscoped (dagens atferd for legacy company)", () => {

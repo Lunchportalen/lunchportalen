@@ -34,7 +34,7 @@ import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
 import type { StoredMealContract } from "@/lib/server/agreements/mealContract";
 import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
-import { menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
+import { menuDayQueryOptsFromScope, menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
@@ -944,7 +944,7 @@ export async function GET(req: NextRequest) {
         reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
       });
     }
-    const menuDayOpts = menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined;
+    const menuDayOpts = menuDayQueryOptsFromScope(menuScope);
 
     const days = await Promise.all(
       legacyDays.map(async (day) => {

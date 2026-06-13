@@ -16,7 +16,7 @@ import {
   type MenuDay,
   type MenuDayQueryOptions,
 } from "@/lib/cms/menuDay";
-import { menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
+import { menuDayQueryOptsFromScope, menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 
 function severityCard(sev: Announcement["severity"]) {
   if (sev === "critical") return "bg-red-50 border-red-200 text-red-900";
@@ -106,7 +106,7 @@ export default async function Page() {
     if (!pRes.error && companyId) {
       const menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(supabaseAdmin(), companyId));
       if (menuScope.mode === "scoped") {
-        menuOpts = { providerSlug: menuScope.providerSlug };
+        menuOpts = menuDayQueryOptsFromScope(menuScope);
         menuBlocked = false;
       } else if (menuScope.mode === "legacy-unscoped") {
         menuBlocked = false;
