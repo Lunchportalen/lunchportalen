@@ -347,8 +347,8 @@ export function deriveSuperadminRegistrationPipelineNext(opts: {
     };
   }
   return {
-    stage_label: "Registrert — mangler ledger-avtaleutkast",
-    next_label: "Opprett avtaleutkast",
+    stage_label: "Registrert — venter godkjenning",
+    next_label: "Avtale opprettes kontrollert ved godkjenning. Manuelle avtaleutkast er deaktivert.",
     next_href: null,
   };
 }

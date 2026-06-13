@@ -5,6 +5,10 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import {
+  AGREEMENT_DRAFT_FLOW_DISABLED_CODE,
+  AGREEMENT_DRAFT_FLOW_DISABLED_MESSAGE,
+} from "@/lib/server/superadmin/agreementDraftFlowDisabled";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
@@ -18,12 +22,7 @@ export async function POST(req: NextRequest) {
   if (deny) return deny;
 
   const rid = g.ctx.rid;
-  return jsonErr(
-    rid,
-    "Manuell opprettelse av agreement-utkast er ikke lenger tillatt. Avtaler opprettes nå automatisk når en pending company_registration godkjennes. Se /superadmin/registrations.",
-    410,
-    "FLOW_DEPRECATED"
-  );
+  return jsonErr(rid, AGREEMENT_DRAFT_FLOW_DISABLED_MESSAGE, 410, AGREEMENT_DRAFT_FLOW_DISABLED_CODE);
 }
 
 export async function GET(req: NextRequest) {

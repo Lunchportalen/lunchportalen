@@ -80,7 +80,7 @@ function RegistrationDetailView({ r }: { r: CompanyRegistrationDetail }) {
     ledger_active_agreement_id: r.ledger_active_agreement_id,
   });
   const closed = safeStr(r.company_status).toUpperCase() === "CLOSED";
-  const showDraftBtn = !closed && !r.ledger_pending_agreement_id && !r.ledger_active_agreement_id;
+  const showDraftNotice = !closed && !r.ledger_pending_agreement_id && !r.ledger_active_agreement_id;
 
   return (
     <div className="lp-select-text mx-auto max-w-3xl px-4 py-8">
@@ -151,10 +151,10 @@ function RegistrationDetailView({ r }: { r: CompanyRegistrationDetail }) {
         </div>
       </section>
 
-      {showDraftBtn ? <CreateAgreementDraftButton companyId={r.company_id} /> : null}
+      {showDraftNotice ? <CreateAgreementDraftButton companyId={r.company_id} /> : null}
       {!closed && r.ledger_pending_agreement_id ? (
         <p className="mt-3 text-xs text-[rgb(var(--lp-muted))]">
-          Avtaleutkast finnes allerede. «Opprett avtaleutkast» er skjult til PENDING er ferdigbehandlet (godkjent eller avslått).
+          Pending ledger-avtale finnes. Godkjenn eller avslå via avtaleflyten — manuelle avtaleutkast er deaktivert.
         </p>
       ) : null}
       {!closed && !r.ledger_pending_agreement_id && r.ledger_active_agreement_id ? (
