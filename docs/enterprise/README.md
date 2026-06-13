@@ -2,7 +2,7 @@
 
 **Formål:** Én inngang for **innkjøp, IT, sikkerhet og ledelse** uten å måtte lete i hele `docs/`. Innholdet **pakker og presiser** det som allerede finnes — det introduserer ikke nye produktløfter.
 
-**Master Blueprint (uendret ansvar):** Umbraco = public/content · Sanity = meny/weekplan · Supabase = operativ sannhet · Next.js = experience/integrasjon. Se `AGENTS.md` for låste regler og RC-gates.
+**Master Blueprint (uendret ansvar):** Umbraco = public/content · Sanity = meny/weekplan · Supabase = operativ sannhet · Next.js = experience/integrasjon. **Repo-struktur og deploy:** [../architecture/monorepo.md](../architecture/monorepo.md). Se `AGENTS.md` for låste regler og RC-gates.
 
 **Ubetinget enterprise-live (E0):** Salgs- og due diligence-pakken under er **ikke** det samme som «ubetinget enterprise-live» i E0-forstand. E0-tabellen (`docs/enterprise-ready/ENTERPRISE_LIVE_LIMITATIONS.md`) og rad-for-rad-fasit Closeout 12 (`docs/enterprise-ready/ENTERPRISE_LIVE_E0_CLOSEOUT_12.md`) fastholder **NO-GO** for ubetinget status frem til dokumenterte blokkere er lukket med bevis. **RC-/produktkjerne** vurderes i `docs/decision/MASTER_BLUEPRINT_FINAL_PARITY.md`.
 
@@ -36,12 +36,12 @@
 | API-kontrakt `{ ok, rid, … }`, fail-closed | Ja | — |
 | Ordre, uke, kjøkken leseflate, company_admin rammer | Ja (RC) | — |
 | SSO / SAML / SCIM | Nei | `sso-roadmap.md` |
-| Full ekstern compliance-sertifisering (f.eks. SOC2 *attest*) | Kontekst-dokumentert | `docs/security/SOC2_CONTROL_MATRIX.md` beskriver *mapping*, ikke leverandør-attest i seg selv |
+| Full ekstern compliance-sertifisering (f.eks. SOC2 *attest*) | Kontekst-dokumentert | `docs/security/soc2-architecture-mapping.md` beskriver *mapping*, ikke leverandør-attest i seg selv |
 | K4-observabilitet som full incident-plattform | Delvis (`opsLog`, health) | Utvidet drift/alarm som produkt — se `AGENTS.md` Q17 K3 |
 
 **AI:** Brukes til innhold, forslag og styrt beslutningsstøtte der det er implementert — **ikke** solgt som synlig sluttbrukerprodukt der det ikke er live. Se `docs/product/technical.md`.
 
-**ESG / utvidet revisjon:** Leses opp mot faktisk implementerte flater og `docs/security/AUDIT_COVERAGE.md` — ikke som ubetinget full enterprise-revisorpakke uten avtalt scope.
+**ESG / utvidet revisjon:** Leses opp mot faktisk implementerte flater og `docs/security/audit-coverage.md` — ikke som ubetinget full enterprise-revisorpakke uten avtalt scope.
 
 ---
 

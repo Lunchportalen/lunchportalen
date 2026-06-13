@@ -4,6 +4,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { normOperativeSlot } from "@/lib/kitchen/operativeSlot";
 import { KITCHEN_OPERATIVE_ORDER_COLUMNS } from "@/lib/orders/projection";
 
 function safeStr(v: unknown) {
@@ -19,8 +20,7 @@ function isUuid(v: unknown) {
 
 /** Aligner med GET /api/kitchen — operativ grouping på leveringsvindu. */
 export function normKitchenSlot(v: unknown) {
-  const s = safeStr(v).toLowerCase();
-  return s || "lunch";
+  return normOperativeSlot(v);
 }
 
 export type OperativeKitchenOrderRow = {
@@ -35,6 +35,8 @@ export type OperativeKitchenOrderRow = {
 
 export type KitchenDayChoiceMapEntry = {
   choice_key: string;
+  item_key: string | null;
+  item_title_snapshot: string | null;
   note: string | null;
   updated_at: string | null;
   status: string | null;
@@ -102,7 +104,7 @@ export async function loadOperativeKitchenOrders(args: {
   if (userIds0.length) {
     let dcQ = admin
       .from("day_choices")
-      .select("user_id,company_id,location_id,date,choice_key,note,updated_at,status")
+      .select("user_id,company_id,location_id,date,choice_key,item_key,item_title_snapshot,note,updated_at,status")
       .eq("date", date)
       .in("user_id", userIds0);
     if (tenant !== "system") {
@@ -123,6 +125,11 @@ export async function loadOperativeKitchenOrders(args: {
       if (!prev || nextT >= prevT) {
         dcMap.set(k, {
           choice_key: safeStr(row.choice_key),
+          item_key: row.item_key != null && safeStr(row.item_key) ? safeStr(row.item_key) : null,
+          item_title_snapshot:
+            row.item_title_snapshot != null && safeStr(row.item_title_snapshot)
+              ? safeStr(row.item_title_snapshot)
+              : null,
           note: row.note != null ? safeStr(row.note) : null,
           updated_at: row.updated_at != null ? String(row.updated_at) : null,
           status: row.status != null ? String(row.status) : null,

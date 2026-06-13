@@ -17,10 +17,10 @@
 @media (prefers-reduced-motion: no-preference) {
   .ds-week-calendar-day-pill {
     transition:
-      transform 200ms cubic-bezier(0.22, 0.92, 0.27, 0.94),
-      background-color 200ms cubic-bezier(0.22, 0.92, 0.27, 0.94),
-      color 180ms cubic-bezier(0.22, 0.92, 0.27, 0.94),
-      box-shadow 200ms cubic-bezier(0.22, 0.92, 0.27, 0.94);
+      transform 180ms var(--ds-ease),
+      background-color 180ms var(--ds-ease),
+      color 180ms var(--ds-ease),
+      box-shadow 180ms var(--ds-ease);
   }
 
   .ds-week-calendar-day-pill:active {
@@ -40,20 +40,21 @@
 
 .ds-week-calendar-day-pill--idle {
   background-color: rgb(255 255 255 / 0.8);
-  color: #525252;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05);
+  color: var(--ds-text-soft);
+  box-shadow: 0 0 0 1px var(--ds-line);
 }
 
+/* Selected day — neutral (gold reserved for primary CTA) */
 .ds-week-calendar-day-pill--selected {
-  background-color: #fff6d6;
+  background-color: var(--ds-surface);
   color: var(--ds-text);
   box-shadow:
-    0 0 0 1px #f5c518,
-    0 10px 30px rgb(245 197 24 / 0.2);
+    0 0 0 2px var(--ds-text),
+    var(--ds-shadow-secondary);
 }
 
 .ds-week-calendar-day-pill--today {
-  outline: 2px solid var(--ds-accent);
+  outline: 2px solid var(--ds-line-strong);
   outline-offset: 2px;
 }
 
@@ -62,7 +63,7 @@
 }
 
 .ds-week-calendar-day-pill:focus-visible {
-  outline: 3px solid var(--ds-accent);
+  outline: 3px solid var(--ds-text);
   outline-offset: 3px;
   z-index: 1;
   position: relative;
@@ -73,14 +74,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--ds-body-xs, 12px);
+  font-size: var(--ds-body-xs);
   font-weight: 700;
   line-height: 1.2;
   text-transform: capitalize;
 }
 
 .ds-week-calendar-day-pill--idle .ds-week-calendar-day-pill__weekday {
-  color: #404040;
+  color: var(--ds-text-soft);
 }
 
 .ds-week-calendar-day-pill--selected .ds-week-calendar-day-pill__weekday {
@@ -90,16 +91,108 @@
 .ds-week-calendar-day-pill__daynum {
   display: block;
   margin-top: 0.25rem;
-  font-size: var(--ds-body-xxs, 11px);
+  font-size: var(--ds-body-xxs);
   font-weight: 500;
 }
 
 .ds-week-calendar-day-pill--idle .ds-week-calendar-day-pill__daynum {
-  color: #737373;
+  color: var(--ds-text-soft);
 }
 
 .ds-week-calendar-day-pill--selected .ds-week-calendar-day-pill__daynum {
-  color: rgb(82 82 82);
+  color: var(--ds-text-soft);
+}
+
+/* STEG 7.1 — kalender dag-celle livssyklus (token-drevet, ikke-farge affordance) */
+.ds-week-calendar-day-pill__state-mark {
+  display: block;
+  margin-top: 0.2rem;
+  line-height: 1;
+}
+
+/* STEG 8 — felles livssyklus-ikon (1em, currentColor; tekst-label bærer mening) */
+.ds-week-icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  color: currentColor;
+  vertical-align: -0.125em;
+}
+
+.ds-week-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Legacy glyph footprints (✓ 11px / clock 12px in 14px / — 14px) — font-size 12px keeps V.W8 probe */
+.ds-week-calendar-day-pill__state-mark--ordered {
+  display: block;
+  height: 11px;
+  line-height: 11px;
+  font-size: var(--ds-body-xs);
+  font-weight: 700;
+  color: var(--ds-accent);
+}
+
+.ds-week-calendar-day-pill__state-mark--locked,
+.ds-week-calendar-day-pill__state-mark--unavailable {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 14px;
+  height: 14px;
+  line-height: 14px;
+  font-size: var(--ds-body-xs);
+}
+
+.ds-week-calendar-day-pill__state-mark--locked {
+  color: var(--ds-text-soft);
+}
+
+.ds-week-calendar-day-pill__state-mark--unavailable {
+  font-weight: 600;
+  color: var(--ds-text);
+  letter-spacing: 0.08em;
+}
+
+.ds-week-calendar-day-pill__state-mark--ordered .ds-week-icon,
+.ds-week-calendar-day-pill__state-mark--locked .ds-week-icon,
+.ds-week-calendar-day-pill__state-mark--unavailable .ds-week-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  vertical-align: 0;
+}
+
+.ds-week-calendar-day-pill--locked:not(.ds-week-calendar-day-pill--selected) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ds-week-calendar-day-pill--locked:hover:not(:focus-visible) {
+  background-color: rgb(255 255 255 / 0.8);
+  box-shadow: 0 0 0 1px var(--ds-line);
+}
+
+.ds-week-calendar-day-pill--locked.ds-week-calendar-day-pill--selected {
+  opacity: 0.5;
+}
+
+.ds-week-calendar-day-pill--unavailable:not(.ds-week-calendar-day-pill--selected) {
+  background-color: var(--ds-bg-soft);
+  box-shadow: 0 0 0 1px var(--ds-line);
+  border-style: dashed;
+  border-width: 1px;
+  border-color: var(--ds-line-strong);
+}
+
+.ds-week-calendar-day-pill--unavailable:hover:not(:focus-visible) {
+  background-color: var(--ds-bg-soft);
+}
+
+.ds-week-calendar-day-pill--ordered .ds-week-calendar-day-pill__daynum {
+  font-weight: 600;
 }
 
 .ds-tier-pill {
@@ -122,21 +215,303 @@
 }
 
 .ds-tier-pill.is-luxus {
-  background: var(--ds-accent-soft);
-  color: #8a6800;
-  border: 1px solid rgba(245, 180, 0, 0.3);
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line-strong);
 }
 
 .ds-tier-pill.is-enterprise {
-  background: rgba(160, 124, 0, 0.12);
-  color: var(--lp-gold-dark);
-  border: 1px solid rgba(160, 124, 0, 0.3);
+  background: var(--ds-bg-soft);
+  color: var(--ds-text);
+  border: 1px solid var(--ds-line-strong);
 }
 
 .ds-tier-pill.is-unavailable {
   background: var(--ds-bg-soft);
   color: var(--ds-text-soft);
   border: 1px solid var(--ds-line);
+}
+
+/* Status pill — order/day state (STEG 5.1: single structural primitive) */
+.ds-week-status-pill {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 24px;
+  padding: 4px 12px;
+  border-radius: var(--ds-radius-pill);
+  border: none;
+  box-shadow: 0 0 0 1px var(--ds-line);
+  font-size: var(--ds-body-xs);
+  line-height: 16px;
+}
+
+.ds-week-status-pill.is-ordered {
+  background: var(--ds-status-success);
+  color: #fff;
+  box-shadow: 0 0 0 1px rgb(4 120 87 / 0.3);
+  font-weight: 700;
+}
+
+.ds-week-status-pill.is-open {
+  background: var(--ds-status-neutral-bg);
+  color: var(--ds-status-neutral-text);
+  box-shadow: 0 0 0 1px #e5e5e5;
+  font-weight: 600;
+}
+
+.ds-week-status-pill.is-cancelled {
+  background: transparent;
+  color: #404040;
+  box-shadow: 0 0 0 1px #d4d4d4;
+  font-weight: 600;
+}
+
+.ds-week-status-pill.is-locked {
+  background: #f5f5f5;
+  color: #404040;
+  box-shadow: 0 0 0 1px #e5e5e5;
+  font-weight: 600;
+}
+
+.ds-week-status-pill.is-cutoff {
+  background: #fffbeb;
+  color: #451a03;
+  box-shadow: 0 0 0 1px #fde68a;
+  font-weight: 600;
+}
+
+.ds-week-status-pill.is-preview {
+  background: #0a0a0a;
+  color: #fff;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+/* Surface — inset notice/card (STEG 5.2: dedup soft notice blocks) */
+.ds-week-surface {
+  box-sizing: border-box;
+  border: none;
+  box-shadow: 0 0 0 1px var(--ds-line);
+}
+
+.ds-week-surface--inset {
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-bg-soft);
+  padding: 1rem;
+}
+
+.ds-week-surface--inset.is-row {
+  padding-block: 0;
+}
+
+/* Panel — primary surfaces (allergen card, active day card) */
+.ds-week-surface--panel {
+  border-radius: var(--ds-radius-lg);
+  padding: 1.25rem;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.05),
+    var(--ds-shadow-soft);
+}
+
+/* Row — upcoming day list item */
+.ds-week-surface--row {
+  border-radius: var(--ds-radius-md);
+  padding-inline: 1rem;
+  padding-block: 0;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-week-surface--row {
+    transition: transform 180ms var(--ds-ease);
+  }
+
+  .ds-week-surface--row:active {
+    transform: scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-week-surface--row {
+    transition: none;
+  }
+
+  .ds-week-surface--row:active {
+    transform: none;
+  }
+}
+
+/* E2E week-visual: deterministic probes + resting screenshots (STEG 6) */
+html.lp-week-visual-regression .ds-week-surface--row {
+  transition: none !important;
+}
+
+/* Slot — selectable category / item choice on day card (STEG 5.4) */
+.ds-week-surface--slot {
+  box-sizing: border-box;
+  min-height: 48px;
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-line);
+  box-shadow: none;
+  color: var(--ds-text);
+  cursor: pointer;
+  transition:
+    border-color 0.18s var(--ds-ease),
+    background 0.18s var(--ds-ease),
+    box-shadow 0.18s var(--ds-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-week-surface--slot {
+    transition: none;
+  }
+}
+
+/* E2E week-visual: deterministic computed-style probes (no slot transition mid-sample) */
+html.lp-week-visual-regression .ds-week-surface--slot {
+  transition: none !important;
+}
+
+.ds-week-surface--slot[aria-pressed="true"],
+.ds-week-surface--slot.is-selected {
+  border-color: var(--ds-accent);
+  background: var(--ds-accent-soft);
+}
+
+.ds-week-surface--slot[aria-pressed="true"]::after,
+.ds-week-surface--slot.is-selected::after {
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ds-radius-pill);
+  border: 1.5px solid var(--ds-accent);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ds-week-surface--slot:focus {
+  outline: none;
+}
+
+.ds-week-surface--slot:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 3px;
+}
+
+.ds-week-surface--slot:disabled,
+.ds-week-surface--slot[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* STEG 7.1 — slot livssyklus (locked vs unavailable distinkt) */
+.ds-week-surface--slot.is-locked,
+.ds-week-surface--slot.is-locked[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ds-week-surface--slot.is-locked:hover,
+.ds-week-surface--slot.is-locked[aria-disabled="true"]:hover {
+  border-color: var(--ds-line);
+  background: var(--ds-surface);
+  box-shadow: none;
+}
+
+.ds-week-surface--slot.is-unavailable:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+  background: var(--ds-bg-soft);
+  border-style: dashed;
+  border-color: var(--ds-line-strong);
+}
+
+.ds-week-surface--slot.is-unavailable:disabled:hover {
+  border-color: var(--ds-line-strong);
+  background: var(--ds-bg-soft);
+}
+
+.week-category-card.is-ordered[aria-pressed="true"] {
+  border-color: var(--ds-accent);
+  background: var(--ds-accent-soft);
+}
+
+.week-category-card.is-ordered[aria-pressed="true"]::after {
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ds-radius-pill);
+  border: 1.5px solid var(--ds-accent);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.week-category-card__state-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: var(--ds-body-xs);
+  font-weight: 600;
+  color: var(--ds-text-soft);
+  line-height: 1.2;
+}
+
+.week-category-card__state-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.week-category-card.is-locked .week-category-card__state-label {
+  color: var(--ds-text-soft);
+}
+
+.week-category-card.is-unavailable .week-category-card__state-label {
+  font-style: italic;
+}
+
+/* Chip — read-only status/metadata pill (STEG 5.5) */
+.ds-week-surface--chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-bg-soft);
+  border: 1px solid var(--ds-line);
+  box-shadow: none;
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+  padding: 4px 10px;
+  line-height: 1.2;
+  transition: none;
+}
+
+.ds-week-surface--chip.ds-allergen-chip {
+  min-height: unset;
+  min-width: auto;
+  cursor: default;
+  pointer-events: none;
 }
 
 .week-day__categories {
@@ -147,39 +522,149 @@
 }
 
 .week-category-card {
+  position: relative;
   display: flex;
-  min-height: 48px;
   flex-direction: column;
   gap: 4px;
   padding: 16px;
-  border: 2px solid var(--ds-line);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-surface);
-  color: var(--ds-text);
   text-align: left;
+}
+
+.week-category-card:not([aria-pressed="true"]):not(.is-selected):hover:not(:disabled):not(.is-locked):not(.is-unavailable) {
+  border-color: var(--ds-line-strong);
+}
+
+.week-category-card.is-ordered .week-category-card__label {
+  color: var(--ds-text-soft);
+}
+
+.ds-ordered-meal-line {
+  margin: 0;
+  padding: clamp(12px, 2.5vw, 14px) clamp(14px, 3vw, 18px);
+  border-radius: var(--ds-radius-md);
+  border: 1.5px solid rgba(47, 122, 101, 0.35);
+  background: var(--ds-status-success-soft);
+  color: var(--ds-text);
+  font-size: var(--ds-body);
+  line-height: 1.45;
+  text-align: left;
+}
+
+.ds-ordered-meal-line__body {
+  font-weight: 600;
+}
+
+/* STEG 7.2 — ordered dag: kompakt sammendrag + «Endre» disclosure */
+.ds-week-ordered-collapse {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: clamp(12px, 2.5vw, 14px) clamp(14px, 3vw, 18px);
+  border-radius: var(--ds-radius-md);
+  border: 1.5px solid rgba(47, 122, 101, 0.35);
+  background: var(--ds-status-success-soft);
+  text-align: left;
+}
+
+.ds-week-ordered-collapse__summary {
+  margin: 0;
+  color: var(--ds-text);
+  font-size: var(--ds-body);
+  line-height: 1.45;
+}
+
+.ds-week-ordered-collapse__label {
+  font-weight: 600;
+}
+
+.ds-week-ordered-collapse__meal {
+  font-weight: 600;
+}
+
+.ds-week-ordered-collapse__locked-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ds-text-soft);
+  font-size: var(--ds-body-sm);
+  font-weight: 600;
+}
+
+.ds-week-ordered-collapse__locked-note__label {
+  display: inline-block;
+}
+
+.ds-week-ordered-collapse__locked-note .ds-week-icon {
+  flex-shrink: 0;
+}
+
+.ds-week-ordered-collapse__edit {
+  display: inline-flex;
+  min-height: 48px;
+  min-width: 48px;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: 0 20px;
+  border-radius: var(--ds-radius-pill);
+  border: 1.5px solid var(--ds-line);
+  background: rgb(255, 255, 255);
+  color: var(--ds-text);
+  font-size: var(--ds-body-sm);
+  font-weight: 600;
   cursor: pointer;
-  transition:
-    border-color 0.2s var(--ds-ease),
-    background 0.2s var(--ds-ease);
 }
 
-.week-category-card:hover:not(:disabled) {
-  border-color: var(--ds-accent);
-}
-
-.week-category-card.is-selected {
-  border-color: var(--ds-accent);
-  background: var(--ds-accent-soft);
-}
-
-.week-category-card:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.week-category-card:focus-visible {
-  outline: 3px solid var(--ds-accent);
+.ds-week-ordered-collapse__edit:focus-visible {
+  outline: 2px solid var(--ds-accent);
   outline-offset: 3px;
+}
+
+.week-ordered-picker-region {
+  margin-top: 0;
+}
+
+.week-ordered-picker-region--open {
+  margin-top: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .week-ordered-picker-region--open {
+    animation: week-ordered-picker-reveal 0.18s var(--ds-ease);
+  }
+}
+
+@keyframes week-ordered-picker-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-ordered-picker-region--open {
+    animation: none;
+  }
+}
+
+/* Habit insight — neutral (does not compete with primary CTA) */
+.ds-week-insight-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-status-neutral-bg);
+  color: var(--ds-status-neutral-text);
+  font-size: var(--ds-body-xxs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 0 1px var(--ds-status-neutral-line);
 }
 
 .week-category-card__label {
@@ -201,11 +686,6 @@
   font-size: var(--ds-body-sm);
 }
 
-.week-category-card__empty {
-  color: var(--ds-text-soft);
-  font-size: var(--ds-body-sm);
-  font-style: italic;
-}
 
 @media (min-width: 640px) {
   .week-day__categories {
@@ -285,7 +765,7 @@
   font-size: var(--ds-body-sm);
   font-style: italic;
   color: var(--ds-text-soft);
-  text-align: center;
+  text-align: left;
   padding: clamp(12px, 2vw, 16px);
 }
 
@@ -302,46 +782,21 @@
 }
 
 .ds-week-item-btn {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  min-height: 64px;
   padding: 14px 16px;
-  background: var(--ds-surface);
-  border: 1.5px solid var(--ds-line);
-  border-radius: var(--ds-radius-md);
   text-align: left;
-  cursor: pointer;
-  transition: border-color 0.18s var(--ds-ease), background 0.18s var(--ds-ease), box-shadow 0.18s var(--ds-ease),
-    transform 0.18s var(--ds-ease);
-  color: var(--ds-text);
 }
 
 .ds-week-item-btn:hover:not(:disabled) {
   border-color: var(--ds-line-strong);
-  transform: translateY(-1px);
-  box-shadow: var(--ds-shadow-card);
-}
-
-.ds-week-item-btn:focus-visible {
-  outline: 3px solid var(--ds-accent);
-  outline-offset: 3px;
-}
-
-.ds-week-item-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.ds-week-item-btn--selected {
-  border-color: var(--ds-accent);
-  background: var(--ds-accent-soft);
-  box-shadow: var(--ds-shadow-card);
 }
 
 .ds-week-item-btn--vegetarian {
-  border-color: rgba(47, 122, 101, 0.25);
+  border-color: var(--ds-line-strong);
 }
 
 .ds-week-item-btn__title {
@@ -359,29 +814,30 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--ds-body-xs);
   font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--ds-radius-pill);
-  background: rgba(245, 180, 0, 0.16);
-  color: #7a5a00;
+  background: var(--ds-warning-soft);
+  color: var(--ds-warning);
   white-space: nowrap;
 }
 
 .ds-allergen-badge--warning {
-  background: rgba(245, 180, 0, 0.22);
+  background: var(--ds-warning-soft);
 }
 
 .ds-vegetarian-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--ds-body-xs);
   font-weight: 500;
   padding: 3px 8px;
   border-radius: var(--ds-radius-pill);
-  background: rgba(47, 122, 101, 0.14);
-  color: var(--ds-green);
+  background: var(--ds-bg-soft);
+  color: var(--ds-text-soft);
+  border: 1px solid var(--ds-line);
 }
 
 @media (prefers-reduced-motion: reduce) {

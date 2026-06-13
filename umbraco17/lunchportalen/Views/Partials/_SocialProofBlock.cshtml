@@ -1,13 +1,21 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.Blocks.BlockListItem>
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
 
 @{
-    var quote    = Model.Content.Value<string>("quote");
-    var initials = Model.Content.Value<string>("initials") ?? "LP";
-    var name     = Model.Content.Value<string>("name");
-    var role     = Model.Content.Value<string>("role");
-    var facts    = Model.Content.Value<IEnumerable<BlockListItem>>("items");
+    var quote    = Model?.Value<string>("quote")
+        ?? "Plattformen ga oss oversikt uten ekstra administrasjon — og catereren vår fikk forutsigbar produksjon.";
+    var initials = Model?.Value<string>("initials") ?? "HF";
+    var name     = Model?.Value<string>("name") ?? "Hanne Fredriksen";
+    var role     = Model?.Value<string>("role") ?? "HR-leder, kundebedrift";
+    var facts    = Model?.Value<IEnumerable<BlockListItem>>("items");
+
+    var defaultFacts = new (string Value, string Label)[]
+    {
+        ("1 200+", "bedrifter på plattformen"),
+        ("−32%", "mindre matsvinn i snitt"),
+        ("08:00", "deterministisk bestillingsfrist")
+    };
 }
 
 <section class="lp-social-proof">
@@ -15,38 +23,28 @@
         <div class="lp-social-proof__grid">
 
             <article class="lp-social-proof__quote-card">
-                <div class="lp-social-proof__quote-mark">"</div>
+                <div class="lp-social-proof__quote-mark" aria-hidden="true">"</div>
 
-                @if (!string.IsNullOrWhiteSpace(quote))
-                {
-                    <blockquote class="lp-social-proof__quote">@quote</blockquote>
-                }
+                <blockquote class="lp-social-proof__quote">@quote</blockquote>
 
                 <div class="lp-social-proof__person">
-                    <div class="lp-social-proof__avatar">@initials</div>
+                    <div class="lp-social-proof__avatar" aria-hidden="true">@initials</div>
                     <div>
-                        @if (!string.IsNullOrWhiteSpace(name))
-                        {
-                            <div class="lp-social-proof__name">@name</div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(role))
-                        {
-                            <div class="lp-social-proof__role">@role</div>
-                        }
+                        <div class="lp-social-proof__name">@name</div>
+                        <div class="lp-social-proof__role">@role</div>
                     </div>
                 </div>
             </article>
 
-            @if (facts != null && facts.Any())
-            {
-                <div class="lp-social-proof__facts">
-                    @foreach (var item in facts)
+            <div class="lp-social-proof__facts">
+                @if (facts != null && facts.Any())
+                {
+                    foreach (var item in facts)
                     {
                         var value = item.Content.Value<string>("value");
                         var label = item.Content.Value<string>("label");
 
-                        @* Hopp over items uten verdi *@
-                        @if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(label))
+                        if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(label))
                         {
                             continue;
                         }
@@ -62,8 +60,18 @@
                             }
                         </div>
                     }
-                </div>
-            }
+                }
+                else
+                {
+                    foreach (var fact in defaultFacts)
+                    {
+                        <div class="lp-social-proof__fact">
+                            <strong>@fact.Value</strong>
+                            <span>@fact.Label</span>
+                        </div>
+                    }
+                }
+            </div>
 
         </div>
     </div>

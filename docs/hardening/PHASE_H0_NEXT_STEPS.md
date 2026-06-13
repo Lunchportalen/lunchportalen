@@ -33,5 +33,5 @@ H0 leverer **beslutningsgrunnlag**, ikke implementasjon. Neste steg bør eies ek
 
 ## Referanser
 
-- Baseline: `REPO_DEEP_DIVE_REPORT.md`  
+- Baseline: `docs/audit/repo-deep-dive-report.md`  
 - Senere delta: `docs/phase2d/PHASE2D_BASELINE_DELTA_AUDIT.md` (2D-kontekst)

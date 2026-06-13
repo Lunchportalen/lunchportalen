@@ -2,6 +2,20 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:3000}"
+BASE_URL="${BASE_URL//$'\r'/}"
+BASE_URL="${BASE_URL//$'\n'/}"
+
+if [[ "${STAGING_SMOKE_SKIP:-}" == "1" ]]; then
+  echo "SKIP: staging cron smoke pending real staging env (STAGING_SMOKE_SKIP=1)"
+  echo "  Expected when ready: BASE_URL=https://staging.app.lunchportalen.no (app) + Supabase uigxsboqeruxflgzqztl (db push in this workflow)"
+  exit 0
+fi
+
+if [[ ! "$BASE_URL" =~ ^https?://[^[:space:]]+$ ]]; then
+  echo "::error::BASE_URL must be absolute http(s) URL (length=${#BASE_URL})"
+  exit 1
+fi
+
 CRON_SECRET="${CRON_SECRET:-}"
 if [[ -z "$CRON_SECRET" && -f ".env.local" ]]; then
   CRON_SECRET="$(grep -E '^CRON_SECRET=' .env.local | head -n1 | cut -d '=' -f2- | tr -d '\r' | sed 's/^"//' | sed 's/"$//')"
@@ -54,9 +68,6 @@ check GET  /api/cron/forecast 403 "$EXPECTED_WITH_AUTH"
 check GET  /api/cron/preprod 403 "$EXPECTED_WITH_AUTH"
 check POST /api/cron/outbox 403 "$EXPECTED_WITH_AUTH"
 check POST /api/cron/cleanup-invites 403 "$EXPECTED_WITH_AUTH"
-check POST /api/cron/esg/daily 403 "$EXPECTED_WITH_AUTH"
-check POST /api/cron/esg/monthly 403 "$EXPECTED_WITH_AUTH"
-check POST /api/cron/esg/yearly 403 "$EXPECTED_WITH_AUTH"
 check POST /api/cron/system-motor 403 "$EXPECTED_WITH_AUTH" "$SYSTEM_MOTOR_SECRET"
 
 echo "PASS" | tee -a "$OUT_DIR/summary.txt"

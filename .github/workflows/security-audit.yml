@@ -1,5 +1,8 @@
 name: "Security: audit"
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   schedule:
     - cron: "0 7 * * *" # daglig 07:00
@@ -12,13 +15,15 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm

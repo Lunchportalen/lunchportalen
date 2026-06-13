@@ -3,7 +3,8 @@
  * READ-ONLY: Postgres vs tests/rls/golden-rls-snapshot.json (v2).
  * Exit: 0 = match, 1 = drift, 2 = config/connection.
  *
- * Env: SUPABASE_POSTGRES_URL eller DATABASE_URL (samme prioritet som migrationParity / rls:snapshot).
+ * Env (URL priority): RLS_DRIFT_DATABASE_URL > DATABASE_URL > SUPABASE_POSTGRES_URL
+ * Env (pinned ref): RLS_DRIFT_EXPECTED_REF (default hkpokyapzarefrgqzkos)
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -17,6 +18,8 @@ import {
   SQL_RLS_ENABLED_TABLES,
   buildGoldenPayload,
   createSupabasePoolConfig,
+  resolveRlsDatabaseUrl,
+  assertRlsDriftDbIdentity,
 } from "./rls/golden-snapshot-lib.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -30,12 +33,6 @@ const STATEMENT_TIMEOUT_MS = 8000;
 
 function checkedAt() {
   return new Date().toISOString();
-}
-
-function resolveDbUrl() {
-  const supa = (process.env.SUPABASE_POSTGRES_URL ?? "").trim();
-  const db = (process.env.DATABASE_URL ?? "").trim();
-  return supa ? supa : db ? db : "";
 }
 
 function loadGolden() {
@@ -64,14 +61,14 @@ function sliceDiff(label, goldenArr, liveArr) {
 }
 
 async function mainAsync() {
-  const urlRaw = resolveDbUrl();
+  const urlRaw = resolveRlsDatabaseUrl();
   if (!urlRaw) {
     printReport({
       ok: false,
       checkedAt: checkedAt(),
       error: "MISSING_DATABASE_URL",
       message:
-        "Sett SUPABASE_POSTGRES_URL eller DATABASE_URL. Legg inn som GitHub secret for scheduled drift-sjekk.",
+        "Sett RLS_DRIFT_DATABASE_URL, DATABASE_URL eller SUPABASE_POSTGRES_URL. Legg inn som GitHub secret for scheduled drift-sjekk.",
     });
     return 2;
   }
@@ -95,6 +92,20 @@ async function mainAsync() {
       checkedAt: checkedAt(),
       error: "GOLDEN_VERSION",
       message: `Forventet golden.version === 2, fikk ${golden.version}`,
+    });
+    return 2;
+  }
+
+  const identity = assertRlsDriftDbIdentity({
+    databaseUrl: urlRaw,
+    goldenProjectRef: golden.project_ref,
+  });
+  if (!identity.ok) {
+    printReport({
+      ok: false,
+      checkedAt: checkedAt(),
+      error: "DB_IDENTITY_MISMATCH",
+      message: identity.error,
     });
     return 2;
   }
@@ -123,7 +134,7 @@ async function mainAsync() {
       const { rows: rlsRows } = await client.query(SQL_RLS_ENABLED_TABLES);
 
       const live = buildGoldenPayload({
-        project_ref: golden.project_ref,
+        project_ref: identity.connectedRef,
         postgres_version,
         policyRows,
         functionRows,
@@ -164,6 +175,7 @@ async function mainAsync() {
         },
         meta: {
           match: metaOk,
+          expected_ref: identity.expectedRef,
           project_ref: { golden: golden.project_ref, live: live.project_ref },
           postgres_version: { golden: golden.postgres_version, live: live.postgres_version },
         },

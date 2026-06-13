@@ -21,7 +21,7 @@ import { formatDateNO, formatMenuDateNO } from "@/lib/date/format";
 import { weekRangeISO } from "@/lib/date/week";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 export const metadata: Metadata = {
   title: "Ukeplan – Lunchportalen",
@@ -147,6 +147,19 @@ function normalizeCategoryText(value: unknown) {
     .replace(/å/g, "a");
 }
 
+function menuDayCategoryEnum(value: unknown): SuperadminMenuCategory | null {
+  const c = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (c === "paasmurt") return "Påsmurt";
+  if (c === "salat") return "Salatboks";
+  if (c === "sushi") return "Sushi";
+  if (c === "pokebowl") return "Pokebowl";
+  if (c === "thai") return "Thaimat";
+  if (c === "varmrett") return "Varmmat";
+  return null;
+}
+
 function matchMenuCategory(value: unknown): SuperadminMenuCategory | null {
   const text = normalizeCategoryText(value);
   if (!text) return null;
@@ -154,13 +167,16 @@ function matchMenuCategory(value: unknown): SuperadminMenuCategory | null {
   if (/\bpoke\s*bowl\b|\bpokebowl\b|\bpoke\b/.test(text)) return "Pokebowl";
   if (/\bthai\b|\bthaimat\b/.test(text)) return "Thaimat";
   if (/\bpasmurt\b|\bsandwich\b/.test(text)) return "Påsmurt";
-  if (/\bvarm\b|\bvarmmat\b/.test(text)) return "Varmmat";
+  if (/\bvarmrett\b|\bvarmmat\b/.test(text)) return "Varmmat";
+  if (/\bvarm\b/.test(text)) return "Varmmat";
   if (/\bsalat\b|\bsalatboks\b/.test(text)) return "Salatboks";
   return null;
 }
 
 function normalizeMenuCategory(menu: MenuDay): SuperadminMenuCategory | null {
   const row = menu as MenuDay & Record<string, unknown>;
+  const fromEnum = menuDayCategoryEnum(row.category);
+  if (fromEnum) return fromEnum;
   const directSources = [row.category, row.menuType, row.type, row.kind, row.title];
   for (const source of directSources) {
     const category = matchMenuCategory(source);
@@ -265,7 +281,7 @@ function SuperadminCategoryLine({ status }: { status: SuperadminCategoryDayStatu
         className={`inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
           isPublished
             ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
-            : "bg-[#fff3c8] text-amber-950 ring-amber-200/80"
+            : "bg-amber-50 text-amber-950 ring-amber-200/80"
         }`}
       >
         {isPublished ? "Publisert" : "Mangler"}
@@ -301,7 +317,7 @@ function SuperadminUncategorizedMenuLine({ menus }: { menus: MenuDay[] }) {
       <p className="min-w-0 text-sm leading-6 text-neutral-700 sm:truncate">
         Publisert meny uten kategori{menus.length > 1 ? ` (${menus.length})` : ""}
       </p>
-      <span className="inline-flex w-fit shrink-0 items-center rounded-full bg-[#fff3c8] px-2.5 py-1 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-200/80">
+      <span className="inline-flex w-fit shrink-0 items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-200/80">
         Uten kategori
       </span>
     </div>
@@ -344,7 +360,7 @@ function SuperadminWeekPreviewCard({
   const counts = weekTierCounts(block, menusByDate);
 
   return (
-    <section className="rounded-[2rem] bg-white/85 p-5 shadow-[0_12px_34px_rgba(24,20,16,0.045)] ring-1 ring-black/5 sm:p-6">
+    <section className="rounded-lg bg-white/85 p-5 shadow-card ring-1 ring-black/5 sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold tracking-[-0.025em] text-neutral-950">{block.title}</h2>
@@ -356,7 +372,7 @@ function SuperadminWeekPreviewCard({
           className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
             counts.isComplete
               ? "bg-emerald-50 text-emerald-950 ring-emerald-200"
-              : "bg-[#f5c518]/15 text-neutral-950 ring-[#f5c518]/25"
+              : "bg-amber-50 text-amber-950 ring-amber-200"
           }`}
         >
           {counts.isComplete ? "Komplett" : "Mangler"}
@@ -373,7 +389,7 @@ function SuperadminWeekPreviewCard({
       </div>
 
       {!counts.hasPublishedMenu ? (
-        <div className="mt-5 border-l-2 border-[#f5c518] pl-4">
+        <div className="mt-5 border-l-2 border-neutral-300 pl-4">
           <p className="text-base font-semibold tracking-[-0.01em] text-neutral-950">{block.emptyTitle}</p>
           <p className="mt-1 text-sm leading-6 text-neutral-600">
             Publiser Salatboks, Påsmurt og Varmmat for Basis. Legg til Sushi, Pokebowl og Thaimat for Luxus.
@@ -399,7 +415,7 @@ function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: Employ
   ];
 
   return (
-    <section className="mt-6 rounded-[2rem] bg-white/85 p-5 shadow-[0_12px_34px_rgba(24,20,16,0.045)] ring-1 ring-black/5 sm:p-6">
+    <section className="mt-6 rounded-lg bg-white/85 p-5 shadow-card ring-1 ring-black/5 sm:p-6">
       <div className="mx-auto max-w-2xl text-center">
         <span className="inline-flex rounded-full bg-neutral-950 px-3 py-1 text-xs font-semibold text-white">
           Kun visning
@@ -419,9 +435,9 @@ function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: Employ
             <Link
               key={tab.mode}
               href={`/week?preview=${tab.mode}`}
-              className={`min-h-[58px] rounded-2xl px-4 py-3 text-center ring-1 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518]/50 ${
+              className={`min-h-day rounded-2xl px-4 py-3 text-center ring-1 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/40 ${
                 active
-                  ? "bg-[#fff6d6] text-neutral-950 ring-[#f5c518] shadow-[0_10px_30px_rgba(245,197,24,0.2)]"
+                  ? "bg-white text-neutral-950 ring-neutral-900 shadow-secondary"
                   : "bg-white text-neutral-800 ring-black/10"
               }`}
             >
@@ -432,7 +448,7 @@ function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: Employ
         })}
       </div>
 
-      <div className="mx-auto mt-6 max-w-[430px] rounded-[2rem] bg-white p-3 shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5">
+      <div className="mx-auto mt-6 max-w-week-mobile rounded-lg bg-white p-3 shadow-soft ring-1 ring-black/5">
         <EmployeeWeekClient
           canAct={false}
           billingHoldReason={null}
@@ -480,19 +496,19 @@ async function renderSuperadminWeekPreview(previewMode: EmployeePreviewMode) {
   const allComplete = thisWeekCounts.isComplete && nextWeekCounts.isComplete;
 
   return (
-    <section className="w-full bg-[#fbf8f1] px-4 py-6 sm:py-8">
-      <div className="mx-auto w-full max-w-[1120px]">
+    <section className="w-full bg-bg px-4 py-6 sm:py-8">
+      <div className="mx-auto w-full max-w-week-admin">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">SUPERADMIN</p>
           <h1 className="mt-2 text-3xl font-semibold leading-[0.98] tracking-[-0.045em] text-neutral-950 md:text-5xl">
             Publisert ukesmeny
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-6 text-neutral-600 sm:text-base sm:leading-7">
+          <p className="mx-auto mt-3 max-w-2xl text-ds-body-sm leading-6 text-neutral-600 sm:text-base sm:leading-7">
             Forhåndsvisning av meny som ansatte får se etter avtale, nivå og tilgang.
           </p>
         </div>
 
-        <div className="mx-auto mt-5 grid max-w-3xl grid-cols-1 gap-3 rounded-[1.75rem] bg-white/75 px-4 py-4 text-center shadow-[0_12px_40px_rgba(24,20,16,0.04)] ring-1 ring-black/5 backdrop-blur sm:grid-cols-3 sm:px-5">
+        <div className="mx-auto mt-5 grid max-w-3xl grid-cols-1 gap-3 rounded-lg bg-white/75 px-4 py-4 text-center shadow-card ring-1 ring-black/5 backdrop-blur sm:grid-cols-3 sm:px-5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">Denne uken</p>
             <p className="mt-1 text-sm font-semibold leading-5 text-neutral-950">
@@ -522,20 +538,20 @@ async function renderSuperadminWeekPreview(previewMode: EmployeePreviewMode) {
         <div className="mx-auto mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
           <Link
             href="/superadmin"
-            className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
+            className="inline-flex min-h-action w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
           >
             G&aring; til systemadministrasjon
           </Link>
           <Link
             href="/kitchen"
-            className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-neutral-950 ring-1 ring-black/10 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
+            className="inline-flex min-h-action w-full items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-neutral-950 ring-1 ring-black/10 transition-transform duration-150 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40"
           >
             Se kj&oslash;kkenoversikt
           </Link>
         </div>
 
         {menuDataError ? (
-          <div className="mx-auto mt-5 max-w-2xl border-l-2 border-[#f5c518] bg-white/55 px-4 py-3 text-sm text-amber-950">
+          <div className="mx-auto mt-5 max-w-2xl border-l-2 border-neutral-300 bg-white/55 px-4 py-3 text-sm text-neutral-800">
             Kunne ikke hente publisert meny akkurat nå. Superadmin-preview viser derfor trygge placeholders.
           </div>
         ) : null}
@@ -614,6 +630,10 @@ export default async function EmployeeWeekPage({
           <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
             Bestillingsprofil
           </Link>
+          {" · "}
+          <Link href="/week/allergenprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Allergenprofil
+          </Link>
         </p>
         <EmployeeWeekClient canAct={false} billingHoldReason={null} />
       </>
@@ -646,6 +666,10 @@ export default async function EmployeeWeekPage({
           {" · "}
           <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
             Bestillingsprofil
+          </Link>
+          {" · "}
+          <Link href="/week/allergenprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Allergenprofil
           </Link>
         </p>
         <EmployeeWeekClient canAct={false} billingHoldReason="Mangler service-konfigurasjon for firmaverifisering." />
@@ -689,6 +713,10 @@ export default async function EmployeeWeekPage({
           {" · "}
           <Link href="/week/bestillingsprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
             Bestillingsprofil
+          </Link>
+          {" · "}
+          <Link href="/week/allergenprofil" className="font-semibold text-neutral-900 underline decoration-neutral-400 underline-offset-4">
+            Allergenprofil
           </Link>
         </p>
         <EmployeeWeekClient canAct={false} billingHoldReason="Kan ikke verifisere firmastatus akkurat nå." />

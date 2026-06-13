@@ -19,8 +19,11 @@
 
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms" />
+    <PackageReference Include="Umbraco.StorageProviders.AzureBlob" />
+    <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" />
     <PackageReference Include="SeoToolkit.Umbraco" />
     <PackageReference Include="SeoToolkit.Umbraco.Sitemap" />
+    <PackageReference Include="uSync" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +32,16 @@
       Include="System.Globalization.AppLocalIcu"
       Value="72.1.0.3"
       Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)'=='Release'">
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Lunchportalen.AppUrls.Tests/**" />
+    <Content Remove="Lunchportalen.AppUrls.Tests/**" />
+    <None Remove="Lunchportalen.AppUrls.Tests/**" />
   </ItemGroup>
 
 </Project>

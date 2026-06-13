@@ -115,6 +115,13 @@ vi.mock("@/lib/orders/resolveOrderDayItemPersist", () => ({
 
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({
+    rpc: async (name: string, args: unknown) => {
+      rpcCalls.push({ name, args });
+      if (name === "lp_idem_begin") return idemBeginResult;
+      if (name === "lp_idem_complete") return { data: null, error: null };
+      if (name === "lp_idem_fail") return { data: null, error: null };
+      return { data: null, error: { message: `unknown admin rpc ${name}` } };
+    },
     from: () => ({
       upsert: async () => ({ error: null }),
       select: () => ({
@@ -131,9 +138,6 @@ vi.mock("@/lib/supabase/server", () => ({
   supabaseServer: async () => ({
     rpc: async (name: string, args: unknown) => {
       rpcCalls.push({ name, args });
-      if (name === "lp_idem_begin") return idemBeginResult;
-      if (name === "lp_idem_complete") return { data: null, error: null };
-      if (name === "lp_idem_fail") return { data: null, error: null };
       if (name === "lp_order_set") return idemOrderSetResult;
       return { data: null, error: { message: `unknown rpc ${name}` } };
     },

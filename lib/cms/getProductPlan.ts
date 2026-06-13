@@ -50,6 +50,7 @@ export async function getProductPlan(
         price,
         allowedMeals,
         allowedMealTypes,
+        includesWarm,
         rules,
         allowDailyVariation
       }`,
@@ -62,7 +63,11 @@ export async function getProductPlan(
     const allowedNew = Array.isArray((doc as any).allowedMeals) ? (doc as any).allowedMeals : [];
     const allowedLegacy = Array.isArray((doc as any).allowedMealTypes) ? (doc as any).allowedMealTypes : [];
     const allowedRaw = allowedNew.length ? allowedNew : allowedLegacy;
-    const allowedMeals = allowedRaw.map((x: unknown) => normalizeMealTypeKey(x)).filter(Boolean);
+    let allowedMeals = allowedRaw.map((x: unknown) => normalizeMealTypeKey(x)).filter(Boolean);
+    const includesWarm = (doc as { includesWarm?: boolean | null }).includesWarm !== false;
+    if (includesWarm && !allowedMeals.includes("varmmat")) {
+      allowedMeals = [...allowedMeals, "varmmat"];
+    }
     if (!Number.isFinite(price) || price <= 0 || !allowedMeals.length) return null;
 
     const rulesObj = (doc as any).rules && typeof (doc as any).rules === "object" ? (doc as any).rules : null;

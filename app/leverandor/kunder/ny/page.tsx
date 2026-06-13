@@ -7,10 +7,13 @@ import Link from "next/link";
 export default function LeverandorNyKundePage() {
   return (
     <div className="ds-container">
-      <h1 className="ds-h2">Legg til kunde</h1>
-      <p className="ds-lead">Registrering av nye kunder kommer i Patch 13.</p>
+      <h1 className="ds-h2">Ny bedriftskunde</h1>
+      <p className="ds-lead">
+        Direkte opprettelse av bedriftskunder er ikke tilgjengelig ennå. Nye bedrifter i ditt dekningsområde kommer
+        inn via Registreringer når de melder interesse, og vises under Bedrifter etter godkjenning.
+      </p>
       <Link href="/leverandor/kunder" className="ds-btn ds-btn--secondary">
-        Tilbake til kunder
+        Tilbake til bedrifter
       </Link>
     </div>
   );

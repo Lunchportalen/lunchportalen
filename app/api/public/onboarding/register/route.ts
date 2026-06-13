@@ -120,6 +120,21 @@ function mapRpcError(messageRaw: unknown) {
   if (m.includes("POSTAL_CITY_REQUIRED")) {
     return { status: 400, code: "POSTAL_CITY_REQUIRED", message: "Poststed må fylles ut." };
   }
+  if (m.includes("ORGNR_ALREADY_REGISTERED") || m.includes("ORGNR_RECENT_REGISTRATION_EXISTS")) {
+    return {
+      status: 409,
+      code: "ORGNR_ALREADY_REGISTERED",
+      message: "Dette organisasjonsnummeret er allerede registrert eller til behandling.",
+    };
+  }
+  // Fail-closed provider-scope: ingen leverandør dekker postnummeret => ingen rader skrevet.
+  if (m.includes("PROVIDER_NOT_FOUND")) {
+    return {
+      status: 422,
+      code: "PROVIDER_NOT_FOUND",
+      message: "Vi dekker dessverre ikke dette området ennå. Ingen registrering er opprettet.",
+    };
+  }
 
   return { status: 500, code: "REGISTER_FAILED", message: "Registreringen kunne ikke fullføres nå." };
 }

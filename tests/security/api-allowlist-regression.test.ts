@@ -5,6 +5,7 @@ import path from "node:path";
 
 import {
   API_AUTH_ALLOWLIST,
+  API_AUTH_ALLOWLIST_GET_ONLY,
   API_AUTH_ALLOWLIST_SIZE,
   isApiAuthAllowlisted,
 } from "@/lib/server/auth/apiAllowlist";
@@ -14,7 +15,6 @@ const API_ROOT = path.join(ROOT, "app", "api");
 
 /** Routes fixed in PR-X1 Fase 3 — must have explicit fail-closed gate in route file. */
 const CRITICAL_INLINE_AUTH: Array<{ url: string; file: string; pattern: RegExp }> = [
-  { url: "/api/ai/analyze", file: "app/api/ai/analyze/route.ts", pattern: /denyUnlessSession/ },
   { url: "/api/system/outbox/process", file: "app/api/system/outbox/process/route.ts", pattern: /requireCronAuth/ },
   { url: "/api/superadmin/users/set-company-admin", file: "app/api/superadmin/users/set-company-admin/route.ts", pattern: /requireSuperadmin/ },
   { url: "/api/auth/profile", file: "app/api/auth/profile/route.ts", pattern: /denyUnlessSession/ },
@@ -77,9 +77,9 @@ const API_KEY_AUTH = /(x-api-key|API_KEY|apiKey|v1\/public\/orders)/i;
 describe("api-allowlist-regression (DC-011)", () => {
   const routeFiles = walkRouteFiles(API_ROOT);
 
-  test("allowlist size matches canonical count (83)", () => {
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(83);
-    expect(API_AUTH_ALLOWLIST.size + 3).toBe(83);
+  test("allowlist size matches canonical count (85)", () => {
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(85);
+    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(85);
   });
 
   test("every allowlisted static path maps to a route file with category auth evidence", () => {
@@ -95,6 +95,15 @@ describe("api-allowlist-regression (DC-011)", () => {
       else if (isWebhook) expect(src).toMatch(WEBHOOK_AUTH);
       else if (isApiKey) expect(src).toMatch(API_KEY_AUTH);
       else expect(src).toMatch(ANON_VALIDATION);
+    }
+    for (const url of API_AUTH_ALLOWLIST_GET_ONLY) {
+      expect(isApiAuthAllowlisted(url, "GET")).toBe(true);
+      expect(isApiAuthAllowlisted(url, "POST")).toBe(false);
+      const file = routeFiles.find((f) => fileToApiPath(f) === url);
+      expect(file, `missing route file for GET-only allowlist entry ${url}`).toBeTruthy();
+      const src = fs.readFileSync(file!, "utf8");
+      expect(src).toMatch(/scopeOr401/);
+      expect(src).toMatch(/requireRoleOr403/);
     }
   });
 

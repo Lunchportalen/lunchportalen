@@ -1,10 +1,43 @@
 name: Supabase Migrate + Verify + Evidence + Typegen
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   pull_request:
     branches: [ "**" ]
+    paths: &supabase_ci_paths
+      - "app/**"
+      - "components/**"
+      - "lib/**"
+      - "public/**"
+      - "studio/**"
+      - "supabase/**"
+      - "scripts/**"
+      - "tests/**"
+      - "e2e/**"
+      - "middleware.ts"
+      - "next.config.ts"
+      - "instrumentation.ts"
+      - "vercel.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - "playwright.config.ts"
+      - "tailwind.config.cjs"
+      - "postcss.config.cjs"
+      - ".eslintrc.cjs"
+      - "eslint.config.*"
+      - "AGENTS.md"
+      - ".github/workflows/supabase-migrate.yml"
+      - "scripts/ci/migration-gate.mjs"
+      - "scripts/ci/db-contracts.mjs"
+      - "scripts/ci/assert-db-target.mjs"
+      - "scripts/smoke/cron-smoke.sh"
   push:
     branches: [ "main" ]
+    paths: *supabase_ci_paths
   workflow_dispatch: {}
 
 concurrency:
@@ -20,17 +53,37 @@ jobs:
       pull-requests: write
 
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
       DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      BASE_URL: ${{ secrets.POSTDEPLOY_BASE_URL }}
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
+      # HTTP cron smoke needs staging.app (uigx-backed deploy); POSTDEPLOY_BASE_URL not wired yet — owner fixes secret.
+      STAGING_SMOKE_SKIP: "1"
       EVIDENCE_DIR: evidence/staging
+      # Locked shadow baseline — bump intentionally in FASE 3 when RLS policies are added.
+      TENANT_POLICY_COUNT_BASELINE: "53"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch PR base/head SHAs (migration diff)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+          echo "Fetched base=${{ github.event.pull_request.base.sha }}"
+          echo "Fetched head=${{ github.event.pull_request.head.sha }}"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -39,51 +92,167 @@ jobs:
         run: npm ci
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.102.0
+
+      - name: Install psql
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Detect migration file changes in PR
+        id: mig_diff
+        env:
+          MIG_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          MIG_DIFF_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          node scripts/ci/detect-pr-migration-changes.mjs | tee /tmp/mig-detect.log
+          CHANGED="$(grep -o 'changed=\(true\|false\)' /tmp/mig-detect.log | tail -1 | cut -d= -f2)"
+          CANONICAL="$(git diff --name-only --diff-filter=ACMR "$MIG_DIFF_BASE" "$MIG_DIFF_HEAD" -- supabase/migrations/ | grep -E '^supabase/migrations/[0-9][0-9]+_.*\.sql$' || true)"
+          if [ "$CHANGED" = "true" ] && [ -z "$CANONICAL" ]; then
+            echo "::error::Migration detector mismatch: changed=true but canonical diff empty"
+            exit 1
+          fi
+          if [ "$CHANGED" = "false" ] && [ -n "$CANONICAL" ]; then
+            echo "::error::Migration detector false-negative — canonical diff found:"
+            echo "$CANONICAL"
+            exit 1
+          fi
+          if [ "$CHANGED" = "true" ]; then
+            echo "PR modifies supabase/migrations — staging apply eligible (non-draft)."
+          else
+            echo "No supabase/migrations changes in PR — staging db push skipped."
+          fi
 
       - name: Prepare evidence dir
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
           echo "ref=${GITHUB_REF}" > "$EVIDENCE_DIR/meta.txt"
           echo "sha=${GITHUB_SHA}" >> "$EVIDENCE_DIR/meta.txt"
 
+      - name: Verify required secrets present (staging)
+        run: |
+          set -euo pipefail
+          missing=()
+          for var in SUPABASE_ACCESS_TOKEN PROJECT_REF DB_PASSWORD CRON_SECRET BASE_URL SYSTEM_MOTOR_SECRET; do
+            if [ -z "${!var:-}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required staging secrets/env: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required staging secrets present."
+
+      - name: Build staging DATABASE_URL (session pooler)
+        run: |
+          set -euo pipefail
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing staging job: PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          echo "STAGING_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "Staging session pooler URL configured."
+
+      - name: Assert DB target (staging, fail-closed)
+        run: |
+          set -euo pipefail
+          node scripts/ci/assert-db-target.mjs --expect staging
+
       # ✅ Gate 1: Migrasjonsrekkefølge + bootstrap-sjekk (før vi toucher staging)
       - name: Migration gate (order + bootstrap-safe)
         run: |
+          set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
-      - name: Link project (staging)
+      - name: Repair MCP ledger drift (staging, idempotent)
         run: |
-          supabase link --project-ref "$PROJECT_REF"
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          set -euo pipefail
+          node scripts/ci/repair-staging-mcp-batch-ledger.mjs | tee "$EVIDENCE_DIR/ledger-repair.log"
 
-      # ✅ Apply migrations to staging
-      - name: Apply migrations (staging)
+      # ✅ Guard verify: capture pinned CLI 2.102.0 dry-run output against uigx (fail-closed)
+      - name: Staging dry-run (guard verify, pinned CLI)
         run: |
-          supabase db push --project-ref "$PROJECT_REF" --password "$DB_PASSWORD" 2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+          set -euo pipefail
+          set +e
+          OUT="$(supabase db push --dry-run --db-url "$STAGING_DATABASE_URL" 2>&1)"
+          DRY_EXIT=$?
+          set -e
+          echo "$OUT" | tee "$EVIDENCE_DIR/db-push-dry-run-staging.log"
+          node scripts/ci/db-push-preflight-guard.mjs --exit "$DRY_EXIT" < "$EVIDENCE_DIR/db-push-dry-run-staging.log"
 
-      # ✅ Verify DB contracts (fail-closed)
+      # ✅ Apply migrations to staging only when this PR changes migrations (fail-closed on apply)
+      - name: Apply migrations (staging, session pooler)
+        if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
+        run: |
+          set -euo pipefail
+          supabase db push --db-url "$STAGING_DATABASE_URL" --yes \
+            2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+
+      - name: Verify migration actually applied (staging)
+        if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
+        run: |
+          set -euo pipefail
+          LATEST_LOCAL="$(ls supabase/migrations/ | sort | tail -1 | grep -oP '^\d+' || true)"
+          if [ -z "$LATEST_LOCAL" ]; then
+            echo "No local migrations found — skipping verify."
+            exit 0
+          fi
+          echo "Verifying $LATEST_LOCAL is in schema_migrations (staging)..."
+          APPLIED="$(psql "$DATABASE_URL" -t -A -c \
+            "SELECT version FROM supabase_migrations.schema_migrations \
+             WHERE version = '$LATEST_LOCAL'")"
+          if [ "$APPLIED" != "$LATEST_LOCAL" ]; then
+            echo "::error::Migration $LATEST_LOCAL not in staging schema_migrations!"
+            echo "Last 5 applied versions:"
+            psql "$DATABASE_URL" -c \
+              "SELECT version FROM supabase_migrations.schema_migrations \
+               ORDER BY version DESC LIMIT 5"
+            exit 1
+          fi
+          echo "Migration $LATEST_LOCAL verified applied on staging."
+
+      - name: Verify batch order status sync (staging, Model B loop)
+        if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-batch-order-status-sync-staging.mjs 2>&1 | tee "$EVIDENCE_DIR/batch-order-status-sync-verify.log"
+
       - name: Verify DB contracts (staging)
         run: |
+          set -euo pipefail
           node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
+
+      - name: Verify FASE 2 auth hook shadow (staging)
+        if: steps.mig_diff.outputs.changed == 'true' && github.event.pull_request.draft == false
+        run: |
+          set -euo pipefail
+          node scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs 2>&1 | tee "$EVIDENCE_DIR/fase2-auth-hook-verify.log"
 
       # ✅ Optional: run your smoke scripts (cron/auth/RPC etc.)
       - name: Smoke tests (staging)
         run: |
-          bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
+          set -euo pipefail
+          bash scripts/smoke/run-cron-smoke-ci.sh "$EVIDENCE_DIR/cron-smoke.log"
 
       # ✅ Typegen (committed types are optional; here we just generate + upload as evidence)
       - name: Typegen (staging)
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR/typegen"
           supabase gen types typescript --project-id "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
           echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"
 
       - name: Upload evidence artifact (staging)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: evidence-staging-${{ github.sha }}
           path: evidence/staging
@@ -92,21 +261,26 @@ jobs:
   prod:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
 
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
       DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       EVIDENCE_DIR: evidence/prod
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -115,70 +289,122 @@ jobs:
         run: npm ci
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.102.0
+
+      - name: Install psql
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
 
       - name: Prepare evidence dir
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
           echo "ref=${GITHUB_REF}" > "$EVIDENCE_DIR/meta.txt"
           echo "sha=${GITHUB_SHA}" >> "$EVIDENCE_DIR/meta.txt"
 
+      - name: Verify required secrets present (prod)
+        run: |
+          set -euo pipefail
+          missing=()
+          for var in SUPABASE_ACCESS_TOKEN PROJECT_REF DB_PASSWORD CRON_SECRET APP_BASE_URL SYSTEM_MOTOR_SECRET; do
+            if [ -z "${!var:-}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required prod secrets/env: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required prod secrets present."
+
+      - name: Build prod DATABASE_URL (session pooler)
+        run: |
+          set -euo pipefail
+          if [ "${PROJECT_REF}" != "hkpokyapzarefrgqzkos" ]; then
+            echo "::error::Refusing prod job: PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          # prod pooler = aws-1 (verifisert); staging = aws-0 — per-prosjekt, ikke rett til aws-0; hvis push feiler på connection, sjekk host i Dashboard.
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-1-eu-west-1.pooler.supabase.com:5432/postgres"
+          echo "PROD_DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+          echo "Prod session pooler URL configured."
+
+      - name: Assert DB target (prod, fail-closed)
+        run: |
+          set -euo pipefail
+          node scripts/ci/assert-db-target.mjs --expect production
+
       # ✅ Gate 1: same gate in prod (fail before touching prod)
       - name: Migration gate (order + bootstrap-safe)
         run: |
+          set -euo pipefail
           node scripts/ci/migration-gate.mjs | tee "$EVIDENCE_DIR/migration-gate.log"
 
-      # Must fail with clear message before supabase link (empty secrets → cryptic CLI errors, often exit ≠ 0).
-      - name: Precheck prod link inputs (no secret values printed)
-        shell: bash
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+      - name: Preflight dry-run (prod, session pooler)
         run: |
           set -euo pipefail
-          echo "=== Prod link precheck (boolean only) ==="
-          if [[ -n "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
-            echo "SUPABASE_ACCESS_TOKEN: set=yes"
-          else
-            echo "::error::SUPABASE_ACCESS_TOKEN is missing. Add org/repo secret SUPABASE_ACCESS_TOKEN (Supabase CLI personal access token)."
+          set +e
+          OUT="$(supabase db push --dry-run --db-url "$PROD_DATABASE_URL" 2>&1)"
+          DRY_EXIT=$?
+          set -e
+          echo "$OUT" | tee "$EVIDENCE_DIR/db-push-dry-run.log"
+          node scripts/ci/db-push-preflight-guard.mjs --exit "$DRY_EXIT" < "$EVIDENCE_DIR/db-push-dry-run.log"
+
+      - name: Apply migrations (prod, session pooler)
+        run: |
+          set -euo pipefail
+          supabase db push --db-url "$PROD_DATABASE_URL" --yes \
+            2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+
+      - name: Verify migration actually applied (prod)
+        run: |
+          set -euo pipefail
+          LATEST_LOCAL="$(ls supabase/migrations/ | sort | tail -1 | grep -oP '^\d+' || true)"
+          if [ -z "$LATEST_LOCAL" ]; then
+            echo "No local migrations found — skipping verify."
+            exit 0
+          fi
+          echo "Verifying $LATEST_LOCAL is in schema_migrations (prod)..."
+          APPLIED="$(psql "$DATABASE_URL" -t -A -c \
+            "SELECT version FROM supabase_migrations.schema_migrations \
+             WHERE version = '$LATEST_LOCAL'")"
+          if [ "$APPLIED" != "$LATEST_LOCAL" ]; then
+            echo "::error::Migration $LATEST_LOCAL not in prod schema_migrations!"
+            echo "Last 5 applied versions:"
+            psql "$DATABASE_URL" -c \
+              "SELECT version FROM supabase_migrations.schema_migrations \
+               ORDER BY version DESC LIMIT 5"
             exit 1
           fi
-          if [[ -n "${PROJECT_REF:-}" ]]; then
-            echo "SUPABASE_PROD_PROJECT_REF (PROJECT_REF): set=yes"
-          else
-            echo "::error::Prod project ref is missing. Add repository secret SUPABASE_PROD_PROJECT_REF (Dashboard → Project Settings → General → Reference ID)."
-            exit 1
-          fi
-          echo "DB password for db push is checked later (SUPABASE_PROD_DB_PASSWORD)."
-
-      - name: Link project (prod)
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          supabase link --project-ref "$PROJECT_REF"
-
-      - name: Apply migrations (prod)
-        run: |
-          supabase db push --project-ref "$PROJECT_REF" --password "$DB_PASSWORD" 2>&1 | tee "$EVIDENCE_DIR/db-push.log"
+          echo "Migration $LATEST_LOCAL verified applied on prod."
 
       - name: Verify DB contracts (prod)
         run: |
+          set -euo pipefail
           node scripts/ci/db-contracts.mjs 2>&1 | tee "$EVIDENCE_DIR/db-contracts.log"
 
       - name: Smoke tests (prod)
+        env:
+          BASE_URL: ${{ secrets.APP_BASE_URL }}
         run: |
-          bash scripts/smoke/cron-smoke.sh 2>&1 | tee "$EVIDENCE_DIR/cron-smoke.log"
+          set -euo pipefail
+          bash scripts/smoke/run-cron-smoke-ci.sh "$EVIDENCE_DIR/cron-smoke.log"
 
       - name: Typegen (prod)
         run: |
+          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR/typegen"
           supabase gen types typescript --project-id "$PROJECT_REF" --schema public > "$EVIDENCE_DIR/typegen/supabase.types.ts"
           echo "typegen=ok" >> "$EVIDENCE_DIR/meta.txt"
 
       - name: Upload evidence artifact (prod)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: evidence-prod-${{ github.sha }}
           path: evidence/prod

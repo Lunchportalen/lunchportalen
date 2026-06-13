@@ -1,13 +1,13 @@
 "use client";
 
-import { ClockIcon, Loader2 } from "lucide-react";
+import { CheckIcon, ClockIcon, Loader2, MinusIcon } from "lucide-react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
 import { addDaysISO, isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
-import { generateIdempotencyKey } from "@/lib/orders/idempotencyKey";
 import {
   findRecommendedDateInWindow,
   getTopWeekdayKey,
@@ -18,9 +18,27 @@ import {
   shouldShowHabitNudge,
   weekdayKeyFromDateISO,
 } from "@/lib/week/orderPatternsClient";
+import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCard";
 import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
+import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
 
 const API_ORDER = "/api/order";
+
+/** STEG 8 — dekorativt livssyklus-ikon (1em, currentColor, aria-hidden). */
+const DS_WEEK_ICON_STROKE = 2;
+
+type DsWeekIconVariant = "clock" | "minus" | "check";
+
+function DsWeekIcon({ variant }: { variant: DsWeekIconVariant }) {
+  const iconProps = {
+    className: "ds-week-icon",
+    "aria-hidden": true as const,
+    strokeWidth: DS_WEEK_ICON_STROKE,
+  };
+  if (variant === "clock") return <ClockIcon {...iconProps} />;
+  if (variant === "minus") return <MinusIcon {...iconProps} />;
+  return <CheckIcon {...iconProps} />;
+}
 
 function safeVibrate(ms: number) {
   try {
@@ -139,6 +157,46 @@ function isCutoffApiError(code: string | null, message: string): boolean {
   const c = String(code ?? "").toUpperCase();
   const m = String(message ?? "").toUpperCase();
   return c === "CUTOFF_PASSED" || c === "LOCKED" || m.includes("BESTILLINGSFRISTEN") || m.includes("FRISTEN");
+}
+
+function isDayCutoffClosed(day: DayRow | undefined): boolean {
+  return Boolean(day?.isLocked && day.lockReason === "CUTOFF");
+}
+
+function orderErrorKey(json: Record<string, unknown> | null): string {
+  if (!json || typeof json !== "object") return "";
+  if (typeof json.error === "string" && json.error.trim()) return json.error.trim();
+  if (typeof json.code === "string" && json.code.trim()) return json.code.trim();
+  return "";
+}
+
+function handleOrderError(
+  status: number,
+  json: Record<string, unknown> | null,
+  setErrorBanner: (state: ErrorBannerState) => void,
+): void {
+  const errorKey = orderErrorKey(json);
+  if (status === 409 && errorKey === "menu_not_published") {
+    setErrorBanner({ code: errorKey, message: "Menyen for valgt dag er ikke publisert ennå" });
+    return;
+  }
+  if (status === 409 && errorKey === "menu_items_missing") {
+    setErrorBanner({ code: errorKey, message: "Menyen er ikke ferdig klargjort — prøv igjen om litt" });
+    return;
+  }
+  if (status === 422 && errorKey === "data_integrity") {
+    setErrorBanner({ code: errorKey, message: "Teknisk feil — support er varslet" });
+    Sentry.captureMessage("Order data_integrity", {
+      level: "warning",
+      tags: { error_code: String(json?.code ?? "NOT_NULL_VIOLATION") },
+    });
+    return;
+  }
+  if (status === 422 && errorKey === "provider_unresolvable") {
+    setErrorBanner({ code: errorKey, message: "Konfigurasjonsfeil for valgt dag — kontakt support" });
+    return;
+  }
+  setErrorBanner({ code: errorKey || null, message: "Noe gikk galt — prøv igjen" });
 }
 
 function asOrderStatus(v: unknown): "ACTIVE" | "CANCELLED" | null {
@@ -277,8 +335,8 @@ const CARD_TRANSFORM =
 const BASIS_CATEGORY_LABELS = ["Salatboks", "Påsmurt", "Varmmat"];
 const LUXUS_CATEGORY_LABELS = ["Salatboks", "Påsmurt", "Sushi", "Pokebowl", "Thaimat", "Varmmat"];
 const PRIMARY_CTA =
-  "bg-gradient-to-r from-[#f5c518] to-[#ffd43b] text-neutral-950 shadow-[0_16px_40px_rgba(245,197,24,0.32)]";
-const SECONDARY_CTA = "border border-black/10 bg-white text-neutral-900 shadow-[0_10px_26px_rgba(24,20,16,0.06)]";
+  "bg-gradient-to-r from-accent to-accent-gradient-end text-neutral-950 shadow-accent";
+const SECONDARY_CTA = "border border-black/10 bg-white text-neutral-900 shadow-secondary";
 const WEEKDAY_GRID_COLUMN: Record<string, number> = {
   mon: 1,
   tue: 2,
@@ -333,9 +391,7 @@ function CutoffSafetyHint({ day, className = "" }: { day: DayRow; className?: st
 
 function CutoffPassedBadge({ className = "" }: { className?: string }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200 ${className}`}
-    >
+    <span className={`ds-week-status-pill is-cutoff ${className}`.trim()}>
       Frist passert 08:00
     </span>
   );
@@ -379,7 +435,7 @@ function isNoTierForDay(day: DayRow) {
 
 function NoTierForDayNotice() {
   return (
-    <div className="rounded-2xl bg-[#faf7ef] px-4 py-4 text-center ring-1 ring-black/5">
+    <div className="ds-week-surface ds-week-surface--inset text-left">
       <p className="text-sm font-semibold text-neutral-900">Denne dagen er ikke tilgjengelig for bestilling.</p>
       <p className="mt-1 text-sm text-neutral-600">Kontakt firmaadmin.</p>
     </div>
@@ -433,29 +489,18 @@ export function orderStatusLabel(day: DayRow) {
 
 export function statusPresentation(day: DayRow): { label: string; className: string } {
   const label = orderStatusLabel(day);
+  const base = "ds-week-status-pill";
 
   if (label === "Bestilt") {
-    return {
-      label,
-      className: "bg-[var(--ds-green)] text-white ring-1 ring-emerald-700/30 font-bold",
-    };
+    return { label, className: `${base} is-ordered` };
   }
   if (label === "Ikke bestilt") {
-    return {
-      label: "Ikke bestilt",
-      className: "bg-[var(--ds-accent)] text-[var(--ds-text)] ring-1 ring-black/10 font-bold",
-    };
+    return { label: "Ikke bestilt", className: `${base} is-open` };
   }
   if (label === "Avbestilt") {
-    return {
-      label,
-      className: "bg-transparent text-neutral-700 ring-1 ring-neutral-300 font-semibold",
-    };
+    return { label, className: `${base} is-cancelled` };
   }
-  return {
-    label,
-    className: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-200 font-semibold",
-  };
+  return { label, className: `${base} is-locked` };
 }
 
 function canOrderDay(day: DayRow, canAct: boolean, globalBusy: boolean) {
@@ -528,6 +573,22 @@ function selectedChoiceLabel(day: DayRow) {
   return selected?.label ?? day.selectedChoiceKey;
 }
 
+/** ACTIVE order line — «Kategori – variant» (CMS items / snapshot, not raw slug). */
+export function orderedMealDisplayLine(day: DayRow): string | null {
+  return buildOrderedMealDisplayLine(day);
+}
+
+function OrderedMealStatusLine({ day, className = "" }: { day: DayRow; className?: string }) {
+  const body = orderedMealDisplayLine(day);
+  if (day.orderStatus !== "ACTIVE" || !body) return null;
+  return (
+    <p className={`ds-ordered-meal-line ${className}`.trim()} role="status">
+      <span className="sr-only">Bestilt:</span>
+      <span className="ds-ordered-meal-line__body">{body}</span>
+    </p>
+  );
+}
+
 function parseStoredSelection(stored: WeekChoiceStored): DayChoiceSelection | null {
   if (stored == null) return null;
   if (typeof stored === "string") {
@@ -562,13 +623,6 @@ function variantPickRequired(cat: DayCategory | undefined): boolean {
   return Boolean(cat?.items?.length && cat!.items!.length >= 2);
 }
 
-function tierChipMatchesSummary(summary: string | null, choiceLabel: string): boolean {
-  if (!summary || !choiceLabel) return false;
-  const s = summary.toLowerCase();
-  const c = choiceLabel.toLowerCase();
-  return s === c || s.startsWith(`${c} ·`);
-}
-
 function effectiveSelectedChoice(day: DayRow, stored: WeekChoiceStored): string | null {
   if (stored === null) return null;
   const parsed = parseStoredSelection(stored);
@@ -580,6 +634,18 @@ function effectiveSelectedChoice(day: DayRow, stored: WeekChoiceStored): string 
 
 function choiceRequired(day: DayRow) {
   return day.categories.filter((c) => c.available).length > 1;
+}
+
+function singleCategoryItemDefault(cat: DayCategory | undefined): DayChoiceSelection | null {
+  if (!cat?.items?.length || cat.items.length !== 1) return null;
+  const it = cat.items[0]!;
+  const ik = String(it.key ?? "").trim();
+  if (!ik) return null;
+  return {
+    categoryKey: cat.key,
+    itemKey: ik,
+    itemTitle: String(it.title ?? "").trim() || null,
+  };
 }
 
 function variantPickSatisfied(day: DayRow, stored: WeekChoiceStored): boolean {
@@ -634,6 +700,10 @@ type ChoiceHighlightLine =
   | { mode: "valgt_body"; body: string };
 
 function choiceHighlightLine(day: DayRow, stored: WeekChoiceStored): ChoiceHighlightLine {
+  if (day.orderStatus === "ACTIVE") {
+    const ordered = orderedMealDisplayLine(day);
+    return ordered ? { mode: "valgt_body", body: ordered } : { mode: "none" };
+  }
   const ck = effectiveSelectedChoice(day, stored);
   if (!ck) return { mode: "none" };
   const cat = day.categories.find((c) => c.key.toLowerCase() === ck.toLowerCase());
@@ -683,11 +753,21 @@ export function WeekCategoryCards({
 }) {
   if (isNoTierForDay(day)) return null;
   if (!day.categories.length) return null;
+  const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
   const selectedKey = effectiveSelectedChoice(day, storedChoice);
+  const orderedChoiceKey =
+    day.orderStatus === "ACTIVE" && day.selectedChoiceKey
+      ? String(day.selectedChoiceKey).trim().toLowerCase()
+      : null;
   const selectedCat = selectedKey
     ? day.categories.find((c) => c.key.toLowerCase() === selectedKey.toLowerCase())
     : undefined;
-  const showExpandedPanel = Boolean(selectedCat && selectedCat.available && day.isEnabled && !disabled);
+  const isPendingSelection = Boolean(
+    selectedKey && selectedCat && (!orderedChoiceKey || selectedCat.key.toLowerCase() !== orderedChoiceKey),
+  );
+  const showExpandedPanel = Boolean(
+    selectedCat && selectedCat.available && day.isEnabled && !disabled && isPendingSelection,
+  );
 
   const itemCount = selectedCat?.items?.length ?? 0;
   const hasCategoryHeadline =
@@ -732,9 +812,10 @@ export function WeekCategoryCards({
                   type="button"
                   role="radio"
                   aria-checked={isItemSelected}
+                  aria-pressed={isItemSelected}
                   disabled={disabled || !day.isEnabled || !selectedCat.available}
                   onClick={() => onSelectItem(selectedCat.key, it.key, it.title)}
-                  className={`ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " ds-week-item-btn--selected" : ""}`}
+                  className={`ds-week-surface ds-week-surface--slot ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " is-selected ds-week-item-btn--selected" : ""}`}
                   aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian)}
                 >
                   <span className="ds-week-item-btn__title">{it.title}</span>
@@ -823,84 +904,59 @@ export function WeekCategoryCards({
   return (
     <div className="week-day__categories" aria-label="Velg kategori">
       {day.categories.map((cat) => {
-        const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === cat.key.toLowerCase());
+        const keyLower = cat.key.toLowerCase();
+        const isOrdered = Boolean(orderedChoiceKey && orderedChoiceKey === keyLower);
+        const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === keyLower);
+        const isPendingCat = isSelected && !isOrdered;
+        const slotLocked = cutoffClosed;
+        const slotUnavailable = !cat.available;
+        const slotDisabled = Boolean(disabled || slotUnavailable || !day.isEnabled || slotLocked);
         return (
           <Fragment key={cat.key}>
             <button
               type="button"
-              className={`week-category-card ${isSelected ? "is-selected" : ""}`}
+              className={[
+                "ds-week-surface ds-week-surface--slot week-category-card",
+                isOrdered ? "is-ordered" : "",
+                isPendingCat ? "is-selected" : "",
+                slotLocked ? "is-locked" : "",
+                slotUnavailable ? "is-unavailable" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               onClick={() => onSelectCategory(cat.key)}
-              disabled={disabled || !cat.available || !day.isEnabled}
-              aria-pressed={isSelected}
-              title={!cat.available ? "Ikke tilgjengelig" : undefined}
+              disabled={slotDisabled}
+              aria-disabled={slotLocked && !slotUnavailable ? true : undefined}
+              aria-pressed={isOrdered || isPendingCat}
+              aria-label={
+                slotLocked
+                  ? `${cat.label}, frist passert`
+                  : slotUnavailable
+                    ? `${cat.label}, ikke tilgjengelig`
+                    : isOrdered
+                      ? `${cat.label}, bestilt`
+                      : isPendingCat
+                        ? `${cat.label}, valgt`
+                        : cat.label
+              }
+              title={
+                slotUnavailable ? "Ikke tilgjengelig" : slotLocked ? "Frist passert" : isOrdered ? "Bestilt" : undefined
+              }
             >
               <span className="week-category-card__label">{cat.label}</span>
-              {!cat.available ? <span className="week-category-card__empty">Ikke tilgjengelig</span> : null}
+              {slotLocked ? (
+                <span className="week-category-card__state-label">
+                  <ClockIcon className="week-category-card__state-icon" aria-hidden />
+                  Frist passert
+                </span>
+              ) : slotUnavailable ? (
+                <span className="week-category-card__state-label">Ikke tilgjengelig</span>
+              ) : null}
             </button>
-            {isSelected ? expandSection : null}
+            {isPendingCat ? expandSection : null}
           </Fragment>
         );
       })}
-    </div>
-  );
-}
-
-function DayMenuSummary({
-  day,
-  storedChoice,
-  compact = false,
-}: {
-  day: DayRow;
-  storedChoice?: WeekChoiceStored;
-  compact?: boolean;
-}) {
-  if (isNoTierForDay(day)) {
-    return (
-      <div className={compact ? "mt-3" : "mt-4"}>
-        <NoTierForDayNotice />
-      </div>
-    );
-  }
-  const choices = getTierCategories(day);
-  const chipSummary = selectedChoiceSummaryLabel(day, storedChoice ?? null);
-  const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
-
-  return (
-    <div className={`${compact ? "mt-3" : "mt-4"} text-center md:text-center`}>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <TierPill tier={day.tier} />
-        {highlightLine.mode === "valgt_body" ? (
-          <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200">
-            Valgt: {highlightLine.body}
-          </span>
-        ) : highlightLine.mode === "variant_pending" ? (
-          <span className="inline-flex min-h-[32px] items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-neutral-950 ring-1 ring-amber-200/80">
-            Velg variant for {highlightLine.categoryLabel}
-          </span>
-        ) : null}
-      </div>
-
-      {choices.length ? (
-        <div className="mt-3 flex flex-wrap justify-center gap-2">
-          {choices.map((choice) => (
-            <span
-              key={choice}
-              className={[
-                "rounded-full px-3 py-1 text-xs font-medium ring-1",
-                tierChipMatchesSummary(chipSummary, choice)
-                  ? "bg-neutral-950 text-white ring-neutral-950"
-                  : "bg-white/80 text-neutral-800 ring-black/10",
-              ].join(" ")}
-            >
-              {choice}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-sm text-neutral-600 ring-1 ring-black/10">
-          Menyen er ikke publisert ennå.
-        </p>
-      )}
     </div>
   );
 }
@@ -911,9 +967,9 @@ function WeekLoadingSkeleton({ mobileLayout }: { mobileLayout: boolean }) {
       {[0, 1, 2, 3, 4].map((i) => (
         <li
           key={i}
-          className="animate-pulse rounded-2xl border border-black/10 bg-white/90 p-4 text-center shadow-sm md:text-left"
+          className="animate-pulse rounded-2xl border border-black/10 bg-white/90 p-4 text-left shadow-sm"
         >
-          <div className="mx-auto mb-2 h-6 w-24 rounded bg-gray-200 md:mx-0" />
+          <div className="mb-2 h-6 w-24 rounded bg-gray-200" />
           <div className="mb-2 h-4 w-full rounded bg-gray-200" />
           <div className="mb-2 h-4 w-full rounded bg-gray-200" />
           <div className="h-10 w-full rounded bg-gray-200" />
@@ -947,11 +1003,30 @@ type Props = {
   previewHarness?: { calendarDates: string[]; osloToday: string } | null;
 };
 
-/** Eksportert for klassenavnkontrakttester på /week-kalenderen (FASE 12A). */
-export function weekCalendarDayPillClassNames(active: boolean, isToday: boolean): string {
+/** Livssyklus-tilstand for dag (STEG 7.1 — presentasjon, ikke bestillingslogikk). */
+export type WeekDayLifecycleState = "available" | "ordered" | "locked" | "unavailable";
+
+export function weekDayLifecycleState(
+  day: Pick<DayRow, "reason" | "isEnabled" | "isLocked" | "lockReason" | "orderStatus">,
+): WeekDayLifecycleState {
+  if (day.reason === "NO_TIER_FOR_DAY" || !day.isEnabled) return "unavailable";
+  if (day.isLocked && day.lockReason === "CUTOFF") return "locked";
+  if (day.orderStatus === "ACTIVE") return "ordered";
+  return "available";
+}
+
+/** Eksportert for klassenavnkontrakttester på /week-kalenderen (FASE 12A + STEG 7.1). */
+export function weekCalendarDayPillClassNames(
+  active: boolean,
+  isToday: boolean,
+  lifecycle: WeekDayLifecycleState = "available",
+): string {
   const base = ["ds-week-calendar-day-pill"];
   base.push(active ? "ds-week-calendar-day-pill--selected" : "ds-week-calendar-day-pill--idle");
   if (isToday) base.push("ds-week-calendar-day-pill--today");
+  if (lifecycle === "ordered") base.push("ds-week-calendar-day-pill--ordered");
+  if (lifecycle === "locked") base.push("ds-week-calendar-day-pill--locked");
+  if (lifecycle === "unavailable") base.push("ds-week-calendar-day-pill--unavailable");
   return base.join(" ");
 }
 
@@ -980,7 +1055,7 @@ function WeekConfirmModal({
     : "motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out";
   return (
     <div
-      className={`fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 sm:items-center ${shell}`}
+      className={`fixed inset-0 z-modal flex items-end justify-center bg-black/40 p-4 sm:items-center ${shell}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="week-confirm-title"
@@ -994,7 +1069,7 @@ function WeekConfirmModal({
             type="button"
             disabled={confirming}
             onClick={onCancel}
-            className={`flex min-h-[48px] flex-1 items-center justify-center rounded-full border border-black/15 bg-white px-4 text-sm font-semibold text-neutral-900 disabled:opacity-50 ${BTN_TOUCH}`}
+            className={`flex min-h-touch flex-1 items-center justify-center rounded-full border border-black/15 bg-white px-4 text-sm font-semibold text-neutral-900 disabled:opacity-50 ${BTN_TOUCH}`}
           >
             Avbryt
           </button>
@@ -1002,7 +1077,7 @@ function WeekConfirmModal({
             type="button"
             disabled={confirming}
             onClick={onConfirm}
-            className={`flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-neutral-900 px-4 text-sm font-semibold text-white disabled:opacity-50 ${BTN_TOUCH}`}
+            className={`flex min-h-touch flex-1 items-center justify-center rounded-full bg-neutral-900 px-4 text-sm font-semibold text-white disabled:opacity-50 ${BTN_TOUCH}`}
           >
             {confirming ? (
               <span className="inline-flex items-center gap-2">
@@ -1035,169 +1110,12 @@ type RowBase = {
   readOnlyPreview?: boolean;
 };
 
-function WeekDayRowDesktop({
-  day,
-  canAct,
-  globalBusy,
-  busyThis,
-  storedChoice,
-  onRequestOrder,
-  onRequestCancel,
-  onSelectCategory,
-  onSelectItem,
-  insightRecommended,
-  insightPreferredMotion,
-  readOnlyPreview,
-}: RowBase) {
-  const ordered = day.orderStatus === "ACTIVE";
-  const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
-  const companyClosed = day.isLocked && day.lockReason === "COMPANY";
-  const notInAgreement = !day.isEnabled;
-  const noTierForDay = isNoTierForDay(day);
-  const canClick = canOrderDay(day, canAct, globalBusy);
-  const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
-  const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
-  const status = statusPresentation(day);
-
-  return (
-    <li
-      className={`rounded-2xl border border-black/10 bg-white/90 p-4 text-center shadow-sm md:text-left ${CARD_TRANSFORM} ${
-        insightPreferredMotion
-          ? "motion-safe:ring-1 motion-safe:ring-neutral-300/60 motion-safe:animate-pulse"
-          : ""
-      }`}
-    >
-      <div className="flex flex-col items-center gap-1 md:flex-row md:items-start md:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            <div className="text-base font-semibold capitalize text-neutral-900">
-              {formatMenuDateNO(day.date)}
-            </div>
-            <TierPill tier={day.tier} />
-          </div>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs ring-1 ${status.className}`}>
-              {status.label}
-            </span>
-            {cutoffClosed ? <CutoffPassedBadge /> : null}
-          </div>
-          {insightRecommended ? (
-            <div className="mt-2 max-w-md space-y-0.5 text-center md:text-left">
-              <span className="inline-flex rounded-full bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-pink-950 ring-1 ring-pink-200">
-                Anbefalt for deg
-              </span>
-              <p className="text-[11px] text-neutral-600">Du bestiller ofte denne dagen</p>
-              <p className="text-[10px] text-neutral-400">Basert på dine tidligere bestillinger</p>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-3 border-t border-black/5 pt-3 text-center md:text-left">
-        {day.menuImages.length ? (
-          <div className="mb-2 flex flex-wrap justify-center gap-2 md:justify-start">
-            {day.menuImages.map((src) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={src}
-                src={src}
-                alt=""
-                className="h-24 max-w-full rounded-lg object-cover ring-1 ring-black/10"
-              />
-            ))}
-          </div>
-        ) : null}
-        <p className="text-sm font-semibold text-neutral-900">{noTierForDay ? "Ikke tilgjengelig" : day.menuTitle ?? "Menyen er ikke publisert ennå."}</p>
-        {day.menuDescription ? (
-          <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700">{day.menuDescription}</p>
-        ) : null}
-        {day.allergens.length > 0 ? (
-          <p className="mt-2 text-xs text-neutral-600">
-            <span className="font-semibold">Allergener: </span>
-            {day.allergens.join(", ")}
-          </p>
-        ) : null}
-        {noTierForDay ? null : (
-          <WeekCategoryCards
-            day={day}
-            storedChoice={storedChoice}
-            onSelectCategory={onSelectCategory}
-            onSelectItem={onSelectItem}
-            disabled={readOnlyPreview || globalBusy}
-          />
-        )}
-        <DayMenuSummary day={day} storedChoice={storedChoice} />
-      </div>
-
-      <div className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center md:justify-start">
-        {noTierForDay ? (
-          <span className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
-        ) : notInAgreement ? (
-          <span className="text-center text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
-        ) : cutoffClosed ? (
-          <div className="flex w-full flex-col sm:w-full md:w-auto">
-            <button
-              type="button"
-              disabled
-              className={`min-h-[48px] w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 sm:w-auto ${BTN_TOUCH}`}
-            >
-              Frist passert kl. 08:00
-            </button>
-            <CutoffSafetyHint day={day} className="text-center md:text-left" />
-          </div>
-        ) : companyClosed ? (
-          <span className="text-center text-sm text-neutral-600">Bestilling stengt for firma</span>
-        ) : ordered ? (
-          <div className="flex w-full flex-col sm:w-full md:w-auto">
-            <button
-              type="button"
-              disabled={readOnlyPreview || !canClick}
-              aria-disabled={readOnlyPreview || !canClick}
-              title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
-              onClick={readOnlyPreview ? undefined : onRequestCancel}
-              className={`flex min-h-[54px] items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
-            >
-              {busyThis ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Behandler…
-                </>
-              ) : (
-                "Avbestill lunsj"
-              )}
-            </button>
-            {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
-          </div>
-        ) : (
-          <div className="flex w-full flex-col sm:w-full md:w-auto">
-            <button
-              type="button"
-              disabled={readOnlyPreview || !canOrderClick}
-              aria-disabled={readOnlyPreview || !canOrderClick}
-              title={primaryTitle}
-              onClick={readOnlyPreview ? undefined : onRequestOrder}
-              className={`flex min-h-[54px] items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
-            >
-              {busyThis ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                  Behandler…
-                </>
-              ) : (
-                "Bestill lunsj"
-              )}
-            </button>
-            {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center md:text-left" /> : <CutoffSafetyHint day={day} className="text-center md:text-left" />}
-          </div>
-        )}
-      </div>
-    </li>
-  );
-}
-
 type MobileCardProps = RowBase & {
   isSelected: boolean;
   onSelectDay: () => void;
+  /** STEG 7.2 — efemær disclosure for ordered dag (før cutoff). */
+  orderedPickerExpanded: boolean;
+  onToggleOrderedPicker: () => void;
 };
 
 const WeekDayCardMobile = memo(
@@ -1216,8 +1134,18 @@ const WeekDayCardMobile = memo(
     insightRecommended,
     insightPreferredMotion,
     readOnlyPreview,
+    orderedPickerExpanded,
+    onToggleOrderedPicker,
   }: MobileCardProps) {
     const ordered = day.orderStatus === "ACTIVE";
+    const lifecycle = weekDayLifecycleState(day);
+    const mealLine = orderedMealDisplayLine(day);
+    const orderedEditableCollapse = lifecycle === "ordered" && ordered && Boolean(mealLine);
+    const orderedLockedCollapse = lifecycle === "locked" && ordered && Boolean(mealLine);
+    const showOrderedCollapse = orderedEditableCollapse || orderedLockedCollapse;
+    const showOrderedPicker =
+      !showOrderedCollapse || (orderedEditableCollapse && orderedPickerExpanded);
+    const orderedPickerId = `week-ordered-picker-${day.date}`;
     const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
     const companyClosed = day.isLocked && day.lockReason === "COMPANY";
     const notInAgreement = !day.isEnabled;
@@ -1230,7 +1158,7 @@ const WeekDayCardMobile = memo(
     const mobileChoiceLine =
       highlightLine.mode === "variant_pending"
         ? `Velg variant for ${highlightLine.categoryLabel}`
-        : highlightLine.mode === "valgt_body"
+        : highlightLine.mode === "valgt_body" && day.orderStatus !== "ACTIVE"
           ? `Valgt: ${highlightLine.body}`
           : undefined;
     const status = statusPresentation(day);
@@ -1239,10 +1167,10 @@ const WeekDayCardMobile = memo(
       <div
         role="group"
         aria-label={formatMenuDateNO(day.date)}
-        className={`rounded-[2rem] bg-white/85 p-5 text-center shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
+        className={`ds-week-surface ds-week-surface--panel bg-white/85 transition-colors duration-100 active:bg-white ${CARD_TRANSFORM} ${
           isSelected
-            ? "motion-safe:scale-[1.01] ring-[#f5c518]/45"
-            : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-[#f5c518]/35 motion-safe:animate-pulse" : ""}`
+            ? "motion-safe:scale-[1.01] ring-neutral-900/15"
+            : `${insightPreferredMotion ? " motion-safe:ring-1 motion-safe:ring-neutral-300/60 motion-safe:animate-pulse" : ""}`
         }`}
       >
         <div
@@ -1258,34 +1186,59 @@ const WeekDayCardMobile = memo(
             if ((e.target as HTMLElement).closest("button")) return;
             onSelectDay();
           }}
-          className="cursor-pointer rounded-[1.5rem] outline-none transition-colors duration-100 active:bg-[#faf7ef] focus-visible:ring-2 focus-visible:ring-[#f5c518]/50"
+          className="cursor-pointer rounded-card outline-none transition-colors duration-100 active:bg-bg-soft focus-visible:ring-2 focus-visible:ring-neutral-900/40"
         >
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-start gap-2">
             <TierPill tier={day.tier} />
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs ring-1 ${status.className}`}>
-              {status.label}
-            </span>
+            <span className={status.className}>{status.label}</span>
             {cutoffClosed ? <CutoffPassedBadge /> : null}
             {readOnlyPreview ? (
-              <span className="inline-flex items-center rounded-full bg-neutral-950 px-3 py-1 text-xs font-bold text-white">
-                Forhåndsvisning
-              </span>
+              <span className="ds-week-status-pill is-preview">Forhåndsvisning</span>
             ) : null}
           </div>
 
           <div className="mt-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Valgt dag</p>
-            <h2 className="mt-1 text-2xl font-bold capitalize tracking-[-0.03em] text-neutral-950">
+            <h2 className="text-2xl font-bold capitalize tracking-[-0.03em] text-neutral-950">
               {selectedDayLabel(day)}
             </h2>
             {mobileChoiceLine ? (
               <p className="mt-1 text-sm font-medium text-neutral-600">{mobileChoiceLine}</p>
             ) : null}
           </div>
+        </div>
 
-          {insightRecommended ? (
-            <div className="mt-2 space-y-0.5 text-center">
-              <span className="inline-flex rounded-full bg-[#fff6d6] px-2.5 py-0.5 text-[11px] font-semibold text-neutral-950 ring-1 ring-[#f5c518]/40">
+        {showOrderedCollapse ? (
+          <div className="ds-week-ordered-collapse mt-3">
+            <p className="ds-week-ordered-collapse__summary" role="status">
+              <span className="ds-week-ordered-collapse__label">Bestilt:</span>{" "}
+              <span className="ds-week-ordered-collapse__meal">{mealLine}</span>
+            </p>
+            {orderedLockedCollapse ? (
+              <p className="ds-week-ordered-collapse__locked-note">
+                <DsWeekIcon variant="clock" />
+                <span className="ds-week-ordered-collapse__locked-note__label">Frist passert</span>
+                <span className="sr-only">Bestillingen kan ikke endres etter kl. 08:00.</span>
+              </p>
+            ) : null}
+            {orderedEditableCollapse ? (
+              <button
+                type="button"
+                className="ds-week-ordered-collapse__edit"
+                aria-expanded={orderedPickerExpanded}
+                aria-controls={orderedPickerId}
+                aria-label={`Endre bestilling: ${mealLine}`}
+                onClick={onToggleOrderedPicker}
+              >
+                Endre
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <OrderedMealStatusLine day={day} className="mt-3" />
+        )}
+        {insightRecommended ? (
+            <div className="mt-2 space-y-0.5 text-left">
+              <span className="ds-week-insight-pill">
                 Anbefalt for deg
               </span>
               <p className="text-[11px] text-neutral-600">Du bestiller ofte denne dagen</p>
@@ -1293,9 +1246,9 @@ const WeekDayCardMobile = memo(
             </div>
           ) : null}
 
-          <div className="mt-5 text-center">
+          <div className="mt-5">
             {day.menuImages.length ? (
-              <div className="mb-2 flex flex-wrap justify-center gap-2">
+              <div className="mb-2 flex flex-wrap justify-start gap-2">
                 {day.menuImages.map((src) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -1310,19 +1263,27 @@ const WeekDayCardMobile = memo(
             {noTierForDay ? (
               <NoTierForDayNotice />
             ) : day.categories.length ? (
-              <WeekCategoryCards
-                day={day}
-                storedChoice={storedChoice}
-                onSelectCategory={onSelectCategory}
-                onSelectItem={onSelectItem}
-                disabled={readOnlyPreview || globalBusy}
-              />
+              showOrderedPicker ? (
+                <div
+                  id={orderedPickerId}
+                  className={`week-ordered-picker-region${orderedEditableCollapse && orderedPickerExpanded ? " week-ordered-picker-region--open" : ""}`}
+                  hidden={showOrderedCollapse && !orderedPickerExpanded}
+                >
+                  <WeekCategoryCards
+                    day={day}
+                    storedChoice={storedChoice}
+                    onSelectCategory={onSelectCategory}
+                    onSelectItem={onSelectItem}
+                    disabled={readOnlyPreview || globalBusy}
+                  />
+                </div>
+              ) : null
             ) : categories.length ? (
               <div className="space-y-2 text-left">
                 {categories.map((category) => (
                   <div
                     key={category}
-                    className="flex min-h-[48px] items-center gap-3 rounded-2xl bg-[#faf7ef] px-4 text-sm font-semibold text-neutral-900 ring-1 ring-black/5"
+                    className="ds-week-surface ds-week-surface--inset is-row flex min-h-touch items-center gap-3 text-sm font-semibold text-neutral-900"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-sm ring-1 ring-black/5">
                       {category.slice(0, 1)}
@@ -1332,32 +1293,31 @@ const WeekDayCardMobile = memo(
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl bg-[#faf7ef] px-4 py-4 text-center ring-1 ring-black/5">
+              <div className="ds-week-surface ds-week-surface--inset text-left">
                 <p className="text-sm font-semibold text-neutral-900">Menyen er ikke publisert ennå.</p>
                 <p className="mt-1 text-sm text-neutral-600">Denne dagen er ikke klar for bestilling.</p>
               </div>
             )}
           </div>
-        </div>
 
         <div className="mt-4 flex flex-col items-stretch gap-2">
           {noTierForDay ? (
-            <span className="text-center text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
+            <span className="text-left text-sm text-neutral-500">Denne dagen er ikke tilgjengelig for bestilling. Kontakt firmaadmin.</span>
           ) : notInAgreement ? (
-            <span className="text-center text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
+            <span className="text-left text-sm text-neutral-500">Ikke leveringsdag i avtalen.</span>
           ) : cutoffClosed ? (
             <>
               <button
                 type="button"
                 disabled
-                className={`min-h-[48px] w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 ${BTN_TOUCH}`}
+                className={`min-h-touch w-full cursor-not-allowed rounded-full border border-black/10 bg-neutral-50 px-4 text-sm font-semibold text-neutral-500 ${BTN_TOUCH}`}
               >
                 Frist passert kl. 08:00
               </button>
-              <CutoffSafetyHint day={day} className="text-center" />
+              <CutoffSafetyHint day={day} />
             </>
           ) : companyClosed ? (
-            <span className="text-center text-sm text-neutral-600">Bestilling stengt for firma</span>
+            <span className="text-left text-sm text-neutral-600">Bestilling stengt for firma</span>
           ) : ordered ? (
             <>
               <button
@@ -1366,7 +1326,7 @@ const WeekDayCardMobile = memo(
                 aria-disabled={readOnlyPreview || !canClick}
                 title={readOnlyPreview ? "Kun forhåndsvisning" : undefined}
                 onClick={readOnlyPreview ? undefined : onRequestCancel}
-                className={`flex min-h-[54px] items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
+                className={`flex min-h-cta items-center justify-center rounded-full px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${SECONDARY_CTA} ${BTN_TOUCH}`}
               >
                 {busyThis ? (
                   <>
@@ -1377,7 +1337,7 @@ const WeekDayCardMobile = memo(
                   "Avbestill lunsj"
                 )}
               </button>
-              {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
+              {readOnlyPreview ? <ReadOnlyPreviewHint /> : <CutoffSafetyHint day={day} />}
             </>
           ) : (
             <>
@@ -1387,7 +1347,7 @@ const WeekDayCardMobile = memo(
                 aria-disabled={readOnlyPreview || !canOrderClick}
                 title={primaryTitle}
                 onClick={readOnlyPreview ? undefined : onRequestOrder}
-                className={`flex min-h-[54px] w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
+                className={`flex min-h-cta w-full items-center justify-center rounded-full px-6 text-sm font-bold disabled:pointer-events-none disabled:opacity-50 ${PRIMARY_CTA} ${BTN_TOUCH}`}
               >
                 {busyThis ? (
                   <>
@@ -1398,7 +1358,7 @@ const WeekDayCardMobile = memo(
                   "Bestill lunsj"
                 )}
               </button>
-              {readOnlyPreview ? <ReadOnlyPreviewHint className="text-center" /> : <CutoffSafetyHint day={day} className="text-center" />}
+              {readOnlyPreview ? <ReadOnlyPreviewHint /> : <CutoffSafetyHint day={day} />}
             </>
           )}
         </div>
@@ -1424,7 +1384,8 @@ const WeekDayCardMobile = memo(
     prev.canAct === next.canAct &&
     prev.insightRecommended === next.insightRecommended &&
     prev.insightPreferredMotion === next.insightPreferredMotion &&
-    prev.readOnlyPreview === next.readOnlyPreview,
+    prev.readOnlyPreview === next.readOnlyPreview &&
+    prev.orderedPickerExpanded === next.orderedPickerExpanded,
 );
 
 export default function EmployeeWeekClient({
@@ -1457,6 +1418,8 @@ export default function EmployeeWeekClient({
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedChoices, setSelectedChoices] = useState<Record<string, WeekChoiceStored | null>>({});
+  /** STEG 7.2 — efemær «Endre»-disclosure per dag (default kollapset). */
+  const [orderedPickerExpanded, setOrderedPickerExpanded] = useState<Record<string, boolean>>({});
   const [contentVisible, setContentVisible] = useState(false);
   /** Server-side etterspørselssignal (firma-scope) — kun informasjon. */
   const [demandHintLine, setDemandHintLine] = useState<string | null>(null);
@@ -1485,6 +1448,25 @@ export default function EmployeeWeekClient({
   const ioRef = useRef<IntersectionObserver | null>(null);
   /** Under programmatisk scroll (init/tap): ikke la IO overskrive valgt dag midlertidig. */
   const suppressIoUntilRef = useRef(0);
+  const idemKeyRef = useRef<string | null>(null);
+  const idemScopeRef = useRef<string | null>(null);
+
+  const resetIdemKey = useCallback(() => {
+    idemKeyRef.current = null;
+    idemScopeRef.current = null;
+  }, []);
+
+  const ensureIdemKey = useCallback((scope: string): string => {
+    if (idemScopeRef.current !== scope || !idemKeyRef.current) {
+      idemScopeRef.current = scope;
+      if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        idemKeyRef.current = crypto.randomUUID();
+      } else {
+        idemKeyRef.current = `idem-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+      }
+    }
+    return idemKeyRef.current;
+  }, []);
 
   const [patternTick, setPatternTick] = useState(0);
   const patterns = useMemo(() => {
@@ -1561,6 +1543,10 @@ export default function EmployeeWeekClient({
   useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
+
+  useEffect(() => {
+    resetIdemKey();
+  }, [selectedChoices, resetIdemKey]);
 
   useEffect(() => {
     if (readOnlyPreview) return;
@@ -1827,28 +1813,18 @@ export default function EmployeeWeekClient({
     setSelectedDate(date);
   }, []);
 
-  const selectCategory = useCallback(
-    (date: string, choiceKey: string) => {
-      setSelectedChoices((prev) => {
-        const day = days.find((d) => d.date === date);
-        if (!day) {
-          return { ...prev, [date]: { categoryKey: choiceKey, itemKey: null, itemTitle: null } };
-        }
-        const currentEff = effectiveSelectedChoice(day, prev[date]);
-        if (currentEff && currentEff.toLowerCase() === choiceKey.toLowerCase()) {
-          return { ...prev, [date]: null };
-        }
-        return { ...prev, [date]: { categoryKey: choiceKey, itemKey: null, itemTitle: null } };
-      });
-    },
-    [days],
-  );
-
-  const selectItemForDay = useCallback((date: string, categoryKey: string, itemKey: string, itemTitle: string) => {
-    setSelectedChoices((prev) => ({
+  const toggleOrderedPicker = useCallback((date: string) => {
+    setOrderedPickerExpanded((prev) => ({
       ...prev,
-      [date]: { categoryKey, itemKey, itemTitle },
+      [date]: !prev[date],
     }));
+  }, []);
+
+  const collapseOrderedPicker = useCallback((date: string) => {
+    setOrderedPickerExpanded((prev) => {
+      if (prev[date] === false) return prev;
+      return { ...prev, [date]: false };
+    });
   }, []);
 
   const showSuccessToast = useCallback((msg: string) => {
@@ -1874,7 +1850,7 @@ export default function EmployeeWeekClient({
   }, []);
 
   const postSetDayInner = useCallback(
-    async (date: string, wantsLunch: boolean): Promise<boolean> => {
+    async (date: string, wantsLunch: boolean, selectionOverride?: WeekChoiceStored): Promise<boolean> => {
       if (readOnlyPreview) return false;
       const rid = clientRid();
       setErrorBanner(null);
@@ -1885,26 +1861,29 @@ export default function EmployeeWeekClient({
 
       try {
         const day = days.find((d) => d.date === date);
-        const choiceKey = day ? effectiveSelectedChoice(day, selectedChoices[date]) : null;
-        if (wantsLunch && day && choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoices[date])) {
+        const storedForPost =
+          selectionOverride !== undefined ? selectionOverride : (selectedChoices[date] ?? null);
+        const choiceKey = day ? effectiveSelectedChoice(day, storedForPost) : null;
+        if (wantsLunch && day && choiceRequired(day) && !effectiveSelectedChoice(day, storedForPost)) {
           setErrorBanner({ code: "CHOICE_REQUIRED", message: "Velg en kategori før du bestiller." });
           return false;
         }
-        if (wantsLunch && day && !variantPickSatisfied(day, selectedChoices[date])) {
+        if (wantsLunch && day && !variantPickSatisfied(day, storedForPost)) {
           setErrorBanner({ code: "VARIANT_REQUIRED", message: "Velg variant før du bestiller." });
           return false;
         }
-        const pick = parseStoredSelection(selectedChoices[date] ?? null);
+        const pick = parseStoredSelection(storedForPost ?? null);
         const itemKeyForOrder =
           wantsLunch && typeof pick?.itemKey === "string" && pick.itemKey.trim().length ? pick.itemKey.trim() : null;
         const body = buildOrderWriteBody(date, wantsLunch, choiceKey, itemKeyForOrder);
+        const idemScope = `${date}:${wantsLunch ? "SET" : "CANCEL"}:${choiceKey ?? ""}:${itemKeyForOrder ?? ""}`;
 
         const res = await fetch("/api/orders", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-rid": rid,
-            "Idempotency-Key": generateIdempotencyKey(),
+            "Idempotency-Key": ensureIdemKey(idemScope),
           },
           cache: "no-store",
           body: JSON.stringify(body),
@@ -1941,9 +1920,10 @@ export default function EmployeeWeekClient({
             setErrorBanner({ code: apiError.code, message: "Ugyldig dato" });
             return false;
           }
-          showErrorBanner(apiError.message, apiError.code);
+          handleOrderError(res.status, json, setErrorBanner);
           return false;
         }
+        resetIdemKey();
         const refreshed = await loadWindow({ silent: true });
         if (!refreshed) {
           showErrorBanner("");
@@ -1958,6 +1938,7 @@ export default function EmployeeWeekClient({
           const wk = weekdayKeyFromDateISO(date);
           recordSuccessfulOrder(date, wk);
           setPatternTick((t) => t + 1);
+          collapseOrderedPicker(date);
         }
         safeVibrate(12);
         showSuccessToast(wantsLunch ? "Bestilling registrert ✔" : "Avbestilling registrert ✔");
@@ -1967,7 +1948,88 @@ export default function EmployeeWeekClient({
         return false;
       }
     },
-    [days, loadWindow, readOnlyPreview, selectedChoices, showErrorBanner, showSuccessToast],
+    [
+      collapseOrderedPicker,
+      days,
+      ensureIdemKey,
+      loadWindow,
+      readOnlyPreview,
+      resetIdemKey,
+      selectedChoices,
+      showErrorBanner,
+      showSuccessToast,
+    ],
+  );
+
+  const applyActiveOrderChange = useCallback(
+    async (date: string, selection: DayChoiceSelection) => {
+      const day = days.find((d) => d.date === date);
+      if (!day || day.orderStatus !== "ACTIVE" || readOnlyPreview) return;
+      if (!canOrderDay(day, true, Boolean(busyDate))) return;
+      const orderedKey = day.selectedChoiceKey ? String(day.selectedChoiceKey).trim().toLowerCase() : "";
+      if (orderedKey && orderedKey === selection.categoryKey.trim().toLowerCase()) {
+        const sameItem =
+          !selection.itemKey ||
+          (day.selectedItemKey &&
+            String(day.selectedItemKey).trim().toLowerCase() === selection.itemKey.trim().toLowerCase());
+        if (sameItem) return;
+      }
+      if (!variantPickSatisfied(day, selection)) return;
+      await guardedAction(date, async () => {
+        setBusyDate(date);
+        try {
+          await postSetDayInner(date, true, selection);
+        } finally {
+          setBusyDate(null);
+        }
+      });
+    },
+    [busyDate, days, guardedAction, postSetDayInner, readOnlyPreview],
+  );
+
+  const selectCategory = useCallback(
+    (date: string, choiceKey: string) => {
+      const day = days.find((d) => d.date === date);
+      const cat = day?.categories.find((c) => c.key.toLowerCase() === choiceKey.toLowerCase());
+      const singleDefault = singleCategoryItemDefault(cat);
+      const nextSelection: DayChoiceSelection = singleDefault ?? {
+        categoryKey: choiceKey,
+        itemKey: null,
+        itemTitle: null,
+      };
+
+      setSelectedChoices((prev) => {
+        if (!day) {
+          return { ...prev, [date]: nextSelection };
+        }
+        const currentEff = effectiveSelectedChoice(day, prev[date]);
+        if (currentEff && currentEff.toLowerCase() === choiceKey.toLowerCase()) {
+          if (day.orderStatus === "ACTIVE") return prev;
+          return { ...prev, [date]: null };
+        }
+        return { ...prev, [date]: nextSelection };
+      });
+
+      if (day?.orderStatus === "ACTIVE") {
+        void applyActiveOrderChange(date, nextSelection);
+      }
+    },
+    [applyActiveOrderChange, days],
+  );
+
+  const selectItemForDay = useCallback(
+    (date: string, categoryKey: string, itemKey: string, itemTitle: string) => {
+      const selection: DayChoiceSelection = { categoryKey, itemKey, itemTitle };
+      setSelectedChoices((prev) => ({
+        ...prev,
+        [date]: selection,
+      }));
+      const day = days.find((d) => d.date === date);
+      if (day?.orderStatus === "ACTIVE") {
+        void applyActiveOrderChange(date, selection);
+      }
+    },
+    [applyActiveOrderChange, days],
   );
 
   const handleConfirmSubmit = useCallback(async () => {
@@ -1991,6 +2053,7 @@ export default function EmployeeWeekClient({
   const requestOrder = useCallback((date: string) => {
     if (readOnlyPreview) return;
     const day = days.find((d) => d.date === date);
+    if (isDayCutoffClosed(day)) return;
     if (day && choiceRequired(day) && !effectiveSelectedChoice(day, selectedChoices[date])) {
       setErrorBanner({ code: "CHOICE_REQUIRED", message: "Velg en kategori før du bestiller." });
       return;
@@ -2009,13 +2072,15 @@ export default function EmployeeWeekClient({
 
   const requestCancel = useCallback((date: string) => {
     if (readOnlyPreview) return;
+    const day = days.find((d) => d.date === date);
+    if (isDayCutoffClosed(day)) return;
     setErrorBanner(null);
     if (errorTimerRef.current) {
       clearTimeout(errorTimerRef.current);
       errorTimerRef.current = null;
     }
     setConfirm({ date, action: "cancel" });
-  }, [readOnlyPreview]);
+  }, [days, readOnlyPreview]);
 
   const blocked = !readOnlyPreview && (!canAct || !weekOrderingAllowed);
   const globalBusy = busyDate !== null;
@@ -2032,7 +2097,7 @@ export default function EmployeeWeekClient({
 
   if (forbidden) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-left">
         <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
           <p className="font-semibold">Ingen tilgang til ukeplan</p>
           <p className="mt-2 text-neutral-600">
@@ -2061,7 +2126,7 @@ export default function EmployeeWeekClient({
 
   if (blocked) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-left">
         <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
           <p className="font-semibold">Bestilling er ikke tilgjengelig</p>
           <p className="mt-2 text-neutral-600">
@@ -2076,7 +2141,7 @@ export default function EmployeeWeekClient({
 
   if (sortedDays.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-left">
         <div className="rounded-2xl bg-neutral-100 px-4 py-4 text-sm text-neutral-800 ring-1 ring-black/10">
           <p className="font-semibold">Ingen synlige dager akkurat nå</p>
           <p className="mt-2 text-neutral-600">
@@ -2085,7 +2150,7 @@ export default function EmployeeWeekClient({
           <button
             type="button"
             onClick={() => void loadWindow()}
-            className={`mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 ${BTN_TOUCH}`}
+            className={`mt-4 inline-flex min-h-touch items-center justify-center rounded-full border border-neutral-300 bg-white px-5 text-sm font-semibold text-neutral-900 ${BTN_TOUCH}`}
           >
             Prøv igjen
           </button>
@@ -2112,8 +2177,8 @@ export default function EmployeeWeekClient({
     <div
       className={`mx-auto w-full px-4 py-6 motion-safe:transition-opacity motion-safe:duration-300 ${
         readOnlyPreview
-          ? "max-w-[430px] rounded-[2rem] bg-[#fbf8f1] shadow-[0_18px_60px_rgba(24,20,16,0.08)] ring-1 ring-black/5"
-          : `min-h-dvh max-w-lg bg-[#fbf8f1] md:max-w-2xl`
+          ? "max-w-week-mobile rounded-lg bg-bg shadow-soft ring-1 ring-black/5"
+          : `min-h-dvh max-w-lg bg-bg md:max-w-2xl`
       } ${contentVisible ? "opacity-100" : "opacity-0"}`}
     >
       <WeekConfirmModal
@@ -2141,47 +2206,49 @@ export default function EmployeeWeekClient({
           (HeaderShell). Selskaps-navn er dynamisk fra /api/order/window.
           Per-dag-status ("Fristen for dagens endring er passert") forblir
           ved valgt-dag-kortet. FASE 10B.1. */}
-      <header className="mb-6 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">
-          Ansattflate
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl">
+      <header className="mb-6 text-left">
+        {readOnlyPreview ? (
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Ansattflate</p>
+        ) : null}
+        <h1 className={`text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl${readOnlyPreview ? " mt-2" : ""}`}>
           Bestill eller avbestill lunsj
         </h1>
         {companyName ? (
-          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
+          <p className="mt-3 max-w-md text-base leading-7 text-neutral-600">
             {companyName} · Endringsfrist kl. 08:00
           </p>
         ) : (
-          <p className="mx-auto mt-3 max-w-md text-base leading-7 text-neutral-600">
+          <p className="mt-3 max-w-md text-base leading-7 text-neutral-600">
             Endringsfrist kl. 08:00
           </p>
         )}
       </header>
 
+      {!readOnlyPreview ? <WeekAllergenProfileCard /> : null}
+
       <div className="mb-5 space-y-2" aria-live="polite">
         {menuSanityFetchFailed ? (
           <div
-            className="rounded-2xl bg-amber-50 px-3 py-2 text-center text-sm text-amber-950 ring-1 ring-amber-200"
+            className="rounded-2xl bg-amber-50 px-3 py-2 text-left text-sm text-amber-950 ring-1 ring-amber-200"
             role="status"
           >
             Menytekst kunne ikke lastes akkurat nå. Ordrestatus og bestilling/avbestilling vises som vanlig.
           </div>
         ) : null}
         {!readOnlyPreview && patterns.streakCount >= 2 ? (
-          <p className="text-center text-xs font-medium text-neutral-700">{patterns.streakCount} uker på rad</p>
+          <p className="text-left text-xs font-medium text-neutral-700">{patterns.streakCount} uker på rad</p>
         ) : null}
         {!readOnlyPreview && showHabitNudge ? (
-          <p className="text-center text-xs text-neutral-500">Du pleier å bestille denne dagen</p>
+          <p className="text-left text-xs text-neutral-500">Du pleier å bestille denne dagen</p>
         ) : null}
-        {!readOnlyPreview && demandHintLine ? <p className="text-center text-xs text-neutral-500">{demandHintLine}</p> : null}
+        {!readOnlyPreview && demandHintLine ? <p className="text-left text-xs text-neutral-500">{demandHintLine}</p> : null}
         {!readOnlyPreview && todayCutoffStatus === "TODAY_OPEN" && orderingUrgencyHint ? (
-          <p className="text-center text-xs font-medium text-amber-900/90">Bestill før kl. 08:00</p>
+          <p className="text-left text-xs font-medium text-amber-900/90">Bestill før kl. 08:00</p>
         ) : !readOnlyPreview && todayCutoffStatus === "TODAY_LOCKED" ? (
-          <p className="text-center text-xs font-medium text-neutral-600">Fristen for dagens endring er passert.</p>
+          <p className="text-left text-xs font-medium text-neutral-600">Fristen for dagens endring er passert.</p>
         ) : null}
         {errorBanner ? (
-          <div className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-50 px-3 py-2 text-center text-sm text-rose-900 ring-1 ring-rose-200">
+          <div className="inline-flex w-full items-start gap-2 rounded-2xl bg-rose-50 px-3 py-2 text-left text-sm text-rose-900 ring-1 ring-rose-200">
             {errorBanner.code === "CUTOFF_PASSED" ? <ClockIcon className="h-4 w-4 shrink-0" aria-hidden /> : null}
             <span>{errorBanner.message}</span>
           </div>
@@ -2197,20 +2264,52 @@ export default function EmployeeWeekClient({
         {sortedDays.map((day, index) => {
           const active = activeDay?.date === day.date;
           const isToday = Boolean(serverOsloDate && day.date === serverOsloDate);
+          const lifecycle = weekDayLifecycleState(day);
           const weekday = (formatWeekdayNO(day.date) || day.weekday).slice(0, 3);
           return (
             <button
               key={day.date}
               type="button"
               data-lp-date={day.date}
+              data-lp-lifecycle={lifecycle}
               aria-current={isToday ? "date" : undefined}
               style={selectorGridPosition(day, selectorWeekRows, index)}
               onClick={() => selectDayFromTap(day.date)}
-              className={weekCalendarDayPillClassNames(active, isToday)}
+              className={weekCalendarDayPillClassNames(active, isToday, lifecycle)}
               aria-pressed={active}
             >
               <span className="ds-week-calendar-day-pill__weekday">{weekday}</span>
               <span className="ds-week-calendar-day-pill__daynum">{formatDateNO(day.date).split(".")[0]}</span>
+              {lifecycle === "ordered" ? (
+                <span
+                  className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--ordered"
+                  aria-hidden="true"
+                >
+                  <DsWeekIcon variant="check" />
+                </span>
+              ) : null}
+              {lifecycle === "locked" ? (
+                <>
+                  <span
+                    className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--locked"
+                    aria-hidden="true"
+                  >
+                    <DsWeekIcon variant="clock" />
+                  </span>
+                  <span className="sr-only">Frist passert</span>
+                </>
+              ) : null}
+              {lifecycle === "unavailable" ? (
+                <>
+                  <span
+                    className="ds-week-calendar-day-pill__state-mark ds-week-calendar-day-pill__state-mark--unavailable"
+                    aria-hidden="true"
+                  >
+                    <DsWeekIcon variant="minus" />
+                  </span>
+                  <span className="sr-only">Ikke tilgjengelig</span>
+                </>
+              ) : null}
             </button>
           );
         })}
@@ -2229,7 +2328,7 @@ export default function EmployeeWeekClient({
               key={`placeholder-${cell.date}`}
               aria-hidden="true"
               style={{ gridColumnStart, gridRowStart }}
-              className="min-h-[52px] min-w-0 rounded-2xl bg-neutral-50/60 px-2 py-3 text-center select-none"
+              className="min-h-calendar-pill min-w-0 rounded-2xl bg-neutral-50/60 px-2 py-3 text-center select-none"
             >
               <div className="text-xs uppercase tracking-wide text-neutral-400">
                 {weekdayShort}
@@ -2259,13 +2358,15 @@ export default function EmployeeWeekClient({
             insightRecommended={Boolean(!readOnlyPreview && recommendedDate && activeDay.date === recommendedDate && preferredWeekday)}
             insightPreferredMotion={false}
             readOnlyPreview={readOnlyPreview}
+            orderedPickerExpanded={Boolean(orderedPickerExpanded[activeDay.date])}
+            onToggleOrderedPicker={() => toggleOrderedPicker(activeDay.date)}
           />
         </section>
       ) : null}
 
       {upcomingDays.length > 0 ? (
         <section className="pb-2">
-          <h2 className="mb-3 text-center text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende menyer</h2>
+          <h2 className="mb-3 text-left text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende dager</h2>
           <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label="Kommende dager">
             {upcomingDays.map((day) => {
               const { label: statusLabel, className: statusClass } = statusPresentation(day);
@@ -2276,7 +2377,7 @@ export default function EmployeeWeekClient({
                   data-date={day.date}
                   data-day-slide=""
                   onClick={() => selectDayFromTap(day.date)}
-                  className="flex min-h-[58px] w-full items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 text-left text-sm ring-1 ring-black/5 transition-transform active:scale-[0.99]"
+                  className="ds-week-surface ds-week-surface--row flex min-h-day w-full items-center justify-between gap-3 bg-white/75 text-left text-sm"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-bold capitalize text-neutral-950">
@@ -2286,9 +2387,7 @@ export default function EmployeeWeekClient({
                       <TierPill tier={day.tier} />
                     </span>
                   </span>
-                  <span className={`shrink-0 rounded-full px-3 py-1 text-xs ring-1 ${statusClass}`}>
-                    {statusLabel}
-                  </span>
+                  <span className={`${statusClass} shrink-0`}>{statusLabel}</span>
                 </button>
               );
             })}

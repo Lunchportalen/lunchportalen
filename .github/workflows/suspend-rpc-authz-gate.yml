@@ -1,0 +1,143 @@
+# Standing authz gate for lp_company_* lifecycle RPCs (#92 strict provider gate).
+# Golden RLS drift does not cover public RPC wiring — this integration test is the guard.
+#
+# Required status check (branch protection): suspend-rpc-authz
+# PR: always runs and reports status; N/A pass when diff excludes supabase/** + lib/admin/**.
+# Push/schedule/dispatch: always runs full gate.
+name: Suspend RPC authz gate (uigx)
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: suspend-rpc-authz-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  suspend-rpc-authz:
+    name: suspend-rpc-authz
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      CI: "true"
+      RUN_SUPABASE_INTEGRATION_TESTS: "1"
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+      PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+      DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch PR base/head (scope detect)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+
+      - name: Detect gate relevance (supabase/** or lib/admin/**)
+        id: scope
+        env:
+          GATE_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          GATE_DIFF_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            echo "suspend-rpc-authz: full gate (${{ github.event_name }})"
+            exit 0
+          fi
+          set +e
+          node scripts/ci/detect-suspend-rpc-gate-scope.mjs
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          elif [ "$code" -eq 2 ]; then
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "suspend-rpc-authz: N/A — no supabase/** or lib/admin/** changes (required-check safe pass)"
+          else
+            echo "::error::suspend-rpc gate scope detect failed (exit ${code})"
+            exit "$code"
+          fi
+
+      - name: N/A — skip integration (required-check safe)
+        if: steps.scope.outputs.relevant == 'false'
+        run: |
+          echo "suspend-rpc-authz: skipped integration — PR does not touch supabase/** or lib/admin/**"
+          echo "This is not a false-green: skip-guard applies only when the gate is relevant."
+
+      - name: Skip-guard self-test (unit, always)
+        run: node scripts/ci/run-suspend-rpc-integration.test.mjs
+
+      - name: Setup Node
+        if: steps.scope.outputs.relevant == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.scope.outputs.relevant == 'true'
+        run: npm ci
+
+      - name: Verify staging secrets present
+        if: steps.scope.outputs.relevant == 'true'
+        run: |
+          set -euo pipefail
+          missing=()
+          for var in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY PROJECT_REF DB_PASSWORD; do
+            if [ -z "${!var:-}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing staging secrets: ${missing[*]}"
+            exit 1
+          fi
+          if [ "${PROJECT_REF}" != "uigxsboqeruxflgzqztl" ]; then
+            echo "::error::Refusing suspend-rpc gate: PROJECT_REF=${PROJECT_REF}"
+            exit 1
+          fi
+          if [[ "${NEXT_PUBLIC_SUPABASE_URL}" == *"hkpokyapzarefrgqzkos"* ]]; then
+            echo "::error::Refusing prod Supabase URL"
+            exit 1
+          fi
+          echo "Staging secrets OK (uigx)."
+
+      - name: Build staging postgres URL (session pooler)
+        if: steps.scope.outputs.relevant == 'true'
+        run: |
+          set -euo pipefail
+          ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+          URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          echo "SUPABASE_POSTGRES_URL=${URL}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${URL}" >> "$GITHUB_ENV"
+
+      - name: Assert DB target (staging, fail-closed)
+        if: steps.scope.outputs.relevant == 'true'
+        run: node scripts/ci/assert-db-target.mjs --expect staging
+
+      - name: Run suspend-rpc authz integration (skip-guard)
+        if: steps.scope.outputs.relevant == 'true'
+        run: node scripts/ci/run-suspend-rpc-integration.mjs

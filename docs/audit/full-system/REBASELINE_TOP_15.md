@@ -19,7 +19,7 @@
    — *Konsekvens:* Uklart hva som er «produkt» vs lokalt eksperiment.
 
 4. **`global_content` RLS: bred `authenticated`-policy** — **High** (sikkerhet, betinget)  
-   — *Evidence:* `RISK_REGISTER.md` R7; migrering ikke endret i denne revisjonen.  
+   — *Evidence:* `docs/security/incident/risk-register.md` R7; migrering ikke endret i denne revisjonen.  
    — *Konsekvens:* Kritisk **hvis** klienter skriver direkte til Supabase — **ikke** full runtime-bevis i denne rebaseline.
 
 5. **Build avhenger av hevet heap** — **High** (operasjonell)  

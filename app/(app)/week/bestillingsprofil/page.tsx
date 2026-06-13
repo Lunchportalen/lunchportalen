@@ -28,7 +28,7 @@ import {
 } from "@/lib/server/employee/loadEmployeeOwnLunchRecentHistory";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
-import { hasSupabaseSsrAuthCookieInJar } from "@/utils/supabase/ssrSessionCookies";
+import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 export const metadata: Metadata = {
   title: "Bestillingsprofil – Lunchportalen",
@@ -63,13 +63,13 @@ export default async function EmployeeBestillingsprofilPage() {
 
   if (role === "superadmin") {
     return (
-      <main className="mx-auto w-full max-w-lg px-4 py-10 text-center">
+      <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
         <h1 className="lp-h1">Bestillingsprofil</h1>
         <p className="mt-4 text-sm text-neutral-700">Superadmin har ikke tilgang til denne siden.</p>
         <Link href="/superadmin" className="mt-6 inline-block text-sm font-semibold text-neutral-900 underline">
           Til superadmin
         </Link>
-      </main>
+      </div>
     );
   }
 
@@ -113,7 +113,7 @@ export default async function EmployeeBestillingsprofilPage() {
     .join(" ");
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-8 text-center sm:max-w-2xl">
+    <div className="mx-auto w-full max-w-lg px-4 py-8 text-center sm:max-w-2xl">
       <h1 className="lp-h1">Bestillingsprofil</h1>
       <p className="mx-auto mt-2 max-w-md text-sm text-[rgb(var(--lp-muted))]">
         Enkel oppsummering fra den operative ordretabellen (samme kilde som «Mine lunsjendringer» og «Tidligere lunsjdager»).
@@ -125,22 +125,22 @@ export default async function EmployeeBestillingsprofilPage() {
       </p>
 
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Ukeplan
         </Link>
-        <Link href="/week/min-dag" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/min-dag" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Min dag
         </Link>
-        <Link href="/week/mine-registrerte-dager" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/mine-registrerte-dager" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Mine registrerte dager
         </Link>
-        <Link href="/week/mine-lunsjendringer" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/mine-lunsjendringer" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Mine lunsjendringer
         </Link>
-        <Link href="/week/tidligere-lunsjdager" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/week/tidligere-lunsjdager" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Tidligere lunsjdager
         </Link>
-        <Link href="/orders" className="lp-btn lp-btn--secondary lp-neon-focus min-h-[44px]">
+        <Link href="/orders" className="lp-btn lp-btn--secondary lp-neon-focus min-h-touch">
           Bestillinger
         </Link>
       </div>
@@ -277,6 +277,6 @@ export default async function EmployeeBestillingsprofilPage() {
           </ul>
         ) : null}
       </section>
-    </main>
+    </div>
   );
 }

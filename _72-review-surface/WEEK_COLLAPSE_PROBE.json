@@ -1,0 +1,20 @@
+{
+  "ciRun": "26966767704",
+  "branch": "feat/week-steg-7-2-ordered-collapse",
+  "head": "b9b4afff",
+  "WEEK_COLLAPSE_PROBE_EDITABLE": "see CI log (ordered before cutoff)",
+  "WEEK_COLLAPSE_PROBE_LOCKED": {
+    "summaryText": "Bestilt: Påsmurt – Ost & skinke",
+    "endreCount": 0,
+    "lockedNoteText": "Frist passert",
+    "lockedNoteVisibleHeight": 22.7249755859375,
+    "calendarLockedMarkHeight": 14,
+    "pickerGate": {
+      "pickerInDom": false,
+      "pickerHidden": true,
+      "editControlInDom": false,
+      "ariaControlsTargetCount": 0,
+      "visibleSlotControlsInCollapse": 0
+    }
+  }
+}

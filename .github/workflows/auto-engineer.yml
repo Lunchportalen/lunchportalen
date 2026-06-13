@@ -1,6 +1,9 @@
 # Autonomous audit → tasks → (optional) fix → validate. PR only; never pushes to main.
 name: Auto Engineer
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   workflow_dispatch:
 
@@ -17,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       SKIP_HTTP: "1"
       AUTONOMOUS_NEXT_BUILD: "1"
       NODE_OPTIONS: "--max-old-space-size=8192"
@@ -24,10 +28,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -39,7 +43,7 @@ jobs:
         run: node scripts/runAutonomous.mjs
 
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore: autonomous audit (auditReport + tasks)"
           title: "Autonomous engineer — audit + tasks"

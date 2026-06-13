@@ -4,3 +4,6 @@
 *.tsx text eol=lf
 *.js text eol=lf
 *.json text eol=lf
+*.sh text eol=lf
+*.toml text eol=lf
+supabase/migrations/** text eol=lf

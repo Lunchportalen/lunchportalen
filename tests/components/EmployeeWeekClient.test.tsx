@@ -5,9 +5,11 @@ import { describe, expect, test } from "vitest";
 import {
   buildOrderWriteBody,
   isCalendarUpcoming,
+  orderedMealDisplayLine,
   statusPresentation,
   tierPillClass,
   weekCalendarDayPillClassNames,
+  weekDayLifecycleState,
   type DayRow,
 } from "@/app/(app)/week/EmployeeWeekClient";
 
@@ -78,18 +80,65 @@ describe("weekCalendarDayPillClassNames (/week kalender-pill)", () => {
     );
   });
 
+  test("livssyklus: ordered, locked, unavailable modifikatorer", () => {
+    expect(weekCalendarDayPillClassNames(false, false, "ordered")).toContain(
+      "ds-week-calendar-day-pill--ordered",
+    );
+    expect(weekCalendarDayPillClassNames(false, false, "locked")).toContain("ds-week-calendar-day-pill--locked");
+    expect(weekCalendarDayPillClassNames(false, false, "unavailable")).toContain(
+      "ds-week-calendar-day-pill--unavailable",
+    );
+  });
+
+  test("weekDayLifecycleState: CUTOFF, ACTIVE, NO_TIER_FOR_DAY", () => {
+    const base: DayRow = {
+      date: "2026-06-01",
+      weekday: "Mandag",
+      tier: "BASIS",
+      planTier: "BASIS",
+      allowedChoices: [],
+      categories: [],
+      selectedChoiceKey: null,
+      selectedItemKey: null,
+      selectedItemTitleSnapshot: null,
+      isLocked: false,
+      isEnabled: true,
+      orderStatus: null,
+      wantsLunch: false,
+      menuDescription: "",
+      allergens: [],
+      menuImages: [],
+    };
+    expect(
+      weekDayLifecycleState({ ...base, isLocked: true, lockReason: "CUTOFF" }),
+    ).toBe("locked");
+    expect(weekDayLifecycleState({ ...base, orderStatus: "ACTIVE" })).toBe("ordered");
+    expect(
+      weekDayLifecycleState({ ...base, reason: "NO_TIER_FOR_DAY", isEnabled: false }),
+    ).toBe("unavailable");
+  });
+
   test("kilde: knapp bruker data-lp-date, aria-current og weekCalendarDayPillClassNames(active, isToday)", () => {
     const source = readFileSync(CLIENT_PATH, "utf-8");
     expect(source).toContain("data-lp-date={day.date}");
     expect(source).toContain('aria-current={isToday ? "date" : undefined}');
     expect(source).toContain("const isToday = Boolean(serverOsloDate && day.date === serverOsloDate);");
-    expect(source).toContain("className={weekCalendarDayPillClassNames(active, isToday)}");
+    expect(source).toContain("className={weekCalendarDayPillClassNames(active, isToday, lifecycle)}");
+    expect(source).toContain("data-lp-lifecycle={lifecycle}");
+    expect(source).toContain("ds-week-calendar-day-pill__state-mark--ordered");
+    expect(source).toContain("ds-week-calendar-day-pill__state-mark--locked");
+    expect(source).toContain("ds-week-calendar-day-pill__state-mark--unavailable");
+    expect(source).toContain("DsWeekIcon");
+    expect(source).toContain('className: "ds-week-icon"');
   });
 
-  test("CSS: dagens dato outline med var(--ds-accent)", () => {
+  test("CSS: dagens dato outline nøytral (gull reservert til primær-CTA)", () => {
     const css = readFileSync(CSS_PATH, "utf-8");
     expect(css).toContain(".ds-week-calendar-day-pill--today");
-    expect(css).toContain("outline: 2px solid var(--ds-accent)");
+    expect(css).toContain("outline: 2px solid var(--ds-line-strong)");
+    expect(css).toContain(".ds-week-icon");
+    expect(css).toMatch(/width:\s*1em/);
+    expect(css).toContain("color: currentColor");
   });
 });
 
@@ -111,6 +160,59 @@ describe("EmployeeWeekClient tier pill", () => {
     expect(css).toContain(".ds-tier-pill.is-basis");
     expect(css).toContain(".ds-tier-pill.is-luxus");
     expect(css).toContain(".ds-tier-pill.is-enterprise");
+  });
+});
+
+describe("EmployeeWeekClient chip surface (STEG 5.5)", () => {
+  test("CSS: --chip read-only pill uten states eller transition", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    const chipBlock = css.match(/\.ds-week-surface--chip\s*\{[^}]+\}/)?.[0] ?? "";
+    expect(css).toContain(".ds-week-surface--chip {");
+    expect(chipBlock).toMatch(/border-radius:\s*var\(--ds-radius-pill\)/);
+    expect(chipBlock).toMatch(/background:\s*var\(--ds-bg-soft\)/);
+    expect(chipBlock).toMatch(/color:\s*var\(--ds-text-soft\)/);
+    expect(chipBlock).toMatch(/font-size:\s*var\(--ds-body-sm\)/);
+    expect(chipBlock).toMatch(/box-shadow:\s*none/);
+    expect(chipBlock).toMatch(/transition:\s*none/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip:hover/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip:focus/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip\[aria-pressed/);
+    expect(css).not.toMatch(/\.ds-week-surface--chip\[disabled/);
+  });
+
+  test("chip tekst på soft bg oppfyller WCAG AA kontrast (4.5:1)", () => {
+    function relLuminance(hex: string) {
+      const n = parseInt(hex.slice(1), 16);
+      const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * rgb[0]! + 0.7152 * rgb[1]! + 0.0722 * rgb[2]!;
+    }
+    const fg = relLuminance("#5f5f5f");
+    const bg = relLuminance("#eee9df");
+    const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("EmployeeWeekClient motion surface (STEG 6)", () => {
+  test("CSS: row press + reduce gate; calendar bruker --ds-ease 180ms", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: no-preference\)[\s\S]*\.ds-week-surface--row[\s\S]*transition:\s*transform 180ms var\(--ds-ease\)/,
+    );
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.ds-week-surface--row[\s\S]*transition:\s*none/,
+    );
+    expect(css).toContain("html.lp-week-visual-regression .ds-week-surface--row");
+    expect(css).toMatch(/transform 180ms var\(--ds-ease\)/);
+  });
+
+  test("kilde: row uten Tailwind active:scale uten motion-safe", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("ds-week-surface--row flex min-h-day");
+    expect(source).not.toMatch(/ds-week-surface--row[\s\S]*active:scale-\[0\.99\]/);
   });
 });
 
@@ -178,28 +280,51 @@ describe("isCalendarUpcoming", () => {
   });
 });
 
+describe("orderedMealDisplayLine", () => {
+  test("ACTIVE + CMS item resolves «Kategori – variant» (Melhus 02.06 shape)", () => {
+    const line = orderedMealDisplayLine(
+      dayFixture({
+        orderStatus: "ACTIVE",
+        selectedChoiceKey: "paasmurt",
+        selectedItemKey: "ost-skinke",
+        categories: [
+          {
+            key: "paasmurt",
+            category: "paasmurt",
+            label: "Påsmurt",
+            title: null,
+            description: null,
+            allergens: [],
+            available: true,
+            items: [{ key: "ost-skinke", title: "Ost & skinke", allergens: [], isVegetarian: false }],
+          },
+        ],
+        allowedChoices: [{ key: "paasmurt", label: "Påsmurt" }],
+      }),
+    );
+    expect(line).toBe("Påsmurt – Ost & skinke");
+  });
+});
+
 describe("statusPresentation", () => {
   test("Bestilt → grønn pill", () => {
     const p = statusPresentation(dayFixture({ orderStatus: "ACTIVE", isEnabled: true, isLocked: false }));
     expect(p.label).toBe("Bestilt");
-    expect(p.className).toContain("ds-green");
-    expect(p.className).toContain("text-white");
+    expect(p.className).toBe("ds-week-status-pill is-ordered");
   });
 
-  test("Ikke bestilt → gul accent-pill og normalisert label", () => {
+  test("Ikke bestilt → nøytral grå pill (tilstand, ikke merkeaksent)", () => {
     const p = statusPresentation(
       dayFixture({ orderStatus: null, isEnabled: true, isLocked: false, lockReason: null }),
     );
     expect(p.label).toBe("Ikke bestilt");
-    expect(p.className).toContain("ds-accent");
-    expect(p.className).toContain("ds-text");
+    expect(p.className).toBe("ds-week-status-pill is-open");
   });
 
   test("Avbestilt → transparent/outline", () => {
     const p = statusPresentation(dayFixture({ orderStatus: "CANCELLED", isEnabled: true, isLocked: false }));
     expect(p.label).toBe("Avbestilt");
-    expect(p.className).toContain("bg-transparent");
-    expect(p.className).toContain("ring-neutral-300");
+    expect(p.className).toBe("ds-week-status-pill is-cancelled");
   });
 
   test("Frist passert → nøytral grå", () => {
@@ -207,7 +332,95 @@ describe("statusPresentation", () => {
       dayFixture({ orderStatus: null, isEnabled: true, isLocked: true, lockReason: "CUTOFF" }),
     );
     expect(p.label).toBe("Frist passert");
-    expect(p.className).toContain("bg-neutral-100");
+    expect(p.className).toBe("ds-week-status-pill is-locked");
+  });
+
+  test("CSS: ds-week-status-pill struktur + farge-modifiers", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).toContain(".ds-week-status-pill {");
+    expect(css).toMatch(/\.ds-week-status-pill[\s\S]*display:\s*inline-flex/);
+    expect(css).toMatch(/\.ds-week-status-pill[\s\S]*box-shadow:\s*0 0 0 1px var\(--ds-line\)/);
+    expect(css).toContain(".ds-week-status-pill.is-ordered");
+    expect(css).toMatch(/\.ds-week-status-pill\.is-ordered[\s\S]*background:\s*var\(--ds-status-success\)/);
+    expect(css).toContain(".ds-week-status-pill.is-open");
+    expect(css).toMatch(/\.ds-week-status-pill\.is-open[\s\S]*var\(--ds-status-neutral-bg\)/);
+    expect(css).toContain(".ds-week-status-pill.is-cancelled");
+    expect(css).toContain(".ds-week-status-pill.is-locked");
+    expect(css).toContain(".ds-week-status-pill.is-cutoff");
+    expect(css).toContain(".ds-week-status-pill.is-preview");
+  });
+
+  test("Ikke bestilt grå oppfyller WCAG AA kontrast (4.5:1)", () => {
+    function relLuminance(hex: string) {
+      const n = parseInt(hex.slice(1), 16);
+      const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * rgb[0]! + 0.7152 * rgb[1]! + 0.0722 * rgb[2]!;
+    }
+    const fg = relLuminance("#404040");
+    const bg = relLuminance("#f5f5f5");
+    const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("EmployeeWeekClient ordered vs insight styling", () => {
+  test("kilde: is-ordered på kategori-kort, ds-week-insight-pill for anbefaling", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(source).toContain("is-ordered");
+    expect(source).toContain("ds-week-insight-pill");
+    expect(source).toContain("ds-ordered-meal-line");
+    expect(source).toContain("Bestilt:");
+    expect(css).toContain(".week-category-card.is-ordered");
+    expect(css).toContain(".ds-week-insight-pill");
+    expect(css).not.toMatch(/\.week-category-card\.is-ordered\s*\{[^}]*var\(--ds-accent\)/);
+  });
+
+  test("ACTIVE: kategori-kort ikke låst; SET-bytte via applyActiveOrderChange", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).not.toContain("cardsLocked");
+    expect(source).toContain("applyActiveOrderChange");
+    expect(source).toContain("postSetDayInner(date, true, selection)");
+    expect(source).toMatch(/day\.orderStatus === "ACTIVE"\) return prev/);
+  });
+
+  test("STEG 7.2: ordered collapse summary + Endre disclosure (Modell A)", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(source).toContain("ds-week-ordered-collapse");
+    expect(source).toContain("orderedPickerExpanded");
+    expect(source).toContain("collapseOrderedPicker");
+    expect(source).toContain('aria-label={`Endre bestilling: ${mealLine}`}');
+    expect(source).toContain("weekDayLifecycleState(day)");
+    expect(css).toContain(".ds-week-ordered-collapse__edit:focus-visible");
+    expect(css).toMatch(/min-height:\s*48px/);
+  });
+
+  test("CSS: slot focus-visible accent ring; ordered category uses --slot not green card frame", () => {
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(css).not.toMatch(/^\s*ring\s*:/m);
+    expect(css).toContain(".ds-week-surface--slot:focus-visible");
+    expect(css).toMatch(/\.ds-week-surface--slot:focus-visible[\s\S]*outline:\s*2px solid var\(--ds-accent\)/);
+    expect(css).toMatch(/outline-offset:\s*3px/);
+    expect(css).toContain(".ds-week-surface--slot[aria-pressed=\"true\"]");
+    expect(css).not.toMatch(/\.week-category-card\.is-ordered::before/);
+    expect(css).toContain(".week-category-card.is-ordered[aria-pressed=\"true\"]");
+    expect(css).toContain(".ds-week-calendar-day-pill--locked");
+    expect(css).toContain(".ds-week-calendar-day-pill--unavailable");
+    expect(css).toContain(".ds-week-surface--slot.is-locked");
+    expect(css).toContain(".ds-week-surface--slot.is-unavailable");
+  });
+
+  test("gull reservert til PRIMARY_CTA; dag-valg og insight uten accent", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    const css = readFileSync(CSS_PATH, "utf-8");
+    expect(source).toContain("from-accent");
+    expect(source).not.toContain("ring-accent/");
+    expect(css).not.toMatch(/\.ds-week-calendar-day-pill--selected[\s\S]*#f5c518/);
+    expect(css).toMatch(/\.ds-week-insight-pill[\s\S]*var\(--ds-status-neutral-bg\)/);
   });
 });
 
@@ -223,5 +436,13 @@ describe("EmployeeWeekClient in-card CTA (WeekDayCardMobile)", () => {
 
     expect(source).not.toContain("ds-week-sticky-safe-bottom");
     expect(source).not.toContain("stickyCtaForDay");
+  });
+});
+
+describe("EmployeeWeekClient inline allergenkort", () => {
+  test("monterer WeekAllergenProfileCard rett under intro-header når ikke readOnlyPreview", () => {
+    const source = readFileSync(CLIENT_PATH, "utf-8");
+    expect(source).toContain("WeekAllergenProfileCard");
+    expect(source).toMatch(/<\/header>[\s\S]*!readOnlyPreview \? <WeekAllergenProfileCard \/>/);
   });
 });

@@ -1,0 +1,88 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+
+import { DEFAULT_BRAND_ACCENT, normalizeBrandHex } from "@/lib/providers/brandColor";
+import { saveProviderBrandColor } from "@/lib/providers/saveProviderLogo";
+
+type Status =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "success"; label: string }
+  | { kind: "error"; label: string };
+
+export type ProviderBrandColorProps = {
+  providerId: string;
+  primaryColor: string | null;
+};
+
+export default function ProviderBrandColor({ providerId, primaryColor }: ProviderBrandColorProps) {
+  const [value, setValue] = useState(primaryColor ?? "");
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [pending, startTransition] = useTransition();
+
+  const busy = pending || status.kind === "loading";
+  const previewHex = useMemo(() => normalizeBrandHex(value) ?? DEFAULT_BRAND_ACCENT, [value]);
+
+  function onSave() {
+    if (busy) return;
+    const trimmed = value.trim();
+    if (trimmed && !normalizeBrandHex(trimmed)) {
+      setStatus({ kind: "error", label: "Bruk HEX-format, for eksempel #F5C518." });
+      return;
+    }
+
+    setStatus({ kind: "loading" });
+    startTransition(async () => {
+      const res = await saveProviderBrandColor(providerId, trimmed || null);
+      if (res.ok) {
+        setValue(res.primaryColor ?? "");
+        setStatus({ kind: "success", label: res.primaryColor ? "Farge lagret." : "Standardfarge gjenopprettet." });
+        return;
+      }
+      setStatus({ kind: "error", label: "error" in res ? res.error : "Kunne ikke lagre fargen." });
+    });
+  }
+
+  return (
+    <div className="ds-provider-brand-color">
+      <div className="ds-provider-brand-color__row">
+        <span className="ds-provider-brand-color__swatch" style={{ background: previewHex }} aria-hidden="true" />
+        <label className="ds-provider-brand-color__field" htmlFor="provider-brand-color">
+          <span className="ds-provider-brand-color__label">HEX-kode</span>
+          <input
+            id="provider-brand-color"
+            name="brandColor"
+            value={value}
+            placeholder={DEFAULT_BRAND_ACCENT}
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={7}
+            onChange={(e) => setValue(e.target.value)}
+            disabled={busy}
+          />
+        </label>
+        <button type="button" className="ds-btn ds-btn--secondary" onClick={onSave} disabled={busy}>
+          {busy ? "Lagrer…" : "Lagre farge"}
+        </button>
+      </div>
+
+      <p className="ds-provider-brand-color__sample" aria-hidden="true">
+        <span className="ds-provider-brand-color__sample-line" style={{ background: previewHex }} />
+        Slik brukes fargen: som liten aksent i menyen og detaljer.
+      </p>
+
+      <p className="ds-provider-logo__hint">
+        Bruk HEX-format, for eksempel #F5C518. Ved dårlig kontrast brukes standardfarge.
+      </p>
+
+      <p
+        className={`ds-provider-logo__status${status.kind === "success" ? " is-success" : ""}${status.kind === "error" ? " is-error" : ""}`}
+        role="status"
+        aria-live="polite"
+      >
+        {status.kind === "success" || status.kind === "error" ? status.label : ""}
+      </p>
+    </div>
+  );
+}

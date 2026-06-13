@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
 @using Umbraco.Cms.Core.Models.PublishedContent
@@ -7,18 +7,18 @@
 @{
     var eyebrow     = Model.Value<string>("eyebrow")     ?? "Klar til å prøve?";
     var heading     = Model.Value<string>("heading")     ?? "Klar for en lunsjordning som faktisk fungerer?";
-    var text        = Model.Value<string>("text")        ?? "Prøv Lunchportalen gratis i 5 dager. Ingen forpliktelser, ingen kredittkort.";
-    var trustSignal = Model.Value<string>("trustSignal") ?? "5 dager gratis · Ingen kredittkort · Kom i gang på 15 min";
+    var text        = Model.Value<string>("text")        ?? "Book demo av Lunchportalen. Ingen forpliktelser, ingen kredittkort.";
+    var trustSignal = Model.Value<string>("trustSignal") ?? "Uforpliktende demo · Ingen kredittkort · Kom i gang på 15 min";
 
     var primaryCtaLinks = Model.Value<IEnumerable<Link>>("primaryCtaLink");
     var primaryCta      = primaryCtaLinks?.FirstOrDefault();
-    var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Prøv gratis i 5 dager";
-    var primaryUrl      = !string.IsNullOrWhiteSpace(primaryCta?.Url) ? primaryCta.Url : "/kom-i-gang/";
+    var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Book demo";
+    var primaryUrl      = AppUrls.ResolveLeadCapture("losningen-primary");
 
     var secCtaLinks = Model.Value<IEnumerable<Link>>("secCtaLink");
     var secCta      = secCtaLinks?.FirstOrDefault();
     var secCtaText  = Model.Value<string>("secCtaText") ?? "Book demo";
-    var secUrl      = !string.IsNullOrWhiteSpace(secCta?.Url) ? secCta.Url : "/demo/";
+    var secUrl      = AppUrls.ResolveLeadCapture("losningen-book-demo");
 
     bool hasSecCta = !string.IsNullOrWhiteSpace(secCtaText);
 }

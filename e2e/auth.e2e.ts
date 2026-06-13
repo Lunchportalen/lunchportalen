@@ -41,10 +41,9 @@ test.describe("Auth and redirect", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test("public front page is accessible without auth", async ({ page }) => {
+  test("public root redirects unauthenticated users to marketing site", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL("/");
-    await expect(page.getByRole("main")).toBeVisible();
+    await expect(page).toHaveURL(/^https:\/\/lunchportalen\.no\/?/);
   });
 
   test("public /status is accessible", async ({ page }) => {

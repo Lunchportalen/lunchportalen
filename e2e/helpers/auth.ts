@@ -114,6 +114,12 @@ export function getHomeForRole(role: E2ERole): string {
   return ROLE_HOME[role];
 }
 
+/** Full-URL match for role home; tolerates post-login `?rid=` (Playwright toHaveURL matches entire href). */
+export function roleHomeUrlPattern(role: E2ERole): RegExp {
+  const home = getHomeForRole(role).replace(/\//g, "\\/");
+  return new RegExp(`${home}(\\?|$|/)`);
+}
+
 export async function visitProtectedRouteAndAssertRedirect(
   page: Page,
   path: string,

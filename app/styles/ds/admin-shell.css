@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   background: var(--ds-bg);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--lp-font-body, "Segoe UI"), system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   color: var(--ds-text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -622,6 +622,19 @@
   transform: translateY(-4px);
   border-color: rgba(245, 180, 0, .34);
   box-shadow: var(--ds-shadow-card-hover);
+}
+
+/* KPI som drilldown-lenke: samme visuelle card, men klikkbar og fokusbar. */
+.ds-admin-kpi--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ds-admin-kpi--link:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
 }
 
 .ds-admin-kpi__top {

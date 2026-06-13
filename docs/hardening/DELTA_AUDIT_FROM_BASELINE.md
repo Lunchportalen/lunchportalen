@@ -1,7 +1,7 @@
 # Delta audit — fra REPO_DEEP_DIVE_REPORT til nåstatus
 
 **Dato:** 2026-03-28  
-**Before snapshot:** `REPO_DEEP_DIVE_REPORT.md` (samme dato) — brukt som baseline, **ikke** som automatisk sannhet om dagens kode uten re-verifikasjon.  
+**Before snapshot:** `docs/audit/repo-deep-dive-report.md` (samme dato) — brukt som baseline, **ikke** som automatisk sannhet om dagens kode uten re-verifikasjon.  
 **After snapshot:** Lesing av repo 2026-03-28 (kode + eksisterende fasedokumentasjon).
 
 ---

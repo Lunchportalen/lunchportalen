@@ -98,7 +98,14 @@ describe("summarizeOperativeOrdersForBrief", () => {
       dcMap: new Map([
         [
           "00000000-0000-4000-8000-0000000000bb|00000000-0000-4000-8000-0000000000cc|00000000-0000-4000-8000-0000000000dd",
-          { choice_key: "basis", note: "Ekstra", updated_at: null, status: "ACTIVE" },
+          {
+            choice_key: "basis",
+            item_key: null,
+            item_title_snapshot: null,
+            note: "Ekstra",
+            updated_at: null,
+            status: "ACTIVE",
+          },
         ],
       ]),
     } satisfies Extract<LoadOperativeKitchenOrdersResult, { ok: true }>;
@@ -110,7 +117,7 @@ describe("summarizeOperativeOrdersForBrief", () => {
     expect(s.ok).toBe(true);
     if (!s.ok) return;
     expect(s.total_operative).toBe(2);
-    expect(s.by_slot.lunch).toBe(2);
+    expect(s.by_slot.default).toBe(2);
     expect(s.by_location[0]?.count).toBe(2);
     expect(s.order_notes_nonempty).toBe(1);
     expect(s.day_choice_notes_nonempty).toBe(1);

@@ -10,26 +10,15 @@ import { redirect } from "next/navigation";
 
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { getVerifiedSanityStudioBaseUrl } from "@/lib/cms/sanityStudioUrl";
 import { formatProviderRevenue, loadProviderDashboard } from "@/lib/providers/loadProviderDashboard";
-
-function formatTs(iso: string) {
-  if (!iso) return "—";
-  try {
-    return new Intl.DateTimeFormat("nb-NO", {
-      dateStyle: "short",
-      timeStyle: "short",
-      timeZone: "Europe/Oslo",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
-function truncateReason(reason: string | null, max = 80) {
-  const t = String(reason ?? "").trim();
-  if (!t) return null;
-  return t.length > max ? `${t.slice(0, max)}…` : t;
-}
+import {
+  PROVIDER_ACTIVITY_EMPTY_STATE,
+  PROVIDER_FOLLOW_UP_ALL_CLEAR,
+  buildProviderFollowUps,
+  mapProviderDashboardActivity,
+} from "@/lib/providers/providerDashboardActivity";
+import { PROVIDER_AGREEMENTS_KPI_COPY } from "@/lib/providers/providerDashboardKpis";
 
 export default async function LeverandorDashboardPage() {
   const auth = await getAuthContext();
@@ -46,14 +35,52 @@ export default async function LeverandorDashboardPage() {
 
   const { stats, recentActivity } = await loadProviderDashboard(provider.id);
 
-  const kpis = [
-    { label: "Aktive kunder", value: String(stats.activeCustomers), foot: "Ikke suspendert eller pauset" },
-    { label: "Aktive avtaler", value: String(stats.activeAgreements), foot: "Status ACTIVE" },
-    { label: "Ordrer denne uken", value: String(stats.ordersThisWeek), foot: "ISO-uke, status ACTIVE" },
+  // Samme sannhetskilde som /leverandor/meny (PR #167): kun verifisert env
+  // aktiverer ekstern menyredigering.
+  const menuEditingEnabled = Boolean(getVerifiedSanityStudioBaseUrl());
+
+  const activity = mapProviderDashboardActivity(recentActivity);
+  const followUps = buildProviderFollowUps({
+    menuEditingEnabled,
+    ordersThisWeek: stats.ordersThisWeek,
+    activeCustomers: stats.activeCustomers,
+    revenueLast30DaysNok: stats.revenueLast30DaysNok,
+  });
+
+  const kpis: Array<{ label: string; value: string; foot: string; href?: string; linkTitle?: string }> = [
+    { label: "Aktive kunder", value: String(stats.activeCustomers), foot: "Bedrifter med aktiv lunsjordning" },
     {
-      label: "Omsetning siste 30 dager",
+      label: PROVIDER_AGREEMENTS_KPI_COPY.label,
+      value: String(stats.activeAgreements),
+      foot: PROVIDER_AGREEMENTS_KPI_COPY.foot,
+      href: PROVIDER_AGREEMENTS_KPI_COPY.href,
+      linkTitle: PROVIDER_AGREEMENTS_KPI_COPY.linkTitle,
+    },
+    { label: "Ordrer denne uken", value: String(stats.ordersThisWeek), foot: "Bestillinger i inneværende uke" },
+    {
+      label: "Ordreverdi siste 30 dager",
       value: formatProviderRevenue(stats.revenueLast30DaysNok),
-      foot: "Sum line_total på ordrer",
+      foot: "Samlet ordreverdi",
+    },
+  ];
+
+  const quickActions = [
+    {
+      href: "/leverandor/ordrer",
+      title: "Se dagens leveranser",
+      text: "Få oversikt over ordre og produksjon for neste leveringsdag.",
+    },
+    {
+      href: "/leverandor/kunder",
+      title: "Se kunder",
+      text: "Administrer bedrifter, avtaler og leveringsoppsett.",
+    },
+    {
+      href: "/leverandor/meny",
+      title: "Meny og publisering",
+      text: menuEditingEnabled
+        ? "Administrer menyinnholdet som vises for kundene."
+        : "Se status for menyinnhold og provider-redigering.",
     },
   ];
 
@@ -69,50 +96,81 @@ export default async function LeverandorDashboardPage() {
 
       <section className="ds-section" aria-label="Nøkkeltall">
         <div className="ds-admin-kpi-row">
-          {kpis.map((item) => (
-            <div className="ds-admin-kpi" key={item.label}>
-              <div className="ds-admin-kpi__label">{item.label}</div>
-              <div className="ds-admin-kpi__value">{item.value}</div>
-              <div className="ds-admin-kpi__foot">{item.foot}</div>
-            </div>
-          ))}
+          {kpis.map((item) =>
+            item.href ? (
+              <Link
+                href={item.href}
+                title={item.linkTitle}
+                className="ds-admin-kpi ds-admin-kpi--link"
+                key={item.label}
+              >
+                <div className="ds-admin-kpi__label">{item.label}</div>
+                <div className="ds-admin-kpi__value">{item.value}</div>
+                <div className="ds-admin-kpi__foot">{item.foot}</div>
+              </Link>
+            ) : (
+              <div className="ds-admin-kpi" key={item.label}>
+                <div className="ds-admin-kpi__label">{item.label}</div>
+                <div className="ds-admin-kpi__value">{item.value}</div>
+                <div className="ds-admin-kpi__foot">{item.foot}</div>
+              </div>
+            ),
+          )}
         </div>
+      </section>
+
+      <section className="ds-section" aria-label="Må følges opp">
+        <h2 className="ds-h2">Må følges opp</h2>
+        {followUps.length === 0 ? (
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">{PROVIDER_FOLLOW_UP_ALL_CLEAR.title}</p>
+            <p className="ds-provider-empty__text">{PROVIDER_FOLLOW_UP_ALL_CLEAR.text}</p>
+          </div>
+        ) : (
+          <div className="ds-provider-followup-grid">
+            {followUps.map((item) => (
+              <article className={`ds-card ds-provider-followup ds-provider-followup--${item.tone}`} key={item.id}>
+                <h3 className="ds-card__title">{item.title}</h3>
+                <p className="ds-card__text">{item.text}</p>
+                <Link href={item.href} className="ds-provider-followup__action">
+                  {item.actionLabel}
+                </Link>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="ds-section" aria-label="Hurtighandlinger">
         <h2 className="ds-h2">Hurtighandlinger</h2>
         <div className="ds-provider-quick-grid">
-          <Link href="/leverandor/kunder/ny" className="ds-card">
-            <h3 className="ds-card__title">Legg til kunde</h3>
-            <p className="ds-card__text">Registrer ny bedrift (Patch 13).</p>
-          </Link>
-          <Link href="/leverandor/kunder" className="ds-card">
-            <h3 className="ds-card__title">Se kunder</h3>
-            <p className="ds-card__text">
-              {stats.ordersThisWeek} ordrer denne uken · administrer kunder.
-            </p>
-          </Link>
-          <div className="ds-card ds-provider-nav__item is-disabled">
-            <h3 className="ds-card__title">Oppdater meny</h3>
-            <p className="ds-card__text">Meny-redigering kommer i Patch 11.</p>
-          </div>
+          {quickActions.map((action) => (
+            <Link href={action.href} className="ds-card" key={action.href}>
+              <h3 className="ds-card__title">{action.title}</h3>
+              <p className="ds-card__text">{action.text}</p>
+            </Link>
+          ))}
         </div>
       </section>
 
       <section className="ds-section" aria-label="Siste aktivitet">
         <h2 className="ds-h2">Siste aktivitet</h2>
-        {recentActivity.length === 0 ? (
-          <p className="ds-body">Ingen registrerte hendelser ennå.</p>
+        {activity.length === 0 ? (
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">{PROVIDER_ACTIVITY_EMPTY_STATE.title}</p>
+            <p className="ds-provider-empty__text">{PROVIDER_ACTIVITY_EMPTY_STATE.text}</p>
+          </div>
         ) : (
           <div className="ds-provider-activity">
-            {recentActivity.map((row) => (
-              <article className="ds-provider-activity__row" key={row.id}>
-                <div className="ds-provider-activity__meta">{formatTs(row.createdAt)}</div>
+            {activity.map((item) => (
+              <article className="ds-provider-activity__row" key={item.id}>
+                <div className="ds-provider-activity__meta">{item.timeLabel}</div>
                 <div className="ds-provider-activity__action">
-                  {row.action} · {row.entityType}
+                  <span className={`ds-provider-activity__dot ds-provider-activity__dot--${item.tone}`} aria-hidden />
+                  {item.title}
                 </div>
-                {truncateReason(row.reason) ? (
-                  <p className="ds-body ds-provider-activity__meta--desktop">{truncateReason(row.reason)}</p>
+                {item.description ? (
+                  <p className="ds-body ds-provider-activity__meta--desktop">{item.description}</p>
                 ) : null}
               </article>
             ))}

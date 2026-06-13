@@ -28,7 +28,7 @@ export const ENTERPRISE_READINESS = {
     },
     queueWorkers: {
       status: "implemented",
-      notes: "`lib/infra/queue.ts`, `lib/infra/redis.ts`, `workers/worker.ts`, outbox-fanout valgfri (`OUTBOX_QUEUE_FANOUT`).",
+      notes: "`lib/infra/queue.ts`, `lib/infra/redis.ts`, valgfri outbox-fanout (`OUTBOX_QUEUE_FANOUT`); primær drain via Vercel cron `/api/cron/outbox`.",
     },
     idempotency: {
       status: "implemented",

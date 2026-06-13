@@ -27,6 +27,8 @@ type RegisterResponse = {
 type CompanyRegistrationFormProps = {
   blocked?: boolean;
   blockedReason?: string | null;
+  initialPostalCode?: string;
+  initialPostalCity?: string;
 };
 
 export type CompanyRegistrationFormState = {
@@ -166,7 +168,12 @@ function getRegisterErrorReference(response: RegisterResponse | null) {
   return candidates.map((value) => value?.trim()).find((value) => isRegisterReference(value)) || null;
 }
 
-export default function CompanyRegistrationForm({ blocked = false, blockedReason = null }: CompanyRegistrationFormProps) {
+export default function CompanyRegistrationForm({
+  blocked = false,
+  blockedReason = null,
+  initialPostalCode = "",
+  initialPostalCity = "",
+}: CompanyRegistrationFormProps) {
   const defaultTiers: WeekdayMealTiers = {
     mon: "BASIS",
     tue: "BASIS",
@@ -183,8 +190,8 @@ export default function CompanyRegistrationForm({ blocked = false, blockedReason
     contactEmail: "",
     contactPhone: "",
     addressLine: "",
-    postalCode: "",
-    postalCity: "",
+    postalCode: initialPostalCode.replace(/\D/g, "").slice(0, 4),
+    postalCity: initialPostalCity.trim(),
     confirmAuthority: false,
     weekdayTiers: defaultTiers,
     deliveryWindowFrom: "",

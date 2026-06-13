@@ -10,15 +10,34 @@ import {
   syncMenuServiceDaysForPublishedMenuDay,
 } from "@/lib/menu-publish/syncMenuServiceDaysFromMenuDay";
 import {
+  extractMenuDayProviderRef,
+  resolveMenuDayProviderScope,
+} from "@/lib/menu-publish/resolveMenuDayProvider";
+import {
   extractMenuDayFromSanityWebhookBody,
   menuDayIsPublishVisible,
 } from "@/lib/menu-publish/sanityMenuDayWebhookBody";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { opsLog } from "@/lib/ops/log";
 import { SANITY_WEBHOOK_SIGNATURE_HEADER, verifySanityWebhookSignature } from "@/lib/sanity/verifySanityWebhookSignature";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function safeTrim(v: unknown): string {
   return String(v ?? "").trim();
+}
+
+function skippedPayload(reason: string) {
+  return {
+    skipped: true,
+    reason,
+    inserted: 0,
+    updated: 0,
+    unchanged: 0,
+    deleted: 0,
+    locations: 0,
+    msdiRowsUpserted: 0,
+    msdiLocationsSkippedNoTier: 0,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -46,49 +65,57 @@ export async function POST(req: NextRequest) {
 
   const doc = extractMenuDayFromSanityWebhookBody(parsed);
   if (!doc) {
-    return jsonOk(
-      rid,
-      {
-        skipped: true,
-        reason: "NOT_MENU_DAY_PAYLOAD",
-        inserted: 0,
-        updated: 0,
-        unchanged: 0,
-        deleted: 0,
-        locations: 0,
-        msdiRowsUpserted: 0,
-        msdiLocationsSkippedNoTier: 0,
-      },
-      200,
-    );
+    return jsonOk(rid, skippedPayload("NOT_MENU_DAY_PAYLOAD"), 200);
   }
 
   const date = safeTrim(doc.date);
   const planTier = safeTrim(doc.planTier);
 
   if (!date || !planTier) {
-    return jsonOk(
-      rid,
-      {
-        skipped: true,
-        reason: "MISSING_DATE_OR_PLAN_TIER",
-        inserted: 0,
-        updated: 0,
-        unchanged: 0,
-        deleted: 0,
-        locations: 0,
-        msdiRowsUpserted: 0,
-        msdiLocationsSkippedNoTier: 0,
-      },
-      200,
-    );
+    return jsonOk(rid, skippedPayload("MISSING_DATE_OR_PLAN_TIER"), 200);
   }
 
   try {
     const admin = supabaseAdmin();
 
+    // Provider-isolation (LOCKED): sync/delete krever provider-scope fra
+    // menuDay.provider._ref → Supabase providers.id. Fail-closed skip ved
+    // manglende ref eller ukjent provider — aldri global/unscoped sync,
+    // ingen Melhus-fallback.
+    const providerRef = extractMenuDayProviderRef(doc);
+    if (!providerRef) {
+      opsLog("menu_day_sync.skipped", {
+        rid,
+        level: "warn",
+        reason: "missing_provider_scope",
+        sanity_menu_day_id: safeTrim(doc["_id"]) || null,
+        date,
+        plan_tier: planTier,
+      });
+      return jsonOk(rid, skippedPayload("MISSING_PROVIDER_SCOPE"), 200);
+    }
+
+    const scopeResult = await resolveMenuDayProviderScope(admin, providerRef);
+    if (scopeResult.ok === false) {
+      if (scopeResult.reason === "LOOKUP_FAILED") {
+        // Transient infra-feil: la Sanity retry + reconcile-cron self-heale.
+        throw new Error(`provider lookup: ${scopeResult.detail ?? "LOOKUP_FAILED"}`);
+      }
+      opsLog("menu_day_sync.skipped", {
+        rid,
+        level: "warn",
+        reason: "provider_not_found",
+        sanity_menu_day_id: safeTrim(doc["_id"]) || null,
+        date,
+        plan_tier: planTier,
+      });
+      return jsonOk(rid, skippedPayload("PROVIDER_NOT_FOUND"), 200);
+    }
+
+    const providerId = scopeResult.scope.providerId;
+
     if (!menuDayIsPublishVisible(doc)) {
-      const { deleted } = await deleteMenuServiceDaysForMenuDay(admin, { date, planTier });
+      const { deleted } = await deleteMenuServiceDaysForMenuDay(admin, { date, planTier, providerId });
       return jsonOk(
         rid,
         { skipped: false, unpublished: true, deleted, inserted: 0, updated: 0, unchanged: 0, locations: 0, msdiRowsUpserted: 0, msdiLocationsSkippedNoTier: 0 },
@@ -96,7 +123,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const stats = await syncMenuServiceDaysForPublishedMenuDay(admin, { date, planTier });
+    const stats = await syncMenuServiceDaysForPublishedMenuDay(admin, { date, planTier, providerId });
 
     return jsonOk(
       rid,

@@ -7,6 +7,13 @@
    - FAIL => exit(1) for CI/ops safety.
 ========================================================= */
 
+import {
+  DEFAULT_RETRIES,
+  DEFAULT_RETRY_DELAY_MS,
+  DEFAULT_TIMEOUT_MS,
+  isTransient,
+} from "./postdeploy-lib.mjs";
+
 const BASE_URL = (process.env.POSTDEPLOY_BASE_URL || "").replace(/\/$/, "");
 
 if (!BASE_URL) {
@@ -14,9 +21,9 @@ if (!BASE_URL) {
   process.exit(1);
 }
 
-const TIMEOUT_MS = Number(process.env.POSTDEPLOY_TIMEOUT_MS || 45000);
-const RETRIES = Number(process.env.POSTDEPLOY_RETRIES || 6);
-const RETRY_DELAY_MS = Number(process.env.POSTDEPLOY_RETRY_DELAY_MS || 10000);
+const TIMEOUT_MS = Number(process.env.POSTDEPLOY_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
+const RETRIES = Number(process.env.POSTDEPLOY_RETRIES || DEFAULT_RETRIES);
+const RETRY_DELAY_MS = Number(process.env.POSTDEPLOY_RETRY_DELAY_MS || DEFAULT_RETRY_DELAY_MS);
 const EXPECTED_TEXT = process.env.POSTDEPLOY_EXPECTED_TEXT || "";
 
 const ROUTES = (process.env.POSTDEPLOY_ROUTES || "/")
@@ -54,27 +61,13 @@ async function fetchWithTimeout(url, opts = {}) {
       redirect: "follow",
       headers: {
         "cache-control": "no-store",
-        "user-agent": "lunchportalen-postdeploy-gate/1.0",
+        "user-agent": "lunchportalen-postdeploy-gate/1.1",
         ...(opts.headers || {}),
       },
     });
   } finally {
     clearTimeout(id);
   }
-}
-
-function isTransient(result) {
-  return (
-    result.status === 0 ||
-    result.status === 404 ||
-    result.status === 408 ||
-    result.status === 425 ||
-    result.status === 429 ||
-    result.status === 500 ||
-    result.status === 502 ||
-    result.status === 503 ||
-    result.status === 504
-  );
 }
 
 async function withRetries(fn) {
@@ -224,11 +217,12 @@ function printResult(result) {
 }
 
 async function main() {
+  const maxWaitMs = (RETRIES - 1) * RETRY_DELAY_MS;
   console.log(`\nPOST-DEPLOY GATE @ ${now()}`);
   console.log(`Base: ${BASE_URL}`);
   console.log(`Timeout: ${TIMEOUT_MS}ms`);
   console.log(`Retries: ${RETRIES}`);
-  console.log(`Retry delay: ${RETRY_DELAY_MS}ms`);
+  console.log(`Retry delay: ${RETRY_DELAY_MS}ms (max inter-attempt wait ≈ ${maxWaitMs}ms)`);
   console.log(`HTML routes: ${ROUTES.join(", ")}`);
   console.log(`JSON routes: ${JSON_CHECKS_ENABLED ? JSON_ROUTES.join(", ") || "(none)" : "(disabled)"}`);
 

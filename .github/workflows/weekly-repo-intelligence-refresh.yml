@@ -1,0 +1,119 @@
+name: Weekly Repo Intelligence Refresh
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # søndag 03:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-repo-intelligence
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify stable-json helper
+        run: node scripts/audit/lib/stable-json.mjs --self-test
+
+      - name: Run repo intelligence scan
+        run: npm run repo:scan
+
+      - name: Run audit scripts
+        run: |
+          node scripts/audit/lib-ai-keep-closure.mjs
+          node scripts/audit/extract-code-rpc-refs.mjs
+
+      - name: Verify V.20 determinism
+        run: |
+          BASELINE=/tmp/v20-baseline
+          mkdir -p "$BASELINE/repo-intelligence" "$BASELINE/scripts/audit"
+          npm run repo:scan
+          node scripts/audit/lib-ai-keep-closure.mjs
+          node scripts/audit/extract-code-rpc-refs.mjs
+          cp repo-intelligence/meta.json \
+             repo-intelligence/repo-map.json \
+             repo-intelligence/routes.json \
+             repo-intelligence/api-map.json \
+             repo-intelligence/db-map.json \
+             repo-intelligence/flows.json \
+             repo-intelligence/dependencies.json \
+             repo-intelligence/errors.json \
+             "$BASELINE/repo-intelligence/"
+          cp scripts/audit/lib-ai-keep-closure.json \
+             scripts/audit/k4-code-rpc-refs.json \
+             "$BASELINE/scripts/audit/"
+          npm run repo:scan
+          node scripts/audit/lib-ai-keep-closure.mjs
+          node scripts/audit/extract-code-rpc-refs.mjs
+          diff -q "$BASELINE/repo-intelligence/meta.json" repo-intelligence/meta.json
+          diff -q "$BASELINE/repo-intelligence/repo-map.json" repo-intelligence/repo-map.json
+          diff -q "$BASELINE/repo-intelligence/routes.json" repo-intelligence/routes.json
+          diff -q "$BASELINE/repo-intelligence/api-map.json" repo-intelligence/api-map.json
+          diff -q "$BASELINE/repo-intelligence/db-map.json" repo-intelligence/db-map.json
+          diff -q "$BASELINE/repo-intelligence/flows.json" repo-intelligence/flows.json
+          diff -q "$BASELINE/repo-intelligence/dependencies.json" repo-intelligence/dependencies.json
+          diff -q "$BASELINE/repo-intelligence/errors.json" repo-intelligence/errors.json
+          diff -q "$BASELINE/scripts/audit/lib-ai-keep-closure.json" scripts/audit/lib-ai-keep-closure.json
+          diff -q "$BASELINE/scripts/audit/k4-code-rpc-refs.json" scripts/audit/k4-code-rpc-refs.json
+
+      - name: Run check-doc-links
+        run: npm run check:links
+
+      - name: Create PR if changes
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore: weekly repo-intelligence refresh"
+          title: "chore: weekly repo-intelligence refresh"
+          body: |
+            Automated weekly refresh per Sprint AB Gr 17 (E.7).
+
+            ## Changed files
+            `repo-intelligence/{meta,repo-map,routes,api-map,db-map,flows,dependencies,errors}.json`
+            `scripts/audit/{lib-ai-keep-closure,k4-code-rpc-refs}.json`
+
+            ## V-gates
+            - check:links: PASS (0 broken)
+            - V.20 determinisme: PASS (2× re-run, diff = 0)
+
+            ## Action required
+            Review and merge. Auto-merge NOT enabled initially.
+          labels: |
+            automated-refresh
+            sprint-ab-gr17
+          branch: chore/auto-refresh-${{ github.run_id }}
+          delete-branch: true
+          add-paths: |
+            repo-intelligence/meta.json
+            repo-intelligence/repo-map.json
+            repo-intelligence/routes.json
+            repo-intelligence/api-map.json
+            repo-intelligence/db-map.json
+            repo-intelligence/flows.json
+            repo-intelligence/dependencies.json
+            repo-intelligence/errors.json
+            scripts/audit/lib-ai-keep-closure.json
+            scripts/audit/k4-code-rpc-refs.json

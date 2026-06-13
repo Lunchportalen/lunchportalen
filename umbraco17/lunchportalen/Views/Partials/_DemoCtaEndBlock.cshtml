@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using Umbraco.Extensions
 
 @{
@@ -6,12 +6,12 @@
     var heading      = Model.Value<string>("heading")      ?? "Fjern kaoset rundt firmalunsj";
     var text         = Model.Value<string>("text")         ?? "Dropp manuelle bestillinger, usikker produksjon og unødvendig matsvinn. Lunchportalen gir en strukturert og forutsigbar løsning for hele bedriften – uten daglig oppfølging.";
     var ctaLabel     = Model.Value<string>("ctaLabel")     ?? "Book demo";
-    var ctaUrl       = Model.Value<string>("ctaUrl")       ?? "#book-demo";
+    var ctaUrl       = AppUrls.ResolveLeadCapture("demo-cta-end");
     var secLabel     = Model.Value<string>("secLabel")     ?? "Logg inn";
-    var secUrl       = Model.Value<string>("secUrl")       ?? "/logg-inn/";
+    var secUrl       = AppUrls.ResolveLogin(Model.Value<string>("secUrl"));
     var trustSignal  = Model.Value<string>("trustSignal")  ?? "15 minutter · Ingen forpliktelser · Passer bedrifter med 20+ ansatte";
 
-    bool hasSecCta = !string.IsNullOrWhiteSpace(secLabel) && !string.IsNullOrWhiteSpace(secUrl);
+    bool hasSecCta = !string.IsNullOrWhiteSpace(secLabel);
 }
 
 <section class="lp-demo-final">
@@ -25,7 +25,7 @@
             <div class="lp-demo-final-card__actions">
                 <a href="@ctaUrl"
                    class="lp-demo-final-card__cta"
-                   aria-label="@ctaLabel – åpner bookingskjema på denne siden">
+                   aria-label="@ctaLabel – åpner demo-skjema i Lunchportalen-appen">
                     @ctaLabel
                 </a>
 

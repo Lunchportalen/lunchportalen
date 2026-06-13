@@ -184,6 +184,11 @@ main{
 
 .ds-btn:hover{transform:translateY(-2px);}
 
+.ds-btn:focus-visible{
+  outline:3px solid var(--ds-accent);
+  outline-offset:3px;
+}
+
 .ds-btn::after{
   content:"";
   position:absolute;
@@ -555,6 +560,41 @@ main{
   font-size:var(--ds-body);
   line-height:1.7;
   color:var(--ds-text-soft);
+}
+
+.ds-card__icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:48px;
+  height:48px;
+  margin-bottom:20px;
+  border-radius:14px;
+  background:rgba(245,180,0,.14);
+}
+
+.ds-card__icon img{
+  display:block;
+  width:28px;
+  height:28px;
+  object-fit:contain;
+}
+
+.ds-section__actions{
+  margin-top:40px;
+  text-align:center;
+}
+
+.lp-hero--size-md .lp-hero__heading{
+  font-size:clamp(2rem,4.5vw,3.25rem);
+}
+
+.lp-hero--size-lg .lp-hero__heading{
+  font-size:clamp(2.5rem,5.5vw,4.5rem);
+}
+
+.lp-hero--size-xl .lp-hero__heading{
+  font-size:clamp(3rem,6.5vw,5.5rem);
 }
 
 /* HOW IT WORKS */

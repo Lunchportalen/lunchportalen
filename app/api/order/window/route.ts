@@ -34,7 +34,9 @@ import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import type { CmsMenuByMealType, CmsProductPlan } from "@/lib/cms/types";
 import type { StoredMealContract } from "@/lib/server/agreements/mealContract";
 import { resolveMenuForDay } from "@/lib/domain/resolveMenuForDay";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
+import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
 import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteGuard";
 
@@ -408,14 +410,7 @@ async function loadOrdersByDate(
 
   if (oErr) return jsonErr(rid, "Kunne ikke hente bestilling.", 500, "ORDERS_FETCH_FAILED");
 
-  const ordersByDate = new Map<string, OrderRow>();
-  for (const o of (ordersRaw ?? []) as OrderRow[]) {
-    const dISO = asDateISO((o as any)?.date);
-    if (!dISO) continue;
-    ordersByDate.set(dISO, o);
-  }
-
-  return ordersByDate;
+  return foldOrdersByDate((ordersRaw ?? []) as OrderRow[], (o) => asDateISO((o as any)?.date));
 }
 
 async function loadDayChoicesByDate(
@@ -937,6 +932,20 @@ export async function GET(req: NextRequest) {
       lunchCategoryRows = [];
     }
 
+    // Provider-scope for menuDay (server truth: companies.provider_id → providers.slug).
+    // fail-closed: provider finnes men kan ikke scopes trygt → ingen menuDay-henting
+    // (statisk katalog-fallback beholdes). Aldri en annen providers meny.
+    const menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(admin, sc.company_id));
+    if (menuScope.mode !== "scoped") {
+      opsLog("window.menuScope", {
+        rid,
+        company_id: sc.company_id,
+        mode: menuScope.mode,
+        reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
+      });
+    }
+    const menuDayOpts = menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined;
+
     const days = await Promise.all(
       legacyDays.map(async (day) => {
         const planTier = asPlanTier((day as any).planTier ?? (day as any).tier);
@@ -946,7 +955,8 @@ export async function GET(req: NextRequest) {
         const hasStaticCatalog = Object.keys(staticItemsByCategory).length > 0;
 
         try {
-          const menus = await getMenuForDateAndPlan(day.date, planTier);
+          const menus =
+            menuScope.mode === "fail-closed" ? [] : await getMenuForDateAndPlan(day.date, planTier, menuDayOpts);
           if (menus.length > 0) {
             return {
               ...day,
@@ -979,11 +989,10 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        // Post-launch cleanup: Fjern legacy fallback når all produksjonsdata er migrert til menuDay.
         return {
           ...day,
           planTier,
-          categories: Array.isArray((day as any).categories) ? (day as any).categories : [],
+          categories: buildMenuDayCategories({ planTier, menus: [], staticItemsByCategory }),
         };
       })
     );

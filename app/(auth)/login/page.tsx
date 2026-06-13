@@ -54,18 +54,18 @@ export default async function LoginPage({
   return (
     <AuthShell
       variant="loginPremium"
-      brandSubtitle="Kundeinnlogging"
+      brandSubtitle="Arbeidsflate for bedrift og leverandør"
       title="Logg inn"
       subtitle="Bruk e-post og passord for å åpne riktig arbeidsflate i Lunchportalen."
       footer={
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center text-sm">
-          <Link href="/registrering" className="font-semibold underline decoration-[rgb(var(--lp-gold)/0.45)] underline-offset-4 transition hover:decoration-[rgb(var(--lp-gold))]">
+          <Link href="/start?intent=register&source=login-register" className="lp-login-link">
             Registrer firma
           </Link>
-          <span className="text-neutral-400" aria-hidden>
+          <span className="lp-login-link-sep" aria-hidden>
             ·
           </span>
-          <Link href="/forgot-password" className="font-semibold underline decoration-[rgb(var(--lp-gold)/0.45)] underline-offset-4 transition hover:decoration-[rgb(var(--lp-gold))]">
+          <Link href="/forgot-password" className="lp-login-link">
             Glemt passord?
           </Link>
         </div>

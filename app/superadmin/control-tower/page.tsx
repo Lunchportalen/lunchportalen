@@ -29,9 +29,9 @@ export default async function ControlTowerPage() {
 
   if (!auth.ok || auth.role !== "superadmin") {
     return (
-      <main className="mx-auto max-w-[1440px] px-4 pb-16 pt-8 lp-select-text">
+      <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-8 lp-select-text">
         <p className="text-sm text-[rgb(var(--lp-muted))]">Ingen tilgang</p>
-      </main>
+      </div>
     );
   }
 
@@ -137,7 +137,7 @@ export default async function ControlTowerPage() {
   const platformMetrics = buildPlatformPowerMetrics(initial);
 
   return (
-    <main className="mx-auto max-w-[1440px] px-4 pb-16 pt-8 lp-select-text">
+    <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-8 lp-select-text">
       <header className="mb-8">
         <h1 className="font-heading text-2xl font-semibold text-[rgb(var(--lp-fg))]">Kontrolltårn</h1>
         <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Sanntids oversikt — AI, inntekt og systemstatus.</p>
@@ -341,6 +341,6 @@ export default async function ControlTowerPage() {
         ) : null}
       </section>
       <ControlTowerClient initial={initial} />
-    </main>
+    </div>
   );
 }

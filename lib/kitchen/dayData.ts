@@ -3,9 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { KITCHEN_DAY_DATA_ORDER_COLUMNS } from "@/lib/orders/projection";
 import { opsLog } from "@/lib/ops/log";
 import { getMenusByMealTypes } from "@/lib/cms/getMenusByMealTypes";
-import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import type { CmsMenuByMealType } from "@/lib/cms/types";
+import { buildKitchenMealNote, buildVariantTitleLookup } from "@/lib/kitchen/kitchenMealNote";
 
 export type KitchenOrder = {
   id: string; // order id
@@ -13,9 +13,7 @@ export type KitchenOrder = {
   department: string | null;
 
   /**
-   * ✅ Kitchen note (what to make)
-   * - Prefer day_choices.choice_key + variant from day_choices.note
-   * - Fallback to legacy orders.note ("choice:varmmat") if day_choices missing
+   * Kitchen note (what to make): choice_key + variant via item_key / item_title_snapshot / legacy note.
    */
   note: string | null;
   /** CMS `menu` for choice_key (read-only enrichment). */
@@ -56,6 +54,8 @@ type DayChoiceRow = {
   user_id: string;
   date: string;
   choice_key: string;
+  item_key?: string | null;
+  item_title_snapshot?: string | null;
   note: string | null;
   status: string | null; // expected: "ACTIVE" | "CANCELLED" (or null)
   updated_at: string | null;
@@ -155,58 +155,6 @@ function parseChoiceKeyFromLegacyNote(note: string | null): string | null {
   if (m?.[1]) return m[1].toLowerCase();
   if (/^[a-z0-9_\-]{2,}$/.test(n)) return n;
   return null;
-}
-
-function escapeRegExp(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Variant parsing:
- * Accept:
- * - "variant||Salatboks: Skinke"
- * - "Salatboks: Skinke"
- * Prefix matches CMS `menu.title` when present, else {@link displayLabelForMealTypeKey}.
- */
-function parseVariantFromNote(
-  choiceKey: string,
-  note: string | null,
-  menuByMeal: Map<string, CmsMenuByMealType>
-): string | null {
-  const n = safeStr(note);
-  if (!n) return null;
-
-  const parts = n.split("||").map((x) => x.trim()).filter(Boolean);
-  const payload = parts.length >= 2 ? parts.slice(1).join("||").trim() : parts[0] ?? "";
-
-  const nk = normalizeMealTypeKey(choiceKey);
-  if (nk !== "salatboks" && nk !== "paasmurt") return null;
-
-  const label = displayLabelForMealTypeKey(nk, nk ? menuByMeal.get(nk) : null);
-  if (!label) return null;
-
-  const re = new RegExp(`^${escapeRegExp(label)}\\s*:\\s*(.+)$`, "i");
-  const m = re.exec(payload);
-  const v = m?.[1] ? String(m[1]).trim() : "";
-  return v || null;
-}
-
-function buildKitchenNote(
-  choiceKey: string | null,
-  note: string | null,
-  menuByMeal: Map<string, CmsMenuByMealType>
-): string | null {
-  const ck = safeStr(choiceKey).toLowerCase();
-  if (!ck) return null;
-
-  const nk = normalizeMealTypeKey(ck);
-  const base = displayLabelForMealTypeKey(nk || ck, nk ? menuByMeal.get(nk) : null) || nk || ck;
-  if (nk === "salatboks" || nk === "paasmurt") {
-    const v = parseVariantFromNote(nk, note, menuByMeal);
-    if (v) return `${base} (${v})`;
-    return base;
-  }
-  return base;
 }
 
 export async function fetchKitchenDayData(args: {
@@ -351,7 +299,7 @@ export async function fetchKitchenDayData(args: {
   if (userIds.length) {
     const { data: dayChoices, error: dcErr } = await (admin as any)
       .from("day_choices")
-      .select("company_id, location_id, user_id, date, choice_key, note, status, updated_at")
+      .select("company_id, location_id, user_id, date, choice_key, item_key, item_title_snapshot, note, status, updated_at")
       .eq("company_id", companyId)
       .in("user_id", userIds)
       .eq("date", dateISO);
@@ -411,8 +359,10 @@ export async function fetchKitchenDayData(args: {
     if (choiceKey) mealKeys.add(normalizeMealTypeKey(choiceKey));
   }
   let menuByMeal = new Map<string, CmsMenuByMealType>();
+  let variantLookup = new Map<string, string>();
   try {
     menuByMeal = await getMenusByMealTypes([...mealKeys]);
+    variantLookup = await buildVariantTitleLookup();
   } catch (e: any) {
     opsLog("kitchen.day.cms_menu_failed", { rid, detail: String(e?.message ?? e) });
   }
@@ -481,7 +431,14 @@ export async function fetchKitchenDayData(args: {
     const choiceKey = dc?.choice_key ?? parseChoiceKeyFromLegacyNote(o.note ?? null);
     const nk = choiceKey ? normalizeMealTypeKey(choiceKey) : "";
     const menuRow = nk ? menuByMeal.get(nk) : null;
-    const kitchenNote = buildKitchenNote(choiceKey, dc?.note ?? null, menuByMeal);
+    const kitchenNote = buildKitchenMealNote({
+      choiceKey,
+      itemKey: dc?.item_key ?? null,
+      itemTitleSnapshot: dc?.item_title_snapshot ?? null,
+      note: dc?.note ?? null,
+      menuByMeal,
+      variantLookup,
+    });
 
     groups.get(groupKey)!.orders.push({
       id: String(o.id),

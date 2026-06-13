@@ -28,6 +28,7 @@ import { GET as OrdersTodayGET } from "@/app/api/orders/today/route";
 import { trackOrderAiConversion } from "@/lib/revenue/trackOrderAiConversion";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
 import { assertEmployeeOrderBodyHasNoPricingOverrides, assertOrderWithinAgreementPreflight } from "@/lib/orders/orderWriteGuard";
+import { menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
 import { resolveOrderDayItemPersist } from "@/lib/orders/resolveOrderDayItemPersist";
 import { agreementRuleSlotForOrderTableSlot, normalizeOrderTableSlot } from "@/lib/orders/rpcWrite";
 import { orderWriteBodySchema } from "@/lib/validation/schemas";
@@ -35,6 +36,8 @@ import { persistMvoOnOrder } from "@/lib/mvo/persistOrderMvo";
 import { fanoutLpOrderSetOutboxBestEffort } from "@/lib/orderBackup/outbox";
 import { getAgreementStatus, type Tier } from "@/lib/auth/agreementStatus";
 import { PLAN_ORDER_CHOICE_KEYS } from "@/lib/cms/menuDayContract";
+import { mapOrderWriteError } from "@/lib/orders/mapOrderWriteError";
+import { captureServerMessage } from "@/lib/sentry/capture";
 
 type OrderBody = {
   date?: unknown;
@@ -145,71 +148,6 @@ function buildOrderWriteOkJsonBody(
   };
   if ("tier" in params) out.tier = params.tier ?? null;
   return out;
-}
-
-function mapRpcError(messageRaw: unknown) {
-  const m = safeStr(messageRaw).toUpperCase();
-
-  if (m.includes("DATE_REQUIRED") || m.includes("ACTION_INVALID")) {
-    return { status: 400, code: "BAD_INPUT", message: "Bestillingen mangler gyldige felter." };
-  }
-  if (m.includes("NO_ACTIVE_AGREEMENT")) {
-    return {
-      status: 409,
-      code: "NO_ACTIVE_AGREEMENT",
-      message: "Du kan ikke bestille fordi firmaet ikke har en aktiv avtale.",
-    };
-  }
-  if (m.includes("OUTSIDE_DELIVERY_DAYS")) {
-    return {
-      status: 409,
-      code: "OUTSIDE_DELIVERY_DAYS",
-      message: "Denne dagen er ikke en leveringsdag.",
-    };
-  }
-  if (m.includes("CUTOFF_PASSED")) {
-    return {
-      status: 409,
-      code: "CUTOFF_PASSED",
-      message: "Fristen for i dag er passert (kl. 08:00).",
-    };
-  }
-  if (m.includes("CHOICE_KEY_REQUIRED")) {
-    return {
-      status: 422,
-      code: "CHOICE_KEY_REQUIRED",
-      message: "Menyvalg er påkrevd.",
-    };
-  }
-  if (m.includes("MENU_SERVICE_DAY_ITEMS_MISSING")) {
-    return {
-      status: 409,
-      code: "MENU_SERVICE_DAY_ITEMS_MISSING",
-      message: "Menyen er ikke klar i databasen ennå.",
-    };
-  }
-  if (m.includes("MENU_SERVICE_DAY_ITEM_NOT_FOUND")) {
-    return {
-      status: 409,
-      code: "MENU_SERVICE_DAY_ITEM_NOT_FOUND",
-      message: "Fant ikke menylinje for valget.",
-    };
-  }
-  if (m.includes("PROFILE_MISSING") || m.includes("SCOPE_FORBIDDEN")) {
-    return {
-      status: 403,
-      code: "SCOPE_FORBIDDEN",
-      message: "Du har ikke tilgang til å bestille for denne brukeren.",
-    };
-  }
-  if (m.includes("UNAUTHENTICATED")) {
-    return { status: 401, code: "UNAUTHENTICATED", message: "Du må logge inn for å bestille." };
-  }
-  if (m.includes("SLOT") || m.includes("INVALID_SLOT")) {
-    return { status: 400, code: "INVALID_SLOT", message: "Ugyldig leveringsslot." };
-  }
-
-  return { status: 500, code: "ORDER_SET_FAILED", message: "Vi kunne ikke lagre bestillingen nå." };
 }
 
 function asRpcOut(data: unknown): RpcOut {
@@ -344,12 +282,30 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
           });
         }
 
+        // Provider-scope for menuDay-validering (server truth: companies.provider_id).
+        // fail-closed: aldri en annen providers meny — kun statisk katalog gjenstår.
+        let menuScope: MenuScopeDecision;
+        try {
+          menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(supabaseAdmin(), cid));
+        } catch (e: unknown) {
+          menuScope = { mode: "fail-closed", reason: safeStr((e as { message?: string })?.message) || "SCOPE_LOOKUP_FAILED" };
+        }
+        if (menuScope.mode !== "scoped") {
+          opsLog("orders.menuScope", {
+            rid,
+            company_id: cid,
+            mode: menuScope.mode,
+            reason: menuScope.mode === "fail-closed" ? menuScope.reason : null,
+          });
+        }
+
         const itemBody = validated.data as unknown as Record<string, unknown>;
         const itemResolved = await resolveOrderDayItemPersist({
           date,
           planTier: resolvedTier,
           choiceKey: finalChoiceKey,
           clientItemKey: sanitizeItemKeyFromBody(itemBody),
+          menuScope,
         });
         if (itemResolved.ok === false) {
           return jsonOrderWriteErr(rid, itemResolved.status, itemResolved.code, itemResolved.message);
@@ -363,6 +319,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     let idemHash: string | null = null;
 
     const sb = await supabaseServer();
+    const idemAdmin = supabaseAdmin();
 
     if (idemKey !== "") {
       if (idemKey.length < 8) {
@@ -379,7 +336,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
         })
       );
 
-      const { data: beginData, error: beginErr } = await sb.rpc("lp_idem_begin", {
+      const { data: beginData, error: beginErr } = await idemAdmin.rpc("lp_idem_begin", {
         p_scope: "orders.write",
         p_key: idemKey,
         p_request_hash: idemHash,
@@ -435,7 +392,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
       if (isUniqueViolation) {
         if (idemKey !== "" && idemHash) {
-          await sb.rpc("lp_idem_fail", {
+          await idemAdmin.rpc("lp_idem_fail", {
             p_scope: "orders.write",
             p_key: idemKey,
             p_request_hash: idemHash,
@@ -445,11 +402,29 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
         return jsonOrderWriteErr(rid, 409, "DUPLICATE_ORDER", "Du har allerede en bestilling for denne dagen.");
       }
 
-      const mapped = mapRpcError(error.message);
-      if (mapped.status === 500 && mapped.code === "ORDER_SET_FAILED") {
-        opsLog("orders.lp_order_set.rpc_unmapped", {
+      const mapped = mapOrderWriteError(errAny);
+      const logPayload = {
+        rid,
+        route: "/api/orders",
+        level: mapped.logLevel,
+        error_code: mapped.code,
+        error_type: mapped.errorType,
+        user_id: g.ctx.scope.userId,
+        date,
+        pg_code: errAny.code ?? null,
+        pg_hint: errAny.hint ?? null,
+      };
+      if (mapped.status >= 400 && mapped.status < 500) {
+        opsLog("orders.lp_order_set.client_error", logPayload);
+        captureServerMessage("orders.lp_order_set.client_error", "warning", {
+          error_code: mapped.code,
+          error_type: mapped.errorType,
           rid,
-          level: "error",
+          route: "/api/orders",
+        });
+      } else if (mapped.status === 500) {
+        opsLog("orders.lp_order_set.rpc_unmapped", {
+          ...logPayload,
           msg: "lp_order_set RPC unrecognized or generic failure message",
           err: {
             message: errAny.message,
@@ -461,19 +436,24 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
             date,
             choiceKey: finalChoiceKey,
             itemKey: persistedItemKey,
-            userId: g.ctx.scope.userId,
           },
+        });
+        captureServerMessage("orders.lp_order_set.rpc_unmapped", "error", {
+          error_code: mapped.code,
+          error_type: mapped.errorType,
+          rid,
+          route: "/api/orders",
         });
       }
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_fail", {
+        await idemAdmin.rpc("lp_idem_fail", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
           p_error: errMsg,
         });
       }
-      return jsonOrderWriteErr(rid, mapped.status, mapped.code, mapped.message);
+      return jsonOrderWriteErr(rid, mapped.status, mapped.code, mapped.message, mapped.bodyExtra);
     }
 
     const out = asRpcOut(data);
@@ -483,7 +463,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
     if (!savedStatus) {
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_fail", {
+        await idemAdmin.rpc("lp_idem_fail", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
@@ -496,7 +476,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     if (!orderId && action === "CANCEL") {
       const ts = new Date().toISOString();
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_complete", {
+        await idemAdmin.rpc("lp_idem_complete", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
@@ -519,7 +499,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
 
     if (!orderId) {
       if (idemKey !== "" && idemHash) {
-        await sb.rpc("lp_idem_fail", {
+        await idemAdmin.rpc("lp_idem_fail", {
           p_scope: "orders.write",
           p_key: idemKey,
           p_request_hash: idemHash,
@@ -636,7 +616,7 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
     const successTs = new Date().toISOString();
     const writtenStatus = orderWriteStatusFromDb(savedStatus);
     if (idemKey !== "" && idemHash) {
-      await sb.rpc("lp_idem_complete", {
+      await idemAdmin.rpc("lp_idem_complete", {
         p_scope: "orders.write",
         p_key: idemKey,
         p_request_hash: idemHash,

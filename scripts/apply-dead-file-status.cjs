@@ -1,7 +1,9 @@
 /**
  * SAFE CLEANUP CLASSIFICATION — prepends // STATUS and moves ARCHIVE under /archive
  *
- * Prerequisite: dead-files.json (run: $env:AUDIT_DEAD_JSON='1'; node audit-v4.cjs)
+ * Prerequisite: dead-files.json (must exist at repo root before run).
+ * Note: audit-v4 (scripts/audit/audit-v4.mjs) writes no dead-files.json in current state —
+ * this script reads an existing file if present. See Fase F backlog for audit-v4 JSON-export reintroduction.
  * Run: node scripts/apply-dead-file-status.cjs
  *
  * SAFETY: Never move `lib/**` here — dynamic `import("@/lib/...")` is not in the static audit graph.
@@ -15,7 +17,9 @@ const ARCHIVE_ROOT = path.join(ROOT, "archive");
 
 function loadDeadFiles() {
   if (!fs.existsSync(DEAD_JSON)) {
-    console.error("Missing dead-files.json — run: $env:AUDIT_DEAD_JSON='1'; node audit-v4.cjs");
+    console.error(
+      "Missing dead-files.json — audit-v4 (scripts/audit/audit-v4.mjs) does not generate this file in current state; supply dead-files.json manually or see Fase F backlog for JSON-export reintroduction."
+    );
     process.exit(1);
   }
   return JSON.parse(fs.readFileSync(DEAD_JSON, "utf8"));

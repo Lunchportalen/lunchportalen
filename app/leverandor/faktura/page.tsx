@@ -11,6 +11,7 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadProviderBilling } from "@/lib/providers/loadProviderBilling";
+import { PROVIDER_BILLING_COPY } from "@/lib/providers/providerBillingSurface";
 
 export default async function LeverandorFakturaPage() {
   const auth = await getAuthContext();
@@ -30,9 +31,9 @@ export default async function LeverandorFakturaPage() {
     <div className="ds-container ds-provider-billing-page">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">Leverandør</p>
-          <h1 className="ds-h2">Faktura og lisens</h1>
-          <p className="ds-lead">SaaS-lisens til Lunchportalen og oversikt over månedlige fakturaer.</p>
+          <p className="ds-eyebrow">{PROVIDER_BILLING_COPY.eyebrow}</p>
+          <h1 className="ds-h2">{PROVIDER_BILLING_COPY.heading}</h1>
+          <p className="ds-lead">{PROVIDER_BILLING_COPY.subheading}</p>
         </div>
       </header>
       <ProviderBillingView bundle={bundle} providerId={provider.id} canEditContact={canEditContact} />

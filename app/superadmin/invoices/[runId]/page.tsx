@@ -80,7 +80,7 @@ export default async function InvoiceRunDetailPage(props: {
 
   if (!data?.ok) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-6 py-8 lp-select-text">
+      <div className="mx-auto w-full max-w-6xl px-6 py-8 lp-select-text">
         <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-lg font-semibold text-[rgb(var(--lp-text))]">Fant ikke fakturakjøring</div>
           <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
@@ -93,12 +93,12 @@ export default async function InvoiceRunDetailPage(props: {
             Tilbake
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8 lp-select-text">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8 lp-select-text">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-[rgb(var(--lp-text))]">
@@ -116,6 +116,6 @@ export default async function InvoiceRunDetailPage(props: {
       </div>
 
       <InvoiceRunDetailClient initialRun={data.run} initialRows={data.rows} initialTotals={data.totals} />
-    </main>
+    </div>
   );
 }

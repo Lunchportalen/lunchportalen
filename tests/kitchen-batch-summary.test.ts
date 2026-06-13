@@ -135,9 +135,9 @@ beforeEach(() => {
       { id: "b2", delivery_date: "2026-02-02", delivery_window: "lunch", company_location_id: LOCATION_ID, status: "PACKED", packed_at: "t", delivered_at: null },
     ],
     orders: [
-      { slot: "lunch", location_id: LOCATION_ID, company_id: COMPANY_ID },
-      { slot: "lunch", location_id: LOCATION_ID, company_id: COMPANY_ID },
-      { slot: "dinner", location_id: LOCATION_ID, company_id: COMPANY_ID },
+      { slot: "lunch", location_id: LOCATION_ID, company_id: COMPANY_ID, status: "ACTIVE", date: "2026-02-02" },
+      { slot: "lunch", location_id: LOCATION_ID, company_id: COMPANY_ID, status: "ACTIVE", date: "2026-02-02" },
+      { slot: "dinner", location_id: LOCATION_ID, company_id: COMPANY_ID, status: "ACTIVE", date: "2026-02-02" },
     ],
   });
 });
@@ -160,7 +160,7 @@ describe("kitchen batch/summary", () => {
       profiles: [{ id: "p1", user_id: "u1", company_id: OTHER_COMPANY, location_id: LOCATION_ID, disabled_at: null, is_active: true }],
       company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
       kitchen_batch: [{ id: "b1", delivery_date: "2026-02-02", delivery_window: "lunch", company_location_id: LOCATION_ID, status: "PACKED" }],
-      orders: [{ slot: "lunch", location_id: LOCATION_ID, company_id: COMPANY_ID }],
+      orders: [{ slot: "lunch", location_id: LOCATION_ID, company_id: COMPANY_ID, status: "ACTIVE", date: "2026-02-02" }],
     });
 
     const req = mkReq(`http://localhost/api/kitchen/batch/summary?date=2026-02-02&location_id=${LOCATION_ID}`, { method: "GET" });

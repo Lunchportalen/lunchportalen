@@ -10,6 +10,11 @@ export { isoDateToAgreementDayKey, normalizeMenuPlanTier } from "@/lib/menu-publ
 export type MenuDaySyncInput = {
   date: string;
   planTier: string;
+  /**
+   * Supabase providers.id (== Sanity provider `_id`). Obligatorisk:
+   * sync uten provider-scope er fail-closed (aldri global/unscoped).
+   */
+  providerId: string;
 };
 
 export type MenuServiceDaySyncStats = {
@@ -24,13 +29,33 @@ export type MenuServiceDaySyncStats = {
   msdiLocationsSkippedNoTier?: number;
 };
 
+function safeId(v: unknown): string {
+  return String(v ?? "").trim();
+}
+
 /**
- * Sanity menuDay slice → ACTIVE agreements with matching per-day tier + locations → UPSERT menu_service_days.
+ * Sanity menuDay slice → ACTIVE agreements (samme provider) with matching per-day tier + locations → UPSERT menu_service_days.
+ *
+ * Provider-isolation (LOCKED): tier/dag-match alene er aldri nok — agreements
+ * OG companies må tilhøre menuDay sin provider. Mangler provider-scope er
+ * syncen fail-closed (skip), aldri global.
  */
 export async function syncMenuServiceDaysForPublishedMenuDay(
   admin: SupabaseClient<any>,
   menuDay: MenuDaySyncInput
 ): Promise<MenuServiceDaySyncStats> {
+  const providerId = safeId(menuDay.providerId);
+  if (!providerId) {
+    return {
+      locationCount: 0,
+      inserted: 0,
+      updated: 0,
+      unchanged: 0,
+      skipped: true,
+      reason: "MISSING_PROVIDER_SCOPE",
+    };
+  }
+
   const planTier = normalizeMenuPlanTier(menuDay.planTier);
   if (!planTier) {
     return {
@@ -76,18 +101,38 @@ export async function syncMenuServiceDaysForPublishedMenuDay(
     .from("agreements")
     .select("id, company_id")
     .in("id", agreementIds)
-    .eq("status", "ACTIVE");
+    .eq("status", "ACTIVE")
+    .eq("provider_id", providerId);
 
   if (aErr) {
     throw new Error(`agreements: ${aErr.message}`);
   }
 
-  const companyIds = [
+  const agreementCompanyIds = [
     ...new Set(
       (agreements ?? [])
         .map((r) => String((r as { company_id?: string }).company_id ?? "").trim())
         .filter(Boolean),
     ),
+  ];
+  if (agreementCompanyIds.length === 0) {
+    return { locationCount: 0, inserted: 0, updated: 0, unchanged: 0, skipped: false };
+  }
+
+  // Defense-in-depth: company må også tilhøre samme provider (fanger legacy-drift
+  // mellom agreements.provider_id og companies.provider_id — aldri cross-provider).
+  const { data: companyRows, error: cErr } = await admin
+    .from("companies")
+    .select("id")
+    .in("id", agreementCompanyIds)
+    .eq("provider_id", providerId);
+
+  if (cErr) {
+    throw new Error(`companies: ${cErr.message}`);
+  }
+
+  const companyIds = [
+    ...new Set((companyRows ?? []).map((r) => String((r as { id?: string }).id ?? "").trim()).filter(Boolean)),
   ];
   if (companyIds.length === 0) {
     return { locationCount: 0, inserted: 0, updated: 0, unchanged: 0, skipped: false };
@@ -112,6 +157,7 @@ export async function syncMenuServiceDaysForPublishedMenuDay(
     .from("menu_service_days")
     .select("location_id, state, cutoff_at")
     .eq("service_date", menuDay.date)
+    .eq("provider_id", providerId)
     .in("location_id", locationIds);
 
   if (bErr) {
@@ -127,10 +173,14 @@ export async function syncMenuServiceDaysForPublishedMenuDay(
     beforeMap.set(lid, { state: row.state ?? null, cutoff_at: row.cutoff_at ?? null });
   }
 
+  // provider_id settes eksplisitt (kolonnen er NOT NULL); lokasjonene er allerede
+  // provider-verifisert via agreements + companies over. Conflict key
+  // (location_id, service_date) er provider-disjoint: én location → én provider.
   const rows = locationIds.map((location_id) => ({
     location_id,
     service_date: menuDay.date,
     state: "published" as const,
+    provider_id: providerId,
   }));
 
   const { error: uErr } = await admin.from("menu_service_days").upsert(rows, {
@@ -145,6 +195,7 @@ export async function syncMenuServiceDaysForPublishedMenuDay(
     .from("menu_service_days")
     .select("location_id, state, cutoff_at")
     .eq("service_date", menuDay.date)
+    .eq("provider_id", providerId)
     .in("location_id", locationIds);
 
   if (afErr) {
@@ -176,6 +227,7 @@ export async function syncMenuServiceDaysForPublishedMenuDay(
   const msdiStats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
     serviceDate: menuDay.date,
     locationIds,
+    providerId,
   });
 
   return {
@@ -191,8 +243,13 @@ export async function syncMenuServiceDaysForPublishedMenuDay(
 
 /**
  * Fjern materialiserte rader når menuDay ikke lenger er publiserbar Synlighetsfilter.
+ * Provider-isolation: delete er like scoped som upsert — Provider A sin unpublish
+ * kan aldri slette Provider B sine menu_service_days. Uten provider-scope: no-op.
  */
 export async function deleteMenuServiceDaysForMenuDay(admin: SupabaseClient<any>, menuDay: MenuDaySyncInput): Promise<{ deleted: number }> {
+  const providerId = safeId(menuDay.providerId);
+  if (!providerId) return { deleted: 0 };
+
   const planTier = normalizeMenuPlanTier(menuDay.planTier);
   if (!planTier) return { deleted: 0 };
 
@@ -210,14 +267,26 @@ export async function deleteMenuServiceDaysForMenuDay(admin: SupabaseClient<any>
     .from("agreements")
     .select("id, company_id")
     .in("id", agreementIds)
-    .eq("status", "ACTIVE");
+    .eq("status", "ACTIVE")
+    .eq("provider_id", providerId);
 
-  const companyIds = [
+  const agreementCompanyIds = [
     ...new Set(
       (agreements ?? [])
         .map((r) => String((r as { company_id?: string }).company_id ?? "").trim())
         .filter(Boolean),
     ),
+  ];
+  if (agreementCompanyIds.length === 0) return { deleted: 0 };
+
+  const { data: companyRows } = await admin
+    .from("companies")
+    .select("id")
+    .in("id", agreementCompanyIds)
+    .eq("provider_id", providerId);
+
+  const companyIds = [
+    ...new Set((companyRows ?? []).map((r) => String((r as { id?: string }).id ?? "").trim()).filter(Boolean)),
   ];
   if (companyIds.length === 0) return { deleted: 0 };
 
@@ -232,6 +301,7 @@ export async function deleteMenuServiceDaysForMenuDay(admin: SupabaseClient<any>
     .from("menu_service_days")
     .delete()
     .eq("service_date", menuDay.date)
+    .eq("provider_id", providerId)
     .in("location_id", locationIds)
     .select("id");
 

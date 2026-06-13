@@ -64,12 +64,12 @@ export default async function SuperadminRegistrationDetailPage(props: { params: 
   }
 
   return (
-    <main className="lp-select-text mx-auto max-w-3xl px-4 py-8">
+    <div className="lp-select-text mx-auto max-w-3xl px-4 py-8">
       <p className="text-sm text-red-700">{"message" in bundle ? bundle.message : "Kunne ikke laste registrering."}</p>
       <Link href="/superadmin/registrations" className="mt-4 inline-block text-sm underline">
         Tilbake til innboks
       </Link>
-    </main>
+    </div>
   );
 }
 
@@ -80,10 +80,10 @@ function RegistrationDetailView({ r }: { r: CompanyRegistrationDetail }) {
     ledger_active_agreement_id: r.ledger_active_agreement_id,
   });
   const closed = safeStr(r.company_status).toUpperCase() === "CLOSED";
-  const showDraftBtn = !closed && !r.ledger_pending_agreement_id && !r.ledger_active_agreement_id;
+  const showDraftNotice = !closed && !r.ledger_pending_agreement_id && !r.ledger_active_agreement_id;
 
   return (
-    <main className="lp-select-text mx-auto max-w-3xl px-4 py-8">
+    <div className="lp-select-text mx-auto max-w-3xl px-4 py-8">
       <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin / Registreringer</div>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">Registreringsdetalj</h1>
       <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
@@ -151,10 +151,10 @@ function RegistrationDetailView({ r }: { r: CompanyRegistrationDetail }) {
         </div>
       </section>
 
-      {showDraftBtn ? <CreateAgreementDraftButton companyId={r.company_id} /> : null}
+      {showDraftNotice ? <CreateAgreementDraftButton companyId={r.company_id} /> : null}
       {!closed && r.ledger_pending_agreement_id ? (
         <p className="mt-3 text-xs text-[rgb(var(--lp-muted))]">
-          Avtaleutkast finnes allerede. «Opprett avtaleutkast» er skjult til PENDING er ferdigbehandlet (godkjent eller avslått).
+          Pending ledger-avtale finnes. Godkjenn eller avslå via avtaleflyten — manuelle avtaleutkast er deaktivert.
         </p>
       ) : null}
       {!closed && !r.ledger_pending_agreement_id && r.ledger_active_agreement_id ? (
@@ -248,6 +248,6 @@ function RegistrationDetailView({ r }: { r: CompanyRegistrationDetail }) {
           </div>
         </dl>
       </section>
-    </main>
+    </div>
   );
 }

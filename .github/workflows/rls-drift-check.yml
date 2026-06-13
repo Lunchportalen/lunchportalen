@@ -2,6 +2,9 @@
 # Secret: DATABASE_URL (direkte postgresql://…@db.<ref>.supabase.co:5432/postgres?sslmode=require)
 name: RLS drift check
 
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 on:
   workflow_dispatch:
   schedule:
@@ -18,13 +21,15 @@ jobs:
   rls-drift:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm

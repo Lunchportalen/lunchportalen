@@ -90,7 +90,7 @@ export default function ReconcileClient({ initialMonth }: { initialMonth: string
   }, [data, filter]);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-[rgb(var(--lp-text))]">Faktura avstemming</h1>
@@ -248,6 +248,6 @@ export default function ReconcileClient({ initialMonth }: { initialMonth: string
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 }

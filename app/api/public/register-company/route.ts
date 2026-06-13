@@ -146,6 +146,14 @@ function mapRpcError(messageRaw: unknown) {
       message: "Dette organisasjonsnummeret er allerede registrert eller til behandling.",
     };
   }
+  // Fail-closed provider-scope: ingen leverandør dekker postnummeret => ingen rader skrevet.
+  if (m.includes("PROVIDER_NOT_FOUND")) {
+    return {
+      status: 422,
+      code: "PROVIDER_NOT_FOUND",
+      message: "Vi dekker dessverre ikke dette området ennå. Ingen registrering er opprettet.",
+    };
+  }
 
   return { status: 500, code: "REGISTER_FAILED", message: "Registreringen kunne ikke fullføres nå." };
 }

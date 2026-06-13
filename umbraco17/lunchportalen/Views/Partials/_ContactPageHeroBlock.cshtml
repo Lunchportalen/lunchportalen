@@ -7,10 +7,10 @@
     var text = Model.Value<string>("text") ?? "Få en rask gjennomgang av hvordan Lunchportalen gir dere full kontroll på bestilling, avbestilling og levering – uten unødvendig administrasjon.";
 
     var primaryLabel = Model.Value<string>("primaryCtaLabel") ?? "Send forespørsel";
-    var primaryUrl = Model.Value<string>("primaryCtaUrl") ?? "#kontakt";
+    var primaryUrl = AppUrls.ResolveSamePageAnchor(Model.Value<string>("primaryCtaUrl"), "#kontakt");
 
     var secondaryLabel = Model.Value<string>("secondaryCtaLabel") ?? "Se hvordan det fungerer";
-    var secondaryUrl = Model.Value<string>("secondaryCtaUrl") ?? "/Demo/";
+    var secondaryUrl = AppUrls.ResolveMarketingDemoPage(Model.Value<string>("secondaryCtaUrl"));
 
     var trustOne = Model.Value<string>("trustOne") ?? "Svar innen 24 timer";
     var trustTwo = Model.Value<string>("trustTwo") ?? "Ingen forpliktelser";

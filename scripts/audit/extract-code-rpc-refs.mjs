@@ -2,8 +2,9 @@
 /**
  * K4 — Extract unique Supabase RPC names referenced in app/lib (excludes tests).
  */
-import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname, relative } from "node:path";
+import { writeStableJson } from "./lib/stable-json.mjs";
 
 const ROOT = process.cwd();
 const SKIP_DIRS = new Set(["node_modules", ".next", "dist", "archive", ".git", "tests", "scripts"]);
@@ -44,7 +45,6 @@ function collect(file) {
 
 const names = [...refs.keys()].sort();
 const payload = {
-  generated_at: new Date().toISOString(),
   scope: "app + lib (excludes tests/scripts)",
   count: names.length,
   rpcs: names,
@@ -52,5 +52,5 @@ const payload = {
 };
 
 const outPath = join(ROOT, "scripts", "audit", "k4-code-rpc-refs.json");
-writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+writeStableJson(outPath, payload);
 console.log(`Wrote ${outPath} (${names.length} RPCs)`);

@@ -8,10 +8,15 @@ import "server-only";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import ProviderBrandColor from "@/components/providers/ProviderBrandColor";
+import ProviderLogoUploader from "@/components/providers/ProviderLogoUploader";
+import ProviderOperationsForm from "@/components/providers/ProviderOperationsForm";
 import ProviderSettingsForm from "@/components/providers/ProviderSettingsForm";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
+import { PROVIDER_EMAIL_OWNERSHIP_NOTE } from "@/lib/providers/operationalSettingsShared";
 
 export default async function LeverandorInnstillingerPage() {
   const auth = await getAuthContext();
@@ -22,11 +27,12 @@ export default async function LeverandorInnstillingerPage() {
   if (!provider) redirect("/leverandor");
 
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
+  const operationalSettings = canEdit ? await loadProviderOperationalSettings(provider.id) : null;
   if (!canEdit) {
     return (
       <div className="ds-container">
         <h1 className="ds-h2">Innstillinger</h1>
-        <p className="ds-body">Kun provider-admin kan endre profilen.</p>
+        <p className="ds-body">Du har lesetilgang. Innstillinger kan kun endres av administrator.</p>
       </div>
     );
   }
@@ -41,8 +47,39 @@ export default async function LeverandorInnstillingerPage() {
         </div>
       </header>
       <section className="ds-section">
+        <h2 className="ds-h3">Logo og merkevare</h2>
+        <p className="ds-body">
+          Last opp logo og velg en kontrollert aksentfarge. Lunchportalen beholder layout, typografi og
+          produktuttrykk.
+        </p>
+
+        <h3 className="ds-provider-brand-heading">Logo</h3>
+        <p className="ds-body">
+          Bruk en ren logo med transparent bakgrunn. Logoen vises kontrollert i leverandørmenyen.
+        </p>
+        <ProviderLogoUploader providerId={provider.id} providerName={provider.name} logoUrl={provider.logoUrl} />
+        <p className="ds-provider-brand-note">
+          Logoer som ikke følger plattformens visuelle standard kan bli avvist.
+        </p>
+
+        <h3 className="ds-provider-brand-heading">Primærfarge</h3>
+        <p className="ds-body">Velg leverandørens aksentfarge. Fargen brukes kun i kontrollerte detaljer.</p>
+        <ProviderBrandColor providerId={provider.id} primaryColor={provider.primaryColor} />
+      </section>
+      <section className="ds-section">
         <ProviderSettingsForm provider={provider} />
       </section>
+      {operationalSettings ? (
+        <section className="ds-section">
+          <h2 className="ds-h3">Drift og varsling</h2>
+          <p className="ds-body">
+            Legg inn e-postadressene som skal motta ordre, kjøkkenlister og leveringsvarsler for denne
+            leverandøren. Disse innstillingene gjelder kun for dette cateringfirmaet.
+          </p>
+          <p className="ds-body">{PROVIDER_EMAIL_OWNERSHIP_NOTE}</p>
+          <ProviderOperationsForm providerId={provider.id} initial={operationalSettings} />
+        </section>
+      ) : null}
       <section className="ds-section">
         <h2 className="ds-h3">Regnskap</h2>
         <p className="ds-body">Koble Tripletex for automatisk fakturering og betalingsstatus.</p>

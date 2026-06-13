@@ -82,7 +82,7 @@ export default async function SuperadminAuditPage() {
      3) Render client UI (shell)
   ========================================================= */
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
+    <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
@@ -94,6 +94,6 @@ export default async function SuperadminAuditPage() {
       </header>
 
       <AuditClient />
-    </main>
+    </div>
   );
 }

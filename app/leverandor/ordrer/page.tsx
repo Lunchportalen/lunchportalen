@@ -12,6 +12,12 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadKitchenOrders } from "@/lib/providers/loadKitchenOrders";
+import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
+import {
+  PROVIDER_ORDERS_COPY,
+  formatProviderOrdersDateRange,
+  type ProviderOrdersDateMode,
+} from "@/lib/providers/providerOrdersSurface";
 
 export default async function LeverandorOrdrerPage({
   searchParams,
@@ -29,28 +35,41 @@ export default async function LeverandorOrdrerPage({
   if (!canView) redirect("/leverandor");
 
   const sp = await searchParams;
-  const dateMode = (typeof sp.date === "string" ? sp.date : "today") as "today" | "tomorrow" | "week";
+  const dateModeRaw = typeof sp.date === "string" ? sp.date : "today";
+  const dateMode: ProviderOrdersDateMode =
+    dateModeRaw === "tomorrow" || dateModeRaw === "week" ? dateModeRaw : "today";
   const statusFilter = typeof sp.status === "string" && sp.status ? sp.status : null;
   const companyId = typeof sp.company === "string" && sp.company ? sp.company : null;
   const group = typeof sp.group === "string" ? sp.group : "company";
 
-  const bundle = await loadKitchenOrders(provider.id, { dateMode, statusFilter, companyId });
-  const canAdvance = await hasProviderRole(auth.user.id, provider.id, "provider_kitchen");
+  const [bundle, canAdvance, settings] = await Promise.all([
+    loadKitchenOrders(provider.id, { dateMode, statusFilter, companyId }),
+    hasProviderRole(auth.user.id, provider.id, "provider_kitchen"),
+    loadProviderOperationalSettings(provider.id),
+  ]);
+
+  const dateLabel = formatProviderOrdersDateRange(bundle.dateFrom, bundle.dateTo, settings.locale);
 
   return (
     <div className="ds-container ds-provider-kitchen-page">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">Kjøkken</p>
-          <h1 className="ds-h2">Ordrer</h1>
+          <p className="ds-eyebrow">{PROVIDER_ORDERS_COPY.eyebrow}</p>
+          <h1 className="ds-h2">{PROVIDER_ORDERS_COPY.heading}</h1>
           <p className="ds-lead">
-            {provider.name} · {bundle.dateFrom}
-            {bundle.dateFrom !== bundle.dateTo ? ` – ${bundle.dateTo}` : ""}
+            {provider.name}
+            {dateLabel ? ` · ${dateLabel}` : ""}
           </p>
         </div>
       </header>
 
-      <KitchenOrdersView bundle={bundle} canAdvance={canAdvance} groupMode={group} />
+      <KitchenOrdersView
+        bundle={bundle}
+        canAdvance={canAdvance}
+        groupMode={group}
+        dateMode={dateMode}
+        statusFilterActive={Boolean(statusFilter)}
+      />
     </div>
   );
 }

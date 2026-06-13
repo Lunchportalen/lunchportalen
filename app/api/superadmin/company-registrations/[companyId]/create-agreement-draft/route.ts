@@ -5,6 +5,10 @@ export const revalidate = 0;
 import "server-only";
 
 import type { NextRequest } from "next/server";
+import {
+  AGREEMENT_DRAFT_FLOW_DISABLED_CODE,
+  AGREEMENT_DRAFT_FLOW_DISABLED_MESSAGE,
+} from "@/lib/server/superadmin/agreementDraftFlowDisabled";
 import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 
@@ -21,7 +25,7 @@ function denyResponse(s: any): Response {
 
 /**
  * POST /api/superadmin/company-registrations/:companyId/create-agreement-draft
- * Canonical: lp_agreement_create_pending (samme som POST /api/superadmin/agreements), trigget fra registrering.
+ * Fail-closed: manuell avtaleutkast-flyt er deaktivert (lp_agreement_create_pending finnes ikke i prod).
  */
 export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
   void req;
@@ -33,10 +37,5 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
   const deny = requireRoleOr403(authCtx, "superadmin.agreements.create", ["superadmin"]);
   if (deny) return deny;
 
-  return jsonErr(
-    authCtx.rid,
-    "Opprettelse av agreement-utkast fra registrering er ikke lenger tillatt. Bruk approve/reject-knappene på registreringen direkte.",
-    410,
-    "FLOW_DEPRECATED"
-  );
+  return jsonErr(authCtx.rid, AGREEMENT_DRAFT_FLOW_DISABLED_MESSAGE, 410, AGREEMENT_DRAFT_FLOW_DISABLED_CODE);
 }

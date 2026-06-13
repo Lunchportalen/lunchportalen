@@ -111,6 +111,31 @@ vi.mock("@/lib/audit/auditWrite", () => ({
   auditWriteMust: vi.fn(async () => true),
 }));
 
+vi.mock("@/lib/kitchen/batchPackedOutbox", () => ({
+  enqueueBatchPackedOutbox: vi.fn(async () => undefined),
+}));
+
+vi.mock("@/lib/kitchen/batchTransitionRpc", () => ({
+  batchTransitionAndSyncOrders: vi.fn(async (_admin, input) => ({
+    data: {
+      ok: true,
+      batch_updated: true,
+      batch: {
+        id: "b1",
+        delivery_date: input.deliveryDate,
+        delivery_window: input.deliveryWindow,
+        company_location_id: input.companyLocationId,
+        status: "PACKED",
+        packed_at: new Date().toISOString(),
+        delivered_at: null,
+      },
+      sync: { advanced: 0, skipped: 0, already: 0, order_ids: [] },
+      provider_id: "prov1",
+    },
+    error: null,
+  })),
+}));
+
 import { POST as batchSetPOST } from "../app/api/kitchen/batch/set/route";
 
 beforeEach(() => {
@@ -124,7 +149,7 @@ beforeEach(() => {
       { id: OTHER_LOCATION, company_id: OTHER_COMPANY },
     ],
     kitchen_batch: [
-      { id: "b1", delivery_date: "2026-02-02", delivery_window: "lunch", company_location_id: LOCATION_ID, status: "QUEUED", packed_at: null, delivered_at: null },
+      { id: "b1", delivery_date: "2026-02-02", delivery_window: "default", company_location_id: LOCATION_ID, status: "QUEUED", packed_at: null, delivered_at: null },
     ],
   });
 });
@@ -146,7 +171,7 @@ describe("kitchen batch/status", () => {
       profiles: [{ id: "p1", user_id: "u1", company_id: COMPANY_ID, location_id: LOCATION_ID, disabled_at: null, is_active: true }],
       company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
       kitchen_batch: [
-        { id: "b1", delivery_date: "2026-02-02", delivery_window: "lunch", company_location_id: LOCATION_ID, status: "DELIVERED", packed_at: "t", delivered_at: "t" },
+        { id: "b1", delivery_date: "2026-02-02", delivery_window: "default", company_location_id: LOCATION_ID, status: "DELIVERED", packed_at: "t", delivered_at: "t" },
       ],
     });
 
@@ -199,7 +224,7 @@ describe("kitchen batch/status", () => {
       profiles: [{ id: "p1", user_id: "u1", company_id: COMPANY_ID, location_id: LOCATION_ID, disabled_at: null, is_active: true }],
       company_locations: [{ id: LOCATION_ID, company_id: COMPANY_ID }],
       kitchen_batch: [
-        { id: "b1", delivery_date: "2026-02-02", delivery_window: "lunch", company_location_id: LOCATION_ID, status: "PACKED", packed_at: "t", delivered_at: null },
+        { id: "b1", delivery_date: "2026-02-02", delivery_window: "default", company_location_id: LOCATION_ID, status: "PACKED", packed_at: "t", delivered_at: null },
       ],
     });
 
@@ -213,8 +238,12 @@ describe("kitchen batch/status", () => {
     expect(res.status).toBe(200);
   });
 
-  test("race: to samtidige updates -> 409", async () => {
-    mockRace = true;
+  test("race: concurrent transition failure -> 422", async () => {
+    const { batchTransitionAndSyncOrders } = await import("@/lib/kitchen/batchTransitionRpc");
+    vi.mocked(batchTransitionAndSyncOrders).mockResolvedValueOnce({
+      data: null,
+      error: { message: "INVALID_BATCH_TRANSITION", code: "22023" },
+    });
     const req = mkReq("http://localhost/api/kitchen/batch/set", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -222,7 +251,7 @@ describe("kitchen batch/status", () => {
     });
 
     const res = await batchSetPOST(req);
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(422);
   });
 });
 

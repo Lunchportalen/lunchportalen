@@ -12,6 +12,8 @@ import {
 import { osloTodayISODate } from "@/lib/date/oslo";
 import Link from "next/link";
 
+import KitchenEmployeeAllergenExtra from "@/components/kitchen/KitchenEmployeeAllergenExtra";
+
 function osloISO(d: Date) {
   const parts = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Oslo",
@@ -649,6 +651,11 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
                                   <span className="font-medium">Notat (ordre):</span> {row.note}
                                 </div>
                               ) : null}
+                              <KitchenEmployeeAllergenExtra
+                                status={row.employee_allergen_profile_status}
+                                codes={row.employee_allergen_codes}
+                                free_text={row.employee_allergen_free_text}
+                              />
                             </div>
                           ))}
                         </div>

@@ -26,6 +26,14 @@ async function readJson(res: Response) {
 const scopeOr401Mock = vi.hoisted(() => vi.fn());
 const readJsonMock = vi.hoisted(() => vi.fn());
 
+vi.mock("@/lib/orders/resolveOrderDayItemPersist", () => ({
+  resolveOrderDayItemPersist: vi.fn(async () => ({
+    ok: true,
+    item_key: null,
+    item_title_snapshot: null,
+  })),
+}));
+
 vi.mock("@/lib/agreement/requireRule", () => ({
   requireRule: vi.fn(async () => ({
     ok: true,

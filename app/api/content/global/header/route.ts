@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { globalPublicGetResponse } from "@/lib/cms/readGlobal";
 import { publishGlobal } from "@/lib/cms/publishGlobal";
 import { saveGlobalDraft } from "@/lib/cms/writeGlobal";
+import { denyResponse, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
 
 function newRid(prefix: string): string {
   const t = Date.now().toString(36);
@@ -10,7 +11,6 @@ function newRid(prefix: string): string {
   return `${prefix}_${t}_${u}`;
 }
 
-export const runtime = "edge";
 export const revalidate = 3600;
 
 /** CDN / shared caches: align with route `revalidate` and Next fetch `revalidate` (3600s). */
@@ -67,6 +67,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await scopeOr401(request);
+  if (!gate.ok) return denyResponse(gate);
+  const deny = requireRoleOr403(gate.ctx, ["superadmin"]);
+  if (deny) return deny;
+
   const requestId = newRid("cms_global_header");
   const body = await readJson(request);
   if (!body || typeof body !== "object" || Array.isArray(body)) {

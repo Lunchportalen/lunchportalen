@@ -79,14 +79,13 @@ function mergeRepoMap(
 }
 
 function run() {
-  const started = new Date().toISOString();
   const allCurrent = collectFiles();
   const gitChanged = getGitChangedFiles();
 
   if (gitChanged === null) {
     console.log("[updateRepoMemory] git unavailable — full scan");
     const files = scanAllFileEntries();
-    writeRepoIntelligence(files, started);
+    writeRepoIntelligence(files);
     console.log(`[updateRepoMemory] wrote ${files.length} files`);
     return;
   }
@@ -98,21 +97,21 @@ function run() {
   if (changedInScope.size === 0 && fs.existsSync(MAP_PATH)) {
     console.log("[updateRepoMemory] no changes in scanned roots — touching meta only");
     const existing = loadExistingMap();
-    writeRepoIntelligence(existing, started);
+    writeRepoIntelligence(existing);
     return;
   }
 
   if (!fs.existsSync(MAP_PATH) || loadExistingMap().length === 0) {
     console.log("[updateRepoMemory] no existing map — full scan");
     const files = scanAllFileEntries();
-    writeRepoIntelligence(files, started);
+    writeRepoIntelligence(files);
     console.log(`[updateRepoMemory] wrote ${files.length} files`);
     return;
   }
 
   const existing = loadExistingMap();
   const merged = mergeRepoMap(existing, allCurrent, changedInScope);
-  writeRepoIntelligence(merged, started);
+  writeRepoIntelligence(merged);
   console.log(`[updateRepoMemory] incremental merge → ${merged.length} files (changed: ${changedInScope.size})`);
 }
 

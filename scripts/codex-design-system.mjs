@@ -1,7 +1,7 @@
 /* scripts/codex-design-system.mjs
 ------------------------------------------------------------
 Design-system Codex runner (NO CLI):
-- Reads design/DESIGN_BRIEF.md + selected repo context
+- Reads docs/engineering/design-constitution.md + selected repo context
 - Calls OpenAI Responses API via fetch (Node 20)
 - Expects unified git diff ONLY (git apply compatible)
 - Writes codex.design.patch and applies it (git apply)
@@ -11,6 +11,8 @@ Design-system Codex runner (NO CLI):
 
 import fs from "node:fs";
 import { execSync } from "node:child_process";
+
+const DESIGN_CONSTITUTION_PATH = "docs/engineering/design-constitution.md";
 
 /* =========================================================
    Helpers
@@ -105,7 +107,7 @@ async function openaiUnifiedDiff({ apiKey, model, brief, context }) {
               "- Do NOT change business logic, auth, guards, audit, cron, or API shapes.",
               "- Do NOT add dependencies. Do NOT modify package-lock.json.",
               "- Focus only on: tokens, CSS variables, UI components, layout shells, and page styling.",
-              "- Use design/DESIGN_BRIEF.md as source of truth.",
+              `- Use ${DESIGN_CONSTITUTION_PATH} as source of truth.`,
               "- Output ONLY a unified git diff (git apply compatible). No explanation.",
               "- If you cannot produce a safe patch, output nothing.",
             ].join("\n"),
@@ -186,9 +188,9 @@ async function main() {
   const apiKey = requireEnv("OPENAI_API_KEY");
   const model = (process.env.OPENAI_MODEL || "gpt-5").trim();
 
-  const brief = readFileSafe("design/DESIGN_BRIEF.md");
+  const brief = readFileSafe(DESIGN_CONSTITUTION_PATH);
   if (!brief.trim()) {
-    throw new Error("Missing design/DESIGN_BRIEF.md");
+    throw new Error(`Missing ${DESIGN_CONSTITUTION_PATH}`);
   }
 
   // Keep context small & safe (no secrets). This is just to help the model.

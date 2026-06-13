@@ -13,6 +13,23 @@ pnpm-debug.log*
 .env.local
 .env.*.local
 
+# === .env hardening (Sprint AB Gr 8 — 2026-05-25) ===
+# All .env-files except templates
+.env.local.*
+.env.vercel.local
+.env.*.tmp
+.env.k6-*
+.env.prod-k6*
+.env.sentry-diag-*
+.env.staging-check*
+.env.staging-pull*
+.env.vercel.pull*
+.env.preview-*
+
+# Explicit keep (templates only)
+!.env.example
+!.env.postdeploy.example
+
 # OS / Editor
 .DS_Store
 .vscode/
@@ -98,3 +115,20 @@ artifacts/
 build-output.txt
 umbraco17/*BACKUP*/
 .claude/
+
+# Post-audit PF.1 (2026-05-26) — local evidence, not repo truth
+.screenshots/
+_ci-snapshots/
+tmp-week-visual-baselines/
+scripts/k6/results/
+scripts/audit/*-dump-*.sql
+*.dump.sql
+
+# Repo hygiene (2026-06-12) — lokale debug-/engangsartefakter, ikke repo-sannhet
+.audit-publish-out/
+tmp-*/
+tmp-*.txt
+_ci-snapshots-*/
+_ci-steg*/
+playwright-week-visual-report/
+.smoke-provision.*

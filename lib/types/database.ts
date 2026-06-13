@@ -58,6 +58,86 @@ type SystemSettingsTable = {
   Relationships: [];
 };
 
+/** Typed subset of `public.lp_user_allergens` (migration 20260615120000 + subtypes). */
+type LpUserAllergensTable = {
+  Row: {
+    user_id: string;
+    codes: string[];
+    free_text: string;
+    updated_at: string;
+  };
+  Insert: {
+    user_id: string;
+    codes?: string[];
+    free_text?: string;
+    updated_at?: string;
+  };
+  Update: Partial<{
+    user_id: string;
+    codes: string[];
+    free_text: string;
+    updated_at: string;
+  }>;
+  Relationships: [];
+};
+
+/** Typed subset of `public.leads` (migration 20260702120000). */
+type LeadsTable = {
+  Row: {
+    id: string;
+    name: string;
+    email: string;
+    company: string;
+    source: string;
+    consent_at: string;
+    phone: string | null;
+    company_size: string | null;
+    message: string | null;
+    status: string;
+    processed_at: string | null;
+    created_at: string;
+    postal_code: string | null;
+    city: string | null;
+    region: string | null;
+    coverage_wish: boolean;
+    lead_type: string;
+  };
+  Insert: {
+    id?: string;
+    name: string;
+    email: string;
+    company: string;
+    source: string;
+    consent_at: string;
+    phone?: string | null;
+    company_size?: string | null;
+    message?: string | null;
+    status?: string;
+    processed_at?: string | null;
+    created_at?: string;
+    postal_code?: string | null;
+    city?: string | null;
+    region?: string | null;
+    coverage_wish?: boolean;
+    lead_type?: string;
+  };
+  Update: Partial<{
+    id: string;
+    name: string;
+    email: string;
+    company: string;
+    source: string;
+    consent_at: string;
+    phone: string | null;
+    company_size: string | null;
+    message: string | null;
+    status: string;
+    processed_at: string | null;
+    created_at: string;
+  }>;
+  Relationships: [];
+};
+
 type AiActionMemoryTable = {
   Row: {
     id: string;
@@ -177,6 +257,8 @@ const PUBLIC_TABLE_NAMES = [
   "kitchen_batch",
   "kitchen_batches",
   "lead_pipeline",
+  "leads",
+  "lp_user_allergens",
   "location_audit",
   "media_items",
   "menu_visibility_days",
@@ -219,9 +301,13 @@ export type Database = {
     Tables: {
       [K in PublicTableName]: K extends "ai_action_memory"
         ? AiActionMemoryTable
-        : K extends "system_settings"
-          ? SystemSettingsTable
-          : LoosePublicTable;
+        : K extends "leads"
+          ? LeadsTable
+          : K extends "lp_user_allergens"
+            ? LpUserAllergensTable
+            : K extends "system_settings"
+              ? SystemSettingsTable
+              : LoosePublicTable;
     };
     Views: {
       /**
@@ -240,6 +326,24 @@ export type Database = {
       };
     };
     Functions: {
+      lp_capture_lead: {
+        Args: {
+          p_name: string;
+          p_email: string;
+          p_company: string;
+          p_source: string;
+          p_consented: boolean;
+          p_phone?: string | null;
+          p_company_size?: string | null;
+          p_message?: string | null;
+          p_postal_code?: string | null;
+          p_city?: string | null;
+          p_region?: string | null;
+          p_coverage_wish?: boolean;
+          p_lead_type?: string;
+        };
+        Returns: string;
+      };
       [fn: string]: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Args: Record<string, any>;

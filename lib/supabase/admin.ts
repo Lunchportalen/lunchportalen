@@ -19,7 +19,7 @@ import type { Database } from "@/lib/types/database";
  *
  * NOTE:
  * - SUPABASE_SERVICE_ROLE_KEY leses KUN her (CI / sikkerhetskrav). Aldri i browser, Server Components,
- *   middleware eller publishable-key-klienter — bruk `supabaseServer()` / `@/utils/supabase/server` for bruker-sesjon.
+ *   middleware eller publishable-key-klienter — bruk `supabaseServer()` / `@/lib/supabase/server` for bruker-sesjon.
  * - Bruker server-var først (SUPABASE_URL), fallback til NEXT_PUBLIC_SUPABASE_URL for legacy.
  */
 

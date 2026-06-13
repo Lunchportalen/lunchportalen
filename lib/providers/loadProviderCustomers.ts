@@ -8,6 +8,7 @@ import type {
   ProviderCustomerStatus,
   ProviderCustomersPage,
 } from "@/lib/providers/customerTypes";
+import { buildCustomerStatusCounts } from "@/lib/providers/providerCustomersSurface";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type { ProviderCustomerFilter, ProviderCustomerRow, ProviderCustomerStatus, ProviderCustomersPage } from "@/lib/providers/customerTypes";
@@ -30,13 +31,17 @@ function deriveStatus(row: {
   return "ACTIVE";
 }
 
+/**
+ * Visningssemantikk (uendret fra tidligere DB-gate):
+ * «all» viser kun ikke-slettede; «deleted» viser kun slettede; øvrige matcher eksakt status.
+ */
 function matchesFilter(status: ProviderCustomerStatus, filter: ProviderCustomerFilter): boolean {
-  if (filter === "all") return true;
+  if (filter === "all") return status !== "DELETED";
   if (filter === "active") return status === "ACTIVE";
   if (filter === "suspended") return status === "SUSPENDED";
   if (filter === "paused") return status === "PAUSED";
   if (filter === "deleted") return status === "DELETED";
-  return true;
+  return status !== "DELETED";
 }
 
 async function enrichCounts(
@@ -95,8 +100,10 @@ export async function loadProviderCustomers(
   const currentPage = Math.max(1, Math.floor(page) || 1);
   const term = safeStr(search).toLowerCase();
 
+  const emptyCounts = buildCustomerStatusCounts([]);
+
   if (!pid) {
-    return { customers: [], totalCount: 0, currentPage: 1, totalPages: 1, pageSize: PAGE_SIZE };
+    return { customers: [], totalCount: 0, currentPage: 1, totalPages: 1, pageSize: PAGE_SIZE, statusCounts: emptyCounts };
   }
 
   const sb = await supabaseServer();
@@ -104,17 +111,13 @@ export async function loadProviderCustomers(
   const weekStart = startOfWeekISO(today);
   const weekEnd = addDaysISO(weekStart, 7);
 
+  // Deleted-gaten håndteres i minne (matchesFilter) med identisk visningssemantikk,
+  // slik at statuschip-tellinger kan beregnes fra samme resultatsett uten ekstra query.
   let query = (sb as any)
     .from("companies")
     .select("id, name, updated_at, deleted_at, suspended_at, paused_at", { count: "exact" })
     .eq("provider_id", pid)
     .order("updated_at", { ascending: false });
-
-  if (filter === "deleted") {
-    query = query.not("deleted_at", "is", null);
-  } else {
-    query = query.is("deleted_at", null);
-  }
 
   if (term) {
     query = query.ilike("name", `%${term}%`);
@@ -122,7 +125,7 @@ export async function loadProviderCustomers(
 
   const { data: allRows, error } = await query;
   if (error || !Array.isArray(allRows)) {
-    return { customers: [], totalCount: 0, currentPage, totalPages: 1, pageSize: PAGE_SIZE };
+    return { customers: [], totalCount: 0, currentPage, totalPages: 1, pageSize: PAGE_SIZE, statusCounts: emptyCounts };
   }
 
   const mapped = allRows.map((row: Record<string, unknown>) => {
@@ -137,6 +140,7 @@ export async function loadProviderCustomers(
     };
   });
 
+  const statusCounts = buildCustomerStatusCounts(mapped.map((c) => c.status));
   const filtered = mapped.filter((c) => matchesFilter(c.status, filter));
   const totalCount = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -159,5 +163,6 @@ export async function loadProviderCustomers(
     currentPage: safePage,
     totalPages,
     pageSize: PAGE_SIZE,
+    statusCounts,
   };
 }

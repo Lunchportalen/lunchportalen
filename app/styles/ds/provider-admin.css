@@ -33,6 +33,54 @@
   gap: 10px;
 }
 
+/* «Må følges opp» — rolige operasjonelle kort (samme flate som ds-card). */
+.ds-provider-followup-grid {
+  display: grid;
+  gap: clamp(12px, 2vw, 18px);
+  grid-template-columns: 1fr;
+}
+
+.ds-provider-followup {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.ds-provider-followup--warning {
+  border-color: rgba(245, 180, 0, .45);
+}
+
+.ds-provider-followup__action {
+  justify-self: start;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ds-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ds-provider-activity__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: var(--ds-text-soft);
+}
+
+.ds-provider-activity__dot--success {
+  background: rgba(47, 122, 101, .85);
+}
+
+.ds-provider-activity__dot--warning {
+  background: rgba(245, 180, 0, .9);
+}
+
 .ds-provider-activity__row {
   display: grid;
   gap: 4px;
@@ -53,11 +101,18 @@
   color: var(--ds-text);
 }
 
+/* Logo-variant: lys, nøytral flate slik at mørke logoer forblir lesbare. */
+.ds-provider-nav__mark.ds-provider-nav__mark--logo {
+  background: var(--ds-surface, #fff);
+  border: 1px solid var(--ds-line, rgba(17, 17, 17, 0.1));
+}
+
 .ds-provider-nav__mark img {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: contain;
+  padding: 4px;
 }
 
 .ds-provider-nav__item.is-disabled {
@@ -117,7 +172,8 @@
 }
 
 @media (min-width: 640px) {
-  .ds-provider-quick-grid {
+  .ds-provider-quick-grid,
+  .ds-provider-followup-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -133,7 +189,8 @@
 }
 
 @media (min-width: 980px) {
-  .ds-provider-quick-grid {
+  .ds-provider-quick-grid,
+  .ds-provider-followup-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -182,6 +239,11 @@
 
 .ds-provider-customer-list--desktop {
   display: none;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px;
+  border: 1px solid var(--ds-border, rgba(17, 17, 17, 0.1));
+  background: var(--ds-surface, #fff);
 }
 
 .ds-provider-customer-table {
@@ -192,9 +254,20 @@
 
 .ds-provider-customer-table th,
 .ds-provider-customer-table td {
-  padding: 12px 10px;
+  padding: 14px 16px;
   text-align: left;
   border-bottom: 1px solid var(--ds-line);
+}
+
+.ds-provider-customer-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-customer-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .ds-provider-customer-table__link {
@@ -244,6 +317,27 @@
 
 .ds-provider-status-badge--deleted {
   background: rgba(17, 17, 17, 0.08);
+  color: var(--ds-text-soft);
+}
+
+/* Tellinger på statusfilter-chips (/leverandor/kunder). */
+.ds-provider-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  background: var(--ds-bg-soft, rgba(17, 17, 17, .06));
+  color: var(--ds-text);
+}
+
+/* Rolig oppsummering når pagination-kontroller er skjult (én side). */
+.ds-provider-pagination__summary {
   color: var(--ds-text-soft);
 }
 
@@ -509,6 +603,15 @@
 }
 
 /* Provider registration queue (/leverandor/registreringer) — Patch 13 */
+/* Rolig statuslinje over bedriftsforespørsler (/leverandor/registreringer). */
+.ds-provider-reg-summary {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ds-text-soft);
+}
+
 .ds-provider-reg-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -563,6 +666,115 @@
   padding: 28px 16px !important;
 }
 
+.ds-provider-reg-empty .ds-provider-reg-meta {
+  margin-top: 6px;
+}
+
+/* Rolig, felles tomtilstand for leverandørflatene. */
+.ds-provider-empty {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(28px, 5vw, 44px) 20px;
+  border-radius: var(--ds-radius-md, 22px);
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface, #fff);
+}
+
+.ds-provider-empty__title {
+  margin: 0;
+  font-weight: 800;
+  color: var(--ds-text);
+}
+
+.ds-provider-empty__text {
+  margin: 0;
+  max-width: 48ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ds-text-soft);
+}
+
+/* Operasjonell micro-guidance i empty state (/leverandor/ordrer). */
+.ds-provider-empty__steps {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-empty__steps li::before {
+  content: "·";
+  margin-right: 8px;
+  font-weight: 800;
+  color: var(--ds-text);
+}
+
+/* Tellinger på statuschips. */
+.ds-provider-status-pill__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  background: var(--ds-bg-soft, rgba(17, 17, 17, .06));
+  color: var(--ds-text);
+}
+
+.ds-provider-status-pill.is-active .ds-provider-status-pill__count {
+  background: rgba(255, 255, 255, .85);
+}
+
+/* Avtale-kort på kundedetalj (/leverandor/kunder/[id]). */
+.ds-provider-agreement-card {
+  display: grid;
+  gap: 8px;
+  padding: 20px 22px;
+  margin-bottom: 12px;
+}
+
+.ds-provider-agreement-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ds-provider-agreement-card__head .ds-h4 {
+  margin: 0;
+}
+
+.ds-provider-agreement-card .ds-provider-reg-detail {
+  margin: 4px 0 0;
+}
+
+/* Kontrollert avvik (f.eks. leveringsdager utenfor man-fre) — rolig, ikke alarm. */
+.ds-provider-agreement-warning {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(178, 80, 0, 0.3);
+  background: rgba(178, 80, 0, 0.06);
+  color: #b25000;
+  font-size: 14px;
+}
+
+.ds-provider-agreement-card .ds-provider-agreement-warning {
+  margin: 4px 0 0;
+}
+
 .ds-provider-reg-detail {
   display: grid;
   gap: 10px;
@@ -601,6 +813,11 @@
   gap: 12px;
   align-items: center;
   margin-bottom: 16px;
+}
+
+/* Summary venstrejustert, CTA høyrejustert — rolig kontrollflate. */
+.ds-provider-service-areas-toolbar .ds-provider-reg-summary {
+  margin: 0 auto 0 0;
 }
 
 .ds-provider-service-area-list {
@@ -723,6 +940,41 @@
   justify-self: center;
 }
 
+.ds-provider-meny-note {
+  font-size: 14px;
+  opacity: 0.75;
+  text-align: center;
+}
+
+.ds-provider-meny-form {
+  text-align: left;
+}
+
+.ds-provider-meny-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.ds-provider-meny-actions .ds-btn {
+  min-height: 48px;
+  min-width: 140px;
+}
+
+.ds-provider-meny-result {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(47, 122, 101, 0.06);
+  text-align: center;
+}
+
+.ds-provider-meny-result__meta {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
 .ds-provider-reg-table tr.is-inactive td {
   opacity: 0.7;
 }
@@ -730,6 +982,41 @@
 /* Billing (/leverandor/faktura) — Patch 15 */
 .ds-provider-billing-page {
   max-width: 960px;
+}
+
+/* Rolige status cards øverst på /leverandor/faktura (oppgjør/provisjon/neste oppgjør). */
+.ds-provider-billing-status-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 12px;
+}
+
+.ds-provider-billing-status-card {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+}
+
+.ds-provider-billing-status-card__value {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* Produktcopy om provisjonsmodellen — informasjon, ikke beregning. */
+.ds-provider-billing-model-note {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: var(--ds-text-soft);
+}
+
+/* Kontrollert «ikke aktivert»-panel når oppgjørsavtale mangler. */
+.ds-provider-billing-inactive {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
 }
 
 .ds-provider-billing-summary {
@@ -788,4 +1075,237 @@
   padding-left: 1.2rem;
   font-size: 14px;
   line-height: 1.6;
+}
+
+/* ---------- Provider logo (innstillinger) ---------- */
+
+.ds-provider-logo {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2.5vw, 24px);
+  flex-wrap: wrap;
+}
+
+.ds-provider-logo__preview {
+  width: 120px;
+  height: 120px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  border-radius: var(--ds-radius-md, 22px);
+  border: 1px solid var(--ds-line);
+  /* Subtil checkerboard: viser transparens uten å bli rotete. */
+  background:
+    repeating-conic-gradient(rgba(17, 17, 17, 0.035) 0% 25%, transparent 0% 50%) 0 0 / 16px 16px,
+    var(--ds-surface, #fff);
+  box-shadow: var(--ds-shadow-card, 0 20px 60px rgba(17, 17, 17, 0.06));
+}
+
+.ds-provider-logo__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+
+.ds-provider-logo__initials {
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-logo__body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ds-provider-logo__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-logo__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ds-provider-logo__remove {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 10px 4px;
+  min-height: 44px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.18s ease;
+}
+
+.ds-provider-logo__remove:hover:not(:disabled) {
+  color: var(--ds-text, #111);
+}
+
+.ds-provider-logo__remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ds-provider-logo__status {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-logo__status.is-success {
+  color: #1e8449;
+  font-weight: 600;
+}
+
+.ds-provider-logo__status.is-error {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.ds-provider-logo__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ds-provider-brand-heading {
+  margin: clamp(20px, 3vw, 30px) 0 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--ds-text, #111);
+}
+
+.ds-provider-brand-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+/* ---------- Drift og varsling (provider-eide mottakere) ---------- */
+
+.ds-provider-ops__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+}
+
+@media (max-width: 720px) {
+  .ds-provider-ops__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ds-provider-ops__field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ds-provider-ops__field label {
+  margin: 0;
+}
+
+.ds-provider-ops__hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+/* ---------- Provider primærfarge (kontrollert aksent) ---------- */
+
+.ds-provider-brand-color {
+  display: grid;
+  gap: 12px;
+}
+
+.ds-provider-brand-color__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ds-provider-brand-color__swatch {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  border: 1px solid var(--ds-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.ds-provider-brand-color__field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.ds-provider-brand-color__label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ds-text, #111);
+}
+
+.ds-provider-brand-color__field input {
+  width: 140px;
+  min-height: 44px;
+  border: 1px solid rgba(17, 17, 17, 0.11);
+  border-radius: 14px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ds-text, #111);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ds-provider-brand-color__field input:focus {
+  outline: none;
+  border-color: var(--lp-gold, #f5c518);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.28);
+}
+
+.ds-provider-brand-color__sample {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ds-text-soft, rgba(17, 17, 17, 0.55));
+}
+
+.ds-provider-brand-color__sample-line {
+  width: 28px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+/* Kontrollert leverandøraksent i sidebar-brand: liten linje, aldri flater. */
+.ds-provider-nav__accent {
+  display: block;
+  width: 24px;
+  height: 3px;
+  margin: 4px 0 4px;
+  border-radius: 999px;
 }

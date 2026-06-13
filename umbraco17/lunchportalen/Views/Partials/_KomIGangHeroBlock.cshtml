@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using System.Linq
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
@@ -11,10 +11,13 @@
     var subheading     = Model.Value<string>("subheading");
     var primaryLabel   = Model.Value<string>("primaryCtaLabel");
     var primaryLinks   = Model.Value<IEnumerable<Link>>("primaryCtaUrl");
-    var primaryUrl     = primaryLinks?.FirstOrDefault()?.Url ?? "#";
+    var primaryUrl     = AppUrls.ResolveLeadCapture("kom-i-gang-hero-primary");
     var secondaryLabel = Model.Value<string>("secondaryCtaLabel");
     var secondaryLinks = Model.Value<IEnumerable<Link>>("secondaryCtaUrl");
-    var secondaryUrl   = secondaryLinks?.FirstOrDefault()?.Url ?? "#";
+    var secondaryUrl   = AppUrls.ResolveGenericHeroSecondary(
+        secondaryLinks?.FirstOrDefault()?.Url,
+        "kom-i-gang-hero-secondary",
+        "#kom-i-gang");
 }
 
 <section class="kig-hero">

@@ -52,7 +52,7 @@ Referanse: `lib/pilot/vercelScheduledCrons.ts` for forventede paths.
 |------|----------|
 | L1 | Sjekk `GET /api/observability` (superadmin), Vercel logs, `cron_runs`. |
 | L2 | Supabase dashboard (queries, RLS-feil), Redis (hvis brukt). |
-| L3 | Utvikler — incident etter intern mal (`INCIDENT_RESPONSE_PLAN.md` i rot hvis aktuelt). |
+| L3 | Utvikler — incident etter intern mal (`docs/security/incident/incident-response-plan.md` hvis aktuelt). |
 
 ## Relaterte dokumenter
 

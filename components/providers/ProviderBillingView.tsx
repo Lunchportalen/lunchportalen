@@ -3,11 +3,12 @@
 import { useState } from "react";
 
 import BillingContactForm from "@/components/providers/BillingContactForm";
+import { PLAN_LABELS, type ProviderBillingBundle } from "@/lib/providers/providerBillingShared";
 import {
-  INVOICE_STATUS_LABELS,
-  PLAN_LABELS,
-  type ProviderBillingBundle,
-} from "@/lib/providers/providerBillingShared";
+  PROVIDER_BILLING_COPY,
+  buildBillingSummaryCards,
+  invoiceStatusLabel,
+} from "@/lib/providers/providerBillingSurface";
 import { formatDateNO, formatMonthYearLongNO, formatMonthYearShortNO } from "@/lib/date/format";
 
 function formatNok(amount: number) {
@@ -30,11 +31,25 @@ export default function ProviderBillingView({
   const taxAmount = sub ? sub.monthly_amount * sub.tax_rate : 0;
   const totalAmount = sub ? sub.monthly_amount + taxAmount : 0;
 
+  const copy = PROVIDER_BILLING_COPY;
+  const summaryCards = buildBillingSummaryCards({ hasActiveSubscription: Boolean(sub) });
+
   return (
     <div className="ds-provider-billing">
+      <section className="ds-provider-billing-status-grid">
+        {summaryCards.map((card) => (
+          <article key={card.id} className="ds-card ds-provider-billing-status-card">
+            <p className="ds-eyebrow">{card.label}</p>
+            <p className="ds-provider-billing-status-card__value">{card.value}</p>
+            {card.hint ? <p className="ds-provider-reg-meta">{card.hint}</p> : null}
+          </article>
+        ))}
+      </section>
+      <p className="ds-provider-billing-model-note">{copy.commissionNote}</p>
+
       {sub ? (
         <section className="ds-card ds-provider-billing-summary">
-          <p className="ds-eyebrow">Aktiv lisens</p>
+          <p className="ds-eyebrow">{copy.activeAgreementEyebrow}</p>
           <h2 className="ds-h3">{PLAN_LABELS[sub.plan] ?? sub.plan}</h2>
           <dl className="ds-provider-billing-kpis">
             <div>
@@ -57,17 +72,19 @@ export default function ProviderBillingView({
           {canEditContact ? <BillingContactForm providerId={providerId} subscription={sub} /> : null}
         </section>
       ) : (
-        <section className="ds-card">
-          <p className="ds-body">
-            Ingen aktiv SaaS-lisens er registrert ennå. Kontakt Lunchportalen for å aktivere fakturering.
-          </p>
+        <section className="ds-card ds-provider-billing-inactive">
+          <p className="ds-provider-empty__title">{copy.notActivated.title}</p>
+          <p className="ds-body">{copy.notActivated.text}</p>
         </section>
       )}
 
       <section className="ds-section">
-        <h2 className="ds-h3">Fakturahistorikk</h2>
+        <h2 className="ds-h3">{copy.history.title}</h2>
         {bundle.invoices.length === 0 ? (
-          <p className="ds-body">Ingen fakturaer generert ennå.</p>
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">{copy.history.emptyTitle}</p>
+            <p className="ds-provider-empty__text">{copy.history.emptyText}</p>
+          </div>
         ) : (
           <>
             <div className="ds-provider-service-area-list">
@@ -78,7 +95,7 @@ export default function ProviderBillingView({
                     <p className="ds-provider-reg-meta">{inv.invoice_number ?? "Uten nummer"}</p>
                   </div>
                   <p className="ds-provider-billing-amount">{formatNok(inv.amount_total)}</p>
-                  <span className="ds-provider-status-pill">{INVOICE_STATUS_LABELS[inv.status] ?? inv.status}</span>
+                  <span className="ds-provider-status-pill">{invoiceStatusLabel(inv.status)}</span>
                   <button
                     type="button"
                     className="ds-btn ds-btn--secondary"
@@ -93,10 +110,10 @@ export default function ProviderBillingView({
               <table className="ds-provider-reg-table">
                 <thead>
                   <tr>
-                    <th>Periode</th>
-                    <th>Beløp</th>
-                    <th>Status</th>
-                    <th>Forfall</th>
+                    <th>{copy.tableHeaders.period}</th>
+                    <th>{copy.tableHeaders.amount}</th>
+                    <th>{copy.tableHeaders.status}</th>
+                    <th>{copy.tableHeaders.dueDate}</th>
                     <th />
                   </tr>
                 </thead>
@@ -105,7 +122,9 @@ export default function ProviderBillingView({
                     <tr key={inv.id}>
                       <td>{formatMonthYearLongNO(inv.invoice_period)}</td>
                       <td>{formatNok(inv.amount_total)}</td>
-                      <td>{INVOICE_STATUS_LABELS[inv.status] ?? inv.status}</td>
+                      <td>
+                        <span className="ds-provider-status-pill">{invoiceStatusLabel(inv.status)}</span>
+                      </td>
                       <td>{inv.due_date ? formatDateNO(inv.due_date) : "—"}</td>
                       <td>
                         <button
@@ -151,7 +170,7 @@ export default function ProviderBillingView({
               </div>
               <div>
                 <dt>Status</dt>
-                <dd>{INVOICE_STATUS_LABELS[selected.status] ?? selected.status}</dd>
+                <dd>{invoiceStatusLabel(selected.status)}</dd>
               </div>
               {selected.sent_at ? (
                 <div>

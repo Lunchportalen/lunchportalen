@@ -2,20 +2,23 @@
 
 **Status:** Teknisk og sikkerhetsmessig sannhet på oversiktsnivå — detaljer og penetrasjonstest avtales separat.
 
+**Monorepo:** Operativ app (Next.js + Supabase + Sanity, Vercel) og marketing CMS (Umbraco 17, Azure App Service + Azure SQL) deler ett Git-repo. Se [../architecture/monorepo.md](../architecture/monorepo.md).
+
 ## Live nå vs. senere lag
 
 | Tema | Typisk live (RC/produksjon) | Roadmap / utdyping |
 |------|-----------------------------|---------------------|
 | Next.js + Supabase, server-side guards, rollemodell | Ja | — |
-| Tenant-isolasjon på operative data | Ja | Se `docs/security/TENANT_ISOLATION.md` |
+| Tenant-isolasjon på operative data | Ja | Se `docs/security/tenant-isolation.md` |
 | Strukturert logging / `rid` i API-feil | Ja | Utvidet observability som egen leveranse (jf. blueprint K3) |
 | SSO / SAML | Nei (standard) | `docs/enterprise/sso-roadmap.md` |
-| Full SOC2 *attest* som leverandørdokument | Utenfor repo | Matrise i `docs/security/SOC2_CONTROL_MATRIX.md` er *mapping*, ikke attest |
+| Full SOC2 *attest* som leverandørdokument | Utenfor repo | Matrise i `docs/security/soc2-architecture-mapping.md` er *mapping*, ikke attest |
 
 ## Hosting og plattform
-- Next.js App Router (Node.js) og Supabase (Postgres + Auth + Storage).
-- All server-side logikk kjører på backend; klient får kun API-responser med ok/rid-kontrakt.
-- Datasenter følger leverandørens EU/EØS-region der dette er konfigurert.
+- **Next.js app** (`app.lunchportalen.no`): Vercel — App Router, Node.js runtime, `vercel.json` crons.
+- **Operativ data:** Supabase (Postgres + Auth + Storage), EU/EØS der konfigurert.
+- **Marketing CMS** (`lunchportalen.no`): Umbraco 17 on Azure App Service; content DB on Azure SQL (connection string off-repo).
+- All server-side logikk i Next.js kjører på backend; klient får kun API-responser med ok/rid-kontrakt.
 
 ## Autentisering og roller
 - Roller: `superadmin`, `company_admin`, `employee`, `driver`, `kitchen`.

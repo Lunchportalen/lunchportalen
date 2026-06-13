@@ -1,10 +1,11 @@
 import "server-only";
 
 import { buildMenuDayCategories } from "@/app/api/order/window/route";
-import { getMenuForDateAndPlan } from "@/lib/cms/menuDay";
+import { getMenuForDateAndPlan, type MenuDay } from "@/lib/cms/menuDay";
 import { getLunchCategoryStaticItemsByPlanTier } from "@/lib/cms/lunchCategory";
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
+import type { MenuScopeDecision } from "@/lib/menu/providerMenuScope";
 
 export type ResolveOrderDayItemResult =
   | { ok: true; item_key: string | null; item_title_snapshot: string | null }
@@ -18,23 +19,36 @@ function normChoiceKey(key: string): string {
 /**
  * Bestemmer `item_key` + `item_title_snapshot` for day_choices ut fra publisert menuDay.
  * Client `itemTitle` brukes ikke — snapshot er alltid server-side.
+ *
+ * `menuScope` (provider-scope, server truth):
+ * - "scoped": menuDay leses kun for providerens slug.
+ * - "fail-closed": menuDay hentes IKKE (aldri en annen providers meny) —
+ *   statisk lunchCategory-katalog (globalt delt innhold) brukes alene.
+ * - utelatt / "legacy-unscoped": dagens (globale) lesing beholdes.
  */
 export async function resolveOrderDayItemPersist(params: {
   date: string;
   planTier: PlanTier;
   choiceKey: string;
   clientItemKey: string | null;
+  menuScope?: MenuScopeDecision;
 }): Promise<ResolveOrderDayItemResult> {
-  let menus;
-  try {
-    menus = await getMenuForDateAndPlan(params.date, params.planTier);
-  } catch {
-    return {
-      ok: false,
-      status: 503,
-      code: "MENU_LOOKUP_FAILED",
-      message: "Menyinnhold er midlertidig utilgjengelig — prøv igjen.",
-    };
+  let menus: MenuDay[] = [];
+  if (params.menuScope?.mode !== "fail-closed") {
+    try {
+      menus = await getMenuForDateAndPlan(
+        params.date,
+        params.planTier,
+        params.menuScope?.mode === "scoped" ? { providerSlug: params.menuScope.providerSlug } : undefined,
+      );
+    } catch {
+      return {
+        ok: false,
+        status: 503,
+        code: "MENU_LOOKUP_FAILED",
+        message: "Menyinnhold er midlertidig utilgjengelig — prøv igjen.",
+      };
+    }
   }
 
   const staticItemsByCategory = await getLunchCategoryStaticItemsByPlanTier(params.planTier);

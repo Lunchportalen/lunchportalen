@@ -10,8 +10,10 @@ import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { cutoffStatusForDate0805, osloTodayISODate } from "@/lib/date/oslo";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
-import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { batchTransitionAndSyncOrders } from "@/lib/kitchen/batchTransitionRpc";
 import { enqueueBatchPackedOutbox } from "@/lib/kitchen/batchPackedOutbox";
+import { normOperativeSlot } from "@/lib/kitchen/operativeSlot";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 /**
  * POST /api/kitchen/batch/set
@@ -27,8 +29,7 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 function normSlot(v: unknown) {
-  const s = safeStr(v).toLowerCase();
-  return s || "lunch";
+  return normOperativeSlot(v);
 }
 type BatchStatus = "QUEUED" | "PACKED" | "DELIVERED";
 function normStatus(v: unknown): BatchStatus | null {
@@ -213,9 +214,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ts = nowIso();
-    const packed_at = existing.packed_at ?? ts;
 
-    // ? MUST audit (fail-closed) BEFORE write
     await auditWriteMust({
       rid,
       action: "kitchen_batch_set_status",
@@ -238,43 +237,44 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    let updateQ = admin
-      .from("kitchen_batch")
-      .update({ status: "PACKED", packed_at, delivered_at: existing.delivered_at ?? null })
-      .eq("delivery_date", date)
-      .eq("delivery_window", slot)
-      .eq("company_location_id", location_id);
+    const transitioned = await batchTransitionAndSyncOrders(admin, {
+      deliveryDate: date,
+      deliveryWindow: slot,
+      companyLocationId: location_id,
+      targetBatchStatus: "PACKED",
+      actorUserId: userId,
+      mode: "from_queued",
+    });
 
-    updateQ = updateQ.eq("status", "QUEUED");
-
-    const { data: saved, error: upErr } = await updateQ
-      .select("id,delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at")
-      .maybeSingle<KitchenBatchRow>();
-
-    if (upErr) {
-      return jsonErr(rid, "Kunne ikke lagre batch.", 500, { code: "DB_ERROR", detail: {
-        message: upErr?.message ?? null,
-        code: (upErr as any)?.code ?? null,
-      } });
+    if (transitioned.error || !transitioned.data) {
+      const msg = transitioned.error?.message ?? "Kunne ikke lagre batch.";
+      if (msg.includes("PERMISSION_DENIED")) {
+        return jsonErr(rid, "Mangler kjøkken-tilgang hos leverandør.", 403, "FORBIDDEN");
+      }
+      if (msg.includes("INVALID_BATCH_TRANSITION")) {
+        return jsonErr(rid, "Batch kan ikke endres fra nåværende status.", 422, { code: "INVALID_STATUS", detail: { status: prevStatus } });
+      }
+      return jsonErr(rid, "Kunne ikke lagre batch.", 500, { code: "BATCH_TRANSITION_FAILED", detail: { message: msg } });
     }
 
-    if (!saved) {
-      return jsonErr(rid, "Batch-status ble endret av en annen prosess.", 409, "RACE_CONDITION");
-    }
+    const saved = transitioned.data.batch;
 
-    await enqueueBatchPackedOutbox(admin, { rid, date, slot, companyId, locationId: location_id });
+    if (transitioned.data.batch_updated) {
+      await enqueueBatchPackedOutbox(admin, { rid, date, slot, companyId, locationId: location_id });
+    }
 
     return jsonOk(rid, {
         status: "PACKED",
         batch: {
-          id: saved.id ?? null,
+          id: saved.id || null,
           delivery_date: saved.delivery_date,
           delivery_window: saved.delivery_window,
           company_location_id: saved.company_location_id,
           status: "PACKED",
-          packed_at: saved.packed_at ?? null,
+          packed_at: saved.packed_at ?? ts,
           delivered_at: saved.delivered_at ?? null,
         },
+        sync: transitioned.data.sync,
       }, 200);
   } catch (e: any) {
     return jsonErr(rid, safeStr(e?.message ?? e), 500, { code: "UNHANDLED", detail: { at: "kitchen/batch/set" } });

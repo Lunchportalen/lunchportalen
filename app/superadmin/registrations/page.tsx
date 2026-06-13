@@ -8,7 +8,10 @@ import "server-only";
 import Link from "next/link";
 
 import { formatDateTimeNO } from "@/lib/date/format";
-import { loadCompanyRegistrationsInbox } from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
+import {
+  deriveCompanylessRegistrationPresentation,
+  loadCompanyRegistrationsInbox,
+} from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
 import RegistrationDecisionActions from "./RegistrationDecisionActions";
 
 function safeStr(v: unknown) {
@@ -49,7 +52,7 @@ export default async function SuperadminRegistrationsInboxPage() {
   const bundle = await loadCompanyRegistrationsInbox();
 
   return (
-    <main className="lp-select-text mx-auto max-w-6xl px-4 py-8">
+    <div className="lp-select-text mx-auto max-w-6xl px-4 py-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
@@ -101,6 +104,14 @@ export default async function SuperadminRegistrationsInboxPage() {
             <tbody>
               {bundle.items.map((r, idx) => {
                 const st = r.company_status;
+                const companyless = !r.company_id;
+                const pres = companyless
+                  ? deriveCompanylessRegistrationPresentation({
+                      provider_id: r.provider_id,
+                      provider_name: r.provider_name,
+                      source: r.source,
+                    })
+                  : null;
                 const created = r.created_at
                   ? (() => {
                       try {
@@ -111,22 +122,38 @@ export default async function SuperadminRegistrationsInboxPage() {
                     })()
                   : "—";
                 return (
-                  <tr key={r.company_id} className={idx % 2 === 0 ? "bg-white/40" : "bg-white/20"}>
+                  <tr key={r.registration_id} className={idx % 2 === 0 ? "bg-white/40" : "bg-white/20"}>
                     <td className="px-4 py-3">
                       <div className="font-medium">{r.company_name || "—"}</div>
                       <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
-                        Org.nr {r.company_orgnr || "—"} · ID {r.company_id}
+                        {companyless ? (
+                          <>Org.nr {r.company_orgnr || "—"} · {pres!.source_label}</>
+                        ) : (
+                          <>Org.nr {r.company_orgnr || "—"} · ID {r.company_id}</>
+                        )}
                       </div>
                       <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
                         {r.postal_code} {r.city} · {r.address_line}
                       </div>
+                      {companyless ? (
+                        <div className="mt-1 text-xs text-amber-800">{pres!.review_copy}</div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", statusPillClass(st)].join(" ")}
-                      >
-                        {companyStatusLabel(st)}
-                      </span>
+                      {companyless ? (
+                        <div className="space-y-1">
+                          <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                            {pres!.badge_label}
+                          </span>
+                          <div className="text-xs text-[rgb(var(--lp-muted))]">{pres!.provider_label}</div>
+                        </div>
+                      ) : (
+                        <span
+                          className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", statusPillClass(st)].join(" ")}
+                        >
+                          {companyStatusLabel(st)}
+                        </span>
+                      )}
                     </td>
                     <td className="max-w-[220px] px-4 py-3 align-top text-xs leading-snug text-neutral-800">
                       <div className="space-y-1">
@@ -150,21 +177,25 @@ export default async function SuperadminRegistrationsInboxPage() {
                     <td className="px-4 py-3 tabular-nums">{r.employee_count}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-xs">{created}</td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex flex-col items-end gap-2">
-                        <RegistrationDecisionActions agreementId={r.agreement_id ?? r.ledger_pending_agreement_id} />
-                        <Link
-                          href={`/superadmin/registrations/${encodeURIComponent(r.company_id)}`}
-                          className="inline-flex rounded-xl border bg-white px-2 py-1 text-xs font-semibold hover:bg-neutral-50"
-                        >
-                          Registrering →
-                        </Link>
-                        <Link
-                          href={`/superadmin/companies/${encodeURIComponent(r.company_id)}`}
-                          className="inline-flex rounded-xl border bg-white px-2 py-1 text-xs font-semibold hover:bg-neutral-50"
-                        >
-                          Firmaside →
-                        </Link>
-                      </div>
+                      {companyless ? (
+                        <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">Krever manuell vurdering</div>
+                      ) : (
+                        <div className="flex flex-col items-end gap-2">
+                          <RegistrationDecisionActions agreementId={r.agreement_id ?? r.ledger_pending_agreement_id} />
+                          <Link
+                            href={`/superadmin/registrations/${encodeURIComponent(r.company_id!)}`}
+                            className="inline-flex rounded-xl border bg-white px-2 py-1 text-xs font-semibold hover:bg-neutral-50"
+                          >
+                            Registrering →
+                          </Link>
+                          <Link
+                            href={`/superadmin/companies/${encodeURIComponent(r.company_id!)}`}
+                            className="inline-flex rounded-xl border bg-white px-2 py-1 text-xs font-semibold hover:bg-neutral-50"
+                          >
+                            Firmaside →
+                          </Link>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -173,6 +204,6 @@ export default async function SuperadminRegistrationsInboxPage() {
           </table>
         </section>
       )}
-    </main>
+    </div>
   );
 }

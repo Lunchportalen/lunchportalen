@@ -41,23 +41,24 @@ function setupSuperadmin() {
   requireRoleOr403Mock.mockReturnValue(null);
 }
 
-describe("deprecated manual agreement draft flows", () => {
+describe("disabled manual agreement draft flows", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupSuperadmin();
   });
 
-  test("POST /api/superadmin/agreements returns 410 FLOW_DEPRECATED", async () => {
+  test("POST /api/superadmin/agreements returns 410 AGREEMENT_DRAFT_FLOW_DISABLED", async () => {
     const route = await import("@/app/api/superadmin/agreements/route");
     const res = await route.POST(req("http://localhost/api/superadmin/agreements"));
     const body = await json(res);
 
     expect(res.status).toBe(410);
     expect(body.ok).toBe(false);
-    expect(body.error).toBe("FLOW_DEPRECATED");
+    expect(body.error).toBe("AGREEMENT_DRAFT_FLOW_DISABLED");
+    expect(String(body.message ?? "")).toMatch(/deaktivert/i);
   });
 
-  test("POST /api/superadmin/company-registrations/:companyId/create-agreement-draft returns 410 FLOW_DEPRECATED", async () => {
+  test("POST /api/superadmin/company-registrations/:companyId/create-agreement-draft returns 410 AGREEMENT_DRAFT_FLOW_DISABLED", async () => {
     const route = await import("@/app/api/superadmin/company-registrations/[companyId]/create-agreement-draft/route");
     const res = await route.POST(
       req("http://localhost/api/superadmin/company-registrations/test-company-id/create-agreement-draft"),
@@ -67,7 +68,8 @@ describe("deprecated manual agreement draft flows", () => {
 
     expect(res.status).toBe(410);
     expect(body.ok).toBe(false);
-    expect(body.error).toBe("FLOW_DEPRECATED");
+    expect(body.error).toBe("AGREEMENT_DRAFT_FLOW_DISABLED");
+    expect(String(body.message ?? "")).toMatch(/kanoniske godkjenningsflyten/i);
     expect(createAgreementDraftFromRegistrationMock).not.toHaveBeenCalled();
   });
 

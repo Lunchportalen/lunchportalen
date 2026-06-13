@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { SanityClient } from "@sanity/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { MELHUS_PROVIDER_SANITY_ID } from "@/lib/cms/providerSanityConstants";
 import type { Meal } from "@/lib/menu-publish/generateWeekMenu";
 import { fetchMealIdeaBank } from "@/lib/menu-publish/mealIdeaBankQuery";
 import { runMenuWeekRollout, validateRolloutWeekMondayIso } from "@/lib/menu-publish/runMenuWeekRollout";
@@ -86,13 +87,22 @@ function diverseMealsWithNoise(prefix: string): Meal[] {
   }));
 }
 
-function mockSupabaseForTiers(tiers: Array<"BASIS" | "LUXUS" | "ENTERPRISE">): SupabaseClient {
+function mockSupabaseForTiers(
+  tiers: Array<"BASIS" | "LUXUS" | "ENTERPRISE">,
+  probe?: { providerIdFilter?: string },
+): SupabaseClient {
   const admin = {
     from: (table: string) => {
       if (table === "agreements") {
         return {
           select: () => ({
-            eq: () => Promise.resolve({ data: [{ id: "ag1" }], error: null }),
+            // .eq("status","ACTIVE").eq("provider_id", pid) — provider-scoped tier-utledning
+            eq: () => ({
+              eq: (_col: string, providerId: string) => {
+                if (probe) probe.providerIdFilter = providerId;
+                return Promise.resolve({ data: [{ id: "ag1" }], error: null });
+              },
+            }),
           }),
         };
       }
@@ -177,12 +187,14 @@ describe("runMenuWeekRollout", () => {
   it("ingen menuDays: 2 tiers × 5 dager = 10 opprettet, alle publisert + autoFilled", async () => {
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
       sanityRead,
       getSanityWrite: mockWrite,
     });
 
     expect(res.targetWeek).toBe("2026-06-01");
+    expect(res.providerRef).toBe(MELHUS_PROVIDER_SANITY_ID);
     expect(res.tiersProcessed).toEqual(["BASIS", "LUXUS"]);
     expect(res.menuDaysSkipped).toBe(0);
     expect(res.errors).toEqual([]);
@@ -214,6 +226,7 @@ describe("runMenuWeekRollout", () => {
 
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
       sanityRead,
       getSanityWrite: mockWrite,
@@ -245,6 +258,7 @@ describe("runMenuWeekRollout", () => {
 
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
       sanityRead,
       getSanityWrite: mockWrite,
@@ -322,6 +336,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
   it("bruker override og ignorerer N+3-beregning for instant", async () => {
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
       overrideTargetWeekMonday: overrideMonday,
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
       sanityRead,
@@ -340,6 +355,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
   it("uten gyldig override (kun whitespace): samme N+3 som før", async () => {
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
       overrideTargetWeekMonday: "  \t\n",
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
       sanityRead,
@@ -354,6 +370,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     await expect(
       runMenuWeekRollout({
         instant: fixedInstant,
+        sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
         overrideTargetWeekMonday: "2026-05-20",
         supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
         sanityRead,
@@ -366,6 +383,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     await expect(
       runMenuWeekRollout({
         instant: fixedInstant,
+        sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
         overrideTargetWeekMonday: "2026-02-31",
         supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
         sanityRead,
@@ -389,6 +407,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
 
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
       overrideTargetWeekMonday: overrideMonday,
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
       sanityRead,
@@ -426,6 +445,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
 
     const res = await runMenuWeekRollout({
       instant: reproClock,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
       overrideTargetWeekMonday: monday,
       supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS"]),
       sanityRead,
@@ -453,6 +473,195 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
           expect(relaxCalls.length).toBeGreaterThan(0);
         }
       }
+    }
+  });
+});
+
+describe("runMenuWeekRollout provider-scope (P0 multi-provider data-correctness)", () => {
+  const fixedInstant = new Date("2026-05-15T12:00:00.000Z");
+  const expectedDates = ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05"];
+  const PROVIDER_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const PROVIDER_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+
+  /** Sanity-read der eksisterende menuDays KUN returneres for matching providerRef (provider-scoped GROQ). */
+  function mkSanityRead(existingByProvider: Record<string, Array<{ date: string; mealTitle: string }>>) {
+    let bankCall = 0;
+    const fetch = vi.fn(async (q: string, p?: Record<string, unknown>) => {
+      if (q.includes('_type == "mealIdea"')) {
+        bankCall += 1;
+        return diverseMealsFixture(`ps${bankCall}`);
+      }
+      if (q.includes("{ date, mealTitle }")) {
+        // Existence-query MÅ være provider-scoped — aldri global date/tier/category-matching.
+        expect(q).toContain("provider._ref == $providerRef");
+        return existingByProvider[String(p?.providerRef ?? "")] ?? [];
+      }
+      if (q.includes("{ mealTitle, description }")) {
+        // Cooldown-query MÅ være provider-scoped.
+        expect(q).toContain("provider._ref == $providerRef");
+        return [];
+      }
+      return [];
+    });
+    return { fetch } as unknown as SanityClient;
+  }
+
+  function mkWrite(createdDocs: unknown[]): () => SanityClient {
+    return () =>
+      ({
+        transaction: () => {
+          const chain = {
+            createOrReplace: vi.fn((doc: unknown) => {
+              createdDocs.push(doc);
+              return chain;
+            }),
+            patch: vi.fn(() => chain),
+            commit: vi.fn(async () => {}),
+          };
+          return chain;
+        },
+      }) as unknown as SanityClient;
+  }
+
+  it("provider A og B oppretter hver sine menuDays: egne provider._ref og egne doc-ids for samme dato/tier/kategori", async () => {
+    const docsA: unknown[] = [];
+    const docsB: unknown[] = [];
+
+    const resA = await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: PROVIDER_A,
+      providerSlug: "provider-a",
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+      sanityRead: mkSanityRead({}),
+      getSanityWrite: mkWrite(docsA),
+    });
+    const resB = await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: PROVIDER_B,
+      providerSlug: "provider-b",
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+      sanityRead: mkSanityRead({}),
+      getSanityWrite: mkWrite(docsB),
+    });
+
+    expect(resA.providerRef).toBe(PROVIDER_A);
+    expect(resA.providerSlug).toBe("provider-a");
+    expect(resB.providerRef).toBe(PROVIDER_B);
+    expect(resA.menuDaysCreated).toBe(5);
+    expect(resB.menuDaysCreated).toBe(5);
+
+    for (const doc of docsA as Array<Record<string, unknown>>) {
+      expect((doc.provider as { _ref?: string })?._ref).toBe(PROVIDER_A);
+      expect(String(doc._id)).toBe(`menuDay-${PROVIDER_A}-${doc.date}-BASIS-varmrett`);
+    }
+    for (const doc of docsB as Array<Record<string, unknown>>) {
+      expect((doc.provider as { _ref?: string })?._ref).toBe(PROVIDER_B);
+      expect(String(doc._id)).toBe(`menuDay-${PROVIDER_B}-${doc.date}-BASIS-varmrett`);
+    }
+
+    // Samme dato/tier/kategori kan eksistere for A og B separat — ingen id-kollisjon.
+    const idsA = new Set((docsA as Array<{ _id: string }>).map((d) => d._id));
+    for (const doc of docsB as Array<{ _id: string }>) {
+      expect(idsA.has(doc._id)).toBe(false);
+    }
+  });
+
+  it("provider A sine eksisterende docs blokkerer ikke provider B (existence er provider-scoped)", async () => {
+    const existingForA = expectedDates.map((date) => ({ date, mealTitle: "Existing A" }));
+
+    const docsB: unknown[] = [];
+    const resB = await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: PROVIDER_B,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+      sanityRead: mkSanityRead({ [PROVIDER_A]: existingForA }),
+      getSanityWrite: mkWrite(docsB),
+    });
+
+    expect(resB.menuDaysCreated).toBe(5);
+    expect(resB.menuDaysSkipped).toBe(0);
+
+    // …og A ser sine egne (idempotent for A): 0 opprettet, 5 hoppet over.
+    const docsA: unknown[] = [];
+    const resA = await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: PROVIDER_A,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+      sanityRead: mkSanityRead({ [PROVIDER_A]: existingForA }),
+      getSanityWrite: mkWrite(docsA),
+    });
+    expect(resA.menuDaysCreated).toBe(0);
+    expect(resA.menuDaysSkipped).toBe(5);
+    expect(docsA).toHaveLength(0);
+  });
+
+  it("tier-utledning er provider-scoped: agreements filtreres på provider_id", async () => {
+    const probe: { providerIdFilter?: string } = {};
+    const docs: unknown[] = [];
+
+    await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: PROVIDER_A,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS"], probe),
+      sanityRead: mkSanityRead({}),
+      getSanityWrite: mkWrite(docs),
+    });
+
+    expect(probe.providerIdFilter).toBe(PROVIDER_A);
+  });
+
+  it("manglende provider-scope → fail-closed (kaster), aldri Melhus-fallback", async () => {
+    const docs: unknown[] = [];
+
+    await expect(
+      runMenuWeekRollout({
+        instant: fixedInstant,
+        sanityProviderRef: "   ",
+        supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+        sanityRead: mkSanityRead({}),
+        getSanityWrite: mkWrite(docs),
+      }),
+    ).rejects.toThrow(/sanityProviderRef er påkrevd/);
+
+    expect(docs).toHaveLength(0);
+  });
+
+  it("ingen skjult Melhus-fallback i core: provider B-docs har aldri Melhus-ref", async () => {
+    const docsB: unknown[] = [];
+
+    await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: PROVIDER_B,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS", "ENTERPRISE"]),
+      sanityRead: mkSanityRead({}),
+      getSanityWrite: mkWrite(docsB),
+    });
+
+    expect(docsB.length).toBeGreaterThan(0);
+    for (const doc of docsB as Array<Record<string, unknown>>) {
+      expect((doc.provider as { _ref?: string })?._ref).not.toBe(MELHUS_PROVIDER_SANITY_ID);
+      expect(String(doc._id)).not.toBe(`menuDay-${doc.date}-${doc.planTier}-varmrett`);
+    }
+  });
+
+  it("eksplisitt Melhus-flow fungerer fortsatt: Melhus-ref + legacy doc-id uten provider-segment", async () => {
+    const docs: unknown[] = [];
+
+    const res = await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
+      providerSlug: "melhus-catering",
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS"]),
+      sanityRead: mkSanityRead({}),
+      getSanityWrite: mkWrite(docs),
+    });
+
+    expect(res.providerRef).toBe(MELHUS_PROVIDER_SANITY_ID);
+    expect(res.menuDaysCreated).toBe(5);
+    for (const doc of docs as Array<Record<string, unknown>>) {
+      expect((doc.provider as { _ref?: string })?._ref).toBe(MELHUS_PROVIDER_SANITY_ID);
+      // Kontinuitet: Melhus beholder historisk id-skjema (idempotent mot eksisterende docs).
+      expect(String(doc._id)).toBe(`menuDay-${doc.date}-BASIS-varmrett`);
     }
   });
 });

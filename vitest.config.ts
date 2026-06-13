@@ -1,7 +1,7 @@
 // vitest.config.ts
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 import dotenv from "dotenv";
-import tsconfigPaths from "vite-tsconfig-paths";
 import path from "node:path";
 
 // Normalize test environment so local and CI behave the same (isTestEnv(), testDefaults, etc.)
@@ -47,14 +47,9 @@ process.on("uncaughtException", (err) => {
 });
 
 export default defineConfig({
-  esbuild: {
-    jsx: "automatic",
-  },
-  plugins: [
-    // ✅ gjør at @/… resolves via tsconfig.json paths (samme som Next)
-    tsconfigPaths(),
-  ],
+  plugins: [react()],
   resolve: {
+    tsconfigPaths: true,
     alias: {
       // ✅ FIKS: Vitest kjenner ikke "server-only" (Next.js helper)
       // Mapper til tom mock slik at tester ikke krasjer

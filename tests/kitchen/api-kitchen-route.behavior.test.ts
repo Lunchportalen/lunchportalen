@@ -31,6 +31,9 @@ function expectKitchenRowsSingleDeliveryBucket(
 const KITCHEN_ROW_CONTRACT_KEYS = [
   "department",
   "employeeName",
+  "employee_allergen_codes",
+  "employee_allergen_free_text",
+  "employee_allergen_profile_status",
   "location",
   "menu_allergens",
   "menu_description",
@@ -62,6 +65,9 @@ function kitchenRowParityPayload(row: any) {
     menu_title: row.menu_title ?? null,
     menu_description: row.menu_description ?? null,
     menu_allergens: row.menu_allergens ?? [],
+    employee_allergen_codes: row.employee_allergen_codes ?? [],
+    employee_allergen_free_text: row.employee_allergen_free_text ?? null,
+    employee_allergen_profile_status: row.employee_allergen_profile_status ?? "unknown",
   };
 }
 
@@ -151,6 +157,7 @@ function makeAdminMock(seed: {
   companies?: any[];
   company_locations?: any[];
   profiles?: any[];
+  lp_user_allergens?: any[];
 }) {
   const db = {
     orders: seed.orders ?? [],
@@ -159,6 +166,7 @@ function makeAdminMock(seed: {
     companies: seed.companies ?? [],
     company_locations: seed.company_locations ?? [],
     profiles: seed.profiles ?? [],
+    lp_user_allergens: seed.lp_user_allergens ?? [],
   };
 
   return {
@@ -256,7 +264,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
         {
@@ -266,7 +274,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
         {
@@ -276,7 +284,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
           status: "CANCELED",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
         {
@@ -286,7 +294,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
           status: "QUEUED",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
       ],
@@ -309,7 +317,7 @@ describe("api/kitchen – production visibility", () => {
     expect(companies.size).toBe(1);
     expectKitchenRowsCanonicallySorted(rows0);
     expectKitchenRowsSingleDeliveryBucket(rows0, {
-      slot: "lunch",
+      slot: "default",
       company: "Ukjent firma",
       location: "Lokasjon",
     });
@@ -330,7 +338,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
         },
         {
           id: "00000002-0002-4002-8002-000000000002",
@@ -339,7 +347,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: null,
           date: "2026-02-03",
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
         },
         {
           id: "00000003-0003-4003-8003-000000000003",
@@ -348,7 +356,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
         },
       ],
     });
@@ -382,7 +390,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
           date: "2026-02-03",
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
       ],
@@ -429,7 +437,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID,
           date: K_DATE,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
       ],
@@ -467,7 +475,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID,
           date: K_DATE,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
         {
@@ -477,7 +485,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID,
           date: K_DATE,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
       ],
@@ -517,7 +525,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -527,7 +535,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -570,7 +578,7 @@ describe("api/kitchen – production visibility", () => {
     const liveRows0 = liveBody?.data?.rows ?? [];
     expectKitchenSummaryInvariantsFromRows(liveRows0, liveBody?.data?.summary);
     expectKitchenRowsCanonicallySorted(liveRows0);
-    expectKitchenRowsSingleDeliveryBucket(liveRows0, { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(liveRows0, { slot: "default", company: "TestCo", location: "Loc1" });
     expect(liveRows0.map((r: any) => r.orderId)).toEqual([K_O1, K_O2]);
     for (const r of liveRows0) expectKitchenRowFieldContract(r);
     const liveTitle = (liveBody?.data?.rows ?? []).find((r: any) => r.orderId === K_O1)?.menu_title;
@@ -608,7 +616,7 @@ describe("api/kitchen – production visibility", () => {
     const frRows0 = frBody?.data?.rows ?? [];
     expectKitchenSummaryInvariantsFromRows(frRows0, frBody?.data?.summary);
     expectKitchenRowsCanonicallySorted(frBody?.data?.rows ?? []);
-    expectKitchenRowsSingleDeliveryBucket(frRows0, { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(frRows0, { slot: "default", company: "TestCo", location: "Loc1" });
     const frTitle = (frBody?.data?.rows ?? []).find((r: any) => r.orderId === K_O1)?.menu_title;
     expect(frTitle).toBe(liveTitle);
     expectKitchenFrozenRowsFieldParityWithLive(liveRows0, frRows0);
@@ -626,7 +634,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID,
           date: sat,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
       ],
@@ -691,7 +699,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -701,7 +709,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -724,7 +732,7 @@ describe("api/kitchen – production visibility", () => {
     const rowsLp = body?.data?.rows ?? [];
     expectKitchenSummaryInvariantsFromRows(rowsLp, body?.data?.summary);
     expectKitchenRowsCanonicallySorted(rowsLp);
-    expectKitchenRowsSingleDeliveryBucket(rowsLp, { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(rowsLp, { slot: "default", company: "TestCo", location: "Loc1" });
     expect(rowsLp.map((r: any) => r.orderId)).toEqual([K_O1, K_O2]);
     for (const r of rowsLp) expectKitchenRowFieldContract(r);
   });
@@ -738,7 +746,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -748,7 +756,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -776,7 +784,7 @@ describe("api/kitchen – production visibility", () => {
     const rowsWd = body?.data?.rows ?? [];
     expectKitchenSummaryInvariantsFromRows(rowsWd, body?.data?.summary);
     expectKitchenRowsCanonicallySorted(rowsWd);
-    expectKitchenRowsSingleDeliveryBucket(rowsWd, { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(rowsWd, { slot: "default", company: "TestCo", location: "Loc1" });
     expect(rowsWd.map((r: any) => r.orderId)).toEqual([K_O1, K_O2]);
     for (const r of rowsWd) expectKitchenRowFieldContract(r);
   });
@@ -790,7 +798,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -800,7 +808,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -844,7 +852,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -854,7 +862,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -897,7 +905,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -907,7 +915,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -972,7 +980,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -982,7 +990,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -1076,7 +1084,7 @@ describe("api/kitchen – production visibility", () => {
     const wideIds = new Set((wide?.data?.rows ?? []).map((r: any) => r.orderId));
     expect(wideIds.has(K_O1) && wideIds.has(K_O2)).toBe(true);
     expectKitchenRowsCanonicallySorted(wide?.data?.rows ?? []);
-    expectKitchenRowsSingleDeliveryBucket(wide?.data?.rows ?? [], { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(wide?.data?.rows ?? [], { slot: "default", company: "TestCo", location: "Loc1" });
     expect((wide?.data?.rows ?? []).map((r: any) => r.orderId)).toEqual(twoRowLiveOrder);
     for (const r of wide?.data?.rows ?? []) expectKitchenRowFieldContract(r);
     expectKitchenFrozenRowsFieldParityWithLive(liveRef?.data?.rows ?? [], wide?.data?.rows ?? []);
@@ -1091,7 +1099,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
       {
@@ -1101,7 +1109,7 @@ describe("api/kitchen – production visibility", () => {
         location_id: K_LID,
         date: K_DATE,
         status: "ACTIVE",
-        slot: "lunch",
+        slot: "default",
         note: null,
       },
     ];
@@ -1161,7 +1169,7 @@ describe("api/kitchen – production visibility", () => {
     const matRows = body?.data?.rows ?? [];
     expectKitchenSummaryInvariantsFromRows(matRows, body?.data?.summary);
     expectKitchenRowsCanonicallySorted(matRows);
-    expectKitchenRowsSingleDeliveryBucket(matRows, { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(matRows, { slot: "default", company: "TestCo", location: "Loc1" });
     for (const r of matRows) expectKitchenRowFieldContract(r);
   });
 
@@ -1184,7 +1192,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID,
           date: K_DATE,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
         {
@@ -1194,7 +1202,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID_OTHER,
           date: K_DATE,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: "fremmed",
         },
       ],
@@ -1223,7 +1231,7 @@ describe("api/kitchen – production visibility", () => {
     expect((body?.data?.rows ?? []).length).toBe(1);
     const tenantOnlyRows = body?.data?.rows ?? [];
     expectKitchenRowsCanonicallySorted(tenantOnlyRows);
-    expectKitchenRowsSingleDeliveryBucket(tenantOnlyRows, { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(tenantOnlyRows, { slot: "default", company: "TestCo", location: "Loc1" });
     expect(tenantOnlyRows.map((r: any) => r.orderId)).toEqual([K_O1]);
     for (const r of tenantOnlyRows) expectKitchenRowFieldContract(r);
   });
@@ -1247,7 +1255,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID,
           date: K_DATE,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
         {
@@ -1257,7 +1265,7 @@ describe("api/kitchen – production visibility", () => {
           location_id: K_LID_OTHER,
           date: K_DATE,
           status: "ACTIVE",
-          slot: "lunch",
+          slot: "default",
           note: null,
         },
       ],
@@ -1288,7 +1296,77 @@ describe("api/kitchen – production visibility", () => {
     const snRows = body?.data?.rows ?? [];
     expectKitchenSummaryInvariantsFromRows(snRows, body?.data?.summary);
     expectKitchenRowsCanonicallySorted(snRows);
-    expectKitchenRowsSingleDeliveryBucket(snRows, { slot: "lunch", company: "TestCo", location: "Loc1" });
+    expectKitchenRowsSingleDeliveryBucket(snRows, { slot: "default", company: "TestCo", location: "Loc1" });
     for (const r of snRows) expectKitchenRowFieldContract(r);
+  });
+
+  test("employee allergen profile_status: has_data, declared_empty, unknown from lp_user_allergens join", async () => {
+    adminDb = makeAdminMock({
+      ...kSupport,
+      orders: [
+        {
+          id: K_O1,
+          user_id: K_U1,
+          company_id: K_CID,
+          location_id: K_LID,
+          date: K_DATE,
+          status: "ACTIVE",
+          slot: "default",
+          note: null,
+        },
+        {
+          id: K_O2,
+          user_id: K_U2,
+          company_id: K_CID,
+          location_id: K_LID,
+          date: K_DATE,
+          status: "ACTIVE",
+          slot: "default",
+          note: null,
+        },
+      ],
+      lp_user_allergens: [
+        { user_id: K_U1, codes: ["gluten", "milk"], free_text: "test-X" },
+        { user_id: K_U2, codes: [], free_text: "" },
+      ],
+    });
+
+    const res = await kitchenGET(mkReq(`http://localhost/api/kitchen?date=${K_DATE}`, { method: "GET" }));
+    expect(res.status).toBe(200);
+    const body = await readJson(res);
+    const r1 = (body?.data?.rows ?? []).find((r: any) => r.orderId === K_O1);
+    const r2 = (body?.data?.rows ?? []).find((r: any) => r.orderId === K_O2);
+    expect(r1?.employee_allergen_profile_status).toBe("has_data");
+    expect(r1?.employee_allergen_codes).toEqual(["gluten", "milk"]);
+    expect(r1?.employee_allergen_free_text).toBe("test-X");
+    expect(r2?.employee_allergen_profile_status).toBe("declared_empty");
+    expect(r2?.employee_allergen_codes).toEqual([]);
+    expect(r2?.employee_allergen_free_text).toBe("");
+  });
+
+  test("employee allergen profile_status unknown when no lp_user_allergens row", async () => {
+    adminDb = makeAdminMock({
+      ...kSupport,
+      orders: [
+        {
+          id: K_O1,
+          user_id: K_U1,
+          company_id: K_CID,
+          location_id: K_LID,
+          date: K_DATE,
+          status: "ACTIVE",
+          slot: "default",
+          note: null,
+        },
+      ],
+      lp_user_allergens: [],
+    });
+
+    const res = await kitchenGET(mkReq(`http://localhost/api/kitchen?date=${K_DATE}`, { method: "GET" }));
+    const body = await readJson(res);
+    const row = (body?.data?.rows ?? [])[0];
+    expect(row?.employee_allergen_profile_status).toBe("unknown");
+    expect(row?.employee_allergen_codes).toEqual([]);
+    expect(row?.employee_allergen_free_text).toBeNull();
   });
 });

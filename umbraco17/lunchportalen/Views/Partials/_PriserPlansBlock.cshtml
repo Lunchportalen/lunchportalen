@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
 
@@ -96,7 +96,7 @@
                     var priceUnit     = block.Content.Value<string>("priceUnit")    ?? "";
                     var priceMonthEst = block.Content.Value<string>("billingInfo")  ?? "";
                     var ctaText       = block.Content.Value<string>("ctaText")      ?? "Kom i gang";
-                    var ctaUrl        = block.Content.Value<string>("ctaUrl")       ?? "/kom-i-gang/";
+                    var ctaUrl        = AppUrls.ResolveLeadCapture("priser-plan");
                     var featured      = block.Content.Value<bool>("featured");
                     var featuresRaw   = block.Content.Value<string>("features")     ?? "";
                     var featureList   = featuresRaw.Split('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
@@ -176,7 +176,7 @@
                                 <span class="pr-plan__badge-save">Spar 17%</span>
                             </div>
                         </div>
-                        <a href="@plan.CtaUrl" class="pr-plan__cta @(plan.Featured ? "pr-plan__cta--featured" : "")">
+                        <a href="@AppUrls.ResolveLeadCapture("priser-plan-default")" class="pr-plan__cta @(plan.Featured ? "pr-plan__cta--featured" : "")">
                             @plan.CtaText
                         </a>
                         <ul class="pr-plan__features">

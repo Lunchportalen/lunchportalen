@@ -1,12 +1,14 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using Umbraco.Extensions
 @{
-    var heading            = Model.Value<string>("heading");
-    var text               = Model.Value<string>("text");
-    var ctaLabel           = Model.Value<string>("ctaLabel");
-    var ctaUrl             = Model.Value<string>("ctaUrl");
-    var ctaSecondaryLabel  = Model.Value<string>("ctaSecondaryLabel");
-    var ctaSecondaryUrl    = Model.Value<string>("ctaSecondaryUrl");
+    var heading            = Model?.Value<string>("heading")
+        ?? "Klar til å komme i gang på plattformen?";
+    var text               = Model?.Value<string>("text")
+        ?? "Book demo som bedrift — eller som caterer. Vi viser hvordan Lunchportalen kobler dere i praksis.";
+    var ctaLabel           = Model?.Value<string>("ctaLabel") ?? "Book demo som bedrift";
+    var ctaUrl             = AppUrls.Demo("forside-kunde");
+    var ctaSecondaryLabel  = Model?.Value<string>("ctaSecondaryLabel") ?? "Book demo for caterer";
+    var ctaSecondaryUrl    = AppUrls.Demo("forside-caterer");
 }
 <section class="lp-cta-band ds-fade-up">
     <div class="lp-cta-band__inner">
@@ -19,11 +21,11 @@
             <p class="lp-cta-band__text">@text</p>
         }
         <div class="lp-cta-band__actions">
-            @if (!string.IsNullOrWhiteSpace(ctaLabel) && !string.IsNullOrWhiteSpace(ctaUrl))
+            @if (!string.IsNullOrWhiteSpace(ctaLabel))
             {
                 <a href="@ctaUrl" class="ds-btn ds-btn--primary">@ctaLabel</a>
             }
-            @if (!string.IsNullOrWhiteSpace(ctaSecondaryLabel) && !string.IsNullOrWhiteSpace(ctaSecondaryUrl))
+            @if (!string.IsNullOrWhiteSpace(ctaSecondaryLabel))
             {
                 <a href="@ctaSecondaryUrl" class="ds-btn ds-btn--outline ds-btn--outline-light">@ctaSecondaryLabel</a>
             }

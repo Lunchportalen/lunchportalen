@@ -1,10 +1,59 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.PublishedContent
+
 @{
-    var eyebrow = Model.Value<string>("eyebrow");
-    var heading = Model.Value<string>("heading");
-    var items   = Model.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("items");
+    var preset  = ViewData["ValuePropsPreset"] as string ?? "";
+    var eyebrow = Model?.Value<string>("eyebrow");
+    var heading = Model?.Value<string>("heading");
+    var items   = Model?.Value<Umbraco.Cms.Core.Models.Blocks.BlockListModel>("items");
+
+    if (string.IsNullOrWhiteSpace(eyebrow))
+    {
+        eyebrow = preset switch
+        {
+            "platform" => "Hva vi er",
+            "customer" => "For kundefirma",
+            "caterer"  => "For caterere",
+            _          => null
+        };
+    }
+
+    if (string.IsNullOrWhiteSpace(heading))
+    {
+        heading = preset switch
+        {
+            "platform" => "Vi er ikke lunsjleverandør. Vi er plattformen som organiserer firmalunsj.",
+            "customer" => "Finn firmalunsj via caterer nær dere",
+            "caterer"  => "Drift caterer-virksomheten på Lunchportalen",
+            _          => null
+        };
+    }
+
+    var defaultItems = preset switch
+    {
+        "platform" => new (string Title, string Text)[]
+        {
+            ("Administrasjon", "Daglige lister og manuell oppfølging erstattes av ett system — automatisk og sporbar."),
+            ("Kostnader", "Bedrifter betaler kun for det som faktisk bestilles og spises. Caterere får forutsigbar drift."),
+            ("Ansattes frihet", "Ansatte velger og avbestiller selv. Caterere leverer etter avtale — plattformen holder orden.")
+        },
+        "customer" => new (string Title, string Text)[]
+        {
+            ("Caterer i ditt område", "Vi kobler dere med caterere som dekker deres lokasjon — uten at dere må jage leverandører."),
+            ("Bestilling uten styr", "Ansatte bestiller selv innen frist. Dere ser oversikt og kostnader samlet."),
+            ("Forutsigbar kostnad", "Betaler kun for det som faktisk spises — mindre svinn, mindre administrasjon.")
+        },
+        "caterer" => new (string Title, string Text)[]
+        {
+            ("Egen kundebase", "Dine bedriftskunder, din meny og din produksjon — på én plattform."),
+            ("Drift uten Excel", "Cutoff, kjøkkenliste og leveringsplan er systemstyrt og deterministisk."),
+            ("Skalerbar SaaS", "Lunchportalen leverer registrering, bestilling og rapportering — dere leverer maten.")
+        },
+        _ => Array.Empty<(string Title, string Text)>()
+    };
+
+    var hasItems = items != null && items.Any();
 }
 <section class="lp-value-props ds-fade-up">
     <div class="lp-value-props__inner">
@@ -16,10 +65,10 @@
         {
             <h2 class="lp-value-props__heading">@heading</h2>
         }
-        @if (items != null && items.Any())
+        @if (hasItems)
         {
             <div class="lp-value-props__grid">
-                @foreach (var item in items)
+                @foreach (var item in items!)
                 {
                     var title = item.Content.Value<string>("title");
                     var text  = item.Content.Value<string>("text");
@@ -36,6 +85,18 @@
                         {
                             <p class="lp-value-prop-item__text">@text</p>
                         }
+                    </div>
+                }
+            </div>
+        }
+        else if (defaultItems.Length > 0)
+        {
+            <div class="lp-value-props__grid">
+                @foreach (var item in defaultItems)
+                {
+                    <div class="lp-value-prop-item">
+                        <h3 class="lp-value-prop-item__title">@item.Title</h3>
+                        <p class="lp-value-prop-item__text">@item.Text</p>
                     </div>
                 }
             </div>

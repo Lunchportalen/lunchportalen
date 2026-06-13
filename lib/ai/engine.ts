@@ -1,8 +1,6 @@
 import "server-only";
 
-import { adjustScore } from "@/lib/ai/adaptiveScoring";
 import { analyzeCro } from "@/lib/ai/croAnalyzer";
-import { loadPatternWeights } from "@/lib/ai/learning";
 import { analyzeSeo } from "@/lib/ai/seoAnalyzer";
 import type { AiAnalysisEngineResult, AiEditorPanelPrep, AiSuggestionItem, CMSContentInput } from "@/lib/ai/types";
 
@@ -80,8 +78,7 @@ function buildEditorPrep(score: number, suggestions: AiSuggestionItem[]): AiEdit
 }
 
 /**
- * SEO + CRO analyzers + bounded adaptive scoring from experiment feedback.
- * Does not persist or mutate CMS; admin applies changes manually.
+ * SEO + CRO analyzers (deterministic blend). Does not persist or mutate CMS; admin applies changes manually.
  */
 export async function runAIAnalysis(content: unknown): Promise<AiAnalysisEngineResult> {
   const normalized = normalizeContentInput(content);
@@ -93,26 +90,16 @@ export async function runAIAnalysis(content: unknown): Promise<AiAnalysisEngineR
     Math.min(100, Math.round(seo.score * 0.52 + cro.score * 0.48)),
   );
 
-  const patternWeights = await loadPatternWeights();
-  const { adjustedScore, adjustments } = adjustScore(baseScore, normalized, patternWeights);
-
-  const learnedInsights = adjustments.map((a) => ({
-    patternKey: a.patternKey,
-    reason: a.reason,
-    basedOn: a.basedOn,
-    scoreDelta: Math.round(a.delta * 100) / 100,
-  }));
-
   const suggestions = buildSuggestions(seo, cro);
-  const editorPrep = buildEditorPrep(adjustedScore, suggestions);
+  const editorPrep = buildEditorPrep(baseScore, suggestions);
 
   return {
-    score: adjustedScore,
+    score: baseScore,
     baseScore,
     seo,
     cro,
     suggestions,
     editorPrep,
-    learnedInsights,
+    learnedInsights: [],
   };
 }

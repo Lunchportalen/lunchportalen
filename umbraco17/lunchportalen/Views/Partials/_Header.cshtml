@@ -1,5 +1,6 @@
-﻿@using Umbraco.Extensions
+@using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
+@using Umbraco.Cms.Core.Models.PublishedContent
 @using Umbraco.Cms.Web.Common
 @inject UmbracoHelper UmbracoHelper
 
@@ -11,8 +12,17 @@
         .FirstOrDefault(x => x.ContentType.Alias == "siteSettings");
 
     var ctaLabel = siteSettings?.Value<string>("ctaTekst") ?? "Kom i gang";
-    var ctaUrl = siteSettings?.Value<string>("ctaLenke") ?? "/kom-i-gang/";
-    var orderUrl = "/login";
+    var ctaUrl = AppUrls.ResolveLeadCapture("header-cta");
+    var orderUrl = AppUrls.Login;
+
+    var headerLogo = siteSettings?.Value<MediaWithCrops>("headerLogo");
+    IPublishedContent? logoMedia = headerLogo?.Content;
+    var logoUrl = logoMedia?.Url();
+    var logoAlt = siteSettings?.Value<string>("logoAltTekst");
+    if (string.IsNullOrWhiteSpace(logoAlt))
+    {
+        logoAlt = logoMedia?.Name ?? "Lunchportalen";
+    }
 
     bool IsActive(string url)
     {
@@ -34,14 +44,17 @@
 <header class="lp-header" id="lp-header" role="banner">
     <div class="lp-header__inner">
 
-        <a class="lp-header__logo" href="/" aria-label="Lunchportalen – til forsiden">
-            <img src="/media/zs5pbb1n/logo-lunchportalen-uten-bakgrunn.png"
-                 alt="Lunchportalen"
-                 class="lp-logo-img"
-                 width="180"
-                 height="40"
-                 loading="eager"
-                 decoding="async" />
+        <a class="lp-header__logo" href="/" aria-label="@logoAlt – til forsiden">
+            @if (!string.IsNullOrWhiteSpace(logoUrl))
+            {
+                <img src="@logoUrl"
+                     alt="@logoAlt"
+                     class="lp-logo-img"
+                     width="180"
+                     height="40"
+                     loading="eager"
+                     decoding="async" />
+            }
         </a>
 
         <nav class="lp-nav" aria-label="Hovednavigasjon">

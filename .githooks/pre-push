@@ -3,7 +3,15 @@ import { execSync } from "node:child_process";
 
 try {
   console.log("Running preflight...");
-  execSync("npm run preflight", { stdio: "inherit" });
+  // Match CI: uigx integration is opt-in (PREFLIGHT_WITH_UIGX_INTEGRATION=1), not .env.local default.
+  const withUigx = process.env.PREFLIGHT_WITH_UIGX_INTEGRATION === "1";
+  execSync("npm run preflight", {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      RUN_SUPABASE_INTEGRATION_TESTS: withUigx ? process.env.RUN_SUPABASE_INTEGRATION_TESTS ?? "1" : "0",
+    },
+  });
 } catch (e) {
   console.error("❌ Preflight failed. Push aborted.");
   process.exit(1);

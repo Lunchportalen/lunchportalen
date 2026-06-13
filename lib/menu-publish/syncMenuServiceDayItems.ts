@@ -99,9 +99,16 @@ async function fetchLunchCategoriesForTier(tier: PlanTier): Promise<LunchCatRow[
   return Array.isArray(rows) ? rows : [];
 }
 
-async function fetchVarmrettMenuProjection(dateISO: string, tier: PlanTier): Promise<VarmrettMenuProjection> {
+async function fetchVarmrettMenuProjection(
+  dateISO: string,
+  tier: PlanTier,
+  providerRef: string,
+): Promise<VarmrettMenuProjection> {
+  // provider._ref-filter: varmrett-snapshot må komme fra samme provider som
+  // menuDay-publiseringen — aldri en annen providers innhold for samme dato/tier.
   const q = `*[
     _type == "menuDay" &&
+    provider._ref == $providerRef &&
     date == $date &&
     planTier == $tier &&
     category == "varmrett" &&
@@ -110,7 +117,7 @@ async function fetchVarmrettMenuProjection(dateISO: string, tier: PlanTier): Pro
     mealTitle,
     "meal": mealRef->{ title, description, allergens }
   }`;
-  return sanityServer.fetch<VarmrettMenuProjection>(q, { date: dateISO, tier });
+  return sanityServer.fetch<VarmrettMenuProjection>(q, { date: dateISO, tier, providerRef });
 }
 
 /**
@@ -125,9 +132,16 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
     serviceDate: string;
     /** Alle lokasjoner som nettopp fikk menu_service_days UPSERT (samme som publish-sync). */
     locationIds: string[];
+    /** Supabase providers.id (== Sanity provider `_id`). Fail-closed: ingen MSDI uten provider-scope. */
+    providerId: string;
   },
 ): Promise<MenuServiceDayItemsSyncStats> {
   const { serviceDate, locationIds } = params;
+  const providerId = safeTrim(params.providerId);
+  if (!providerId) {
+    return { msdiRowsUpserted: 0, msdiLocationsSkippedNoTier: 0 };
+  }
+
   const uniqueLocs = [...new Set(locationIds.map((id) => safeTrim(id)).filter(Boolean))];
   if (uniqueLocs.length === 0) {
     return { msdiRowsUpserted: 0, msdiLocationsSkippedNoTier: 0 };
@@ -156,6 +170,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
     .from("menu_service_days")
     .select("id, location_id")
     .eq("service_date", serviceDate)
+    .eq("provider_id", providerId)
     .in("location_id", uniqueLocs);
 
   if (msdErr) {
@@ -247,6 +262,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
       .eq("company_id", companyId)
       .eq("location_id", locationId)
       .eq("status", "ACTIVE")
+      .eq("provider_id", providerId)
       .order("starts_at", { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
@@ -281,7 +297,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
       if (categories.length === 0) {
         throw new Error(`MSDI_SYNC_EMPTY_SANITY_LUNCH_CATEGORIES:${tier}`);
       }
-      const varmrett = await fetchVarmrettMenuProjection(serviceDate, tier);
+      const varmrett = await fetchVarmrettMenuProjection(serviceDate, tier, providerId);
       cached = { categories, varmrett };
       tierCache.set(tier, cached);
     }

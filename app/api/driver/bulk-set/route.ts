@@ -10,6 +10,9 @@ import { osloTodayISODate } from "@/lib/date/oslo";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { auditWriteMust } from "@/lib/audit/auditWrite";
+import { batchTransitionAndSyncOrders } from "@/lib/kitchen/batchTransitionRpc";
+import { normOperativeSlot } from "@/lib/kitchen/operativeSlot";
 import { loadOperativeKitchenOrders, normKitchenSlot } from "@/lib/server/kitchen/loadOperativeKitchenOrders";
 import { fetchProductionOperativeSnapshotAllowlist } from "@/lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist";
 
@@ -157,6 +160,7 @@ export async function POST(req: NextRequest) {
   }
 
   const slotNorm = normKitchenSlot(slot);
+  const slotCanonical = normOperativeSlot(slot);
   const allowedByStops = new Set(
     loaded.operative.filter((o) => normKitchenSlot(o.slot) === slotNorm).map((o) => String(o.location_id))
   );
@@ -169,24 +173,70 @@ export async function POST(req: NextRequest) {
     return jsonErr(safeStr(gate.ctx?.rid) || r, "Ingen stops funnet for dagens leveranser.", 403, { code: "FORBIDDEN", detail: { date, slot } });
   }
 
-  // ---- write ----
-  // NB: Tabellnavn brukt i kitchen/orders-route.ts (samme standard)
-  const BATCH_TABLE = "kitchen_batches";
+  // ---- write (batch DELIVERED + derived orders.status in one RPC per location) ----
   const now = new Date().toISOString();
+  const updatedRows: Array<Record<string, unknown>> = [];
 
-  const { data: up, error: upErr } = await admin
-    .from(BATCH_TABLE)
-    .update({ status: "DELIVERED", delivered_at: now })
-    .eq("delivery_date", date)
-    .eq("delivery_window", slot)
-    .in("company_location_id", finalIds)
-    .eq("status", "PACKED")
-    .select("delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at");
+  for (const locId of finalIds) {
+    await auditWriteMust({
+      rid: safeStr(gate.ctx?.rid) || r,
+      action: "driver_bulk_set_delivered",
+      entity_type: "kitchen_batch",
+      entity_id: `${date}__${slotCanonical}__${locId}`,
+      company_id: companyId,
+      location_id: locId,
+      actor_user_id: userId,
+      actor_email: gate.ctx?.scope?.email ?? null,
+      actor_role: gate.ctx?.scope?.role ?? null,
+      summary: "Driver bulk-set DELIVERED",
+      detail: { date, slot: slotCanonical, location_id: locId },
+    });
 
-  if (upErr) {
-    // Typisk: feil tabellnavn / kolonnenavn / RLS
-    return jsonErr(safeStr(gate.ctx?.rid) || r, "Kunne ikke oppdatere batch-status.", 500, { code: "BATCH_UPSERT_FAILED", detail: { message: upErr.message, hint: (upErr as any).hint, details: (upErr as any).details } });
+    const transitioned = await batchTransitionAndSyncOrders(admin as any, {
+      deliveryDate: date,
+      deliveryWindow: slotCanonical,
+      companyLocationId: locId,
+      targetBatchStatus: "DELIVERED",
+      actorUserId: userId,
+      mode: "from_packed",
+    });
+
+    if (transitioned.error || !transitioned.data) {
+      const msg = transitioned.error?.message ?? "Kunne ikke oppdatere batch-status.";
+      if (msg.includes("PERMISSION_DENIED")) {
+        return jsonErr(safeStr(gate.ctx?.rid) || r, "Mangler sjåfør-tilgang hos leverandør.", 403, "FORBIDDEN");
+      }
+      if (msg.includes("BATCH_NOT_FOUND")) {
+        return jsonErr(safeStr(gate.ctx?.rid) || r, "Batch finnes ikke for stop.", 404, { code: "NOT_FOUND", detail: { date, slot: slotCanonical, location_id: locId } });
+      }
+      if (msg.includes("INVALID_BATCH_TRANSITION")) {
+        return jsonErr(safeStr(gate.ctx?.rid) || r, "Batch er ikke klar for levering.", 409, { code: "INVALID_BATCH_STATE", detail: { date, slot: slotCanonical, location_id: locId } });
+      }
+      return jsonErr(safeStr(gate.ctx?.rid) || r, "Kunne ikke oppdatere batch-status.", 500, { code: "BATCH_TRANSITION_FAILED", detail: { message: msg } });
+    }
+
+    if (transitioned.data.batch_updated) {
+      updatedRows.push({
+        delivery_date: transitioned.data.batch.delivery_date,
+        delivery_window: transitioned.data.batch.delivery_window,
+        company_location_id: transitioned.data.batch.company_location_id,
+        status: transitioned.data.batch.status,
+        packed_at: transitioned.data.batch.packed_at,
+        delivered_at: transitioned.data.batch.delivered_at ?? now,
+        sync: transitioned.data.sync,
+      });
+    } else {
+      updatedRows.push({
+        delivery_date: date,
+        delivery_window: slotCanonical,
+        company_location_id: locId,
+        status: "DELIVERED",
+        packed_at: transitioned.data.batch.packed_at,
+        delivered_at: transitioned.data.batch.delivered_at,
+        sync: transitioned.data.sync,
+      });
+    }
   }
 
-  return jsonOk(safeStr(gate.ctx?.rid) || r, { date, slot, status, updated: (up ?? []).length, rows: up ?? [] }, 200);
+  return jsonOk(safeStr(gate.ctx?.rid) || r, { date, slot: slotCanonical, status, updated: updatedRows.length, rows: updatedRows }, 200);
 }

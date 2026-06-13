@@ -178,6 +178,111 @@ describe("POST /api/public/register-company", () => {
     expect(fromMock).toHaveBeenCalledWith("company_registrations");
   });
 
+  test("422 PROVIDER_NOT_FOUND når ingen leverandør dekker postnummeret (fail-closed)", async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: "PROVIDER_NOT_FOUND" } });
+
+    const { POST } = await import("@/app/api/public/register-company/route");
+    const res = await POST(
+      mkReq({
+        orgnr: "123456789",
+        company_name: "Test AS",
+        employee_count: 22,
+        contact_name: "Ola",
+        contact_email: "ola@test.no",
+        contact_phone: "41234567",
+        address_line: "Gate 1",
+        postal_code: "9999",
+        postal_city: "Utenfor",
+        consent_accepted: true,
+        weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
+        delivery_window_from: "11:00",
+        delivery_window_to: "13:00",
+        terms_binding_months: 12,
+        terms_notice_months: 3,
+      }),
+    );
+    expect(res.status).toBe(422);
+    const j = await readJson(res);
+    expect(j?.ok).toBe(false);
+    expect(String(j?.error?.code ?? "")).toBe("PROVIDER_NOT_FOUND");
+    // Ingen registrering skal verifiseres/oppdateres når RPC feiler fail-closed.
+    expect(fromMock).not.toHaveBeenCalledWith("company_registrations");
+  });
+
+  test("klientstyrt provider_id sendes ALDRI videre til RPC (server-side resolve er sannhet)", async () => {
+    const { POST } = await import("@/app/api/public/register-company/route");
+    const res = await POST(
+      mkReq({
+        orgnr: "123456789",
+        company_name: "Test AS",
+        employee_count: 22,
+        contact_name: "Ola",
+        contact_email: "ola@test.no",
+        contact_phone: "41234567",
+        address_line: "Gate 1",
+        postal_code: "5000",
+        postal_city: "Bergen",
+        consent_accepted: true,
+        // Bypass-forsøk: skal ignoreres av ruten.
+        provider_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        providerId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
+        delivery_window_from: "11:00",
+        delivery_window_to: "13:00",
+        terms_binding_months: 12,
+        terms_notice_months: 3,
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(rpcMock).toHaveBeenCalledTimes(1);
+    const [rpcName, rpcArgs] = rpcMock.mock.calls[0];
+    expect(rpcName).toBe("lp_company_register");
+    expect(Object.keys(rpcArgs).sort()).toEqual([
+      "p_address_line",
+      "p_company_name",
+      "p_contact_email",
+      "p_contact_name",
+      "p_contact_phone",
+      "p_employee_count",
+      "p_orgnr",
+      "p_postal_city",
+      "p_postal_code",
+    ]);
+    expect(JSON.stringify(rpcArgs)).not.toContain("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  });
+
+  test("alias-rutene /api/register og /api/public/register delegerer til canonical POST", async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: "PROVIDER_NOT_FOUND" } });
+    const aliasA = await import("@/app/api/register/route");
+    const aliasB = await import("@/app/api/public/register/route");
+
+    const body = {
+      orgnr: "123456789",
+      company_name: "Test AS",
+      employee_count: 22,
+      contact_name: "Ola",
+      contact_email: "ola@test.no",
+      contact_phone: "41234567",
+      address_line: "Gate 1",
+      postal_code: "9999",
+      postal_city: "Utenfor",
+      consent_accepted: true,
+      weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
+      delivery_window_from: "11:00",
+      delivery_window_to: "13:00",
+      terms_binding_months: 12,
+      terms_notice_months: 3,
+    };
+
+    const resA = await aliasA.POST(mkReq(body));
+    expect(resA.status).toBe(422);
+    expect(String((await readJson(resA))?.error?.code ?? "")).toBe("PROVIDER_NOT_FOUND");
+
+    const resB = await aliasB.POST(mkReq(body));
+    expect(resB.status).toBe(422);
+    expect(String((await readJson(resB))?.error?.code ?? "")).toBe("PROVIDER_NOT_FOUND");
+  });
+
   test("500 REGISTER_PERSISTENCE_FAILED når company_registrations mangler etter RPC", async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === "companies") {

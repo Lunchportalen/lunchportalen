@@ -10,8 +10,10 @@ import { scopeOr401, requireRoleOr403, readJson } from "@/lib/http/routeGuard";
 import { cutoffStatusForDate0805, osloTodayISODate } from "@/lib/date/oslo";
 import { CUTOFF_BUFFER_MINUTES } from "@/lib/kitchen/cutoff";
 import { auditWriteMust } from "@/lib/audit/auditWrite";
-import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { batchTransitionAndSyncOrders } from "@/lib/kitchen/batchTransitionRpc";
 import { enqueueBatchPackedOutbox } from "@/lib/kitchen/batchPackedOutbox";
+import { normOperativeSlot } from "@/lib/kitchen/operativeSlot";
+import { loadProfileByUserId } from "@/lib/db/profileLookup";
 
 function isIsoDate(v: any) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(v ?? ""));
@@ -20,11 +22,7 @@ function safeStr(v: any) {
   return String(v ?? "").trim();
 }
 function normSlot(v: any) {
-  const s = safeStr(v).toLowerCase();
-  return s || "lunch";
-}
-function nowIso() {
-  return new Date().toISOString();
+  return normOperativeSlot(v);
 }
 function batchKey(date: string, slot: string, location_id: string) {
   return `${date}__${slot}__${location_id}`;
@@ -180,16 +178,6 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Ingen ordre å starte batch for.", 422, { code: "NO_ORDERS", detail: { date, slot, location_id: locationId } });
     }
 
-    const ts = nowIso();
-    const payload = {
-      delivery_date: date,
-      delivery_window: slot,
-      company_location_id: locationId,
-      status: "PACKED",
-      packed_at: ts,
-      delivered_at: null,
-    };
-
     await auditWriteMust({
       rid,
       action: "kitchen_batch_start",
@@ -204,29 +192,34 @@ export async function POST(req: NextRequest) {
       detail: { date, slot, location_id: locationId },
     });
 
-    const { data: saved, error: insErr } = await admin
-      .from("kitchen_batch")
-      .insert(payload)
-      .select("id,delivery_date,delivery_window,company_location_id,status,packed_at,delivered_at")
-      .maybeSingle();
+    const transitioned = await batchTransitionAndSyncOrders(admin as any, {
+      deliveryDate: date,
+      deliveryWindow: slot,
+      companyLocationId: locationId,
+      targetBatchStatus: "PACKED",
+      actorUserId: userId,
+      mode: "create",
+    });
 
-    if (insErr) {
-      const code = String((insErr as any)?.code ?? "");
-      if (code === "23505") {
+    if (transitioned.error || !transitioned.data) {
+      const msg = transitioned.error?.message ?? "Kunne ikke starte batch.";
+      const code = transitioned.error?.code ?? "";
+      if (msg.includes("BATCH_EXISTS") || code === "23505") {
         return jsonErr(rid, "Batch finnes allerede.", 409, { code: "BATCH_EXISTS", detail: { date, slot, location_id: locationId } });
       }
-      return jsonErr(rid, "Kunne ikke starte batch.", 500, { code: "DB_ERROR", detail: {
-        message: insErr?.message ?? null,
-        code,
-      } });
+      if (msg.includes("PERMISSION_DENIED") || code === "42501") {
+        return jsonErr(rid, "Mangler kjøkken-tilgang hos leverandør.", 403, "FORBIDDEN");
+      }
+      return jsonErr(rid, "Kunne ikke starte batch.", 500, { code: "BATCH_TRANSITION_FAILED", detail: { message: msg, code } });
     }
-    if (!saved) return jsonErr(rid, "Kunne ikke starte batch.", 500, "DB_ERROR");
+
+    const saved = transitioned.data.batch;
 
     await enqueueBatchPackedOutbox(admin, { rid, date, slot, companyId, locationId });
 
     return jsonOk(rid, {
         batch: {
-          id: (saved as any).id ?? null,
+          id: saved.id || null,
           delivery_date: saved.delivery_date,
           delivery_window: saved.delivery_window,
           company_location_id: saved.company_location_id,
@@ -234,6 +227,7 @@ export async function POST(req: NextRequest) {
           packed_at: saved.packed_at ?? null,
           delivered_at: saved.delivered_at ?? null,
         },
+        sync: transitioned.data.sync,
       }, 200);
   } catch (e: any) {
     return jsonErr(rid, safeStr(e?.message ?? e), 500, { code: "UNHANDLED", detail: { at: "kitchen/batch/start" } });

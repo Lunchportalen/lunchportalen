@@ -1,0 +1,126 @@
+{
+  "url": "https://www.lunchportalen.no/",
+  "capturedAt": "2026-06-07T11:50:09.792Z",
+  "viewports": {
+    "640": {
+      "screenshot": "live-640.png",
+      "sections": {
+        "hero": true,
+        "valueProps": 3,
+        "howItWorksKunde": true,
+        "howItWorksCaterer": true,
+        "socialProof": true,
+        "ctaBand": true,
+        "demoBooking": true
+      },
+      "inlineStyleCount": 1,
+      "inlineStyleSamples": [
+        {
+          "tag": "body",
+          "cls": ""
+        }
+      ],
+      "goldColor": "rgb(160, 124, 0)",
+      "heroBackground": "rgb(246, 243, 237)",
+      "hamburger": {
+        "width": 48,
+        "height": 48,
+        "display": "flex"
+      },
+      "bodyScrollWidth": 640,
+      "viewportWidth": 640,
+      "horizontalOverflow": false,
+      "focusVisible": {
+        "ok": true,
+        "tag": "A",
+        "className": "lp-lp-btn-primary",
+        "outlineWidth": "3px",
+        "outlineColor": "rgb(245, 197, 24)",
+        "outlineStyle": "solid",
+        "outlineOffset": "3px"
+      },
+      "goldDarkContrastOnCream": 3.53,
+      "aaPass": false
+    },
+    "980": {
+      "screenshot": "live-980.png",
+      "sections": {
+        "hero": true,
+        "valueProps": 3,
+        "howItWorksKunde": true,
+        "howItWorksCaterer": true,
+        "socialProof": true,
+        "ctaBand": true,
+        "demoBooking": true
+      },
+      "inlineStyleCount": 1,
+      "inlineStyleSamples": [
+        {
+          "tag": "body",
+          "cls": ""
+        }
+      ],
+      "goldColor": "rgb(160, 124, 0)",
+      "heroBackground": "rgb(246, 243, 237)",
+      "hamburger": {
+        "width": 0,
+        "height": 0,
+        "display": "none"
+      },
+      "bodyScrollWidth": 980,
+      "viewportWidth": 980,
+      "horizontalOverflow": false,
+      "focusVisible": {
+        "ok": true,
+        "tag": "A",
+        "className": "lp-lp-btn-primary",
+        "outlineWidth": "3px",
+        "outlineColor": "rgb(245, 197, 24)",
+        "outlineStyle": "solid",
+        "outlineOffset": "3px"
+      },
+      "goldDarkContrastOnCream": 3.53,
+      "aaPass": false
+    },
+    "desktop": {
+      "screenshot": "live-desktop.png",
+      "sections": {
+        "hero": true,
+        "valueProps": 3,
+        "howItWorksKunde": true,
+        "howItWorksCaterer": true,
+        "socialProof": true,
+        "ctaBand": true,
+        "demoBooking": true
+      },
+      "inlineStyleCount": 1,
+      "inlineStyleSamples": [
+        {
+          "tag": "body",
+          "cls": ""
+        }
+      ],
+      "goldColor": "rgb(160, 124, 0)",
+      "heroBackground": "rgb(246, 243, 237)",
+      "hamburger": {
+        "width": 0,
+        "height": 0,
+        "display": "none"
+      },
+      "bodyScrollWidth": 1280,
+      "viewportWidth": 1280,
+      "horizontalOverflow": false,
+      "focusVisible": {
+        "ok": true,
+        "tag": "A",
+        "className": "lp-lp-btn-primary",
+        "outlineWidth": "3px",
+        "outlineColor": "rgb(245, 197, 24)",
+        "outlineStyle": "solid",
+        "outlineOffset": "3px"
+      },
+      "goldDarkContrastOnCream": 3.53,
+      "aaPass": false
+    }
+  }
+}

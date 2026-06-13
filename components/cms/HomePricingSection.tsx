@@ -54,7 +54,7 @@ export async function HomePricingSection({ title, intro, designSettings }: HomeP
               <li>Avbestilling før kl. 08:00</li>
               <li>Forutsigbar firmalunsj</li>
             </ul>
-            <Link className="lp-btn lp-btn-primary lp-btn-block lp-neon" href="/registrering">
+            <Link className="lp-btn lp-btn-primary lp-btn-block lp-neon" href="/start?intent=register&source=pricing-starter">
               Velg Basis
             </Link>
           </div>
@@ -82,7 +82,7 @@ export async function HomePricingSection({ title, intro, designSettings }: HomeP
               <li>Kontrollert flyt</li>
               <li>Avbestilling før kl. 08:00</li>
             </ul>
-            <Link className="lp-btn lp-btn-primary lp-btn-block lp-neon" href="/registrering">
+            <Link className="lp-btn lp-btn-primary lp-btn-block lp-neon" href="/start?intent=register&source=pricing-luxus">
               Velg Luxus
             </Link>
           </div>

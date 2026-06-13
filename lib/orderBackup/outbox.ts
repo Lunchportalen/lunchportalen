@@ -3,11 +3,16 @@ import "server-only";
 
 import { sendMail } from "@/lib/orderBackup/smtp";
 import {
+  resolveOrderNotificationRecipients,
+  type OrderNotificationRouting,
+} from "@/lib/orders/resolveOrderNotificationRecipients";
+import {
   OUTBOX_SMTP_CLAIM_EXCLUDE_PREFIXES,
   OUTBOX_SMTP_EMAIL_PREFIXES,
   OUTBOX_STATE_EVENT_PREFIXES,
 } from "@/lib/outbox/eventKinds";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { ORDER_EMAIL as SYSTEM_ORDER_EMAIL } from "@/lib/system/emailAddresses";
 import { opsLog } from "@/lib/ops/log";
 import { reportOutboxPermanentFailure } from "@/lib/sentry/capture";
 import type { OrderBackupInput } from "./types";
@@ -223,11 +228,7 @@ export async function fanoutLpOrderSetOutboxBestEffort(p: {
   }
 }
 
-/**
- * `POST /api/order/cancel` (day_choice): persisterer canonical `public.outbox` etter verifisert ordre-rad.
- * Kaster ved DB-feil — HTTP-laget skal ikke returnere suksess uten vellykket outbox-skriving.
- */
-export async function persistDayChoiceOrderCancelOutbox(p: {
+export type DayChoiceCancelOutboxParams = {
   dbEventKey: string;
   rid: string;
   orderId: string;
@@ -237,15 +238,47 @@ export async function persistDayChoiceOrderCancelOutbox(p: {
   userEmail: string | null;
   date: string;
   orderStatus: string;
-}): Promise<void> {
-  const key = safeStr(p.dbEventKey);
-  if (!key) throw new Error("dbEventKey required");
+  /** Ordrens provider_id (orders.provider_id). Null → varsling går kun til plattformkopi. */
+  providerId?: string | null;
+};
 
-  const ts = new Date().toISOString();
-  const payload: OrderBackupInput = {
+function isoToDottedDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(safeStr(iso));
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : safeStr(iso);
+}
+
+function dayChoiceCancelMailFrom(): string {
+  return safeStr(process.env.LP_RESEND_FROM) || `Lunchportalen <${SYSTEM_ORDER_EMAIL}>`;
+}
+
+/**
+ * Ren payload-bygger for avbestillings-varsling (testbar uten I/O).
+ * `routing.recipients` inneholder provider-routet mottaker + plattformkopi (deduplisert).
+ */
+export function buildDayChoiceCancelOutboxPayload(
+  p: DayChoiceCancelOutboxParams,
+  routing: OrderNotificationRouting,
+  opts?: { from?: string; timestampISO?: string },
+): OrderBackupInput {
+  const ts = safeStr(opts?.timestampISO) || new Date().toISOString();
+  const prettyDate = isoToDottedDate(p.date);
+
+  const bodyText = [
+    "Avbestilling (drift)",
+    "",
+    `Dato: ${prettyDate}`,
+    `Status: ${safeStr(p.orderStatus) || "-"}`,
+    "",
+    `OrderId: ${safeStr(p.orderId) || "-"}`,
+    `RID: ${safeStr(p.rid) || "-"}`,
+    "",
+    "Denne meldingen er sendt automatisk fra Lunchportalen.",
+  ].join("\n");
+
+  return {
     eventType: "ORDER_CANCELLED",
     rid: p.rid,
-    eventKey: key,
+    eventKey: safeStr(p.dbEventKey),
     userId: p.userId,
     userEmail: p.userEmail,
     companyId: p.companyId,
@@ -254,8 +287,31 @@ export async function persistDayChoiceOrderCancelOutbox(p: {
     status: p.orderStatus,
     orderId: p.orderId,
     timestampISO: ts,
-    extra: { source: "day_choice_http" },
+    from: safeStr(opts?.from) || dayChoiceCancelMailFrom(),
+    to: routing.recipients.join(", "),
+    subject: `Ordre avbestilt – ${prettyDate} – Lunchportalen`,
+    bodyText,
+    extra: {
+      source: "day_choice_http",
+      providerId: routing.providerId,
+      recipientSource: routing.recipientSource,
+    },
   };
+}
+
+/**
+ * `POST /api/order/cancel` (day_choice): persisterer canonical `public.outbox` etter verifisert ordre-rad.
+ * Kaster ved DB-feil — HTTP-laget skal ikke returnere suksess uten vellykket outbox-skriving.
+ *
+ * Mottakere: provider-routet via ordrens provider_id (operations_email-kjeden) + plattformkopi.
+ * Resolver-feil er fail-safe (plattformkopi alene) og blokkerer aldri avbestillingen.
+ */
+export async function persistDayChoiceOrderCancelOutbox(p: DayChoiceCancelOutboxParams): Promise<void> {
+  const key = safeStr(p.dbEventKey);
+  if (!key) throw new Error("dbEventKey required");
+
+  const routing = await resolveOrderNotificationRecipients(p.providerId ?? null);
+  const payload = buildDayChoiceCancelOutboxPayload(p, routing);
 
   await upsertOutboxEvent(key, payload);
 }

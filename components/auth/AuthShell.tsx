@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import AuthBrand from "./AuthBrand";
+import { ADMIN_LOGO_SRC } from "@/lib/admin/constants";
 
 type AuthShellProps = {
   title?: string;
@@ -22,13 +24,13 @@ export default function AuthShell({
 }: AuthShellProps) {
   if (bare) {
     return (
-      <main className="relative min-h-screen w-full overflow-hidden bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
+      <main className="relative min-h-screen w-full overflow-clip bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(255,0,127,0.07) 0%, rgba(255,0,127,0.00) 55%)",
+              "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(245,197,24,0.10) 0%, rgba(245,197,24,0.00) 55%)",
           }}
         />
         <div className="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-3xl items-center justify-center">
@@ -40,23 +42,27 @@ export default function AuthShell({
 
   if (variant === "loginPremium") {
     return (
-      <main className="lp-registration-page">
-        <div className="lp-registration-inner">
-          <div className="lp-registration-card">
-            <AuthBrand subtitle={brandSubtitle} />
+      <main className="lp-login-page">
+        <div className="lp-login-inner">
+          <header className="lp-login-brand lp-login-enter lp-login-enter--brand">
+            <Image
+              src={ADMIN_LOGO_SRC}
+              alt="Lunchportalen"
+              width={168}
+              height={90}
+              priority
+              className="lp-login-brand__logo"
+            />
+            {brandSubtitle ? <p className="lp-login-brand__tag">{brandSubtitle}</p> : null}
+          </header>
 
-            <div className="mt-8">
-              {title ? <h1 className="lp-registration-title font-heading">{title}</h1> : null}
-              {subtitle ? <p className="lp-registration-lead font-body">{subtitle}</p> : null}
-            </div>
+          <div className="lp-login-card lp-login-enter lp-login-enter--card">
+            {title ? <h1 className="lp-login-title font-heading">{title}</h1> : null}
+            {subtitle ? <p className="lp-login-lead font-body">{subtitle}</p> : null}
 
-            <div>{children}</div>
+            <div className="lp-login-body">{children}</div>
 
-            {footer ? (
-              <div className="mt-7 border-t border-[rgb(var(--lp-text)/0.08)] pt-5 text-center text-sm text-[rgb(var(--lp-muted))]">
-                {footer}
-              </div>
-            ) : null}
+            {footer ? <div className="lp-login-footer">{footer}</div> : null}
           </div>
         </div>
       </main>
@@ -64,14 +70,14 @@ export default function AuthShell({
   }
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
+    <main className="relative min-h-screen w-full overflow-clip bg-[rgb(var(--lp-bg))] px-4 py-12 text-[rgb(var(--lp-text))]">
       {/* Soft spotlight (premium) */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(255,0,127,0.07) 0%, rgba(255,0,127,0.00) 55%)",
+            "radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.00) 60%), radial-gradient(700px 420px at 18% 18%, rgba(245,197,24,0.10) 0%, rgba(245,197,24,0.00) 55%)",
         }}
       />
 
@@ -88,7 +94,7 @@ export default function AuthShell({
           >
             {/* Card */}
             <div
-              className="relative overflow-hidden rounded-3xl bg-white p-8"
+              className="relative overflow-clip rounded-3xl bg-white p-8"
               style={{
                 boxShadow: "var(--lp-shadow-card)",
               }}
@@ -98,7 +104,7 @@ export default function AuthShell({
                 aria-hidden="true"
                 className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full"
                 style={{
-                  background: "radial-gradient(circle at 30% 30%, rgba(255,0,127,0.10), rgba(255,0,127,0.00) 65%)",
+                  background: "radial-gradient(circle at 30% 30%, rgba(245,197,24,0.12), rgba(245,197,24,0.00) 65%)",
                   filter: "blur(2px)",
                 }}
               />
@@ -130,7 +136,7 @@ export default function AuthShell({
 
           {/* tiny trust line (optional but premium, unobtrusive) */}
           <div className="mt-6 text-center text-xs text-[rgba(var(--lp-muted),0.95)]">
-            Én sannhetskilde · Cut-off 08:00 · Admin-kontroll
+            Ã‰n sannhetskilde Â· Cut-off 08:00 Â· Admin-kontroll
           </div>
         </div>
       </div>

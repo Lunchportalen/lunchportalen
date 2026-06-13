@@ -11,6 +11,7 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadServiceAreas } from "@/lib/providers/loadServiceAreas";
+import { PROVIDER_COVERAGE_COPY, providerCoverageSubheading } from "@/lib/providers/providerCoverageSurface";
 
 export default async function LeverandorOmraderPage() {
   const auth = await getAuthContext();
@@ -30,11 +31,9 @@ export default async function LeverandorOmraderPage() {
     <div className="ds-container ds-provider-service-areas-page">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">Leverandør</p>
-          <h1 className="ds-h2">Dekningsområder</h1>
-          <p className="ds-lead">
-            Postnummer-intervaller styrer hvilke bedrifter som matches til {provider.name} ved registrering.
-          </p>
+          <p className="ds-eyebrow">{PROVIDER_COVERAGE_COPY.eyebrow}</p>
+          <h1 className="ds-h2">{PROVIDER_COVERAGE_COPY.heading}</h1>
+          <p className="ds-lead">{providerCoverageSubheading(provider.name)}</p>
         </div>
       </header>
       <ServiceAreasManager providerId={provider.id} rows={rows} canEdit={canEdit} />

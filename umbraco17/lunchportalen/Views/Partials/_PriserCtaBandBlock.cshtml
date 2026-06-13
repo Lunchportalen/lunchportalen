@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models
 @using System.Linq
@@ -12,12 +12,12 @@
     var primaryCtaLinks = Model.Value<IEnumerable<Link>>("primaryCtaLink");
     var primaryCta      = primaryCtaLinks?.FirstOrDefault();
     var primaryCtaText  = Model.Value<string>("primaryCtaText") ?? "Kom i gang →";
-    var primaryUrl      = !string.IsNullOrWhiteSpace(primaryCta?.Url) ? primaryCta.Url : "/kom-i-gang/";
+    var primaryUrl      = AppUrls.ResolveLeadCapture("priser-primary");
 
     var secCtaLinks = Model.Value<IEnumerable<Link>>("secCtaLink");
     var secCta      = secCtaLinks?.FirstOrDefault();
     var secCtaText  = Model.Value<string>("secCtaText") ?? "Se en demo";
-    var secUrl      = !string.IsNullOrWhiteSpace(secCta?.Url) ? secCta.Url : "/demo/";
+    var secUrl      = AppUrls.ResolveLeadCapture("priser-demo");
 
     bool hasSecCta = !string.IsNullOrWhiteSpace(secCtaText);
 }

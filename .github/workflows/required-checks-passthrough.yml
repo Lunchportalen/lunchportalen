@@ -1,0 +1,104 @@
+# Per-check passthrough: emit required status when that check's paths were NOT touched.
+# Complement to path-filtered real workflows — closes mixed-app orphan (week-visual) and
+# duplicate-context holes. e2e stays pathless in ci-e2e.yml (not duplicated here).
+#
+# Drift-vakt is parallel (no downstream needs) — promote to branch-protection required
+# so filter drift blocks merge explicitly without skipping detect/emits.
+name: Required checks passthrough
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: required-checks-passthrough-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  required-check-path-drift:
+    name: required-check-path-drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Verify passthrough paths match workflow on.pull_request.paths
+        run: node scripts/ci/verify-required-check-path-drift.mjs
+
+      - name: Unit tests (path parser, drift guard, scope detect)
+        run: |
+          node scripts/ci/github-path-filter.test.mjs
+          node scripts/ci/parse-workflow-pr-paths.test.mjs
+          node scripts/ci/detect-required-check-scope.test.mjs
+          node scripts/ci/verify-required-check-path-drift.test.mjs
+
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      build_touched: ${{ steps.scope.outputs.build_touched }}
+      enterprise_touched: ${{ steps.scope.outputs.enterprise_touched }}
+      agents_gate_touched: ${{ steps.scope.outputs.agents_gate_touched }}
+      staging_touched: ${{ steps.scope.outputs.staging_touched }}
+      week_visual_touched: ${{ steps.scope.outputs.week_visual_touched }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch PR base/head (scope detect)
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+
+      - name: Detect per-check path scope (git diff)
+        id: scope
+        env:
+          GATE_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          GATE_DIFF_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci/detect-required-check-scope.mjs
+
+  build:
+    name: build
+    needs: detect
+    if: needs.detect.outputs.build_touched != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "passthrough — build paths ikke rørt; ekte CI er eneste meningsfulle kontekst når rørt."
+
+  enterprise:
+    name: enterprise
+    needs: detect
+    if: needs.detect.outputs.enterprise_touched != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "passthrough — enterprise paths ikke rørt; ekte CI er eneste meningsfulle kontekst når rørt."
+
+  agents_gate:
+    name: agents_gate
+    needs: detect
+    if: needs.detect.outputs.agents_gate_touched != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "passthrough — agents_gate paths ikke rørt; ekte CI er eneste meningsfulle kontekst når rørt."
+
+  staging:
+    name: staging
+    needs: detect
+    if: needs.detect.outputs.staging_touched != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "passthrough — staging paths ikke rørt; ekte supabase-migrate er eneste meningsfulle kontekst når rørt."
+
+  week-visual:
+    name: week-visual
+    needs: detect
+    if: needs.detect.outputs.week_visual_touched != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "passthrough — week-visual paths ikke rørt; ekte ci-week-visual er eneste meningsfulle kontekst når rørt."

@@ -4,15 +4,16 @@
 
 @{
     Layout = "~/Views/Partials/_Layout.cshtml";
+    var blocks = Model.Value<BlockListModel>("contentBlocks");
 }
 
 @section Head {
     <link rel="stylesheet" href="/css/contact.css" />
 }
 
-@if (Model?.Value<BlockGridModel>("contentBlocks")?.Any() == true)
+@if (blocks != null && blocks.Any())
 {
     <div class="lp-contact-page">
-        @await Html.GetBlockGridHtmlAsync(Model, "contentBlocks")
+        @await Html.PartialAsync("~/Views/Partials/blocklist/default.cshtml", blocks)
     </div>
 }

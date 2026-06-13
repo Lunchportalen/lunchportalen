@@ -13,6 +13,12 @@ import {
 import SuspendDialog, { type SuspendDialogVariant } from "@/components/providers/SuspendDialog";
 import type { ProviderCustomerDetail } from "@/lib/providers/loadProviderCustomerDetail";
 import { providerCustomerStatusLabel } from "@/lib/providers/customerTypes";
+import {
+  PROVIDER_AGREEMENT_COPY,
+  buildAgreementDisplay,
+  hasMultipleActiveAgreements,
+  sortAgreementsForDisplay,
+} from "@/lib/providers/providerCustomerAgreementSurface";
 
 type DialogState = {
   open: boolean;
@@ -106,7 +112,7 @@ export default function CustomerDetailClient({
           <div className="ds-admin-kpi__value">{detail.stats.employeesCount}</div>
         </div>
         <div className="ds-admin-kpi">
-          <div className="ds-admin-kpi__label">Aktive ordrer</div>
+          <div className="ds-admin-kpi__label">Aktive ordre totalt</div>
           <div className="ds-admin-kpi__value">{detail.stats.activeOrdersCount}</div>
         </div>
         <div className="ds-admin-kpi">
@@ -155,27 +161,73 @@ export default function CustomerDetailClient({
       </div>
 
       {!canManage ? (
-        <p className="ds-body ds-section">Du har lesetilgang. Handlinger krever provider-admin.</p>
+        <p className="ds-body ds-section">Du har lesetilgang. Endringer krever administratortilgang.</p>
       ) : null}
 
       <section className="ds-section">
         <h2 className="ds-h2">Ansatte</h2>
-        <p className="ds-body">Kommer i Patch 11.</p>
+        <p className="ds-body">Oversikt over ansatte er ikke tilgjengelig ennå.</p>
       </section>
 
       <section className="ds-section">
-        <h2 className="ds-h2">Avtaler</h2>
+        <h2 className="ds-h2">{PROVIDER_AGREEMENT_COPY.sectionTitle}</h2>
         {detail.agreements.length === 0 ? (
-          <p className="ds-body">Ingen avtaler registrert.</p>
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">{PROVIDER_AGREEMENT_COPY.empty.title}</p>
+            <p className="ds-provider-empty__text">{PROVIDER_AGREEMENT_COPY.empty.text}</p>
+          </div>
         ) : (
-          <ul className="ds-provider-activity">
-            {detail.agreements.map((a) => (
-              <li key={a.id} className="ds-provider-activity__row">
-                <span className="ds-provider-activity__action">{a.status}</span>
-                <span className="ds-provider-activity__meta">{a.createdAt ?? "—"}</span>
-              </li>
-            ))}
-          </ul>
+          <>
+            {hasMultipleActiveAgreements(detail.agreements) ? (
+              <p className="ds-provider-agreement-warning" role="status">
+                {PROVIDER_AGREEMENT_COPY.multipleActiveWarning}
+              </p>
+            ) : null}
+            {sortAgreementsForDisplay(detail.agreements).map((row) => {
+              const display = buildAgreementDisplay(row, detail.locations);
+              return (
+                <article key={display.id} className="ds-card ds-provider-agreement-card">
+                  <div className="ds-provider-agreement-card__head">
+                    <h3 className="ds-h4">{display.title}</h3>
+                    <span
+                      className={`ds-provider-status-pill${display.statusTone === "success" ? " is-active" : ""}`}
+                    >
+                      {display.statusLabel}
+                    </span>
+                  </div>
+                  <dl className="ds-provider-reg-detail">
+                    <div>
+                      <dt>{PROVIDER_AGREEMENT_COPY.labels.created}</dt>
+                      <dd>{display.createdLabel}</dd>
+                    </div>
+                    {display.periodLabel ? (
+                      <div>
+                        <dt>{PROVIDER_AGREEMENT_COPY.labels.period}</dt>
+                        <dd>{display.periodLabel}</dd>
+                      </div>
+                    ) : null}
+                    <div>
+                      <dt>{PROVIDER_AGREEMENT_COPY.labels.deliveryDays}</dt>
+                      <dd>{display.deliveryDaysLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>{PROVIDER_AGREEMENT_COPY.labels.location}</dt>
+                      <dd>{display.locationLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>{PROVIDER_AGREEMENT_COPY.labels.package}</dt>
+                      <dd>{display.packageLabel}</dd>
+                    </div>
+                  </dl>
+                  {display.deliveryDaysWarning ? (
+                    <p className="ds-provider-agreement-warning" role="status">
+                      {display.deliveryDaysWarning}
+                    </p>
+                  ) : null}
+                </article>
+              );
+            })}
+          </>
         )}
       </section>
 
