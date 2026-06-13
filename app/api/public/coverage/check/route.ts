@@ -54,16 +54,7 @@ export async function POST(req: NextRequest) {
 
     const hasServiceAreas = (count ?? 0) > 0;
 
-    if (!hasServiceAreas) {
-      return jsonOk(rid, {
-        covered: true,
-        hasServiceAreas: false,
-        postal_code,
-        city,
-        mvpForward: true,
-      });
-    }
-
+    // Dekning = faktisk provider-match via canonical RPC — aldri MVP-forward eller tom tabell.
     const { data: providerId, error: matchError } = await supabase.rpc("lp_match_provider_by_postal_code", {
       p_postal_code: postal_code,
     });
@@ -73,13 +64,16 @@ export async function POST(req: NextRequest) {
     }
 
     const covered = typeof providerId === "string" && providerId.length > 0;
+    const reason = covered ? "provider_matched" : hasServiceAreas ? "not_covered" : "service_areas_empty";
 
     return jsonOk(rid, {
       covered,
-      hasServiceAreas: true,
+      hasServiceAreas,
       postal_code,
       city,
+      /** Legacy field — alltid false; dekning avgjøres kun av faktisk provider-match. */
       mvpForward: false,
+      reason,
     });
   } catch {
     return jsonErr(rid, "Kunne ikke sjekke dekning", 500, "SERVER_ERROR");
