@@ -15,6 +15,9 @@ import {
 } from "../../scripts/smoke/fixtures/provider-ab-staging.constants.mjs";
 import {
   buildProviderAbFixtureSql,
+  ORGANIZATION_FIXTURE_INSERT_COLUMNS,
+  ORGANIZATION_PROVIDER_LINK_COLUMN,
+  validateOrganizationFixtureSql,
   validateProviderAbFixtureConstants,
 } from "../../scripts/smoke/provider-ab-fixture-core.mjs";
 import {
@@ -115,6 +118,44 @@ describe("seed-provider-ab-fixture.mjs (static guards)", () => {
 
   test("Provider A correction sets Melhus provider_id", () => {
     expect(sql).toContain(`provider_id = '${PROVIDER_A.providerId}'`);
+  });
+
+  test("fixture SQL does not reference customer_provider_org_id (R3 rename)", () => {
+    expect(sql).not.toContain("customer_provider_org_id");
+    expect(core).not.toMatch(/insert into public\.organizations[\s\S]*customer_provider_org_id/i);
+  });
+
+  test("fixture SQL links customer org via legacy_provider_id", () => {
+    expect(sql).toContain(ORGANIZATION_PROVIDER_LINK_COLUMN);
+    expect(sql).toContain(`legacy_provider_id = excluded.${ORGANIZATION_PROVIDER_LINK_COLUMN}`);
+    const v = validateOrganizationFixtureSql(sql);
+    expect(v.ok).toBe(true);
+    expect(v.errors).toEqual([]);
+  });
+
+  test("provider org insert keeps legacy_provider_id NULL; customer org points at provider B", () => {
+    const providerBlock = sql.match(
+      /insert into public\.organizations[\s\S]*?'provider'::public\.org_type[\s\S]*?on conflict \(id\)/i,
+    )?.[0];
+    const customerBlock = sql.match(
+      /insert into public\.organizations[\s\S]*?'customer'::public\.org_type[\s\S]*?on conflict \(id\)/i,
+    )?.[0];
+    expect(providerBlock).toMatch(/'provider',\s*\n\s*null,/);
+    expect(customerBlock).toMatch(new RegExp(`'company',\\s*\\n\\s*'${PROVIDER_B.providerId}'::uuid`));
+  });
+
+  test("organization INSERT columns match staging fixture contract", () => {
+    for (const col of ORGANIZATION_FIXTURE_INSERT_COLUMNS) {
+      expect(sql).toContain(col);
+    }
+    expect(ORGANIZATION_FIXTURE_INSERT_COLUMNS).toContain("legacy_provider_id");
+    expect(ORGANIZATION_FIXTURE_INSERT_COLUMNS).not.toContain("customer_provider_org_id");
+  });
+
+  test("script does not log secrets", () => {
+    expect(script).not.toMatch(/console\.log\([^)]*password/i);
+    expect(script).not.toMatch(/console\.log\([^)]*DATABASE_URL/i);
+    expect(script).not.toMatch(/console\.log\([^)]*connectionString/i);
   });
 });
 
