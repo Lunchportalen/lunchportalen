@@ -10,7 +10,7 @@ import { isIsoDate } from "@/lib/date/oslo";
 import { coerceOrderWriteErrorResponse, jsonOrderWriteErr, jsonOrderWriteOk, orderWriteStatusFromDb } from "@/lib/http/respond";
 import { companyIdFromCtx, readJson, requireRoleOr403, scopeOr401 } from "@/lib/http/routeGuard";
 import { getPublishedMenuForDate } from "@/lib/cms/menuDay";
-import { menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
+import { menuDayQueryOptsFromScope, menuScopeDecision, resolveProviderMenuScopeForCompany, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
 import { opsLog } from "@/lib/ops/log";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { assertCompanyOrderWriteAllowed } from "@/lib/orders/companyOrderEligibility";
@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
     try {
       const menu = await getPublishedMenuForDate(
         date,
-        menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined,
+        menuDayQueryOptsFromScope(menuScope),
       );
       if (!menu) {
         return jsonOrderWriteErr(rid, 409, "MENU_NOT_PUBLISHED", "Meny er ikke publisert for datoen.");

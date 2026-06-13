@@ -108,7 +108,10 @@ describe("GET /api/orders/week provider-menuScope", () => {
     expect(resolveScopeMock.mock.calls[0][1]).toBe("company-a");
 
     expect(getMenuForDatesMock).toHaveBeenCalledTimes(1);
-    expect(getMenuForDatesMock.mock.calls[0][1]).toEqual({ providerSlug: "provider-a" });
+    expect(getMenuForDatesMock.mock.calls[0][1]).toEqual({
+      providerSlug: "provider-a",
+      providerRef: "prov-a-id",
+    });
 
     const json = await readJson(res);
     expect(json.ok).toBe(true);
@@ -127,7 +130,10 @@ describe("GET /api/orders/week provider-menuScope", () => {
     expect(res.status).toBe(200);
 
     expect(getMenuForDatesMock).toHaveBeenCalledTimes(1);
-    expect(getMenuForDatesMock.mock.calls[0][1]).toEqual({ providerSlug: "provider-b" });
+    expect(getMenuForDatesMock.mock.calls[0][1]).toEqual({
+      providerSlug: "provider-b",
+      providerRef: "prov-b-id",
+    });
 
     // Provider B fikk tom meny — ikke Provider A sine publiserte dager.
     const json = await readJson(res);

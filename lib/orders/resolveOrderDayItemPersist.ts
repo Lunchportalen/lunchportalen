@@ -5,7 +5,7 @@ import { getMenuForDateAndPlan, type MenuDay } from "@/lib/cms/menuDay";
 import { getLunchCategoryStaticItemsByPlanTier } from "@/lib/cms/lunchCategory";
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
-import type { MenuScopeDecision } from "@/lib/menu/providerMenuScope";
+import { menuDayQueryOptsFromScope, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
 
 export type ResolveOrderDayItemResult =
   | { ok: true; item_key: string | null; item_title_snapshot: string | null }
@@ -39,7 +39,7 @@ export async function resolveOrderDayItemPersist(params: {
       menus = await getMenuForDateAndPlan(
         params.date,
         params.planTier,
-        params.menuScope?.mode === "scoped" ? { providerSlug: params.menuScope.providerSlug } : undefined,
+        params.menuScope?.mode === "scoped" ? menuDayQueryOptsFromScope(params.menuScope) : undefined,
       );
     } catch {
       return {

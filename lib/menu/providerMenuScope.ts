@@ -4,9 +4,9 @@
 // Prinsipp:
 // - provider_id utledes ALLTID server-side fra Supabase (companies.provider_id).
 //   Aldri fra klientinput.
-// - Sanity menuDay-queries scopes via providers.slug (matcher provider-mirror i Sanity).
-// - Fail-closed: provider uten slug, eller lookup-feil, gir ALDRI unscoped query
-//   (det kunne eksponert en annen providers meny). Resultatet blir tom meny.
+// - Sanity menuDay-queries scopes via provider._ref (providers.id) og/eller providers.slug.
+// - Fail-closed: lookup-feil gir ALDRI unscoped query (kunne eksponert annen providers meny).
+// - Provider uten slug scopes fortsatt via providerRef (Supabase providers.id == Sanity _id).
 // - Legacy: company uten provider_id beholder dagens unscoped lesing (logges),
 //   slik at eksisterende flyt ikke regredierer. Ingen Melhus-hardcoding.
 
@@ -24,14 +24,25 @@ export type ProviderMenuScopeResult =
 
 /**
  * Beslutning for menuDay-lesing gitt et scope-resultat:
- * - "scoped":          query filtreres på providerSlug
+ * - "scoped":          query filtreres på providerRef (+ slug når tilgjengelig)
  * - "legacy-unscoped": company har ingen provider — dagens (globale) lesing beholdes
  * - "fail-closed":     provider finnes men kan ikke scopes trygt — IKKE hent menuDay
  */
 export type MenuScopeDecision =
-  | { mode: "scoped"; providerId: string; providerSlug: string }
+  | { mode: "scoped"; providerId: string; providerSlug: string | null }
   | { mode: "legacy-unscoped" }
   | { mode: "fail-closed"; reason: string };
+
+/** MenuDay GROQ opts fra server-side scope (aldri klientinput). */
+export function menuDayQueryOptsFromScope(
+  scope: MenuScopeDecision,
+): { providerSlug?: string | null; providerRef?: string | null } | undefined {
+  if (scope.mode !== "scoped") return undefined;
+  return {
+    providerSlug: scope.providerSlug,
+    providerRef: scope.providerId,
+  };
+}
 
 type MinimalDbClient = {
   from: (table: string) => any;
@@ -101,8 +112,7 @@ export async function resolveProviderMenuScopeForCompany(
  * Ren (testbar) beslutning: hvordan skal menuDay leses for dette scope-resultatet?
  *
  * Sikkerhetsregler:
- * - Provider med slug → scoped query.
- * - Provider uten slug → fail-closed (unscoped ville lekket andre providers meny).
+ * - Provider med id → scoped query via providerRef (slug legges til når tilgjengelig).
  * - Lookup-feil → fail-closed (aldri gjett).
  * - Ingen provider på company → legacy unscoped (dagens atferd, ingen provider å lekke fra).
  */
@@ -111,8 +121,9 @@ export function menuScopeDecision(result: ProviderMenuScopeResult): MenuScopeDec
     if (result.reason === "NO_PROVIDER") return { mode: "legacy-unscoped" };
     return { mode: "fail-closed", reason: result.reason };
   }
-  if (result.scope.providerSlug) {
-    return { mode: "scoped", providerId: result.scope.providerId, providerSlug: result.scope.providerSlug };
-  }
-  return { mode: "fail-closed", reason: "PROVIDER_MISSING_SLUG" };
+  return {
+    mode: "scoped",
+    providerId: result.scope.providerId,
+    providerSlug: result.scope.providerSlug,
+  };
 }

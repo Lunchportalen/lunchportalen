@@ -78,6 +78,7 @@ export async function GET(req: NextRequest) {
   let failed = 0;
   let skippedNoProvider = 0;
   let skippedUnknownProvider = 0;
+  const syncFailures: Array<{ date: string; planTier: string; providerRef: string; message: string }> = [];
 
   const admin = supabaseAdmin();
 
@@ -129,6 +130,9 @@ export async function GET(req: NextRequest) {
     } catch (e: unknown) {
       failed += 1;
       const msg = e instanceof Error ? e.message : String(e);
+      if (syncFailures.length < 20) {
+        syncFailures.push({ date, planTier, providerRef, message: msg });
+      }
       const pgCodeMatch = msg.match(/\b(23\d{3})\b/);
       const locationMatch = msg.match(/location_id=([0-9a-f-]{36})/i);
       opsLog("cron.menu_service_day_reconcile.sync_failed", {
@@ -177,7 +181,10 @@ export async function GET(req: NextRequest) {
   );
 
   if (failed > 0 && inserted === 0 && updated === 0 && unchanged === 0) {
-    return jsonErr(rid, "Reconcile sync feilet for alle menuDay.", 500, "sync_failed", { failed });
+    return jsonErr(rid, "Reconcile sync feilet for alle menuDay.", 500, "sync_failed", {
+      failed,
+      failures: syncFailures,
+    });
   }
 
   return jsonOk(
@@ -189,6 +196,7 @@ export async function GET(req: NextRequest) {
       unchanged,
       failed,
       skippedNoProvider: skippedProviderTotal,
+      failures: syncFailures.length > 0 ? syncFailures : undefined,
       from: today,
       to: toInclusive,
     },
