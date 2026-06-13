@@ -4,8 +4,8 @@ const fetchMock = vi.hoisted(() => vi.fn());
 
 vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/sanity/client", () => ({
-  sanity: {
+vi.mock("@/lib/sanity/server", () => ({
+  sanityServer: {
     fetch: fetchMock,
   },
 }));

@@ -16,7 +16,7 @@ export {
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import { menuDayProviderGroqClause } from "@/lib/cms/menuDayProviderFilter";
-import { sanity } from "@/lib/sanity/client";
+import { sanityServer } from "@/lib/sanity/server";
 import { menuDayHasDisplayableCopy } from "@/lib/sanity/menuDayGuards";
 
 export type MenuDayQueryOptions = {
@@ -125,7 +125,7 @@ const MENU_DAY_PROJECTION = `
 `;
 
 export async function getActiveAnnouncement(): Promise<Announcement | null> {
-  return sanity.fetch(
+  return sanityServer.fetch(
     `*[_type == "announcement" && active == true][0]{
       _id,
       title,
@@ -144,7 +144,7 @@ export async function getMenuForDate(
   }
 
   const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
-  const row = await sanity.fetch<MenuContent | null>(
+  const row = await sanityServer.fetch<MenuContent | null>(
     `*[
       _type == "menuDay" &&
       date == $date &&
@@ -183,7 +183,7 @@ export async function getMenuForDates(
   }
 
   const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
-  const rows = await sanity.fetch<MenuContent[]>(
+  const rows = await sanityServer.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
       date in $dates &&
@@ -215,7 +215,7 @@ export async function getMenuForRange(
   }
 
   const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
-  const rows = await sanity.fetch<MenuContent[]>(
+  const rows = await sanityServer.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
       date >= $from && date <= $to &&
@@ -247,7 +247,7 @@ export async function getMenuForDatesAdmin(
   }
 
   const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
-  const rows = await sanity.fetch<MenuContent[]>(
+  const rows = await sanityServer.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
       date in $dates &&
@@ -272,7 +272,7 @@ export async function getMenuForDateAndPlan(
   }
 
   const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
-  const rows = await sanity.fetch<MenuDay[]>(
+  const rows = await sanityServer.fetch<MenuDay[]>(
     `*[
       _type == "menuDay" &&
       date == $date &&
@@ -285,7 +285,9 @@ export async function getMenuForDateAndPlan(
     { date, planTier, ...provider.params },
   );
 
-  return Array.isArray(rows) ? rows.filter((m) => menuDayHasDisplayableCopy(m)) : [];
+  return Array.isArray(rows)
+    ? rows.filter((m) => m.isPublished === true && menuDayHasDisplayableCopy(m))
+    : [];
 }
 
 export { menuDayHasDisplayableCopy } from "@/lib/sanity/menuDayGuards";
