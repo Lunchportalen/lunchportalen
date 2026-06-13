@@ -54,7 +54,8 @@ describe("mapCompanyRegistrationInboxRow", () => {
     });
 
     expect(pipe.stage_label).toContain("Registrert");
-    expect(pipe.next_label).toContain("Opprett");
+    expect(pipe.next_label).toMatch(/deaktivert|godkjenning/i);
+    expect(pipe.next_label).not.toMatch(/Opprett avtaleutkast/i);
     expect(inboxPrimaryHref).toBe(`/superadmin/registrations/${registrationId}`);
   });
 
@@ -246,14 +247,15 @@ describe("deriveSuperadminRegistrationPipelineNext", () => {
     expect(r.next_label).toContain("Godkjenn");
   });
 
-  it("mangler utkast: neste er opprett utkast uten href (UI har knapp)", () => {
+  it("mangler utkast: neste steg er deaktivert manuell utkast-flyt (ingen href)", () => {
     const r = deriveSuperadminRegistrationPipelineNext({
       company_status: "PENDING",
       ledger_pending_agreement_id: null,
       ledger_active_agreement_id: null,
     });
     expect(r.next_href).toBeNull();
-    expect(r.next_label).toContain("Opprett");
+    expect(r.next_label).toMatch(/deaktivert|godkjenning/i);
+    expect(r.next_label).not.toMatch(/Opprett avtaleutkast/i);
   });
 });
 

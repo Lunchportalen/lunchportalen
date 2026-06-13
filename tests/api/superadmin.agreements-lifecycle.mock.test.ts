@@ -106,7 +106,7 @@ describe("superadmin agreements lifecycle API contract (mocked)", () => {
     expect(res.status).toBe(410);
     expect(body.ok).toBe(false);
     expect(body.rid).toBe("rid_lifecycle_mock");
-    expect(body.error).toBe("FLOW_DEPRECATED");
+    expect(body.error).toBe("AGREEMENT_DRAFT_FLOW_DISABLED");
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
