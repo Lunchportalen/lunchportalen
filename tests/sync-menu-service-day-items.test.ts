@@ -20,6 +20,7 @@ type Seed = {
   products: Array<{ id: string; sku: string; category_id: string }>;
   agreementId: string;
   dayTier: string;
+  companyProviderId?: string;
 };
 
 function makeAdmin(seed: Seed) {
@@ -74,6 +75,12 @@ function createChain(table: string, seed: Seed, upserts: unknown[]) {
       }
       if (table === "agreement_delivery_days") {
         return Promise.resolve({ data: { tier: seed.dayTier }, error: null });
+      }
+      if (table === "companies") {
+        return Promise.resolve({
+          data: { id: "co1", provider_id: seed.companyProviderId ?? PROVIDER_A },
+          error: null,
+        });
       }
       return Promise.resolve({ data: null, error: null });
     },
@@ -275,5 +282,50 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     expect(stats.msdiLocationsSkippedNoTier).toBe(0);
     expect(admin.getUpserts()).toHaveLength(0);
     expect(sanityServer.fetch).not.toHaveBeenCalled();
+  });
+
+  it("bruker PLAN_CATEGORIES-fallback når Sanity lunchCategory er tom", async () => {
+    (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
+      async (q: string) => {
+        if (q.includes("lunchCategory")) return [];
+        if (q.includes("menuDay")) return { mealTitle: "Testrett første ordre", meal: null };
+        return null;
+      },
+    );
+
+    const admin = makeAdmin(seed);
+    const stats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
+      serviceDate: "2026-05-18",
+      locationIds: ["loc1"],
+      providerId: PROVIDER_A,
+    });
+
+    expect(stats.msdiRowsUpserted).toBe(3);
+    const rows = admin.getUpserts()[0] as Array<Record<string, unknown>>;
+    const varmrett = rows.find((r) => r.product_id === "pr3");
+    expect(String(varmrett?.product_name_snapshot)).toContain("Testrett første ordre");
+  });
+
+  it("hopper lokasjon når companies.provider_id ikke matcher menuDay-provider", async () => {
+    (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
+      async (q: string) => {
+        if (q.includes("lunchCategory")) {
+          return [{ key: "varmrett", title: "Varmrett", displayOrder: 1, items: [] }];
+        }
+        if (q.includes("menuDay")) return { mealTitle: "X", meal: null };
+        return null;
+      },
+    );
+
+    const wrongProviderSeed: Seed = { ...seed, companyProviderId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" };
+    const admin = makeAdmin(wrongProviderSeed);
+    const stats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
+      serviceDate: "2026-05-18",
+      locationIds: ["loc1"],
+      providerId: PROVIDER_A,
+    });
+
+    expect(stats.msdiRowsUpserted).toBe(0);
+    expect(admin.getUpserts()).toHaveLength(0);
   });
 });

@@ -118,7 +118,10 @@ describe("POST /api/orders/set provider-menuScope", () => {
     expect(res.status).toBe(200);
 
     expect(resolveScopeMock.mock.calls[0][1]).toBe("company-a");
-    expect(getPublishedMenuForDateMock).toHaveBeenCalledWith("2026-06-15", { providerSlug: "provider-a" });
+    expect(getPublishedMenuForDateMock).toHaveBeenCalledWith("2026-06-15", {
+      providerSlug: "provider-a",
+      providerRef: "prov-a-id",
+    });
 
     // Write semantics uendret: samme RPC og samme params-kontrakt.
     expect(rpcMock).toHaveBeenCalledTimes(1);
@@ -144,7 +147,10 @@ describe("POST /api/orders/set provider-menuScope", () => {
     const res = await POST(mkReq({ date: "2026-06-15", action: "ORDER", choice_key: "varmmat" }));
     const json = await readJson(res);
 
-    expect(getPublishedMenuForDateMock).toHaveBeenCalledWith("2026-06-15", { providerSlug: "provider-b" });
+    expect(getPublishedMenuForDateMock).toHaveBeenCalledWith("2026-06-15", {
+      providerSlug: "provider-b",
+      providerRef: "prov-b-id",
+    });
     expect(res.status).toBe(409);
     expect(json.error ?? json.code).toBeDefined();
     expect(rpcMock).not.toHaveBeenCalled();

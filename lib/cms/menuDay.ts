@@ -22,7 +22,16 @@ import { menuDayHasDisplayableCopy } from "@/lib/sanity/menuDayGuards";
 export type MenuDayQueryOptions = {
   /** When set, scopes reads to `provider.slug` in Sanity. Omit = legacy unscoped (dev warning). */
   providerSlug?: string | null;
+  /** Supabase providers.id (== Sanity provider `_id`). Used when slug mirror is missing. */
+  providerRef?: string | null;
 };
+
+function menuDayProviderOpts(opts?: MenuDayQueryOptions) {
+  return {
+    providerSlug: opts?.providerSlug,
+    providerRef: opts?.providerRef,
+  };
+}
 
 export type Announcement = {
   _id: string;
@@ -134,7 +143,7 @@ export async function getMenuForDate(
     throw new Error(`[getMenuForDate] Invalid date (expected YYYY-MM-DD): ${date}`);
   }
 
-  const provider = menuDayProviderGroqClause(opts?.providerSlug);
+  const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
   const row = await sanity.fetch<MenuContent | null>(
     `*[
       _type == "menuDay" &&
@@ -173,7 +182,7 @@ export async function getMenuForDates(
     }
   }
 
-  const provider = menuDayProviderGroqClause(opts?.providerSlug);
+  const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
   const rows = await sanity.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
@@ -205,7 +214,7 @@ export async function getMenuForRange(
     throw new Error(`[getMenuForRange] Invalid range: from (${from}) > to (${to})`);
   }
 
-  const provider = menuDayProviderGroqClause(opts?.providerSlug);
+  const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
   const rows = await sanity.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
@@ -237,7 +246,7 @@ export async function getMenuForDatesAdmin(
     }
   }
 
-  const provider = menuDayProviderGroqClause(opts?.providerSlug);
+  const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
   const rows = await sanity.fetch<MenuContent[]>(
     `*[
       _type == "menuDay" &&
@@ -262,7 +271,7 @@ export async function getMenuForDateAndPlan(
     throw new Error(`[getMenuForDateAndPlan] Invalid date (expected YYYY-MM-DD): ${date}`);
   }
 
-  const provider = menuDayProviderGroqClause(opts?.providerSlug);
+  const provider = menuDayProviderGroqClause(menuDayProviderOpts(opts));
   const rows = await sanity.fetch<MenuDay[]>(
     `*[
       _type == "menuDay" &&

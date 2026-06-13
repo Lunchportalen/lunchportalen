@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { MenuDay } from "@/lib/cms/menuDay";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
 
 describe("buildEmployeeWeekDayRows", () => {
@@ -30,6 +31,39 @@ describe("buildEmployeeWeekDayRows", () => {
       { k: "wed", t: "BASIS" },
       { k: "thu", t: "LUXUS" },
       { k: "fri", t: "BASIS" },
+    ]);
+  });
+
+  it("fyller dishes fra publiserte menuDays per dato", () => {
+    const dates = ["2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19"];
+    const menuByDate = new Map<string, MenuDay[]>([
+      [
+        "2026-06-15",
+        [
+          {
+            _id: "menuDay-2026-06-15-BASIS-varmrett",
+            date: "2026-06-15",
+            planTier: "BASIS",
+            category: "varmrett",
+            mealTitle: "Testrett første ordre",
+            title: "Testrett første ordre",
+            isPublished: true,
+          },
+        ],
+      ],
+    ]);
+    const rows = buildEmployeeWeekDayRows({
+      dates,
+      deliveryDayKeys: ["mon"],
+      defaultTier: "BASIS",
+      weekOffset: 1,
+      menuByDate,
+    });
+    const mon = rows[0];
+    expect(mon?.isPublished).toBe(true);
+    expect(mon?.title).toBe("Testrett første ordre");
+    expect(mon?.dishes).toEqual([
+      { title: "Testrett første ordre", category: "varmrett", description: null },
     ]);
   });
 });

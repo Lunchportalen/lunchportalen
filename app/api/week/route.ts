@@ -15,8 +15,10 @@ import { opsLog } from "@/lib/ops/log";
 import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
-import { menuScopeDecision, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
+import { menuScopeDecision, menuDayQueryOptsFromScope, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import type { MenuDay } from "@/lib/cms/menuDay";
+import { asPlanTier } from "@/lib/cms/menuDayContract";
+import { EMPLOYEE_WEEK_DAY_KEYS } from "@/lib/week/employeeWeekMenuDays";
 
 type Tier = "BASIS" | "LUXUS" | "ENTERPRISE";
 type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
@@ -184,18 +186,18 @@ export async function GET(req: Request) {
       });
     }
 
-    const menuByDate = new Map<string, MenuDay>();
+    const menuByDate = new Map<string, MenuDay[]>();
     let menuFetchFailed = false;
     try {
       if (menuScope.mode !== "fail-closed") {
-        const { getMenuForDates } = await import("@/lib/cms/menuDay");
-        const menus = await getMenuForDates(
-          dates,
-          menuScope.mode === "scoped" ? { providerSlug: menuScope.providerSlug } : undefined,
-        );
-        for (const m of menus ?? []) {
-          const dt = String((m as MenuDay).date ?? "").slice(0, 10);
-          if (dt) menuByDate.set(dt, m as MenuDay);
+        const { getMenuForDateAndPlan } = await import("@/lib/cms/menuDay");
+        const menuDayOpts = menuDayQueryOptsFromScope(menuScope);
+        for (let i = 0; i < dates.length; i += 1) {
+          const date = dates[i];
+          const dayKey = EMPLOYEE_WEEK_DAY_KEYS[i] ?? "mon";
+          const tierForDay = asPlanTier(tierByDay?.[dayKey] ?? tier) ?? tier;
+          const menus = await getMenuForDateAndPlan(date, tierForDay, menuDayOpts);
+          if (menus.length > 0) menuByDate.set(date, menus);
         }
       }
     } catch (e: unknown) {
