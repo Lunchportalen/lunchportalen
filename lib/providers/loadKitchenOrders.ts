@@ -1,7 +1,8 @@
 // lib/providers/loadKitchenOrders.ts
 import "server-only";
 
-import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
+import { getCurrentWeekDates } from "@/lib/date/week";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import { normalizeKitchenOrderStatus, type KitchenOrderStatus } from "@/lib/providers/kitchenOrderStatus";
@@ -46,8 +47,10 @@ function parseDateRange(mode: string, anchor: string) {
     return { from: d, toExclusive: addDaysISO(d, 1), displayTo: d };
   }
   if (mode === "week") {
-    const from = startOfWeekISO(today);
-    return { from, toExclusive: addDaysISO(from, 7), displayTo: addDaysISO(from, 6) };
+    const dates = getCurrentWeekDates(new Date(`${today}T12:00:00`));
+    const from = dates[0] ?? today;
+    const last = dates[dates.length - 1] ?? from;
+    return { from, toExclusive: addDaysISO(last, 1), displayTo: last };
   }
   return { from: today, toExclusive: addDaysISO(today, 1), displayTo: today };
 }

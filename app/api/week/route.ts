@@ -14,6 +14,7 @@ import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { opsLog } from "@/lib/ops/log";
 import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
+import { loadEmployeeWeekMenusFromMsdi } from "@/lib/week/loadEmployeeWeekMenusFromMsdi";
 import { loadProfileByUserId } from "@/lib/db/profileLookup";
 import { menuScopeDecision, menuDayQueryOptsFromScope, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import type { MenuDay } from "@/lib/cms/menuDay";
@@ -198,6 +199,30 @@ export async function GET(req: Request) {
           const tierForDay = asPlanTier(tierByDay?.[dayKey] ?? tier) ?? tier;
           const menus = await getMenuForDateAndPlan(date, tierForDay, menuDayOpts);
           if (menus.length > 0) menuByDate.set(date, menus);
+        }
+      }
+
+      // MSDI fallback: when Sanity read misses but materialization exists (provider-scoped).
+      if (menuScope.mode === "scoped") {
+        const missingDates = dates.filter((d) => !menuByDate.has(d));
+        if (missingDates.length > 0) {
+          const tierByDate = new Map<string, "BASIS" | "LUXUS" | "ENTERPRISE">();
+          for (let i = 0; i < dates.length; i += 1) {
+            const date = dates[i];
+            const dayKey = EMPLOYEE_WEEK_DAY_KEYS[i] ?? "mon";
+            const tierForDay = asPlanTier(tierByDay?.[dayKey] ?? tier) ?? tier;
+            tierByDate.set(date, tierForDay);
+          }
+          const msdiMenus = await loadEmployeeWeekMenusFromMsdi(admin, {
+            companyId,
+            locationId: prof.location_id != null ? String(prof.location_id) : null,
+            providerId: menuScope.providerId,
+            dates: missingDates,
+            tierByDate,
+          });
+          for (const [date, menus] of msdiMenus) {
+            if (!menuByDate.has(date) && menus.length > 0) menuByDate.set(date, menus);
+          }
         }
       }
     } catch (e: unknown) {
