@@ -106,7 +106,7 @@ export default function GeographyGateForm({ locale = DEFAULT_START_LOCALE }: Pro
           return;
         }
 
-        const covered = json.data?.covered === true || json.data?.mvpForward === true;
+        const covered = json.data?.covered === true;
         setLocation({ postalCode: postal_code, city });
         setStep(covered ? "covered" : "uncovered");
         setStatus("idle");

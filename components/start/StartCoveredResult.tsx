@@ -11,8 +11,8 @@ import { DEFAULT_START_LOCALE, getStartCopy, type StartLocale } from "@/lib/i18n
  * Positive coverage result — premium match confirmation.
  *
  * DATA GAP (documented, do not fake):
- * /api/public/coverage/check only returns { covered, hasServiceAreas,
- * postal_code, city, mvpForward }. The matched provider id from
+ * /api/public/coverage/check returns { covered, hasServiceAreas,
+ * postal_code, city, reason }. The matched provider id from
  * lp_match_provider_by_postal_code is NOT exposed, and no provider names,
  * plans, menus or pricing exist in the response. Real supplier cards
  * require provider-match data in the coverage response (explicit API
