@@ -11,19 +11,27 @@ describe("app/admin/page", () => {
     expect(source).toContain("loadCompanyOperationalBrief");
   });
 
-  test("renderer nye Phase 1-seksjoner", () => {
+  test("renderer enterprise command center-seksjoner", () => {
     const source = readFileSync(PAGE_PATH, "utf-8");
-    expect(source).toContain("<KpiRow data={kpiData} />");
-    expect(source).toContain("<OrdersChart data={chartData} />");
-    expect(source).toContain("<ActivityFeed items={activityItems} />");
-    expect(source).toContain("<TodayRoster items={rosterItems} />");
-    expect(source).toContain("<SystemStatus data={systemStatus} />");
+    expect(source).toContain("<CommandCenterHero");
+    expect(source).toContain("<OnboardingActionPanel");
+    expect(source).toContain("<ReadinessStrip");
+    expect(source).toContain("<OrdersChart");
+    expect(source).toContain("<ActivityFeed");
+    expect(source).toContain("<TodayRoster");
+    expect(source).toContain("<SystemStatus");
   });
 
-  test("bruker getAgreementStatus for systemstatus", () => {
+  test("skjuler KPI-rad i onboarding-modus", () => {
     const source = readFileSync(PAGE_PATH, "utf-8");
-    expect(source).toContain("getAgreementStatus");
-    expect(source).toContain("agreementStatus.billingHold");
+    expect(source).toContain("{!onboarding ? <KpiRow");
+  });
+
+  test("bruker dashboard command center helper", () => {
+    const source = readFileSync(PAGE_PATH, "utf-8");
+    expect(source).toContain("buildReadinessStrip");
+    expect(source).toContain("isOnboardingMode");
+    expect(source).not.toContain("ledger_pipeline_label_nb");
   });
 
   test("fjerner gamle Oversikt-bokser", () => {

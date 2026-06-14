@@ -1,6 +1,28 @@
+import Link from "next/link";
+
+import { INVITE_EMPLOYEES_HREF, type ChartEmptyVariant } from "@/lib/admin/dashboardOnboarding";
+
 export type OrdersChartPoint = {
   label: string;
   value: number;
+};
+
+type OrdersChartProps = {
+  data: OrdersChartPoint[];
+  emptyVariant?: ChartEmptyVariant;
+};
+
+const EMPTY_COPY: Record<Exclude<ChartEmptyVariant, null>, { title: string; text: string; showCta: boolean }> = {
+  onboarding: {
+    title: "Bestillinger vises her når ansatte er invitert",
+    text: "Start med å invitere ansatte. Når de bestiller lunsj, får du oversikt per dag her.",
+    showCta: true,
+  },
+  waiting_orders: {
+    title: "Ingen bestillinger ennå",
+    text: "Når ansatte velger lunsj før cut-off, vises bestillingene her.",
+    showCta: false,
+  },
 };
 
 function clampPoint(value: number, max: number) {
@@ -8,7 +30,29 @@ function clampPoint(value: number, max: number) {
   return 190 - (Math.max(0, value) / max) * 140;
 }
 
-export default function OrdersChart({ data }: { data: OrdersChartPoint[] }) {
+export default function OrdersChart({ data, emptyVariant = null }: OrdersChartProps) {
+  if (emptyVariant) {
+    const copy = EMPTY_COPY[emptyVariant];
+    return (
+      <section className="ds-admin-card ds-admin-chart-empty">
+        <div className="ds-admin-card__head">
+          <div>
+            <h2 className="ds-admin-card__title">Bestillinger denne uken</h2>
+            <p className="ds-admin-card__sub">Daglige bestillinger per ukedag</p>
+          </div>
+        </div>
+        <div className="ds-admin-chart-empty__body">
+          <h3 className="ds-admin-chart-empty__title">{copy.title}</h3>
+          <p className="ds-admin-chart-empty__text">{copy.text}</p>
+          {copy.showCta ? (
+            <Link href={INVITE_EMPLOYEES_HREF} className="ds-btn ds-admin-chart-empty__cta">
+              Inviter ansatte
+            </Link>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
   const points = data.length ? data : [];
   const max = Math.max(1, ...points.map((point) => point.value));
   const xStep = points.length > 1 ? 520 / (points.length - 1) : 0;
