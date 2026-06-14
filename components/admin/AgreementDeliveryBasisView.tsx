@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import AdminTechnicalDetails from "@/components/admin/AdminTechnicalDetails";
 import type { AgreementPageData, DayKey } from "@/lib/admin/agreement/types";
 import { formatDateNO, formatDateTimeNO } from "@/lib/date/format";
 import type { CompanyOperationalBrief } from "@/lib/server/admin/loadCompanyOperationalBrief";
@@ -57,10 +58,10 @@ function StatusPill({ label }: { label: string }) {
 }
 
 function agreementStatusNb(s: AgreementPageData["status"]) {
-  if (s === "ACTIVE") return "Aktiv avtale (snapshot)";
+  if (s === "ACTIVE") return "Aktiv avtale";
   if (s === "PAUSED") return "Avtale pauset";
   if (s === "CLOSED") return "Avtale avsluttet";
-  if (s === "MISSING_AGREEMENT") return "Ingen aktiv avtale i snapshot";
+  if (s === "MISSING_AGREEMENT") return "Ingen aktiv avtale";
   return "Firma ikke aktivt for avtalevisning";
 }
 
@@ -77,7 +78,7 @@ export default function AgreementDeliveryBasisView({
         <div className="lp-card-pad">
           <h2 className="text-sm font-semibold text-neutral-900">Status · {formatDateNO(brief.today_iso)}</h2>
           <p className="mt-1 text-sm text-neutral-600">
-            Read-only innsyn i operativt leveringsgrunnlag. Samme kilder som avtale-API og firmadagens drift — uten pris, binding eller superadmin-felt.
+            Leveringsgrunnlag for eget firma — plan, leveringsdager og cut-off.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <StatusPill label={brief.company_status_upper} />
@@ -85,23 +86,20 @@ export default function AgreementDeliveryBasisView({
           </div>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtale (ledger)</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Aktiv avtale</dt>
               <dd className="mt-1 font-medium text-neutral-900">{brief.ledger_pipeline_label_nb}</dd>
             </div>
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtale (snapshot)</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtalestatus</dt>
               <dd className="mt-1 font-medium text-neutral-900">
                 {brief.snapshot_agreement_status_upper ?? "—"}{" "}
                 {agreement ? <span className="text-neutral-600">· {agreementStatusNb(agreement.status)}</span> : null}
               </dd>
             </div>
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5 sm:col-span-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Leveringsvindu (ledger)</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Leveringsvindu</dt>
               <dd className="mt-1 text-neutral-900">{brief.ledger_delivery_window_nb ?? "—"}</dd>
-              <dd className="mt-1 text-xs text-neutral-600">
-                Cut-off for bestilling samme dag: kl. 08:00 (Europe/Oslo). Status nå:{" "}
-                <span className="font-mono">{brief.cutoff_today}</span>
-              </dd>
+              <dd className="mt-1 text-xs text-neutral-600">Cut-off for bestilling samme dag: kl. 08:00 (Oslo).</dd>
             </div>
           </dl>
         </div>
@@ -109,8 +107,8 @@ export default function AgreementDeliveryBasisView({
 
       <section className="lp-card lp-card--elevated">
         <div className="lp-card-pad">
-          <h2 className="text-sm font-semibold text-neutral-900">Dag-for-dag (Basis / Luxus)</h2>
-          <p className="mt-1 text-xs text-neutral-600">Kilde: v_company_current_agreement_daymap + avtaleleveringsdager (samme som /api/admin/agreement).</p>
+          <h2 className="text-sm font-semibold text-neutral-900">Dag-for-dag</h2>
+          <p className="mt-1 text-xs text-neutral-600">Plan per ukedag i henhold til avtalen.</p>
           {agreement ? (
             <div className="mt-4 grid gap-2 sm:grid-cols-5">
               {DAY_KEYS.map((dayKey) => {
@@ -125,9 +123,9 @@ export default function AgreementDeliveryBasisView({
                     )}
                   >
                     <div className="font-semibold text-neutral-900">{DAY_LABELS[dayKey]}</div>
-                    <div className="mt-1 text-xs text-neutral-600">{active ? "Aktiv dag" : "Ikke aktiv"}</div>
+                    <div className="mt-1 text-xs text-neutral-600">{active ? "Leveringsdag" : "Ikke leveringsdag"}</div>
                     <div className="mt-1 text-xs font-medium text-neutral-800">
-                      {day?.tier ? (day.tier === "LUXUS" ? "Luxus" : "Basis") : "—"}
+                      {day?.tier ? (day.tier === "LUXUS" ? "Luxus" : day.tier === "ENTERPRISE" ? "Enterprise" : "Basis") : "—"}
                     </div>
                     {!active && day?.reasonIfInactive ? (
                       <div className="mt-1 text-[11px] text-neutral-600">{day.reasonIfInactive}</div>
@@ -137,10 +135,10 @@ export default function AgreementDeliveryBasisView({
               })}
             </div>
           ) : (
-            <p className="mt-3 text-sm text-neutral-600">Kunne ikke hente ukeskjema — se operative dager i daymap under.</p>
+            <p className="mt-3 text-sm text-neutral-600">Kunne ikke hente ukeskjema — se leveringsdager under.</p>
           )}
           <div className="mt-4 rounded-2xl bg-neutral-50/80 p-3 text-sm text-neutral-800 ring-1 ring-black/5">
-            <span className="font-semibold">Operative leveringsdager (daymap): </span>
+            <span className="font-semibold">Leveringsdager: </span>
             {brief.operative_days_label_nb}
           </div>
         </div>
@@ -148,7 +146,7 @@ export default function AgreementDeliveryBasisView({
 
       <section className="lp-card lp-card--elevated">
         <div className="lp-card-pad">
-          <h2 className="text-sm font-semibold text-neutral-900">Bestilling / uke</h2>
+          <h2 className="text-sm font-semibold text-neutral-900">Bestilling og uke</h2>
           <p className="mt-1 text-sm text-neutral-700">{brief.week_visibility_summary_nb}</p>
           {agreement?.updatedAt ? (
             <p className="mt-2 text-xs text-neutral-600">Avtaledata sist oppdatert: {formatDateTimeNO(agreement.updatedAt)}</p>
@@ -169,18 +167,19 @@ export default function AgreementDeliveryBasisView({
           <h2 className="text-sm font-semibold text-neutral-900">Videre</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus">
-              Ukeplan (/week)
+              Ukeplan for ansatte
             </Link>
             <Link href="/admin/orders" className="lp-btn lp-btn--secondary lp-neon-focus">
               Ordrehistorikk
             </Link>
-            <Link href="/admin#firma-operativt" className="lp-btn lp-btn--secondary lp-neon-focus">
-              Firmadagens drift
-            </Link>
             <Link href="/admin/agreement" className="lp-btn lp-btn--secondary lp-neon-focus">
-              Full avtalevisning
+              Avtale og drift
             </Link>
           </div>
+          <AdminTechnicalDetails
+            className="mt-4"
+            rows={[{ label: "source", value: "company_current_agreement" }]}
+          />
         </div>
       </section>
     </div>

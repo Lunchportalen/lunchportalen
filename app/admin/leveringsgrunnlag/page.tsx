@@ -15,6 +15,7 @@ import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AgreementDeliveryBasisView from "@/components/admin/AgreementDeliveryBasisView";
+import { SUPPORT_BUTTON_LABEL } from "@/lib/admin/companyAdminCopy";
 
 function blockedTitle(ctx: AdminContextBlocked) {
   if (ctx.blocked === "ACCOUNT_DISABLED") return "Konto er deaktivert";
@@ -54,7 +55,7 @@ export default async function LeveringsgrunnlagPage() {
               reason={ctx.support.reason}
               companyId={ctx.support.companyId}
               locationId={ctx.support.locationId}
-              buttonLabel="Send systemrapport"
+              buttonLabel={SUPPORT_BUTTON_LABEL}
               buttonClassName="lp-btn lp-btn--secondary"
             />
           }
@@ -82,7 +83,7 @@ export default async function LeveringsgrunnlagPage() {
   return (
     <AdminPageShell
       title="Leveringsgrunnlag"
-      subtitle="Read-only leveringsrammer for eget firma — ingen pris, binding eller operativ unntakshåndtering her."
+      subtitle="Leveringsrammer for eget firma — plan, leveringsdager og cut-off."
       actions={null}
     >
       {agr.kind === "error" ? (

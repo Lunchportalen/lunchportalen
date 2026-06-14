@@ -1,7 +1,8 @@
-// components/admin/LocationsPanel.tsx
 "use client";
 
 import { useEffect, useState } from "react";
+
+import { locationStatusLabel } from "@/lib/admin/companyAdminCopy";
 
 type Props = {
   companyId: string;
@@ -49,7 +50,6 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
   const [rows, setRows] = useState<LocationRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [actionErr, setActionErr] = useState<string | null>(null);
-  const [actionRid, setActionRid] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   async function load() {
@@ -79,7 +79,6 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
   async function toggleStatus(loc: LocationRow) {
     if (readOnly) return;
     setActionErr(null);
-    setActionRid(null);
     setBusyId(loc.id);
 
     const nextStatus = normalizeStatus(loc.status) === "ACTIVE" ? "INACTIVE" : "ACTIVE";
@@ -95,7 +94,6 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
       if (!res.ok || !json || (json as any).ok !== true) {
         const j = json as ApiErr | null;
         setActionErr(j?.message || j?.error || `HTTP ${res.status}`);
-        setActionRid(j?.rid ?? null);
         return;
       }
 
@@ -121,7 +119,7 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
         <div>
           <div className="text-lg font-semibold">Lokasjoner</div>
           <div className="text-sm text-[rgb(var(--lp-muted))]">
-            Leveringskontakt og leveringsvindu per lokasjon. Ingen manuelle unntak.
+            Leveringskontakt og leveringsvindu per sted. Ansatte velger lokasjon ved registrering.
           </div>
           {readOnly ? (
             <div className="mt-2 inline-flex rounded-2xl bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs text-[rgb(var(--lp-muted))] ring-1 ring-[rgb(var(--lp-border))]">
@@ -141,18 +139,20 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
       {actionErr ? (
         <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
           {actionErr}
-          {actionRid ? <div className="mt-1 text-xs font-mono">RID: {actionRid}</div> : null}
         </div>
       ) : null}
 
-      <div className="mt-4 overflow-hidden rounded-3xl ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="mt-4 rounded-3xl ring-1 ring-[rgb(var(--lp-border))]">
         <div className="bg-white p-4">
           {loading ? (
             <div className="text-sm text-[rgb(var(--lp-muted))]">Laster…</div>
           ) : err ? (
             <div className="text-sm text-red-600">{err}</div>
           ) : rows.length === 0 ? (
-            <div className="text-sm text-[rgb(var(--lp-muted))]">Ingen lokasjoner funnet.</div>
+            <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 text-sm text-[rgb(var(--lp-muted))]">
+              <div className="text-base font-semibold text-[rgb(var(--lp-text))]">Ingen leveringssteder registrert</div>
+              <p className="mt-2">Kontakt Lunchportalen hvis dere mangler et leveringssted.</p>
+            </div>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {rows.map((loc) => {
@@ -162,12 +162,12 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-semibold">{loc.name ?? "Lokasjon"}</div>
-                        <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">
-                          ID: <span className="font-mono">{loc.id}</span>
-                        </div>
+                        {loc.address ? (
+                          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{loc.address}</div>
+                        ) : null}
                       </div>
                       <span className={["rounded-full px-3 py-1 text-xs font-semibold ring-1", statusTone(status)].join(" ")}>
-                        {status}
+                        {locationStatusLabel(status)}
                       </span>
                     </div>
 
@@ -179,16 +179,21 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
                         Telefon: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.contact_phone ?? "—"}</span>
                       </div>
                       <div>
-                        Vindu: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.window_from ?? "—"}</span> –{" "}
+                        Leveringsvindu: <span className="font-medium text-[rgb(var(--lp-text))]">{loc.window_from ?? "—"}</span> –{" "}
                         <span className="font-medium text-[rgb(var(--lp-text))]">{loc.window_to ?? "—"}</span>
                       </div>
-                      {loc.address ? (
-                        <div className="text-xs text-[rgb(var(--lp-muted))]">Adresse: {loc.address}</div>
-                      ) : null}
+                      <div className="text-xs text-[rgb(var(--lp-muted))]">
+                        Ansatte knyttet til dette stedet bestiller lunsj hit.
+                      </div>
                       {loc.notes ? (
                         <div className="text-xs text-[rgb(var(--lp-muted))]">Notat: {loc.notes}</div>
                       ) : null}
                     </div>
+
+                    <details className="mt-3">
+                      <summary className="cursor-pointer text-xs font-semibold text-[rgb(var(--lp-muted))]">Vis teknisk info</summary>
+                      <div className="mt-2 font-mono text-[11px] text-[rgb(var(--lp-muted))]">location_id: {loc.id}</div>
+                    </details>
 
                     {!readOnly ? (
                       <div className="mt-4">
@@ -211,9 +216,10 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
             </div>
           )}
 
-          <div className="mt-3 text-xs text-[rgb(var(--lp-muted))]">
-            Firma-ID: <span className="font-mono">{companyId}</span>
-          </div>
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs font-semibold text-[rgb(var(--lp-muted))]">Vis teknisk info</summary>
+            <div className="mt-2 font-mono text-[11px] text-[rgb(var(--lp-muted))]">company_id: {companyId}</div>
+          </details>
         </div>
       </div>
     </section>
