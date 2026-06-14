@@ -485,6 +485,9 @@
         "lib/kitchen/dayData.ts",
         "lib/kitchen/ordersFeed.ts",
         "lib/kitchen/report.ts",
+        "lib/menu-publish/syncMenuServiceDayItems.ts",
+        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/menu/providerMenuScope.ts",
         "lib/orders/backupContext.ts",
         "lib/orders/companyOrderEligibility.ts",
         "lib/platform/engine.ts",
@@ -612,6 +615,7 @@
         "lib/menu-publish/syncMenuServiceDayItems.ts",
         "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
         "lib/orders/backupContext.ts",
+        "lib/providers/loadProviderCustomerDetail.ts",
         "lib/server/admin/loadCompanyOperationalBrief.ts",
         "lib/server/admin/loadCompanyOperativeDayRoster.ts",
         "lib/server/admin/loadCompanyOperativeRecentHistory.ts",
@@ -619,6 +623,11 @@
         "lib/server/employee/loadEmployeeOwnLunchRecentHistory.ts",
         "scripts/system-test/steps/createLocation.ts",
         "scripts/system-test/utils/cleanup.ts"
+      ]
+    },
+    "company_memberships": {
+      "used_in": [
+        "scripts/smoke/seed-e2e-users.mjs"
       ]
     },
     "company_registrations": {
@@ -808,14 +817,10 @@
         "app/api/superadmin/system/repairs/run/route.ts"
       ]
     },
-    "demo_interest_leads": {
-      "used_in": [
-        "app/api/public/demo-interest/route.ts"
-      ]
-    },
     "email_outbox": {
       "used_in": [
-        "app/api/outbox/process/route.ts"
+        "app/api/outbox/process/route.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
       ]
     },
     "employee_audit": {
@@ -1073,6 +1078,17 @@
         "app/api/admin/locations/audit/route.ts"
       ]
     },
+    "location_memberships": {
+      "used_in": [
+        "scripts/smoke/seed-e2e-users.mjs"
+      ]
+    },
+    "lp_user_allergens": {
+      "used_in": [
+        "app/api/kitchen/route.ts",
+        "app/api/me/user-allergens/route.ts"
+      ]
+    },
     "media_items": {
       "used_in": [
         "app/api/backoffice/ai/image-generator/route.ts",
@@ -1086,13 +1102,17 @@
     },
     "menu_service_day_items": {
       "used_in": [
-        "lib/menu-publish/syncMenuServiceDayItems.ts"
+        "lib/menu-publish/syncMenuServiceDayItems.ts",
+        "lib/week/loadEmployeeWeekMenusFromMsdi.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
       ]
     },
     "menu_service_days": {
       "used_in": [
         "lib/menu-publish/syncMenuServiceDayItems.ts",
-        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts"
+        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/week/loadEmployeeWeekMenusFromMsdi.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
       ]
     },
     "menu_visibility_days": {
@@ -1113,7 +1133,8 @@
     },
     "order_items": {
       "used_in": [
-        "lib/providers/loadKitchenOrders.ts"
+        "lib/providers/loadKitchenOrders.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
       ]
     },
     "orders": {
@@ -1134,7 +1155,6 @@
         "app/api/cron/daily-order-summary/route.ts",
         "app/api/cron/daily-sanity/route.ts",
         "app/api/cron/invoices/generate/route.ts",
-        "app/api/cron/meal-learning/route.ts",
         "app/api/driver/orders/route.ts",
         "app/api/health/route.ts",
         "app/api/kitchen/batch/start/route.ts",
@@ -1209,6 +1229,7 @@
         "lib/strategy/collect.ts",
         "lib/superadmin/loadSuperadminHomeSignals.ts",
         "scripts/ci-guard.mjs",
+        "scripts/smoke/_first-menu-order-smoke.mjs",
         "scripts/testSocialFlow.ts"
       ]
     },
@@ -1259,6 +1280,7 @@
     },
     "profiles": {
       "used_in": [
+        "app/(app)/home/page.tsx",
         "app/(app)/week/bestillingsprofil/page.tsx",
         "app/(app)/week/min-dag/page.tsx",
         "app/(app)/week/mine-lunsjendringer/page.tsx",
@@ -1309,6 +1331,7 @@
         "app/api/kitchen/route.ts",
         "app/api/me/agreement/route.ts",
         "app/api/me/route.ts",
+        "app/api/me/user-allergens/route.ts",
         "app/api/observability/route.ts",
         "app/api/onboarding/complete/route.ts",
         "app/api/order/cancel/route.ts",
@@ -1384,6 +1407,7 @@
         "lib/system/health.ts",
         "lib/system/systemHealthAggregator.ts",
         "scripts/k6/diag-prod-pool-access.mjs",
+        "scripts/smoke/seed-e2e-users.mjs",
         "scripts/system-test/steps/createEmployee.ts",
         "scripts/system-test/utils/cleanup.ts"
       ]
@@ -1398,12 +1422,21 @@
     },
     "provider_memberships": {
       "used_in": [
+        "lib/auth/getAuthContext.ts",
         "lib/auth/provider.ts"
       ]
     },
     "provider_service_areas": {
       "used_in": [
+        "app/api/public/coverage/check/route.ts",
         "lib/providers/loadServiceAreas.ts"
+      ]
+    },
+    "provider_settings": {
+      "used_in": [
+        "lib/providers/loadProviderOperationalSettings.ts",
+        "lib/providers/providerNotificationRecipients.ts",
+        "lib/providers/saveProviderOperationalSettings.ts"
       ]
     },
     "provider_subscriptions": {
@@ -1444,8 +1477,13 @@
         "lib/auth/providerContext.ts",
         "lib/cms/syncProviderToSanity.ts",
         "lib/integrations/tripletex/providerCustomerSync.ts",
+        "lib/menu-publish/resolveMenuDayProvider.ts",
+        "lib/menu/providerMenuScope.ts",
         "lib/providers/loadProviderBilling.ts",
+        "lib/providers/providerNotificationRecipients.ts",
+        "lib/providers/saveProviderLogo.ts",
         "lib/providers/saveProviderSettings.ts",
+        "lib/server/superadmin/loadCompanyRegistrationsInbox.ts",
         "lib/superadmin/tripletexAdminData.ts"
       ]
     },

@@ -871,6 +871,13 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/demo/page.tsx",
+      "url_path": "/demo",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/driver/page.tsx",
       "url_path": "/driver",
       "uses_tables": [
@@ -891,7 +898,9 @@
       "fetch_urls": [],
       "file": "app/(app)/home/page.tsx",
       "url_path": "/home",
-      "uses_tables": []
+      "uses_tables": [
+        "profiles"
+      ]
     },
     {
       "confidence": "confirmed",
@@ -1152,6 +1161,13 @@
       "fetch_urls": [],
       "file": "app/saas/plans/page.tsx",
       "url_path": "/saas/plans",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/start/page.tsx",
+      "url_path": "/start",
       "uses_tables": []
     },
     {
@@ -1561,6 +1577,13 @@
         "companies",
         "profiles"
       ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/(app)/week/allergenprofil/page.tsx",
+      "url_path": "/week/allergenprofil",
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",

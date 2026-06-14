@@ -93,7 +93,9 @@
     {
       "description": "Table \"menu_service_day_items\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/menu-publish/syncMenuServiceDayItems.ts"
+        "lib/menu-publish/syncMenuServiceDayItems.ts",
+        "lib/week/loadEmployeeWeekMenusFromMsdi.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -101,7 +103,9 @@
       "description": "Table \"menu_service_days\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
         "lib/menu-publish/syncMenuServiceDayItems.ts",
-        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts"
+        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/week/loadEmployeeWeekMenusFromMsdi.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -122,7 +126,17 @@
     {
       "description": "Table \"order_items\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/providers/loadKitchenOrders.ts"
+        "lib/providers/loadKitchenOrders.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"provider_settings\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/providers/loadProviderOperationalSettings.ts",
+        "lib/providers/providerNotificationRecipients.ts",
+        "lib/providers/saveProviderOperationalSettings.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -130,6 +144,20 @@
       "description": "Table \"*\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
         "scripts/audit/auditCore.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"company_memberships\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "scripts/smoke/seed-e2e-users.mjs"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"location_memberships\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "scripts/smoke/seed-e2e-users.mjs"
       ],
       "type": "table_not_in_database_ts"
     },

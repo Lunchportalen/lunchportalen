@@ -23,6 +23,12 @@
     "lp_apply_tripletex_paid_status": [
       "lib/integrations/tripletex/agreementWebhookHandlers.ts"
     ],
+    "lp_batch_transition_and_sync_orders": [
+      "lib/kitchen/batchTransitionRpc.ts"
+    ],
+    "lp_capture_lead": [
+      "app/api/public/leads/capture/route.ts"
+    ],
     "lp_company_order_summary": [
       "app/api/admin/company/[companyId]/summary/route.ts",
       "lib/admin/fetchCompanyOrderSummary.ts"
@@ -57,6 +63,9 @@
     ],
     "lp_insert_page_version": [
       "lib/backoffice/content/pageVersionsRepo.ts"
+    ],
+    "lp_match_provider_by_postal_code": [
+      "app/api/public/coverage/check/route.ts"
     ],
     "lp_membership_get": [
       "lib/auth/membershipLookup.ts"
@@ -141,7 +150,7 @@
       "app/leverandor/omrader/actions.ts"
     ]
   },
-  "count": 43,
+  "count": 46,
   "rpcs": [
     "claim_ai_jobs",
     "claim_repair_jobs",
@@ -150,6 +159,8 @@
     "lp_agreement_pause_ledger_active",
     "lp_agreement_reject_pending",
     "lp_apply_tripletex_paid_status",
+    "lp_batch_transition_and_sync_orders",
+    "lp_capture_lead",
     "lp_company_order_summary",
     "lp_company_register",
     "lp_company_registration_approve_provider",
@@ -161,6 +172,7 @@
     "lp_idem_complete",
     "lp_idem_fail",
     "lp_insert_page_version",
+    "lp_match_provider_by_postal_code",
     "lp_membership_get",
     "lp_order_advance_status",
     "lp_order_set",
