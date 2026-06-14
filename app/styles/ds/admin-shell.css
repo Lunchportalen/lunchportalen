@@ -1174,3 +1174,409 @@
   color: var(--ds-text-soft);
   font-weight: 600;
 }
+
+/* Company admin dashboard — enterprise command center */
+.ds-admin-command-center {
+  display: grid;
+  gap: 20px;
+}
+
+.ds-admin-command-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--ds-radius-md) + 4px);
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background:
+    radial-gradient(900px 420px at 0% -10%, rgba(245, 180, 0, 0.22), transparent 58%),
+    linear-gradient(145deg, #1a1714 0%, #2a241c 42%, #1f1b17 100%);
+  color: #fff;
+  box-shadow:
+    0 24px 60px rgba(17, 17, 17, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.ds-admin-command-hero__glow {
+  position: absolute;
+  inset: auto -10% -40% auto;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 180, 0, 0.28), transparent 68%);
+  pointer-events: none;
+}
+
+.ds-admin-command-hero__inner {
+  position: relative;
+  z-index: 1;
+  padding: clamp(24px, 4vw, 36px);
+}
+
+.ds-admin-command-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.ds-admin-command-hero__eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.ds-admin-command-hero__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ds-admin-command-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--ds-radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.ds-admin-command-hero__pill.is-agreement {
+  border: 1px solid rgba(47, 122, 101, 0.45);
+  background: rgba(47, 122, 101, 0.18);
+  color: #b8e6d4;
+}
+
+.ds-admin-command-hero__pill.is-provider {
+  border: 1px solid rgba(245, 180, 0, 0.42);
+  background: rgba(245, 180, 0, 0.14);
+  color: #ffe7a3;
+}
+
+.ds-admin-command-hero__title {
+  margin: 0 0 12px;
+  max-width: 18ch;
+  font-size: clamp(28px, 4.8vw, 40px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+  font-family: var(--lp-font-heading, Inter, system-ui, sans-serif);
+}
+
+.ds-admin-command-hero__sub {
+  margin: 0 0 8px;
+  max-width: 56ch;
+  font-size: clamp(15px, 2vw, 17px);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.ds-admin-command-hero__tertiary {
+  margin: 0 0 22px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.ds-admin-command-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ds-admin-command-hero__cta,
+.ds-admin-command-hero__cta-secondary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  text-decoration: none;
+}
+
+.ds-admin-command-hero__cta-secondary {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ds-admin-readiness {
+  margin-bottom: 4px;
+}
+
+.ds-admin-readiness__head {
+  margin-bottom: 12px;
+}
+
+.ds-admin-readiness__title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.ds-admin-readiness__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ds-text-soft);
+}
+
+.ds-admin-readiness__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ds-admin-readiness__card {
+  border-radius: 14px;
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface);
+  padding: 14px 16px;
+  box-shadow: var(--ds-shadow-card);
+}
+
+.ds-admin-readiness__card.is-ready {
+  border-color: rgba(47, 122, 101, 0.22);
+  background: linear-gradient(180deg, rgba(47, 122, 101, 0.06), #fff);
+}
+
+.ds-admin-readiness__card.is-action {
+  border-color: rgba(245, 180, 0, 0.34);
+  background: linear-gradient(180deg, rgba(245, 180, 0, 0.1), #fff);
+}
+
+.ds-admin-readiness__card.is-pending {
+  border-color: rgba(17, 17, 17, 0.08);
+  background: var(--ds-bg-soft);
+}
+
+.ds-admin-readiness__label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ds-text-soft);
+  margin-bottom: 6px;
+}
+
+.ds-admin-readiness__value {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--ds-text);
+}
+
+.ds-admin-onboard {
+  background:
+    linear-gradient(145deg, rgba(245, 180, 0, 0.12) 0%, rgba(255, 255, 255, 0.92) 42%),
+    var(--ds-surface);
+  border: 1px solid rgba(245, 180, 0, 0.28);
+  border-radius: var(--ds-radius-md);
+  padding: clamp(20px, 3vw, 28px);
+  box-shadow:
+    var(--ds-shadow-card),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.ds-admin-onboard--panel {
+  margin-top: -4px;
+}
+
+.ds-admin-onboard__head {
+  margin-bottom: 18px;
+}
+
+.ds-admin-onboard__title {
+  margin: 0 0 8px;
+  font-size: clamp(18px, 2.6vw, 22px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  font-family: var(--lp-font-heading, Inter, system-ui, sans-serif);
+}
+
+.ds-admin-onboard__sub {
+  margin: 0;
+  max-width: 58ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(17, 17, 17, 0.58);
+}
+
+.ds-admin-onboard__list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.ds-admin-onboard__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--ds-line);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(17, 17, 17, 0.55);
+}
+
+.ds-admin-onboard__step.is-done {
+  color: var(--ds-text);
+  border-color: rgba(47, 122, 101, 0.2);
+  background: rgba(47, 122, 101, 0.06);
+}
+
+.ds-admin-onboard__step.is-current {
+  color: var(--ds-text);
+  border-color: rgba(245, 180, 0, 0.42);
+  background: rgba(245, 180, 0, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(245, 180, 0, 0.08);
+}
+
+.ds-admin-onboard__step.is-info {
+  color: var(--ds-text);
+  border-color: rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.ds-admin-onboard__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ds-accent);
+  margin-top: 2px;
+}
+
+.ds-admin-onboard__step.is-done .ds-admin-onboard__marker {
+  color: var(--ds-green);
+}
+
+.ds-admin-onboard__step.is-info .ds-admin-onboard__marker {
+  color: var(--ds-text-soft);
+}
+
+.ds-admin-onboard__check-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.ds-admin-onboard__copy {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+}
+
+.ds-admin-onboard__label {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ds-admin-onboard__detail {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(17, 17, 17, 0.52);
+}
+
+.ds-admin-onboard__badge {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-text);
+  background: var(--ds-accent);
+  border-radius: var(--ds-radius-pill);
+  padding: 4px 10px;
+  align-self: center;
+}
+
+.ds-admin-onboard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ds-admin-onboard__cta,
+.ds-admin-chart-empty__cta {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  text-decoration: none;
+}
+
+.ds-admin-kpi__cta {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ds-text);
+}
+
+.ds-admin-chart-empty__body {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding: 8px 2px 4px;
+}
+
+.ds-admin-chart-empty__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.ds-admin-chart-empty__text {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(17, 17, 17, 0.58);
+}
+
+@media (min-width: 768px) {
+  .ds-admin-readiness__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .ds-admin-readiness__grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .ds-admin-command-hero__meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ds-admin-command-hero__actions,
+  .ds-admin-onboard__actions {
+    width: 100%;
+  }
+
+  .ds-admin-command-hero__cta,
+  .ds-admin-command-hero__cta-secondary,
+  .ds-admin-onboard__cta,
+  .ds-admin-chart-empty__cta {
+    width: 100%;
+  }
+}
