@@ -19,6 +19,7 @@ import { formatProviderLabel } from "@/lib/admin/dashboardOnboarding";
 import { AGREEMENT_CHANGE_NOTE, SUPPORT_BUTTON_LABEL } from "@/lib/admin/companyAdminCopy";
 
 import BlockedState from "@/components/admin/BlockedState";
+import AgreementChangeRequestPanel from "@/components/admin/AgreementChangeRequestPanel";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminCompanySelect from "@/components/admin/AdminCompanySelect";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -308,6 +309,12 @@ function AgreementBody({
           </div>
         </div>
       </Card>
+
+      <AgreementChangeRequestPanel
+        companyId={data.company.id}
+        activeDeliveryDays={data.weekPlan.filter((d) => d.active).map((d) => d.dayKey)}
+        disabled={data.status !== "ACTIVE"}
+      />
 
       <Card className="p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
