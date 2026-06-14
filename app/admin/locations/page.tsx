@@ -14,6 +14,7 @@ import {
 import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import LocationsPanel from "@/components/admin/LocationsPanel";
+import { LOCATIONS_SCOPE_NOTE, SUPPORT_BUTTON_LABEL } from "@/lib/admin/companyAdminCopy";
 
 function GhostLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -136,11 +137,13 @@ export default async function AdminLocationsPage() {
               Firmaadmin · {companyName} · Lokasjoner
             </div>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Lokasjoner</h1>
-            <p className="mt-2 text-neutral-600">Aktiver eller deaktiver leveringslokasjoner innenfor avtalt scope.</p>
+            <p className="mt-2 text-neutral-600">
+              Leveringssteder der ansatte mottar lunsj. Kontakt og leveringsvindu vises per sted.
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <GhostLink href="/admin">← Command Center</GhostLink>
+            <GhostLink href="/admin">← Oversikt</GhostLink>
             <GhostLink href="/admin/people">Ansatte</GhostLink>
             <PrimaryLink href="/admin/history">Historikk</PrimaryLink>
           </div>
@@ -148,12 +151,13 @@ export default async function AdminLocationsPage() {
 
         <SectionCard
           title="Lokasjoner"
-          subtitle="Dette er firmaets registrerte leveringslokasjoner."
+          subtitle="Dette er firmaets registrerte leveringssteder."
           right={
             <SupportReportButton
               reason="COMPANY_ADMIN_LOCATIONS_SUPPORT_REPORT"
               companyId={ctx.companyId}
               locationId={ctx.profile.location_id ?? null}
+              buttonLabel={SUPPORT_BUTTON_LABEL}
             />
           }
         >
@@ -161,15 +165,11 @@ export default async function AdminLocationsPage() {
 
           <div className="mt-6 rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
             <div className="text-xs font-semibold tracking-wide text-neutral-700">Merk</div>
-            <p className="mt-1 text-sm text-neutral-700">
-              Avtale, priser og leveranseoppsett endres kun av superadmin.
-            </p>
+            <p className="mt-1 text-sm text-neutral-700">{LOCATIONS_SCOPE_NOTE}</p>
           </div>
 
           <details className="mt-5">
-            <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
-              Vis teknisk info (kun ved behov)
-            </summary>
+            <summary className="cursor-pointer text-sm font-semibold text-neutral-900">Vis teknisk info</summary>
             <pre className="mt-3 max-h-72 overflow-auto rounded-2xl bg-neutral-950 p-4 text-xs text-white/85 ring-1 ring-black/10">
 {JSON.stringify(
   {
@@ -188,9 +188,9 @@ export default async function AdminLocationsPage() {
 
         {/* Footer */}
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-500">
-          <span>Lokasjoner kan aktiveres/deaktiveres av kunde-admin. Avtaleendringer gjøres av superadmin.</span>
+          <span>Lokasjoner kan aktiveres og deaktiveres av firmaadmin. Endringer i avtalen håndteres av Lunchportalen.</span>
           <Link className="font-semibold text-neutral-700 hover:text-neutral-900" href="/admin">
-            Til Command Center →
+            Til oversikt →
           </Link>
         </div>
       </div>

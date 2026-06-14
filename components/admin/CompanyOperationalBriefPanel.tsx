@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import AdminTechnicalDetails from "@/components/admin/AdminTechnicalDetails";
 import { formatDateNO } from "@/lib/date/format";
 import type { CompanyOperationalBrief } from "@/lib/server/admin/loadCompanyOperationalBrief";
 
@@ -62,7 +63,7 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
               Firmadagens drift · {formatDateNO(brief.today_iso)}
             </h2>
             <p className="mt-1 text-sm lp-muted">
-              Lesing fra companies, ledger-avtaler, daymap, closed_dates, cut-off og operative ordre (samme filter som /api/kitchen). Ingen ny ordre- eller driftmotor.
+              Status for bestilling, leveringsdager og ordre i dag — basert på avtalen og cut-off.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -73,52 +74,42 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
 
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtale (ledger)</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Aktiv avtale</dt>
             <dd className="mt-1 font-medium text-neutral-900">{brief.ledger_pipeline_label_nb}</dd>
           </div>
           <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtale (snapshot)</dt>
-            <dd className="mt-1 font-medium text-neutral-900">
-              {brief.snapshot_agreement_status_upper ?? "—"}{" "}
-              <span className="text-xs font-normal text-neutral-600">(company_current_agreement)</span>
-            </dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtalestatus</dt>
+            <dd className="mt-1 font-medium text-neutral-900">{brief.snapshot_agreement_status_upper ?? "—"}</dd>
           </div>
           <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5 sm:col-span-2">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Operative leveringsdager (daymap)</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Leveringsdager</dt>
             <dd className="mt-1 text-neutral-900">{brief.operative_days_label_nb}</dd>
           </div>
           <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5 sm:col-span-2">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Uke i /week</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Bestillingsvindu for ansatte</dt>
             <dd className="mt-1 text-neutral-900">{brief.week_visibility_summary_nb}</dd>
           </div>
           <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5 sm:col-span-2">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Cut-off i dag (modell)</dt>
-            <dd className="mt-1 text-sm text-neutral-900">
-              {cutoffLabelNb(brief.cutoff_today)}{" "}
-              <span className="font-mono text-xs text-neutral-600">({brief.cutoff_today})</span>
-            </dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Cut-off i dag</dt>
+            <dd className="mt-1 text-sm text-neutral-900">{cutoffLabelNb(brief.cutoff_today)}</dd>
           </div>
         </dl>
 
         <div className="mt-6 rounded-2xl border border-black/5 bg-white/90 p-4 ring-1 ring-black/5">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Operative ordre i dag (firma)</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Bestillinger i dag</h3>
           {brief.orders_day.ok === false ? (
             <p className="mt-2 text-sm text-rose-800">{brief.orders_day.message}</p>
           ) : (
             <div className="mt-3 space-y-3 text-sm text-neutral-900">
               <div className="flex flex-wrap gap-4">
                 <div>
-                  <span className="text-xs font-semibold text-neutral-600">Totalt operative</span>
+                  <span className="text-xs font-semibold text-neutral-600">Totalt</span>
                   <div className="text-2xl font-semibold tabular-nums">{brief.orders_day.total_operative}</div>
-                </div>
-                <div>
-                  <span className="text-xs font-semibold text-neutral-600">Aktive rå (DB)</span>
-                  <div className="text-lg font-semibold tabular-nums text-neutral-800">{brief.orders_day.total_raw_active}</div>
                 </div>
               </div>
               {Object.keys(brief.orders_day.by_slot).length > 0 ? (
                 <div>
-                  <div className="text-xs font-semibold text-neutral-600">Per vindu (slot)</div>
+                  <div className="text-xs font-semibold text-neutral-600">Per leveringsvindu</div>
                   <p className="mt-1 text-neutral-800">
                     {Object.entries(brief.orders_day.by_slot)
                       .sort(([a], [b]) => a.localeCompare(b, "nb"))
@@ -127,7 +118,7 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
                   </p>
                 </div>
               ) : (
-                <p className="text-sm text-neutral-600">Ingen operative ordre — ingen slot-fordeling.</p>
+                <p className="text-sm text-neutral-600">Ingen bestillinger registrert i dag.</p>
               )}
               {brief.orders_day.by_location.length > 0 ? (
                 <div>
@@ -135,9 +126,7 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
                   <ul className="mt-1 list-disc space-y-1 pl-5 text-neutral-800">
                     {brief.orders_day.by_location.map((row) => (
                       <li key={row.location_id}>
-                        {row.location_label}{" "}
-                        <span className="font-mono text-xs text-neutral-500">({row.location_id})</span>:{" "}
-                        <span className="tabular-nums font-semibold">{row.count}</span>
+                        {row.location_label}: <span className="tabular-nums font-semibold">{row.count}</span>
                       </li>
                     ))}
                   </ul>
@@ -146,7 +135,7 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
             </div>
           )}
           <div className="mt-3 border-t border-black/5 pt-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Ordre — forklaring</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Forklaring</div>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-800">
               {brief.orders_context_lines_nb.map((line, i) => (
                 <li key={`oc-${i}`}>{line}</li>
@@ -156,7 +145,7 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
         </div>
 
         <div className="mt-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Bestilling / drift — forklaring</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Bestilling i dag</div>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-800">
             {brief.booking_detail_lines_nb.map((line, i) => (
               <li key={`bk-${i}-${line.slice(0, 24)}`}>{line}</li>
@@ -164,9 +153,17 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
           </ul>
         </div>
 
+        <AdminTechnicalDetails
+          className="mt-4"
+          rows={[
+            { label: "cutoff_model", value: brief.cutoff_today },
+            { label: "source", value: "company_current_agreement" },
+          ]}
+        />
+
         <div className="mt-4 flex flex-wrap gap-2">
           <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus">
-            Ukeplan (/week)
+            Ukeplan for ansatte
           </Link>
           <Link href="/admin/uke-bestillbarhet" className="lp-btn lp-btn--secondary lp-neon-focus">
             Uke og bestillbarhet
@@ -175,19 +172,7 @@ export default function CompanyOperationalBriefPanel({ brief }: { brief: Company
             Ordrehistorikk
           </Link>
           <Link href="/admin/agreement" className="lp-btn lp-btn--secondary lp-neon-focus">
-            Avtale
-          </Link>
-          <Link href="/admin/leveringsgrunnlag" className="lp-btn lp-btn--secondary lp-neon-focus">
-            Leveringsgrunnlag
-          </Link>
-          <Link href="/admin/dagens-brukere" className="lp-btn lp-btn--secondary lp-neon-focus">
-            Dagens brukere
-          </Link>
-          <Link href="/admin/dagens-levering" className="lp-btn lp-btn--secondary lp-neon-focus">
-            Dagens levering
-          </Link>
-          <Link href="/admin/history" className="lp-btn lp-btn--secondary lp-neon-focus">
-            Aktivitet / historikk
+            Avtale og drift
           </Link>
         </div>
       </div>

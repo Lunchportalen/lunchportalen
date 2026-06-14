@@ -3,12 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+import AdminTechnicalDetails from "@/components/admin/AdminTechnicalDetails";
 import EmployeesTable from "@/components/admin/EmployeesTable";
 import InvitesPanel from "@/components/admin/InvitesPanel";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Button } from "@/components/ui/button";
 import { Card, getCardVariantClass } from "@/components/ui/card";
+import {
+  PEOPLE_ONBOARDING_EMPTY_BODY,
+  PEOPLE_ONBOARDING_EMPTY_TITLE,
+  SUPPORT_BUTTON_LABEL,
+  TECHNICAL_DETAILS_SUMMARY,
+} from "@/lib/admin/companyAdminCopy";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -54,6 +61,8 @@ type PeopleData = {
 type ApiOk = { ok: true; rid: string; data: PeopleData };
 type ApiErr = { ok: false; rid: string; error: string; message?: string; status?: number };
 
+type LocationRow = { id: string; name: string | null };
+
 async function readJsonOrThrow(res: Response) {
   const text = await res.text();
   if (!text) throw new Error(`Server returnerte tom respons (HTTP ${res.status}).`);
@@ -94,6 +103,7 @@ export default function PeopleClient({
   const [data, setData] = useState<PeopleData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [rid, setRid] = useState<string | null>(null);
+  const [locationLabels, setLocationLabels] = useState<Record<string, string>>({});
 
   async function load(opts?: { keepError?: boolean }) {
     setLoading(true);
@@ -124,8 +134,44 @@ export default function PeopleClient({
     load();
   }, []);
 
+  useEffect(() => {
+    const companyId = data?.company?.id ?? supportCompanyId;
+    if (!companyId) return;
+
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/locations?companyId=${encodeURIComponent(companyId)}`, {
+          headers: { "cache-control": "no-store" },
+        });
+        const json = (await res.json().catch(() => null)) as {
+          ok?: boolean;
+          data?: { locations?: LocationRow[] };
+          locations?: LocationRow[];
+        } | null;
+        if (!alive || !res.ok || !json || json.ok !== true) return;
+        const payload = json.data ?? json;
+        const locations = Array.isArray(payload?.locations) ? payload.locations : [];
+        const map: Record<string, string> = {};
+        for (const loc of locations) {
+          if (loc.id) map[loc.id] = loc.name?.trim() || "Lokasjon";
+        }
+        setLocationLabels(map);
+      } catch {
+        /* optional enrichment */
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [data?.company?.id, supportCompanyId]);
+
   const counts = data?.counts ?? { total: 0, active: 0, deactivated: 0 };
   const companyName = data?.company?.name ?? "Firma";
+  const employeeRows = (data?.employees ?? []).filter((row) => row.role === "employee");
+  const invitedEmployees = employeeRows.length;
+  const showOnboardingHero = !loading && !err && invitedEmployees === 0;
 
   const sourceMeta = useMemo(() => {
     return {
@@ -138,32 +184,50 @@ export default function PeopleClient({
   return (
     <AdminPageShell
       title="Ansatte"
-      subtitle="Inviter, deaktiver og hold kontroll. Lesetilgang til avtale-rammer."
+      subtitle={`Inviter ansatte til ${companyName}. Ansatte må inviteres før de kan bestille lunsj.`}
       actions={
         <>
           <Button asChild className="lp-neon-focus lp-neon-glow-hover">
-            <Link href="/admin/invite">Inviter</Link>
+            <Link href="/admin/invite">Inviter ansatt</Link>
           </Button>
           <details className="relative">
             <summary className="lp-btn lp-btn--ghost min-h-[44px] cursor-pointer list-none border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-2 text-sm font-semibold">
               Flere
             </summary>
             <div className="absolute right-0 z-10 mt-2 w-56 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-2 shadow-[var(--lp-shadow-soft)]">
+              <Link href="/admin/invite" className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgb(var(--lp-surface-alt))]">
+                Inviter via e-postliste
+              </Link>
               <Link href="/admin/export/employees.csv" className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgb(var(--lp-surface-alt))]">
                 Last ned CSV
-              </Link>
-              <Link href="/admin/invite" className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgb(var(--lp-surface-alt))]">
-                Inviter flere
               </Link>
             </div>
           </details>
         </>
       }
     >
+      {showOnboardingHero ? (
+        <section className="lp-card lp-card--elevated p-6 text-center sm:text-left">
+          <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_ONBOARDING_EMPTY_TITLE}</h2>
+          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_ONBOARDING_EMPTY_BODY}</p>
+          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
+            Firmaadmin-kontoen er for administrasjon. Inviter minst én ansatt som skal bestille lunsj.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <Button asChild className="lp-neon-focus lp-neon-glow-hover">
+              <Link href="/admin/invite">Inviter ansatt</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/admin/invite">Inviter via e-postliste</Link>
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
       <section className="lp-card p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="text-xs text-[rgb(var(--lp-muted))]">Firmaadmin · {companyName} · Ansatte</div>
+            <div className="text-xs text-[rgb(var(--lp-muted))]">Firmaadmin · {companyName}</div>
             <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kun ansatte i ditt firma vises.</div>
           </div>
           {viewerEmail ? <div className="text-xs text-[rgb(var(--lp-muted))]">Innlogget: {viewerEmail}</div> : null}
@@ -178,15 +242,21 @@ export default function PeopleClient({
 
       {err ? (
         <section className="lp-card p-6">
-          <div className="text-sm text-[rgb(var(--lp-muted))]">Kunne ikke hente ansatte. {err}{rid ? ` RID: ${rid}` : ""}</div>
+          <div className="text-sm text-[rgb(var(--lp-muted))]">Kunne ikke hente ansatte. {err}</div>
+          {rid ? (
+            <AdminTechnicalDetails
+              className="mt-3"
+              rows={[{ label: "RID", value: rid }]}
+            />
+          ) : null}
         </section>
       ) : null}
 
       <section className="lp-panel overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgb(var(--lp-border))] px-6 py-4">
           <div>
-            <h2 className="lp-h2">Ansatte</h2>
-            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Full bredde, tenant-sikker tabell.</div>
+            <h2 className="lp-h2">Oversikt</h2>
+            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Inviterte ansatte og status.</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form action="/admin/people" method="get" className="flex items-center gap-2">
@@ -202,11 +272,6 @@ export default function PeopleClient({
         </div>
 
         <div className="px-6 py-4">
-          <div className="mb-4 flex flex-wrap gap-2">
-            <span className="rounded-full border border-[rgb(var(--lp-border))] bg-white px-3 py-1 text-xs text-[rgb(var(--lp-text))]">Alle</span>
-            <span className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1 text-xs text-[rgb(var(--lp-muted))]">Aktive</span>
-            <span className="rounded-full border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-1 text-xs text-[rgb(var(--lp-muted))]">Deaktivert</span>
-          </div>
           <EmployeesTable
             companyId={data?.company?.id ?? supportCompanyId}
             companyName={data?.company?.name ?? null}
@@ -216,6 +281,7 @@ export default function PeopleClient({
             employees={data?.employees ?? []}
             loading={loading}
             error={err}
+            locationLabels={locationLabels}
             onReload={load}
           />
         </div>
@@ -235,21 +301,22 @@ export default function PeopleClient({
             reason="COMPANY_ADMIN_PEOPLE_SUPPORT_REPORT"
             companyId={supportCompanyId}
             locationId={supportLocationId}
-            buttonLabel="Send systemrapport"
+            buttonLabel={SUPPORT_BUTTON_LABEL}
             buttonClassName="lp-btn lp-btn--secondary"
           />
-          <div className="text-sm text-[rgb(var(--lp-muted))]">
-            Rapporten inkluderer firma, lokasjon og tidspunkt.
-          </div>
+          <div className="text-sm text-[rgb(var(--lp-muted))]">Vi hjelper med invitasjoner og tilgang.</div>
         </div>
       </details>
 
-      <details className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}>
-        <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">Kilde til sannhet</summary>
-        <div className="mt-3 text-sm text-[rgb(var(--lp-text))]">
-          companyId: {sourceMeta.companyId || "Ikke tilgjengelig"} · updatedAt: {sourceMeta.updatedAt || "Ikke tilgjengelig"} · rid: {sourceMeta.rid || "Ikke tilgjengelig"}
-        </div>
-      </details>
+      <AdminTechnicalDetails
+        className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}
+        summary={TECHNICAL_DETAILS_SUMMARY}
+        rows={[
+          { label: "company_id", value: sourceMeta.companyId || "Ikke tilgjengelig" },
+          { label: "updated_at", value: sourceMeta.updatedAt || "Ikke tilgjengelig" },
+          { label: "rid", value: sourceMeta.rid || "Ikke tilgjengelig" },
+        ]}
+      />
     </AdminPageShell>
   );
 }

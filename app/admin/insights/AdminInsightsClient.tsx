@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import AdminTechnicalDetails from "@/components/admin/AdminTechnicalDetails";
+import {
+  INSIGHTS_EMPTY_BODY,
+  INSIGHTS_EMPTY_TITLE,
+} from "@/lib/admin/companyAdminCopy";
+
 type RangeKey = "7d" | "14d" | "30d";
 
 type DaySummary = {
@@ -194,7 +200,7 @@ export default function AdminInsightsClient() {
     return (
       <SectionCard title="Innsikt" subtitle="Kunne ikke hente data.">
         <div className="text-sm text-rose-700">{err}</div>
-        {rid ? <div className="mt-2 text-xs text-neutral-500">RID: {rid}</div> : null}
+        {rid ? <AdminTechnicalDetails className="mt-3" rows={[{ label: "rid", value: rid }]} /> : null}
       </SectionCard>
     );
   }
@@ -207,15 +213,42 @@ export default function AdminInsightsClient() {
     );
   }
 
+  const hasOrders = data.deliveries.total_orders > 0;
+
+  if (!hasOrders) {
+    return (
+      <SectionCard
+        title={INSIGHTS_EMPTY_TITLE}
+        subtitle={INSIGHTS_EMPTY_BODY}
+      >
+        <div className="rounded-2xl border border-dashed border-black/10 bg-white/60 p-6 text-center sm:text-left">
+          <p className="text-sm text-neutral-700">{INSIGHTS_EMPTY_BODY}</p>
+          <p className="mt-2 text-sm text-neutral-600">
+            Inviter ansatte og start pilotbestilling — da fylles denne siden med faktiske tall.
+          </p>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  const hasDemandHistory =
+    demandData != null &&
+    demandData.weekdayRanking.some((w) => w.sampleDays > 0 && w.avgActive > 0);
+
   return (
     <div className="space-y-6">
       <SectionCard
-        title="AI Innsikt"
-        subtitle="Deterministisk etterspørselsstøtte fra ordrehistorikk — endrer ikke bestillinger eller produksjon automatisk."
+        title="Forbruksinnsikt"
+        subtitle="Basert på faktiske bestillinger. Vises når det finnes historikk."
       >
         {demandLoading ? <div className="h-20 animate-pulse rounded-2xl bg-black/5" /> : null}
         {demandErr && !demandLoading ? <div className="text-sm text-rose-700">{demandErr}</div> : null}
-        {demandData && !demandLoading ? (
+        {!hasDemandHistory && !demandLoading && !demandErr ? (
+          <p className="text-sm text-neutral-600">
+            Det finnes ikke nok bestillingshistorikk ennå til meningsfull forbruksinnsikt.
+          </p>
+        ) : null}
+        {demandData && hasDemandHistory && !demandLoading ? (
           <div className="space-y-4 text-sm text-neutral-800">
             <p className="text-xs text-neutral-600">{demandData.transparencyNote}.</p>
             <div className="rounded-2xl bg-neutral-50/70 p-4 ring-1 ring-black/5">
@@ -228,7 +261,7 @@ export default function AdminInsightsClient() {
                 {fmtNum(demandData.nextBusinessDayForecast.plannedWithBuffer)} (+{demandData.nextBusinessDayForecast.bufferPercent.toFixed(0)} %)
               </div>
               <div className="mt-2 text-xs text-neutral-600">
-                Konfidansindikator: {fmtNum(demandData.nextBusinessDayForecast.confidence * 100, 0)} % (intern).
+                Basert på historikk fra {demandData.window.from} til {demandData.window.to}.
               </div>
             </div>
             <div>
@@ -339,8 +372,7 @@ export default function AdminInsightsClient() {
             hint="Registrerte endringer etter 08:00."
           />
         </div>
-        {rid ? <div className="mt-3 text-xs text-neutral-500">RID: {rid}</div> : null}
-        <div className="mt-3 text-xs text-neutral-600">Systemet er én sannhetskilde. Avvik logges automatisk med RID.</div>
+        {rid ? <AdminTechnicalDetails className="mt-3" rows={[{ label: "rid", value: rid }]} /> : null}
       </SectionCard>
 
       <SectionCard
