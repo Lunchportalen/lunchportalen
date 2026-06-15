@@ -14,12 +14,16 @@ import {
 import { fetchAgreementPageDataForAdmin } from "@/lib/admin/fetchAgreementPageDataServer";
 import { formatDateNO, formatDateTimeNO } from "@/lib/date/format";
 import type { AgreementPageData, DayKey } from "@/lib/admin/agreement/types";
-import { ADMIN_DASHBOARD_HREF } from "@/lib/admin/constants";
+import { loadDashboardCompanyMeta } from "@/lib/admin/loadDashboardCompanyMeta";
+import { formatProviderLabel } from "@/lib/admin/dashboardOnboarding";
+import { AGREEMENT_CHANGE_NOTE, SUPPORT_BUTTON_LABEL } from "@/lib/admin/companyAdminCopy";
 
 import BlockedState from "@/components/admin/BlockedState";
+import AgreementChangeRequestPanel from "@/components/admin/AgreementChangeRequestPanel";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminCompanySelect from "@/components/admin/AdminCompanySelect";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import AdminTechnicalDetails from "@/components/admin/AdminTechnicalDetails";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
@@ -86,13 +90,13 @@ function statusBadge(status: AgreementPageData["status"]) {
 
 function statusNote(status: AgreementPageData["status"]) {
   if (status === "ACTIVE") {
-    return "Inngåtte avtalerammer for eget firma (read-only). Endringer skjer via avtalt prosess — ikke fra denne flaten.";
+    return "Dette er avtalen som styrer meny, leveringsdager og bestilling. Endringer skjer via Lunchportalen.";
   }
-  if (status === "PAUSED") return "Avtalen er pauset. Visningen er skrivebeskyttet.";
-  if (status === "CLOSED") return "Avtalen er avsluttet. Visningen er skrivebeskyttet.";
-  if (status === "MISSING_AGREEMENT") return "Firmaet mangler aktiv avtale. Visningen er skrivebeskyttet.";
-  if (status === "COMPANY_DISABLED") return "Firmaet er deaktivert. Visningen er skrivebeskyttet.";
-  return "Skrivebeskyttet visning.";
+  if (status === "PAUSED") return "Avtalen er pauset. Kontakt Lunchportalen for oppfølging.";
+  if (status === "CLOSED") return "Avtalen er avsluttet. Kontakt Lunchportalen for oppfølging.";
+  if (status === "MISSING_AGREEMENT") return "Firmaet mangler aktiv avtale. Kontakt Lunchportalen.";
+  if (status === "COMPANY_DISABLED") return "Firmaet er deaktivert. Kontakt Lunchportalen.";
+  return "Kontakt Lunchportalen ved spørsmål om avtalen.";
 }
 
 function statValue(v: number | null) {
@@ -170,51 +174,65 @@ function AgreementError({ message, rid, errorCode }: { message: string; rid: str
   return (
     <Card className="p-6">
       <div className="text-sm text-[rgb(var(--lp-muted))]">{message || "Kunne ikke hente avtalen. Prøv igjen."}</div>
-      <div className="mt-2 flex flex-wrap gap-4 text-[11px] uppercase tracking-[0.12em] text-[rgb(var(--lp-muted))]">
-        <span>Årsak: {errorCode ?? "UKJENT"}</span>
-        <span>RID: {rid || "—"}</span>
-      </div>
+      <AdminTechnicalDetails
+        className="mt-3"
+        rows={[
+          { label: "error", value: errorCode ?? "UKJENT" },
+          { label: "rid", value: rid || "—" },
+        ]}
+      />
     </Card>
   );
 }
 
-function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPageData }) {
+function AgreementBody({
+  ctx,
+  data,
+  providerName,
+  ehfEnabled,
+}: {
+  ctx: AdminContextOk;
+  data: AgreementPageData;
+  providerName: string | null;
+  ehfEnabled: boolean;
+}) {
   const status = statusBadge(data.status);
   const note = statusNote(data.status);
   const updatedAt = formatUpdatedAt(data.updatedAt);
   const endDateLabel = data.binding.endDate ? formatDate(data.binding.endDate) : "Løpende";
   const remainingLabel = data.binding.endDate ? `${data.binding.remainingDays ?? 0} dager` : "—";
+  const invoiceLabel = ehfEnabled ? "EHF klargjort" : "Standard faktura";
+  const provider = formatProviderLabel(providerName);
 
   return (
     <div className="grid gap-6">
       <Card variant="soft" className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="text-lg font-semibold text-[rgb(var(--lp-text))]">Avtale</div>
-            <Badge variant={status.variant}>{status.label}</Badge>
+          <div>
+            <div className="text-lg font-semibold text-[rgb(var(--lp-text))]">Avtale og drift</div>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{note}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Badge variant={status.variant}>{status.label}</Badge>
+            </div>
           </div>
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Cut-off 08:00 (Europe/Oslo)</div>
+          <div className="text-xs text-[rgb(var(--lp-muted))]">Cut-off kl. 08:00 (Oslo)</div>
         </div>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <AdminCompanySelect companies={data.companies} selectedId={data.company.id} />
           <div className="text-xs text-[rgb(var(--lp-muted))]">Sist oppdatert {updatedAt}</div>
         </div>
-        <div className="mt-3 text-xs text-[rgb(var(--lp-muted))]">{note}</div>
       </Card>
 
       <Card className="p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="lp-h2">Avtalesammendrag</h2>
-            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Systemfasit og leveringsdager.</div>
-          </div>
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Kilde: company_current_agreement</div>
+        <div className="mb-4">
+          <h2 className="lp-h2">Avtalesammendrag</h2>
+          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">Dette styrer plan, pris og leveringsdager.</div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4">
             <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Plan og pris</div>
-            <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">Tier: {formatPlanTierLabel(data)}</div>
+            <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">Plan: {formatPlanTierLabel(data)}</div>
             <div className="text-sm text-[rgb(var(--lp-text))]">
               Pris per dag: {formatPriceExVat(data.pricing.pricePerCuvertNok)}
             </div>
@@ -225,26 +243,41 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
             <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">Start: {formatDate(data.binding.startDate)}</div>
             <div className="text-sm text-[rgb(var(--lp-text))]">Slutt: {endDateLabel}</div>
             <div className="text-sm text-[rgb(var(--lp-text))]">Gjenstår: {remainingLabel}</div>
+            <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">
+              Bindingstid:{" "}
+              {data.terms?.bindingMonths != null ? `${data.terms.bindingMonths} måneder` : "Ikke tilgjengelig"}
+            </div>
+            <div className="text-sm text-[rgb(var(--lp-text))]">
+              Oppsigelse:{" "}
+              {data.terms?.noticeMonths != null ? `${data.terms.noticeMonths} måneder` : "Ikke tilgjengelig"}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-[rgb(var(--lp-border))] bg-white/70 p-4">
-            <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Leveringsdager</div>
+            <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Leveranse</div>
+            <div className="mt-2 text-sm text-[rgb(var(--lp-text))]">Leverandør: {provider}</div>
+            <div className="text-sm text-[rgb(var(--lp-text))]">Faktura: {invoiceLabel}</div>
+            <div className="mt-3 text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Leveringsdager</div>
             <div className="mt-2">
               <DayStrip data={data} />
             </div>
           </div>
         </div>
 
-        <details className="mt-5">
-          <summary className="cursor-pointer text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">
-            Kilde til sannhet
-          </summary>
-          <div className="mt-3 text-sm text-[rgb(var(--lp-text))]">
-            Firma-ID: {data.sourceOfTruth.companyId} · Avtale-ID: {data.sourceOfTruth.agreementId ?? "-"} · Sist oppdatert:{" "}
-            {formatUpdatedAt(data.sourceOfTruth.updatedAt)}
-          </div>
-          <div className="mt-2 text-[11px] text-[rgb(var(--lp-muted))]">Dashboard: {ADMIN_DASHBOARD_HREF}</div>
-        </details>
+        <div className="mt-5 rounded-2xl border border-[rgb(var(--lp-border))] bg-neutral-50/80 p-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">Ønsker dere endring?</div>
+          <p className="mt-2 text-sm text-[rgb(var(--lp-text))]">{AGREEMENT_CHANGE_NOTE}</p>
+        </div>
+
+        <AdminTechnicalDetails
+          className="mt-5"
+          rows={[
+            { label: "company_id", value: data.sourceOfTruth.companyId },
+            { label: "agreement_id", value: data.sourceOfTruth.agreementId ?? "—" },
+            { label: "updated_at", value: formatUpdatedAt(data.sourceOfTruth.updatedAt) },
+            { label: "source", value: "company_current_agreement" },
+          ]}
+        />
       </Card>
 
       <Card className="p-6">
@@ -277,12 +310,18 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
         </div>
       </Card>
 
+      <AgreementChangeRequestPanel
+        companyId={data.company.id}
+        activeDeliveryDays={data.weekPlan.filter((d) => d.active).map((d) => d.dayKey)}
+        disabled={data.status !== "ACTIVE"}
+      />
+
       <Card className="p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="lp-h2">Operativt overblikk</h2>
-            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-              Tall og status for innlogget firma — read-only, samme operative filter som ordre-/avtale-API.
+            <h2 className="lp-h2">Driftsoversikt</h2>
+            <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
+              Tall og status for innlogget firma — det ansatte ser i ukeplanen.
             </div>
           </div>
           <SupportReportButton
@@ -296,7 +335,7 @@ function AgreementBody({ ctx, data }: { ctx: AdminContextOk; data: AgreementPage
               metrics: data.metrics,
               companyName: data.company.name ?? null,
             }}
-            buttonLabel="Send systemrapport"
+            buttonLabel={SUPPORT_BUTTON_LABEL}
             buttonClassName="lp-btn lp-btn--primary lp-neon-focus lp-neon-glow-hover"
           />
         </div>
@@ -361,7 +400,7 @@ export default async function Page() {
               reason={ctx.support.reason}
               companyId={ctx.support.companyId}
               locationId={ctx.support.locationId}
-              buttonLabel="Send systemrapport"
+              buttonLabel={SUPPORT_BUTTON_LABEL}
               buttonClassName="lp-btn lp-btn--secondary"
             />
           }
@@ -376,18 +415,24 @@ export default async function Page() {
   }
 
   const result = await fetchAgreementPageDataForAdmin(ctx.companyId);
+  const companyMeta = await loadDashboardCompanyMeta(ctx.companyId);
 
   return (
     <AdminPageShell
-      title="Avtale"
-      subtitle="Avtalerammer og status for eget firma — read-only, samme operative kilde som drift."
+      title="Avtale og drift"
+      subtitle="Dette er avtalen som styrer meny, leveringsdager og bestilling."
       actions={null}
     >
       <Suspense fallback={<AgreementLoading />}>
         {result.kind === "error" ? (
           <AgreementError message={result.message} rid={result.rid} errorCode={result.errorCode ?? "API_ERROR"} />
         ) : (
-          <AgreementBody ctx={ctx} data={result.data} />
+          <AgreementBody
+            ctx={ctx}
+            data={result.data}
+            providerName={companyMeta.providerName}
+            ehfEnabled={companyMeta.ehfEnabled}
+          />
         )}
       </Suspense>
     </AdminPageShell>

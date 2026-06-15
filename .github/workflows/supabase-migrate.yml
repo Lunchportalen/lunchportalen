@@ -178,8 +178,18 @@ jobs:
           set -euo pipefail
           node scripts/ci/repair-staging-mcp-batch-ledger.mjs | tee "$EVIDENCE_DIR/ledger-repair.log"
 
+      # UI-only PRs: skip dry-run when this PR does not change supabase/migrations (avoids
+      # false ABORT on pre-existing remote/staging ledger drift unrelated to the PR).
+      - name: Staging dry-run skipped (no migration changes in PR)
+        if: steps.mig_diff.outputs.changed != 'true'
+        run: |
+          set -euo pipefail
+          echo "DB dry-run skipped: no database-affecting migration files changed in this PR."
+          echo "dry_run_skipped=true" >> "$EVIDENCE_DIR/meta.txt"
+
       # ✅ Guard verify: capture pinned CLI 2.102.0 dry-run output against uigx (fail-closed)
       - name: Staging dry-run (guard verify, pinned CLI)
+        if: steps.mig_diff.outputs.changed == 'true'
         run: |
           set -euo pipefail
           set +e
