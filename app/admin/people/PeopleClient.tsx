@@ -13,15 +13,23 @@ import { getCardVariantClass } from "@/components/ui/card";
 import {
   PEOPLE_INVITES_ACCORDION_NOTE,
   PEOPLE_LIST_TITLE,
-  PEOPLE_ONBOARDING_EMPTY_BODY,
-  PEOPLE_ONBOARDING_EMPTY_TITLE,
-  PEOPLE_READINESS_HAS_EMPLOYEES,
-  PEOPLE_READINESS_NEXT_INVITE,
+  PEOPLE_READINESS_ACTIVE_BODY,
+  PEOPLE_READINESS_ACTIVE_CTA,
+  PEOPLE_READINESS_ACTIVE_TITLE,
+  PEOPLE_READINESS_EMPTY_BODY,
+  PEOPLE_READINESS_EMPTY_TITLE,
+  PEOPLE_READINESS_PENDING_BODY,
+  PEOPLE_READINESS_PENDING_NEXT,
+  PEOPLE_READINESS_PENDING_TITLE,
   PEOPLE_SUPPORT_ACCORDION_NOTE,
   SUPPORT_BUTTON_LABEL,
   TECHNICAL_DETAILS_SUMMARY,
   peopleListScopeNote,
+  peoplePageSubtitleEmpty,
+  peoplePageSubtitleFollowUp,
 } from "@/lib/admin/companyAdminCopy";
+import { isPendingEmployeeInvite, resolvePeopleReadinessPhase } from "@/lib/admin/peopleReadiness";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -79,6 +87,11 @@ async function readJsonOrThrow(res: Response) {
     throw new Error(`Server returnerte ikke JSON (HTTP ${res.status}).`);
   }
   return json;
+}
+
+function fmtInviteTs(ts: string | null | undefined) {
+  if (!ts) return "Ikke satt";
+  return formatDateTimeNO(ts);
 }
 
 export default function PeopleClient({
@@ -161,11 +174,21 @@ export default function PeopleClient({
     };
   }, [data?.company?.id, supportCompanyId]);
 
-  const counts = data?.counts ?? { total: 0, active: 0, deactivated: 0 };
   const companyName = data?.company?.name ?? "Firma";
   const employeeRows = (data?.employees ?? []).filter((row) => row.role === "employee");
-  const invitedEmployees = employeeRows.length;
-  const showOnboardingHero = !loading && !err && invitedEmployees === 0;
+  const activeEmployeeCount = employeeRows.filter((row) => !row.disabled_at && row.is_active !== false).length;
+  const invites = data?.invites ?? [];
+  const pendingInvites = invites.filter(isPendingEmployeeInvite);
+  const pendingInviteCount = pendingInvites.length;
+  const deactivatedCount = employeeRows.filter((row) => !!row.disabled_at).length;
+
+  const readinessPhase = resolvePeopleReadinessPhase({
+    activeEmployeeCount,
+    pendingInviteCount,
+  });
+
+  const pageSubtitle =
+    readinessPhase === "empty" ? peoplePageSubtitleEmpty(companyName) : peoplePageSubtitleFollowUp(companyName);
 
   const sourceMeta = useMemo(() => {
     return {
@@ -178,7 +201,7 @@ export default function PeopleClient({
   return (
     <AdminPageShell
       title="Ansatte"
-      subtitle={`Inviter ansatte til ${companyName}. Ansatte må være lagt til før de kan bestille lunsj.`}
+      subtitle={pageSubtitle}
       actions={
         <>
           <Button asChild className="lp-neon-focus lp-neon-glow-hover">
@@ -194,28 +217,65 @@ export default function PeopleClient({
       }
     >
       <section className={cn("lp-card", getCardVariantClass("soft"), "p-4 sm:p-5")}>
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
-          <span className="font-semibold text-[rgb(var(--lp-text))]">
-            {loading ? "Laster…" : err ? "Ikke tilgjengelig" : `${counts.active} aktiv`}
-          </span>
-          <span className="text-[rgb(var(--lp-muted))]">
-            {loading ? "…" : err ? "…" : `${counts.deactivated} deaktiverte`}
-          </span>
-        </div>
-        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-          {invitedEmployees === 0 ? PEOPLE_READINESS_NEXT_INVITE : PEOPLE_READINESS_HAS_EMPLOYEES}
-        </p>
+        {loading ? (
+          <p className="text-sm text-[rgb(var(--lp-muted))]">Laster…</p>
+        ) : err ? (
+          <p className="text-sm text-[rgb(var(--lp-muted))]">Kunne ikke hente status.</p>
+        ) : readinessPhase === "empty" ? (
+          <>
+            <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_READINESS_EMPTY_TITLE}</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_READINESS_EMPTY_BODY}</p>
+            <div className="mt-4">
+              <Button asChild className="lp-neon-focus lp-neon-glow-hover">
+                <Link href="/admin/invite">Inviter ansatt</Link>
+              </Button>
+            </div>
+          </>
+        ) : readinessPhase === "pending_invite" ? (
+          <>
+            <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_READINESS_PENDING_TITLE}</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_READINESS_PENDING_BODY}</p>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-[rgb(var(--lp-text))]">
+                <span className="font-semibold">{pendingInviteCount}</span> ventende invitasjon
+                {pendingInviteCount === 1 ? "" : "er"}
+              </span>
+              <span className="text-[rgb(var(--lp-muted))]">
+                <span className="font-semibold">{activeEmployeeCount}</span> aktive ansatte
+              </span>
+            </div>
+            <p className="mt-3 text-sm font-medium text-[rgb(var(--lp-text))]">
+              Neste steg: {PEOPLE_READINESS_PENDING_NEXT}
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_READINESS_ACTIVE_TITLE}</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_READINESS_ACTIVE_BODY}</p>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-[rgb(var(--lp-text))]">
+                <span className="font-semibold">{activeEmployeeCount}</span> aktive ansatte
+              </span>
+              {deactivatedCount > 0 ? (
+                <span className="text-[rgb(var(--lp-muted))]">
+                  <span className="font-semibold">{deactivatedCount}</span> deaktiverte
+                </span>
+              ) : null}
+              {pendingInviteCount > 0 ? (
+                <span className="text-[rgb(var(--lp-muted))]">
+                  <span className="font-semibold">{pendingInviteCount}</span> ventende invitasjon
+                  {pendingInviteCount === 1 ? "" : "er"}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-4">
+              <Button asChild variant="secondary">
+                <Link href="/week">{PEOPLE_READINESS_ACTIVE_CTA}</Link>
+              </Button>
+            </div>
+          </>
+        )}
       </section>
-
-      {showOnboardingHero ? (
-        <section className="lp-card lp-card--elevated p-6 text-center sm:text-left">
-          <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_ONBOARDING_EMPTY_TITLE}</h2>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_ONBOARDING_EMPTY_BODY}</p>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-            Firmaadmin-kontoen er for administrasjon. Inviter minst én ansatt som skal bestille lunsj.
-          </p>
-        </section>
-      ) : null}
 
       {err ? (
         <section className="lp-card p-6">
@@ -262,10 +322,27 @@ export default function PeopleClient({
       </section>
 
       <details className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}>
-        <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">Invitasjoner</summary>
+        <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">
+          Invitasjoner
+          {!loading && pendingInviteCount > 0 ? (
+            <span className="ml-2 font-normal text-[rgb(var(--lp-muted))]">({pendingInviteCount} ventende)</span>
+          ) : null}
+        </summary>
         <p className="mt-3 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_INVITES_ACCORDION_NOTE}</p>
+        {!loading && pendingInvites.length > 0 ? (
+          <ul className="mt-4 space-y-3 border-t border-[rgb(var(--lp-border))] pt-4">
+            {pendingInvites.slice(0, 10).map((invite) => (
+              <li key={invite.id} className="text-sm">
+                <div className="font-medium text-[rgb(var(--lp-text))]">{invite.email}</div>
+                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                  Sendt: {fmtInviteTs(invite.last_sent_at ?? invite.created_at)} · Utløper: {fmtInviteTs(invite.expires_at)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="mt-4">
-          <InvitesPanel rows={data?.invites ?? []} loading={loading} error={err} onReload={load} />
+          <InvitesPanel rows={invites} loading={loading} error={err} onReload={load} />
         </div>
       </details>
 

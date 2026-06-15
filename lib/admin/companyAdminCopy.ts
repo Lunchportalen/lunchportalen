@@ -20,6 +20,32 @@ export function peopleListScopeNote(companyName: string) {
   return `Kun ansatte i ${companyName} vises.`;
 }
 
+export function peoplePageSubtitleEmpty(companyName: string) {
+  return `Inviter ansatte til ${companyName}. Ansatte må være lagt til før de kan bestille lunsj.`;
+}
+
+export function peoplePageSubtitleFollowUp(companyName: string) {
+  return `Følg opp ansatte og invitasjoner for ${companyName}. Når ansatte er aktive kan de bestille lunsj fra ukemenyen.`;
+}
+
+export const PEOPLE_READINESS_EMPTY_TITLE = "Ingen ansatte invitert ennå";
+
+export const PEOPLE_READINESS_EMPTY_BODY = "Start med én pilotansatt.";
+
+export const PEOPLE_READINESS_PENDING_TITLE = "Første ansatt er invitert";
+
+export const PEOPLE_READINESS_PENDING_BODY =
+  "Når invitasjonen er akseptert, kan den ansatte logge inn og bestille lunsj.";
+
+export const PEOPLE_READINESS_PENDING_NEXT = "Ansatt fullfører invitasjon";
+
+export const PEOPLE_READINESS_ACTIVE_TITLE = "Ansatte klare";
+
+export const PEOPLE_READINESS_ACTIVE_BODY =
+  "Neste steg er å verifisere at ansatt ser ukemenyen og kan legge inn første ordre.";
+
+export const PEOPLE_READINESS_ACTIVE_CTA = "Se uke og bestilling";
+
 export const PEOPLE_READINESS_NEXT_INVITE = "Neste steg: inviter ansatte";
 
 export const PEOPLE_READINESS_HAS_EMPLOYEES =
