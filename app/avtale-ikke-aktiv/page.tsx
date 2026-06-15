@@ -1,10 +1,15 @@
-import Link from "next/link";
 import { Ban } from "lucide-react";
+
+import { loadInactiveAgreementPageContext } from "@/lib/auth/inactiveAgreementGateRecovery";
+
+import InactiveAgreementRecovery from "./InactiveAgreementRecovery.client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default function InactiveAgreementPage() {
+export default async function InactiveAgreementPage() {
+  const { showProviderRecovery } = await loadInactiveAgreementPageContext();
+
   return (
     <main className="ds-page ds-empty-state">
       <div className="ds-container">
@@ -19,18 +24,11 @@ export default function InactiveAgreementPage() {
             <h1 className="ds-h2">Avtalen er ikke aktiv</h1>
 
             <p className="ds-lead">
-              Vi finner ikke en aktiv lunsjavtale for firmaet ditt akkurat nå. Logg inn på nytt, eller kontakt administrator
-              dersom dette ikke stemmer.
+              Vi finner ikke en aktiv lunsjavtale for firmaet ditt akkurat nå. Logg ut og inn igjen, eller kontakt
+              administrator hvis dette ikke stemmer.
             </p>
 
-            <div className="ds-empty-state__actions">
-              <Link href="/login" className="ds-btn ds-btn--primary">
-                Gå til innlogging
-              </Link>
-              <Link href="/" className="ds-btn ds-btn--secondary">
-                Til forsiden
-              </Link>
-            </div>
+            <InactiveAgreementRecovery showProviderRecovery={showProviderRecovery} />
           </div>
         </div>
       </div>
