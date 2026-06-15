@@ -14,6 +14,23 @@ export const PEOPLE_ONBOARDING_EMPTY_TITLE = "Ingen ansatte er invitert ennå";
 
 export const PEOPLE_ONBOARDING_EMPTY_BODY = "Start med å invitere én pilotansatt.";
 
+export const PEOPLE_LIST_TITLE = "Ansattliste";
+
+export function peopleListScopeNote(companyName: string) {
+  return `Kun ansatte i ${companyName} vises.`;
+}
+
+export const PEOPLE_READINESS_NEXT_INVITE = "Neste steg: inviter ansatte";
+
+export const PEOPLE_READINESS_HAS_EMPLOYEES =
+  "Ansatte kan bestille når menyen er publisert og cut-off ikke er passert.";
+
+export const PEOPLE_INVITES_ACCORDION_NOTE =
+  "Her vises invitasjoner som er sendt, men ikke fullført.";
+
+export const PEOPLE_SUPPORT_ACCORDION_NOTE =
+  "Kontakt Lunchportalen hvis en ansatt ikke får invitasjonen.";
+
 export const INSIGHTS_EMPTY_TITLE = "Ingen bestillingsgrunnlag ennå";
 
 export const INSIGHTS_EMPTY_BODY =
