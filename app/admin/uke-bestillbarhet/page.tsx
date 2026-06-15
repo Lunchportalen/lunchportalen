@@ -16,6 +16,7 @@ import { loadCompanyWeekBookabilityOverview } from "@/lib/server/admin/loadCompa
 import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import { SUPPORT_BUTTON_LABEL, UKE_BESTILLBARHET_SUBTITLE, bookabilityDayStatus } from "@/lib/admin/companyAdminCopy";
 
 function blockedTitle(ctx: AdminContextBlocked) {
   if (ctx.blocked === "ACCOUNT_DISABLED") return "Konto er deaktivert";
@@ -55,7 +56,7 @@ export default async function UkeBestillbarhetPage() {
               reason={ctx.support.reason}
               companyId={ctx.support.companyId}
               locationId={ctx.support.locationId}
-              buttonLabel="Send systemrapport"
+              buttonLabel={SUPPORT_BUTTON_LABEL}
               buttonClassName="lp-btn lp-btn--secondary"
             />
           }
@@ -78,7 +79,7 @@ export default async function UkeBestillbarhetPage() {
   return (
     <AdminPageShell
       title="Uke og bestillbarhet"
-      subtitle="Oversikt for synlige uker i /week: operative dager i daymap, stengte datoer, cut-off og firmastatus — samme kilder som firmadagens drift. Kun visning."
+      subtitle={UKE_BESTILLBARHET_SUBTITLE}
       actions={null}
     >
       {overview.config_warning_nb ? (
@@ -90,30 +91,28 @@ export default async function UkeBestillbarhetPage() {
       <section className="lp-card lp-card--elevated" aria-labelledby="uke-grunnlag-heading">
         <div className="lp-card-pad">
           <h2 id="uke-grunnlag-heading" className="text-sm font-semibold text-neutral-900">
-            Operativt ukegrunnlag
+            Avtalegrunnlag
           </h2>
+          <p className="mt-1 text-sm text-neutral-600">Dette styrer hvilke dager ansatte kan bestille lunsj.</p>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Firma (status)</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Firma</dt>
               <dd className="mt-1 font-medium text-neutral-900">{overview.company_status_upper}</dd>
             </div>
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtale (ledger)</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Aktiv avtale</dt>
               <dd className="mt-1 font-medium text-neutral-900">{overview.ledger_pipeline_label_nb}</dd>
             </div>
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5 sm:col-span-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtale (snapshot)</dt>
-              <dd className="mt-1 font-medium text-neutral-900">
-                {overview.snapshot_agreement_status_upper ?? "—"}{" "}
-                <span className="text-xs font-normal text-neutral-600">(company_current_agreement)</span>
-              </dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Avtalestatus</dt>
+              <dd className="mt-1 font-medium text-neutral-900">{overview.snapshot_agreement_status_upper ?? "—"}</dd>
             </div>
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5 sm:col-span-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Operative leveringsdager (daymap)</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Leveringsdager</dt>
               <dd className="mt-1 text-neutral-900">{overview.operative_days_label_nb}</dd>
             </div>
             <div className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5 sm:col-span-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Synlighet i /week</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Bestillingsvindu for ansatte</dt>
               <dd className="mt-1 text-neutral-900">{overview.week_visibility_summary_nb}</dd>
             </div>
           </dl>
@@ -134,34 +133,30 @@ export default async function UkeBestillbarhetPage() {
               </div>
 
               <ul className="mt-4 space-y-3 text-sm text-neutral-800">
-                {w.days.map((d) => (
+                {w.days.map((d) => {
+                  const statusLabel = bookabilityDayStatus(d);
+                  return (
                   <li key={`${d.date_iso}-det`} className="rounded-2xl bg-neutral-50/80 p-3 ring-1 ring-black/5">
                     <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:text-left">
                       <div className="min-w-0 font-medium text-neutral-900">
                         {formatDateNO(d.date_iso)} · {d.weekday_label_nb}
                       </div>
                       <div className="flex flex-wrap items-center justify-center gap-2">
-                        {d.daymap_active ? (
-                          <span className="inline-flex min-h-[44px] items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200">
-                            Aktiv i daymap
-                          </span>
-                        ) : (
-                          <span className="inline-flex min-h-[44px] items-center rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-800 ring-1 ring-neutral-200">
-                            Ikke i daymap
-                          </span>
-                        )}
-                        <span className="inline-flex min-h-[44px] items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-neutral-800 ring-1 ring-black/10">
-                          Nivå: {d.tier_label_nb ?? "—"}
+                        <span
+                          className={[
+                            "inline-flex min-h-[44px] items-center rounded-full px-3 py-1 text-xs font-semibold ring-1",
+                            statusLabel === "Åpen for bestilling"
+                              ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
+                              : statusLabel === "Cut-off passert"
+                                ? "bg-amber-50 text-amber-900 ring-amber-200"
+                                : "bg-neutral-100 text-neutral-800 ring-neutral-200",
+                          ].join(" ")}
+                        >
+                          {statusLabel}
                         </span>
-                        {d.booking === "open" ? (
-                          <span className="inline-flex min-h-[44px] items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200">
-                            Bestilling: åpen
-                          </span>
-                        ) : (
-                          <span className="inline-flex min-h-[44px] items-center rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-900 ring-1 ring-rose-200">
-                            Bestilling: blokkert
-                          </span>
-                        )}
+                        <span className="inline-flex min-h-[44px] items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-neutral-800 ring-1 ring-black/10">
+                          Plan: {d.tier_label_nb ?? "—"}
+                        </span>
                       </div>
                     </div>
                     <ul className="mt-3 list-disc space-y-1 pl-5 text-left text-sm text-neutral-700">
@@ -170,7 +165,8 @@ export default async function UkeBestillbarhetPage() {
                       ))}
                     </ul>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </div>
           </section>
@@ -184,10 +180,10 @@ export default async function UkeBestillbarhetPage() {
           </h2>
           <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
             <Link href="/week" className="lp-btn lp-btn--secondary lp-neon-focus">
-              Ukeplan (/week)
+              Ukeplan for ansatte
             </Link>
             <Link href="/admin" className="lp-btn lp-btn--secondary lp-neon-focus">
-              Oversikt (/admin)
+              Oversikt
             </Link>
             <Link href="/admin/leveringsgrunnlag" className="lp-btn lp-btn--secondary lp-neon-focus">
               Leveringsgrunnlag

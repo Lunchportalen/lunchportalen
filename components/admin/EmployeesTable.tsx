@@ -13,6 +13,7 @@ type Props = {
   employees?: EmployeeRow[];
   loading?: boolean;
   error?: string | null;
+  locationLabels?: Record<string, string>;
   onReload?: () => Promise<void> | void;
 };
 
@@ -113,6 +114,11 @@ function parseEmailLines(input: string): string[] {
   return out;
 }
 
+function formatLocationLabel(locationId: string | null, locationLabels: Record<string, string>) {
+  if (!locationId) return "—";
+  return locationLabels[locationId] ?? "Lokasjon";
+}
+
 export default function EmployeesTable({
   companyId,
   companyName = null,
@@ -122,10 +128,10 @@ export default function EmployeesTable({
   employees = [],
   loading = false,
   error = null,
+  locationLabels = {},
   onReload,
 }: Props) {
   const [q, setQ] = useState(initialQuery);
-  const [copied, setCopied] = useState(false);
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -183,16 +189,6 @@ export default function EmployeesTable({
 
   async function doReload() {
     if (onReload) await onReload();
-  }
-
-  async function copyCompanyId() {
-    try {
-      await navigator.clipboard.writeText(companyId);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
-    } catch {
-      setCopied(false);
-    }
   }
 
   async function doInvite() {
@@ -402,7 +398,7 @@ export default function EmployeesTable({
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-3xl ring-1 ring-[rgb(var(--lp-border))]">
+      <div className="mt-4 rounded-3xl ring-1 ring-[rgb(var(--lp-border))]">
         <div className="bg-white p-4">
           {loading ? (
             <div className="text-sm text-[rgb(var(--lp-muted))]">Laster…</div>
@@ -410,10 +406,8 @@ export default function EmployeesTable({
             <div className="text-sm text-red-600">{error}</div>
           ) : filtered.length === 0 ? (
             <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 text-sm text-[rgb(var(--lp-muted))]">
-              <div className="text-base font-semibold text-[rgb(var(--lp-text))]">Ingen ansatte registrert</div>
-              <p className="mt-2">
-                Inviter ansatte for å gi tilgang til bestilling innenfor avtalen.
-              </p>
+              <div className="text-base font-semibold text-[rgb(var(--lp-text))]">Ingen ansatte er invitert ennå</div>
+              <p className="mt-2">Start med å invitere én pilotansatt.</p>
               {canInvite ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
@@ -460,7 +454,7 @@ export default function EmployeesTable({
                       <td className="font-medium">{r.name ?? r.full_name ?? "-"}</td>
                       <td>{r.email ?? "-"}</td>
                       <td>{r.department ?? "-"}</td>
-                      <td className="font-mono text-xs">{r.location_id ?? "-"}</td>
+                      <td>{formatLocationLabel(r.location_id, locationLabels)}</td>
                       <td className="text-xs">
                         <span className="rounded-full bg-white px-2 py-1 ring-1 ring-[rgb(var(--lp-border))]">
                           {statusLabel(r)}
@@ -475,14 +469,7 @@ export default function EmployeesTable({
             </div>
           )}
 
-          <div className="mt-3 flex items-center justify-between text-xs text-[rgb(var(--lp-muted))]">
-            <button
-              onClick={copyCompanyId}
-              className="rounded-xl bg-white px-3 py-2 font-semibold ring-1 ring-[rgb(var(--lp-border))]"
-              title={companyId}
-            >
-              {copied ? "Kopiert" : "Kopier firma-ID"}
-            </button>
+          <div className="mt-3 flex items-center justify-end text-xs text-[rgb(var(--lp-muted))]">
             <button onClick={doReload} className="rounded-xl bg-white px-3 py-2 ring-1 ring-[rgb(var(--lp-border))]">
               Oppdater
             </button>

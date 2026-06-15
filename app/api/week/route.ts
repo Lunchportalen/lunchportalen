@@ -15,7 +15,7 @@ import { opsLog } from "@/lib/ops/log";
 import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreement";
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
 import { loadEmployeeWeekMenusFromMsdi } from "@/lib/week/loadEmployeeWeekMenusFromMsdi";
-import { loadProfileByUserId } from "@/lib/db/profileLookup";
+import { resolveEmployeeWeekScope } from "@/lib/week/resolveEmployeeWeekScope";
 import { menuScopeDecision, menuDayQueryOptsFromScope, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import type { MenuDay } from "@/lib/cms/menuDay";
 import { asPlanTier } from "@/lib/cms/menuDayContract";
@@ -89,7 +89,6 @@ function isUnlocked(unlockDateISO: string, unlockTimeHM: string) {
    - weekOffset=1: neste uke — låst til torsdag 08:00 Oslo (samme som order/window)
 ========================================================= */
 export async function GET(req: Request) {
-  const { supabaseServer } = await import("@/lib/supabase/server");
   const _rid = rid();
 
   try {
@@ -97,31 +96,10 @@ export async function GET(req: Request) {
     const weekOffsetRaw = url.searchParams.get("weekOffset") ?? "0";
     const weekOffset = weekOffsetRaw === "1" ? 1 : 0;
 
-    const sb = await supabaseServer();
-    const { data: auth, error: aerr } = await sb.auth.getUser();
-    const user = auth?.user ?? null;
-    if (aerr || !user) return jsonError(401, _rid, "AUTH_REQUIRED", "Ikke innlogget.");
+    const scope = await resolveEmployeeWeekScope(req, _rid);
+    if (scope.ok === false) return scope.response;
 
-    const { data: profRaw, error: perr } = await loadProfileByUserId(
-      sb,
-      user.id,
-      "company_id, location_id, role, is_active, disabled_at, disabled_reason",
-    );
-    const prof = profRaw as {
-      company_id?: string | null;
-      location_id?: string | null;
-      role?: string | null;
-      is_active?: boolean | null;
-      disabled_at?: string | null;
-      disabled_reason?: string | null;
-    } | null;
-
-    if (perr) return jsonError(500, _rid, "PROFILE_LOOKUP_FAILED", "Kunne ikke hente profil.", perr);
-    if (!prof?.company_id) return jsonError(409, _rid, "MISSING_COMPANY", "Mangler firmatilknytning.");
-    if (prof.disabled_at || prof.disabled_reason) return jsonError(403, _rid, "DISABLED", "Kontoen er deaktivert.");
-    if (prof.is_active === false) return jsonError(403, _rid, "INACTIVE", "Kontoen er ikke aktiv ennå.");
-
-    const companyId = String(prof.company_id);
+    const { companyId, locationId } = scope;
     const admin = supabaseAdmin();
 
     const { data: agr, error: agrErr } = await admin
@@ -216,7 +194,7 @@ export async function GET(req: Request) {
           }
           const msdiMenus = await loadEmployeeWeekMenusFromMsdi(admin, {
             companyId,
-            locationId: prof.location_id != null ? String(prof.location_id) : null,
+            locationId,
             providerId: menuScope.providerId,
             dates: missingDates,
             tierByDate,

@@ -3,14 +3,15 @@ import "server-only";
 import crypto from "node:crypto";
 
 import { auditAdmin } from "@/lib/audit/actions";
+import { buildEmployeeInviteEmail } from "@/lib/email/templates/employeeInvite";
 import { sendEmail } from "@/lib/email/send";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isSystemEmail as isSystemEmailCore } from "@/lib/system/emails";
 
 import { buildEmployeeInviteUrl, getPublicAppUrlFromEnv } from "@/lib/invites/employeeInviteUrl";
+import { EMPLOYEE_INVITE_TTL_MS } from "@/lib/invites/employeeInviteConstants";
 
-export const EMPLOYEE_INVITE_TTL_MS = 1000 * 60 * 60 * 48;
-const INVITE_CONTACT_EMAIL = "post@lunchportalen.no";
+export { EMPLOYEE_INVITE_TTL_MS } from "@/lib/invites/employeeInviteConstants";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -28,35 +29,51 @@ function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+async function resolveInviteEmailMetadata(
+  admin: ReturnType<typeof supabaseAdmin>,
+  companyId: string,
+  locationId: string,
+) {
+  let providerName = "";
+  let locationName = "";
+
+  const { data: companyRow } = await admin
+    .from("companies")
+    .select("provider_id")
+    .eq("id", companyId)
+    .maybeSingle();
+
+  const providerId = safeStr((companyRow as { provider_id?: string } | null)?.provider_id);
+  if (providerId) {
+    const { data: providerRow } = await admin.from("providers").select("name").eq("id", providerId).maybeSingle();
+    providerName = safeStr((providerRow as { name?: string } | null)?.name);
+  }
+
+  const { data: locationRow } = await admin.from("company_locations").select("name").eq("id", locationId).maybeSingle();
+  locationName = safeStr((locationRow as { name?: string } | null)?.name);
+
+  return { providerName, locationName };
 }
 
-async function sendInviteEmailBestEffort(opts: { to: string; link: string; companyName: string }) {
+async function sendInviteEmailBestEffort(opts: {
+  to: string;
+  link: string;
+  companyName: string;
+  providerName?: string;
+  locationName?: string;
+}) {
   try {
-    const subject = "Invitasjon til Lunchportalen";
-    const text =
-      `Du er invitert til Lunchportalen av ${opts.companyName}.\n\n` +
-      `Åpne lenken for å opprette konto (ansatt):\n${opts.link}\n\n` +
-      `Hvis du ikke forventet denne e-posten, kan du ignorere den.\n\n` +
-      `Spørsmål? Kontakt ${INVITE_CONTACT_EMAIL}.`;
-    const html = `
-      <p>Hei,</p>
-      <p>Du er invitert til Lunchportalen av ${escapeHtml(opts.companyName)}.</p>
-      <p>Åpne lenken for å opprette konto (ansatt):</p>
-      <p><a href="${escapeHtml(opts.link)}">${escapeHtml(opts.link)}</a></p>
-      <p>Hvis du ikke forventet denne e-posten, kan du ignorere den.</p>
-      <p>Spørsmål? Kontakt <a href="mailto:${INVITE_CONTACT_EMAIL}">${INVITE_CONTACT_EMAIL}</a>.</p>
-    `;
+    const built = buildEmployeeInviteEmail({
+      companyName: opts.companyName,
+      inviteUrl: opts.link,
+      providerName: opts.providerName,
+      locationName: opts.locationName,
+    });
 
     const result = await sendEmail({
       to: opts.to,
-      subject,
-      html,
+      subject: built.subject,
+      html: built.html,
       // Transaksjonell e-post: firmaadmin har eksplisitt bedt om invitasjon via /admin/invite.
       explicitApproval: true,
     });
@@ -206,7 +223,15 @@ export async function createEmployeeSingleInvite(opts: {
     return { ok: false, code: "INSERT_FAILED", message: "Kunne ikke lagre invitasjon." };
   }
 
-  const sent = await sendInviteEmailBestEffort({ to: email, link: inviteUrl, companyName: def.companyName });
+  const metadata = await resolveInviteEmailMetadata(admin, companyId, def.locationId);
+
+  const sent = await sendInviteEmailBestEffort({
+    to: email,
+    link: inviteUrl,
+    companyName: def.companyName,
+    providerName: metadata.providerName || undefined,
+    locationName: metadata.locationName || undefined,
+  });
 
   await auditAdmin({
     actor_user_id: safeStr(opts.actorUserId),

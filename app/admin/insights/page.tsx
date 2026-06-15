@@ -14,6 +14,7 @@ import {
 import BlockedState from "@/components/admin/BlockedState";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminInsightsClient from "./AdminInsightsClient";
+import { SUPPORT_BUTTON_LABEL } from "@/lib/admin/companyAdminCopy";
 
 function GhostLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -69,6 +70,7 @@ export default async function AdminInsightsPage() {
                 reason={ctx.support.reason}
                 companyId={ctx.support.companyId}
                 locationId={ctx.support.locationId}
+                buttonLabel={SUPPORT_BUTTON_LABEL}
               />
             }
             meta={[
@@ -95,16 +97,16 @@ export default async function AdminInsightsPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-xs font-semibold tracking-wide text-neutral-600">
-              Firmaadmin · {ctx.company?.name ?? "Firma"} · Rapporter
+              Firmaadmin · {ctx.company?.name ?? "Firma"} · Økonomi
             </div>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">ROI & stabilitet</h1>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900">Økonomi</h1>
             <p className="mt-2 text-neutral-600">
-              Tallene under viser faktisk bruk og drift – uten estimater eller pynt.
+              Kostnad, volum og historikk basert på faktiske bestillinger.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <GhostLink href="/admin">← Command Center</GhostLink>
+            <GhostLink href="/admin">← Oversikt</GhostLink>
             <GhostLink href="/admin/people">Ansatte</GhostLink>
             <GhostLink href="/admin/orders">Ordre</GhostLink>
           </div>
