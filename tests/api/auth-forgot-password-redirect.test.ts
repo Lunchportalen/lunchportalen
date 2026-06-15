@@ -70,6 +70,27 @@ describe("POST /api/auth/forgot-password redirect URL", () => {
     });
   });
 
+  test("request host app.lunchportalen.no forces production redirect without VERCEL_ENV", async () => {
+    vi.stubEnv("VERCEL_ENV", "");
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
+
+    const req = new Request("https://app.lunchportalen.no/api/auth/forgot-password", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        host: "app.lunchportalen.no",
+      },
+      body: JSON.stringify({ email: "post@melhuscatering.no" }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(generateLinkMock.mock.calls.at(-1)?.[0]).toMatchObject({
+      options: { redirectTo: "https://app.lunchportalen.no/reset-password" },
+    });
+  });
+
   test("uses shared sendMail path and does not log tokenized URL", async () => {
     const actionLink =
       "https://example.supabase.co/auth/v1/verify?token=secret-token&type=recovery&redirect_to=https%3A%2F%2Fapp.lunchportalen.no%2Freset-password";
