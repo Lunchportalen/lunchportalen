@@ -70,6 +70,16 @@ jobs:
       - name: CI Guard
         run: npm run ci:guard
 
+      - name: Protected Golden Path guard (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          GATE_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          GATE_DIFF_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: npm run ci:protected-path-guard
+
+      - name: Protected Golden Path guard self-test
+        run: npm run ci:protected-path-guard:test
+
       - name: Platform guards (API contract, status, mocks, CMS, AI, UI)
         run: npm run ci:platform-guards
 
