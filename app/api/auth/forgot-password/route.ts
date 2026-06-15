@@ -4,9 +4,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { NextRequest } from "next/server";
-import nodemailer from "nodemailer";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { readJson } from "@/lib/http/routeGuard";
+import { sendMail } from "@/lib/orderBackup/smtp";
+import { opsLog } from "@/lib/ops/log";
+import { RESEND_DEFAULT_FROM_ORDER } from "@/lib/system/emails";
 import { getAppBaseUrl } from "@/lib/url/appUrl";
 
 function safeStr(v: unknown) {
@@ -21,41 +23,16 @@ function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-type SmtpCfgOk = { ok: true; host: string; port: number; user: string; pass: string; from: string; secure: boolean };
-type SmtpCfgErr = { ok: false; error: string };
-type SmtpCfg = SmtpCfgOk | SmtpCfgErr;
-
-function smtpConfig(): SmtpCfg {
-  const host = process.env.SMTP_HOST || process.env.LP_SMTP_HOST;
-  const portRaw = process.env.SMTP_PORT || process.env.LP_SMTP_PORT;
-  const user = process.env.SMTP_USER || process.env.LP_SMTP_USER;
-  const pass = process.env.SMTP_PASS || process.env.LP_SMTP_PASS;
-  const from = process.env.SMTP_FROM || process.env.LP_SMTP_FROM || user;
-
-  if (!host) return { ok: false, error: "Missing env SMTP_HOST" };
-  if (!portRaw) return { ok: false, error: "Missing env SMTP_PORT" };
-  if (!user) return { ok: false, error: "Missing env SMTP_USER" };
-  if (!pass) return { ok: false, error: "Missing env SMTP_PASS" };
-  if (!from) return { ok: false, error: "Missing env SMTP_FROM" };
-
-  const port = Number(portRaw);
-  if (!Number.isFinite(port)) return { ok: false, error: "Invalid SMTP_PORT" };
-
-  const secure = port === 465;
-  return { ok: true, host: String(host), port, user: String(user), pass: String(pass), from: String(from), secure };
+function resetMailFrom(): string {
+  return (
+    process.env.LP_SMTP_FROM ||
+    process.env.SMTP_FROM ||
+    process.env.LP_RESEND_FROM ||
+    RESEND_DEFAULT_FROM_ORDER
+  );
 }
 
-async function sendResetEmail(opts: { to: string; link: string }) {
-  const cfg = smtpConfig();
-  if (cfg.ok === false) return { ok: false as const, error: cfg.error };
-
-  const transport = nodemailer.createTransport({
-    host: cfg.host,
-    port: cfg.port,
-    secure: cfg.secure,
-    auth: { user: cfg.user, pass: cfg.pass },
-  });
-
+async function sendResetEmail(opts: { to: string; link: string; rid: string }) {
   const subject = "Tilbakestill passordet ditt i Lunchportalen";
   const text =
     "Hei,\n" +
@@ -67,10 +44,12 @@ async function sendResetEmail(opts: { to: string; link: string }) {
     "Lunchportalen";
 
   try {
-    await transport.sendMail({ from: cfg.from, to: opts.to, subject, text });
+    await sendMail({ from: resetMailFrom(), to: opts.to, subject, text });
     return { ok: true as const };
-  } catch (e: any) {
-    return { ok: false as const, error: String(e?.message ?? e ?? "Email send failed") };
+  } catch (e: unknown) {
+    const error = String((e as { message?: unknown })?.message ?? e ?? "Email send failed");
+    opsLog("auth.forgot_password_email_failed", { rid: opts.rid, error: error.slice(0, 200) });
+    return { ok: false as const, error };
   }
 }
 
@@ -117,7 +96,7 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Kunne ikke sende lenke.", 500, { code: "RECOVERY_LINK_MISSING" });
     }
 
-    const sent = await sendResetEmail({ to: email, link: actionLink });
+    const sent = await sendResetEmail({ to: email, link: actionLink, rid });
     if (sent.ok === false) {
       return jsonErr(rid, "Kunne ikke sende lenke.", 500, { code: "EMAIL_SEND_FAILED" });
     }
