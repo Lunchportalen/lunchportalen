@@ -10,6 +10,10 @@ import { sendMail } from "@/lib/orderBackup/smtp";
 import { opsLog } from "@/lib/ops/log";
 import { RESEND_DEFAULT_FROM_ORDER } from "@/lib/system/emails";
 import { getPasswordResetRedirectUrl } from "@/lib/url/appUrl";
+import {
+  describeRedirectTo,
+  normalizeRecoveryActionLink,
+} from "@/lib/auth/recoveryActionLink";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -99,7 +103,18 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Kunne ikke sende lenke.", 500, { code: "RECOVERY_LINK_MISSING" });
     }
 
-    const sent = await sendResetEmail({ to: email, link: actionLink, rid });
+    const normalizedLink = normalizeRecoveryActionLink(actionLink, redirectTo);
+    const linkDiag = describeRedirectTo(normalizedLink);
+    if (linkDiag.isLocalhost) {
+      opsLog("auth.forgot_password_redirect_localhost", {
+        rid,
+        intendedRedirectTo: redirectTo,
+        redirectToFromLink: linkDiag.redirectTo,
+      });
+      return jsonErr(rid, "Kunne ikke sende lenke.", 500, { code: "RECOVERY_REDIRECT_LOCALHOST" });
+    }
+
+    const sent = await sendResetEmail({ to: email, link: normalizedLink, rid });
     if (sent.ok === false) {
       return jsonErr(rid, "Kunne ikke sende lenke.", 500, { code: "EMAIL_SEND_FAILED" });
     }

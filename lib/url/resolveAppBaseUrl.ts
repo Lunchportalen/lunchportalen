@@ -46,6 +46,21 @@ function isCanonicalProductionHost(host: string): boolean {
   return host === CANONICAL_PRODUCTION_APP_HOST;
 }
 
+/** True only for genuine local dev (never remote_backend / RC production). */
+export function isLocalDevPasswordResetContext(input: ResolveAppBaseUrlInput = {}): boolean {
+  const env = readInput(input);
+  const host = normalizeHost(env.requestHost);
+  const vercelEnv = String(env.vercelEnv ?? "").trim();
+  const nodeEnv = String(env.nodeEnv ?? "").trim();
+
+  if (vercelEnv === "production") return false;
+  if (isCanonicalProductionHost(host)) return false;
+  if (host && !isLocalhostHost(host)) return false;
+  if (nodeEnv === "production") return false;
+
+  return isLocalhostHost(host) || (!host && nodeEnv !== "production" && !vercelEnv);
+}
+
 function readInput(input: ResolveAppBaseUrlInput = {}): Required<Omit<ResolveAppBaseUrlInput, "requestHost">> & {
   requestHost: string | null;
 } {
@@ -131,26 +146,17 @@ export function resolveAppBaseUrl(input: ResolveAppBaseUrlInput = {}): string {
 
 /**
  * Password reset redirect must not depend on baked NEXT_PUBLIC_APP_URL alone.
- * Request host + production deployment signals win over localhost env.
+ * remote_backend may lack VERCEL_ENV and Host headers — fail-safe to canonical unless local dev.
  */
 export function resolvePasswordResetRedirectUrl(input: ResolveAppBaseUrlInput = {}): string {
-  const env = readInput(input);
-  const host = normalizeHost(env.requestHost);
+  if (isLocalDevPasswordResetContext(input)) {
+    return `${LOCAL_DEV_APP_URL}/reset-password`;
+  }
+
   const explicit = pickExplicitAppUrl(input);
-
-  if (isCanonicalProductionHost(host)) {
-    return `${CANONICAL_PRODUCTION_APP_URL}/reset-password`;
+  if (explicit && !isLocalhostBaseUrl(explicit)) {
+    return `${explicit.replace(/\/+$/, "")}/reset-password`;
   }
 
-  if (String(env.vercelEnv ?? "").trim() === "production") {
-    if (explicit && !isLocalhostBaseUrl(explicit)) return `${explicit}/reset-password`;
-    return `${CANONICAL_PRODUCTION_APP_URL}/reset-password`;
-  }
-
-  if (host && !isLocalhostHost(host)) {
-    if (explicit && !isLocalhostBaseUrl(explicit)) return `${explicit}/reset-password`;
-    return `${CANONICAL_PRODUCTION_APP_URL}/reset-password`;
-  }
-
-  return `${resolveAppBaseUrl(input)}/reset-password`;
+  return `${CANONICAL_PRODUCTION_APP_URL}/reset-password`;
 }

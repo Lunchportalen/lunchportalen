@@ -24,6 +24,7 @@ vi.mock("@/lib/ops/log", () => ({
 }));
 
 import { POST } from "@/app/api/auth/forgot-password/route";
+import * as recoveryActionLink from "@/lib/auth/recoveryActionLink";
 
 function mkReq(email: string) {
   return new Request("http://localhost/api/auth/forgot-password", {
@@ -110,5 +111,44 @@ describe("POST /api/auth/forgot-password redirect URL", () => {
       expect(payload).not.toContain("secret-token");
       expect(payload).not.toContain(actionLink);
     }
+  });
+
+  test("normalizes Supabase localhost redirect_to in action_link before sendMail", async () => {
+    const localhostLink =
+      "https://example.supabase.co/auth/v1/verify?token=secret-token&type=recovery&redirect_to=http%3A%2F%2Flocalhost%3A3000";
+    generateLinkMock.mockResolvedValueOnce({
+      data: { properties: { action_link: localhostLink } },
+      error: null,
+    });
+
+    const res = await POST(mkReq("post@melhuscatering.no"));
+    expect(res.status).toBe(200);
+
+    const mailedText = sendMailMock.mock.calls[0][0].text;
+    expect(mailedText).toContain("redirect_to=https%3A%2F%2Fapp.lunchportalen.no%2Freset-password");
+    expect(mailedText).not.toContain("localhost");
+  });
+
+  test("fail-closed when action_link still has localhost after normalization", async () => {
+    const spy = vi
+      .spyOn(recoveryActionLink, "normalizeRecoveryActionLink")
+      .mockImplementation((link) => link);
+
+    generateLinkMock.mockResolvedValueOnce({
+      data: {
+        properties: {
+          action_link:
+            "https://example.supabase.co/auth/v1/verify?token=secret&type=recovery&redirect_to=http%3A%2F%2Flocalhost%3A3000",
+        },
+      },
+      error: null,
+    });
+
+    const res = await POST(mkReq("post@melhuscatering.no"));
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe("RECOVERY_REDIRECT_LOCALHOST");
+    expect(sendMailMock).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
