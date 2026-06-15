@@ -931,3 +931,42 @@ Logo height is locked to 64px (mobile) and 120px (desktop).
 Logo must always link to "/" (home).
 
 Any overflow/layout shift is a BLOCKING DEFECT.
+
+---
+
+# T) PROTECTED GOLDEN PATH (LOCKED)
+
+## T17) PROTECTED GOLDEN PATH — ORDER PILOT FLOW
+
+**Protected Golden Path must not be changed without explicit protected-path audit.**
+
+Authoritative doc: **`docs/PROTECTED_GOLDEN_PATH.md`**
+
+### What is locked (summary)
+Proven production pilot: provider menu publish → `menu_service_days` / `menu_service_day_items` → employee `/week` → order write (`lp_order_set`) with correct `provider_id` / `company_id` / `location_id` → provider `/leverandor/ordrer` with employee + variant display → wrong provider cannot see order.
+
+Reference pilot (fixtures/docs/tests only — **never hardcode in runtime**): Pettersen&Co · Melhus Catering AS · `paasmurt` / `laks-eggerore` · `2026-06-16`.
+
+### Agent / AI rules (HARD STOP)
+- No broad refactors or “cleanup” across the protected path
+- No schema/RLS/order/auth/agreement lifecycle changes without read-only audit
+- No fallback to wrong provider; no hardcoded tenant logic in `app/` or `lib/`
+- UI polish elsewhere → protected files are **out of scope**
+- If uncertain → **STOP** (fail-closed)
+
+### PR / patch requirements when touching protected files
+Any PR or AI patch touching protected files must:
+1. State **`Protected Golden Path Impact`** in PR body, **or** update listed regression tests in the same PR, **or** carry label `protected-path-approved`
+2. Include read-only audit (files + blast radius)
+3. Include reason, exact files changed, regression tests, rollback plan
+4. Pass `npm run test:golden-path` and `node scripts/ci/guard-protected-golden-path.test.mjs`
+
+CI enforces via `scripts/ci/guard-protected-golden-path.mjs`.
+
+### Sensitive areas (non-exhaustive)
+- Order write path · `lp_order_set` · order RPC wrappers
+- `/api/week` · menu materialization · provider order read model
+- Provider/company/location scoping · auth/profile lookup
+- Active agreement gate · cutoff · RLS/schema/migrations touching orders
+
+Violation → **STOP**
