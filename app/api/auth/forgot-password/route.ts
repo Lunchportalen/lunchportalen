@@ -9,7 +9,7 @@ import { readJson } from "@/lib/http/routeGuard";
 import { sendMail } from "@/lib/orderBackup/smtp";
 import { opsLog } from "@/lib/ops/log";
 import { RESEND_DEFAULT_FROM_ORDER } from "@/lib/system/emails";
-import { getAppBaseUrl } from "@/lib/url/appUrl";
+import { getPasswordResetRedirectUrl } from "@/lib/url/appUrl";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -71,8 +71,7 @@ export async function POST(req: NextRequest) {
 
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const admin = supabaseAdmin();
-    const appUrl = getAppBaseUrl();
-    const redirectTo = `${appUrl}/reset-password`;
+    const redirectTo = getPasswordResetRedirectUrl();
 
     const { data, error } = await admin.auth.admin.generateLink({
       type: "recovery",
