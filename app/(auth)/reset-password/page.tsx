@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,11 @@ import {
   RECOVERY_CHECKING_MESSAGE,
   RECOVERY_EXPIRED_MESSAGE,
 } from "@/lib/auth/recoveryHash";
+import {
+  POST_RESET_REDIRECT_MESSAGE,
+  POST_RESET_SUCCESS_MESSAGE,
+  redirectAfterPasswordReset,
+} from "@/lib/auth/postResetRedirect";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Status = "idle" | "loading" | "success" | "error";
@@ -26,7 +30,6 @@ function safeStr(v: unknown) {
 }
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("checking");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -134,11 +137,10 @@ export default function ResetPasswordPage() {
       }
 
       setStatus("success");
-      setMessage("Passordet er oppdatert. Du kan nå logge inn.");
+      setMessage(`${POST_RESET_SUCCESS_MESSAGE} ${POST_RESET_REDIRECT_MESSAGE}`);
 
       setTimeout(() => {
-        router.replace("/login");
-        router.refresh();
+        void redirectAfterPasswordReset(sb);
       }, 600);
     } catch {
       setStatus("error");

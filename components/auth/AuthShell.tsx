@@ -136,7 +136,7 @@ export default function AuthShell({
 
           {/* tiny trust line (optional but premium, unobtrusive) */}
           <div className="mt-6 text-center text-xs text-[rgba(var(--lp-muted),0.95)]">
-            Ã‰n sannhetskilde Â· Cut-off 08:00 Â· Admin-kontroll
+            Én sannhetskilde · Cut-off 08:00 · Admin-kontroll
           </div>
         </div>
       </div>
