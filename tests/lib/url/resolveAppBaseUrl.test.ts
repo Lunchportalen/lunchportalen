@@ -95,4 +95,45 @@ describe("resolveAppBaseUrl", () => {
       }),
     ).toBe("https://a.example");
   });
+
+  it("request host app.lunchportalen.no forces production reset redirect without VERCEL_ENV", () => {
+    expect(
+      resolvePasswordResetRedirectUrl({
+        requestHost: "app.lunchportalen.no",
+        nodeEnv: "development",
+        vercelEnv: "",
+        nextPublicAppUrl: "http://localhost:3000",
+      }),
+    ).toBe(`${CANONICAL_PRODUCTION_APP_URL}/reset-password`);
+  });
+
+  it("bad localhost env on deployed non-localhost host never returns localhost reset URL", () => {
+    expect(
+      resolvePasswordResetRedirectUrl({
+        requestHost: "app.lunchportalen.no",
+        nextPublicAppUrl: "http://localhost:3000",
+      }),
+    ).not.toContain("localhost");
+  });
+
+  it("local dev localhost host may use localhost reset redirect", () => {
+    expect(
+      resolvePasswordResetRedirectUrl({
+        requestHost: "localhost:3000",
+        nodeEnv: "development",
+        vercelEnv: "",
+      }),
+    ).toBe(`${LOCAL_DEV_APP_URL}/reset-password`);
+  });
+
+  it("production never returns localhost reset redirect", () => {
+    const cases = [
+      { vercelEnv: "production", nodeEnv: "production", nextPublicAppUrl: "http://localhost:3000" },
+      { requestHost: "app.lunchportalen.no", nextPublicAppUrl: "http://localhost:3000" },
+      { requestHost: "app.lunchportalen.no", nodeEnv: "development", vercelEnv: "" },
+    ] as const;
+    for (const input of cases) {
+      expect(resolvePasswordResetRedirectUrl(input)).not.toContain("localhost");
+    }
+  });
 });

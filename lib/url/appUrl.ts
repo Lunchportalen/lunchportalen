@@ -1,6 +1,10 @@
 import "server-only";
 
-import { resolveAppBaseUrl, resolvePasswordResetRedirectUrl } from "@/lib/url/resolveAppBaseUrl";
+import {
+  resolveAppBaseUrl,
+  resolvePasswordResetRedirectUrl,
+  type ResolveAppBaseUrlInput,
+} from "@/lib/url/resolveAppBaseUrl";
 
 export {
   CANONICAL_PRODUCTION_APP_URL,
@@ -15,6 +19,6 @@ export function getAppBaseUrl(): string {
   return resolveAppBaseUrl();
 }
 
-export function getPasswordResetRedirectUrl(): string {
-  return resolvePasswordResetRedirectUrl();
+export function getPasswordResetRedirectUrl(input?: Pick<ResolveAppBaseUrlInput, "requestHost">): string {
+  return resolvePasswordResetRedirectUrl(input ?? {});
 }

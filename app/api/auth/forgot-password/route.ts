@@ -71,7 +71,11 @@ export async function POST(req: NextRequest) {
 
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
     const admin = supabaseAdmin();
-    const redirectTo = getPasswordResetRedirectUrl();
+    const requestHost =
+      req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+      req.headers.get("host")?.split(",")[0]?.trim() ||
+      null;
+    const redirectTo = getPasswordResetRedirectUrl({ requestHost });
 
     const { data, error } = await admin.auth.admin.generateLink({
       type: "recovery",
