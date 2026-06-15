@@ -60,7 +60,11 @@ describe("company admin surfaces — enterprise copy", () => {
     expect(source).toContain("Inviter ansatt");
     expect(source).toContain("Inviter via e-postliste");
     expect(source).toContain("Last ned CSV");
-    expect(source).toContain("PEOPLE_ONBOARDING_EMPTY_TITLE");
+    expect(source).toContain("PEOPLE_READINESS_EMPTY_TITLE");
+    expect(source).toContain("PEOPLE_LIST_TITLE");
+    expect(source).toContain("showToolbarActions={false}");
+    expect(source).toContain("PEOPLE_READINESS_PENDING_TITLE");
+    expect(source).toContain("PEOPLE_READINESS_ACTIVE_CTA");
   });
 
   test("/admin/locations hides raw location UUID by default", () => {

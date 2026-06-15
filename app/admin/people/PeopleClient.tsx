@@ -9,13 +9,27 @@ import InvitesPanel from "@/components/admin/InvitesPanel";
 import SupportReportButton from "@/components/admin/SupportReportButton";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { Button } from "@/components/ui/button";
-import { Card, getCardVariantClass } from "@/components/ui/card";
+import { getCardVariantClass } from "@/components/ui/card";
 import {
-  PEOPLE_ONBOARDING_EMPTY_BODY,
-  PEOPLE_ONBOARDING_EMPTY_TITLE,
+  PEOPLE_INVITES_ACCORDION_NOTE,
+  PEOPLE_LIST_TITLE,
+  PEOPLE_READINESS_ACTIVE_BODY,
+  PEOPLE_READINESS_ACTIVE_CTA,
+  PEOPLE_READINESS_ACTIVE_TITLE,
+  PEOPLE_READINESS_EMPTY_BODY,
+  PEOPLE_READINESS_EMPTY_TITLE,
+  PEOPLE_READINESS_PENDING_BODY,
+  PEOPLE_READINESS_PENDING_NEXT,
+  PEOPLE_READINESS_PENDING_TITLE,
+  PEOPLE_SUPPORT_ACCORDION_NOTE,
   SUPPORT_BUTTON_LABEL,
   TECHNICAL_DETAILS_SUMMARY,
+  peopleListScopeNote,
+  peoplePageSubtitleEmpty,
+  peoplePageSubtitleFollowUp,
 } from "@/lib/admin/companyAdminCopy";
+import { isPendingEmployeeInvite, resolvePeopleReadinessPhase } from "@/lib/admin/peopleReadiness";
+import { formatDateTimeNO } from "@/lib/date/format";
 
 function cn(...v: Array<string | false | null | undefined>) {
   return v.filter(Boolean).join(" ");
@@ -75,17 +89,9 @@ async function readJsonOrThrow(res: Response) {
   return json;
 }
 
-function StatItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="text-xs uppercase tracking-[0.08em] text-[rgb(var(--lp-muted))]">{label}</div>
-      <div className="text-base font-semibold text-[rgb(var(--lp-text))]">{value}</div>
-    </div>
-  );
-}
-
-function statValue(v: number | null | undefined) {
-  return v == null ? "Ikke tilgjengelig" : String(v);
+function fmtInviteTs(ts: string | null | undefined) {
+  if (!ts) return "Ikke satt";
+  return formatDateTimeNO(ts);
 }
 
 export default function PeopleClient({
@@ -104,6 +110,7 @@ export default function PeopleClient({
   const [err, setErr] = useState<string | null>(null);
   const [rid, setRid] = useState<string | null>(null);
   const [locationLabels, setLocationLabels] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
 
   async function load(opts?: { keepError?: boolean }) {
     setLoading(true);
@@ -167,11 +174,21 @@ export default function PeopleClient({
     };
   }, [data?.company?.id, supportCompanyId]);
 
-  const counts = data?.counts ?? { total: 0, active: 0, deactivated: 0 };
   const companyName = data?.company?.name ?? "Firma";
   const employeeRows = (data?.employees ?? []).filter((row) => row.role === "employee");
-  const invitedEmployees = employeeRows.length;
-  const showOnboardingHero = !loading && !err && invitedEmployees === 0;
+  const activeEmployeeCount = employeeRows.filter((row) => !row.disabled_at && row.is_active !== false).length;
+  const invites = data?.invites ?? [];
+  const pendingInvites = invites.filter(isPendingEmployeeInvite);
+  const pendingInviteCount = pendingInvites.length;
+  const deactivatedCount = employeeRows.filter((row) => !!row.disabled_at).length;
+
+  const readinessPhase = resolvePeopleReadinessPhase({
+    activeEmployeeCount,
+    pendingInviteCount,
+  });
+
+  const pageSubtitle =
+    readinessPhase === "empty" ? peoplePageSubtitleEmpty(companyName) : peoplePageSubtitleFollowUp(companyName);
 
   const sourceMeta = useMemo(() => {
     return {
@@ -184,60 +201,80 @@ export default function PeopleClient({
   return (
     <AdminPageShell
       title="Ansatte"
-      subtitle={`Inviter ansatte til ${companyName}. Ansatte må inviteres før de kan bestille lunsj.`}
+      subtitle={pageSubtitle}
       actions={
         <>
           <Button asChild className="lp-neon-focus lp-neon-glow-hover">
             <Link href="/admin/invite">Inviter ansatt</Link>
           </Button>
-          <details className="relative">
-            <summary className="lp-btn lp-btn--ghost min-h-[44px] cursor-pointer list-none border border-[rgb(var(--lp-border))] bg-white/70 px-3 py-2 text-sm font-semibold">
-              Flere
-            </summary>
-            <div className="absolute right-0 z-10 mt-2 w-56 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-2 shadow-[var(--lp-shadow-soft)]">
-              <Link href="/admin/invite" className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgb(var(--lp-surface-alt))]">
-                Inviter via e-postliste
-              </Link>
-              <Link href="/admin/export/employees.csv" className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgb(var(--lp-surface-alt))]">
-                Last ned CSV
-              </Link>
-            </div>
-          </details>
+          <Button asChild variant="secondary">
+            <Link href="/admin/invite">Inviter via e-postliste</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/admin/export/employees.csv">Last ned CSV</Link>
+          </Button>
         </>
       }
     >
-      {showOnboardingHero ? (
-        <section className="lp-card lp-card--elevated p-6 text-center sm:text-left">
-          <h2 className="text-lg font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_ONBOARDING_EMPTY_TITLE}</h2>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_ONBOARDING_EMPTY_BODY}</p>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-            Firmaadmin-kontoen er for administrasjon. Inviter minst én ansatt som skal bestille lunsj.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
-            <Button asChild className="lp-neon-focus lp-neon-glow-hover">
-              <Link href="/admin/invite">Inviter ansatt</Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/admin/invite">Inviter via e-postliste</Link>
-            </Button>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="lp-card p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="text-xs text-[rgb(var(--lp-muted))]">Firmaadmin · {companyName}</div>
-            <div className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Kun ansatte i ditt firma vises.</div>
-          </div>
-          {viewerEmail ? <div className="text-xs text-[rgb(var(--lp-muted))]">Innlogget: {viewerEmail}</div> : null}
-        </div>
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <StatItem label="Totalt" value={loading ? "Laster…" : err ? "Ikke tilgjengelig" : statValue(counts.total)} />
-          <StatItem label="Aktive" value={loading ? "Laster…" : err ? "Ikke tilgjengelig" : statValue(counts.active)} />
-          <StatItem label="Deaktivert" value={loading ? "Laster…" : err ? "Ikke tilgjengelig" : statValue(counts.deactivated)} />
-        </div>
+      <section className={cn("lp-card", getCardVariantClass("soft"), "p-4 sm:p-5")}>
+        {loading ? (
+          <p className="text-sm text-[rgb(var(--lp-muted))]">Laster…</p>
+        ) : err ? (
+          <p className="text-sm text-[rgb(var(--lp-muted))]">Kunne ikke hente status.</p>
+        ) : readinessPhase === "empty" ? (
+          <>
+            <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_READINESS_EMPTY_TITLE}</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_READINESS_EMPTY_BODY}</p>
+            <div className="mt-4">
+              <Button asChild className="lp-neon-focus lp-neon-glow-hover">
+                <Link href="/admin/invite">Inviter ansatt</Link>
+              </Button>
+            </div>
+          </>
+        ) : readinessPhase === "pending_invite" ? (
+          <>
+            <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_READINESS_PENDING_TITLE}</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_READINESS_PENDING_BODY}</p>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-[rgb(var(--lp-text))]">
+                <span className="font-semibold">{pendingInviteCount}</span> ventende invitasjon
+                {pendingInviteCount === 1 ? "" : "er"}
+              </span>
+              <span className="text-[rgb(var(--lp-muted))]">
+                <span className="font-semibold">{activeEmployeeCount}</span> aktive ansatte
+              </span>
+            </div>
+            <p className="mt-3 text-sm font-medium text-[rgb(var(--lp-text))]">
+              Neste steg: {PEOPLE_READINESS_PENDING_NEXT}
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-base font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_READINESS_ACTIVE_TITLE}</h2>
+            <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_READINESS_ACTIVE_BODY}</p>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-[rgb(var(--lp-text))]">
+                <span className="font-semibold">{activeEmployeeCount}</span> aktive ansatte
+              </span>
+              {deactivatedCount > 0 ? (
+                <span className="text-[rgb(var(--lp-muted))]">
+                  <span className="font-semibold">{deactivatedCount}</span> deaktiverte
+                </span>
+              ) : null}
+              {pendingInviteCount > 0 ? (
+                <span className="text-[rgb(var(--lp-muted))]">
+                  <span className="font-semibold">{pendingInviteCount}</span> ventende invitasjon
+                  {pendingInviteCount === 1 ? "" : "er"}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-4">
+              <Button asChild variant="secondary">
+                <Link href="/week">{PEOPLE_READINESS_ACTIVE_CTA}</Link>
+              </Button>
+            </div>
+          </>
+        )}
       </section>
 
       {err ? (
@@ -253,21 +290,17 @@ export default function PeopleClient({
       ) : null}
 
       <section className="lp-panel overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgb(var(--lp-border))] px-6 py-4">
-          <div>
-            <h2 className="lp-h2">Oversikt</h2>
-            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Inviterte ansatte og status.</div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <form action="/admin/people" method="get" className="flex items-center gap-2">
-              <input
-                name="q"
-                defaultValue={initialQuery}
-                placeholder="Søk navn, e-post"
-                className="min-h-[40px] rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 text-sm"
-              />
-              <button className="lp-btn lp-btn--secondary min-h-[40px]">Søk</button>
-            </form>
+        <div className="border-b border-[rgb(var(--lp-border))] px-6 py-4">
+          <h2 className="lp-h2">{PEOPLE_LIST_TITLE}</h2>
+          <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{peopleListScopeNote(companyName)}</p>
+          <div className="mt-4">
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Søk navn eller e-post"
+              aria-label="Søk ansatte"
+              className="w-full max-w-md min-h-[44px] rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 text-sm"
+            />
           </div>
         </div>
 
@@ -276,8 +309,9 @@ export default function PeopleClient({
             companyId={data?.company?.id ?? supportCompanyId}
             companyName={data?.company?.name ?? null}
             viewerEmail={viewerEmail}
-            canInvite
-            initialQuery={initialQuery}
+            canInvite={false}
+            showToolbarActions={false}
+            searchQuery={searchQuery}
             employees={data?.employees ?? []}
             loading={loading}
             error={err}
@@ -288,14 +322,33 @@ export default function PeopleClient({
       </section>
 
       <details className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}>
-        <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">Invitasjoner</summary>
+        <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">
+          Invitasjoner
+          {!loading && pendingInviteCount > 0 ? (
+            <span className="ml-2 font-normal text-[rgb(var(--lp-muted))]">({pendingInviteCount} ventende)</span>
+          ) : null}
+        </summary>
+        <p className="mt-3 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_INVITES_ACCORDION_NOTE}</p>
+        {!loading && pendingInvites.length > 0 ? (
+          <ul className="mt-4 space-y-3 border-t border-[rgb(var(--lp-border))] pt-4">
+            {pendingInvites.slice(0, 10).map((invite) => (
+              <li key={invite.id} className="text-sm">
+                <div className="font-medium text-[rgb(var(--lp-text))]">{invite.email}</div>
+                <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                  Sendt: {fmtInviteTs(invite.last_sent_at ?? invite.created_at)} · Utløper: {fmtInviteTs(invite.expires_at)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="mt-4">
-          <InvitesPanel rows={data?.invites ?? []} loading={loading} error={err} onReload={load} />
+          <InvitesPanel rows={invites} loading={loading} error={err} onReload={load} />
         </div>
       </details>
 
       <details className={cn("lp-card lp-motion-card", getCardVariantClass("soft"), "p-6")}>
         <summary className="cursor-pointer text-sm font-semibold text-[rgb(var(--lp-text))]">Support</summary>
+        <p className="mt-3 text-sm text-[rgb(var(--lp-muted))]">{PEOPLE_SUPPORT_ACCORDION_NOTE}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <SupportReportButton
             reason="COMPANY_ADMIN_PEOPLE_SUPPORT_REPORT"
@@ -304,7 +357,6 @@ export default function PeopleClient({
             buttonLabel={SUPPORT_BUTTON_LABEL}
             buttonClassName="lp-btn lp-btn--secondary"
           />
-          <div className="text-sm text-[rgb(var(--lp-muted))]">Vi hjelper med invitasjoner og tilgang.</div>
         </div>
       </details>
 

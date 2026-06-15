@@ -3,13 +3,19 @@
 
 import { useMemo, useState } from "react";
 import { formatDateTimeNO } from "@/lib/date/format";
+import {
+  PEOPLE_ONBOARDING_EMPTY_BODY,
+  PEOPLE_ONBOARDING_EMPTY_TITLE,
+} from "@/lib/admin/companyAdminCopy";
 
 type Props = {
   companyId: string;
   companyName?: string | null;
   viewerEmail?: string | null;
   canInvite?: boolean;
+  showToolbarActions?: boolean;
   initialQuery?: string;
+  searchQuery?: string;
   employees?: EmployeeRow[];
   loading?: boolean;
   error?: string | null;
@@ -86,8 +92,13 @@ async function readJsonOrThrow(res: Response) {
 }
 
 function fmtTs(ts: string | null | undefined) {
-  if (!ts) return "-";
+  if (!ts) return "Ikke satt";
   return formatDateTimeNO(ts);
+}
+
+function displayText(v: string | null | undefined) {
+  const s = safeText(v);
+  return s || "Ikke satt";
 }
 
 function statusLabel(r: EmployeeRow) {
@@ -115,8 +126,8 @@ function parseEmailLines(input: string): string[] {
 }
 
 function formatLocationLabel(locationId: string | null, locationLabels: Record<string, string>) {
-  if (!locationId) return "—";
-  return locationLabels[locationId] ?? "Lokasjon";
+  if (!locationId) return "Ikke satt";
+  return locationLabels[locationId] ?? "Ikke satt";
 }
 
 export default function EmployeesTable({
@@ -124,14 +135,17 @@ export default function EmployeesTable({
   companyName = null,
   viewerEmail = null,
   canInvite = false,
+  showToolbarActions = true,
   initialQuery = "",
+  searchQuery,
   employees = [],
   loading = false,
   error = null,
   locationLabels = {},
   onReload,
 }: Props) {
-  const [q, setQ] = useState(initialQuery);
+  const [internalQuery, setInternalQuery] = useState(initialQuery);
+  const q = searchQuery ?? internalQuery;
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -163,16 +177,8 @@ export default function EmployeesTable({
     });
   }, [employees, q]);
 
-  const stats = useMemo(() => {
-    const total = employees.length;
-    const active = employees.filter((r) => !r.disabled_at && r.is_active !== false).length;
-    const disabled = employees.filter((r) => !!r.disabled_at).length;
-    return { total, active, disabled };
-  }, [employees]);
-
   function exportCsv() {
-    const header = ["email", "name", "department", "location_id", "status", "disabled_at", "created_at"].join(","
-    );
+    const header = ["email", "name", "department", "location_id", "status", "disabled_at", "created_at"].join(",");
     const lines = filtered.map((r) =>
       [
         JSON.stringify(r.email ?? ""),
@@ -309,107 +315,44 @@ export default function EmployeesTable({
     dl(`bulk_invites_${companyId}.csv`, [header, ...lines].join("\n"));
   }
 
+  const showLegacyToolbar = showToolbarActions;
+
   return (
     <section>
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="text-lg font-semibold">Ansatte</div>
-          <div className="text-sm text-[rgb(var(--lp-muted))]">
-            Administrer ansatte i bedriften. Deaktivering sletter ikke historikk.
+      {showLegacyToolbar ? (
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="text-lg font-semibold">Ansatte</div>
+            <div className="text-sm text-[rgb(var(--lp-muted))]">
+              Administrer ansatte i bedriften. Deaktivering sletter ikke historikk.
+            </div>
+
+            {companyName ? (
+              <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                Firma: <span className="font-medium">{companyName}</span>
+                {viewerEmail ? (
+                  <>
+                    {" "}
+                    · Innlogget: <span className="font-mono">{viewerEmail}</span>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
-          {companyName ? (
-            <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
-              Firma: <span className="font-medium">{companyName}</span>
-              {viewerEmail ? (
-                <>
-                  {" "}
-                  · Innlogget: <span className="font-mono">{viewerEmail}</span>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Søk navn, e-post, avdeling"
-            className="w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
-          />
-
-          <div className="flex items-center gap-2">
-            {canInvite ? (
-              <>
-                <button
-                  onClick={() => {
-                    setInviteErr(null);
-                    setInviteOk(null);
-                    setInviteOpen(true);
-                  }}
-                  className="rounded-2xl bg-black px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Inviter ansatt
-                </button>
-
-                <button
-                  onClick={() => {
-                    setBulkErr(null);
-                    setBulkOk(null);
-                    setBulkReport(null);
-                    setBulkOpen(true);
-                  }}
-                  className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))]"
-                >
-                  Inviter e-postliste
-                </button>
-              </>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {searchQuery == null ? (
+              <input
+                value={internalQuery}
+                onChange={(e) => setInternalQuery(e.target.value)}
+                placeholder="Søk navn, e-post, avdeling"
+                className="w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))] focus:outline-none"
+              />
             ) : null}
 
-            <button
-              onClick={exportCsv}
-              className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))]"
-            >
-              Last ned CSV
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <div className="rounded-3xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Viser</div>
-          <div className="mt-1 text-xl font-semibold">{filtered.length}</div>
-        </div>
-        <div className="rounded-3xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Aktive (i listen)</div>
-          <div className="mt-1 text-xl font-semibold">
-            {filtered.filter((r) => !r.disabled_at && r.is_active !== false).length}
-          </div>
-        </div>
-        <div className="rounded-3xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Deaktivert (i listen)</div>
-          <div className="mt-1 text-xl font-semibold">{filtered.filter((r) => !!r.disabled_at).length}</div>
-        </div>
-        <div className="rounded-3xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Totalt (alle)</div>
-          <div className="mt-1 text-xl font-semibold">{stats.total}</div>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-3xl ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="bg-white p-4">
-          {loading ? (
-            <div className="text-sm text-[rgb(var(--lp-muted))]">Laster…</div>
-          ) : error ? (
-            <div className="text-sm text-red-600">{error}</div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 text-sm text-[rgb(var(--lp-muted))]">
-              <div className="text-base font-semibold text-[rgb(var(--lp-text))]">Ingen ansatte er invitert ennå</div>
-              <p className="mt-2">Start med å invitere én pilotansatt.</p>
+            <div className="flex items-center gap-2">
               {canInvite ? (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <>
                   <button
                     onClick={() => {
                       setInviteErr(null);
@@ -420,6 +363,7 @@ export default function EmployeesTable({
                   >
                     Inviter ansatt
                   </button>
+
                   <button
                     onClick={() => {
                       setBulkErr(null);
@@ -431,49 +375,74 @@ export default function EmployeesTable({
                   >
                     Inviter e-postliste
                   </button>
-                </div>
+                </>
               ) : null}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs text-[rgb(var(--lp-muted))]">
-                  <tr className="[&>th]:py-2 [&>th]:pr-3">
-                    <th>Navn</th>
-                    <th>E-post</th>
-                    <th>Avdeling</th>
-                    <th>Lokasjon</th>
-                    <th>Status</th>
-                    <th>Opprettet</th>
-                    <th className="text-right">Handling</th>
-                  </tr>
-                </thead>
-                <tbody className="[&>tr]:border-t [&>tr]:border-[rgb(var(--lp-border))]">
-                  {filtered.map((r) => (
-                    <tr key={r.user_id} className="[&>td]:py-3 [&>td]:pr-3">
-                      <td className="font-medium">{r.name ?? r.full_name ?? "-"}</td>
-                      <td>{r.email ?? "-"}</td>
-                      <td>{r.department ?? "-"}</td>
-                      <td>{formatLocationLabel(r.location_id, locationLabels)}</td>
-                      <td className="text-xs">
-                        <span className="rounded-full bg-white px-2 py-1 ring-1 ring-[rgb(var(--lp-border))]">
-                          {statusLabel(r)}
-                        </span>
-                      </td>
-                      <td className="text-xs text-[rgb(var(--lp-muted))]">{fmtTs(r.created_at)}</td>
-                      <td className="text-right text-xs text-[rgb(var(--lp-muted))]">-</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
 
-          <div className="mt-3 flex items-center justify-end text-xs text-[rgb(var(--lp-muted))]">
-            <button onClick={doReload} className="rounded-xl bg-white px-3 py-2 ring-1 ring-[rgb(var(--lp-border))]">
-              Oppdater
-            </button>
+              <button
+                onClick={exportCsv}
+                className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))]"
+              >
+                Last ned CSV
+              </button>
+            </div>
           </div>
+        </div>
+      ) : null}
+
+      <div className={showLegacyToolbar ? "mt-4" : undefined}>
+        {loading ? (
+          <div className="text-sm text-[rgb(var(--lp-muted))]">Laster…</div>
+        ) : error ? (
+          <div className="text-sm text-red-600">{error}</div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 text-sm text-[rgb(var(--lp-muted))]">
+            <div className="text-base font-semibold text-[rgb(var(--lp-text))]">{PEOPLE_ONBOARDING_EMPTY_TITLE}</div>
+            <p className="mt-2">{PEOPLE_ONBOARDING_EMPTY_BODY}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs text-[rgb(var(--lp-muted))]">
+                <tr className="[&>th]:py-2 [&>th]:pr-3">
+                  <th>Navn</th>
+                  <th>E-post</th>
+                  <th>Lokasjon</th>
+                  <th>Status</th>
+                  <th>Opprettet</th>
+                  <th className="text-right">Handling</th>
+                </tr>
+              </thead>
+              <tbody className="[&>tr]:border-t [&>tr]:border-[rgb(var(--lp-border))]">
+                {filtered.map((r) => (
+                  <tr key={r.user_id} className="[&>td]:py-3 [&>td]:pr-3">
+                    <td className="font-medium">{displayText(r.name ?? r.full_name)}</td>
+                    <td>{displayText(r.email)}</td>
+                    <td className="text-[rgb(var(--lp-muted))]">{formatLocationLabel(r.location_id, locationLabels)}</td>
+                    <td className="text-xs">
+                      <span className="rounded-full bg-white px-2 py-1 ring-1 ring-[rgb(var(--lp-border))]">
+                        {statusLabel(r)}
+                      </span>
+                    </td>
+                    <td className="text-xs text-[rgb(var(--lp-muted))]">{fmtTs(r.created_at)}</td>
+                    <td className="text-right text-xs text-[rgb(var(--lp-muted))]">
+                      <span className="text-[rgb(var(--lp-muted))]">Ikke satt</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-3 flex items-center justify-end">
+          <button
+            type="button"
+            onClick={doReload}
+            disabled={loading}
+            className="text-xs text-[rgb(var(--lp-muted))] underline-offset-2 hover:underline disabled:opacity-50"
+          >
+            Oppdater
+          </button>
         </div>
       </div>
 
@@ -632,12 +601,24 @@ export default function EmployeesTable({
 
                 {bulkReport?.data?.summary ? (
                   <div className="mt-3 grid gap-2 text-sm">
-                    <div>Totalt: <span className="font-semibold">{bulkReport.data.summary.total}</span></div>
-                    <div>Sendt: <span className="font-semibold">{bulkReport.data.summary.created}</span></div>
-                    <div>Feilet: <span className="font-semibold">{bulkReport.data.summary.failed}</span></div>
-                    <div>Finnes: <span className="font-semibold">{bulkReport.data.summary.already_exists}</span></div>
-                    <div>Ugyldig: <span className="font-semibold">{bulkReport.data.summary.invalid}</span></div>
-                    <div>Allerede aktiv invite: <span className="font-semibold">{bulkReport.data.summary.already_invited}</span></div>
+                    <div>
+                      Totalt: <span className="font-semibold">{bulkReport.data.summary.total}</span>
+                    </div>
+                    <div>
+                      Sendt: <span className="font-semibold">{bulkReport.data.summary.created}</span>
+                    </div>
+                    <div>
+                      Feilet: <span className="font-semibold">{bulkReport.data.summary.failed}</span>
+                    </div>
+                    <div>
+                      Finnes: <span className="font-semibold">{bulkReport.data.summary.already_exists}</span>
+                    </div>
+                    <div>
+                      Ugyldig: <span className="font-semibold">{bulkReport.data.summary.invalid}</span>
+                    </div>
+                    <div>
+                      Allerede aktiv invite: <span className="font-semibold">{bulkReport.data.summary.already_invited}</span>
+                    </div>
 
                     <div className="mt-3">
                       <button
@@ -668,7 +649,7 @@ export default function EmployeesTable({
                           <tr key={idx} className="[&>td]:py-2 [&>td]:pr-2">
                             <td className="font-medium">{r.email}</td>
                             <td className="font-mono">{r.status}</td>
-                            <td className="text-[rgb(var(--lp-muted))]">{r.message ?? "-"}</td>
+                            <td className="text-[rgb(var(--lp-muted))]">{r.message ?? "Ikke satt"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -683,4 +664,3 @@ export default function EmployeesTable({
     </section>
   );
 }
-
