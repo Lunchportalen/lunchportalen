@@ -131,9 +131,32 @@ describe("resolveAppBaseUrl", () => {
       { vercelEnv: "production", nodeEnv: "production", nextPublicAppUrl: "http://localhost:3000" },
       { requestHost: "app.lunchportalen.no", nextPublicAppUrl: "http://localhost:3000" },
       { requestHost: "app.lunchportalen.no", nodeEnv: "development", vercelEnv: "" },
+      { nodeEnv: "production", vercelEnv: "", nextPublicAppUrl: "http://localhost:3000" },
+      { nodeEnv: "production", vercelEnv: "", requestHost: null, nextPublicAppUrl: "http://localhost:3000" },
     ] as const;
     for (const input of cases) {
       expect(resolvePasswordResetRedirectUrl(input)).not.toContain("localhost");
     }
+  });
+
+  it("remote_backend missing host with NODE_ENV production uses canonical reset URL", () => {
+    expect(
+      resolvePasswordResetRedirectUrl({
+        nodeEnv: "production",
+        vercelEnv: "",
+        requestHost: null,
+        nextPublicAppUrl: "http://localhost:3000",
+      }),
+    ).toBe(`${CANONICAL_PRODUCTION_APP_URL}/reset-password`);
+  });
+
+  it("preview staging explicit APP_URL wins for reset redirect", () => {
+    expect(
+      resolvePasswordResetRedirectUrl({
+        vercelEnv: "preview",
+        nodeEnv: "production",
+        publicAppUrl: "https://staging.example.com",
+      }),
+    ).toBe("https://staging.example.com/reset-password");
   });
 });
