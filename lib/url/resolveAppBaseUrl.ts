@@ -52,13 +52,11 @@ export function isLocalDevPasswordResetContext(input: ResolveAppBaseUrlInput = {
   const host = normalizeHost(env.requestHost);
   const vercelEnv = String(env.vercelEnv ?? "").trim();
   const nodeEnv = String(env.nodeEnv ?? "").trim();
-  const rcMode = String(process.env.RC_MODE ?? "").trim().toLowerCase();
 
   if (vercelEnv === "production") return false;
   if (isCanonicalProductionHost(host)) return false;
   if (host && !isLocalhostHost(host)) return false;
   if (nodeEnv === "production") return false;
-  if (rcMode === "true") return false;
 
   return isLocalhostHost(host) || (!host && nodeEnv !== "production" && !vercelEnv);
 }
