@@ -2457,7 +2457,7 @@
       "confidence": "confirmed",
       "file": "app/api/cron/daily-order-summary/route.ts",
       "methods": [
-        "POST"
+        "UNKNOWN"
       ],
       "route": "/api/cron/daily-order-summary",
       "rpc_calls": [],
@@ -2544,9 +2544,7 @@
       ],
       "route": "/api/cron/meal-learning",
       "rpc_calls": [],
-      "uses_tables": [
-        "orders"
-      ]
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",
@@ -3143,6 +3141,7 @@
       "uses_tables": [
         "companies",
         "company_locations",
+        "lp_user_allergens",
         "profiles"
       ]
     },
@@ -3410,6 +3409,20 @@
       "rpc_calls": [],
       "uses_tables": [
         "company_current_agreement",
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/me/user-allergens/route.ts",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "route": "/api/me/user-allergens",
+      "rpc_calls": [],
+      "uses_tables": [
+        "lp_user_allergens",
         "profiles"
       ]
     },
@@ -3868,6 +3881,16 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/provider/menu-days/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/menu-days",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/public/ai-demo-cta/assign/route.ts",
       "methods": [
         "POST"
@@ -3893,15 +3916,27 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/public/coverage/check/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/public/coverage/check",
+      "rpc_calls": [
+        "lp_match_provider_by_postal_code"
+      ],
+      "uses_tables": [
+        "provider_service_areas"
+      ]
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/public/demo-interest/route.ts",
       "methods": [
         "POST"
       ],
       "route": "/api/public/demo-interest",
       "rpc_calls": [],
-      "uses_tables": [
-        "demo_interest_leads"
-      ]
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",
@@ -3927,6 +3962,18 @@
       "uses_tables": [
         "forms"
       ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/public/leads/capture/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/public/leads/capture",
+      "rpc_calls": [
+        "lp_capture_lead"
+      ],
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",

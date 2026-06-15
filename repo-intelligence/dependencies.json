@@ -11,6 +11,8 @@
       "lib/date/format.ts",
       "lib/date/oslo.ts",
       "lib/date/week.ts",
+      "lib/menu/providerMenuScope.ts",
+      "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
     "app/(app)/layout.tsx": [
@@ -19,12 +21,22 @@
       "lib/auth/employeeAppSurface.ts"
     ],
     "app/(app)/week/EmployeeWeekClient.tsx": [
+      "components/employee/WeekAllergenProfileCard.tsx",
       "lib/cms/menuDayContract.ts",
       "lib/date/format.ts",
       "lib/date/oslo.ts",
+      "lib/employee/orderedMealDisplay.ts",
       "lib/hooks/useMediaQuery.ts",
-      "lib/orders/idempotencyKey.ts",
       "lib/week/orderPatternsClient.ts"
+    ],
+    "app/(app)/week/allergenprofil/page.tsx": [
+      "components/employee/UserAllergenProfileForm.tsx",
+      "lib/agreements/requireActiveAgreement.ts",
+      "lib/auth/devBypass.ts",
+      "lib/auth/role.ts",
+      "lib/supabase/server.ts",
+      "lib/supabase/ssrSessionCookies.ts",
+      "lib/system/emails.ts"
     ],
     "app/(app)/week/bestillingsprofil/page.tsx": [
       "lib/agreements/requireActiveAgreement.ts",
@@ -151,7 +163,8 @@
     "app/(auth)/registrering/mottatt/page.tsx": [],
     "app/(auth)/registrering/page.tsx": [
       "components/PageShell.tsx",
-      "components/registration/PublicRegistrationFlow.tsx"
+      "components/registration/PublicRegistrationFlow.tsx",
+      "lib/public/geographyParams.ts"
     ],
     "app/(auth)/reset-password/page.tsx": [
       "components/auth/AuthShell.tsx",
@@ -3844,12 +3857,14 @@
     "app/api/content/global/footer/route.ts": [
       "lib/cms/publishGlobal.ts",
       "lib/cms/readGlobal.ts",
-      "lib/cms/writeGlobal.ts"
+      "lib/cms/writeGlobal.ts",
+      "lib/http/routeGuard.ts"
     ],
     "app/api/content/global/header/route.ts": [
       "lib/cms/publishGlobal.ts",
       "lib/cms/readGlobal.ts",
-      "lib/cms/writeGlobal.ts"
+      "lib/cms/writeGlobal.ts",
+      "lib/http/routeGuard.ts"
     ],
     "app/api/content/global/settings/route.ts": [
       "lib/cms/publishGlobal.ts",
@@ -3922,7 +3937,9 @@
       "lib/http/cronAuth.ts",
       "lib/http/cronObservability.ts",
       "lib/http/respond.ts",
+      "lib/orders/dailySummaryProviderRouting.ts",
       "lib/orders/projection.ts",
+      "lib/providers/providerNotificationRecipients.ts",
       "lib/supabase/admin.ts",
       "lib/system/emailAddresses.ts"
     ],
@@ -3978,19 +3995,21 @@
       "lib/supabase/admin.ts"
     ],
     "app/api/cron/meal-learning/route.ts": [
-      "lib/http/cronAuth.ts",
-      "lib/orders/projection.ts"
+      "lib/http/cronAuth.ts"
     ],
     "app/api/cron/menu-service-day-reconcile/route.ts": [
       "lib/date/oslo.ts",
       "lib/http/cronAuth.ts",
       "lib/http/cronObservability.ts",
       "lib/http/respond.ts",
+      "lib/menu-publish/resolveMenuDayProvider.ts",
       "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+      "lib/ops/log.ts",
       "lib/sanity/server.ts",
       "lib/supabase/admin.ts"
     ],
     "app/api/cron/menu-week-rollout/route.ts": [
+      "lib/cms/providerSanityConstants.ts",
       "lib/http/cronAuth.ts",
       "lib/http/cronObservability.ts",
       "lib/http/respond.ts",
@@ -4112,10 +4131,13 @@
       "lib/sre/metrics.ts"
     ],
     "app/api/driver/bulk-set/route.ts": [
+      "lib/audit/auditWrite.ts",
       "lib/date/oslo.ts",
       "lib/db/profileLookup.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/kitchen/batchTransitionRpc.ts",
+      "lib/kitchen/operativeSlot.ts",
       "lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist.ts",
       "lib/server/kitchen/loadOperativeKitchenOrders.ts",
       "lib/supabase/admin.ts"
@@ -4407,6 +4429,8 @@
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
       "lib/kitchen/batchPackedOutbox.ts",
+      "lib/kitchen/batchTransitionRpc.ts",
+      "lib/kitchen/operativeSlot.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
@@ -4417,7 +4441,9 @@
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
       "lib/kitchen/batchPackedOutbox.ts",
+      "lib/kitchen/batchTransitionRpc.ts",
       "lib/kitchen/cutoff.ts",
+      "lib/kitchen/operativeSlot.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
@@ -4501,6 +4527,7 @@
       "lib/kitchen/report.ts"
     ],
     "app/api/kitchen/route.ts": [
+      "lib/allergens/lpUserAllergens.ts",
       "lib/cms/getMenusByMealTypes.ts",
       "lib/cms/mealTypeKey.ts",
       "lib/cms/types.ts",
@@ -4508,6 +4535,7 @@
       "lib/domain/resolveMenuForDay.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/kitchen/kitchenMealNote.ts",
       "lib/ops/log.ts",
       "lib/server/agreements/mealContract.ts",
       "lib/server/kitchen/fetchProductionOperativeSnapshotAllowlist.ts",
@@ -4543,6 +4571,11 @@
       "lib/supabase/server.ts"
     ],
     "app/api/me/route.ts": [
+      "lib/http/respond.ts",
+      "lib/supabase/server.ts"
+    ],
+    "app/api/me/user-allergens/route.ts": [
+      "lib/allergens/lpUserAllergens.ts",
       "lib/http/respond.ts",
       "lib/supabase/server.ts"
     ],
@@ -4634,8 +4667,10 @@
       "lib/domain/resolveMenuForDay.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/menu/providerMenuScope.ts",
       "lib/ops/log.ts",
       "lib/orders/orderWriteGuard.ts",
+      "lib/orders/pickCanonicalOrderPerDate.ts",
       "lib/orders/projection.ts",
       "lib/orders/rpcWrite.ts",
       "lib/server/agreements/mealContract.ts",
@@ -4720,11 +4755,13 @@
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
       "lib/http/withObservability.ts",
+      "lib/menu/providerMenuScope.ts",
       "lib/mvo/persistOrderMvo.ts",
       "lib/observability/store.ts",
       "lib/ops/log.ts",
       "lib/orderBackup/outbox.ts",
       "lib/orders/companyOrderEligibility.ts",
+      "lib/orders/mapOrderWriteError.ts",
       "lib/orders/orderWriteGuard.ts",
       "lib/orders/resolveOrderDayItemPersist.ts",
       "lib/orders/rpcWrite.ts",
@@ -4732,6 +4769,7 @@
       "lib/revenue/persistOrderAttribution.ts",
       "lib/revenue/session.ts",
       "lib/revenue/trackOrderAiConversion.ts",
+      "lib/sentry/capture.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts",
       "lib/system/enforcement.ts",
@@ -4743,10 +4781,13 @@
       "lib/date/oslo.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/menu/providerMenuScope.ts",
+      "lib/ops/log.ts",
       "lib/orderBackup/outbox.ts",
       "lib/orders/companyOrderEligibility.ts",
       "lib/orders/orderWriteGuard.ts",
       "lib/orders/rpcWrite.ts",
+      "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
     "app/api/orders/today/route.ts": [
@@ -4779,6 +4820,9 @@
       "lib/date/oslo.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/menu/providerMenuScope.ts",
+      "lib/ops/log.ts",
+      "lib/orders/pickCanonicalOrderPerDate.ts",
       "lib/orders/projection.ts",
       "lib/orders/projectionRole.ts",
       "lib/supabase/admin.ts",
@@ -4867,6 +4911,16 @@
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
+    "app/api/provider/menu-days/route.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/http/respond.ts",
+      "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+      "lib/provider-menu/menuDayPayload.ts",
+      "lib/sanity/client.ts",
+      "lib/supabase/admin.ts"
+    ],
     "app/api/public/ai-demo-cta/assign/route.ts": [
       "lib/http/respond.ts",
       "lib/pos/eventHandler.ts",
@@ -4887,12 +4941,13 @@
       "lib/pos/eventHandler.ts",
       "lib/supabase/admin.ts"
     ],
-    "app/api/public/demo-interest/route.ts": [
-      "lib/growth/growthAbCookie.ts",
+    "app/api/public/coverage/check/route.ts": [
       "lib/http/respond.ts",
-      "lib/pipeline/upsertLead.ts",
-      "lib/public/anonRouteGuard.ts",
+      "lib/public/coverageCheckSchema.ts",
       "lib/supabase/admin.ts"
+    ],
+    "app/api/public/demo-interest/route.ts": [
+      "lib/http/respond.ts"
     ],
     "app/api/public/forms/[id]/route.ts": [
       "lib/cms/plugins/loadPlugins.ts",
@@ -4906,6 +4961,14 @@
       "lib/http/respond.ts",
       "lib/public/anonRouteGuard.ts",
       "lib/public/forms/validate.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "app/api/public/leads/capture/route.ts": [
+      "lib/http/respond.ts",
+      "lib/public/leadsCaptureRateLimit.ts",
+      "lib/public/leadsCaptureSchema.ts",
+      "lib/public/leadsSalesAlert.ts",
+      "lib/sentry/capture.ts",
       "lib/supabase/admin.ts"
     ],
     "app/api/public/onboarding/create-admin/route.ts": [
@@ -5385,7 +5448,8 @@
     ],
     "app/api/superadmin/agreements/route.ts": [
       "lib/http/respond.ts",
-      "lib/http/routeGuard.ts"
+      "lib/http/routeGuard.ts",
+      "lib/server/superadmin/agreementDraftFlowDisabled.ts"
     ],
     "app/api/superadmin/ai-config/route.ts": [
       "lib/auth/getAuthContext.ts",
@@ -5556,7 +5620,8 @@
     ],
     "app/api/superadmin/company-registrations/[companyId]/create-agreement-draft/route.ts": [
       "lib/http/respond.ts",
-      "lib/http/routeGuard.ts"
+      "lib/http/routeGuard.ts",
+      "lib/server/superadmin/agreementDraftFlowDisabled.ts"
     ],
     "app/api/superadmin/company-registrations/[companyId]/route.ts": [
       "lib/http/respond.ts",
@@ -6136,8 +6201,10 @@
     ],
     "app/api/webhooks/sanity/menu-day/route.ts": [
       "lib/http/respond.ts",
+      "lib/menu-publish/resolveMenuDayProvider.ts",
       "lib/menu-publish/sanityMenuDayWebhookBody.ts",
       "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+      "lib/ops/log.ts",
       "lib/sanity/verifySanityWebhookSignature.ts",
       "lib/supabase/admin.ts"
     ],
@@ -6162,14 +6229,17 @@
       "lib/agreement/currentAgreement.ts",
       "lib/agreements/deliveryDays.ts",
       "lib/cms/menuDay.ts",
+      "lib/cms/menuDayContract.ts",
       "lib/date/oslo.ts",
       "lib/date/week.ts",
       "lib/db/profileLookup.ts",
       "lib/http/respond.ts",
+      "lib/menu/providerMenuScope.ts",
       "lib/ops/log.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts",
-      "lib/week/employeeWeekMenuDays.ts"
+      "lib/week/employeeWeekMenuDays.ts",
+      "lib/week/loadEmployeeWeekMenusFromMsdi.ts"
     ],
     "app/api/worker/run/route.ts": [
       "lib/core/requestTrace.ts",
@@ -6194,6 +6264,11 @@
       "lib/types/database.ts"
     ],
     "app/avtale-ikke-aktiv/page.tsx": [],
+    "app/demo/layout.tsx": [],
+    "app/demo/page.tsx": [
+      "components/demo/DemoLeadCaptureForm.tsx",
+      "lib/public/geographyParams.ts"
+    ],
     "app/driver/DriverClient.tsx": [
       "components/ui/Icon.tsx",
       "lib/date/format.ts",
@@ -6232,12 +6307,14 @@
       "lib/system/emails.ts"
     ],
     "app/error.tsx": [],
+    "app/fonts/fonts.ts": [],
     "app/global-error.tsx": [],
     "app/kitchen/KitchenClient.tsx": [
       "app/kitchen/KitchenProductionPanel.tsx",
       "lib/date/oslo.ts"
     ],
     "app/kitchen/KitchenProductionPanel.tsx": [
+      "components/kitchen/KitchenEmployeeAllergenExtra.tsx",
       "lib/date/oslo.ts",
       "lib/kitchen/buildProductionHierarchy.ts",
       "lib/kitchen/kitchenFetch.ts"
@@ -6270,6 +6347,7 @@
       "lib/system/emails.ts"
     ],
     "app/kitchen/print/KitchenPrintBody.tsx": [
+      "components/kitchen/KitchenEmployeeAllergenExtra.tsx",
       "lib/date/oslo.ts",
       "lib/kitchen/buildProductionHierarchy.ts",
       "lib/kitchen/kitchenFetch.ts"
@@ -6282,9 +6360,11 @@
     ],
     "app/kitchen/report/page.tsx": [],
     "app/layout.tsx": [
+      "app/fonts/fonts.ts",
       "app/globals.css",
       "app/styles/ds/admin-shell.css",
       "app/styles/ds/design-system.css",
+      "app/styles/ds/foundation.css",
       "app/styles/employee-week.css",
       "components/DevOverflowGuard.tsx",
       "components/revenue/AttributionCapture.tsx",
@@ -6301,13 +6381,19 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
-      "lib/providers/loadProviderBilling.ts"
+      "lib/providers/loadProviderBilling.ts",
+      "lib/providers/providerBillingSurface.ts"
     ],
     "app/leverandor/innstillinger/page.tsx": [
+      "components/providers/ProviderBrandColor.tsx",
+      "components/providers/ProviderLogoUploader.tsx",
+      "components/providers/ProviderOperationsForm.tsx",
       "components/providers/ProviderSettingsForm.tsx",
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
-      "lib/auth/providerContext.ts"
+      "lib/auth/providerContext.ts",
+      "lib/providers/loadProviderOperationalSettings.ts",
+      "lib/providers/operationalSettingsShared.ts"
     ],
     "app/leverandor/innstillinger/tripletex/koble-til/actions.ts": [
       "lib/auth/getAuthContext.ts",
@@ -6367,7 +6453,9 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
-      "lib/providers/loadProviderCustomers.ts"
+      "lib/providers/loadProviderCustomers.ts",
+      "lib/providers/loadProviderOperationalSettings.ts",
+      "lib/providers/providerCustomersSurface.ts"
     ],
     "app/leverandor/layout.tsx": [
       "components/providers/ProviderNav.tsx",
@@ -6375,13 +6463,14 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
-      "lib/auth/roleHome.ts"
+      "lib/auth/roleHome.ts",
+      "lib/providers/brandColor.ts"
     ],
     "app/leverandor/meny/page.tsx": [
+      "components/providers/ProviderMenuEditor.tsx",
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
-      "lib/auth/providerContext.ts",
-      "lib/cms/sanityStudioUrl.ts"
+      "lib/auth/providerContext.ts"
     ],
     "app/leverandor/omrader/actions.ts": [
       "lib/auth/getAuthContext.ts",
@@ -6394,7 +6483,8 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
-      "lib/providers/loadServiceAreas.ts"
+      "lib/providers/loadServiceAreas.ts",
+      "lib/providers/providerCoverageSurface.ts"
     ],
     "app/leverandor/ordrer/actions.ts": [
       "lib/admin/orderStatus.ts",
@@ -6408,12 +6498,17 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
-      "lib/providers/loadKitchenOrders.ts"
+      "lib/providers/loadKitchenOrders.ts",
+      "lib/providers/loadProviderOperationalSettings.ts",
+      "lib/providers/providerOrdersSurface.ts"
     ],
     "app/leverandor/page.tsx": [
       "lib/auth/getAuthContext.ts",
       "lib/auth/providerContext.ts",
-      "lib/providers/loadProviderDashboard.ts"
+      "lib/cms/sanityStudioUrl.ts",
+      "lib/providers/loadProviderDashboard.ts",
+      "lib/providers/providerDashboardActivity.ts",
+      "lib/providers/providerDashboardKpis.ts"
     ],
     "app/leverandor/registreringer/actions.ts": [
       "lib/auth/getAuthContext.ts",
@@ -6426,7 +6521,9 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
-      "lib/providers/loadProviderRegistrations.ts"
+      "lib/providers/loadProviderOperationalSettings.ts",
+      "lib/providers/loadProviderRegistrations.ts",
+      "lib/providers/providerRegistrationsSurface.ts"
     ],
     "app/menus/week/page.tsx": [
       "lib/cms/menuDay.ts",
@@ -6494,6 +6591,12 @@
     "app/saas/plans/page.tsx": [
       "app/saas/plans/SaasPlansClient.tsx",
       "components/auth/AuthShell.tsx"
+    ],
+    "app/start/layout.tsx": [],
+    "app/start/page.tsx": [
+      "components/start/StartRoleChooser.tsx",
+      "lib/i18n/startCopy.ts",
+      "lib/public/geographyParams.ts"
     ],
     "app/status/page.tsx": [],
     "app/superadmin/_components/AIStatus.tsx": [],
@@ -6916,7 +7019,9 @@
       "lib/supabase/server.ts"
     ],
     "app/superadmin/registrations/RegistrationDecisionActions.tsx": [],
-    "app/superadmin/registrations/[companyId]/CreateAgreementDraftButton.tsx": [],
+    "app/superadmin/registrations/[companyId]/CreateAgreementDraftButton.tsx": [
+      "lib/server/superadmin/agreementDraftFlowDisabled.ts"
+    ],
     "app/superadmin/registrations/[companyId]/page.tsx": [
       "app/superadmin/registrations/[companyId]/CreateAgreementDraftButton.tsx",
       "lib/date/format.ts",
@@ -7172,7 +7277,8 @@
       "lib/admin/constants.ts"
     ],
     "components/auth/AuthShell.tsx": [
-      "components/auth/AuthBrand.tsx"
+      "components/auth/AuthBrand.tsx",
+      "lib/admin/constants.ts"
     ],
     "components/auth/AuthStatus.tsx": [
       "lib/supabase/client.ts"
@@ -7805,6 +7911,19 @@
       "components/cms/EditorSmartHintsBanner.tsx",
       "components/cms/SortableBlockWrapper.tsx"
     ],
+    "components/demo/DemoLeadCaptureForm.tsx": [
+      "lib/public/leadsCaptureSchema.ts"
+    ],
+    "components/employee/UserAllergenProfileForm.tsx": [
+      "lib/allergens/lpUserAllergens.ts"
+    ],
+    "components/employee/WeekAllergenProfileCard.tsx": [
+      "components/employee/UserAllergenProfileForm.tsx",
+      "lib/allergens/lpUserAllergens.ts"
+    ],
+    "components/kitchen/KitchenEmployeeAllergenExtra.tsx": [
+      "lib/allergens/lpUserAllergens.ts"
+    ],
     "components/kitchen/KitchenView.tsx": [],
     "components/layout/AppChrome.tsx": [
       "components/auth/AuthStatus.tsx",
@@ -7969,21 +8088,29 @@
       "app/leverandor/kunder/actions.ts",
       "components/providers/SuspendDialog.tsx",
       "lib/providers/customerTypes.ts",
-      "lib/providers/loadProviderCustomerDetail.ts"
+      "lib/providers/loadProviderCustomerDetail.ts",
+      "lib/providers/providerCustomerAgreementSurface.ts"
     ],
     "components/providers/CustomerList.tsx": [
-      "lib/providers/customerTypes.ts"
+      "lib/providers/customerTypes.ts",
+      "lib/providers/providerCustomersSurface.ts"
     ],
-    "components/providers/KitchenFilters.tsx": [],
+    "components/providers/KitchenFilters.tsx": [
+      "lib/providers/providerOrdersSurface.ts"
+    ],
     "components/providers/KitchenOrderCard.tsx": [
       "app/leverandor/ordrer/actions.ts",
+      "lib/date/format.ts",
       "lib/providers/kitchenOrderStatus.ts",
-      "lib/providers/loadKitchenOrders.ts"
+      "lib/providers/loadKitchenOrders.ts",
+      "lib/providers/providerOrdersSurface.ts"
     ],
     "components/providers/KitchenOrdersView.tsx": [
       "components/providers/KitchenFilters.tsx",
       "components/providers/KitchenOrderCard.tsx",
-      "lib/providers/loadKitchenOrders.ts"
+      "lib/date/format.ts",
+      "lib/providers/loadKitchenOrders.ts",
+      "lib/providers/providerOrdersSurface.ts"
     ],
     "components/providers/PortalProviders.tsx": [
       "components/toast/OrderToastBridge.tsx",
@@ -7993,15 +8120,31 @@
     "components/providers/ProviderBillingView.tsx": [
       "components/providers/BillingContactForm.tsx",
       "lib/date/format.ts",
-      "lib/providers/providerBillingShared.ts"
+      "lib/providers/providerBillingShared.ts",
+      "lib/providers/providerBillingSurface.ts"
+    ],
+    "components/providers/ProviderBrandColor.tsx": [
+      "lib/providers/brandColor.ts",
+      "lib/providers/saveProviderLogo.ts"
+    ],
+    "components/providers/ProviderLogoUploader.tsx": [
+      "lib/providers/saveProviderLogo.ts"
+    ],
+    "components/providers/ProviderMenuEditor.tsx": [
+      "lib/cms/menuDayContract.ts"
     ],
     "components/providers/ProviderNav.tsx": [
       "components/auth/LogoutClient.tsx",
       "lib/providers/types.ts"
     ],
+    "components/providers/ProviderOperationsForm.tsx": [
+      "lib/providers/operationalSettingsShared.ts",
+      "lib/providers/saveProviderOperationalSettings.ts"
+    ],
     "components/providers/ProviderRegistrationsQueue.tsx": [
       "components/providers/RegistrationApproveDialog.tsx",
-      "lib/providers/loadProviderRegistrations.ts"
+      "lib/providers/loadProviderRegistrations.ts",
+      "lib/providers/providerRegistrationsSurface.ts"
     ],
     "components/providers/ProviderSettingsForm.tsx": [
       "lib/providers/saveProviderSettings.ts",
@@ -8024,6 +8167,7 @@
     "components/providers/ServiceAreasManager.tsx": [
       "app/leverandor/omrader/actions.ts",
       "components/providers/ServiceAreaEditor.tsx",
+      "lib/providers/providerCoverageSurface.ts",
       "lib/providers/serviceAreaShared.ts"
     ],
     "components/providers/SuspendDialog.tsx": [
@@ -8051,6 +8195,33 @@
       "lib/revenue/session.ts"
     ],
     "components/seo/RelatedLinks.tsx": [],
+    "components/start/CoverageWishForm.tsx": [
+      "lib/public/geographyParams.ts",
+      "lib/public/leadsCaptureSchema.ts"
+    ],
+    "components/start/GeographyGateForm.tsx": [
+      "components/start/CoverageWishForm.tsx",
+      "components/start/StartCoverageChecking.tsx",
+      "components/start/StartCoveredResult.tsx",
+      "lib/i18n/startCopy.ts",
+      "lib/public/geographyParams.ts",
+      "lib/public/resolveCityFromPostal.ts"
+    ],
+    "components/start/ProviderIntakeForm.tsx": [
+      "lib/i18n/startCopy.ts",
+      "lib/public/geographyParams.ts",
+      "lib/public/leadsCaptureSchema.ts"
+    ],
+    "components/start/StartCoverageChecking.tsx": [],
+    "components/start/StartCoveredResult.tsx": [
+      "lib/i18n/startCopy.ts",
+      "lib/public/geographyParams.ts"
+    ],
+    "components/start/StartRoleChooser.tsx": [
+      "components/start/GeographyGateForm.tsx",
+      "components/start/ProviderIntakeForm.tsx",
+      "lib/i18n/startCopy.ts"
+    ],
     "components/superadmin/AlertsTable.tsx": [],
     "components/superadmin/AuditTable.tsx": [],
     "components/superadmin/CompanyAgreement.tsx": [
@@ -9429,6 +9600,7 @@
       "lib/alerts/types.ts"
     ],
     "lib/alerts/types.ts": [],
+    "lib/allergens/lpUserAllergens.ts": [],
     "lib/analytics/attribution.ts": [
       "lib/analytics/events.ts"
     ],
@@ -10288,9 +10460,9 @@
     "lib/cms/menuDay.ts": [
       "lib/cms/menuDayContract.ts",
       "lib/cms/menuDayProviderFilter.ts",
-      "lib/sanity/client.ts",
       "lib/sanity/getClosedDatesForDate.ts",
-      "lib/sanity/menuDayGuards.ts"
+      "lib/sanity/menuDayGuards.ts",
+      "lib/sanity/server.ts"
     ],
     "lib/cms/menuDayContract.ts": [],
     "lib/cms/menuDayProviderFilter.ts": [],
@@ -10757,6 +10929,7 @@
     "lib/employee/minDagStatusNb.ts": [],
     "lib/employee/mineLunsjEndringerNb.ts": [],
     "lib/employee/mineRegistrerteDagerPartition.ts": [],
+    "lib/employee/orderedMealDisplay.ts": [],
     "lib/employee/tidligereLunsjdagerGroup.ts": [
       "lib/date/oslo.ts",
       "lib/employee/employeeOwnLunchHistoryTypes.ts"
@@ -11554,6 +11727,7 @@
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts"
     ],
+    "lib/i18n/startCopy.ts": [],
     "lib/i18n/translate.ts": [],
     "lib/iconRegistry.tsx": [
       "lib/icons.tsx"
@@ -11738,6 +11912,8 @@
       "lib/exit/kpi.ts"
     ],
     "lib/kitchen/batchPackedOutbox.ts": [
+      "lib/ops/log.ts",
+      "lib/providers/providerNotificationRecipients.ts",
       "lib/system/emailAddresses.ts"
     ],
     "lib/kitchen/batchSummary.ts": [
@@ -11746,21 +11922,34 @@
       "lib/orders/projection.ts",
       "lib/supabase/admin.ts"
     ],
+    "lib/kitchen/batchTransitionRpc.ts": [
+      "lib/kitchen/operativeSlot.ts"
+    ],
     "lib/kitchen/buildProductionHierarchy.ts": [
       "lib/kitchen/kitchenFetch.ts"
     ],
     "lib/kitchen/cutoff.ts": [],
     "lib/kitchen/dayData.ts": [
       "lib/cms/getMenusByMealTypes.ts",
-      "lib/cms/mealTypeDisplayFallback.ts",
       "lib/cms/mealTypeKey.ts",
       "lib/cms/types.ts",
+      "lib/kitchen/kitchenMealNote.ts",
       "lib/ops/log.ts",
       "lib/orders/projection.ts"
     ],
     "lib/kitchen/groupKitchen.ts": [],
     "lib/kitchen/grouping.ts": [],
-    "lib/kitchen/kitchenFetch.ts": [],
+    "lib/kitchen/kitchenFetch.ts": [
+      "lib/allergens/lpUserAllergens.ts"
+    ],
+    "lib/kitchen/kitchenMealNote.ts": [
+      "lib/cms/lunchCategory.ts",
+      "lib/cms/mealTypeDisplayFallback.ts",
+      "lib/cms/mealTypeKey.ts",
+      "lib/cms/menuDayContract.ts",
+      "lib/cms/types.ts"
+    ],
+    "lib/kitchen/operativeSlot.ts": [],
     "lib/kitchen/ordersFeed.ts": [
       "lib/orders/projection.ts",
       "lib/supabase/admin.ts"
@@ -11911,6 +12100,7 @@
       "lib/menu-publish/generateWeekMenu.ts"
     ],
     "lib/menu-publish/menuDaySyncShared.ts": [],
+    "lib/menu-publish/resolveMenuDayProvider.ts": [],
     "lib/menu-publish/runMenuWeekRollout.ts": [
       "lib/menu-publish/runMenuWeekRolloutCore.ts"
     ],
@@ -11938,6 +12128,7 @@
       "lib/cms/menuDayContract.ts"
     ],
     "lib/menu/optimizer.ts": [],
+    "lib/menu/providerMenuScope.ts": [],
     "lib/metrics/collect.ts": [
       "lib/types/database.ts"
     ],
@@ -12428,9 +12619,11 @@
       "lib/ops/log.ts",
       "lib/orderBackup/smtp.ts",
       "lib/orderBackup/types.ts",
+      "lib/orders/resolveOrderNotificationRecipients.ts",
       "lib/outbox/eventKinds.ts",
       "lib/sentry/capture.ts",
-      "lib/supabase/admin.ts"
+      "lib/supabase/admin.ts",
+      "lib/system/emailAddresses.ts"
     ],
     "lib/orderBackup/smtp.ts": [],
     "lib/orderBackup/types.ts": [],
@@ -12439,10 +12632,15 @@
     "lib/orders/companyOrderEligibility.ts": [
       "lib/ops/log.ts"
     ],
+    "lib/orders/dailySummaryProviderRouting.ts": [
+      "lib/providers/providerNotificationRecipients.ts"
+    ],
     "lib/orders/idempotencyKey.ts": [],
     "lib/orders/immutability.ts": [
       "lib/date/oslo.ts"
     ],
+    "lib/orders/mapOrderWriteError.ts": [],
+    "lib/orders/msdiChoiceSlug.ts": [],
     "lib/orders/orderBackup.ts": [
       "lib/date/oslo.ts",
       "lib/system/emails.ts"
@@ -12453,6 +12651,7 @@
       "lib/ops/log.ts",
       "lib/supabase/admin.ts"
     ],
+    "lib/orders/pickCanonicalOrderPerDate.ts": [],
     "lib/orders/projection.ts": [],
     "lib/orders/projectionRole.ts": [],
     "lib/orders/readers/getAdminOrder.ts": [
@@ -12479,7 +12678,12 @@
       "lib/cms/lunchCategory.ts",
       "lib/cms/mealTypeKey.ts",
       "lib/cms/menuDay.ts",
-      "lib/cms/menuDayContract.ts"
+      "lib/cms/menuDayContract.ts",
+      "lib/menu/providerMenuScope.ts"
+    ],
+    "lib/orders/resolveOrderNotificationRecipients.ts": [
+      "lib/providers/providerNotificationRecipients.ts",
+      "lib/system/emailAddresses.ts"
     ],
     "lib/orders/result.ts": [],
     "lib/orders/rpcWrite.ts": [],
@@ -12867,12 +13071,19 @@
       "lib/product/economics.ts"
     ],
     "lib/production/freeze.ts": [],
+    "lib/provider-menu/menuDayPayload.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/cms/providerSanityConstants.ts"
+    ],
+    "lib/providers/brandColor.ts": [],
     "lib/providers/customerTypes.ts": [],
     "lib/providers/kitchenOrderStatus.ts": [],
     "lib/providers/lifecycleReason.ts": [],
     "lib/providers/loadKitchenOrders.ts": [
       "lib/date/oslo.ts",
+      "lib/date/week.ts",
       "lib/providers/kitchenOrderStatus.ts",
+      "lib/providers/providerOrdersSurface.ts",
       "lib/supabase/server.ts"
     ],
     "lib/providers/loadProviderBilling.ts": [
@@ -12888,11 +13099,17 @@
     "lib/providers/loadProviderCustomers.ts": [
       "lib/date/oslo.ts",
       "lib/providers/customerTypes.ts",
+      "lib/providers/providerCustomersSurface.ts",
       "lib/supabase/server.ts"
     ],
     "lib/providers/loadProviderDashboard.ts": [
       "lib/date/oslo.ts",
+      "lib/providers/providerDashboardKpis.ts",
       "lib/supabase/server.ts"
+    ],
+    "lib/providers/loadProviderOperationalSettings.ts": [
+      "lib/providers/operationalSettingsShared.ts",
+      "lib/supabase/admin.ts"
     ],
     "lib/providers/loadProviderRegistrations.ts": [
       "lib/supabase/server.ts"
@@ -12901,13 +13118,51 @@
       "lib/providers/serviceAreaShared.ts",
       "lib/supabase/server.ts"
     ],
+    "lib/providers/operationalSettingsShared.ts": [],
     "lib/providers/providerBillingShared.ts": [],
+    "lib/providers/providerBillingSurface.ts": [
+      "lib/providers/providerBillingShared.ts"
+    ],
+    "lib/providers/providerCoverageSurface.ts": [
+      "lib/providers/serviceAreaShared.ts"
+    ],
+    "lib/providers/providerCustomerAgreementSurface.ts": [],
+    "lib/providers/providerCustomersSurface.ts": [
+      "lib/providers/customerTypes.ts",
+      "lib/providers/operationalSettingsShared.ts"
+    ],
+    "lib/providers/providerDashboardActivity.ts": [
+      "lib/providers/loadProviderDashboard.ts"
+    ],
+    "lib/providers/providerDashboardKpis.ts": [],
+    "lib/providers/providerNotificationRecipients.ts": [
+      "lib/supabase/admin.ts"
+    ],
+    "lib/providers/providerOrdersSurface.ts": [
+      "lib/providers/operationalSettingsShared.ts"
+    ],
+    "lib/providers/providerRegistrationsSurface.ts": [
+      "lib/providers/operationalSettingsShared.ts"
+    ],
     "lib/providers/registrationSchema.ts": [
       "lib/orgnr/no.ts",
       "lib/phone/no.ts"
     ],
     "lib/providers/repository.ts": [
       "lib/providers/types.ts"
+    ],
+    "lib/providers/saveProviderLogo.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/providers/brandColor.ts",
+      "lib/supabase/admin.ts",
+      "lib/supabase/server.ts"
+    ],
+    "lib/providers/saveProviderOperationalSettings.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/providers/operationalSettingsShared.ts",
+      "lib/supabase/admin.ts"
     ],
     "lib/providers/saveProviderSettings.ts": [
       "lib/auth/getAuthContext.ts",
@@ -12947,6 +13202,9 @@
       "lib/cms/overlays/slots.ts",
       "lib/public/blocks/renderBlock.tsx"
     ],
+    "lib/public/coverageCheckSchema.ts": [
+      "lib/public/geographyParams.ts"
+    ],
     "lib/public/demoCtaAb/canonicalPublicCtaAb.ts": [],
     "lib/public/demoCtaAb/catalog.ts": [
       "lib/public/demoCtaAb/config.ts",
@@ -12985,6 +13243,17 @@
     "lib/public/forms/validate.ts": [
       "lib/public/forms/types.ts"
     ],
+    "lib/public/geographyParams.ts": [],
+    "lib/public/leadsCaptureRateLimit.ts": [
+      "lib/infra/redis.ts",
+      "lib/public/anonRouteGuard.ts"
+    ],
+    "lib/public/leadsCaptureSchema.ts": [],
+    "lib/public/leadsSalesAlert.ts": [
+      "lib/ops/log.ts",
+      "lib/system/emails.ts"
+    ],
+    "lib/public/resolveCityFromPostal.ts": [],
     "lib/queue/jobs.ts": [
       "lib/core/structuredLog.ts"
     ],
@@ -13739,12 +14008,14 @@
       "lib/ops/log.ts"
     ],
     "lib/server/kitchen/loadOperativeKitchenOrders.ts": [
+      "lib/kitchen/operativeSlot.ts",
       "lib/orders/projection.ts"
     ],
     "lib/server/kitchen/materializeProductionOperativeSnapshot.ts": [
       "lib/ops/log.ts",
       "lib/server/kitchen/loadOperativeKitchenOrders.ts"
     ],
+    "lib/server/superadmin/agreementDraftFlowDisabled.ts": [],
     "lib/server/superadmin/companyLifecycleStatusApply.ts": [
       "lib/http/respond.ts"
     ],
@@ -14408,7 +14679,12 @@
     "lib/video/voice.ts": [],
     "lib/week/availability.ts": [],
     "lib/week/employeeWeekMenuDays.ts": [
-      "lib/cms/menuDay.ts"
+      "lib/cms/menuDay.ts",
+      "lib/cms/menuDayContract.ts"
+    ],
+    "lib/week/loadEmployeeWeekMenusFromMsdi.ts": [
+      "lib/cms/menuDay.ts",
+      "lib/cms/menuDayContract.ts"
     ],
     "lib/week/orderPatternsClient.ts": [
       "lib/date/oslo.ts",
@@ -14416,7 +14692,9 @@
     ],
     "lib/workflow/daily.ts": [],
     "scripts/agents-ci.mjs": [],
-    "scripts/apply-forward-fix-migrations.mjs": [],
+    "scripts/apply-forward-fix-migrations.mjs": [
+      "scripts/ci/assert-db-target.mjs"
+    ],
     "scripts/ast-api-nextresponse-contract.ts": [],
     "scripts/audit-api-routes.mjs": [
       "lib/http/respond.ts"
@@ -14482,21 +14760,81 @@
     "scripts/ci-guard.mjs": [],
     "scripts/ci/ai-governance-check.mjs": [],
     "scripts/ci/api-contract-enforcer.mjs": [],
+    "scripts/ci/assert-db-target.mjs": [],
+    "scripts/ci/assert-db-target.test.mjs": [
+      "scripts/ci/assert-db-target.mjs"
+    ],
     "scripts/ci/cms-integrity.mjs": [],
     "scripts/ci/db-contracts.mjs": [],
+    "scripts/ci/db-push-preflight-guard.mjs": [],
     "scripts/ci/db-rebuild-verify.mjs": [],
+    "scripts/ci/detect-pr-migration-changes.mjs": [],
+    "scripts/ci/detect-pr-migration-changes.test.mjs": [
+      "scripts/ci/detect-pr-migration-changes.mjs"
+    ],
+    "scripts/ci/detect-required-check-scope.mjs": [
+      "scripts/ci/github-path-filter.mjs",
+      "scripts/ci/required-check-path-patterns.mjs"
+    ],
+    "scripts/ci/detect-required-check-scope.test.mjs": [
+      "scripts/ci/detect-required-check-scope.mjs",
+      "scripts/ci/required-check-path-patterns.mjs"
+    ],
+    "scripts/ci/detect-suspend-rpc-gate-scope.mjs": [],
+    "scripts/ci/detect-suspend-rpc-gate-scope.test.mjs": [
+      "scripts/ci/detect-suspend-rpc-gate-scope.mjs"
+    ],
+    "scripts/ci/github-path-filter.mjs": [],
+    "scripts/ci/github-path-filter.test.mjs": [
+      "scripts/ci/github-path-filter.mjs"
+    ],
     "scripts/ci/migration-gate.mjs": [],
     "scripts/ci/mock-integrity.mjs": [],
+    "scripts/ci/parse-workflow-pr-paths.mjs": [],
+    "scripts/ci/parse-workflow-pr-paths.test.mjs": [
+      "scripts/ci/parse-workflow-pr-paths.mjs",
+      "scripts/ci/required-check-path-patterns.mjs",
+      "scripts/ci/verify-required-check-path-drift.mjs"
+    ],
+    "scripts/ci/repair-staging-mcp-batch-ledger.mjs": [],
+    "scripts/ci/required-check-path-patterns.mjs": [],
+    "scripts/ci/run-suspend-rpc-integration.mjs": [],
+    "scripts/ci/run-suspend-rpc-integration.test.mjs": [
+      "scripts/ci/run-suspend-rpc-integration.mjs"
+    ],
     "scripts/ci/status-code-guard.mjs": [],
     "scripts/ci/ui-clickable-div.mjs": [],
+    "scripts/ci/verify-batch-order-status-sync-staging.mjs": [
+      "scripts/smoke/fixtures/stage4-realistic.constants.mjs",
+      "scripts/smoke/resolve-staging-database-url.mjs"
+    ],
+    "scripts/ci/verify-fundament-spine-phase1.mjs": [],
+    "scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs": [],
+    "scripts/ci/verify-required-check-path-drift.mjs": [
+      "scripts/ci/parse-workflow-pr-paths.mjs",
+      "scripts/ci/required-check-path-patterns.mjs"
+    ],
+    "scripts/ci/verify-required-check-path-drift.test.mjs": [
+      "scripts/ci/verify-required-check-path-drift.mjs"
+    ],
     "scripts/codex-audit-autofix.mjs": [],
     "scripts/codex-design-system.mjs": [],
     "scripts/cron-menu-publish.ts": [
+      "lib/cms/providerSanityConstants.ts",
       "lib/menu-publish/runMenuWeekRolloutCore.ts"
     ],
     "scripts/css-audit-lp-classes.mjs": [],
     "scripts/css-audit-lp-missing.mjs": [],
+    "scripts/db/guarded-db-push.mjs": [
+      "scripts/ci/assert-db-target.mjs"
+    ],
+    "scripts/db/guarded-psql.mjs": [
+      "scripts/ci/assert-db-target.mjs"
+    ],
     "scripts/db/run-health-audit.mjs": [],
+    "scripts/db/seed-environment-sentinel.mjs": [
+      "scripts/ci/assert-db-target.mjs"
+    ],
     "scripts/debug-meal-idea-bank.ts": [
       "lib/menu-publish/mealIdeaBankQuery.ts"
     ],
@@ -14511,6 +14849,11 @@
       "lib/menu-publish/runMenuWeekRolloutCore.ts"
     ],
     "scripts/diagnose-backoffice-db.mjs": [],
+    "scripts/e2e/characterize-steg8-screenshot-red.mjs": [],
+    "scripts/e2e/characterize-week-diff-regions.mjs": [],
+    "scripts/e2e/gen-steg8-icon-review-surface.mjs": [],
+    "scripts/e2e/invalidate-employee-session.mjs": [],
+    "scripts/e2e/seed-e2e-auth-sync.mjs": [],
     "scripts/enterprise-build.ts": [],
     "scripts/enterprise-proof-load.mjs": [],
     "scripts/exportFlatAudit.ts": [],
@@ -14536,7 +14879,15 @@
     "scripts/k6/run.mjs": [],
     "scripts/k6/verify-pool-logins.mjs": [],
     "scripts/lint-ci.mjs": [],
-    "scripts/postdeploy.mjs": [],
+    "scripts/lint-design-tokens.mjs": [],
+    "scripts/postdeploy-lib.mjs": [],
+    "scripts/postdeploy.mjs": [
+      "scripts/postdeploy-lib.mjs"
+    ],
+    "scripts/rls/absorb-private-functions-from-staging.mjs": [
+      "scripts/rls/golden-snapshot-lib.mjs",
+      "scripts/smoke/resolve-staging-database-url.mjs"
+    ],
     "scripts/rls/golden-snapshot-lib.mjs": [],
     "scripts/rls/snapshot-rls.mjs": [
       "scripts/rls/golden-snapshot-lib.mjs"
@@ -14557,6 +14908,7 @@
       "scripts/sanity/sanityProjectEnv.ts"
     ],
     "scripts/sanity/heal-menu-horizon.ts": [
+      "lib/cms/providerSanityConstants.ts",
       "lib/menu-publish/runMenuWeekRolloutCore.ts"
     ],
     "scripts/sanity/migrate-mealidea-allowed-tiers.ts": [
@@ -14605,20 +14957,68 @@
       "lib/supabase/admin.ts",
       "scripts/seedAppOverlaysFromHardcoded.ts"
     ],
+    "scripts/smoke/_first-menu-order-smoke.mjs": [
+      "scripts/ci/assert-db-target.mjs",
+      "scripts/smoke/fixtures/provider-ab-staging.constants.mjs",
+      "scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs",
+      "scripts/smoke/resolve-staging-database-url.mjs"
+    ],
     "scripts/smoke/betterstack-status.mjs": [],
     "scripts/smoke/check-dc011-env.mjs": [],
     "scripts/smoke/check-staging-deploy.mjs": [],
     "scripts/smoke/compare-cron-env.mjs": [],
     "scripts/smoke/dc-011-prod-smoke.mjs": [],
-    "scripts/smoke/dc-011-smoke.mjs": [],
+    "scripts/smoke/dc-011-smoke.mjs": [
+      "scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs",
+      "scripts/smoke/seed-smoke-menu-fixture.mjs"
+    ],
     "scripts/smoke/dc-026-flow1-smoke.mjs": [],
+    "scripts/smoke/fixtures/provider-ab-staging.constants.mjs": [
+      "scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs"
+    ],
+    "scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs": [],
+    "scripts/smoke/fixtures/stage4-realistic.constants.mjs": [
+      "scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs"
+    ],
     "scripts/smoke/forensics-4.5c.mjs": [],
+    "scripts/smoke/forside-track1-screenshots.mjs": [],
     "scripts/smoke/merge-env-local.mjs": [],
     "scripts/smoke/merge-vercel-staging-env.mjs": [
       "scripts/smoke/merge-env-local.mjs"
     ],
+    "scripts/smoke/order-lifecycle-churn-probe-uigx.mjs": [
+      "scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs"
+    ],
     "scripts/smoke/preflight-prod-env.mjs": [],
+    "scripts/smoke/provider-ab-fixture-core.mjs": [
+      "scripts/smoke/fixtures/provider-ab-staging.constants.mjs"
+    ],
+    "scripts/smoke/provider-ab-sanity-core.mjs": [
+      "scripts/smoke/fixtures/provider-ab-staging.constants.mjs"
+    ],
     "scripts/smoke/provision-smoke-user.mjs": [],
+    "scripts/smoke/resolve-staging-database-url.mjs": [],
+    "scripts/smoke/seed-e2e-users.mjs": [
+      "scripts/e2e/seed-e2e-auth-sync.mjs"
+    ],
+    "scripts/smoke/seed-provider-ab-fixture.mjs": [
+      "scripts/ci/assert-db-target.mjs",
+      "scripts/smoke/fixtures/provider-ab-staging.constants.mjs",
+      "scripts/smoke/provider-ab-fixture-core.mjs",
+      "scripts/smoke/resolve-staging-database-url.mjs"
+    ],
+    "scripts/smoke/seed-provider-ab-sanity.mjs": [
+      "scripts/smoke/provider-ab-sanity-core.mjs"
+    ],
+    "scripts/smoke/seed-smoke-menu-fixture.mjs": [
+      "scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs"
+    ],
+    "scripts/smoke/squash-archive-migrations.mjs": [],
+    "scripts/smoke/stage4b-provision-provider-memberships.mjs": [
+      "scripts/smoke/fixtures/stage4-realistic.constants.mjs",
+      "scripts/smoke/resolve-staging-database-url.mjs"
+    ],
+    "scripts/smoke/write-baseline-migration.mjs": [],
     "scripts/system-test/context.ts": [],
     "scripts/system-test/runner.ts": [
       "scripts/system-test/context.ts",
@@ -14686,6 +15086,7 @@
     ],
     "scripts/validate.ts": [],
     "scripts/verify-control-coverage.mjs": [],
-    "scripts/verify-production-public-cms.mjs": []
+    "scripts/verify-production-public-cms.mjs": [],
+    "scripts/verify/decode-jwt-claims.mjs": []
   }
 }
