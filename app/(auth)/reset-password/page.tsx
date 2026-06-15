@@ -7,9 +7,19 @@ import AuthShell from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  clearRecoveryHashFromUrl,
+  isRecoveryHashExpired,
+  isRecoveryHashValid,
+  parseRecoveryHash,
+  RECOVERY_CHECKING_MESSAGE,
+  RECOVERY_EXPIRED_MESSAGE,
+} from "@/lib/auth/recoveryHash";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-type Status = "idle" | "loading" | "success" | "error" | "expired";
+type Status = "idle" | "loading" | "success" | "error";
+
+type Phase = "checking" | "form" | "expired";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -17,62 +27,74 @@ function safeStr(v: unknown) {
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [phase, setPhase] = useState<Phase>("checking");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
 
-  const canSubmit = useMemo(() => status !== "loading" && hasSession === true, [status, hasSession]);
+  const canSubmit = useMemo(() => status !== "loading" && phase === "form", [status, phase]);
 
   useEffect(() => {
     let mounted = true;
-    let settled = false;
-    let unsub: (() => void) | null = null;
-    async function load() {
+
+    async function establishRecoverySession() {
       try {
         const sb = supabaseBrowser();
+        const parsed = parseRecoveryHash(window.location.hash);
+
+        if (isRecoveryHashExpired(parsed)) {
+          if (mounted) setPhase("expired");
+          return;
+        }
+
+        if (isRecoveryHashValid(parsed)) {
+          const { error } = await sb.auth.setSession({
+            access_token: parsed.accessToken!,
+            refresh_token: parsed.refreshToken!,
+          });
+
+          if (!mounted) return;
+
+          if (error) {
+            setPhase("expired");
+            return;
+          }
+
+          clearRecoveryHashFromUrl();
+          setPhase("form");
+          return;
+        }
+
+        const code = safeStr(new URLSearchParams(window.location.search).get("code"));
+        if (code) {
+          const { error } = await sb.auth.exchangeCodeForSession(code);
+          if (!mounted) return;
+          if (error) {
+            setPhase("expired");
+            return;
+          }
+          setPhase("form");
+          return;
+        }
+
         const { data } = await sb.auth.getSession();
         if (!mounted) return;
 
         if (data?.session) {
-          setHasSession(true);
-          setReady(true);
-          settled = true;
+          setPhase("form");
           return;
         }
 
-        const sub = sb.auth.onAuthStateChange((_event, session) => {
-          if (!mounted || settled) return;
-          if (session) {
-            settled = true;
-            setHasSession(true);
-            setReady(true);
-          }
-        });
-        unsub = () => sub.data.subscription.unsubscribe();
-
-        setTimeout(() => {
-          if (!mounted || settled) return;
-          settled = true;
-          setHasSession(false);
-          setReady(true);
-          unsub?.();
-        }, 800);
+        setPhase("expired");
       } catch {
-        if (!mounted || settled) return;
-        settled = true;
-        setHasSession(false);
-        setReady(true);
-      } finally {
-        if (mounted && !settled) setReady(true);
+        if (mounted) setPhase("expired");
       }
     }
-    load();
+
+    void establishRecoverySession();
     return () => {
       mounted = false;
-      unsub?.();
     };
   }, []);
 
@@ -124,22 +146,22 @@ export default function ResetPasswordPage() {
     }
   }
 
-  if (!ready) {
+  if (phase === "checking") {
     return (
-      <AuthShell title="Tilbakestill passord" subtitle="Venter på sikker sesjon …">
+      <AuthShell title="Tilbakestill passord" subtitle={RECOVERY_CHECKING_MESSAGE}>
         <div className="lp-glass-card rounded-card px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
-          Laster …
+          {RECOVERY_CHECKING_MESSAGE}
         </div>
       </AuthShell>
     );
   }
 
-  if (hasSession === false) {
+  if (phase === "expired") {
     return (
-      <AuthShell title="Tilbakestill passord" subtitle="Lenken er utløpt. Be om ny.">
+      <AuthShell title="Tilbakestill passord" subtitle={RECOVERY_EXPIRED_MESSAGE}>
         <div className="space-y-4">
           <div className="lp-glass-card rounded-card px-4 py-3 text-sm text-[rgb(var(--lp-text))]">
-            Lenken er utløpt. Be om ny.
+            {RECOVERY_EXPIRED_MESSAGE}
           </div>
           <Link href="/forgot-password" className="text-sm underline underline-offset-4 text-[rgb(var(--lp-text))]">
             Be om ny lenke
