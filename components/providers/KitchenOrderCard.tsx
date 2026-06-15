@@ -60,8 +60,13 @@ export default function KitchenOrderCard({
         <div>
           <h3 className="ds-provider-order-card__title">{row.companyName}</h3>
           <p className="ds-provider-order-card__meta">
+            {row.locationName ? `${row.locationName} · ` : ""}
             {formatDateNO(row.date) || row.date}
             {row.slot ? ` · ${row.slot}` : ""}
+          </p>
+          <p className="ds-provider-order-card__meta">
+            {row.employeeDisplayName}
+            {row.employeeEmail ? ` · ${row.employeeEmail}` : ""}
           </p>
         </div>
         <span className={kitchenStatusPillClass(optimisticStatus)}>{kitchenStatusLabel(optimisticStatus)}</span>
@@ -73,7 +78,12 @@ export default function KitchenOrderCard({
         ) : (
           row.items.map((item, idx) => (
             <li key={`${row.id}-${idx}`}>
-              {item.quantity}× {item.productName}
+              <div>
+                {item.quantity} stk · {item.displayLine}
+              </div>
+              {item.allergens.length ? (
+                <div className="ds-body text-[rgb(var(--lp-muted))]">Allergener: {item.allergens.join(", ")}</div>
+              ) : null}
             </li>
           ))
         )}

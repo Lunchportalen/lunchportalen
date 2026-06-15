@@ -24,8 +24,20 @@ const sampleOrder = {
   note: "Uten løk",
   companyId: "22222222-2222-2222-2222-222222222222",
   companyName: "Test AS",
-  locationId: null,
-  items: [{ productName: "Dagens", quantity: 2 }],
+  locationId: "33333333-3333-3333-3333-333333333333",
+  locationName: "Hovedlokasjon",
+  employeeDisplayName: "Thomas Johansen",
+  employeeEmail: "thomas@pettersenco.no",
+  items: [
+    {
+      productName: "Påsmurt",
+      quantity: 1,
+      choiceLabel: "Påsmurt",
+      variantTitle: "Laks & Eggerøre",
+      displayLine: "Påsmurt · Laks & Eggerøre",
+      allergens: [] as string[],
+    },
+  ],
 };
 
 describe("kitchenOrderStatus", () => {
@@ -62,6 +74,9 @@ describe("KitchenOrderCard", () => {
     expect(html).toContain("Mottatt");
     expect(html).toContain("Start produksjon");
     expect(html).toContain("Test AS");
+    expect(html).toContain("Thomas Johansen");
+    expect(html).toContain("thomas@pettersenco.no");
+    expect(html).toContain("Påsmurt · Laks &amp; Eggerøre");
     expect(html).toContain("Uten løk");
   });
 
