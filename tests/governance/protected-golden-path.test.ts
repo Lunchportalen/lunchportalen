@@ -146,4 +146,17 @@ describe("Protected Golden Path — contract locks (no runtime changes)", () => 
     const src = readSource("tests/api/orders-idempotency.test.ts");
     expect(src).toContain("DUPLICATE_ORDER");
   });
+
+  it("13. provider production advance uses scoped batch_derived_advance GUC inside lp_order_advance_status", () => {
+    const migrationPath = path.join(
+      ROOT,
+      "supabase/migrations/20260717120000_lp_order_advance_status_provider_after_cutoff.sql",
+    );
+    expect(fs.existsSync(migrationPath)).toBe(true);
+    const sql = fs.readFileSync(migrationPath, "utf8");
+    expect(sql).toContain("set_config('app.batch_derived_advance', '1', true)");
+    expect(sql).toContain("lp_assert_provider_kitchen_access");
+    expect(sql).not.toContain("DISABLE TRIGGER");
+    expect(sql).not.toContain("lp_order_set");
+  });
 });

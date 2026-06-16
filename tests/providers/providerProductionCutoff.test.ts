@@ -6,7 +6,7 @@ const MIGRATION_PATH = join(
   process.cwd(),
   "supabase",
   "migrations",
-  "20260714120000_lp_order_advance_status_provider_after_cutoff.sql",
+  "20260717120000_lp_order_advance_status_provider_after_cutoff.sql",
 );
 const CUTOFF_TRIGGER_PATH = join(
   process.cwd(),
