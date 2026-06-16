@@ -726,13 +726,13 @@ export default function SystemClient() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
+    <div className="w-full space-y-[var(--sa-section-gap,1.5rem)]">
       {/* SYSTEMSTATUS */}
-      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+      <div className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="text-xs font-extrabold tracking-wide text-neutral-600">SYSTEMSTATUS</div>
-            <h1 className="mt-1 text-lg font-extrabold text-neutral-900">Systemstatus</h1>
+            <h2 className="sa-section__title mt-1">Live systemstatus</h2>
           </div>
           <Link
             href="/superadmin/system/operations"
@@ -758,15 +758,13 @@ export default function SystemClient() {
           <div className="mt-3 space-y-2">
             {statusChecks.length ? (
               statusChecks.map((c) => (
-                <div key={c.key} className="rounded-xl bg-[rgb(var(--lp-surface))] p-4 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-neutral-900">{c.message}</div>
-                    <span className={["rounded-full px-3 py-1 text-xs font-semibold ring-1", statusTone(c.status)].join(" ")}>
-                      {c.status}
-                    </span>
-                  </div>
+                <div key={c.key} className="sa-system-check-row">
+                  <div className="text-sm font-semibold text-neutral-900">{c.message}</div>
+                  <span className={["shrink-0 rounded-full px-3 py-1 text-xs font-semibold ring-1", statusTone(c.status)].join(" ")}>
+                    {c.status}
+                  </span>
                   {c.status !== "OK" && c.key === "runtime" && runtimeDetails ? (
-                    <div className="mt-2 rounded-lg bg-[rgb(var(--lp-surface-2))] p-3 text-xs text-neutral-700 ring-1 ring-[rgb(var(--lp-border))]">
+                    <div className="basis-full mt-2 rounded-lg bg-[rgb(var(--lp-surface-2))] p-3 text-xs text-neutral-700 ring-1 ring-[rgb(var(--lp-border))]">
                       <div className="font-semibold text-neutral-900">Detaljer</div>
                       <div className="mt-1">Mangler env: {runtimeMissing.length ? runtimeMissing.join(", ") : "—"}</div>
                       <div className="mt-1">
@@ -791,7 +789,7 @@ export default function SystemClient() {
 
       {/* SLO OG ALARMER */}
       {operationalStatus && (
-        <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+        <div className="sa-system-block">
           <div className="text-xs font-extrabold tracking-wide text-neutral-600">SLO OG ALARMER</div>
           <h2 className="mt-1 text-lg font-extrabold text-neutral-900">Operativ status (én sannhetskilde)</h2>
           <div className="mt-3 flex items-center gap-2">
@@ -881,7 +879,7 @@ export default function SystemClient() {
       ) : null}
 
       {/* REPARASJONER */}
-      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+      <div className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Reparasjoner</div>
@@ -955,7 +953,7 @@ export default function SystemClient() {
       </div>
 
       {/* ORDRE-INTEGRITET */}
-      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+      <div className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Ordre-integritet</div>
@@ -1048,7 +1046,7 @@ export default function SystemClient() {
       </div>
 
       {/* FLYTDIAGNOSTIKK */}
-      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+      <div id="flytdiagnostikk" className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Flytdiagnostikk</div>
@@ -1112,7 +1110,7 @@ export default function SystemClient() {
       </div>
 
       {/* OPS-LOGG */}
-      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+      <div className="sa-system-block">
         <div className="text-sm font-semibold text-neutral-900">Ops-logg</div>
         <div className="mt-1 text-xs text-neutral-600">Totalt: {opsTotal}</div>
 
@@ -1139,7 +1137,7 @@ export default function SystemClient() {
       </div>
 
       {/* HENDELSER */}
-      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+      <div className="sa-system-block">
         <div className="text-sm font-semibold text-neutral-900">Hendelser</div>
         <div className="mt-1 text-xs text-neutral-600">Totalt: {incidentTotal}</div>
 
@@ -1170,7 +1168,7 @@ export default function SystemClient() {
         </div>
       </div>
       {/* CODEX PROMPT (LIVE) */}
-      <div className="rounded-2xl bg-[rgb(var(--lp-surface))] p-6 ring-1 ring-[rgb(var(--lp-border))] shadow-[var(--lp-shadow-soft)]">
+      <div className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-neutral-900">Codex Prompt (Live)</div>

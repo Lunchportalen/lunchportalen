@@ -722,28 +722,19 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
 
   // UI
   return (
-    <div className="mt-8">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight md:text-2xl">Firmaoversikt</h2>
-          <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">
-            Søk, filtrer og åpne firma for avtale, status, ansatte og audit.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/superadmin/audit" className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50">
-            Audit
-          </Link>
-          <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-            {loading ? "Laster…" : `Viser ${visibleRows.length}${typeof total === "number" ? ` av ${total}` : ""}`}
-          </span>
-          <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
-            Side {page}
-            {pages ? ` / ${pages}` : ""}
-          </span>
-        </div>
-      </header>
+    <div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Link href="/superadmin/audit" className="rounded-xl border bg-white px-3 py-2 text-xs font-semibold hover:bg-neutral-50">
+          Audit
+        </Link>
+        <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
+          {loading ? "Laster…" : `Viser ${visibleRows.length}${typeof total === "number" ? ` av ${total}` : ""}`}
+        </span>
+        <span className="rounded-full bg-white/70 px-3 py-1 text-xs ring-1 ring-[rgb(var(--lp-border))]">
+          Side {page}
+          {pages ? ` / ${pages}` : ""}
+        </span>
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button
@@ -772,8 +763,8 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
       </div>
 
       {/* Controls */}
-      <section className="mt-6 rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="grid gap-3 md:grid-cols-12 md:items-end">
+      <section className="sa-table-surface mt-4">
+        <div className="sa-filter-bar grid gap-3 md:grid-cols-12 md:items-end">
           <div className="md:col-span-5">
             <label className="block text-xs text-[rgb(var(--lp-muted))]">Søk</label>
             <input
@@ -874,9 +865,9 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
       </section>
 
       {err ? (
-        <section className="mt-4 rounded-3xl bg-white/70 p-4 ring-1 ring-[rgb(var(--lp-border))]">
-          <div className="text-sm font-semibold text-red-700">Kunne ikke hente firmaoversikt</div>
-          <div className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{err.message || "Ukjent feil."}</div>
+        <section className="sa-context-note mt-4 text-red-700">
+          <div className="text-sm font-semibold">Kunne ikke hente firmaoversikt</div>
+          <div className="mt-1 text-sm">{err.message || "Ukjent feil."}</div>
         </section>
       ) : null}
 
@@ -1113,10 +1104,10 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
       ) : null}
 
       {/* Table */}
-      <section className="mt-6 rounded-3xl bg-white/70 ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="border-b border-[rgb(var(--lp-border))] px-5 py-4">
-          <div className="text-sm font-semibold">Firma</div>
-          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Klikk et firma for detaljer og status.</div>
+      <section className="sa-table-surface mt-4">
+        <div className="border-b border-[rgb(var(--lp-border))] px-5 py-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Firma</div>
+          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Klikk et firma for detaljer og status.</div>
           {statusBusyId ? <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer status…</div> : null}
         </div>
 

@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/ui/toast";
 import ConfirmDestructiveDialog from "@/components/superadmin/ConfirmDestructiveDialog";
+import { SuperadminEmptyState, SuperadminTableSurface } from "@/components/superadmin/shell/SuperadminShell";
 
 type Row = {
   user_id: string;
@@ -150,24 +151,24 @@ export default function SuperadminUsersClient() {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="sa-filter-bar flex-col md:flex-row md:items-end md:justify-between">
         <div>
-          <div className="text-sm font-semibold">Søk</div>
-          <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Søk e-post, navn, firma-ID.</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Søk</div>
+          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">E-post, navn eller firma-ID.</div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="w-72 max-w-full rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
+            className="w-72 max-w-full rounded-xl px-3 py-2 text-sm"
             placeholder="Søk…"
           />
 
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="rounded-2xl bg-white px-3 py-2 text-sm ring-1 ring-[rgb(var(--lp-border))]"
+            className="rounded-xl px-3 py-2 text-sm"
           >
             <option value="ALL">Alle roller</option>
             <option value="employee">employee</option>
@@ -182,7 +183,7 @@ export default function SuperadminUsersClient() {
               setPage(1);
               load();
             }}
-            className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))]"
+            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))]"
           >
             Søk
           </button>
@@ -191,12 +192,12 @@ export default function SuperadminUsersClient() {
 
       {err ? <div className="mt-4 text-sm text-red-600">{err}</div> : null}
 
-      <div className="mt-4 rounded-3xl ring-1 ring-[rgb(var(--lp-border))]">
-        <div className="bg-white p-4">
+      <SuperadminTableSurface className="mt-4">
+        <div className="sa-table-surface__pad">
           {loading ? (
-            <div className="text-sm text-[rgb(var(--lp-muted))]">Laster…</div>
+            <SuperadminEmptyState>Laster…</SuperadminEmptyState>
           ) : rows.length === 0 ? (
-            <div className="text-sm text-[rgb(var(--lp-muted))]">Ingen treff.</div>
+            <SuperadminEmptyState>Ingen treff.</SuperadminEmptyState>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -267,7 +268,7 @@ export default function SuperadminUsersClient() {
             </div>
           )}
 
-          <div className="mt-4 flex items-center justify-between text-xs text-[rgb(var(--lp-muted))]">
+          <div className="mt-4 flex items-center justify-between border-t border-[rgb(var(--lp-border))] pt-4 text-xs text-[rgb(var(--lp-muted))]">
             <div>
               Totalt: <span className="font-semibold">{total}</span> · Side {page} / {pageCount}
             </div>
@@ -289,7 +290,7 @@ export default function SuperadminUsersClient() {
             </div>
           </div>
         </div>
-      </div>
+      </SuperadminTableSurface>
 
       <ConfirmDestructiveDialog
         open={pendingAction?.type === "deactivate" && Boolean(pendingUser)}

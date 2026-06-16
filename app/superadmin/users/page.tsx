@@ -7,6 +7,12 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import SuperadminUsersClient from "@/components/superadmin/SuperadminUsersClient";
 import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
+import {
+  SuperadminHero,
+  SuperadminPageShell,
+  SuperadminSection,
+  SuperadminStatusRail,
+} from "@/components/superadmin/shell/SuperadminShell";
 
 export default async function SuperadminUsersPage() {
   const sb = await supabaseServer();
@@ -23,15 +29,26 @@ export default async function SuperadminUsersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 lp-select-text">
-      <h1 className="text-2xl font-semibold tracking-tight">Brukere (Superadmin)</h1>
-      <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-        Full oversikt. Slett eller deaktiver. Alt skal audites.
-      </p>
+    <SuperadminPageShell>
+      <SuperadminHero
+        variant="command"
+        eyebrow="Superadmin"
+        title="Brukere"
+        lead="Full oversikt over roller, tilgang og firmatilknytning. Deaktivering og sletting auditeres."
+      />
 
-      <div className="mt-6 rounded-3xl bg-white/70 p-6 ring-1 ring-[rgb(var(--lp-border))]">
+      <SuperadminStatusRail
+        ariaLabel="Brukerstyring"
+        items={[
+          { label: "Omfang", value: "Alle roller" },
+          { label: "Handlinger", value: "Deaktiver / slett" },
+          { label: "Sporbarhet", value: "Audit" },
+        ]}
+      />
+
+      <SuperadminSection title="Brukerliste" lead="Søk på e-post, navn eller firma-ID. Filtrer etter rolle." flat>
         <SuperadminUsersClient />
-      </div>
-    </div>
+      </SuperadminSection>
+    </SuperadminPageShell>
   );
 }
