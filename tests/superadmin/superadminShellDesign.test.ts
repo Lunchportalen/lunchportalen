@@ -21,13 +21,12 @@ describe("Superadmin shell design system", () => {
     expect(layout).toContain('auth.role !== "superadmin"');
   });
 
-  it("ControlTowerNav har påkrevde lenker og ekskluderer Backoffice/Kjøkken", () => {
+  it("ControlTowerNav har påkrevde lenker og ekskluderer Backoffice/Kjøkken/Brukere", () => {
     const nav = readSource("app/superadmin/_components/ControlTowerNav.tsx");
     for (const href of [
       "/superadmin",
       "/superadmin/companies",
       "/superadmin/agreements",
-      "/superadmin/users",
       "/superadmin/system",
       "/superadmin/pilot-control",
       "/superadmin/audit",
@@ -40,16 +39,26 @@ describe("Superadmin shell design system", () => {
     }
     expect(nav).not.toContain('label: "Kjøkken"');
     expect(nav).not.toContain('label: "Backoffice"');
+    expect(nav).not.toContain('label: "Brukere"');
     expect(nav).not.toContain("/kitchen");
     expect(nav).not.toContain("/backoffice/content");
+    expect(nav).not.toContain("/superadmin/users");
     expect(nav).toContain("Umbraco");
   });
 
-  it("SuperadminControlCenter ekskluderer Backoffice og Kjøkken", () => {
+  it("SuperadminControlCenter ekskluderer Backoffice, Kjøkken og Brukere", () => {
     const home = readSource("components/superadmin/SuperadminControlCenter.tsx");
     expect(home).not.toContain("/backoffice/content");
     expect(home).not.toContain('href="/kitchen"');
     expect(home).not.toContain("Gå til kjøkken");
+    expect(home).not.toContain("/superadmin/users");
+    expect(home).not.toContain('fallbackLabel: "Brukere"');
+  });
+
+  it("/superadmin/users redirecter til firma (legacy bookmark)", () => {
+    const page = readSource("app/superadmin/users/page.tsx");
+    expect(page).toContain('redirect("/superadmin/companies")');
+    expect(page).not.toContain("SuperadminUsersClient");
   });
 
   it("Priority 3-sider bruker SuperadminPageShell og SuperadminHero", () => {
@@ -85,7 +94,6 @@ describe("Superadmin shell design system", () => {
     for (const rel of [
       "app/superadmin/companies/page.tsx",
       "app/superadmin/agreements/page.tsx",
-      "app/superadmin/users/page.tsx",
       "app/superadmin/system/page.tsx",
     ]) {
       const src = readSource(rel);

@@ -8,7 +8,6 @@ const PRIMARY_NAV = [
   { label: "Kontrollsenter", href: "/superadmin" },
   { label: "Firma", href: "/superadmin/companies" },
   { label: "Avtaler", href: "/superadmin/agreements" },
-  { label: "Brukere", href: "/superadmin/users" },
   { label: "Systemhelse", href: "/superadmin/system" },
 ];
 

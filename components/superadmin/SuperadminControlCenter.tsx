@@ -29,12 +29,6 @@ const PRIORITY_LINKS = [
     description: "Ventende avtaler, aktive avtaler og binding.",
   },
   {
-    id: "users",
-    fallbackLabel: "Brukere",
-    fallbackHref: "/superadmin/users",
-    description: "Brukere, roller og invitasjoner.",
-  },
-  {
     id: "overview-dashboard",
     fallbackLabel: "Driftsoversikt",
     fallbackHref: "/superadmin/overview",
@@ -97,7 +91,7 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
             variant="command"
             eyebrow="Operativ kontroll"
             title="Kontrollsenter"
-            lead="Drift, avtaler, firma og systemstatus — samlet kontrollrom for superadmin."
+            lead="Drift, firma, avtaler og systemstatus — samlet kontrollrom for superadmin."
             meta={
               <>
                 <SuperadminBadge tone="live">Live</SuperadminBadge>
