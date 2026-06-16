@@ -15,10 +15,19 @@ function readSource(relPath: string) {
 }
 
 describe("Superadmin shell design system", () => {
-  it("layout importerer scoped superadmin-shell.css", () => {
+  it("layout bruker flat full-width workspace uten outer frame wrapper", () => {
     const layout = readSource("app/superadmin/layout.tsx");
     expect(layout).toContain("superadmin-shell.css");
     expect(layout).toContain('auth.role !== "superadmin"');
+    expect(layout).toContain("lp-app-shell--wide");
+    expect(layout).toContain("lp-app-shell__workspace");
+    expect(layout).not.toContain("lp-app-shell__frame");
+    expect(layout).not.toContain("lp-app-shell__inner");
+
+    const foundation = readSource("app/styles/ds/foundation.css");
+    expect(foundation).toContain(".lp-app-shell--wide .lp-app-shell__workspace");
+    expect(foundation).toMatch(/lp-app-shell--wide[\s\S]*box-shadow:\s*none/);
+    expect(foundation).toContain(".lp-app-shell--wide .lp-app-shell__main");
   });
 
   it("ControlTowerNav har påkrevde lenker og ekskluderer Backoffice/Kjøkken/Brukere", () => {

@@ -117,12 +117,14 @@ describe("Superadmin companies enterprise surface (source contracts)", () => {
     expect(src).toContain("sa-row-detail");
   });
 
-  it("shell støtter full-width variant", () => {
+  it("shell støtter full-width flat workspace uten outer frame", () => {
     const shell = readFileSync(join(process.cwd(), "components/superadmin/shell/SuperadminShell.tsx"), "utf8");
     const css = readFileSync(join(process.cwd(), "app/styles/ds/superadmin-shell.css"), "utf8");
+    const layout = readFileSync(join(process.cwd(), "app/superadmin/layout.tsx"), "utf8");
     expect(shell).toContain("sa-page--full");
     expect(css).toContain(".sa-page--full");
-    expect(readFileSync(join(process.cwd(), "app/superadmin/layout.tsx"), "utf8")).toContain("lp-app-shell--wide");
+    expect(layout).toContain("lp-app-shell__workspace");
+    expect(layout).not.toContain("lp-app-shell__frame");
   });
 
   it("remove route krever superadmin og validerer server-side", () => {
