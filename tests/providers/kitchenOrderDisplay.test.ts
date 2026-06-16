@@ -63,15 +63,19 @@ describe("kitchenOrderDisplay", () => {
 });
 
 describe("loadKitchenOrders enrichment guard", () => {
-  test("loader joins profiles, day_choices and locations without write-path changes", async () => {
+  test("loader keeps provider scope then admin enrichment for scoped order IDs", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const source = readFileSync(join(process.cwd(), "lib/providers/loadKitchenOrders.ts"), "utf-8");
+    const enrichment = readFileSync(join(process.cwd(), "lib/providers/providerOrderEnrichment.ts"), "utf-8");
     expect(source).toContain('.select("id, date, slot, status, note, company_id, location_id, user_id")');
-    expect(source).toContain('from("profiles")');
-    expect(source).toContain('from("day_choices")');
-    expect(source).toContain('from("company_locations")');
+    expect(source).toContain("fetchProviderOrderEnrichment");
     expect(source).toContain(".eq(\"provider_id\", pid)");
+    expect(enrichment).toContain('from("profiles")');
+    expect(enrichment).toContain('from("day_choices")');
+    expect(enrichment).toContain('from("company_locations")');
+    expect(enrichment).toContain('from("order_items")');
+    expect(enrichment).toContain("supabaseAdmin");
     expect(source).not.toContain("lp_order_set");
   });
 

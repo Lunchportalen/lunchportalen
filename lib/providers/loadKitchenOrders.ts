@@ -1,4 +1,3 @@
-// lib/providers/loadKitchenOrders.ts
 import "server-only";
 
 import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
@@ -8,11 +7,13 @@ import {
   buildKitchenOrderItemDisplay,
   dayChoiceKey,
   locationDisplayName,
-  parseAllergensSnapshot,
   profileDisplayName,
   profileEmail,
-  type KitchenOrderChoiceContext,
 } from "@/lib/providers/kitchenOrderDisplay";
+import {
+  buildAllowedDayChoiceKeys,
+  fetchProviderOrderEnrichment,
+} from "@/lib/providers/providerOrderEnrichment";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import { normalizeKitchenOrderStatus, type KitchenOrderStatus } from "@/lib/providers/kitchenOrderStatus";
@@ -72,20 +73,10 @@ function parseDateRange(mode: string, anchor: string) {
   return { from: today, toExclusive: addDaysISO(today, 1), displayTo: today };
 }
 
-type DayChoiceRow = {
-  company_id: string;
-  location_id: string | null;
-  user_id: string;
-  date: string;
-  choice_key: string;
-  item_key?: string | null;
-  item_title_snapshot?: string | null;
-  note?: string | null;
-  updated_at?: string | null;
-};
-
 /**
  * Provider-scoped kitchen orders for a date window.
+ * Step 1: provider session reads orders (RLS provider_id scope).
+ * Step 2: service-role enrichment only for those order IDs.
  */
 export async function loadKitchenOrders(
   providerId: string,
@@ -135,96 +126,26 @@ export async function loadKitchenOrders(
     }
   }
 
+  const scopedOrderIds = orderRows.map((r) => safeStr((r as { id?: string }).id)).filter(Boolean);
   const userIds = [...new Set(orderRows.map((r) => safeStr((r as { user_id?: string }).user_id)).filter(Boolean))];
-  const profileById = new Map<string, { full_name?: string | null; email?: string | null }>();
-  if (userIds.length) {
-    const { data: profiles } = await sb.from("profiles").select("id, email, full_name").in("id", userIds);
-    for (const row of Array.isArray(profiles) ? profiles : []) {
-      const id = safeStr((row as { id?: string }).id);
-      if (!id) continue;
-      profileById.set(id, {
-        full_name: (row as { full_name?: string | null }).full_name ?? null,
-        email: (row as { email?: string | null }).email ?? null,
-      });
-    }
-  }
-
   const locationIds = [
     ...new Set(orderRows.map((r) => safeStr((r as { location_id?: string }).location_id)).filter(Boolean)),
   ];
-  const locationById = new Map<string, { name?: string | null }>();
-  if (locationIds.length) {
-    const { data: locations } = await sb.from("company_locations").select("id, name").in("id", locationIds);
-    for (const row of Array.isArray(locations) ? locations : []) {
-      const id = safeStr((row as { id?: string }).id);
-      if (!id) continue;
-      locationById.set(id, { name: (row as { name?: string | null }).name ?? null });
-    }
-  }
 
-  const dayChoiceMap = new Map<string, { choice: KitchenOrderChoiceContext; updatedAt: number }>();
-  if (userIds.length) {
-    const { data: dayChoices } = await sb
-      .from("day_choices")
-      .select("company_id, location_id, user_id, date, choice_key, item_key, item_title_snapshot, note, updated_at")
-      .in("user_id", userIds)
-      .gte("date", from)
-      .lt("date", toExclusive);
-
-    for (const row of Array.isArray(dayChoices) ? (dayChoices as DayChoiceRow[]) : []) {
-      const key = dayChoiceKey({
-        companyId: safeStr(row.company_id),
-        locationId: row.location_id != null ? safeStr(row.location_id) : null,
-        userId: safeStr(row.user_id),
-        date: safeStr(row.date),
-      });
-      const nextT = row.updated_at ? new Date(row.updated_at).getTime() : 0;
-      const prev = dayChoiceMap.get(key);
-      if (prev && prev.updatedAt > nextT) continue;
-      dayChoiceMap.set(key, {
-        updatedAt: nextT,
-        choice: {
-          choiceKey: row.choice_key,
-          itemKey: row.item_key ?? null,
-          itemTitleSnapshot: row.item_title_snapshot ?? null,
-          note: row.note ?? null,
-        },
-      });
-    }
-  }
+  const { profileById, locationById, dayChoiceMap, itemsByOrder } = await fetchProviderOrderEnrichment({
+    scopedOrderIds,
+    userIds,
+    locationIds,
+    allowedDayChoiceKeys: buildAllowedDayChoiceKeys(orderRows),
+    dateFrom: from,
+    dateToExclusive: toExclusive,
+  });
 
   let variantLookup = new Map<string, string>();
   try {
     variantLookup = await buildVariantTitleLookup();
   } catch {
     /* CMS enrichment optional */
-  }
-
-  const orderIds = orderRows.map((r) => safeStr((r as { id?: string }).id)).filter(Boolean);
-  type RawOrderItem = { productNameSnapshot: string | null; quantity: number; allergens: string[] };
-  const itemsByOrder = new Map<string, RawOrderItem[]>();
-
-  if (orderIds.length) {
-    const { data: items } = await (sb as unknown as {
-      from: (table: string) => {
-        select: (cols: string) => { in: (col: string, ids: string[]) => Promise<{ data: unknown[] | null }> };
-      };
-    })
-      .from("order_items")
-      .select("order_id, product_name_snapshot, quantity, allergens_snapshot")
-      .in("order_id", orderIds);
-
-    for (const row of Array.isArray(items) ? items : []) {
-      const oid = safeStr((row as { order_id?: string }).order_id);
-      if (!oid) continue;
-      const list = itemsByOrder.get(oid) ?? [];
-      list.push({
-        productNameSnapshot: safeStr((row as { product_name_snapshot?: string }).product_name_snapshot) || null,
-        quantity: Number((row as { quantity?: number }).quantity) || 1,
-        allergens: parseAllergensSnapshot((row as { allergens_snapshot?: unknown }).allergens_snapshot),
-      });
-      itemsByOrder.set(oid, list);
-    }
   }
 
   const orders: KitchenOrderRow[] = orderRows.map((row) => {
