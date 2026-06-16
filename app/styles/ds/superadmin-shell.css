@@ -1,7 +1,7 @@
 /* Superadmin command center — scoped visual system (sa-*) */
 
 .sa-scope {
-  --sa-max-width: 1440px;
+  --sa-max-width: min(100%, 1680px);
   --sa-section-gap: 1.75rem;
   --sa-radius-lg: 1.25rem;
   --sa-radius-xl: 1.5rem;
@@ -17,10 +17,16 @@
 }
 
 .sa-page {
+  width: 100%;
   max-width: var(--sa-max-width);
   display: flex;
   flex-direction: column;
   gap: var(--sa-section-gap);
+}
+
+.sa-page--full {
+  --sa-max-width: none;
+  max-width: none;
 }
 
 /* Hero — one primary command header per page */
@@ -625,10 +631,127 @@ a.sa-metric-row__cell:focus-visible {
   border-bottom: none;
 }
 
-/* Embed operational strip without extra card chrome */
-.sa-scope [data-superadmin-operational-strip="embedded"] {
-  margin-top: 0 !important;
-  border-radius: var(--sa-radius-lg);
-  border: 1px solid var(--sa-border);
-  box-shadow: none;
+/* Enterprise data table — full-width operational lists */
+.sa-enterprise-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+.sa-enterprise-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.sa-enterprise-table thead {
+  background: var(--sa-surface-inset);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--lp-muted));
+}
+
+.sa-enterprise-table th,
+.sa-enterprise-table td {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--sa-border);
+  vertical-align: middle;
+}
+
+.sa-enterprise-table tbody tr:hover {
+  background: rgb(255 255 255 / 0.55);
+}
+
+.sa-enterprise-table tbody tr[data-expanded="true"] {
+  background: var(--sa-surface-inset);
+}
+
+.sa-status-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sa-status-chip--active {
+  background: rgb(236 253 245);
+  color: rgb(6 78 59);
+  box-shadow: inset 0 0 0 1px rgb(167 243 208);
+}
+
+.sa-status-chip--pending {
+  background: rgb(255 251 235);
+  color: rgb(120 53 15);
+  box-shadow: inset 0 0 0 1px rgb(253 230 138);
+}
+
+.sa-status-chip--paused {
+  background: rgb(254 249 195);
+  color: rgb(133 77 14);
+  box-shadow: inset 0 0 0 1px rgb(253 224 71);
+}
+
+.sa-status-chip--closed {
+  background: rgb(245 245 244);
+  color: rgb(87 83 78);
+  box-shadow: inset 0 0 0 1px rgb(214 211 209);
+}
+
+.sa-row-detail {
+  padding: 0.75rem 0.875rem 1rem;
+  background: var(--sa-surface-inset);
+  border-bottom: 1px solid var(--sa-border);
+  font-size: 0.8125rem;
+  color: rgb(var(--lp-muted));
+}
+
+.sa-row-detail__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.sa-action-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.sa-action-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 20;
+  min-width: 11rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sa-border);
+  background: white;
+  padding: 0.25rem;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+}
+
+.sa-action-menu__item {
+  display: block;
+  width: 100%;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  color: rgb(var(--lp-fg));
+}
+
+.sa-action-menu__item:hover,
+.sa-action-menu__item:focus-visible {
+  background: var(--sa-surface-muted);
+  outline: none;
+}
+
+.sa-action-menu__item--danger {
+  color: rgb(159 18 57);
+}
+

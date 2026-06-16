@@ -10,6 +10,8 @@ import { formatDateNO, formatDateTimeNO } from "@/lib/date/format";
 import { isIsoDate } from "@/lib/date/oslo";
 import { buildCleanQuery } from "@/lib/url/qs";
 
+import CompanyRemovalDialog from "./CompanyRemovalDialog";
+
 /* =========================================================
    Types
 ========================================================= */
@@ -202,6 +204,22 @@ function statusLabel(status: CompanyStatus) {
   return "Venter";
 }
 
+function statusChipClass(status: CompanyStatus) {
+  if (status === "active") return "sa-status-chip sa-status-chip--active";
+  if (status === "paused") return "sa-status-chip sa-status-chip--paused";
+  if (status === "closed") return "sa-status-chip sa-status-chip--closed";
+  return "sa-status-chip sa-status-chip--pending";
+}
+
+function pipelineSummary(c: CompanyRow) {
+  const parts: string[] = [];
+  if (c.registrationExists) parts.push("Registrert");
+  if (c.ledgerPendingAgreementId) parts.push("Utkast");
+  if (c.ledgerActiveAgreementId) parts.push("Aktiv avtale");
+  if (c.pipelineStageLabel) parts.push(c.pipelineStageLabel);
+  return parts.length ? parts.join(" · ") : "Ingen pipeline-data";
+}
+
 function isSortKey(v: any): v is SortKey {
   return v === "updated_at" || v === "created_at" || v === "name";
 }
@@ -391,6 +409,47 @@ function stop(e: React.SyntheticEvent) {
   e.stopPropagation();
 }
 
+function CompanyRowActions(props: {
+  row: CompanyRow;
+  busy: boolean;
+  onOpen: () => void;
+  onAudit: () => void;
+  onPause: () => void;
+  onArchive: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="sa-action-menu" onClick={(e) => stop(e)}>
+      <button
+        type="button"
+        className="rounded-lg border bg-white px-2.5 py-1.5 text-xs font-semibold hover:bg-neutral-50 disabled:opacity-40"
+        disabled={props.busy}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        Handlinger ▾
+      </button>
+      {open ? (
+        <div className="sa-action-menu__panel" role="menu">
+          <button type="button" className="sa-action-menu__item" onClick={() => { setOpen(false); props.onOpen(); }}>
+            Åpne
+          </button>
+          <button type="button" className="sa-action-menu__item" onClick={() => { setOpen(false); props.onAudit(); }}>
+            Audit
+          </button>
+          <button type="button" className="sa-action-menu__item" onClick={() => { setOpen(false); props.onPause(); }}>
+            Pause
+          </button>
+          <button type="button" className="sa-action-menu__item sa-action-menu__item--danger" onClick={() => { setOpen(false); props.onArchive(); }}>
+            Arkiver / fjern
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /* =========================================================
    Component
 ========================================================= */
@@ -474,6 +533,10 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
   const [empBusyId, setEmpBusyId] = useState<string | null>(null);
   const [empErr, setEmpErr] = useState<string | null>(null);
 
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [removalTarget, setRemovalTarget] = useState<CompanyRow | null>(null);
+  const [listRefreshKey, setListRefreshKey] = useState(0);
+
   const abortRef = useRef<AbortController | null>(null);
   const reqSeq = useRef(0);
   const detailAbortRef = useRef<AbortController | null>(null);
@@ -547,7 +610,7 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
       });
 
     return () => ac.abort();
-  }, [qs]);
+  }, [qs, listRefreshKey]);
 
   // Fetch detail
   useEffect(() => {
@@ -1103,197 +1166,148 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
         </div>
       ) : null}
 
+      {removalTarget ? (
+        <CompanyRemovalDialog
+          open={Boolean(removalTarget)}
+          companyId={removalTarget.id}
+          companyName={removalTarget.name}
+          orgnr={removalTarget.orgnr}
+          onClose={() => setRemovalTarget(null)}
+          onDone={() => {
+            setRemovalTarget(null);
+            setListRefreshKey((k) => k + 1);
+          }}
+        />
+      ) : null}
+
       {/* Table */}
       <section className="sa-table-surface mt-4">
-        <div className="border-b border-[rgb(var(--lp-border))] px-5 py-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Firma</div>
-          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Klikk et firma for detaljer og status.</div>
-          {statusBusyId ? <div className="mt-2 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer status…</div> : null}
+        <div className="border-b border-[rgb(var(--lp-border))] px-4 py-2.5 sm:px-5">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Operativ firmaoversikt</div>
+          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Utvid rad for pipeline-detaljer. Handlinger via meny.</div>
+          {statusBusyId ? <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer status…</div> : null}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1240px] text-left text-sm">
-            <thead className="bg-white/70 text-xs text-[rgb(var(--lp-muted))]">
-              <tr className="border-b border-[rgb(var(--lp-border))]">
-                <th className="px-5 py-3">Firma</th>
-                <th className="px-5 py-3">Org.nr</th>
-                <th className="px-5 py-3">Firmastatus</th>
-                <th className="px-5 py-3 max-w-[220px]">Registrering → avtale (ledger)</th>
-                <th className="px-5 py-3">Avtale</th>
-                <th className="px-5 py-3">Kontrakt (fra–til)</th>
-                <th className="px-5 py-3">Binding</th>
-                <th className="px-5 py-3">Plan</th>
-                <th className="px-5 py-3">Ansatte</th>
-                <th className="px-5 py-3">Sist endret</th>
-                <th className="px-5 py-3 text-right">Handling</th>
+        <div className="sa-enterprise-table-wrap">
+          <table className="sa-enterprise-table">
+            <thead>
+              <tr>
+                <th aria-label="Utvid" className="w-8" />
+                <th>Firma</th>
+                <th>Org.nr</th>
+                <th>Status</th>
+                <th>Avtale</th>
+                <th>Plan</th>
+                <th>Ansatte</th>
+                <th>Sist endret</th>
+                <th className="text-right">Handlinger</th>
               </tr>
             </thead>
 
             <tbody>
               {loading && visibleRows.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={11}>
+                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={9}>
                     Laster…
                   </td>
                 </tr>
               ) : visibleRows.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={11}>
+                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={9}>
                     <div className="font-medium">{emptyStateTitle}</div>
                     {emptyStateText ? <div className="mt-1 text-xs">{emptyStateText}</div> : null}
                   </td>
                 </tr>
               ) : (
-                visibleRows.map((c, idx) => {
+                visibleRows.map((c) => {
                   const st = normStatus(c?.status);
                   const busy = statusBusyId === c?.id;
                   const employeesCount = Number.isFinite(Number(c?.employeesCount)) ? Number(c?.employeesCount) : 0;
                   const agrSt = c.agreementStatus ? safeStr(c.agreementStatus) : "";
-                  const periodFrom = fmtDay(c.contractStartDate ?? null);
-                  const periodTo = fmtDay(c.contractEndDate ?? null);
-                  const period =
-                    periodFrom === "—" && periodTo === "—" ? "—" : periodFrom === "—" ? periodTo : periodTo === "—" ? periodFrom : `${periodFrom}–${periodTo}`;
-                  const bindN = c.bindingMonthsRemaining;
-                  const bindingText =
-                    bindN === null || bindN === undefined ? "—" : `${bindN} mnd`;
-                  const effEnd = c.effectiveBindingEndDate ? fmtDay(c.effectiveBindingEndDate) : null;
+                  const expanded = expandedId === c.id;
 
                   return (
-                    <tr
-                      key={c.id}
-                      className={[
-                        "border-b border-[rgb(var(--lp-border))] last:border-b-0 cursor-pointer",
-                        idx % 2 === 0 ? "bg-white/30" : "bg-white/10",
-                      ].join(" ")}
-                      onClick={() => openDetail(c)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openDetail(c);
-                        }
-                      }}
-                    >
-                      <td className="px-5 py-4">
-                        <div className="font-medium">{c.name}</div>
-                        <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">{c.id}</div>
-                        <div className="mt-2">
+                    <React.Fragment key={c.id}>
+                      <tr data-expanded={expanded ? "true" : "false"}>
+                        <td>
+                          <button
+                            type="button"
+                            className="rounded-md px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-100"
+                            aria-expanded={expanded}
+                            onClick={(e) => {
+                              stop(e);
+                              setExpandedId((id) => (id === c.id ? null : c.id));
+                            }}
+                          >
+                            {expanded ? "▾" : "▸"}
+                          </button>
+                        </td>
+                        <td>
+                          <div className="font-semibold text-neutral-900">{c.name}</div>
                           <Link
                             href={`/superadmin/companies/${encodeURIComponent(c.id)}`}
-                            className="inline-flex rounded-xl border bg-white px-2 py-1 text-xs font-semibold hover:bg-neutral-50"
+                            className="mt-0.5 inline-block text-xs font-semibold text-neutral-600 hover:underline"
                             onClick={(e) => stop(e as any)}
                           >
-                            Firmaside →
+                            Åpne firmaside
                           </Link>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">{c.orgnr ?? "—"}</td>
-                      <td className="px-5 py-4">
-                        <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", badgeClass(st)].join(" ")}>
-                          {statusLabel(st)}
-                        </span>
-                      </td>
-                      <td className="max-w-[220px] px-5 py-4 align-top text-xs leading-snug text-neutral-800">
-                        <div className="space-y-1">
-                          <div>
-                            Reg:{" "}
-                            <span className="font-semibold tabular-nums">{c.registrationExists ? "Ja" : "Nei"}</span>
-                          </div>
-                          <div>
-                            Utkast (PENDING):{" "}
-                            <span className="font-semibold tabular-nums">{c.ledgerPendingAgreementId ? "Ja" : "Nei"}</span>
-                          </div>
-                          <div>
-                            Aktiv (ACTIVE):{" "}
-                            <span className="font-semibold tabular-nums">{c.ledgerActiveAgreementId ? "Ja" : "Nei"}</span>
-                          </div>
-                          {c.pipelineStageLabel ? (
-                            <div className="pt-1 text-[11px] text-neutral-700">
-                              <span className="font-semibold text-neutral-600">Fase: </span>
-                              {c.pipelineStageLabel}
+                        </td>
+                        <td className="tabular-nums">{c.orgnr ?? "—"}</td>
+                        <td>
+                          <span className={statusChipClass(st)}>{statusLabel(st)}</span>
+                        </td>
+                        <td>
+                          {agrSt ? (
+                            <span className={["sa-status-chip", agreementBadgeClass(agrSt)].join(" ")}>
+                              {agreementStatusLabel(agrSt)}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[rgb(var(--lp-muted))]">—</span>
+                          )}
+                        </td>
+                        <td>{safeStr(c.planLabel) || "—"}</td>
+                        <td className="tabular-nums">{employeesCount}</td>
+                        <td className="whitespace-nowrap text-xs">{fmtTs(c.updatedAt)}</td>
+                        <td className="text-right">
+                          <CompanyRowActions
+                            row={c}
+                            busy={busy}
+                            onOpen={() => openDetail(c)}
+                            onAudit={() => router.push(`/superadmin/audit?entity_id=${encodeURIComponent(c.id)}`)}
+                            onPause={() => openConfirm(c, "paused")}
+                            onArchive={() => setRemovalTarget(c)}
+                          />
+                        </td>
+                      </tr>
+                      {expanded ? (
+                        <tr>
+                          <td colSpan={9} className="p-0">
+                            <div className="sa-row-detail">
+                              <div className="sa-row-detail__grid">
+                                <span>{pipelineSummary(c)}</span>
+                                {c.pipelineNextLabel ? <span>Neste: {c.pipelineNextLabel}</span> : null}
+                                {c.pipelinePrimaryHref ? (
+                                  <Link
+                                    href={c.pipelinePrimaryHref}
+                                    className="font-semibold text-neutral-800 hover:underline"
+                                    onClick={(e) => stop(e as any)}
+                                  >
+                                    Åpne anbefalt steg →
+                                  </Link>
+                                ) : null}
+                                <Link
+                                  href={`/superadmin/audit?entity_id=${encodeURIComponent(c.id)}`}
+                                  className="font-semibold text-neutral-800 hover:underline"
+                                  onClick={(e) => stop(e as any)}
+                                >
+                                  Audit
+                                </Link>
+                              </div>
                             </div>
-                          ) : null}
-                          {c.pipelineNextLabel ? (
-                            <div className="text-[11px] text-neutral-700">
-                              <span className="font-semibold text-neutral-600">Neste: </span>
-                              {c.pipelineNextLabel}
-                            </div>
-                          ) : null}
-                          {c.pipelinePrimaryHref ? (
-                            <div className="pt-1">
-                              <Link
-                                href={c.pipelinePrimaryHref}
-                                className="inline-flex rounded-xl border bg-white px-2 py-1 text-[11px] font-semibold hover:bg-neutral-50"
-                                onClick={(e) => stop(e as any)}
-                              >
-                                Åpne anbefalt steg →
-                              </Link>
-                            </div>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        {agrSt ? (
-                          <span className={["inline-flex rounded-full px-2.5 py-1 text-xs", agreementBadgeClass(agrSt)].join(" ")}>
-                            {agreementStatusLabel(agrSt)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[rgb(var(--lp-muted))]">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="text-sm">{period}</div>
-                        {effEnd && effEnd !== "—" ? (
-                          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Utløp binding: {effEnd}</div>
-                        ) : null}
-                      </td>
-                      <td className="px-5 py-4 text-sm">{bindingText}</td>
-                      <td className="px-5 py-4">{safeStr(c.planLabel) || "—"}</td>
-                      <td className="px-5 py-4">{employeesCount}</td>
-                      <td className="px-5 py-4">{fmtTs(c.updatedAt)}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                            disabled={busy}
-                            onClick={(e) => {
-                              stop(e);
-                              openConfirm(c, "active");
-                            }}
-                          >
-                            Aktivér
-                          </button>
-                          <button
-                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                            disabled={busy}
-                            onClick={(e) => {
-                              stop(e);
-                              openConfirm(c, "paused");
-                            }}
-                          >
-                            Pause
-                          </button>
-                          <button
-                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50 disabled:opacity-40"
-                            disabled={busy}
-                            onClick={(e) => {
-                              stop(e);
-                              openConfirm(c, "closed");
-                            }}
-                          >
-                            Steng
-                          </button>
-                          <Link
-                            className="rounded-2xl border bg-white px-3 py-2 text-xs hover:bg-neutral-50"
-                            href={`/superadmin/audit?entity_id=${encodeURIComponent(c.id)}`}
-                            onClick={(e) => stop(e as any)}
-                          >
-                            Audit
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </React.Fragment>
                   );
                 })
               )}

@@ -3,8 +3,18 @@ import Link from "next/link";
 
 /* Scoped Superadmin command-center primitives — presentational only. */
 
-export function SuperadminPageShell({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`sa-scope sa-page ${className}`.trim()}>{children}</div>;
+export function SuperadminPageShell({
+  children,
+  className = "",
+  fullWidth = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  fullWidth?: boolean;
+}) {
+  return (
+    <div className={`sa-scope sa-page ${fullWidth ? "sa-page--full" : ""} ${className}`.trim()}>{children}</div>
+  );
 }
 
 export function SuperadminHero({

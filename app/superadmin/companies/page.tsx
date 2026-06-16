@@ -56,7 +56,7 @@ export default async function SuperadminCompaniesPage() {
   const intro = cms?.intro ?? "Administrer firma, status og avtaler uten avbrudd.";
 
   return (
-    <SuperadminPageShell>
+    <SuperadminPageShell fullWidth>
       <SuperadminHero
         variant="command"
         eyebrow="Superadmin"

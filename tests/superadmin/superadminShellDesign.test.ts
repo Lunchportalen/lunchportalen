@@ -121,9 +121,12 @@ describe("Superadmin shell design system", () => {
     const shell = readSource("components/superadmin/shell/SuperadminShell.tsx");
     expect(shell).toContain("SuperadminTableSurface");
     expect(shell).toContain("SuperadminEmptyState");
+    expect(shell).toContain("fullWidth");
     const css = readSource("app/styles/ds/superadmin-shell.css");
     expect(css).toContain(".sa-table-surface");
     expect(css).toContain(".sa-empty-state");
+    expect(css).toContain(".sa-enterprise-table");
+    expect(css).toContain(".sa-page--full");
   });
 
   it("shell primitives er presentational uten mutation", () => {

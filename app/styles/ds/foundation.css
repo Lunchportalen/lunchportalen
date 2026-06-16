@@ -62,6 +62,25 @@
   padding-bottom: 4rem;
 }
 
+.lp-app-shell--wide .lp-app-shell__inner {
+  max-width: none;
+}
+
+.lp-app-shell--wide .lp-app-shell__main {
+  padding: 0.875rem;
+}
+
+.lp-app-shell--wide .sa-page {
+  --sa-max-width: none;
+  max-width: none;
+}
+
+@media (min-width: 640px) {
+  .lp-app-shell--wide .lp-app-shell__main {
+    padding: 1.125rem 1.25rem;
+  }
+}
+
 .lp-app-shell__frame {
   display: grid;
   gap: var(--lp-shell-gap);
