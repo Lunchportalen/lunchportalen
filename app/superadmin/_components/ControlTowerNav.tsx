@@ -16,6 +16,7 @@ const PRIMARY_NAV = [
 
 const SECONDARY_NAV = [
   { label: "Revisjon", href: "/superadmin/audit" },
+  { label: "Pilotkontroll", href: "/superadmin/pilot-control" },
   { label: "Tripletex", href: "/superadmin/tripletex" },
   { label: "Kontrolltårn", href: "/superadmin/control-tower" },
   { label: "Operasjoner", href: "/superadmin/operations" },
