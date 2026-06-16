@@ -159,4 +159,40 @@ describe("Protected Golden Path — contract locks (no runtime changes)", () => 
     expect(sql).not.toContain("DISABLE TRIGGER");
     expect(sql).not.toContain("lp_order_set");
   });
+
+  it("14. provider production status labels cover full proven flow", () => {
+    const src = readSource("lib/providers/kitchenOrderStatus.ts");
+    expect(src).toContain('"Start produksjon"');
+    expect(src).toContain('"Klar for levering"');
+    expect(src).toContain('"Marker levert"');
+    expect(src).toContain('"I produksjon"');
+    expect(src).toContain('"Mottatt"');
+    expect(src).toContain('"Levert"');
+  });
+
+  it("15. provider order enrichment module scopes rows to provider-visible orders", () => {
+    const src = readSource("lib/providers/providerOrderEnrichment.ts");
+    expect(src).toContain("scopedOrderIds");
+    expect(src).toContain("ingestScopedOrderItemRow");
+    expect(src).not.toContain("lp_order_set");
+  });
+
+  it("16. provider status RPC wrapper calls lp_order_advance_status only", () => {
+    const src = readSource("lib/admin/orderStatus.ts");
+    expect(src).toContain('rpc("lp_order_advance_status"');
+    expect(src).not.toContain("lp_order_set");
+  });
+
+  it("17. kitchen card advances via advanceKitchenOrder server action", () => {
+    const card = readSource("components/providers/KitchenOrderCard.tsx");
+    const actions = readSource("app/leverandor/ordrer/actions.ts");
+    expect(card).toContain("advanceKitchenOrder");
+    expect(actions).toContain("advanceOrderStatus");
+    expect(actions).toContain("hasProviderRole");
+  });
+
+  it("18. provider production status flow regression suite exists", () => {
+    expect(fs.existsSync(path.join(ROOT, "tests/providers/providerProductionStatusFlow.test.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, "tests/providers/providerProductionCutoff.test.ts"))).toBe(true);
+  });
 });

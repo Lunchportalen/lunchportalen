@@ -943,9 +943,16 @@ Any overflow/layout shift is a BLOCKING DEFECT.
 Authoritative doc: **`docs/PROTECTED_GOLDEN_PATH.md`**
 
 ### What is locked (summary)
-Proven production pilot: provider menu publish → `menu_service_days` / `menu_service_day_items` → employee `/week` → order write (`lp_order_set`) with correct `provider_id` / `company_id` / `location_id` → provider `/leverandor/ordrer` with employee + variant display → wrong provider cannot see order.
+Proven production pilot: provider menu publish → `menu_service_days` / `menu_service_day_items` → employee `/week` → order write (`lp_order_set`) with correct `provider_id` / `company_id` / `location_id` → provider `/leverandor/ordrer` with employee + variant display → **provider production status flow** (Mottatt → I produksjon → Klar for levering → Levert) → wrong provider cannot see or update order.
 
-Reference pilot (fixtures/docs/tests only — **never hardcode in runtime**): Pettersen&Co · Melhus Catering AS · `paasmurt` / `laks-eggerore` · `2026-06-16`.
+Reference pilot (fixtures/docs/tests only — **never hardcode in runtime**): Pettersen&Co · Melhus Catering AS · Hovedlokasjon · Thomas Johansen · `paasmurt` / `laks-eggerore` · `2026-06-16` · status flow proven in production.
+
+### Provider production status flow (HARD STOP)
+- **Protected Golden Path** includes provider kitchen status transitions — not just order visibility.
+- AI/Cursor must **not** refactor provider orders/status transitions without: read-only audit, scoped PR, regression tests, rollback plan.
+- UI polish must **not** touch: `lp_order_advance_status`, cutoff triggers (`orders_cutoff_0800`), order write-path, `lp_order_set`, provider scoping, or order enrichment — unless explicitly approved.
+- Any PR touching `lp_order_advance_status`, provider order card/loader/enrichment, status history, or cutoff GUC path must declare **`Protected Golden Path Impact`**.
+- Employee cutoff after 08:00 must remain enforced for employees; provider production advances after cutoff must remain scoped to `lp_order_advance_status` GUC only.
 
 ### Agent / AI rules (HARD STOP)
 - No broad refactors or “cleanup” across the protected path
@@ -965,8 +972,9 @@ CI enforces via `scripts/ci/guard-protected-golden-path.mjs`.
 
 ### Sensitive areas (non-exhaustive)
 - Order write path · `lp_order_set` · order RPC wrappers
-- `/api/week` · menu materialization · provider order read model
+- `/api/week` · menu materialization · provider order read model + enrichment
+- Provider production status: `KitchenOrderCard`, `kitchenOrderStatus`, `orderStatus.ts`, `lp_order_advance_status`, cutoff GUC path
 - Provider/company/location scoping · auth/profile lookup
-- Active agreement gate · cutoff · RLS/schema/migrations touching orders
+- Active agreement gate · cutoff · RLS/schema/migrations touching orders or status history
 
 Violation → **STOP**
