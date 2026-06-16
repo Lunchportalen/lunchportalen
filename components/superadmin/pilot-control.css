@@ -1,0 +1,128 @@
+.lp-pilot-control {
+  max-width: 1440px;
+  padding-bottom: 2rem;
+}
+
+.lp-pilot-control__hero {
+  padding-bottom: 0.5rem;
+}
+
+.lp-pilot-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.lp-pilot-badge--go {
+  background: rgb(236 253 245);
+  color: rgb(6 78 59);
+  box-shadow: inset 0 0 0 1px rgb(167 243 208);
+}
+
+.lp-pilot-badge--watch {
+  background: rgb(255 251 235);
+  color: rgb(120 53 15);
+  box-shadow: inset 0 0 0 1px rgb(253 230 138);
+}
+
+.lp-pilot-badge--stop {
+  background: rgb(255 241 242);
+  color: rgb(136 19 55);
+  box-shadow: inset 0 0 0 1px rgb(254 205 211);
+}
+
+.lp-pilot-card {
+  border-radius: 1.25rem;
+  border: 1px solid rgb(var(--lp-border) / 1);
+  background: rgb(255 255 255 / 0.82);
+  padding: 1.25rem;
+}
+
+.lp-pilot-card--muted {
+  background: rgb(250 250 250);
+}
+
+.lp-pilot-card--warning {
+  border-color: rgb(254 205 211);
+  background: rgb(255 251 252);
+}
+
+.lp-pilot-strip-card {
+  border-radius: 1rem;
+  border: 1px solid rgb(var(--lp-border) / 1);
+  background: white;
+  padding: 1rem 1.125rem;
+}
+
+.lp-pilot-strip-card__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgb(var(--lp-muted));
+}
+
+.lp-pilot-strip-card__value {
+  margin-top: 0.375rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgb(var(--lp-fg));
+}
+
+.lp-pilot-checklist__item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  border-radius: 0.875rem;
+  padding: 0.75rem 0.875rem;
+}
+
+.lp-pilot-checklist__item--pass {
+  background: rgb(240 253 244);
+}
+
+.lp-pilot-checklist__item--watch {
+  background: rgb(255 251 235);
+}
+
+.lp-pilot-checklist__item--fail {
+  background: rgb(255 241 242);
+}
+
+.lp-pilot-checklist__badge {
+  flex-shrink: 0;
+  min-width: 3.25rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  text-align: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: white;
+  color: rgb(var(--lp-fg));
+}
+
+.lp-pilot-flag {
+  display: inline-flex;
+  border-radius: 9999px;
+  padding: 0.25rem 0.625rem;
+  font-weight: 600;
+}
+
+.lp-pilot-flag--ok {
+  background: rgb(236 253 245);
+  color: rgb(6 95 70);
+}
+
+.lp-pilot-flag--watch {
+  background: rgb(255 251 235);
+  color: rgb(146 64 14);
+}
+
+.lp-pilot-flag--info {
+  background: rgb(245 245 245);
+  color: rgb(64 64 64);
+}
