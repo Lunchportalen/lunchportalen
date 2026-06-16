@@ -18,6 +18,11 @@ import { getLiveCampaignMetrics } from "@/lib/live/campaignStats";
 
 // Dashboard top: KPIBar, ActionPanel, AIStatus, Card — composed in UnifiedControlSection
 import UnifiedControlSection from "../_components/UnifiedControlSection";
+import {
+  SuperadminHero,
+  SuperadminPageShell,
+  SuperadminSection,
+} from "@/components/superadmin/shell/SuperadminShell";
 
 import CategoryDominancePanel from "@/components/superadmin/controlTower/CategoryDominancePanel";
 import GoLiveEnginePanel from "@/components/superadmin/controlTower/GoLiveEnginePanel";
@@ -29,9 +34,9 @@ export default async function ControlTowerPage() {
 
   if (!auth.ok || auth.role !== "superadmin") {
     return (
-      <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-8 lp-select-text">
-        <p className="text-sm text-[rgb(var(--lp-muted))]">Ingen tilgang</p>
-      </div>
+      <SuperadminPageShell>
+        <SuperadminHero variant="command" eyebrow="Superadmin" title="Kontrolltårn" lead="Ingen tilgang." />
+      </SuperadminPageShell>
     );
   }
 
@@ -137,14 +142,19 @@ export default async function ControlTowerPage() {
   const platformMetrics = buildPlatformPowerMetrics(initial);
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 pb-16 pt-8 lp-select-text">
-      <header className="mb-8">
-        <h1 className="font-heading text-2xl font-semibold text-[rgb(var(--lp-fg))]">Kontrolltårn</h1>
-        <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">Sanntids oversikt — AI, inntekt og systemstatus.</p>
-      </header>
-      <UnifiedControlSection />
+    <SuperadminPageShell>
+      <SuperadminHero
+        variant="command"
+        eyebrow="Superadmin"
+        title="Kontrolltårn"
+        lead="Sanntids oversikt — AI, inntekt og systemstatus. Tomme signaler vises kontrollert."
+      />
+
+      <SuperadminSection title="Live kontroll" lead="Prioriterte signaler og anbefalte handlinger." flat>
+        <UnifiedControlSection />
+      </SuperadminSection>
       {investor ? (
-        <section className="mb-10 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-6">
+        <section className="sa-system-block mb-[var(--sa-section-gap,1.5rem)]">
           <h2 className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">Revenue Engine</h2>
           <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
             Sanntids signaler (ordre + session-proxy). API: <code className="text-xs">GET /api/superadmin/investor</code>
@@ -170,7 +180,7 @@ export default async function ControlTowerPage() {
         </section>
       ) : null}
       {investor ? (
-        <section className="mb-10 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-6">
+        <section className="sa-system-block mb-[var(--sa-section-gap,1.5rem)]">
           <h2 className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">AI Intelligence</h2>
           <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
             Prognoser og loggførte beslutninger — ikke garanterte utfall.
@@ -191,7 +201,7 @@ export default async function ControlTowerPage() {
           </div>
         </section>
       ) : null}
-      <section className="mb-10 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-6">
+      <section className="sa-system-block mb-[var(--sa-section-gap,1.5rem)]">
         <h2 className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">Sales Engine</h2>
         <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
           GTM-kjøring (prosessminne siden deploy) — ikke regnskapsgrunnlag.
@@ -213,7 +223,7 @@ export default async function ControlTowerPage() {
           </div>
         </div>
       </section>
-      <section className="mb-10 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-6">
+      <section className="sa-system-block mb-[var(--sa-section-gap,1.5rem)]">
         <h2 className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">Live Campaigns</h2>
         <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
           Sporbarhet (prosessminne siden deploy). Klikk: <code className="text-xs">/api/track/click?to=…&amp;c=…</code> (kun tillatte
@@ -240,7 +250,7 @@ export default async function ControlTowerPage() {
           </div>
         </div>
       </section>
-      <section className="mb-10 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-6">
+      <section className="sa-system-block mb-[var(--sa-section-gap,1.5rem)]">
         <h2 className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">Scale Engine</h2>
         <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
           CAC/LTV er visningsproxy fra Control Tower — ikke full regnskaps-LTV uten churn-kilde.
@@ -283,7 +293,7 @@ export default async function ControlTowerPage() {
           </ul>
         ) : null}
       </section>
-      <section className="mb-10 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-6">
+      <section className="sa-system-block mb-[var(--sa-section-gap,1.5rem)]">
         <h2 className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">Market Domination</h2>
         <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
           Markedssignaler — strukturerte proxyer, ikke rå kopier av konkurrentinnhold.
@@ -313,7 +323,7 @@ export default async function ControlTowerPage() {
       <DominationStrategyPanel />
       <CategoryDominancePanel />
       <GoLiveEnginePanel />
-      <section className="mb-10 rounded-2xl border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-card))] p-6">
+      <section className="sa-system-block mb-[var(--sa-section-gap,1.5rem)]">
         <h2 className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">Platform Power</h2>
         <p className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
           Plattform- og økosystemindeks — aggregerte proxyer (GDPR-minimering).
@@ -341,6 +351,6 @@ export default async function ControlTowerPage() {
         ) : null}
       </section>
       <ControlTowerClient initial={initial} />
-    </div>
+    </SuperadminPageShell>
   );
 }

@@ -9,9 +9,7 @@ const PRIMARY_NAV = [
   { label: "Firma", href: "/superadmin/companies" },
   { label: "Avtaler", href: "/superadmin/agreements" },
   { label: "Brukere", href: "/superadmin/users" },
-  { label: "Kjøkken", href: "/kitchen" },
   { label: "Systemhelse", href: "/superadmin/system" },
-  { label: "Backoffice", href: "/backoffice/content" },
 ];
 
 const SECONDARY_NAV = [
@@ -75,6 +73,9 @@ export default function ControlTowerNav() {
             </Link>
           ))}
         </nav>
+        <p className="mt-3 px-3 text-[10px] leading-relaxed text-[rgb(var(--lp-muted))]">
+          CMS og innhold styres i Umbraco&nbsp;17. Kjøkken/produksjon ligger hos hver cateringbedrift.
+        </p>
       </div>
     </>
   );

@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { resolveSuperadminAuditContextLinks } from "@/lib/audit/operativeAuditStream";
+import { SuperadminEmptyState, SuperadminTableSurface } from "@/components/superadmin/shell/SuperadminShell";
 
 type AuditItem = {
   id: string;
@@ -402,7 +403,7 @@ export default function AuditClient() {
     "rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]";
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-4">
+    <div className="w-full">
       {/* Toast */}
       {toast ? (
         <div
@@ -417,20 +418,16 @@ export default function AuditClient() {
         </div>
       ) : null}
 
-      {/* Sticky header */}
-      <div className="lp-glass-surface sticky top-3 z-10 rounded-card p-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <div>
-            <div className="text-[22px] font-semibold">Audit</div>
+      {/* Filters */}
+      <SuperadminTableSurface>
+        <div className="sa-filter-bar flex-col gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div className="text-xs text-[rgb(var(--lp-muted))]">
-              {operativeStream ? "Filter: operative hendelser (audit_events · avtale / firma-status). " : null}
-              {loading ? "Laster…" : `${viewItems.length} vist • ${critCount} kritiske (heuristikk)`}{" "}
-              <span className="text-[rgb(var(--lp-muted))]">•</span>{" "}
-              <span className="text-[rgb(var(--lp-muted))]">Tastatur: ↑/↓, Enter, Esc</span>
+              {operativeStream ? "Filter: operative hendelser (avtale / firma-status). " : null}
+              {loading ? "Laster…" : `${viewItems.length} vist • ${critCount} kritiske (heuristikk)`}
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
             <Link href="/superadmin" className={navBtn}>
               Dashboard
             </Link>
@@ -492,8 +489,9 @@ export default function AuditClient() {
             </button>
           </div>
         </div>
+        </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="sa-table-surface__pad flex flex-wrap items-center gap-2 border-t border-[rgb(var(--lp-border))]">
           <div className="grid gap-1">
             <input
               value={companyId}
@@ -573,141 +571,146 @@ export default function AuditClient() {
         </div>
 
         {err ? (
-          <div className="mt-3 rounded-xl border border-[rgba(var(--lp-crit-bd),0.9)] bg-[rgba(var(--lp-crit-bg),0.9)] px-3 py-2 text-sm font-semibold text-[rgb(var(--lp-crit-tx))]">
-            {err}
-          </div>
+          <div className="border-t border-[rgb(var(--lp-border))] px-4 py-3 text-sm font-semibold text-red-700">{err}</div>
         ) : null}
-      </div>
 
-      {/* Table */}
-      <div className="mt-3 rounded-xl border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))]">
-        <div className="grid grid-cols-[180px_220px_220px_1fr_90px] gap-2 border-b border-[rgba(var(--lp-border),0.7)] bg-[rgb(var(--lp-surface-2))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-muted))]">
-          <div>Tid</div>
-          <div>Actor</div>
-          <div>Action</div>
-          <div>Entity / summary</div>
-          <div className="text-right">Kopier</div>
+        <div className="overflow-x-auto border-t border-[rgb(var(--lp-border))]">
+          <table className="w-full min-w-[960px] text-sm">
+            <thead>
+              <tr className="border-b border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] text-left text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
+                <th className="whitespace-nowrap px-4 py-3">Tid</th>
+                <th className="px-4 py-3 min-w-[160px]">Actor</th>
+                <th className="px-4 py-3 min-w-[140px]">Action</th>
+                <th className="px-4 py-3 min-w-[280px]">Entity / summary</th>
+                <th className="px-4 py-3 text-right">Handling</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!loading && viewItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <SuperadminEmptyState>Ingen hendelser funnet.</SuperadminEmptyState>
+                  </td>
+                </tr>
+              ) : null}
+
+              {viewItems.map((it, idx) => {
+                const critical = isCritical(it);
+                const selected = idx === selectedIdx;
+                const rowClass = selected
+                  ? "bg-[rgba(var(--lp-text),0.04)]"
+                  : preset === "critical" && critical
+                    ? "bg-[rgba(var(--lp-crit-bg),0.35)]"
+                    : "";
+
+                return (
+                  <tr
+                    key={it.id}
+                    className={`border-b border-[rgb(var(--lp-border))] align-top ${rowClass}`}
+                    role="row"
+                    aria-selected={selected}
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{isoNice(it.created_at)}</td>
+
+                    <td className="px-4 py-3 text-xs">
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const txt = String(pickActorEmail(it));
+                          const ok = await copyText(txt);
+                          showToast(ok ? "ok" : "err", ok ? "E-post kopiert" : "Kunne ikke kopiere");
+                        }}
+                        className="text-left font-semibold text-[rgb(var(--lp-text))] hover:underline break-all"
+                      >
+                        {pickActorEmail(it)}
+                      </button>
+                      <div className="text-[rgb(var(--lp-muted))]">{pickActorRole(it)}</div>
+                    </td>
+
+                    <td className="px-4 py-3 font-mono text-xs font-semibold break-all text-[rgb(var(--lp-text))]">
+                      {it.action ?? "-"}
+                      {preset === "critical" && critical ? (
+                        <span className="ml-2 inline-flex rounded-full border border-[rgba(var(--lp-crit-bd),0.95)] bg-[rgba(var(--lp-crit-bg),0.85)] px-2 py-0.5 text-[10px] font-semibold text-[rgb(var(--lp-crit-tx))]">
+                          KRITISK
+                        </span>
+                      ) : null}
+                    </td>
+
+                    <td className="px-4 py-3 text-xs">
+                      <div className="text-[rgb(var(--lp-muted))] break-words">
+                        {pickEntityType(it)} /{" "}
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const txt = String(pickEntityId(it));
+                            const ok = await copyText(txt);
+                            showToast(ok ? "ok" : "err", ok ? "Entity-id kopiert" : "Kunne ikke kopiere");
+                          }}
+                          className="font-mono font-semibold text-[rgb(var(--lp-text))] hover:underline break-all"
+                        >
+                          {pickEntityId(it)}
+                        </button>
+                      </div>
+
+                      {it.summary ? <div className="mt-1 break-words text-[rgb(var(--lp-text))]">{it.summary}</div> : null}
+
+                      {previewBeforeAfter(it.detail)}
+
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <Link
+                          href={`/superadmin/audit/${it.id}`}
+                          className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Åpne detalj →
+                        </Link>
+                        {resolveSuperadminAuditContextLinks(it).map((l) => (
+                          <Link
+                            key={l.href}
+                            href={l.href}
+                            className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {l.label} →
+                          </Link>
+                        ))}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <div className="inline-flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedIdx(idx)}
+                          className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 text-xs font-semibold"
+                        >
+                          Marker
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const ok = await copyText(it.id);
+                            showToast(ok ? "ok" : "err", ok ? "ID kopiert" : "Kunne ikke kopiere");
+                          }}
+                          className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 text-xs font-semibold"
+                        >
+                          Kopier ID
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-
-        {!loading && viewItems.length === 0 ? (
-          <div className="border-t border-[rgba(var(--lp-border),0.7)] px-3 py-2 text-sm text-[rgb(var(--lp-muted))]">
-            Ingen hendelser funnet.
-          </div>
-        ) : null}
-
-        {viewItems.map((it, idx) => {
-          const critical = isCritical(it);
-          const selected = idx === selectedIdx;
-
-          const rowClass = selected
-            ? "bg-[rgba(var(--lp-text),0.04)]"
-            : preset === "critical" && critical
-            ? "bg-[rgba(var(--lp-crit-bg),0.7)]"
-            : "";
-
-          return (
-            <div
-              key={it.id}
-              className={[
-                "grid grid-cols-[180px_220px_220px_1fr_90px] items-start gap-2 border-t border-[rgba(var(--lp-border),0.7)] px-3 py-2",
-                selected ? "outline outline-2 outline-[rgba(var(--lp-text),0.15)] -outline-offset-2" : "",
-                rowClass,
-              ].join(" ")}
-              role="row"
-              aria-selected={selected}
-            >
-              <div className="lp-mono text-xs">{isoNice(it.created_at)}</div>
-
-              <div className="text-xs">
-                <button
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const txt = String(pickActorEmail(it));
-                    const ok = await copyText(txt);
-                    showToast(ok ? "ok" : "err", ok ? "E-post kopiert" : "Kunne ikke kopiere");
-                  }}
-                  className="text-left text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
-                >
-                  {pickActorEmail(it)}
-                </button>
-                <div className="text-[rgb(var(--lp-muted))]">{pickActorRole(it)}</div>
-              </div>
-
-              <div className="lp-mono text-xs font-semibold text-[rgb(var(--lp-text))]">
-                {it.action ?? "-"}{" "}
-                {preset === "critical" && critical ? (
-                  <span className="ml-2 inline-flex items-center rounded-full border border-[rgba(var(--lp-crit-bd),0.95)] bg-[rgba(var(--lp-crit-bg),0.85)] px-2 py-0.5 text-[10px] font-semibold text-[rgb(var(--lp-crit-tx))]">
-                    KRITISK
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="text-xs">
-                <div className="text-[rgb(var(--lp-muted))]">
-                  {pickEntityType(it)} /{" "}
-                  <button
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const txt = String(pickEntityId(it));
-                      const ok = await copyText(txt);
-                      showToast(ok ? "ok" : "err", ok ? "Entity-id kopiert" : "Kunne ikke kopiere");
-                    }}
-                    className="lp-mono text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
-                  >
-                    {pickEntityId(it)}
-                  </button>
-                </div>
-
-                {it.summary ? <div className="mt-1 text-[rgb(var(--lp-text))]">{it.summary}</div> : null}
-
-                {previewBeforeAfter(it.detail)}
-
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <Link
-                    href={`/superadmin/audit/${it.id}`}
-                    className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Åpne detalj →
-                  </Link>
-                  {resolveSuperadminAuditContextLinks(it).map((l) => (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      className="text-xs font-semibold text-[rgb(var(--lp-text))] hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {l.label} →
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setSelectedIdx(idx)}
-                  className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-white px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
-                >
-                  Marker
-                </button>
-                <button
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const ok = await copyText(it.id);
-                    showToast(ok ? "ok" : "err", ok ? "ID kopiert" : "Kunne ikke kopiere");
-                  }}
-                  className="rounded-lg border border-[rgba(var(--lp-border),0.9)] bg-[rgb(var(--lp-surface))] px-3 py-2 text-xs font-semibold text-[rgb(var(--lp-text))] hover:bg-[rgb(var(--lp-surface-2))]"
-                >
-                  ID
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      </SuperadminTableSurface>
 
       {/* Pagination */}
       <div className="mt-3 flex items-center gap-2">

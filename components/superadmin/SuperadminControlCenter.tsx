@@ -35,12 +35,6 @@ const PRIORITY_LINKS = [
     description: "Brukere, roller og invitasjoner.",
   },
   {
-    id: "kitchen",
-    fallbackLabel: "Kjøkken",
-    fallbackHref: "/kitchen",
-    description: "Dagens produksjon og produksjonssjekk.",
-  },
-  {
     id: "overview-dashboard",
     fallbackLabel: "Driftsoversikt",
     fallbackHref: "/superadmin/overview",
@@ -65,7 +59,6 @@ const ADVANCED_LINKS = [
   { label: "Revisjon", href: "/superadmin/audit", description: "Auditlogg og sporbarhet." },
   { label: "Operasjoner", href: "/superadmin/operations", description: "Dagens leveranser og operativ oversikt." },
   { label: "Tripletex", href: "/superadmin/tripletex", description: "Fakturagrunnlag og eksport." },
-  { label: "Backoffice", href: "/backoffice/content", description: "Innhold og publisering." },
   { label: "Global", href: "/superadmin/global", description: "Global styringsflate." },
 ];
 
@@ -200,11 +193,8 @@ export default function SuperadminControlCenter({ signals }: { signals: LoadSupe
           ]}
           actions={
             <>
-              <Link
-                href="/kitchen"
-                className="lp-btn lp-btn--secondary min-h-[44px] w-full justify-center"
-              >
-                Gå til kjøkken
+              <Link href="/superadmin/audit" className="lp-btn lp-btn--secondary min-h-[44px] w-full justify-center">
+                Revisjon
               </Link>
               <Link href="/superadmin/pilot-control" className="lp-btn lp-btn--ghost min-h-[44px] w-full justify-center">
                 Pilotkontroll
