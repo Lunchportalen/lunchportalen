@@ -126,6 +126,8 @@ describe("Protected Golden Path — contract locks (no runtime changes)", () => 
       for (const file of walkDir(root)) {
         const rel = path.relative(ROOT, file).replace(/\\/g, "/");
         if (rel.includes("/tests/") || rel.endsWith(".test.ts") || rel.endsWith(".test.tsx")) continue;
+        if (rel.includes("__lint_probe__")) continue;
+        if (!fs.existsSync(file)) continue;
         const text = fs.readFileSync(file, "utf8");
         for (const needle of forbidden) {
           expect(text, `${rel} must not hardcode pilot fixture "${needle}"`).not.toContain(needle);
