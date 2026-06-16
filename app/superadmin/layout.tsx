@@ -48,14 +48,12 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
 
   return (
     <div className="lp-app-shell lp-app-shell--wide">
-      <div className="lp-app-shell__inner">
-        <div className="lp-app-shell__frame">
-          <aside className="lp-app-shell__sidebar">
-            <ControlTowerNav />
-          </aside>
+      <div className="lp-app-shell__workspace">
+        <aside className="lp-app-shell__sidebar">
+          <ControlTowerNav />
+        </aside>
 
-          <main className="lp-app-shell__main">{children}</main>
-        </div>
+        <main className="lp-app-shell__main">{children}</main>
       </div>
     </div>
   );
