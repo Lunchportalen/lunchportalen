@@ -48,10 +48,10 @@ export const capabilities: SuperadminCapability[] = [
   {
     id: "users",
     label: "Brukere",
-    description: "Bruker- og rolleoversikt.",
-    href: "/superadmin/users",
+    description: "Ikke primær Superadmin-flate — brukere håndteres under firma.",
+    href: "/superadmin/companies",
     group: "core",
-    enabled: true,
+    enabled: false,
   },
   {
     id: "billing",
