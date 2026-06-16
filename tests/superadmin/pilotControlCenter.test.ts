@@ -7,6 +7,7 @@ import {
   deriveOperationalBadge,
   evaluateGoldenPathChecklist,
 } from "@/lib/superadmin/pilotControlChecklist";
+import { buildPilotLatestOrderDisplayLine } from "@/lib/superadmin/loadPilotControlCenter";
 import { mergePilotScope, pilotScopeFromEnv, pilotScopeFromQuery } from "@/lib/superadmin/pilotControlConfig";
 
 const ROOT = process.cwd();
@@ -14,6 +15,46 @@ const ROOT = process.cwd();
 function readSource(relPath: string) {
   return readFileSync(join(ROOT, relPath), "utf8");
 }
+
+describe("pilot order display line", () => {
+  it("viser varianttittel i stedet for product_name_snapshot", () => {
+    const line = buildPilotLatestOrderDisplayLine({
+      quantity: 1,
+      productNameSnapshot: "Paasmurt",
+      choiceKey: "paasmurt",
+      itemKey: "laks-eggerore",
+      itemTitleSnapshot: "Laks & Eggerøre",
+    });
+    expect(line).toBe("1 stk · Påsmurt · Laks & Eggerøre");
+    expect(line).not.toContain("Paasmurt");
+  });
+
+  it("resolver variant fra lookup når snapshot mangler", () => {
+    const lookup = new Map<string, string>([["paasmurt:laks-eggerore", "Laks & Eggerøre"]]);
+    const line = buildPilotLatestOrderDisplayLine({
+      quantity: 1,
+      productNameSnapshot: "Paasmurt",
+      choiceKey: "paasmurt",
+      itemKey: "laks-eggerore",
+      itemTitleSnapshot: null,
+      variantLookup: lookup,
+    });
+    expect(line).toBe("1 stk · Påsmurt · Laks & Eggerøre");
+    expect(line).not.toContain("Paasmurt");
+  });
+
+  it("fallback til kun kategori når variant mangler", () => {
+    const line = buildPilotLatestOrderDisplayLine({
+      quantity: 1,
+      productNameSnapshot: "Paasmurt",
+      choiceKey: "paasmurt",
+      itemKey: null,
+      itemTitleSnapshot: null,
+    });
+    expect(line).toBe("1 stk · Påsmurt");
+    expect(line).not.toContain("Paasmurt");
+  });
+});
 
 describe("pilotControlConfig", () => {
   it("merger query over env over auto", () => {
@@ -63,6 +104,13 @@ describe("pilotControlChecklist", () => {
 });
 
 describe("loadPilotControlCenter read-only contract", () => {
+  it("loader bruker provider display helper for ordrelinje", () => {
+    const src = readSource("lib/superadmin/loadPilotControlCenter.ts");
+    expect(src).toContain("buildKitchenOrderItemDisplay");
+    expect(src).toContain("buildVariantTitleLookup");
+    expect(src).not.toContain("function buildDisplayLine");
+  });
+
   it("loader importerer ikke lp_order_set eller order write-path", () => {
     const src = readSource("lib/superadmin/loadPilotControlCenter.ts");
     expect(src).not.toContain("lp_order_set");
@@ -126,7 +174,7 @@ describe("PilotControlCenterView render", () => {
           locationName: "Hovedlokasjon",
           employeeName: "Test Ansatt",
           employeeEmail: "test@example.com",
-          displayLine: "1 stk · Påsmurt · Laks",
+          displayLine: "1 stk · Påsmurt · Laks & Eggerøre",
           statusRaw: "DELIVERED",
           statusLabel: "Levert",
           date: "2026-06-16",
@@ -172,7 +220,8 @@ describe("PilotControlCenterView render", () => {
     expect(html).toContain("Pilot Control Center");
     expect(html).toContain("GO with manual control");
     expect(html).toContain("Golden Path checklist");
-    expect(html).toContain("1 stk · Påsmurt · Laks");
+    expect(html).toContain("1 stk · Påsmurt · Laks &amp; Eggerøre");
+    expect(html).not.toContain("Paasmurt");
     expect(html).toContain("Denne siden er read-only");
     expect(html).not.toContain('type="submit"');
   });
