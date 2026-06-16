@@ -222,7 +222,7 @@ describe("PilotControlCenterView render", () => {
     expect(html).toContain("Golden Path checklist");
     expect(html).toContain("1 stk · Påsmurt · Laks &amp; Eggerøre");
     expect(html).not.toContain("Paasmurt");
-    expect(html).toContain("Denne siden er read-only");
+    expect(html).toContain("Ingen handling fra denne siden");
     expect(html).not.toContain('type="submit"');
   });
 

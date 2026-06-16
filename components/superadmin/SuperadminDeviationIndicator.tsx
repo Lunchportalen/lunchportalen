@@ -29,7 +29,7 @@ export default function SuperadminDeviationIndicator() {
   if (!data || (data.unpacked <= 0 && data.undelivered <= 0)) return null;
 
   return (
-    <div className="mt-4 rounded-[1.25rem] bg-red-50 px-4 py-3 text-sm font-semibold text-red-950 ring-1 ring-red-200" role="alert">
+    <div className="rounded-[var(--sa-radius-lg)] border border-red-200/80 bg-red-50/70 px-4 py-3 text-sm font-semibold text-red-950" role="alert">
       {data.unpacked > 0 ? <div>{data.unpacked} leveranser ikke pakket</div> : null}
       {data.undelivered > 0 ? <div>{data.undelivered} leveranser ikke levert</div> : null}
     </div>

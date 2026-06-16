@@ -5,7 +5,6 @@ export const revalidate = 0;
 import "server-only";
 
 import PilotControlCenterView from "@/components/superadmin/PilotControlCenterView";
-import "@/components/superadmin/pilot-control.css";
 import { loadPilotControlCenter } from "@/lib/superadmin/loadPilotControlCenter";
 
 type SP = Record<string, string | string[] | undefined>;
