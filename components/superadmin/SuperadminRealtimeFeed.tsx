@@ -108,32 +108,25 @@ export default function SuperadminRealtimeFeed({ initialOrdersToday }: { initial
   const statusText = useMemo(() => (items.length ? "Live hendelser" : "Venter på hendelser"), [items.length]);
 
   return (
-    <section className="mt-7 rounded-[1.35rem] bg-white/80 p-4 ring-1 ring-black/[0.05]" aria-labelledby="superadmin-live-heading">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 id="superadmin-live-heading" className="font-heading text-lg font-semibold text-[rgb(var(--lp-fg))]">
-            Live drift
-          </h2>
-          <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">{statusText}</p>
-        </div>
-        <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-950 ring-1 ring-emerald-200">
-          Ordre i dag: {ordersToday}
-        </div>
+    <div aria-labelledby="superadmin-live-heading">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <p id="superadmin-live-heading" className="text-sm text-[rgb(var(--lp-muted))]">
+          {statusText}
+        </p>
+        <div className="sa-badge sa-badge--go">Ordre i dag: {ordersToday}</div>
       </div>
 
-      <div className="mt-4 space-y-2" aria-live="polite">
+      <div className="sa-command-list" aria-live="polite">
         {items.length === 0 ? (
-          <p className="rounded-2xl bg-[#fbf8f0] px-3 py-2 text-sm text-[rgb(var(--lp-muted))]">
-            Ingen nye live-hendelser i denne økten.
-          </p>
+          <p className="px-4 py-3 text-sm text-[rgb(var(--lp-muted))]">Ingen nye live-hendelser i denne økten.</p>
         ) : (
           items.map((item) => (
-            <div key={item.id} className={`rounded-2xl px-3 py-2 text-sm font-medium ring-1 ${toneClass(item.tone)}`}>
-              {item.text}
+            <div key={item.id} className={`sa-command-list__item cursor-default ${toneClass(item.tone)}`}>
+              <span className="sa-command-list__label font-normal">{item.text}</span>
             </div>
           ))
         )}
       </div>
-    </section>
+    </div>
   );
 }

@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import BlockedAccess from "@/components/auth/BlockedAccess";
 
 import ControlTowerNav from "./_components/ControlTowerNav";
+import "@/app/styles/ds/superadmin-shell.css";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { roleHome } from "@/lib/auth/roleHome";
