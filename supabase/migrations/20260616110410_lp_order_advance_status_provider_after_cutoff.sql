@@ -1,3 +1,4 @@
+-- Ledger: production applied as 20260616110410 (MCP/manual). Repo timestamp aligned — no SQL change.
 -- Provider production status advances must work after employee 08:00 cutoff.
 -- lp_order_advance_status previously disabled guard_order_mutation only; orders_cutoff_0800
 -- still blocked UPDATE OF status for today's orders (employee rule).

@@ -178,6 +178,11 @@ jobs:
           set -euo pipefail
           node scripts/ci/repair-staging-mcp-batch-ledger.mjs | tee "$EVIDENCE_DIR/ledger-repair.log"
 
+      - name: Repair provider cutoff ledger drift (staging, idempotent)
+        run: |
+          set -euo pipefail
+          node scripts/ci/repair-staging-provider-cutoff-ledger.mjs | tee "$EVIDENCE_DIR/provider-cutoff-ledger-repair.log"
+
       # UI-only PRs: skip dry-run when this PR does not change supabase/migrations (avoids
       # false ABORT on pre-existing remote/staging ledger drift unrelated to the PR).
       - name: Staging dry-run skipped (no migration changes in PR)
