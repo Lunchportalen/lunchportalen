@@ -2,9 +2,9 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
-import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import { getAgreementStatus } from "@/lib/auth/agreementStatus";
+import { buildVariantTitleLookup } from "@/lib/kitchen/kitchenMealNote";
+import { buildKitchenOrderItemDisplay, type VariantTitleLookup } from "@/lib/providers/kitchenOrderDisplay";
 import { addDaysISO, cutoffStatusForDate, osloNowISO, osloTodayISODate } from "@/lib/date/oslo";
 import { getCurrentWeekDates } from "@/lib/date/week";
 import {
@@ -129,23 +129,27 @@ function cutoffLabel(status: ReturnType<typeof cutoffStatusForDate>): string {
   return "Cutoff: fortid — låst for ansatte";
 }
 
-function buildDisplayLine(input: {
+/** Same display contract as KitchenOrderCard: `{qty} stk · {category · variant}`. */
+export function buildPilotLatestOrderDisplayLine(input: {
   quantity: number;
-  productName: string | null;
-  choiceKey: string | null;
-  itemTitle: string | null;
-}): string | null {
+  productNameSnapshot?: string | null;
+  choiceKey?: string | null;
+  itemKey?: string | null;
+  itemTitleSnapshot?: string | null;
+  variantLookup?: VariantTitleLookup;
+}): string {
   const qty = input.quantity > 0 ? input.quantity : 1;
-  const choiceKey = safeStr(input.choiceKey).toLowerCase();
-  const choiceLabel = choiceKey
-    ? displayLabelForMealTypeKey(normalizeMealTypeKey(choiceKey) || choiceKey)
-    : null;
-  const variant = safeStr(input.itemTitle) || safeStr(input.productName);
-  const parts: string[] = [`${qty} stk`];
-  if (choiceLabel) parts.push(choiceLabel);
-  if (variant && variant !== choiceLabel) parts.push(variant);
-  const line = parts.join(" · ");
-  return line.length ? line : null;
+  const display = buildKitchenOrderItemDisplay({
+    productNameSnapshot: input.productNameSnapshot,
+    quantity: qty,
+    choice: {
+      choiceKey: input.choiceKey,
+      itemKey: input.itemKey,
+      itemTitleSnapshot: input.itemTitleSnapshot,
+    },
+    variantLookup: input.variantLookup,
+  });
+  return `${display.quantity} stk · ${display.displayLine}`;
 }
 
 async function resolveAutoPilotScope(admin: SupabaseClient): Promise<{ companyId: string | null; providerId: string | null }> {
@@ -192,15 +196,25 @@ async function loadLatestOrderDisplay(
       .eq("order_id", id)
       .limit(5),
     userId && date
-      ? admin
-          .from("day_choices")
-          .select("choice_key, item_key, item_title_snapshot")
-          .eq("user_id", userId)
-          .eq("company_id", companyId)
-          .eq("date", date)
-          .maybeSingle()
+      ? (() => {
+          let q = admin
+            .from("day_choices")
+            .select("choice_key, item_key, item_title_snapshot")
+            .eq("user_id", userId)
+            .eq("company_id", companyId)
+            .eq("date", date);
+          if (locationId) q = q.eq("location_id", locationId);
+          return q.maybeSingle();
+        })()
       : Promise.resolve({ data: null }),
   ]);
+
+  let variantLookup: VariantTitleLookup = new Map();
+  try {
+    variantLookup = await buildVariantTitleLookup();
+  } catch {
+    /* CMS variant lookup optional — snapshot/item_key may still resolve */
+  }
 
   const profile = profileRes.data as { full_name?: string | null; email?: string | null } | null;
   const location = locationRes.data as { name?: string | null } | null;
@@ -212,11 +226,13 @@ async function loadLatestOrderDisplay(
   } | null;
 
   const firstItem = items[0] as { quantity?: number; product_name_snapshot?: string | null } | undefined;
-  const displayLine = buildDisplayLine({
+  const displayLine = buildPilotLatestOrderDisplayLine({
     quantity: Number(firstItem?.quantity ?? 1),
-    productName: firstItem?.product_name_snapshot ?? null,
+    productNameSnapshot: firstItem?.product_name_snapshot ?? null,
     choiceKey: choice?.choice_key ?? null,
-    itemTitle: choice?.item_title_snapshot ?? null,
+    itemKey: choice?.item_key ?? null,
+    itemTitleSnapshot: choice?.item_title_snapshot ?? null,
+    variantLookup,
   });
 
   const employeeName =
