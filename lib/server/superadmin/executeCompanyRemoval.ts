@@ -89,6 +89,7 @@ export async function executeCompanyRemoval(
   const dependencies = await loadCompanyDependencyCounts(admin, companyId);
   const eligibility = evaluateCompanyRemovalEligibility({
     companyName: company.name,
+    orgnr: company.orgnr,
     deletedAt: company.deleted_at,
     dependencies,
   });

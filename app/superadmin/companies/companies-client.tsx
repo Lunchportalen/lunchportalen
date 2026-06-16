@@ -418,34 +418,105 @@ function CompanyRowActions(props: {
   onArchive: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const el = btnRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const width = 176;
+    setPanelPos({
+      top: rect.bottom + 4,
+      left: Math.max(8, rect.right - width),
+    });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  const menu =
+    open && panelPos && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={panelRef}
+            className="sa-action-menu__panel sa-action-menu__panel--portal"
+            role="menu"
+            style={{ position: "fixed", top: panelPos.top, left: panelPos.left, zIndex: 70 }}
+          >
+            <button
+              type="button"
+              className="sa-action-menu__item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                props.onOpen();
+              }}
+            >
+              Åpne
+            </button>
+            <button
+              type="button"
+              className="sa-action-menu__item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                props.onAudit();
+              }}
+            >
+              Audit
+            </button>
+            <button
+              type="button"
+              className="sa-action-menu__item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                props.onPause();
+              }}
+            >
+              Pause
+            </button>
+            <button
+              type="button"
+              className="sa-action-menu__item sa-action-menu__item--danger"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                props.onArchive();
+              }}
+            >
+              Arkiver / fjern
+            </button>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div className="sa-action-menu" onClick={(e) => stop(e)}>
       <button
+        ref={btnRef}
         type="button"
         className="rounded-lg border bg-white px-2.5 py-1.5 text-xs font-semibold hover:bg-neutral-50 disabled:opacity-40"
         disabled={props.busy}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-haspopup="menu"
       >
         Handlinger ▾
       </button>
-      {open ? (
-        <div className="sa-action-menu__panel" role="menu">
-          <button type="button" className="sa-action-menu__item" onClick={() => { setOpen(false); props.onOpen(); }}>
-            Åpne
-          </button>
-          <button type="button" className="sa-action-menu__item" onClick={() => { setOpen(false); props.onAudit(); }}>
-            Audit
-          </button>
-          <button type="button" className="sa-action-menu__item" onClick={() => { setOpen(false); props.onPause(); }}>
-            Pause
-          </button>
-          <button type="button" className="sa-action-menu__item sa-action-menu__item--danger" onClick={() => { setOpen(false); props.onArchive(); }}>
-            Arkiver / fjern
-          </button>
-        </div>
-      ) : null}
+      {menu}
     </div>
   );
 }
@@ -535,6 +606,7 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [removalTarget, setRemovalTarget] = useState<CompanyRow | null>(null);
+  const [removalSuccess, setRemovalSuccess] = useState<string | null>(null);
   const [listRefreshKey, setListRefreshKey] = useState(0);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -1166,6 +1238,12 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
         </div>
       ) : null}
 
+      {removalSuccess ? (
+        <section className="sa-context-note mt-4 border-emerald-200 bg-emerald-50 text-emerald-900">
+          <div className="text-sm font-semibold">{removalSuccess}</div>
+        </section>
+      ) : null}
+
       {removalTarget ? (
         <CompanyRemovalDialog
           open={Boolean(removalTarget)}
@@ -1173,15 +1251,20 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
           companyName={removalTarget.name}
           orgnr={removalTarget.orgnr}
           onClose={() => setRemovalTarget(null)}
-          onDone={() => {
+          onDone={(result) => {
             setRemovalTarget(null);
+            setRemovalSuccess(
+              result.mode === "hard_delete"
+                ? "Firma er slettet permanent."
+                : "Firma er arkivert. Det vises ikke lenger i aktiv liste."
+            );
             setListRefreshKey((k) => k + 1);
           }}
         />
       ) : null}
 
       {/* Table */}
-      <section className="sa-table-surface mt-4">
+      <section className="sa-table-surface sa-table-surface--menus mt-4">
         <div className="border-b border-[rgb(var(--lp-border))] px-4 py-2.5 sm:px-5">
           <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Operativ firmaoversikt</div>
           <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Utvid rad for pipeline-detaljer. Handlinger via meny.</div>

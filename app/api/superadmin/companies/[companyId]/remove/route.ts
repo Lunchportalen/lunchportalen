@@ -74,6 +74,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const dependencies = await loadCompanyDependencyCounts(admin, companyId);
   const eligibility = evaluateCompanyRemovalEligibility({
     companyName: company.name,
+    orgnr: company.orgnr,
     deletedAt: company.deleted_at,
     dependencies,
   });
@@ -128,10 +129,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       : result.code === "HARD_DELETE_BLOCKED" || result.code === "ALREADY_ARCHIVED" ? 422
       : 500;
 
-    return jsonErr(auth.ctx.rid, result.message, status, {
-      code: result.code,
-      detail: { blockers: result.blockers ?? [] },
-    });
+    return jsonErr(auth.ctx.rid, result.message, status, result.code, { blockers: result.blockers ?? [] });
   }
 
   return jsonOk(auth.ctx.rid, { companyId: result.companyId, mode: result.mode });
