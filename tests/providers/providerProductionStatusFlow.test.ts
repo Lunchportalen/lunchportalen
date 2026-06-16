@@ -39,7 +39,7 @@ const PILOT = {
 
 const MIGRATION_ADVANCE = join(
   process.cwd(),
-  "supabase/migrations/20260717120000_lp_order_advance_status_provider_after_cutoff.sql",
+  "supabase/migrations/20260616110410_lp_order_advance_status_provider_after_cutoff.sql",
 );
 const BATCH_MIGRATION = join(
   process.cwd(),
