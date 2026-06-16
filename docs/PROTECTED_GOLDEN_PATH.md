@@ -18,9 +18,12 @@ The full chain from provider menu publish through employee order to provider ord
 6. Employee submits order through the normal order path
 7. Order is stored with correct `provider_id`, `company_id`, `location_id`, `user_id`, date, and choice/item identity
 8. Duplicate active order is not created (idempotent / safe update per contract)
-9. Provider sees order in `/leverandor/ordrer`
-10. Provider card shows company, location, employee name/email, category, variant, quantity
-11. Wrong provider cannot see the order
+10. Provider sees order in `/leverandor/ordrer`
+11. Provider card shows company, location, employee name/email, category, variant, quantity
+12. Provider can advance order: **Mottatt → I produksjon → Klar for levering → Levert**
+13. Employee cutoff after 08:00 Oslo does **not** block provider production status transitions
+14. Employee cutoff **still** blocks employee order changes after 08:00
+15. Wrong provider cannot see or update the order
 
 **No runtime changes without explicit protected-path approval.**
 
@@ -48,13 +51,59 @@ Breaking this path blocks commercial pilot execution. Governance, CI guards, and
 |-------|-----------------|
 | Company | Pettersen&Co |
 | Provider | Melhus Catering AS |
-| Employee | `thomas@pettersenco.no` |
+| Location | Hovedlokasjon |
+| Employee | Thomas Johansen · `thomas@pettersenco.no` |
 | Order date | `2026-06-16` |
 | Choice | `paasmurt` |
 | Variant | `laks-eggerore` / `Laks & Eggerøre` |
 | Display line | `Påsmurt · Laks & Eggerøre` |
+| Status flow (UI → DB) | Mottatt (`ACTIVE`/`LOCKED`) → I produksjon (`PREPARED`) → Klar for levering (`DISPATCHED`) → Levert (`DELIVERED`) |
 
 **Do not hardcode these IDs or emails in runtime (`app/`, `lib/` production paths).** Use only in tests, smoke scripts, and documentation.
+
+---
+
+## 3.1 Provider production status flow (LOCKED)
+
+Proven in production (June 2026). This extends the golden path **after** order visibility.
+
+### Protected behavior
+
+1. **Provider sees only own orders** — `loadKitchenOrders` filters by `provider_id`; enrichment is scoped to those order IDs.
+2. **Provider card shows** company, location, employee name/email, order line (`quantity · category · variant`), status pill, and primary action when `canAdvance`.
+3. **Provider status progression** (Norwegian UI / `public.order_status`):
+
+   | UI label | DB status | Action label |
+   |----------|-----------|--------------|
+   | Mottatt | `ACTIVE` / `LOCKED` | Start produksjon |
+   | I produksjon | `PREPARED` | Klar for levering |
+   | Klar for levering | `DISPATCHED` | Marker levert |
+   | Levert | `DELIVERED` | (done) |
+
+4. **Employee cutoff after 08:00 Oslo** must **not** block provider production advances — handled inside `lp_order_advance_status` via scoped `app.batch_derived_advance` GUC (not global trigger disable).
+5. **Employee cutoff** must **still** block employee order mutations after 08:00 (`tg_orders_cutoff_0800` unchanged for normal paths).
+6. **Provider scoping** — `lp_assert_provider_kitchen_access` + `hasProviderRole(..., provider_kitchen)` on server action; wrong provider cannot advance.
+7. **Order write-path and `lp_order_set` are out of scope** for provider status work — status changes use `lp_order_advance_status` only.
+8. **Status history** — `order_status_history` / `tg_order_status_history` must continue to record transitions (including batch-derived actor path).
+
+### Key files (read-only reference)
+
+| Layer | Files |
+|-------|-------|
+| UI | `components/providers/KitchenOrderCard.tsx`, `app/leverandor/ordrer/actions.ts` |
+| Labels / progression | `lib/providers/kitchenOrderStatus.ts` |
+| Loader + enrichment | `lib/providers/loadKitchenOrders.ts`, `lib/providers/providerOrderEnrichment.ts` |
+| RPC wrapper | `lib/admin/orderStatus.ts` → `lp_order_advance_status` |
+| DB | `supabase/migrations/*lp_order_advance_status*`, `*batch_order_status_sync*` (`orders_cutoff_0800`, `batch_derived_advance`) |
+
+### Regression tests
+
+- `tests/providers/providerProductionStatusFlow.test.ts` — full status chain + line preservation
+- `tests/providers/providerProductionCutoff.test.ts` — cutoff vs provider GUC
+- `tests/app/leverandor/ordrer.test.tsx` — card + action labels
+- `tests/governance/protected-golden-path.test.ts` — source locks
+
+**Follow-up:** Full browser e2e replay of Pettersen pilot status clicks is optional; contract tests above are required on every protected-path touch.
 
 ---
 
@@ -70,6 +119,10 @@ Breaking this path blocks commercial pilot execution. Governance, CI guards, and
 | Active agreement gate | `lib/agreement/**`, `lib/orders/companyOrderEligibility.ts`, `lib/orders/orderWriteGuard.ts` | `tests/rls/domainHardening.agreementOrders.test.ts` | Same | Guard + governance tests |
 | Cutoff | `lib/cutoff.ts`, `lib/date/oslo.ts`, order routes | Order route tests (cutoff branches) | Same | Governance source-lock tests |
 | Provider order loader | `lib/providers/loadKitchenOrders.ts` | `tests/providers/kitchenOrderDisplay.test.ts` (loader guard) | Same | Guard |
+| Provider order enrichment | `lib/providers/providerOrderEnrichment.ts` | `tests/providers/providerProductionStatusFlow.test.ts` | Same | Guard |
+| Provider status RPC wrapper | `lib/admin/orderStatus.ts` | `tests/providers/providerProductionCutoff.test.ts` | Same | Guard |
+| Provider status labels | `lib/providers/kitchenOrderStatus.ts` | `tests/providers/providerProductionStatusFlow.test.ts` | Same | Guard |
+| Provider production cutoff | `supabase/migrations/*lp_order_advance_status*` | `tests/providers/providerProductionCutoff.test.ts` | Same | Guard + migration gate |
 | Provider order card | `components/providers/KitchenOrderCard.tsx`, `lib/providers/kitchenOrderDisplay.ts` | `tests/app/leverandor/ordrer.test.tsx`, `kitchenOrderDisplay.test.ts` | Same | Guard |
 | Provider page | `app/leverandor/ordrer/**` | `tests/app/leverandor/ordrer.test.tsx` | Same | Guard |
 | Auth/profile for week/order | `lib/auth/getAuthContext.ts`, `lib/http/routeGuard.ts` | `tests/api/week-profile-lookup.test.ts` | Same | Guard |
@@ -88,12 +141,13 @@ Prefix / path patterns enforced by CI:
 - `lib/menu/providerMenuScope.ts`
 - `lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts`, `syncMenuServiceDayItems.ts`, `resolveMenuDayProvider.ts`, `menuDaySyncShared.ts`
 - `lib/cms/menuDay.ts`, `lib/cms/menuDayProviderFilter.ts`
-- `lib/providers/loadKitchenOrders.ts`, `kitchenOrderDisplay.ts`
+- `lib/providers/loadKitchenOrders.ts`, `providerOrderEnrichment.ts`, `kitchenOrderDisplay.ts`, `kitchenOrderStatus.ts`
+- `lib/admin/orderStatus.ts`
 - `components/providers/KitchenOrderCard.tsx`
 - `app/leverandor/ordrer/**`
 - `lib/agreement/**`, `lib/cutoff.ts`, `lib/date/oslo.ts`
 - `lib/auth/getAuthContext.ts`, `lib/http/routeGuard.ts`, `lib/supabase/ensureRpc.ts`
-- Active files: `supabase/migrations/<timestamp>_*.sql`
+- Active files: `supabase/migrations/<timestamp>_*.sql` (especially names containing `lp_order_advance_status`, `orders_cutoff`, `batch_derived_advance`, `order_status_history`)
 
 Full list: `scripts/ci/guard-protected-golden-path.mjs` → `PROTECTED_GOLDEN_PATH_PREFIXES`.
 
@@ -108,6 +162,7 @@ Full list: `scripts/ci/guard-protected-golden-path.mjs` → `PROTECTED_GOLDEN_PA
 - Provider/company/location scoping rules
 - Menu materialization provider binding
 - Provider order read model tenant filter
+- Provider production status flow (`lp_order_advance_status`, kitchen card, cutoff GUC path)
 - Cutoff behavior
 - Silent fallback to wrong provider (especially Melhus default for other providers)
 - Hardcoded Pettersen/Melhus logic in runtime
@@ -142,6 +197,10 @@ Minimum regression coverage:
 | 10 | Cutoff preserved | `tests/governance/protected-golden-path.test.ts` |
 | 11 | No Melhus fallback for other providers | `tests/lib/menu-publish/resolveMenuDayProvider.test.ts` |
 | 12 | No hardcoded Pettersen/Melhus in runtime | `tests/governance/protected-golden-path.test.ts` |
+| 13 | Provider production GUC inside `lp_order_advance_status` | `tests/providers/providerProductionCutoff.test.ts` |
+| 14 | Mottatt → I produksjon → Klar for levering → Levert | `tests/providers/providerProductionStatusFlow.test.ts` |
+| 15 | Order line preserved across status transitions | `tests/providers/providerProductionStatusFlow.test.ts` |
+| 16 | Provider scoping + employee cutoff preserved | `tests/providers/providerProductionCutoff.test.ts`, `providerProductionStatusFlow.test.ts` |
 
 **Follow-up:** Full staging e2e for Pettersen pilot replay is documented in smoke scripts (`scripts/smoke/_prove-first-order.mjs`) — not required on every PR unless write-path changes.
 

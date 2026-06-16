@@ -17,7 +17,12 @@ assert.equal(
   isProtectedGoldenPathFile("supabase/migrations/20260611120000_lp_order_set_variant_itemkey.sql"),
   true,
 );
+assert.equal(isProtectedGoldenPathFile("lib/providers/loadKitchenOrders.ts"), true);
+assert.equal(isProtectedGoldenPathFile("lib/providers/providerOrderEnrichment.ts"), true);
+assert.equal(isProtectedGoldenPathFile("lib/providers/kitchenOrderStatus.ts"), true);
+assert.equal(isProtectedGoldenPathFile("lib/admin/orderStatus.ts"), true);
 assert.equal(isProtectedGoldenPathFile("components/week/WeekHero.tsx"), false);
+assert.equal(isProtectedGoldenPathFile("components/providers/CustomerList.tsx"), false);
 
 for (const exempt of PROTECTED_GUARD_EXEMPT_PREFIXES) {
   assert.equal(isProtectedGoldenPathFile(exempt), false, `exempt: ${exempt}`);
@@ -25,6 +30,7 @@ for (const exempt of PROTECTED_GUARD_EXEMPT_PREFIXES) {
 
 assert.equal(isProtectedGoldenPathTestFile("tests/governance/protected-golden-path.test.ts"), true);
 assert.equal(isProtectedGoldenPathTestFile("tests/api/orders-idempotency.test.ts"), true);
+assert.equal(isProtectedGoldenPathTestFile("tests/providers/providerProductionStatusFlow.test.ts"), true);
 assert.equal(isProtectedGoldenPathTestFile("tests/components/week-category-card.test.tsx"), false);
 
 const passNoTouch = evaluateProtectedPathGuard({
