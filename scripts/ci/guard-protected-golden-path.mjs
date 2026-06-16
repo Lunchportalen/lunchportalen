@@ -55,6 +55,7 @@ export const PROTECTED_GOLDEN_PATH_TEST_PREFIXES = [
   "tests/api/orders-idempotency.test.ts",
   "tests/api/week-profile-lookup.test.ts",
   "tests/providers/kitchenOrderDisplay.test.ts",
+  "tests/providers/providerProductionCutoff.test.ts",
   "tests/app/leverandor/ordrer.test.tsx",
   "tests/lib/menu-publish/resolveMenuDayProvider.test.ts",
   "tests/lib/menu-publish/syncMenuServiceDaysProviderScope.test.ts",
