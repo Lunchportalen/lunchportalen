@@ -36,9 +36,9 @@ export default async function SuperadminSystemPage() {
         meta={
           <SuperadminCommandList
             items={[
-              { label: "Driftsoppsummering", href: "/superadmin/system/operations", description: "Operativ status og SLO" },
+              { label: "Operasjoner", href: "/superadmin/operations", description: "Dagens leveranser" },
               { label: "Flytdiagnostikk", href: "/superadmin/system#flytdiagnostikk", description: "OK / WARN / FAIL" },
-              { label: "Kjøkken", href: "/kitchen", description: "Produksjonssjekk (superadmin-tilgang)" },
+              { label: "Revisjon", href: "/superadmin/audit", description: "Auditlogg og sporbarhet" },
             ]}
           />
         }

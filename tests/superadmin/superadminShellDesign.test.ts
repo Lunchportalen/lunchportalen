@@ -21,7 +21,7 @@ describe("Superadmin shell design system", () => {
     expect(layout).toContain('auth.role !== "superadmin"');
   });
 
-  it("ControlTowerNav har påkrevde lenker inkl. Pilotkontroll", () => {
+  it("ControlTowerNav har påkrevde lenker og ekskluderer Backoffice/Kjøkken", () => {
     const nav = readSource("app/superadmin/_components/ControlTowerNav.tsx");
     for (const href of [
       "/superadmin",
@@ -31,10 +31,54 @@ describe("Superadmin shell design system", () => {
       "/superadmin/system",
       "/superadmin/pilot-control",
       "/superadmin/audit",
-      "/kitchen",
+      "/superadmin/tripletex",
+      "/superadmin/control-tower",
+      "/superadmin/operations",
+      "/superadmin/global",
     ]) {
       expect(nav).toContain(href);
     }
+    expect(nav).not.toContain('label: "Kjøkken"');
+    expect(nav).not.toContain('label: "Backoffice"');
+    expect(nav).not.toContain("/kitchen");
+    expect(nav).not.toContain("/backoffice/content");
+    expect(nav).toContain("Umbraco");
+  });
+
+  it("SuperadminControlCenter ekskluderer Backoffice og Kjøkken", () => {
+    const home = readSource("components/superadmin/SuperadminControlCenter.tsx");
+    expect(home).not.toContain("/backoffice/content");
+    expect(home).not.toContain('href="/kitchen"');
+    expect(home).not.toContain("Gå til kjøkken");
+  });
+
+  it("Priority 3-sider bruker SuperadminPageShell og SuperadminHero", () => {
+    for (const rel of [
+      "app/superadmin/audit/page.tsx",
+      "app/superadmin/tripletex/page.tsx",
+      "app/superadmin/control-tower/page.tsx",
+      "app/superadmin/operations/page.tsx",
+      "app/superadmin/global/page.tsx",
+    ]) {
+      const src = readSource(rel);
+      expect(src).toContain("SuperadminPageShell");
+      expect(src).toContain("SuperadminHero");
+      expect(src).not.toContain("lp_order_set");
+      expect(src).not.toContain("lp_order_advance_status");
+    }
+  });
+
+  it("Audit tabell bruker bred HTML-table med break-all (ikke vertikal grid-ID)", () => {
+    const audit = readSource("app/superadmin/audit/audit-client.tsx");
+    expect(audit).toContain("<table");
+    expect(audit).toContain("break-all");
+    expect(audit).not.toContain("grid-cols-[180px_220px_220px_1fr_90px]");
+  });
+
+  it("Operations har trygg error state (ikke generisk firms error)", () => {
+    const err = readSource("app/superadmin/operations/error.tsx");
+    expect(err).toContain("SuperadminEmptyState");
+    expect(err).not.toContain("Noe gikk galt");
   });
 
   it("Priority 2-sider bruker SuperadminPageShell og SuperadminHero", () => {

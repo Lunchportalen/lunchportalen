@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, extname, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -28,6 +28,7 @@ function walk(dir: string, out: string[] = []): string[] {
 function collectCodeRpcs(): Set<string> {
   const refs = new Set<string>();
   for (const file of [...walk(join(ROOT, "app")), ...walk(join(ROOT, "lib"))]) {
+    if (!existsSync(file) || file.includes("__lint_probe__")) continue;
     const text = readFileSync(file, "utf8");
     for (const re of [RPC_RE, DYNAMIC_RPC_RE]) {
       re.lastIndex = 0;

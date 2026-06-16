@@ -318,7 +318,7 @@ export default function GlobalControlTowerClient() {
 
       {loadErr ? <p className="text-sm text-rose-700">{loadErr}</p> : null}
 
-      <section className="rounded-lg border border-black/10 bg-white/70 p-4">
+      <section className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold text-neutral-900">Global Intelligence</h2>
@@ -421,7 +421,7 @@ export default function GlobalControlTowerClient() {
         ) : null}
       </section>
 
-      <section className="rounded-lg border border-black/10 bg-white/70 p-4">
+      <section className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold text-neutral-900">Revenue Autopilot</h2>
@@ -539,7 +539,7 @@ export default function GlobalControlTowerClient() {
         ) : null}
       </section>
 
-      <section className="rounded-lg border border-black/10 bg-white/70 p-4">
+      <section className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold text-neutral-900">Multi-channel scaling</h2>
@@ -646,7 +646,7 @@ export default function GlobalControlTowerClient() {
         ) : null}
       </section>
 
-      <section className="rounded-lg border border-black/10 bg-white/70 p-4">
+      <section className="sa-system-block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold text-neutral-900">Global Expansion</h2>
@@ -757,7 +757,7 @@ export default function GlobalControlTowerClient() {
         </p>
       ) : null}
 
-      <section className="rounded-lg border border-black/10 bg-white/70 p-4">
+      <section className="sa-system-block">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold text-neutral-900">Markeder</h2>
           <DataTrustBadge kind="REAL" />
@@ -789,7 +789,7 @@ export default function GlobalControlTowerClient() {
       </section>
 
       {lastRun ? (
-        <section className="rounded-lg border border-black/10 bg-white/70 p-4">
+        <section className="sa-system-block">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold text-neutral-900">Siste kjøring</h2>
             <DataTrustBadge kind="REAL" />

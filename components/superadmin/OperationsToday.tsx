@@ -171,8 +171,7 @@ export default async function OperationsToday() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-2 rounded-2xl border bg-surface p-4 md:flex-row md:items-center md:justify-between">
+      <div className="sa-system-block flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="text-sm text-muted">Dagens produksjon</div>
           <div className="mt-1 text-xl font-semibold">{todayISO} • {totalPortions} porsjoner</div>
@@ -193,12 +192,12 @@ export default async function OperationsToday() {
       {/* Body */}
       <div className="space-y-3">
         {groups.length === 0 ? (
-          <div className="rounded-2xl border bg-surface p-6 text-sm text-muted">
+          <div className="sa-system-block text-sm text-[rgb(var(--lp-muted))]">
             Ingen leveranser funnet for i dag.
           </div>
         ) : (
           groups.map((c) => (
-            <div key={c.companyId} className="rounded-2xl border bg-surface p-4">
+            <div key={c.companyId} className="sa-system-block">
               <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                 <div className="text-lg font-semibold">{c.companyName}</div>
                 <div className="text-sm text-muted">Totalt firma: {c.portions} porsjoner</div>
@@ -208,7 +207,7 @@ export default async function OperationsToday() {
                 {c.locations.map((l) => (
                   <div
                     key={`${c.companyId}:${l.locationId ?? "null"}`}
-                    className="rounded-xl border bg-white p-3"
+                    className="mt-3 border-t border-[rgb(var(--lp-border))] pt-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="font-medium">{l.locationName}</div>
@@ -225,10 +224,7 @@ export default async function OperationsToday() {
                         const worst = worstSignal(sigs);
 
                         return (
-                          <div
-                            key={w.windowLabel}
-                            className="rounded-xl bg-bg p-3"
-                          >
+                          <div key={w.windowLabel} className="mt-2 border-t border-[rgb(var(--lp-border))] pt-2">
                             <div className="flex items-center justify-between gap-3">
                               <div className="text-sm font-semibold">{w.windowLabel}</div>
                               <div className="text-sm font-semibold">{w.portions} porsjoner</div>
