@@ -31,9 +31,47 @@ describe("Superadmin shell design system", () => {
       "/superadmin/system",
       "/superadmin/pilot-control",
       "/superadmin/audit",
+      "/kitchen",
     ]) {
       expect(nav).toContain(href);
     }
+  });
+
+  it("Priority 2-sider bruker SuperadminPageShell og SuperadminHero", () => {
+    for (const rel of [
+      "app/superadmin/companies/page.tsx",
+      "app/superadmin/agreements/page.tsx",
+      "app/superadmin/users/page.tsx",
+      "app/superadmin/system/page.tsx",
+    ]) {
+      const src = readSource(rel);
+      expect(src).toContain("SuperadminPageShell");
+      expect(src).toContain("SuperadminHero");
+      expect(src).not.toContain("lp_order_set");
+      expect(src).not.toContain("lp_order_advance_status");
+    }
+  });
+
+  it("Priority 2 klienter introduserer ikke order write-path", () => {
+    for (const rel of [
+      "app/superadmin/companies/companies-client.tsx",
+      "app/superadmin/agreements/agreements-client.tsx",
+      "components/superadmin/SuperadminUsersClient.tsx",
+      "app/superadmin/system/SystemClient.tsx",
+    ]) {
+      const src = readSource(rel);
+      expect(src).not.toContain("lp_order_set");
+      expect(src).not.toContain("lp_order_advance_status");
+    }
+  });
+
+  it("shell har table surface og empty state primitives", () => {
+    const shell = readSource("components/superadmin/shell/SuperadminShell.tsx");
+    expect(shell).toContain("SuperadminTableSurface");
+    expect(shell).toContain("SuperadminEmptyState");
+    const css = readSource("app/styles/ds/superadmin-shell.css");
+    expect(css).toContain(".sa-table-surface");
+    expect(css).toContain(".sa-empty-state");
   });
 
   it("shell primitives er presentational uten mutation", () => {

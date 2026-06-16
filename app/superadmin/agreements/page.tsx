@@ -16,6 +16,12 @@ import {
   deriveSuperadminAgreementListRowPresentation,
   indexLedgerAgreementsByCompanyId,
 } from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
+import {
+  SuperadminHero,
+  SuperadminPageShell,
+  SuperadminSection,
+  SuperadminStatusRail,
+} from "@/components/superadmin/shell/SuperadminShell";
 
 function safeStr(v: unknown, fallback = "") {
   const s = String(v ?? "").trim();
@@ -149,18 +155,29 @@ export default async function SuperadminAgreementsPage() {
   }
 
   const initial = await fetchAgreements();
+  const pendingCount = initial.ok ? initial.agreements.length : 0;
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-10 py-8">
-      <h1 className="lp-h1">Avtaler</h1>
-      <p className="mt-2 text-sm lp-muted">
-        Operativ oversikt fra <code className="rounded bg-white/80 px-1 text-xs">agreements</code> og{" "}
-        <code className="rounded bg-white/80 px-1 text-xs">companies</code>. Standard visning: venter på godkjenning.
-      </p>
+    <SuperadminPageShell>
+      <SuperadminHero
+        variant="command"
+        eyebrow="Superadmin"
+        title="Avtaler"
+        lead="Operativ oversikt over avtaler som krever oppfølging, aktive avtaler og avsluttede."
+      />
 
-      <div className="mt-6">
+      <SuperadminStatusRail
+        ariaLabel="Avtalestatus"
+        items={[
+          { label: "Venter på godkjenning", value: pendingCount, numeric: true },
+          { label: "Standardvisning", value: "PENDING" },
+          { label: "Datakilde", value: initial.ok ? "OK" : "Feil" },
+        ]}
+      />
+
+      <SuperadminSection title="Avtaleliste" lead="Filtrer etter status, søk på firma eller avtale-ID, og åpne detaljer for oppfølging." flat>
         <AgreementsClient initial={initial} />
-      </div>
-    </div>
+      </SuperadminSection>
+    </SuperadminPageShell>
   );
 }

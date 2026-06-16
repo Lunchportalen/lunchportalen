@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
+import {
+  SuperadminContextNote,
+  SuperadminEmptyState,
+  SuperadminTableSurface,
+} from "@/components/superadmin/shell/SuperadminShell";
+
 type AgreementRow = {
   id: string;
   company_id: string;
@@ -151,53 +157,51 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl bg-amber-50 text-amber-950 ring-1 ring-amber-200/80 px-4 py-3 text-sm space-y-1">
-        <p>Superadmin: godkjenn eller avslå PENDING, pause ACTIVE — alt server-side på <span className="font-mono">public.agreements</span>.</p>
-        <p className="text-xs text-amber-950/90">
-          Avtalestatus er adskilt fra <span className="font-mono">companies.status</span>. Ledger PAUSED har ingen definert resume-RPC i migrasjonene.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <SuperadminContextNote>
+        Superadmin kan godkjenne eller avslå ventende avtaler og pause aktive avtaler — all logikk kjøres server-side.
+        Avtalestatus er adskilt fra firmastatus.
+      </SuperadminContextNote>
 
-      <section className="lp-card lp-card--elevated">
-        <div className="lp-card-pad space-y-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="text-sm font-semibold text-neutral-900">Avtaler til gjennomgang</div>
-              <div className="mt-1 text-sm lp-muted">{isPending ? "Oppdaterer..." : `${filtered.length} avtaler vises`}</div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Søk firma eller avtale"
-                className="h-10 w-[240px] max-w-full rounded-xl px-3 text-sm ring-1 ring-black/10 bg-white/70"
-              />
-
-              <select
-                value={status}
-                onChange={(e) => {
-                  const v = (e.target.value as StatusFilter) || "PENDING";
-                  setStatus(v);
-                }}
-                className="h-10 rounded-xl px-3 text-sm ring-1 ring-black/10 bg-white/70"
-              >
-                <option value="PENDING">Venter</option>
-                <option value="ACTIVE">Aktiv</option>
-                <option value="REJECTED">Avslått / avsluttet</option>
-                <option value="PAUSED">Pause</option>
-                <option value="ALL">Alle</option>
-              </select>
-
-              <button type="button" onClick={refresh} disabled={isPending} className="lp-btn lp-btn--secondary">
-                Oppdater
-              </button>
-            </div>
+      <SuperadminTableSurface>
+        <div className="sa-filter-bar flex-col lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Filter</div>
+            <div className="mt-0.5 text-sm text-[rgb(var(--lp-muted))]">{isPending ? "Oppdaterer..." : `${filtered.length} avtaler vises`}</div>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Søk firma eller avtale"
+              className="h-10 w-[240px] max-w-full rounded-xl px-3 text-sm"
+            />
+
+            <select
+              value={status}
+              onChange={(e) => {
+                const v = (e.target.value as StatusFilter) || "PENDING";
+                setStatus(v);
+              }}
+              className="h-10 rounded-xl px-3 text-sm"
+            >
+              <option value="PENDING">Venter</option>
+              <option value="ACTIVE">Aktiv</option>
+              <option value="REJECTED">Avslått / avsluttet</option>
+              <option value="PAUSED">Pause</option>
+              <option value="ALL">Alle</option>
+            </select>
+
+            <button type="button" onClick={refresh} disabled={isPending} className="lp-btn lp-btn--secondary">
+              Oppdater
+            </button>
+          </div>
+        </div>
+
+        <div className="sa-table-surface__pad">
           {msg ? (
-            <div className="rounded-2xl bg-rose-50 text-rose-900 ring-1 ring-rose-200 p-3 text-sm">{msg}</div>
+            <div className="mb-4 rounded-xl bg-rose-50 text-rose-900 ring-1 ring-rose-200 p-3 text-sm">{msg}</div>
           ) : null}
 
           <div className="overflow-x-auto max-w-full">
@@ -277,8 +281,8 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
 
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-6 text-sm lp-muted">
-                      Ingen treff.
+                    <td colSpan={11}>
+                      <SuperadminEmptyState>Ingen treff.</SuperadminEmptyState>
                     </td>
                   </tr>
                 ) : null}
@@ -286,7 +290,7 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
             </table>
           </div>
         </div>
-      </section>
+      </SuperadminTableSurface>
     </div>
   );
 }

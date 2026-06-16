@@ -6,7 +6,6 @@ export const revalidate = 0;
 import "server-only";
 
 import React from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import CompaniesClient from "./companies-client";
@@ -15,6 +14,12 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getRoleForUser } from "@/lib/auth/getRoleForUser";
 import { computeRole, hasRole, type Role } from "@/lib/auth/roles";
 import { getSuperadminCompaniesCmsCopy } from "@/lib/cms/backoffice/getSuperadminCompaniesContent";
+import {
+  SuperadminCommandList,
+  SuperadminHero,
+  SuperadminPageShell,
+  SuperadminSection,
+} from "@/components/superadmin/shell/SuperadminShell";
 
 /* =========================================================
    Superadmin Companies Page
@@ -51,39 +56,27 @@ export default async function SuperadminCompaniesPage() {
   const intro = cms?.intro ?? "Administrer firma, status og avtaler uten avbrudd.";
 
   return (
-    <div className="lp-select-text mx-auto max-w-6xl px-4 py-10">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Superadmin</div>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{title}</h1>
-          {intro ? <p className="mt-2 text-sm text-[rgb(var(--lp-muted))]">{intro}</p> : null}
-        </div>
+    <SuperadminPageShell>
+      <SuperadminHero
+        variant="command"
+        eyebrow="Superadmin"
+        title={title}
+        lead={intro}
+        meta={
+          <SuperadminCommandList
+            items={[
+              { label: "Revisjon", href: "/superadmin/audit", description: "Auditlogg og sporbarhet" },
+              { label: "Systemhelse", href: "/superadmin/system", description: "Flytsjekk og drift" },
+            ]}
+          />
+        }
+      />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/superadmin"
-            className="rounded-2xl border bg-white px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
-          >
-            Dashboard
-          </Link>
-
-          <Link
-            href="/superadmin/audit"
-            className="rounded-2xl border bg-white px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
-          >
-            Audit
-          </Link>
-
-          <Link
-            href="/superadmin/system"
-            className="rounded-2xl border bg-white px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
-          >
-            System
-          </Link>
-        </div>
-      </header>
-
-      <div className="mt-8">
+      <SuperadminSection
+        title="Operativ firmaoversikt"
+        lead="Søk, filtrer og åpne firma for avtale, status, ansatte og audit."
+        flat
+      >
         <CompaniesClient
           cmsCopy={{
             searchPlaceholder: cms?.searchPlaceholder ?? null,
@@ -91,7 +84,7 @@ export default async function SuperadminCompaniesPage() {
             emptyStateText: cms?.emptyStateText ?? null,
           }}
         />
-      </div>
-    </div>
+      </SuperadminSection>
+    </SuperadminPageShell>
   );
 }

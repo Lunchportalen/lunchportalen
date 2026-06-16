@@ -198,3 +198,15 @@ export function SuperadminAsideRail({
     </aside>
   );
 }
+
+export function SuperadminTableSurface({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`sa-table-surface ${className}`.trim()}>{children}</div>;
+}
+
+export function SuperadminEmptyState({ children }: { children: ReactNode }) {
+  return <div className="sa-empty-state">{children}</div>;
+}
+
+export function SuperadminContextNote({ children }: { children: ReactNode }) {
+  return <div className="sa-context-note">{children}</div>;
+}
