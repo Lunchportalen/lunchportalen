@@ -66,19 +66,74 @@
   max-width: none;
 }
 
+/* Superadmin workspace — flat full-width shell (no outer card capsule) */
+.lp-app-shell--wide {
+  background: rgb(var(--lp-surface));
+  padding: 0;
+}
+
+.lp-app-shell--wide .lp-app-shell__workspace {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  max-width: none;
+  margin-inline: auto;
+  padding: var(--lp-shell-pad-header) 1rem 2.5rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .lp-app-shell--wide .lp-app-shell__workspace {
+    padding-inline: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lp-app-shell--wide .lp-app-shell__workspace {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 1.25rem;
+    padding-inline: 1.5rem;
+  }
+}
+
+.lp-app-shell--wide .lp-app-shell__frame {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  padding: 0;
+}
+
+.lp-app-shell--wide .lp-app-shell__sidebar {
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 0.92);
+  padding: 0.75rem;
+  outline: none;
+  border: 1px solid rgb(0 0 0 / 0.06);
+  box-shadow: none;
+}
+
+@media (min-width: 1024px) {
+  .lp-app-shell--wide .lp-app-shell__sidebar {
+    position: sticky;
+    top: 1.25rem;
+    align-self: start;
+  }
+}
+
 .lp-app-shell--wide .lp-app-shell__main {
-  padding: 0.875rem;
+  min-width: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  outline: none;
 }
 
 .lp-app-shell--wide .sa-page {
   --sa-max-width: none;
   max-width: none;
-}
-
-@media (min-width: 640px) {
-  .lp-app-shell--wide .lp-app-shell__main {
-    padding: 1.125rem 1.25rem;
-  }
+  width: 100%;
 }
 
 .lp-app-shell__frame {
