@@ -420,6 +420,10 @@ function stop(e: React.SyntheticEvent) {
   e.stopPropagation();
 }
 
+function providerDetailHref(id: string) {
+  return `/superadmin/companies/${encodeURIComponent(id)}`;
+}
+
 function CompanyRowActions(props: {
   row: CompanyRow;
   busy: boolean;
@@ -475,7 +479,7 @@ function CompanyRowActions(props: {
                 props.onOpen();
               }}
             >
-              Åpne
+              {props.isProvider ? "Åpne leverandør" : "Åpne"}
             </button>
             <button
               type="button"
@@ -740,6 +744,10 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
   const canNext = pages ? page < pages : rows.length === limit;
 
   const visibleRows = useMemo(() => (rows ?? []).filter(isDefined).filter((r) => safeStr(r.id).length > 0), [rows]);
+
+  function openProviderDetail(providerId: string) {
+    router.push(providerDetailHref(providerId));
+  }
 
   function openConfirm(row: CompanyRow, next: CompanyStatus) {
     confirmPayload.current = { id: row.id, name: row.name, next };
@@ -1350,9 +1358,8 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                         <td>
                           <div className="font-semibold text-neutral-900">{c.name}</div>
                           <Link
-                            href={`/superadmin/companies/${encodeURIComponent(c.id)}`}
+                            href={providerDetailHref(c.id)}
                             className="mt-0.5 inline-block text-xs font-semibold text-neutral-600 hover:underline"
-                            onClick={(e) => stop(e as any)}
                           >
                             {isProvider ? "Åpne leverandør" : "Åpne firmaside"}
                           </Link>
@@ -1369,7 +1376,7 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                             row={c}
                             busy={busy}
                             isProvider={isProvider}
-                            onOpen={() => (isProvider ? router.push(`/superadmin/companies/${encodeURIComponent(c.id)}`) : openDetail(c))}
+                            onOpen={() => (isProvider ? openProviderDetail(c.id) : openDetail(c))}
                             onAudit={() => router.push(`/superadmin/audit?entity_id=${encodeURIComponent(c.id)}`)}
                             onPause={() => openConfirm(c, "paused")}
                             onArchive={() => setRemovalTarget(c)}
@@ -1387,9 +1394,8 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                                       {customersCount} kunder · {activeAgreementsCount} aktive avtaler
                                     </span>
                                     <Link
-                                      href={`/superadmin/companies/${encodeURIComponent(c.id)}`}
+                                      href={providerDetailHref(c.id)}
                                       className="font-semibold text-neutral-800 hover:underline"
-                                      onClick={(e) => stop(e as any)}
                                     >
                                       Åpne kundeliste →
                                     </Link>

@@ -86,8 +86,8 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function isUuid(v: unknown) {
-  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+function isUuidLike(v: unknown) {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
     safeStr(v)
   );
 }
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   const params = await Promise.resolve(ctx.params as any);
   const companyId = safeStr(params?.companyId);
-  if (!isUuid(companyId)) return jsonErr(rid, "Ugyldig firma.", 400, "BAD_INPUT");
+  if (!isUuidLike(companyId)) return jsonErr(rid, "Ugyldig firma.", 400, "BAD_INPUT");
 
   try {
     const admin = supabaseAdmin();
