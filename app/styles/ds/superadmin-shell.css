@@ -755,3 +755,16 @@ a.sa-metric-row__cell:focus-visible {
   color: rgb(159 18 57);
 }
 
+.sa-action-menu__panel--portal {
+  z-index: 70;
+}
+
+.sa-table-surface--menus {
+  overflow: visible;
+}
+
+.sa-table-surface--menus .sa-enterprise-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+

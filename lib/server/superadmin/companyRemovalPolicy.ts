@@ -91,13 +91,17 @@ export async function loadCompanyDependencyCounts(
 
 export function evaluateCompanyRemovalEligibility(input: {
   companyName: string | null;
+  orgnr: string | null;
   deletedAt: string | null;
   dependencies: CompanyDependencyCounts;
 }): CompanyRemovalEligibility {
   const protectedPilot = isProtectedPilotCompany(input.companyName);
   const alreadyArchived = Boolean(safeStr(input.deletedAt));
+  const hasOrgnr = Boolean(safeStr(input.orgnr));
   const d = input.dependencies;
   const blockers: string[] = [];
+
+  if (!hasOrgnr) blockers.push("Firma mangler org.nr — arkivering krever org.nr.");
 
   if (protectedPilot) {
     blockers.push("Beskyttet pilotfirma kan ikke slettes permanent.");
@@ -127,7 +131,7 @@ export function evaluateCompanyRemovalEligibility(input: {
     alreadyArchived,
     dependencies: d,
     blockers,
-    canArchive: !alreadyArchived,
+    canArchive: !alreadyArchived && hasOrgnr,
     canHardDelete: !hasHardDeleteBlockers && !alreadyArchived,
   };
 }
