@@ -177,7 +177,7 @@ function buildHardDeleteCleanup(d: CompanyDependencyCounts): string[] {
   if (d.dayChoices > 0) cleanup.push("Meny-/lunsjvalg uten ordre");
   if (d.menuServiceDays > 0) cleanup.push("Menydager uten ordre");
   if (d.auditEvents > 0) cleanup.push("Eksisterende audit-rader (ny pre-delete audit skrives)");
-  cleanup.push("Invitasjoner, memberships og pipeline-rader");
+  cleanup.push("Invitasjoner, legacy- og identitetsmedlemskap, pipeline og stående bestillinger uten ordre");
   return cleanup;
 }
 

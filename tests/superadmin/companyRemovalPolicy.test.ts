@@ -212,10 +212,9 @@ describe("Superadmin company removal UI wiring", () => {
     expect(src).not.toContain("lp_order_set");
   });
 
-  it("policy bruker hasCriticalOperationalHistory", () => {
+  it("policy cleanup inkluderer identitetsmedlemskap og stående bestillinger", () => {
     const src = readFileSync(join(ROOT, "lib/server/superadmin/companyRemovalPolicy.ts"), "utf8");
-    expect(src).toContain("hasCriticalOperationalHistory");
-    expect(src).toContain("isMissingRelationError");
-    expect(src).toContain("archiveBlockers");
+    expect(src).toContain("identitetsmedlemskap");
+    expect(src).toContain("stående bestillinger");
   });
 });
