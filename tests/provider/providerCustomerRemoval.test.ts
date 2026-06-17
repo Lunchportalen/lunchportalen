@@ -196,7 +196,7 @@ describe("provider customer removal wiring", () => {
     const route = readFileSync(join(ROOT, "app/api/provider/customers/[companyId]/remove/route.ts"), "utf8");
     expect(route).toContain("getProviderCustomerRemovalEligibility");
     expect(route).toContain("executeProviderCustomerRemoval");
-    expect(route).toContain("hasProviderRole");
+    expect(route).toContain("authorizeProviderCustomerAdmin");
     expect(route).not.toContain("lp_order_set");
     expect(route).not.toContain("lp_order_advance_status");
   });
