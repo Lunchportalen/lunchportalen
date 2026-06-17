@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { AuthenticatedShellAccount } from "@/components/auth/AuthenticatedShellAccount";
+
 const PRIMARY_NAV = [
   { label: "Kontrollsenter", href: "/superadmin" },
   { label: "Firma", href: "/superadmin/companies" },
@@ -35,11 +37,16 @@ function navClass(active: boolean, compact = false): string {
   ].join(" ");
 }
 
-export default function ControlTowerNav() {
+type ControlTowerNavProps = {
+  userEmail?: string | null;
+  roleLabel?: string;
+};
+
+export default function ControlTowerNav({ userEmail = null, roleLabel = "Superadmin" }: ControlTowerNavProps) {
   const path = usePathname();
 
   return (
-    <>
+    <div className="flex min-h-full flex-col">
       <Link
         href="/"
         className="flex min-h-[64px] items-center rounded-[1.25rem] px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
@@ -76,6 +83,8 @@ export default function ControlTowerNav() {
           CMS og innhold styres i Umbraco&nbsp;17. Kjøkken/produksjon ligger hos hver cateringbedrift.
         </p>
       </div>
-    </>
+
+      <AuthenticatedShellAccount roleLabel={roleLabel} email={userEmail} />
+    </div>
   );
 }

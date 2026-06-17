@@ -1,7 +1,9 @@
 // components/auth/LogoutButton.tsx
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+
+import { LOGOUT_ERROR_MESSAGE, performLogoutRedirect } from "@/components/auth/LogoutClient";
 
 type Props = {
   variant?: "ghost" | "primary" | "secondary";
@@ -13,30 +15,16 @@ export default function LogoutButton({
   className,
 }: Props) {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   function onLogout() {
     if (isPending) return;
 
     startTransition(async () => {
-      try {
-        const res = await fetch("/api/auth/logout", {
-          method: "POST",
-          credentials: "include",
-          redirect: "follow",
-          cache: "no-store",
-        });
-
-        // Hvis fetch fulgte redirect (303 → /login)
-        if (res.redirected && res.url) {
-          window.location.href = res.url;
-          return;
-        }
-
-        // Fallback – alltid trygt
-        window.location.href = "/login";
-      } catch {
-        // Fail-closed
-        window.location.href = "/login";
+      setError(null);
+      const result = await performLogoutRedirect();
+      if (!result.ok) {
+        setError(LOGOUT_ERROR_MESSAGE);
       }
     });
   }
@@ -52,16 +40,24 @@ export default function LogoutButton({
       : "lp-btn--ghost";
 
   return (
-    <button
-      type="button"
-      data-variant={variant}
-      className={className ?? `${base} ${variantClass}`}
-      disabled={isPending}
-      onClick={onLogout}
-      aria-busy={isPending}
-      title={isPending ? "Logger ut…" : "Logg ut"}
-    >
-      {isPending ? "Logger ut…" : "Logg ut"}
-    </button>
+    <div>
+      <button
+        type="button"
+        data-variant={variant}
+        className={className ?? `${base} ${variantClass}`}
+        disabled={isPending}
+        onClick={onLogout}
+        aria-busy={isPending}
+        aria-label="Logg ut"
+        title={isPending ? "Logger ut…" : "Logg ut"}
+      >
+        {isPending ? "Logger ut…" : "Logg ut"}
+      </button>
+      {error ? (
+        <p className="mt-2 text-xs text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }

@@ -53,6 +53,7 @@ describe("Superadmin shell design system", () => {
     expect(nav).not.toContain("/backoffice/content");
     expect(nav).not.toContain("/superadmin/users");
     expect(nav).toContain("Umbraco");
+    expect(nav).toContain("AuthenticatedShellAccount");
   });
 
   it("SuperadminControlCenter ekskluderer Backoffice, Kjøkken og Brukere", () => {
