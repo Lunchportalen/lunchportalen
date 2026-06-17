@@ -26,13 +26,22 @@ export type CompanyDependencyCounts = {
   agreementRequests: number;
   productionManifests: number;
   tripletexInvoices: number;
+  agreementInvoices: number;
 };
 
 export type CompanyRemovalEligibility = {
   protectedPilot: boolean;
   alreadyArchived: boolean;
   dependencies: CompanyDependencyCounts;
+  /** Critical operational reasons — hard-delete blocked. */
   blockers: string[];
+  /** Archive-only blockers (does not affect hard-delete). */
+  archiveBlockers: string[];
+  /** Non-operational rows removed during safe hard-delete. */
+  cleanup: string[];
+  /** Informational only — does not block hard-delete. */
+  warnings: string[];
+  confirmationTargets: string[];
   canArchive: boolean;
   canHardDelete: boolean;
 };
@@ -77,6 +86,7 @@ export async function loadCompanyDependencyCounts(
     agreementRequests,
     productionManifests,
     tripletexInvoices,
+    agreementInvoices,
   ] = await Promise.all([
     countRows(db, "orders", companyId),
     countRows(db, "agreements", companyId),
@@ -93,6 +103,7 @@ export async function loadCompanyDependencyCounts(
     countRows(db, "agreement_requests", companyId),
     countRows(db, "production_manifests", companyId),
     countRows(db, "tripletex_invoices", companyId),
+    countRows(db, "agreement_invoices", companyId),
   ]);
 
   return {
@@ -111,7 +122,26 @@ export async function loadCompanyDependencyCounts(
     agreementRequests,
     productionManifests,
     tripletexInvoices,
+    agreementInvoices,
   };
+}
+
+function dependencyCountFailed(d: CompanyDependencyCounts): boolean {
+  return Object.values(d).some((n) => n === Number.MAX_SAFE_INTEGER);
+}
+
+/** Critical operational history — always blocks hard-delete. */
+export function hasCriticalOperationalHistory(d: CompanyDependencyCounts): boolean {
+  return (
+    d.orders > 0 ||
+    d.deliveries > 0 ||
+    d.productionManifests > 0 ||
+    d.invoiceLines > 0 ||
+    d.agreementInvoices > 0 ||
+    d.tripletexCustomers > 0 ||
+    d.billingAccounts > 0 ||
+    d.tripletexInvoices > 0
+  );
 }
 
 function buildHardDeleteBlockers(input: {
@@ -125,21 +155,43 @@ function buildHardDeleteBlockers(input: {
     blockers.push("Dette firmaet er beskyttet og kan ikke slettes permanent.");
   }
   if (d.orders > 0) blockers.push("Ordrehistorikk finnes.");
-  if (d.agreements > 0 || d.agreementRequests > 0) blockers.push("Avtalehistorikk finnes.");
-  if (d.profiles > 0) blockers.push("Ansatte eller profiler finnes.");
-  if (d.dayChoices > 0 || d.menuServiceDays > 0) blockers.push("Meny-/lunsjvalg finnes.");
+  if (d.invoiceLines > 0 || d.agreementInvoices > 0) blockers.push("Fakturagrunnlag finnes.");
   if (d.tripletexCustomers > 0 || d.billingAccounts > 0 || d.tripletexInvoices > 0) {
-    blockers.push("Audit/faktura/Tripletex-historikk finnes.");
+    blockers.push("Faktura/Tripletex-historikk finnes.");
   }
-  if (d.invoiceLines > 0) blockers.push("Fakturagrunnlag finnes.");
   if (d.deliveries > 0 || d.productionManifests > 0) blockers.push("Leveranse-/produksjonshistorikk finnes.");
-
-  const values = Object.values(d);
-  if (values.some((n) => n === Number.MAX_SAFE_INTEGER)) {
+  if (dependencyCountFailed(d)) {
     blockers.push("Kunne ikke verifisere alle avhengigheter — permanent sletting er blokkert.");
   }
 
   return blockers;
+}
+
+function buildHardDeleteCleanup(d: CompanyDependencyCounts): string[] {
+  const cleanup: string[] = [];
+  if (d.agreements > 0) cleanup.push("Avtaleutkast/avtaler uten ordrehistorikk");
+  if (d.agreementRequests > 0) cleanup.push("Avtaleforespørsler");
+  if (d.profiles > 0) cleanup.push("Profiler og testbrukere");
+  if (d.companyLocations > 0) cleanup.push("Lokasjoner");
+  if (d.companyRegistrations > 0) cleanup.push("Registreringsutkast");
+  if (d.dayChoices > 0) cleanup.push("Meny-/lunsjvalg uten ordre");
+  if (d.menuServiceDays > 0) cleanup.push("Menydager uten ordre");
+  if (d.auditEvents > 0) cleanup.push("Eksisterende audit-rader (ny pre-delete audit skrives)");
+  cleanup.push("Invitasjoner, memberships og pipeline-rader");
+  return cleanup;
+}
+
+export function buildConfirmationTargets(input: {
+  companyName: string | null;
+  orgnr: string | null;
+  companyId?: string | null;
+}): string[] {
+  const targets: string[] = [];
+  const orgnr = safeStr(input.orgnr);
+  const name = safeStr(input.companyName);
+  if (orgnr) targets.push(orgnr);
+  if (name) targets.push(name);
+  return targets;
 }
 
 export function evaluateCompanyRemovalEligibility(input: {
@@ -151,39 +203,37 @@ export function evaluateCompanyRemovalEligibility(input: {
   const protectedPilot = isProtectedPilotCompany(input.companyName);
   const alreadyArchived = Boolean(safeStr(input.deletedAt));
   const hasOrgnr = Boolean(safeStr(input.orgnr));
+  const hasName = Boolean(safeStr(input.companyName));
   const d = input.dependencies;
+
+  const warnings: string[] = [];
+  if (alreadyArchived) warnings.push("Firmaet er allerede arkivert.");
+  if (!hasOrgnr) warnings.push("Firma mangler org.nr — bekreft med eksakt firmanavn.");
 
   const archiveBlockers: string[] = [];
   if (!hasOrgnr) archiveBlockers.push("Firma mangler org.nr — arkivering krever org.nr.");
   if (alreadyArchived) archiveBlockers.push("Firma er allerede arkivert.");
 
   const hardDeleteBlockers = buildHardDeleteBlockers({ protectedPilot, dependencies: d });
+  const hasHardDeleteBlockers = protectedPilot || hasCriticalOperationalHistory(d) || dependencyCountFailed(d);
 
-  const hasHardDeleteBlockers =
-    protectedPilot ||
-    d.orders > 0 ||
-    d.agreements > 0 ||
-    d.agreementRequests > 0 ||
-    d.profiles > 0 ||
-    d.tripletexCustomers > 0 ||
-    d.billingAccounts > 0 ||
-    d.invoiceLines > 0 ||
-    d.deliveries > 0 ||
-    d.dayChoices > 0 ||
-    d.menuServiceDays > 0 ||
-    d.productionManifests > 0 ||
-    d.tripletexInvoices > 0 ||
-    Object.values(d).some((n) => n === Number.MAX_SAFE_INTEGER);
-
-  const blockers = Array.from(new Set([...archiveBlockers, ...hardDeleteBlockers]));
+  const cleanup = hasHardDeleteBlockers ? [] : buildHardDeleteCleanup(d);
+  const confirmationTargets = buildConfirmationTargets({
+    companyName: input.companyName,
+    orgnr: input.orgnr,
+  });
 
   return {
     protectedPilot,
     alreadyArchived,
     dependencies: d,
-    blockers,
+    blockers: hardDeleteBlockers,
+    archiveBlockers,
+    cleanup,
+    warnings,
+    confirmationTargets,
     canArchive: !alreadyArchived && hasOrgnr,
-    canHardDelete: !hasHardDeleteBlockers && !alreadyArchived,
+    canHardDelete: !hasHardDeleteBlockers && (hasOrgnr || hasName),
   };
 }
 
