@@ -17,7 +17,20 @@ type Eligibility = {
 };
 
 type ApiOk = { ok: true; data: Eligibility & { companyName?: string | null; orgnr?: string | null } };
-type ApiErr = { ok: false; message?: string; error?: string; detail?: { blockers?: string[] } | { detail?: { blockers?: string[] } } };
+type ApiErr = {
+  ok: false;
+  message?: string;
+  error?: string;
+  rid?: string;
+  detail?: { blockers?: string[]; code?: string } | { detail?: { blockers?: string[] } };
+};
+
+const ERROR_CODE_MESSAGES: Record<string, string> = {
+  DB_ERROR: "Databasen kunne ikke fullføre slettingen.",
+  HARD_DELETE_BLOCKED: "Permanent sletting er blokkert fordi ordre/faktura/leveransehistorikk finnes.",
+  CONFIRM_MISMATCH: "Bekreftelsen matcher ikke firmanavn eller org.nr.",
+  EXECUTION_FAILED: "Kunne ikke fullføre sletting — serverfeil under utførelse.",
+};
 
 async function readJsonSafe(res: Response) {
   const t = await res.text();
@@ -37,8 +50,32 @@ function parseBlockers(body: ApiErr | null): string[] {
   return [];
 }
 
-function parseApiMessage(body: ApiErr | null, fallback: string) {
-  return body?.message || (typeof body?.error === "string" ? body.error : null) || fallback;
+function parseApiMessage(body: ApiErr | null, fallback: string, httpStatus?: number) {
+  const message = safeStr(body?.message);
+  if (message) {
+    const rid = safeStr(body?.rid);
+    return rid ? `${message} (RID: ${rid})` : message;
+  }
+
+  const errorCode = typeof body?.error === "string" ? body.error : "";
+  if (errorCode && ERROR_CODE_MESSAGES[errorCode]) {
+    const rid = safeStr(body?.rid);
+    const base = ERROR_CODE_MESSAGES[errorCode];
+    return rid ? `${base} (RID: ${rid})` : base;
+  }
+
+  if (httpStatus && httpStatus >= 500) {
+    const rid = safeStr(body?.rid);
+    return rid
+      ? `Serveren kunne ikke fullføre slettingen (HTTP ${httpStatus}, RID: ${rid}).`
+      : `Serveren kunne ikke fullføre slettingen (HTTP ${httpStatus}).`;
+  }
+
+  return fallback;
+}
+
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
 }
 
 export default function CompanyRemovalDialog(props: {
@@ -156,7 +193,7 @@ export default function CompanyRemovalDialog(props: {
       });
       const body = (await readJsonSafe(res)) as { ok?: boolean; message?: string; error?: string; data?: { mode?: string }; detail?: unknown } | null;
       if (!res.ok || body?.ok !== true) {
-        setErr(parseApiMessage(body as ApiErr, "Handlingen feilet."));
+        setErr(parseApiMessage(body as ApiErr, "Handlingen feilet.", res.status));
         setBlockers(parseBlockers(body as ApiErr));
         return;
       }
