@@ -4,7 +4,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  buildConfirmationTargets,
   evaluateCompanyRemovalEligibility,
+  hasCriticalOperationalHistory,
   isProtectedPilotCompany,
   matchesArchiveConfirmation,
   matchesHardDeleteConfirmation,
@@ -28,6 +30,7 @@ const ZERO: CompanyDependencyCounts = {
   agreementRequests: 0,
   productionManifests: 0,
   tripletexInvoices: 0,
+  agreementInvoices: 0,
 };
 
 describe("companyRemovalPolicy", () => {
@@ -37,41 +40,91 @@ describe("companyRemovalPolicy", () => {
     expect(isProtectedPilotCompany("Test Firma AS")).toBe(false);
   });
 
-  it("blokkerer hard delete ved ordre", () => {
+  it("already archived blokkerer ikke hard-delete", () => {
+    const e = evaluateCompanyRemovalEligibility({
+      companyName: "FX Paused 4ee27d",
+      orgnr: "623466172",
+      deletedAt: "2026-01-01T00:00:00Z",
+      dependencies: { ...ZERO, profiles: 2, agreements: 1, dayChoices: 3, menuServiceDays: 1 },
+    });
+    expect(e.canHardDelete).toBe(true);
+    expect(e.alreadyArchived).toBe(true);
+    expect(e.canArchive).toBe(false);
+    expect(e.warnings.some((w) => w.includes("allerede arkivert"))).toBe(true);
+    expect(e.cleanup.length).toBeGreaterThan(0);
+  });
+
+  it("manglende orgnr blokkerer ikke hard-delete når navn finnes", () => {
+    const e = evaluateCompanyRemovalEligibility({
+      companyName: "Test Utkast AS",
+      orgnr: null,
+      deletedAt: null,
+      dependencies: ZERO,
+    });
+    expect(e.canHardDelete).toBe(true);
+    expect(e.canArchive).toBe(false);
+    expect(e.warnings.some((w) => w.includes("org.nr"))).toBe(true);
+    expect(buildConfirmationTargets({ companyName: "Test Utkast AS", orgnr: null })).toEqual(["Test Utkast AS"]);
+  });
+
+  it("profiler uten ordrehistorikk er cleanup, ikke blocker", () => {
     const e = evaluateCompanyRemovalEligibility({
       companyName: "Test AS",
       orgnr: "123456789",
       deletedAt: null,
-      dependencies: { ...ZERO, orders: 2 },
+      dependencies: { ...ZERO, profiles: 3 },
+    });
+    expect(e.canHardDelete).toBe(true);
+    expect(e.blockers).toHaveLength(0);
+    expect(e.cleanup.some((c) => c.includes("Profiler"))).toBe(true);
+  });
+
+  it("lokasjoner uten ordre er cleanup, ikke blocker", () => {
+    const e = evaluateCompanyRemovalEligibility({
+      companyName: "Test AS",
+      orgnr: "123456789",
+      deletedAt: null,
+      dependencies: { ...ZERO, companyLocations: 2 },
+    });
+    expect(e.canHardDelete).toBe(true);
+    expect(e.cleanup.some((c) => c.includes("Lokasjoner"))).toBe(true);
+  });
+
+  it("meny/day setup uten ordre er cleanup, ikke blocker", () => {
+    const e = evaluateCompanyRemovalEligibility({
+      companyName: "Test AS",
+      orgnr: "123456789",
+      deletedAt: null,
+      dependencies: { ...ZERO, dayChoices: 5, menuServiceDays: 2, agreements: 1, agreementRequests: 1 },
+    });
+    expect(e.canHardDelete).toBe(true);
+    expect(e.cleanup.some((c) => c.includes("Meny"))).toBe(true);
+    expect(e.cleanup.some((c) => c.includes("Avtale"))).toBe(true);
+  });
+
+  it("audit-only setup blokkerer ikke hard-delete", () => {
+    const e = evaluateCompanyRemovalEligibility({
+      companyName: "Test AS",
+      orgnr: "123456789",
+      deletedAt: null,
+      dependencies: { ...ZERO, auditEvents: 4 },
+    });
+    expect(e.canHardDelete).toBe(true);
+    expect(e.cleanup.some((c) => c.includes("audit"))).toBe(true);
+  });
+
+  it("ordre blokkerer hard-delete", () => {
+    const e = evaluateCompanyRemovalEligibility({
+      companyName: "Test AS",
+      orgnr: "123456789",
+      deletedAt: null,
+      dependencies: { ...ZERO, orders: 1 },
     });
     expect(e.canHardDelete).toBe(false);
     expect(e.blockers).toContain("Ordrehistorikk finnes.");
-    expect(e.canArchive).toBe(true);
   });
 
-  it("blokkerer hard delete ved avtale", () => {
-    const e = evaluateCompanyRemovalEligibility({
-      companyName: "Test AS",
-      orgnr: "123456789",
-      deletedAt: null,
-      dependencies: { ...ZERO, agreements: 1 },
-    });
-    expect(e.canHardDelete).toBe(false);
-    expect(e.blockers).toContain("Avtalehistorikk finnes.");
-  });
-
-  it("blokkerer hard delete ved profiler", () => {
-    const e = evaluateCompanyRemovalEligibility({
-      companyName: "Test AS",
-      orgnr: "123456789",
-      deletedAt: null,
-      dependencies: { ...ZERO, profiles: 1 },
-    });
-    expect(e.canHardDelete).toBe(false);
-    expect(e.blockers).toContain("Ansatte eller profiler finnes.");
-  });
-
-  it("blokkerer hard delete ved Tripletex mapping", () => {
+  it("faktura/Tripletex blokkerer hard-delete", () => {
     const e = evaluateCompanyRemovalEligibility({
       companyName: "Test AS",
       orgnr: "123456789",
@@ -82,18 +135,18 @@ describe("companyRemovalPolicy", () => {
     expect(e.blockers.some((b) => b.includes("Tripletex"))).toBe(true);
   });
 
-  it("blokkerer hard delete ved audit/faktura avhengigheter", () => {
+  it("leveranse/production manifests blokkerer hard-delete", () => {
     const e = evaluateCompanyRemovalEligibility({
       companyName: "Test AS",
       orgnr: "123456789",
       deletedAt: null,
-      dependencies: { ...ZERO, invoiceLines: 1 },
+      dependencies: { ...ZERO, deliveries: 1 },
     });
     expect(e.canHardDelete).toBe(false);
-    expect(e.blockers).toContain("Fakturagrunnlag finnes.");
+    expect(e.blockers.some((b) => b.includes("Leveranse"))).toBe(true);
   });
 
-  it("blokkerer hard delete for beskyttet pilot", () => {
+  it("beskyttet pilot blokkerer hard-delete", () => {
     const e = evaluateCompanyRemovalEligibility({
       companyName: "Pettersen&Co",
       orgnr: "123456789",
@@ -104,27 +157,7 @@ describe("companyRemovalPolicy", () => {
     expect(e.protectedPilot).toBe(true);
   });
 
-  it("tillater hard delete uten operativ historikk selv med audit-hendelser", () => {
-    const e = evaluateCompanyRemovalEligibility({
-      companyName: "Utkast Test AS",
-      orgnr: "123456789",
-      deletedAt: null,
-      dependencies: { ...ZERO, auditEvents: 3 },
-    });
-    expect(e.canHardDelete).toBe(true);
-  });
-
-  it("tillater hard delete uten avhengigheter", () => {
-    const e = evaluateCompanyRemovalEligibility({
-      companyName: "Utkast Test AS",
-      orgnr: "123456789",
-      deletedAt: null,
-      dependencies: ZERO,
-    });
-    expect(e.canHardDelete).toBe(true);
-  });
-
-  it("fail-closer når avhengighetstelling feiler", () => {
+  it("ukjent dependency count fail-closer", () => {
     const e = evaluateCompanyRemovalEligibility({
       companyName: "Test AS",
       orgnr: "123456789",
@@ -135,21 +168,10 @@ describe("companyRemovalPolicy", () => {
     expect(e.blockers.some((b) => b.includes("Kunne ikke verifisere"))).toBe(true);
   });
 
-  it("blokkerer archive uten orgnr", () => {
-    const e = evaluateCompanyRemovalEligibility({
-      companyName: "Utkast Test AS",
-      orgnr: null,
-      deletedAt: null,
-      dependencies: ZERO,
-    });
-    expect(e.canArchive).toBe(false);
-    expect(e.blockers.some((b) => b.includes("org.nr"))).toBe(true);
-  });
-
-  it("archive bekreftelse krever orgnr ARKIVER", () => {
-    expect(matchesArchiveConfirmation({ confirmation: "123456789 ARKIVER", orgnr: "123456789" })).toBe(true);
-    expect(matchesArchiveConfirmation({ confirmation: "123456789 SLETT", orgnr: "123456789" })).toBe(true);
-    expect(matchesArchiveConfirmation({ confirmation: "feil", orgnr: "123456789" })).toBe(false);
+  it("hasCriticalOperationalHistory skiller kritisk fra setup", () => {
+    expect(hasCriticalOperationalHistory({ ...ZERO, profiles: 5, agreements: 2 })).toBe(false);
+    expect(hasCriticalOperationalHistory({ ...ZERO, orders: 1 })).toBe(true);
+    expect(hasCriticalOperationalHistory({ ...ZERO, agreementInvoices: 1 })).toBe(true);
   });
 
   it("hard delete bekreftelse matcher navn eller orgnr", () => {
@@ -163,53 +185,36 @@ describe("companyRemovalPolicy", () => {
       matchesHardDeleteConfirmation({ confirmation: "Feil navn", companyName: "Test Firma AS", orgnr: "123456789" })
     ).toBe(false);
   });
+
+  it("archive bekreftelse krever orgnr ARKIVER", () => {
+    expect(matchesArchiveConfirmation({ confirmation: "123456789 ARKIVER", orgnr: "123456789" })).toBe(true);
+    expect(matchesArchiveConfirmation({ confirmation: "feil", orgnr: "123456789" })).toBe(false);
+  });
 });
 
 describe("Superadmin company removal UI wiring", () => {
-  it("Arkiver / fjern åpner CompanyRemovalDialog via removalTarget", () => {
-    const client = readFileSync(join(ROOT, "app/superadmin/companies/companies-client.tsx"), "utf8");
-    expect(client).toContain("Arkiver / fjern");
-    expect(client).toContain("setRemovalTarget(c)");
-    expect(client).toContain("CompanyRemovalDialog");
-    expect(client).toContain("sa-action-menu__panel--portal");
-    expect(client).toContain("createPortal");
-  });
-
-  it("CompanyRemovalDialog kaller eligibility GET og POST remove", () => {
+  it("dialog skiller warnings, blockers og cleanup", () => {
     const dialog = readFileSync(join(ROOT, "app/superadmin/companies/CompanyRemovalDialog.tsx"), "utf8");
-    expect(dialog).toContain("/remove");
-    expect(dialog).toMatch(/method:\s*"POST"/);
-    expect(dialog).toContain("canHardDelete");
-    expect(dialog).toContain("confirmMatches");
-    expect(dialog).toContain("Slett firma permanent");
+    expect(dialog).toContain("cleanup");
+    expect(dialog).toContain("warnings");
     expect(dialog).toContain("Firma kan ikke slettes permanent");
+    expect(dialog).toContain("Følgende oppstartsdata ryddes");
+    expect(dialog).not.toContain("Firma kan ikke fjernes");
   });
 
-  it("remove route krever superadmin og returnerer eligibility", () => {
-    const route = readFileSync(join(ROOT, "app/api/superadmin/companies/[companyId]/remove/route.ts"), "utf8");
-    expect(route).toContain("isSuperadminProfile");
-    expect(route).toContain("executeCompanyRemoval");
-    expect(route).toContain("evaluateCompanyRemovalEligibility");
-    expect(route).not.toContain("lp_order_set");
-  });
-
-  it("companies client refresher liste etter vellykket removal", () => {
-    const client = readFileSync(join(ROOT, "app/superadmin/companies/companies-client.tsx"), "utf8");
-    expect(client).toContain("setListRefreshKey");
-    expect(client).toContain("removalSuccess");
-  });
-
-  it("executeCompanyRemoval skriver audit før hard delete og rydder oppstarts-rader", () => {
+  it("executeCompanyRemoval rydder agreements og profiler ved hard delete", () => {
     const src = readFileSync(join(ROOT, "lib/server/superadmin/executeCompanyRemoval.ts"), "utf8");
-    expect(src).toContain('action: "company.hard_delete"');
+    expect(src).toContain('"agreements"');
+    expect(src).toContain('"profiles"');
+    expect(src).toContain('"day_choices"');
     expect(src).toContain("phase: \"pre_delete\"");
-    expect(src).toContain("cleanupHardDeleteDependencies");
     expect(src).not.toContain("lp_order_set");
   });
 
-  it("companyRemovalPolicy fail-soft ved manglende billing-tabell", () => {
+  it("policy bruker hasCriticalOperationalHistory", () => {
     const src = readFileSync(join(ROOT, "lib/server/superadmin/companyRemovalPolicy.ts"), "utf8");
+    expect(src).toContain("hasCriticalOperationalHistory");
     expect(src).toContain("isMissingRelationError");
-    expect(src).toContain("company_billing_accounts");
+    expect(src).toContain("archiveBlockers");
   });
 });

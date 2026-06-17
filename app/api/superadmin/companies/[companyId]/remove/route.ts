@@ -86,7 +86,8 @@ export async function GET(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     protectedPilot: isProtectedPilotCompany(company.name),
     ...eligibility,
     archiveConfirmHint: company.orgnr ? `${company.orgnr} ARKIVER` : null,
-    hardDeleteConfirmHint: company.name || company.orgnr,
+    hardDeleteConfirmHint:
+      eligibility.confirmationTargets[0] ?? (company.name || company.orgnr || null),
   });
 }
 

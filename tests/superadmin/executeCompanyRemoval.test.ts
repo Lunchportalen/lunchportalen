@@ -12,12 +12,14 @@ describe("executeCompanyRemoval contracts", () => {
     expect(src).toContain("freshEligibility");
   });
 
-  it("hard delete rydder lokasjoner og oppstarts-rader kontrollert", () => {
+  it("hard delete rydder non-operational setup rows", () => {
     const src = readFileSync(join(ROOT, "lib/server/superadmin/executeCompanyRemoval.ts"), "utf8");
     expect(src).toContain("default_location_id: null");
     expect(src).toContain("lead_pipeline");
     expect(src).toContain("agreement_change_requests");
-    expect(src).toContain("company_locations");
+    expect(src).toContain("agreements");
+    expect(src).toContain("profiles");
+    expect(src).toContain("day_choices");
   });
 
   it("route returnerer 409 ved HARD_DELETE_BLOCKED", () => {

@@ -33,7 +33,7 @@ export type CompanyRemovalResult =
   | { ok: true; mode: "archive" | "hard_delete"; companyId: string; alreadyDone?: boolean }
   | { ok: false; code: string; message: string; blockers?: string[] };
 
-async function archiveCompanyAccess(
+async function deleteCompanyAuthUsers(
   admin: SupabaseClient,
   companyId: string
 ): Promise<{ authUsersTargeted: number; authUsersDeleted: number }> {
@@ -82,9 +82,23 @@ export async function cleanupHardDeleteDependencies(
     }
   }
 
-  const menuDel = await admin.from("menu_service_days").delete().eq("company_id", companyId);
-  if (menuDel.error) {
-    return { ok: false, message: "Kunne ikke fjerne menydager før sletting." };
+  const setupDeletes = ["day_choices", "menu_service_days"] as const;
+  for (const table of setupDeletes) {
+    const del = await admin.from(table).delete().eq("company_id", companyId);
+    if (del.error) {
+      return { ok: false, message: `Kunne ikke fjerne ${table} før sletting.` };
+    }
+  }
+
+  try {
+    await deleteCompanyAuthUsers(admin, companyId);
+  } catch {
+    return { ok: false, message: "Kunne ikke fjerne tilknyttede brukere før sletting." };
+  }
+
+  const profileDel = await admin.from("profiles").delete().eq("company_id", companyId);
+  if (profileDel.error) {
+    return { ok: false, message: "Kunne ikke fjerne profiler før sletting." };
   }
 
   const tableDeletes = [
@@ -95,6 +109,7 @@ export async function cleanupHardDeleteDependencies(
     "company_invites",
     "employee_invites",
     "company_memberships",
+    "agreements",
   ] as const;
 
   for (const table of tableDeletes) {
@@ -154,7 +169,12 @@ export async function executeCompanyRemoval(
 
   if (mode === "archive") {
     if (!eligibility.canArchive) {
-      return { ok: false, code: "ALREADY_ARCHIVED", message: "Firma er allerede arkivert.", blockers: eligibility.blockers };
+      return {
+        ok: false,
+        code: "ALREADY_ARCHIVED",
+        message: "Firma kan ikke arkiveres.",
+        blockers: eligibility.archiveBlockers,
+      };
     }
 
     const orgnr = safeStr(company.orgnr);
@@ -170,7 +190,7 @@ export async function executeCompanyRemoval(
       };
     }
 
-    const access = await archiveCompanyAccess(admin, companyId);
+    const access = await deleteCompanyAuthUsers(admin, companyId);
     const now = new Date().toISOString();
 
     const companyUpdate = await admin
@@ -268,6 +288,7 @@ export async function executeCompanyRemoval(
       reason,
       mode: "hard_delete",
       dependencies: freshDependencies,
+      cleanup: freshEligibility.cleanup,
       via: "companies.remove",
       phase: "pre_delete",
     },

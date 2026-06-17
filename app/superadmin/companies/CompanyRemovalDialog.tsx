@@ -7,6 +7,10 @@ type Eligibility = {
   canArchive: boolean;
   canHardDelete: boolean;
   blockers: string[];
+  cleanup: string[];
+  warnings: string[];
+  confirmationTargets: string[];
+  alreadyArchived?: boolean;
   protectedPilot: boolean;
   archiveConfirmHint: string | null;
   hardDeleteConfirmHint: string | null;
@@ -61,7 +65,6 @@ export default function CompanyRemovalDialog(props: {
     setReason("");
     setErr(null);
     setBlockers([]);
-    setMode("archive");
     setLoadingEligibility(true);
     setEligibility(null);
 
@@ -83,12 +86,16 @@ export default function CompanyRemovalDialog(props: {
           canArchive: d.canArchive,
           canHardDelete: d.canHardDelete,
           blockers: d.blockers ?? [],
+          cleanup: d.cleanup ?? [],
+          warnings: d.warnings ?? [],
+          confirmationTargets: d.confirmationTargets ?? [],
+          alreadyArchived: d.alreadyArchived,
           protectedPilot: d.protectedPilot,
           archiveConfirmHint: d.archiveConfirmHint ?? (orgnr ? `${orgnr} ARKIVER` : null),
           hardDeleteConfirmHint: d.hardDeleteConfirmHint ?? companyName,
         };
         setEligibility(next);
-        setMode("archive");
+        setMode(next.canHardDelete && !next.canArchive ? "hard_delete" : next.canHardDelete ? "hard_delete" : "archive");
       })
       .catch(() => {
         setEligibility(null);
@@ -104,21 +111,22 @@ export default function CompanyRemovalDialog(props: {
 
   const dialogTitle = useMemo(() => {
     if (loadingEligibility) return "Laster fjerningsregler…";
-    if (!eligibility?.canArchive && !loadingEligibility && eligibility && !eligibility.canHardDelete) {
-      return "Firma kan ikke fjernes";
-    }
     if (mode === "hard_delete" && eligibility?.canHardDelete) return "Slett firma permanent";
     if (eligibility && !eligibility.canHardDelete) return "Firma kan ikke slettes permanent";
-    return "Arkiver firma";
+    if (eligibility?.canArchive) return "Arkiver firma";
+    return "Firmaadministrasjon";
   }, [loadingEligibility, eligibility, mode]);
 
   const dialogLead = useMemo(() => {
     if (loadingEligibility || !eligibility) return null;
     if (mode === "hard_delete" && eligibility.canHardDelete) {
-      return "Firmaet har ingen operativ historikk og kan slettes permanent.";
+      if (eligibility.alreadyArchived) {
+        return "Firmaet er arkivert og har ingen kritisk operativ historikk. Det kan slettes permanent etter bekreftelse.";
+      }
+      return "Firmaet har ingen kritisk operativ historikk og kan slettes permanent.";
     }
     if (!eligibility.canHardDelete) {
-      return "Dette firmaet har historikk eller avhengigheter som må bevares.";
+      return "Dette firmaet har operativ historikk som må bevares.";
     }
     return "Velg om firmaet skal arkiveres eller slettes permanent.";
   }, [loadingEligibility, eligibility, mode]);
@@ -127,11 +135,14 @@ export default function CompanyRemovalDialog(props: {
     const v = confirm.trim();
     if (!v) return false;
     if (mode === "hard_delete") {
-      return v === (companyName || "") || (orgnr ? v === orgnr : false);
+      const targets = eligibility?.confirmationTargets?.length
+        ? eligibility.confirmationTargets
+        : [companyName, orgnr].filter(Boolean);
+      return targets.some((t) => v === t);
     }
     if (!orgnr) return false;
     return v === `${orgnr} ARKIVER` || v === `${orgnr} SLETT`;
-  }, [confirm, mode, companyName, orgnr]);
+  }, [confirm, mode, companyName, orgnr, eligibility?.confirmationTargets]);
 
   function submit() {
     setErr(null);
@@ -157,8 +168,7 @@ export default function CompanyRemovalDialog(props: {
 
   if (!open || typeof document === "undefined") return null;
 
-  const showHardDeleteTab = eligibility?.canHardDelete === true;
-  const archiveOnly = eligibility != null && !eligibility.canHardDelete;
+  const hardDeleteBlocked = eligibility != null && !eligibility.canHardDelete;
 
   return createPortal(
     <div className="fixed inset-0 z-[60] grid place-items-center p-4">
@@ -194,19 +204,40 @@ export default function CompanyRemovalDialog(props: {
           </p>
         ) : null}
 
-        {archiveOnly && eligibility.blockers.length > 0 ? (
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-neutral-700">
+        {eligibility?.warnings && eligibility.warnings.length > 0 ? (
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-neutral-600">
+            {eligibility.warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        {hardDeleteBlocked && eligibility.blockers.length > 0 ? (
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-neutral-800">
             {eligibility.blockers.map((b) => (
               <li key={b}>{b}</li>
             ))}
           </ul>
         ) : null}
 
-        {!loadingEligibility && eligibility && !eligibility.canArchive ? (
-          <p className="mt-3 text-sm text-red-700">Firma kan ikke arkiveres (allerede arkivert eller mangler org.nr).</p>
+        {eligibility?.canHardDelete && eligibility.cleanup.length > 0 ? (
+          <div className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
+            <p className="font-semibold">Følgende oppstartsdata ryddes ved permanent sletting:</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              {eligibility.cleanup.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
 
-        {showHardDeleteTab || (eligibility && eligibility.canArchive) ? (
+        {!loadingEligibility && eligibility && !eligibility.canArchive && eligibility.canHardDelete ? (
+          <p className="mt-3 text-xs text-neutral-600">
+            Firmaet er allerede arkivert. Du kan vurdere permanent sletting hvis serverkontrollen tillater det.
+          </p>
+        ) : null}
+
+        {(eligibility?.canArchive || eligibility?.canHardDelete) ? (
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
@@ -235,39 +266,43 @@ export default function CompanyRemovalDialog(props: {
           </div>
         ) : null}
 
-        {mode === "archive" || !showHardDeleteTab ? (
+        {mode === "archive" && eligibility?.canArchive ? (
           <p className="mt-3 text-xs text-neutral-600">
             Arkivering setter firma til stengt, fjerner innlogging og beholder ordre, avtaler og audit.
           </p>
-        ) : (
+        ) : null}
+
+        {mode === "hard_delete" && eligibility?.canHardDelete ? (
           <p className="mt-3 text-xs font-semibold text-rose-800">
             Dette kan ikke angres. Skriv org.nr eller firmanavn for å bekrefte.
           </p>
-        )}
+        ) : null}
 
-        {(eligibility?.canArchive || eligibility?.canHardDelete) && !loadingEligibility ? (
-          <>
-            <label className="mt-4 block text-xs font-semibold text-neutral-600">
-              Bekreftelse {confirmHint ? `(skriv nøyaktig: ${confirmHint})` : ""}
-              <input
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                autoComplete="off"
-                disabled={pending}
-              />
-            </label>
+        {(eligibility?.canArchive && mode === "archive") || (eligibility?.canHardDelete && mode === "hard_delete") ? (
+          !loadingEligibility ? (
+            <>
+              <label className="mt-4 block text-xs font-semibold text-neutral-600">
+                Bekreftelse {confirmHint ? `(skriv nøyaktig: ${confirmHint})` : ""}
+                <input
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                  autoComplete="off"
+                  disabled={pending}
+                />
+              </label>
 
-            <label className="mt-3 block text-xs font-semibold text-neutral-600">
-              Begrunnelse (valgfritt)
-              <input
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                disabled={pending}
-              />
-            </label>
-          </>
+              <label className="mt-3 block text-xs font-semibold text-neutral-600">
+                Begrunnelse (valgfritt)
+                <input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                  disabled={pending}
+                />
+              </label>
+            </>
+          ) : null
         ) : null}
 
         {err ? <p className="mt-3 text-sm font-semibold text-red-700">{err}</p> : null}
