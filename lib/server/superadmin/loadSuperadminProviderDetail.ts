@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isSystemPlatformCompanyName } from "@/lib/server/superadmin/superadminEntityKind";
+import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -68,7 +69,21 @@ export async function loadSuperadminProviderDetail(
 
   if (companiesErr) throw companiesErr;
 
-  const customerRows = (companies ?? []).filter((row) => !isSystemPlatformCompanyName((row as { name?: string }).name));
+  const customerRows = (companies ?? []).filter((row) => {
+    if (isSystemPlatformCompanyName((row as { name?: string }).name)) return false;
+    return !isProviderSelfCustomer(
+      {
+        id: safeStr((row as { id?: string }).id),
+        name: (row as { name?: string | null }).name ?? null,
+        orgnr: (row as { orgnr?: string | null }).orgnr ?? null,
+      },
+      {
+        id: safeStr(provider.id),
+        name: safeStr(provider.name) || null,
+        orgNumber: (provider as { org_number?: string | null }).org_number ?? null,
+      },
+    );
+  });
   const customerIds = customerRows.map((r) => safeStr((r as { id?: string }).id)).filter(Boolean);
 
   const activeAgreementCompanyIds = new Set<string>();

@@ -5,6 +5,7 @@ export type ProviderCustomerStatus = "ACTIVE" | "PAUSED" | "SUSPENDED" | "DELETE
 export type ProviderCustomerRow = {
   id: string;
   name: string;
+  orgnr: string | null;
   status: ProviderCustomerStatus;
   employeesCount: number;
   ordersThisWeek: number;

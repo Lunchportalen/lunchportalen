@@ -9,6 +9,7 @@ import type {
   ProviderCustomersPage,
 } from "@/lib/providers/customerTypes";
 import { buildCustomerStatusCounts } from "@/lib/providers/providerCustomersSurface";
+import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type { ProviderCustomerFilter, ProviderCustomerRow, ProviderCustomerStatus, ProviderCustomersPage } from "@/lib/providers/customerTypes";
@@ -111,11 +112,25 @@ export async function loadProviderCustomers(
   const weekStart = startOfWeekISO(today);
   const weekEnd = addDaysISO(weekStart, 7);
 
+  const { data: providerRow } = await sb
+    .from("providers")
+    .select("id,name,org_number")
+    .eq("id", pid)
+    .maybeSingle();
+
+  const providerIdentity = providerRow
+    ? {
+        id: pid,
+        name: safeStr((providerRow as { name?: string }).name) || null,
+        orgNumber: (providerRow as { org_number?: string | null }).org_number ?? null,
+      }
+    : { id: pid, name: null, orgNumber: null };
+
   // Deleted-gaten håndteres i minne (matchesFilter) med identisk visningssemantikk,
   // slik at statuschip-tellinger kan beregnes fra samme resultatsett uten ekstra query.
   let query = (sb as any)
     .from("companies")
-    .select("id, name, updated_at, deleted_at, suspended_at, paused_at", { count: "exact" })
+    .select("id, name, orgnr, updated_at, deleted_at, suspended_at, paused_at", { count: "exact" })
     .eq("provider_id", pid)
     .order("updated_at", { ascending: false });
 
@@ -128,17 +143,25 @@ export async function loadProviderCustomers(
     return { customers: [], totalCount: 0, currentPage, totalPages: 1, pageSize: PAGE_SIZE, statusCounts: emptyCounts };
   }
 
-  const mapped = allRows.map((row: Record<string, unknown>) => {
-    const status = deriveStatus(row as { deleted_at?: string | null; suspended_at?: string | null; paused_at?: string | null });
-    return {
-      id: safeStr(row.id),
-      name: safeStr(row.name) || "Uten navn",
-      status,
-      updatedAt: row.updated_at != null ? String(row.updated_at) : null,
-      employeesCount: 0,
-      ordersThisWeek: 0,
-    };
-  });
+  const mapped = allRows
+    .map((row: Record<string, unknown>) => {
+      const status = deriveStatus(row as { deleted_at?: string | null; suspended_at?: string | null; paused_at?: string | null });
+      return {
+        id: safeStr(row.id),
+        name: safeStr(row.name) || "Uten navn",
+        orgnr: (row.orgnr as string | null | undefined) ?? null,
+        status,
+        updatedAt: row.updated_at != null ? String(row.updated_at) : null,
+        employeesCount: 0,
+        ordersThisWeek: 0,
+      };
+    })
+    .filter((row) =>
+      !isProviderSelfCustomer(
+        { id: row.id, name: row.name, orgnr: row.orgnr },
+        providerIdentity,
+      ),
+    );
 
   const statusCounts = buildCustomerStatusCounts(mapped.map((c) => c.status));
   const filtered = mapped.filter((c) => matchesFilter(c.status, filter));
