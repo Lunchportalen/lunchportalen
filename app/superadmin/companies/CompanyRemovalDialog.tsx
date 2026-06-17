@@ -30,6 +30,7 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   HARD_DELETE_BLOCKED: "Permanent sletting er blokkert fordi ordre/faktura/leveransehistorikk finnes.",
   CONFIRM_MISMATCH: "Bekreftelsen matcher ikke firmanavn eller org.nr.",
   EXECUTION_FAILED: "Kunne ikke fullføre sletting — serverfeil under utførelse.",
+  UNKNOWN_DEPENDENCY: "Kunne ikke slette firma fordi en ukjent avhengighet fortsatt er koblet til firmaet.",
 };
 
 async function readJsonSafe(res: Response) {

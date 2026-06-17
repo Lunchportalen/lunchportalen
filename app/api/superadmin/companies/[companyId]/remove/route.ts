@@ -104,7 +104,12 @@ function formatRemovalErrorMessage(message: string, blockers?: string[]): string
 
 function removalErrorResponse(
   rid: string,
-  result: { code: string; message: string; blockers?: string[] }
+  result: {
+    code: string;
+    message: string;
+    blockers?: string[];
+    dependencyDetail?: { table?: string; constraint?: string; cleanupStep?: string };
+  }
 ): Response {
   const status =
     result.code === "NOT_FOUND" ? 404
@@ -118,6 +123,9 @@ function removalErrorResponse(
   return jsonErr(rid, message, status, result.code, {
     blockers: result.blockers ?? [],
     code: result.code,
+    table: result.dependencyDetail?.table,
+    constraint: result.dependencyDetail?.constraint,
+    cleanupStep: result.dependencyDetail?.cleanupStep,
   });
 }
 

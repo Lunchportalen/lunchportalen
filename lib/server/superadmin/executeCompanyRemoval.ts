@@ -24,18 +24,74 @@ function isAuthUserMissing(err: unknown) {
   return status === 404 || msg.includes("not found") || msg.includes("user not found");
 }
 
-function safeDbHint(error: { message?: string; code?: string } | null | undefined): string | null {
-  const code = safeStr(error?.code);
+export function parseDbDependencyError(
+  error: { message?: string; code?: string; details?: string } | null | undefined
+): CompanyRemovalDependencyDetail & { isFkViolation: boolean } {
   const message = safeStr(error?.message);
-  if (!message) return null;
-  const lower = message.toLowerCase();
-  if (lower.includes("foreign key") || code === "23503") {
-    return "Kunne ikke slette firma fordi serveren oppdaget ukjent avhengighet.";
-  }
-  if (lower.includes("violates") && lower.includes("constraint")) {
-    return "Kunne ikke slette firma fordi en databaseregel blokkerte slettingen.";
-  }
-  return null;
+  const code = safeStr(error?.code);
+  const details = safeStr(error?.details);
+  const blob = `${message} ${details}`.trim();
+  const lower = blob.toLowerCase();
+  const isFkViolation = code === "23503" || lower.includes("foreign key");
+
+  const constraintMatch =
+    blob.match(/constraint "([^"]+)"/i) ?? blob.match(/constraint\s+([a-z0-9_]+)/i);
+  const blockingTableMatch = blob.match(/on table "([^"]+)"/gi);
+  const blockingTable = blockingTableMatch?.at(-1)?.match(/"([^"]+)"/)?.[1];
+  const referencedMatch = blob.match(/violates foreign key constraint[^"]*"([^"]+)"/i);
+
+  return {
+    isFkViolation,
+    constraint: constraintMatch?.[1] ?? referencedMatch?.[1],
+    table: blockingTable ?? referencedMatch?.[1],
+  };
+}
+
+function dependencyBlockedMessage(table: string): string {
+  const label = CLEANUP_TABLE_LABELS[table] ?? table.replaceAll("_", " ");
+  return `Kunne ikke slette firma fordi ${label} fortsatt er koblet til firmaet.`;
+}
+
+function buildCleanupFailure(
+  cleanupStep: string,
+  table: string,
+  error?: { message?: string; code?: string; details?: string } | null
+): { ok: false; message: string; code: string; dependencyDetail: CompanyRemovalDependencyDetail } {
+  const parsed = parseDbDependencyError(error ?? null);
+  const failingTable = parsed.table ?? table;
+  const message = parsed.isFkViolation
+    ? dependencyBlockedMessage(failingTable)
+    : cleanupFailureMessage(table, error);
+
+  return {
+    ok: false,
+    message,
+    code: parsed.isFkViolation ? "UNKNOWN_DEPENDENCY" : "DB_ERROR",
+    dependencyDetail: {
+      table: failingTable,
+      constraint: parsed.constraint,
+      cleanupStep,
+    },
+  };
+}
+
+async function logCleanupFailure(
+  rid: string,
+  companyId: string,
+  failure: { message: string; code: string; dependencyDetail: CompanyRemovalDependencyDetail }
+): Promise<void> {
+  await logIncident({
+    scope: "companies",
+    severity: "warn",
+    rid,
+    message: "Company hard-delete cleanup failed",
+    meta: {
+      companyId,
+      code: failure.code,
+      ...failure.dependencyDetail,
+      userMessage: failure.message,
+    },
+  });
 }
 
 async function writeHardDeletePreAudit(
@@ -92,9 +148,21 @@ export type CompanyRemovalActor = {
   email: string | null;
 };
 
+export type CompanyRemovalDependencyDetail = {
+  table?: string;
+  constraint?: string;
+  cleanupStep?: string;
+};
+
 export type CompanyRemovalResult =
   | { ok: true; mode: "archive" | "hard_delete"; companyId: string; alreadyDone?: boolean }
-  | { ok: false; code: string; message: string; blockers?: string[] };
+  | {
+      ok: false;
+      code: string;
+      message: string;
+      blockers?: string[];
+      dependencyDetail?: CompanyRemovalDependencyDetail;
+    };
 
 async function deleteCompanyAuthUsers(
   admin: SupabaseClient,
@@ -127,8 +195,11 @@ const CLEANUP_TABLE_LABELS: Record<string, string> = {
   location_policies: "lokasjonspolicyer",
   day_choices: "lunsjvalg",
   menu_service_days: "menydager",
+  standing_orders: "stående bestillinger",
   location_memberships: "lokasjonsmedlemskap",
   company_memberships: "firmamedlemskap",
+  memberships: "identitetsmedlemskap",
+  organizations: "organisasjonsdata",
   profiles: "profiler",
   lead_pipeline: "pipeline-rader",
   agreement_change_requests: "avtaleendringsforespørsler",
@@ -139,12 +210,15 @@ const CLEANUP_TABLE_LABELS: Record<string, string> = {
   agreements: "avtaler",
   company_locations: "lokasjoner",
   company_deletions: "arkiveringsmetadata",
+  companies: "firma",
 };
 
 function cleanupFailureMessage(table: string, error?: { message?: string; code?: string } | null): string {
+  const parsed = parseDbDependencyError(error ?? null);
+  if (parsed.isFkViolation) {
+    return dependencyBlockedMessage(parsed.table ?? table);
+  }
   const label = CLEANUP_TABLE_LABELS[table] ?? table;
-  const hint = safeDbHint(error ?? null);
-  if (hint) return hint;
   if (table === "profiles") {
     return "Kunne ikke slette firma fordi profiler fortsatt er koblet til firmaet.";
   }
@@ -157,15 +231,47 @@ function cleanupFailureMessage(table: string, error?: { message?: string; code?:
   return `Kunne ikke fjerne ${label} før sletting.`;
 }
 
+type CleanupFailure = {
+  ok: false;
+  message: string;
+  code: string;
+  dependencyDetail: CompanyRemovalDependencyDetail;
+};
+
 async function deleteByCompanyId(
   admin: SupabaseClient,
   table: string,
-  companyId: string
-): Promise<{ ok: true } | { ok: false; message: string }> {
+  companyId: string,
+  cleanupStep: string
+): Promise<{ ok: true } | CleanupFailure> {
   const del = await admin.from(table).delete().eq("company_id", companyId);
   if (del.error) {
     if (isMissingRelationError(del.error, table)) return { ok: true };
-    return { ok: false, message: cleanupFailureMessage(table, del.error) };
+    return buildCleanupFailure(cleanupStep, table, del.error);
+  }
+  return { ok: true };
+}
+
+async function deleteSpineMembershipsByOrgId(
+  admin: SupabaseClient,
+  companyId: string
+): Promise<{ ok: true } | CleanupFailure> {
+  const del = await admin.from("memberships").delete().eq("org_id", companyId);
+  if (del.error) {
+    if (isMissingRelationError(del.error, "memberships")) return { ok: true };
+    return buildCleanupFailure("spine_memberships", "memberships", del.error);
+  }
+  return { ok: true };
+}
+
+async function deleteOrganizationMirror(
+  admin: SupabaseClient,
+  companyId: string
+): Promise<{ ok: true } | CleanupFailure> {
+  const del = await admin.from("organizations").delete().eq("id", companyId);
+  if (del.error) {
+    if (isMissingRelationError(del.error, "organizations")) return { ok: true };
+    return buildCleanupFailure("organizations", "organizations", del.error);
   }
   return { ok: true };
 }
@@ -173,19 +279,25 @@ async function deleteByCompanyId(
 /** Controlled cleanup of non-operational rows before hard delete. Only safe when eligibility already passed. */
 export async function cleanupHardDeleteDependencies(
   admin: SupabaseClient,
-  companyId: string
-): Promise<{ ok: true } | { ok: false; message: string }> {
+  companyId: string,
+  rid?: string
+): Promise<{ ok: true } | CleanupFailure> {
+  const fail = async (result: CleanupFailure) => {
+    if (rid) await logCleanupFailure(rid, companyId, result);
+    return result;
+  };
+
   const nullRefs = await admin
     .from("companies")
     .update({ default_location_id: null, paused_by: null, suspended_by: null } as Record<string, unknown>)
     .eq("id", companyId);
   if (nullRefs.error) {
-    return { ok: false, message: "Kunne ikke nullstille firmareferanser før sletting." };
+    return fail(buildCleanupFailure("null_company_refs", "companies", nullRefs.error));
   }
 
   const locRes = await admin.from("company_locations").select("id").eq("company_id", companyId);
   if (locRes.error) {
-    return { ok: false, message: "Kunne ikke hente lokasjoner før sletting." };
+    return fail(buildCleanupFailure("load_locations", "company_locations", locRes.error));
   }
 
   const locIds = (locRes.data ?? []).map((r) => safeStr((r as { id?: string }).id)).filter(Boolean);
@@ -195,28 +307,31 @@ export async function cleanupHardDeleteDependencies(
     for (const table of locationChildren) {
       const del = await admin.from(table).delete().in("location_id", locIds);
       if (del.error) {
-        return { ok: false, message: cleanupFailureMessage(table, del.error) };
+        return fail(buildCleanupFailure(`location_children:${table}`, table, del.error));
       }
     }
   }
 
-  const setupDeletes = ["day_choices", "menu_service_days"] as const;
+  const setupDeletes = ["day_choices", "menu_service_days", "standing_orders"] as const;
   for (const table of setupDeletes) {
-    const result = await deleteByCompanyId(admin, table, companyId);
-    if (result.ok === false) return result;
+    const result = await deleteByCompanyId(admin, table, companyId, `setup:${table}`);
+    if (result.ok === false) return fail(result);
   }
+
+  const spineMemberships = await deleteSpineMembershipsByOrgId(admin, companyId);
+  if (spineMemberships.ok === false) return fail(spineMemberships);
 
   const membershipTables = ["location_memberships", "company_memberships"] as const;
   for (const table of membershipTables) {
-    const result = await deleteByCompanyId(admin, table, companyId);
-    if (result.ok === false) return result;
+    const result = await deleteByCompanyId(admin, table, companyId, `legacy_memberships:${table}`);
+    if (result.ok === false) return fail(result);
   }
 
   await deleteCompanyAuthUsers(admin, companyId);
 
   const profileDel = await admin.from("profiles").delete().eq("company_id", companyId);
   if (profileDel.error) {
-    return { ok: false, message: cleanupFailureMessage("profiles", profileDel.error) };
+    return fail(buildCleanupFailure("profiles", "profiles", profileDel.error));
   }
 
   const tableDeletes = [
@@ -231,14 +346,17 @@ export async function cleanupHardDeleteDependencies(
   ] as const;
 
   for (const table of tableDeletes) {
-    const result = await deleteByCompanyId(admin, table, companyId);
-    if (result.ok === false) return result;
+    const result = await deleteByCompanyId(admin, table, companyId, `company_rows:${table}`);
+    if (result.ok === false) return fail(result);
   }
 
   const locDel = await admin.from("company_locations").delete().eq("company_id", companyId);
   if (locDel.error) {
-    return { ok: false, message: cleanupFailureMessage("company_locations", locDel.error) };
+    return fail(buildCleanupFailure("company_locations", "company_locations", locDel.error));
   }
+
+  const orgDel = await deleteOrganizationMirror(admin, companyId);
+  if (orgDel.ok === false) return fail(orgDel);
 
   return { ok: true };
 }
@@ -396,20 +514,28 @@ export async function executeCompanyRemoval(
     cleanup: freshEligibility.cleanup,
   });
 
-  const cleanup = await cleanupHardDeleteDependencies(admin, companyId);
+  const cleanup = await cleanupHardDeleteDependencies(admin, companyId, actor.rid);
   if (cleanup.ok === false) {
-    return { ok: false, code: "DB_ERROR", message: cleanup.message, blockers: freshEligibility.blockers };
+    return {
+      ok: false,
+      code: cleanup.code,
+      message: cleanup.message,
+      blockers: freshEligibility.blockers,
+      dependencyDetail: cleanup.dependencyDetail,
+    };
   }
 
   const delRes = await admin.from("companies").delete().eq("id", companyId);
   if (delRes.error) {
+    const parsed = parseDbDependencyError(delRes.error);
+    const failure = buildCleanupFailure("companies", "companies", delRes.error);
+    await logCleanupFailure(actor.rid, companyId, failure);
     return {
       ok: false,
-      code: "DB_ERROR",
-      message:
-        safeDbHint(delRes.error) ??
-        "Kunne ikke slette firma — ukjente avhengigheter kan fortsatt finnes.",
+      code: parsed.isFkViolation ? "UNKNOWN_DEPENDENCY" : "DB_ERROR",
+      message: failure.message,
       blockers: freshEligibility.blockers,
+      dependencyDetail: failure.dependencyDetail,
     };
   }
 
