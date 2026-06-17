@@ -97,6 +97,30 @@ type RemoveBody = {
   reason?: string | null;
 };
 
+function formatRemovalErrorMessage(message: string, blockers?: string[]): string {
+  if (!blockers?.length) return message;
+  return `${message} ${blockers.join(" ")}`;
+}
+
+function removalErrorResponse(
+  rid: string,
+  result: { code: string; message: string; blockers?: string[] }
+): Response {
+  const status =
+    result.code === "NOT_FOUND" ? 404
+    : result.code === "HARD_DELETE_BLOCKED" ? 409
+    : result.code === "CONFIRM_MISMATCH" || result.code === "VALIDATION" || result.code === "BAD_REQUEST" ? 409
+    : result.code === "ALREADY_ARCHIVED" ? 422
+    : 500;
+
+  const message = formatRemovalErrorMessage(result.message, result.blockers);
+
+  return jsonErr(rid, message, status, result.code, {
+    blockers: result.blockers ?? [],
+    code: result.code,
+  });
+}
+
 export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const auth = await requireSuperadmin(req);
   if (!auth.ok) return auth.res;
@@ -112,27 +136,30 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const { supabaseAdmin } = await import("@/lib/supabase/admin");
   const admin = supabaseAdmin();
 
-  const result = await executeCompanyRemoval(admin, {
-    rid: auth.ctx.rid,
-    userId: auth.ctx.scope.userId ?? null,
-    email: auth.ctx.scope.email ?? null,
-  }, {
-    companyId,
-    mode,
-    confirmation: safeStr(body.confirmation),
-    reason: body.reason ?? null,
-  });
+  try {
+    const result = await executeCompanyRemoval(admin, {
+      rid: auth.ctx.rid,
+      userId: auth.ctx.scope.userId ?? null,
+      email: auth.ctx.scope.email ?? null,
+    }, {
+      companyId,
+      mode,
+      confirmation: safeStr(body.confirmation),
+      reason: body.reason ?? null,
+    });
 
-  if (result.ok === false) {
-    const status =
-      result.code === "NOT_FOUND" ? 404
-      : result.code === "HARD_DELETE_BLOCKED" ? 409
-      : result.code === "CONFIRM_MISMATCH" || result.code === "VALIDATION" || result.code === "BAD_REQUEST" ? 409
-      : result.code === "ALREADY_ARCHIVED" ? 422
-      : 500;
+    if (result.ok === false) {
+      return removalErrorResponse(auth.ctx.rid, result);
+    }
 
-    return jsonErr(auth.ctx.rid, result.message, status, result.code, { blockers: result.blockers ?? [] });
+    return jsonOk(auth.ctx.rid, { companyId: result.companyId, mode: result.mode });
+  } catch (err) {
+    const message =
+      err instanceof Error && err.message.startsWith("AUDIT_")
+        ? "Kunne ikke slette firma fordi audit-loggen ikke kunne skrives."
+        : "Kunne ikke fullføre sletting — serverfeil under utførelse.";
+    return jsonErr(auth.ctx.rid, message, 500, "EXECUTION_FAILED", {
+      code: "EXECUTION_FAILED",
+    });
   }
-
-  return jsonOk(auth.ctx.rid, { companyId: result.companyId, mode: result.mode });
 }

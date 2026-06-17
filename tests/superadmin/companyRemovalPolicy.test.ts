@@ -206,8 +206,9 @@ describe("Superadmin company removal UI wiring", () => {
     const src = readFileSync(join(ROOT, "lib/server/superadmin/executeCompanyRemoval.ts"), "utf8");
     expect(src).toContain('"agreements"');
     expect(src).toContain('"profiles"');
+    expect(src).toContain('"company_memberships"');
     expect(src).toContain('"day_choices"');
-    expect(src).toContain("phase: \"pre_delete\"");
+    expect(src).toContain("writeHardDeletePreAudit");
     expect(src).not.toContain("lp_order_set");
   });
 
