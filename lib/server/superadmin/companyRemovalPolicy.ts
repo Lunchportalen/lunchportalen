@@ -3,6 +3,10 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isMissingRelationError } from "@/lib/db/missingRelation";
+import {
+  isProtectedSystemCompany,
+  PROTECTED_SYSTEM_COMPANY_MESSAGE,
+} from "@/lib/server/superadmin/superadminEntityKind";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -146,11 +150,15 @@ export function hasCriticalOperationalHistory(d: CompanyDependencyCounts): boole
 
 function buildHardDeleteBlockers(input: {
   protectedPilot: boolean;
+  protectedSystem: boolean;
   dependencies: CompanyDependencyCounts;
 }): string[] {
   const d = input.dependencies;
   const blockers: string[] = [];
 
+  if (input.protectedSystem) {
+    blockers.push(PROTECTED_SYSTEM_COMPANY_MESSAGE);
+  }
   if (input.protectedPilot) {
     blockers.push("Dette firmaet er beskyttet og kan ikke slettes permanent.");
   }
@@ -201,6 +209,7 @@ export function evaluateCompanyRemovalEligibility(input: {
   dependencies: CompanyDependencyCounts;
 }): CompanyRemovalEligibility {
   const protectedPilot = isProtectedPilotCompany(input.companyName);
+  const protectedSystem = isProtectedSystemCompany({ companyName: input.companyName });
   const alreadyArchived = Boolean(safeStr(input.deletedAt));
   const hasOrgnr = Boolean(safeStr(input.orgnr));
   const hasName = Boolean(safeStr(input.companyName));
@@ -214,8 +223,12 @@ export function evaluateCompanyRemovalEligibility(input: {
   if (!hasOrgnr) archiveBlockers.push("Firma mangler org.nr — arkivering krever org.nr.");
   if (alreadyArchived) archiveBlockers.push("Firma er allerede arkivert.");
 
-  const hardDeleteBlockers = buildHardDeleteBlockers({ protectedPilot, dependencies: d });
-  const hasHardDeleteBlockers = protectedPilot || hasCriticalOperationalHistory(d) || dependencyCountFailed(d);
+  if (protectedSystem) archiveBlockers.push(PROTECTED_SYSTEM_COMPANY_MESSAGE);
+  if (protectedPilot) archiveBlockers.push("Dette firmaet er beskyttet og kan ikke arkiveres.");
+
+  const hardDeleteBlockers = buildHardDeleteBlockers({ protectedPilot, protectedSystem, dependencies: d });
+  const hasHardDeleteBlockers =
+    protectedPilot || protectedSystem || hasCriticalOperationalHistory(d) || dependencyCountFailed(d);
 
   const cleanup = hasHardDeleteBlockers ? [] : buildHardDeleteCleanup(d);
   const confirmationTargets = buildConfirmationTargets({
@@ -232,7 +245,7 @@ export function evaluateCompanyRemovalEligibility(input: {
     cleanup,
     warnings,
     confirmationTargets,
-    canArchive: !alreadyArchived && hasOrgnr,
+    canArchive: !alreadyArchived && hasOrgnr && archiveBlockers.length === 0,
     canHardDelete: !hasHardDeleteBlockers && (hasOrgnr || hasName),
   };
 }

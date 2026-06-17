@@ -20,6 +20,7 @@ import {
   deriveSuperadminRegistrationPipelinePrimaryHref,
   indexLedgerAgreementsByCompanyId,
 } from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
+import { loadSuperadminProviderDetail } from "@/lib/server/superadmin/loadSuperadminProviderDetail";
 
 type Ctx = { params: { companyId: string } | Promise<{ companyId: string }> };
 
@@ -37,6 +38,7 @@ type AgreementSnapshot = {
 };
 
 type CompanyDetails = {
+  entityKind?: "company";
   company: {
     id: string;
     name: string | null;
@@ -135,6 +137,11 @@ export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
 
   try {
     const admin = supabaseAdmin();
+
+    const providerDetail = await loadSuperadminProviderDetail(admin, companyId);
+    if (providerDetail) {
+      return jsonOk(rid, providerDetail, 200);
+    }
 
     const companyRes = await admin
       .from("companies")
@@ -283,6 +290,7 @@ export async function GET(req: NextRequest, ctx: Ctx): Promise<Response> {
     });
 
     const data: CompanyDetails = {
+      entityKind: "company",
       company,
       counts,
       agreement,

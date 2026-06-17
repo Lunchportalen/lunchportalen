@@ -26,6 +26,9 @@ type CompanyRow = {
   name: string;
   orgnr: string | null;
   status: CompanyStatus | null;
+  entityKind?: "provider" | "company";
+  customersCount?: number | null;
+  activeAgreementsCount?: number | null;
   planLabel?: string | null;
   agreementStatus?: string | null;
   contractStartDate?: string | null;
@@ -263,11 +266,19 @@ function normalizeRow(x: any): CompanyRow | null {
   const bmr = x?.bindingMonthsRemaining ?? x?.binding_months_remaining;
   const bindingMonthsRemaining = Number.isFinite(Number(bmr)) ? Math.floor(Number(bmr)) : null;
 
+  const customersCount = Number.isFinite(Number(x?.customersCount)) ? Number(x?.customersCount) : null;
+  const activeAgreementsCount = Number.isFinite(Number(x?.activeAgreementsCount))
+    ? Number(x?.activeAgreementsCount)
+    : null;
+
   return {
     id,
     name: safeStr(x?.name) || "Ukjent firma",
     orgnr: x?.orgnr ?? null,
     status: normStatus(x?.status ?? x?.company_status ?? x?.companyStatus),
+    entityKind: x?.entityKind === "provider" ? "provider" : "company",
+    customersCount,
+    activeAgreementsCount,
     planLabel: x?.planLabel ?? x?.plan ?? null,
     agreementStatus: x?.agreementStatus ?? x?.agreement_status ?? null,
     contractStartDate: x?.contractStartDate ?? x?.contract_start_date ?? null,
@@ -416,6 +427,7 @@ function CompanyRowActions(props: {
   onAudit: () => void;
   onPause: () => void;
   onArchive: () => void;
+  isProvider?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -476,28 +488,32 @@ function CompanyRowActions(props: {
             >
               Audit
             </button>
-            <button
-              type="button"
-              className="sa-action-menu__item"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                props.onPause();
-              }}
-            >
-              Pause
-            </button>
-            <button
-              type="button"
-              className="sa-action-menu__item sa-action-menu__item--danger"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                props.onArchive();
-              }}
-            >
-              Arkiver / fjern
-            </button>
+            {!props.isProvider ? (
+              <>
+                <button
+                  type="button"
+                  className="sa-action-menu__item"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    props.onPause();
+                  }}
+                >
+                  Pause
+                </button>
+                <button
+                  type="button"
+                  className="sa-action-menu__item sa-action-menu__item--danger"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    props.onArchive();
+                  }}
+                >
+                  Arkiver / fjern
+                </button>
+              </>
+            ) : null}
           </div>,
           document.body
         )
@@ -1266,8 +1282,12 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
       {/* Table */}
       <section className="sa-table-surface sa-table-surface--menus mt-4">
         <div className="border-b border-[rgb(var(--lp-border))] px-4 py-2.5 sm:px-5">
-          <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Operativ firmaoversikt</div>
-          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">Utvid rad for pipeline-detaljer. Handlinger via meny.</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">
+            Cateringfirma og leverandører
+          </div>
+          <div className="mt-0.5 text-xs text-[rgb(var(--lp-muted))]">
+            Hovedrader er leverandører. Lunsjkunder åpnes under valgt cateringfirma.
+          </div>
           {statusBusyId ? <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">Oppdaterer status…</div> : null}
         </div>
 
@@ -1276,12 +1296,11 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
             <thead>
               <tr>
                 <th aria-label="Utvid" className="w-8" />
-                <th>Firma</th>
+                <th>Cateringfirma</th>
                 <th>Org.nr</th>
                 <th>Status</th>
-                <th>Avtale</th>
-                <th>Plan</th>
-                <th>Ansatte</th>
+                <th>Kunder</th>
+                <th>Aktive avtaler</th>
                 <th>Sist endret</th>
                 <th className="text-right">Handlinger</th>
               </tr>
@@ -1290,13 +1309,13 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
             <tbody>
               {loading && visibleRows.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={9}>
+                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={8}>
                     Laster…
                   </td>
                 </tr>
               ) : visibleRows.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={9}>
+                  <td className="px-5 py-6 text-sm text-[rgb(var(--lp-muted))]" colSpan={8}>
                     <div className="font-medium">{emptyStateTitle}</div>
                     {emptyStateText ? <div className="mt-1 text-xs">{emptyStateText}</div> : null}
                   </td>
@@ -1305,8 +1324,11 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                 visibleRows.map((c) => {
                   const st = normStatus(c?.status);
                   const busy = statusBusyId === c?.id;
-                  const employeesCount = Number.isFinite(Number(c?.employeesCount)) ? Number(c?.employeesCount) : 0;
-                  const agrSt = c.agreementStatus ? safeStr(c.agreementStatus) : "";
+                  const isProvider = c.entityKind === "provider";
+                  const customersCount = Number.isFinite(Number(c?.customersCount)) ? Number(c?.customersCount) : 0;
+                  const activeAgreementsCount = Number.isFinite(Number(c?.activeAgreementsCount))
+                    ? Number(c?.activeAgreementsCount)
+                    : 0;
                   const expanded = expandedId === c.id;
 
                   return (
@@ -1332,30 +1354,22 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                             className="mt-0.5 inline-block text-xs font-semibold text-neutral-600 hover:underline"
                             onClick={(e) => stop(e as any)}
                           >
-                            Åpne firmaside
+                            {isProvider ? "Åpne leverandør" : "Åpne firmaside"}
                           </Link>
                         </td>
                         <td className="tabular-nums">{c.orgnr ?? "—"}</td>
                         <td>
                           <span className={statusChipClass(st)}>{statusLabel(st)}</span>
                         </td>
-                        <td>
-                          {agrSt ? (
-                            <span className={["sa-status-chip", agreementBadgeClass(agrSt)].join(" ")}>
-                              {agreementStatusLabel(agrSt)}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[rgb(var(--lp-muted))]">—</span>
-                          )}
-                        </td>
-                        <td>{safeStr(c.planLabel) || "—"}</td>
-                        <td className="tabular-nums">{employeesCount}</td>
+                        <td className="tabular-nums">{customersCount}</td>
+                        <td className="tabular-nums">{activeAgreementsCount}</td>
                         <td className="whitespace-nowrap text-xs">{fmtTs(c.updatedAt)}</td>
                         <td className="text-right">
                           <CompanyRowActions
                             row={c}
                             busy={busy}
-                            onOpen={() => openDetail(c)}
+                            isProvider={isProvider}
+                            onOpen={() => (isProvider ? router.push(`/superadmin/companies/${encodeURIComponent(c.id)}`) : openDetail(c))}
                             onAudit={() => router.push(`/superadmin/audit?entity_id=${encodeURIComponent(c.id)}`)}
                             onPause={() => openConfirm(c, "paused")}
                             onArchive={() => setRemovalTarget(c)}
@@ -1364,20 +1378,37 @@ export default function CompaniesClient(props: { cmsCopy?: CompaniesClientCmsCop
                       </tr>
                       {expanded ? (
                         <tr>
-                          <td colSpan={9} className="p-0">
+                          <td colSpan={8} className="p-0">
                             <div className="sa-row-detail">
                               <div className="sa-row-detail__grid">
-                                <span>{pipelineSummary(c)}</span>
-                                {c.pipelineNextLabel ? <span>Neste: {c.pipelineNextLabel}</span> : null}
-                                {c.pipelinePrimaryHref ? (
-                                  <Link
-                                    href={c.pipelinePrimaryHref}
-                                    className="font-semibold text-neutral-800 hover:underline"
-                                    onClick={(e) => stop(e as any)}
-                                  >
-                                    Åpne anbefalt steg →
-                                  </Link>
-                                ) : null}
+                                {isProvider ? (
+                                  <>
+                                    <span>
+                                      {customersCount} kunder · {activeAgreementsCount} aktive avtaler
+                                    </span>
+                                    <Link
+                                      href={`/superadmin/companies/${encodeURIComponent(c.id)}`}
+                                      className="font-semibold text-neutral-800 hover:underline"
+                                      onClick={(e) => stop(e as any)}
+                                    >
+                                      Åpne kundeliste →
+                                    </Link>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>{pipelineSummary(c)}</span>
+                                    {c.pipelineNextLabel ? <span>Neste: {c.pipelineNextLabel}</span> : null}
+                                    {c.pipelinePrimaryHref ? (
+                                      <Link
+                                        href={c.pipelinePrimaryHref}
+                                        className="font-semibold text-neutral-800 hover:underline"
+                                        onClick={(e) => stop(e as any)}
+                                      >
+                                        Åpne anbefalt steg →
+                                      </Link>
+                                    ) : null}
+                                  </>
+                                )}
                                 <Link
                                   href={`/superadmin/audit?entity_id=${encodeURIComponent(c.id)}`}
                                   className="font-semibold text-neutral-800 hover:underline"
