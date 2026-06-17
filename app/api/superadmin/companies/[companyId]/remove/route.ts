@@ -125,8 +125,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   if (result.ok === false) {
     const status =
       result.code === "NOT_FOUND" ? 404
+      : result.code === "HARD_DELETE_BLOCKED" ? 409
       : result.code === "CONFIRM_MISMATCH" || result.code === "VALIDATION" || result.code === "BAD_REQUEST" ? 409
-      : result.code === "HARD_DELETE_BLOCKED" || result.code === "ALREADY_ARCHIVED" ? 422
+      : result.code === "ALREADY_ARCHIVED" ? 422
       : 500;
 
     return jsonErr(auth.ctx.rid, result.message, status, result.code, { blockers: result.blockers ?? [] });
