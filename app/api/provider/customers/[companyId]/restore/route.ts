@@ -23,11 +23,17 @@ function isUuidLike(v: unknown) {
 }
 
 function restoreErrorMessage(code: string, fallback: string): string {
+  if (code === "PROVIDER_ROLE_MISSING") {
+    return "Brukeren er ikke registrert som administrator for denne leverandøren.";
+  }
+  if (code === "PROVIDER_CONTEXT_MISSING") {
+    return "Fant ikke leverandørtilknytning for innlogget bruker.";
+  }
   if (code === "FORBIDDEN") return "Du har ikke tilgang til å gjenopprette denne kunden.";
   if (code === "OUT_OF_SCOPE") return "Kunden tilhører ikke denne leverandøren.";
   if (code === "SELF_CUSTOMER") return "Leverandøren kan ikke være kunde av seg selv.";
   if (code === "PROTECTED_SYSTEM") return "Systemorganisasjon kan ikke gjenopprettes her.";
-  if (code === "ALREADY_ACTIVE") return "Kunden er allerede aktiv.";
+  if (code === "ALREADY_ACTIVE" || code === "NOT_DELETED") return "Kunden er allerede aktiv.";
   return fallback;
 }
 
@@ -70,7 +76,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       const status =
         result.code === "NOT_FOUND" ? 404
         : result.code === "FORBIDDEN" || result.code === "OUT_OF_SCOPE" || result.code === "PROTECTED_SYSTEM" || result.code === "SELF_CUSTOMER" ? 403
-        : result.code === "CONFIRM_MISMATCH" || result.code === "ALREADY_ACTIVE" ? 409
+        : result.code === "CONFIRM_MISMATCH" || result.code === "ALREADY_ACTIVE" || result.code === "NOT_DELETED" ? 409
         : 500;
 
       return jsonErr(auth.rid, restoreErrorMessage(result.code, result.message), status, result.code, {

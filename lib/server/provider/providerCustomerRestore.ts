@@ -169,7 +169,7 @@ export async function executeProviderCustomerRestore(
       previousStatus: row.status ?? null,
       reason: input.reason ?? null,
     });
-    return { ok: false, code: "ALREADY_ACTIVE", message, blockers: [message] };
+    return { ok: false, code: "NOT_DELETED", message, blockers: [message] };
   }
 
   if (
