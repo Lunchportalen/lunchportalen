@@ -1,9 +1,13 @@
 "use client";
 
 import type { ButtonHTMLAttributes } from "react";
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
-async function performLogoutRedirect() {
+export const LOGOUT_ERROR_MESSAGE = "Kunne ikke logge ut. Prøv igjen.";
+
+export type LogoutRedirectResult = { ok: true } | { ok: false };
+
+export async function performLogoutRedirect(): Promise<LogoutRedirectResult> {
   try {
     const res = await fetch("/api/auth/logout", {
       method: "POST",
@@ -14,12 +18,17 @@ async function performLogoutRedirect() {
 
     if (res.redirected && res.url) {
       window.location.href = res.url;
-      return;
+      return { ok: true };
+    }
+
+    if (!res.ok) {
+      return { ok: false };
     }
 
     window.location.href = "/login";
+    return { ok: true };
   } catch {
-    window.location.href = "/login";
+    return { ok: false };
   }
 }
 
@@ -29,27 +38,39 @@ export type LogoutClientButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElemen
 
 export function LogoutClientButton({ className, ...rest }: LogoutClientButtonProps) {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   function onLogout() {
     if (isPending) return;
 
     startTransition(async () => {
-      await performLogoutRedirect();
+      setError(null);
+      const result = await performLogoutRedirect();
+      if (!result.ok) {
+        setError(LOGOUT_ERROR_MESSAGE);
+      }
     });
   }
 
   return (
-    <button
-      type="button"
-      className={className ?? "lp-btn lp-btn--ghost lp-btn--sm"}
-      disabled={isPending}
-      onClick={onLogout}
-      aria-busy={isPending}
-      title={isPending ? "Logger ut..." : "Logg ut"}
-      {...rest}
-    >
-      {isPending ? "Logger ut..." : "Logg ut"}
-    </button>
+    <div className="w-full">
+      <button
+        type="button"
+        className={className ?? "lp-btn lp-btn--ghost lp-btn--sm"}
+        disabled={isPending}
+        onClick={onLogout}
+        aria-busy={isPending}
+        title={isPending ? "Logger ut..." : "Logg ut"}
+        {...rest}
+      >
+        {isPending ? "Logger ut..." : "Logg ut"}
+      </button>
+      {error ? (
+        <p className="mt-2 text-xs text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

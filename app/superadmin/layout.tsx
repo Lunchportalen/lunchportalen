@@ -46,11 +46,13 @@ export default async function SuperadminLayout({ children }: { children: ReactNo
     redirect(roleHome(auth.role));
   }
 
+  const userEmail = String(auth.email ?? auth.user?.email ?? "").trim() || null;
+
   return (
     <div className="lp-app-shell lp-app-shell--wide">
       <div className="lp-app-shell__workspace">
-        <aside className="lp-app-shell__sidebar">
-          <ControlTowerNav />
+        <aside className="lp-app-shell__sidebar flex flex-col">
+          <ControlTowerNav userEmail={userEmail} roleLabel="Superadmin" />
         </aside>
 
         <main className="lp-app-shell__main">{children}</main>
