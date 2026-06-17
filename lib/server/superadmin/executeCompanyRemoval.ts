@@ -9,6 +9,7 @@ import {
   loadCompanyDependencyCounts,
   matchesArchiveConfirmation,
   matchesHardDeleteConfirmation,
+  type CompanyDependencyCounts,
 } from "@/lib/server/superadmin/companyRemovalPolicy";
 
 function safeStr(v: unknown) {
@@ -52,6 +53,63 @@ async function archiveCompanyAccess(
   }
 
   return { authUsersTargeted: userIds.length, authUsersDeleted };
+}
+
+/** Controlled cleanup of non-operational rows before hard delete. Only safe when eligibility already passed. */
+export async function cleanupHardDeleteDependencies(
+  admin: SupabaseClient,
+  companyId: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const nullDefault = await admin.from("companies").update({ default_location_id: null }).eq("id", companyId);
+  if (nullDefault.error) {
+    return { ok: false, message: "Kunne ikke nullstille standardlokasjon før sletting." };
+  }
+
+  const locRes = await admin.from("company_locations").select("id").eq("company_id", companyId);
+  if (locRes.error) {
+    return { ok: false, message: "Kunne ikke hente lokasjoner før sletting." };
+  }
+
+  const locIds = (locRes.data ?? []).map((r) => safeStr((r as { id?: string }).id)).filter(Boolean);
+
+  if (locIds.length > 0) {
+    const locationChildren = ["location_closed_dates", "location_policies"] as const;
+    for (const table of locationChildren) {
+      const del = await admin.from(table).delete().in("location_id", locIds);
+      if (del.error) {
+        return { ok: false, message: `Kunne ikke fjerne ${table} før sletting.` };
+      }
+    }
+  }
+
+  const menuDel = await admin.from("menu_service_days").delete().eq("company_id", companyId);
+  if (menuDel.error) {
+    return { ok: false, message: "Kunne ikke fjerne menydager før sletting." };
+  }
+
+  const tableDeletes = [
+    "lead_pipeline",
+    "agreement_change_requests",
+    "agreement_requests",
+    "company_registrations",
+    "company_invites",
+    "employee_invites",
+    "company_memberships",
+  ] as const;
+
+  for (const table of tableDeletes) {
+    const del = await admin.from(table).delete().eq("company_id", companyId);
+    if (del.error) {
+      return { ok: false, message: `Kunne ikke fjerne ${table} før sletting.` };
+    }
+  }
+
+  const locDel = await admin.from("company_locations").delete().eq("company_id", companyId);
+  if (locDel.error) {
+    return { ok: false, message: "Kunne ikke fjerne lokasjoner før sletting." };
+  }
+
+  return { ok: true };
 }
 
 export async function executeCompanyRemoval(
@@ -176,27 +234,20 @@ export async function executeCompanyRemoval(
     };
   }
 
-  if (dependencies.companyLocations > 0) {
-    const locDel = await admin.from("company_locations").delete().eq("company_id", companyId);
-    if (locDel.error) {
-      return { ok: false, code: "DB_ERROR", message: "Kunne ikke fjerne lokasjoner før sletting." };
-    }
-  }
+  const freshDependencies = await loadCompanyDependencyCounts(admin, companyId);
+  const freshEligibility = evaluateCompanyRemovalEligibility({
+    companyName: company.name,
+    orgnr: company.orgnr,
+    deletedAt: company.deleted_at,
+    dependencies: freshDependencies,
+  });
 
-  if (dependencies.companyRegistrations > 0) {
-    const regDel = await admin.from("company_registrations").delete().eq("company_id", companyId);
-    if (regDel.error) {
-      return { ok: false, code: "DB_ERROR", message: "Kunne ikke fjerne registreringsutkast før sletting." };
-    }
-  }
-
-  const delRes = await admin.from("companies").delete().eq("id", companyId);
-  if (delRes.error) {
+  if (!freshEligibility.canHardDelete) {
     return {
       ok: false,
-      code: "DB_ERROR",
-      message: "Kunne ikke slette firma — avhengigheter kan fortsatt finnes.",
-      blockers: eligibility.blockers,
+      code: "HARD_DELETE_BLOCKED",
+      message: "Permanent sletting er ikke tillatt — avhengigheter endret.",
+      blockers: freshEligibility.blockers,
     };
   }
 
@@ -210,16 +261,42 @@ export async function executeCompanyRemoval(
     actor_email: actor.email,
     actor_role: "superadmin",
     summary: "Superadmin slettet firma permanent",
-    detail: { companyId, reason, mode: "hard_delete", dependencies, via: "companies.remove" },
+    detail: {
+      companyId,
+      companyName: company.name,
+      orgnr: company.orgnr,
+      reason,
+      mode: "hard_delete",
+      dependencies: freshDependencies,
+      via: "companies.remove",
+      phase: "pre_delete",
+    },
   });
+
+  const cleanup = await cleanupHardDeleteDependencies(admin, companyId);
+  if (cleanup.ok === false) {
+    return { ok: false, code: "DB_ERROR", message: cleanup.message, blockers: freshEligibility.blockers };
+  }
+
+  const delRes = await admin.from("companies").delete().eq("id", companyId);
+  if (delRes.error) {
+    return {
+      ok: false,
+      code: "DB_ERROR",
+      message: "Kunne ikke slette firma — ukjente avhengigheter kan fortsatt finnes.",
+      blockers: freshEligibility.blockers,
+    };
+  }
 
   await logIncident({
     scope: "companies",
     severity: "warn",
     rid: actor.rid,
     message: "Company hard deleted",
-    meta: { companyId, reason, mode: "hard_delete" },
+    meta: { companyId, reason, mode: "hard_delete", dependencies: freshDependencies },
   });
 
   return { ok: true, mode: "hard_delete", companyId };
 }
+
+export type { CompanyDependencyCounts };

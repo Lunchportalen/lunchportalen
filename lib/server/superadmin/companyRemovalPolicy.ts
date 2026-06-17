@@ -2,6 +2,8 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isMissingRelationError } from "@/lib/db/missingRelation";
+
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
@@ -19,6 +21,11 @@ export type CompanyDependencyCounts = {
   companyLocations: number;
   invoiceLines: number;
   deliveries: number;
+  dayChoices: number;
+  menuServiceDays: number;
+  agreementRequests: number;
+  productionManifests: number;
+  tripletexInvoices: number;
 };
 
 export type CompanyRemovalEligibility = {
@@ -43,7 +50,10 @@ async function countRows(
   column = "company_id"
 ): Promise<number> {
   const { count, error } = await db.from(table).select("id", { count: "exact", head: true }).eq(column, companyId);
-  if (error) return Number.MAX_SAFE_INTEGER;
+  if (error) {
+    if (isMissingRelationError(error, table)) return 0;
+    return Number.MAX_SAFE_INTEGER;
+  }
   return Number.isFinite(Number(count)) ? Number(count) : 0;
 }
 
@@ -62,6 +72,11 @@ export async function loadCompanyDependencyCounts(
     companyLocations,
     invoiceLines,
     deliveries,
+    dayChoices,
+    menuServiceDays,
+    agreementRequests,
+    productionManifests,
+    tripletexInvoices,
   ] = await Promise.all([
     countRows(db, "orders", companyId),
     countRows(db, "agreements", companyId),
@@ -73,6 +88,11 @@ export async function loadCompanyDependencyCounts(
     countRows(db, "company_locations", companyId),
     countRows(db, "invoice_lines", companyId),
     countRows(db, "deliveries", companyId),
+    countRows(db, "day_choices", companyId),
+    countRows(db, "menu_service_days", companyId),
+    countRows(db, "agreement_requests", companyId),
+    countRows(db, "production_manifests", companyId),
+    countRows(db, "tripletex_invoices", companyId),
   ]);
 
   return {
@@ -86,7 +106,40 @@ export async function loadCompanyDependencyCounts(
     companyLocations,
     invoiceLines,
     deliveries,
+    dayChoices,
+    menuServiceDays,
+    agreementRequests,
+    productionManifests,
+    tripletexInvoices,
   };
+}
+
+function buildHardDeleteBlockers(input: {
+  protectedPilot: boolean;
+  dependencies: CompanyDependencyCounts;
+}): string[] {
+  const d = input.dependencies;
+  const blockers: string[] = [];
+
+  if (input.protectedPilot) {
+    blockers.push("Dette firmaet er beskyttet og kan ikke slettes permanent.");
+  }
+  if (d.orders > 0) blockers.push("Ordrehistorikk finnes.");
+  if (d.agreements > 0 || d.agreementRequests > 0) blockers.push("Avtalehistorikk finnes.");
+  if (d.profiles > 0) blockers.push("Ansatte eller profiler finnes.");
+  if (d.dayChoices > 0 || d.menuServiceDays > 0) blockers.push("Meny-/lunsjvalg finnes.");
+  if (d.tripletexCustomers > 0 || d.billingAccounts > 0 || d.tripletexInvoices > 0) {
+    blockers.push("Audit/faktura/Tripletex-historikk finnes.");
+  }
+  if (d.invoiceLines > 0) blockers.push("Fakturagrunnlag finnes.");
+  if (d.deliveries > 0 || d.productionManifests > 0) blockers.push("Leveranse-/produksjonshistorikk finnes.");
+
+  const values = Object.values(d);
+  if (values.some((n) => n === Number.MAX_SAFE_INTEGER)) {
+    blockers.push("Kunne ikke verifisere alle avhengigheter — permanent sletting er blokkert.");
+  }
+
+  return blockers;
 }
 
 export function evaluateCompanyRemovalEligibility(input: {
@@ -99,32 +152,30 @@ export function evaluateCompanyRemovalEligibility(input: {
   const alreadyArchived = Boolean(safeStr(input.deletedAt));
   const hasOrgnr = Boolean(safeStr(input.orgnr));
   const d = input.dependencies;
-  const blockers: string[] = [];
 
-  if (!hasOrgnr) blockers.push("Firma mangler org.nr — arkivering krever org.nr.");
+  const archiveBlockers: string[] = [];
+  if (!hasOrgnr) archiveBlockers.push("Firma mangler org.nr — arkivering krever org.nr.");
+  if (alreadyArchived) archiveBlockers.push("Firma er allerede arkivert.");
 
-  if (protectedPilot) {
-    blockers.push("Beskyttet pilotfirma kan ikke slettes permanent.");
-  }
-  if (d.orders > 0) blockers.push(`${d.orders} ordre finnes — historikk må bevares.`);
-  if (d.agreements > 0) blockers.push(`${d.agreements} avtale(r) finnes.`);
-  if (d.profiles > 0) blockers.push(`${d.profiles} ansatt(e)/profil(er) finnes.`);
-  if (d.tripletexCustomers > 0) blockers.push("Tripletex-kobling finnes.");
-  if (d.billingAccounts > 0) blockers.push("Fakturakonto/Tripletex-mapping finnes.");
-  if (d.auditEvents > 0) blockers.push(`${d.auditEvents} audit-hendelse(r) finnes — slettes ikke.`);
-  if (d.invoiceLines > 0) blockers.push(`${d.invoiceLines} fakturalinje(r) finnes.`);
-  if (d.deliveries > 0) blockers.push(`${d.deliveries} leveranse(r) finnes.`);
+  const hardDeleteBlockers = buildHardDeleteBlockers({ protectedPilot, dependencies: d });
 
   const hasHardDeleteBlockers =
     protectedPilot ||
     d.orders > 0 ||
     d.agreements > 0 ||
+    d.agreementRequests > 0 ||
     d.profiles > 0 ||
     d.tripletexCustomers > 0 ||
     d.billingAccounts > 0 ||
-    d.auditEvents > 0 ||
     d.invoiceLines > 0 ||
-    d.deliveries > 0;
+    d.deliveries > 0 ||
+    d.dayChoices > 0 ||
+    d.menuServiceDays > 0 ||
+    d.productionManifests > 0 ||
+    d.tripletexInvoices > 0 ||
+    Object.values(d).some((n) => n === Number.MAX_SAFE_INTEGER);
+
+  const blockers = Array.from(new Set([...archiveBlockers, ...hardDeleteBlockers]));
 
   return {
     protectedPilot,

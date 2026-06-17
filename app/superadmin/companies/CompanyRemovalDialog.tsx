@@ -107,9 +107,20 @@ export default function CompanyRemovalDialog(props: {
     if (!eligibility?.canArchive && !loadingEligibility && eligibility && !eligibility.canHardDelete) {
       return "Firma kan ikke fjernes";
     }
-    if (mode === "hard_delete" && eligibility?.canHardDelete) return "Slett permanent";
-    if (eligibility && !eligibility.canHardDelete) return "Firma kan arkiveres, men ikke slettes permanent";
+    if (mode === "hard_delete" && eligibility?.canHardDelete) return "Slett firma permanent";
+    if (eligibility && !eligibility.canHardDelete) return "Firma kan ikke slettes permanent";
     return "Arkiver firma";
+  }, [loadingEligibility, eligibility, mode]);
+
+  const dialogLead = useMemo(() => {
+    if (loadingEligibility || !eligibility) return null;
+    if (mode === "hard_delete" && eligibility.canHardDelete) {
+      return "Firmaet har ingen operativ historikk og kan slettes permanent.";
+    }
+    if (!eligibility.canHardDelete) {
+      return "Dette firmaet har historikk eller avhengigheter som må bevares.";
+    }
+    return "Velg om firmaet skal arkiveres eller slettes permanent.";
   }, [loadingEligibility, eligibility, mode]);
 
   const confirmMatches = useMemo(() => {
@@ -173,6 +184,8 @@ export default function CompanyRemovalDialog(props: {
           {orgnr ? <span className="text-neutral-500"> · {orgnr}</span> : null}
         </p>
 
+        {dialogLead ? <p className="mt-2 text-sm text-neutral-600">{dialogLead}</p> : null}
+
         {loadingEligibility ? <p className="mt-4 text-sm text-neutral-500">Henter avhengigheter…</p> : null}
 
         {eligibility?.protectedPilot ? (
@@ -193,7 +206,7 @@ export default function CompanyRemovalDialog(props: {
           <p className="mt-3 text-sm text-red-700">Firma kan ikke arkiveres (allerede arkivert eller mangler org.nr).</p>
         ) : null}
 
-        {showHardDeleteTab ? (
+        {showHardDeleteTab || (eligibility && eligibility.canArchive) ? (
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
@@ -204,16 +217,18 @@ export default function CompanyRemovalDialog(props: {
               onClick={() => setMode("archive")}
               disabled={!eligibility?.canArchive || pending}
             >
-              Arkiver
+              Arkiver firma
             </button>
             <button
               type="button"
               className={[
                 "rounded-full border px-3 py-1.5 text-xs font-semibold",
                 mode === "hard_delete" ? "bg-rose-700 text-white" : "bg-white hover:bg-neutral-50",
+                !eligibility?.canHardDelete ? "opacity-50" : "",
               ].join(" ")}
               onClick={() => setMode("hard_delete")}
-              disabled={pending}
+              disabled={!eligibility?.canHardDelete || pending}
+              title={!eligibility?.canHardDelete ? "Permanent sletting er blokkert av server" : undefined}
             >
               Slett permanent
             </button>
@@ -225,7 +240,9 @@ export default function CompanyRemovalDialog(props: {
             Arkivering setter firma til stengt, fjerner innlogging og beholder ordre, avtaler og audit.
           </p>
         ) : (
-          <p className="mt-3 text-xs font-semibold text-rose-800">Permanent sletting kan ikke angres.</p>
+          <p className="mt-3 text-xs font-semibold text-rose-800">
+            Dette kan ikke angres. Skriv org.nr eller firmanavn for å bekrefte.
+          </p>
         )}
 
         {(eligibility?.canArchive || eligibility?.canHardDelete) && !loadingEligibility ? (
