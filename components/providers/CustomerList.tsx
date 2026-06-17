@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 
 import ProviderCustomerRemovalDialog from "@/components/providers/ProviderCustomerRemovalDialog";
+import ProviderCustomerRestoreDialog from "@/components/providers/ProviderCustomerRestoreDialog";
 
 import {
   providerCustomerStatusLabel,
@@ -41,6 +42,7 @@ export default function CustomerList({
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; orgnr: string | null } | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<{ id: string; name: string; orgnr: string | null } | null>(null);
 
   const filter = (searchParams.get("filter") as ProviderCustomerFilter) || "all";
   const search = searchParams.get("q") ?? "";
@@ -139,13 +141,28 @@ export default function CustomerList({
                     <td>{formatProviderCustomerUpdated(row.updatedAt, locale)}</td>
                     {canManage ? (
                       <td className="text-right">
-                        <button
-                          type="button"
-                          className="ds-btn ds-btn--ghost ds-btn--sm min-h-12"
-                          onClick={() => setRemovalTarget({ id: row.id, name: row.name, orgnr: null })}
-                        >
-                          Fjern kunde
-                        </button>
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <Link href={`/leverandor/kunder/${row.id}`} className="ds-btn ds-btn--ghost ds-btn--sm min-h-12">
+                            Åpne kunde
+                          </Link>
+                          {row.status === "DELETED" ? (
+                            <button
+                              type="button"
+                              className="ds-btn ds-btn--secondary ds-btn--sm min-h-12"
+                              onClick={() => setRestoreTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
+                            >
+                              Gjenopprett kunde
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="ds-btn ds-btn--ghost ds-btn--sm min-h-12"
+                              onClick={() => setRemovalTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
+                            >
+                              Fjern kunde
+                            </button>
+                          )}
+                        </div>
                       </td>
                     ) : null}
                   </tr>
@@ -163,14 +180,37 @@ export default function CustomerList({
           </div>
         ) : (
           rows.map((row) => (
-            <Link key={row.id} href={`/leverandor/kunder/${row.id}`} className="ds-card ds-provider-customer-card">
-              <div className="ds-card__title">{row.name}</div>
-              <span className={statusBadgeClass(row.status)}>{providerCustomerStatusLabel(row.status)}</span>
-              <p className="ds-card__text">{copy.mobileMeta(row.employeesCount, row.ordersThisWeek)}</p>
-              <p className="ds-provider-activity__meta">
-                {copy.mobileUpdatedPrefix} {formatProviderCustomerUpdated(row.updatedAt, locale)}
-              </p>
-            </Link>
+            <div key={row.id} className="ds-card ds-provider-customer-card">
+              <Link href={`/leverandor/kunder/${row.id}`} className="block">
+                <div className="ds-card__title">{row.name}</div>
+                <span className={statusBadgeClass(row.status)}>{providerCustomerStatusLabel(row.status)}</span>
+                <p className="ds-card__text">{copy.mobileMeta(row.employeesCount, row.ordersThisWeek)}</p>
+                <p className="ds-provider-activity__meta">
+                  {copy.mobileUpdatedPrefix} {formatProviderCustomerUpdated(row.updatedAt, locale)}
+                </p>
+              </Link>
+              {canManage ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {row.status === "DELETED" ? (
+                    <button
+                      type="button"
+                      className="ds-btn ds-btn--secondary ds-btn--sm min-h-12"
+                      onClick={() => setRestoreTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
+                    >
+                      Gjenopprett kunde
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="ds-btn ds-btn--ghost ds-btn--sm min-h-12"
+                      onClick={() => setRemovalTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
+                    >
+                      Fjern kunde
+                    </button>
+                  )}
+                </div>
+              ) : null}
+            </div>
           ))
         )}
       </div>
@@ -208,6 +248,20 @@ export default function CustomerList({
           onClose={() => setRemovalTarget(null)}
           onDone={() => {
             setRemovalTarget(null);
+            router.refresh();
+          }}
+        />
+      ) : null}
+
+      {restoreTarget ? (
+        <ProviderCustomerRestoreDialog
+          open={Boolean(restoreTarget)}
+          companyId={restoreTarget.id}
+          companyName={restoreTarget.name}
+          orgnr={restoreTarget.orgnr}
+          onClose={() => setRestoreTarget(null)}
+          onDone={() => {
+            setRestoreTarget(null);
             router.refresh();
           }}
         />

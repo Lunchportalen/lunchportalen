@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isSystemPlatformCompanyName } from "@/lib/server/superadmin/superadminEntityKind";
+import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -109,7 +110,7 @@ export async function loadSuperadminProviderList(
   if (providerIds.length > 0) {
     const { data: companies, error: companiesErr } = await admin
       .from("companies")
-      .select("id,provider_id,name,status")
+      .select("id,provider_id,name,orgnr,status")
       .in("provider_id", providerIds);
 
     if (companiesErr && !isMissingSchema(companiesErr)) throw companiesErr;
@@ -123,6 +124,25 @@ export async function loadSuperadminProviderList(
       const name = safeStr((row as { name?: string }).name);
       if (!pid || !cid) continue;
       if (isSystemPlatformCompanyName(name)) continue;
+
+      const provider = providers.find((p) => safeStr(p.id) === pid);
+      if (
+        provider &&
+        isProviderSelfCustomer(
+          {
+            id: cid,
+            name,
+            orgnr: (row as { orgnr?: string | null }).orgnr ?? null,
+          },
+          {
+            id: pid,
+            name: safeStr(provider.name) || null,
+            orgNumber: provider.org_number ?? null,
+          },
+        )
+      ) {
+        continue;
+      }
 
       const arr = customersByProvider.get(pid) ?? [];
       arr.push(cid);

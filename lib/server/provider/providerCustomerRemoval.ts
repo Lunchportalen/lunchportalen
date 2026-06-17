@@ -15,6 +15,7 @@ import {
   type CompanyRemovalResult,
 } from "@/lib/server/superadmin/executeCompanyRemoval";
 import { isSystemPlatformCompanyName } from "@/lib/server/superadmin/superadminEntityKind";
+import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -31,7 +32,8 @@ export type ProviderScopedCustomer = {
 export type ProviderCustomerRemovalScopeError =
   | { code: "NOT_FOUND"; message: string }
   | { code: "OUT_OF_SCOPE"; message: string }
-  | { code: "PROTECTED_SYSTEM"; message: string };
+  | { code: "PROTECTED_SYSTEM"; message: string }
+  | { code: "SELF_CUSTOMER"; message: string };
 
 export async function loadProviderScopedCustomer(
   admin: SupabaseClient,
@@ -60,10 +62,31 @@ export async function loadProviderScopedCustomer(
     return { code: "PROTECTED_SYSTEM", message: "Lunchportalen er systemorganisasjon og kan ikke slettes." };
   }
 
+  const orgnr = (data as { orgnr?: string | null }).orgnr ?? null;
+  const { data: providerRow } = await admin
+    .from("providers")
+    .select("id,name,org_number")
+    .eq("id", pid)
+    .maybeSingle();
+
+  if (
+    providerRow &&
+    isProviderSelfCustomer(
+      { id: cid, name, orgnr },
+      {
+        id: pid,
+        name: (providerRow as { name?: string | null }).name ?? null,
+        orgNumber: (providerRow as { org_number?: string | null }).org_number ?? null,
+      }
+    )
+  ) {
+    return { code: "SELF_CUSTOMER", message: "Leverandøren kan ikke behandles som egen kunde." };
+  }
+
   return {
     id: cid,
     name,
-    orgnr: (data as { orgnr?: string | null }).orgnr ?? null,
+    orgnr,
     providerId: pid,
     deletedAt: (data as { deleted_at?: string | null }).deleted_at ?? null,
   };

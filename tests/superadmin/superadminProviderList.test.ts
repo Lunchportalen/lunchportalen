@@ -205,6 +205,45 @@ describe("loadSuperadminProviderDetail", () => {
     expect(detail?.customers.map((c) => c.name)).toEqual(["Pettersen&Co"]);
     expect(detail?.customers[0]?.activeAgreement).toBe(true);
   });
+
+  it("ekskluderer leverandør som egen kunde", async () => {
+    const admin = mkAdminMock({
+      providers: [
+        {
+          id: MELHUS_PROVIDER_ID,
+          name: "Melhus Catering AS",
+          org_number: "123456789",
+          status: "ACTIVE",
+          contact_email: "kontakt@melhus.no",
+          created_at: "2026-01-01T00:00:00Z",
+          updated_at: "2026-02-01T00:00:00Z",
+        },
+      ],
+      companies: [
+        {
+          id: MELHUS_PROVIDER_ID,
+          provider_id: MELHUS_PROVIDER_ID,
+          name: "Melhus Catering AS",
+          orgnr: "123456789",
+          status: "ACTIVE",
+          updated_at: "2026-03-01T00:00:00Z",
+        },
+        {
+          id: PETTERSEN_COMPANY_ID,
+          provider_id: MELHUS_PROVIDER_ID,
+          name: "Pettersen&Co",
+          orgnr: "987654321",
+          status: "CLOSED",
+          updated_at: "2026-03-01T00:00:00Z",
+        },
+      ],
+      agreements: [],
+    });
+
+    const detail = await loadSuperadminProviderDetail(admin as any, MELHUS_PROVIDER_ID);
+    expect(detail?.customers.map((c) => c.name)).toEqual(["Pettersen&Co"]);
+    expect(detail?.customers[0]?.status).toBe("closed");
+  });
 });
 
 describe("companyRemovalPolicy system org", () => {
