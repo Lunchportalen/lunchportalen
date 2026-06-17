@@ -296,4 +296,13 @@ describe("Superadmin provider-first wiring", () => {
     expect(regex.test(melhusId)).toBe(true);
     expect(regex.test("not-a-uuid")).toBe(false);
   });
+
+  it("ProviderDetailClient har staff-level layout", () => {
+    const client = readFileSync(join(ROOT, "app/superadmin/companies/[companyId]/ProviderDetailClient.tsx"), "utf8");
+    expect(client).toContain("SuperadminPageShell");
+    expect(client).toContain("SuperadminHero");
+    expect(client).toContain("SuperadminMetricRow");
+    expect(client).toContain("sa-enterprise-table");
+    expect(client).toContain("Fjern kunde");
+  });
 });

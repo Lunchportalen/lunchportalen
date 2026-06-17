@@ -14,6 +14,7 @@ export type SuperadminProviderCustomerRow = {
   orgnr: string | null;
   status: "pending" | "active" | "paused" | "closed";
   activeAgreement: boolean;
+  employeesCount: number;
   updatedAt: string | null;
 };
 
@@ -71,16 +72,23 @@ export async function loadSuperadminProviderDetail(
   const customerIds = customerRows.map((r) => safeStr((r as { id?: string }).id)).filter(Boolean);
 
   const activeAgreementCompanyIds = new Set<string>();
+  const employeesByCompany = new Map<string, number>();
+
   if (customerIds.length > 0) {
-    const { data: agreements } = await admin
-      .from("agreements")
-      .select("company_id")
-      .in("company_id", customerIds)
-      .eq("status", "ACTIVE");
+    const [{ data: agreements }, { data: profiles }] = await Promise.all([
+      admin.from("agreements").select("company_id").in("company_id", customerIds).eq("status", "ACTIVE"),
+      admin.from("profiles").select("company_id").in("company_id", customerIds),
+    ]);
 
     for (const row of agreements ?? []) {
       const cid = safeStr((row as { company_id?: string }).company_id);
       if (cid) activeAgreementCompanyIds.add(cid);
+    }
+
+    for (const row of profiles ?? []) {
+      const cid = safeStr((row as { company_id?: string }).company_id);
+      if (!cid) continue;
+      employeesByCompany.set(cid, (employeesByCompany.get(cid) ?? 0) + 1);
     }
   }
 
@@ -92,6 +100,7 @@ export async function loadSuperadminProviderDetail(
       orgnr: (row as { orgnr?: string | null }).orgnr ?? null,
       status: toClientCompanyStatus((row as { status?: string }).status),
       activeAgreement: activeAgreementCompanyIds.has(id),
+      employeesCount: employeesByCompany.get(id) ?? 0,
       updatedAt: (row as { updated_at?: string | null }).updated_at ?? null,
     };
   });

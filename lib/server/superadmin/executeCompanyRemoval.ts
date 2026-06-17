@@ -369,15 +369,21 @@ export async function executeCompanyRemoval(
     mode: "archive" | "hard_delete";
     confirmation: string;
     reason?: string | null;
+    /** When set, company must belong to this provider (provider-scoped removal). */
+    requiredProviderId?: string | null;
+    actorRole?: string | null;
+    auditVia?: string | null;
   }
 ): Promise<CompanyRemovalResult> {
   const companyId = safeStr(input.companyId);
   const mode = input.mode;
   const reason = safeStr(input.reason).slice(0, 500) || null;
+  const actorRole = safeStr(input.actorRole) || "superadmin";
+  const auditVia = safeStr(input.auditVia) || "companies.remove";
 
   const companyRes = await admin
     .from("companies")
-    .select("id,name,orgnr,deleted_at,status")
+    .select("id,name,orgnr,deleted_at,status,provider_id")
     .eq("id", companyId)
     .maybeSingle();
 
@@ -391,7 +397,18 @@ export async function executeCompanyRemoval(
     orgnr: string | null;
     deleted_at: string | null;
     status: string | null;
+    provider_id?: string | null;
   };
+
+  const requiredProviderId = safeStr(input.requiredProviderId);
+  if (requiredProviderId && safeStr(company.provider_id) !== requiredProviderId) {
+    return {
+      ok: false,
+      code: "FORBIDDEN",
+      message: "Kunden tilhører ikke denne leverandøren.",
+      blockers: ["Kunden tilhører ikke denne leverandøren."],
+    };
+  }
 
   const dependencies = await loadCompanyDependencyCounts(admin, companyId);
   const eligibility = evaluateCompanyRemovalEligibility({
@@ -449,9 +466,9 @@ export async function executeCompanyRemoval(
       company_id: companyId,
       actor_user_id: actor.userId,
       actor_email: actor.email,
-      actor_role: "superadmin",
-      summary: "Superadmin arkiverte firma",
-      detail: { companyId, reason, mode: "archive", ...access, via: "companies.remove" },
+      actor_role: actorRole,
+      summary: actorRole === "provider_admin" ? "Provider arkiverte kunde" : "Superadmin arkiverte firma",
+      detail: { companyId, reason, mode: "archive", ...access, via: auditVia, providerId: company.provider_id ?? null },
     });
 
     await logIncident({

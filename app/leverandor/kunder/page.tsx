@@ -41,6 +41,8 @@ export default async function LeverandorKunderPage({
   const search = typeof sp.q === "string" ? sp.q : "";
   const page = typeof sp.page === "string" ? Number(sp.page) : 1;
 
+  const canManage = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
+
   const [list, settings] = await Promise.all([
     loadProviderCustomers(provider.id, filter, search, page),
     loadProviderOperationalSettings(provider.id),
@@ -55,7 +57,7 @@ export default async function LeverandorKunderPage({
           <p className="ds-lead">{providerCustomersSubheading(provider.name)}</p>
         </div>
       </header>
-      <CustomerList initial={list} locale={settings.locale} />
+      <CustomerList initial={list} locale={settings.locale} canManage={canManage} />
     </div>
   );
 }

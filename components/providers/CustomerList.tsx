@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
+
+import ProviderCustomerRemovalDialog from "@/components/providers/ProviderCustomerRemovalDialog";
 
 import {
   providerCustomerStatusLabel,
@@ -25,11 +27,20 @@ function statusBadgeClass(status: ProviderCustomerRow["status"]) {
   return "ds-provider-status-badge ds-provider-status-badge--deleted";
 }
 
-export default function CustomerList({ initial, locale }: { initial: ProviderCustomersPage; locale?: string | null }) {
+export default function CustomerList({
+  initial,
+  locale,
+  canManage = false,
+}: {
+  initial: ProviderCustomersPage;
+  locale?: string | null;
+  canManage?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; orgnr: string | null } | null>(null);
 
   const filter = (searchParams.get("filter") as ProviderCustomerFilter) || "all";
   const search = searchParams.get("q") ?? "";
@@ -101,12 +112,13 @@ export default function CustomerList({ initial, locale }: { initial: ProviderCus
               <th scope="col">{copy.tableHeaders.employees}</th>
               <th scope="col">{copy.tableHeaders.ordersThisWeek}</th>
               <th scope="col">{copy.tableHeaders.lastUpdated}</th>
+              {canManage ? <th scope="col" className="text-right">Handlinger</th> : null}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="ds-provider-reg-empty">
+                <tr>
+                  <td colSpan={canManage ? 6 : 5} className="ds-provider-reg-empty">
                   {emptyState.title}
                   <span className="ds-provider-reg-meta">{emptyState.text}</span>
                 </td>
@@ -124,8 +136,19 @@ export default function CustomerList({ initial, locale }: { initial: ProviderCus
                   </td>
                   <td>{row.employeesCount}</td>
                   <td>{row.ordersThisWeek}</td>
-                  <td>{formatProviderCustomerUpdated(row.updatedAt, locale)}</td>
-                </tr>
+                    <td>{formatProviderCustomerUpdated(row.updatedAt, locale)}</td>
+                    {canManage ? (
+                      <td className="text-right">
+                        <button
+                          type="button"
+                          className="ds-btn ds-btn--ghost ds-btn--sm min-h-12"
+                          onClick={() => setRemovalTarget({ id: row.id, name: row.name, orgnr: null })}
+                        >
+                          Fjern kunde
+                        </button>
+                      </td>
+                    ) : null}
+                  </tr>
               ))
             )}
           </tbody>
@@ -175,6 +198,20 @@ export default function CustomerList({ initial, locale }: { initial: ProviderCus
           </button>
         ) : null}
       </nav>
+
+      {removalTarget ? (
+        <ProviderCustomerRemovalDialog
+          open={Boolean(removalTarget)}
+          companyId={removalTarget.id}
+          companyName={removalTarget.name}
+          orgnr={removalTarget.orgnr}
+          onClose={() => setRemovalTarget(null)}
+          onDone={() => {
+            setRemovalTarget(null);
+            router.refresh();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
