@@ -52,8 +52,8 @@ export default async function SuperadminCompaniesPage() {
   }
 
   const cms = await getSuperadminCompaniesCmsCopy();
-  const title = cms?.title ?? "Firma";
-  const intro = cms?.intro ?? "Administrer firma, status og avtaler uten avbrudd.";
+  const title = cms?.title ?? "Cateringfirma";
+  const intro = cms?.intro ?? "Administrer leverandører, kunder, avtaler og drift uten avbrudd.";
 
   return (
     <SuperadminPageShell fullWidth>
@@ -73,8 +73,8 @@ export default async function SuperadminCompaniesPage() {
       />
 
       <SuperadminSection
-        title="Operativ firmaoversikt"
-        lead="Søk, filtrer og åpne firma for avtale, status, ansatte og audit."
+        title="Cateringfirma og leverandører"
+        lead="Administrer leverandører, kunder, avtaler og drift uten avbrudd."
         flat
       >
         <CompaniesClient

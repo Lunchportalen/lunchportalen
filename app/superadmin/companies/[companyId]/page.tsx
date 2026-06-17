@@ -8,9 +8,11 @@ import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { formatDateTimeNO } from "@/lib/date/format";
 import AuditCompanyPanel from "@/components/audit/AuditCompanyPanel";
+import type { SuperadminProviderDetail } from "@/lib/server/superadmin/loadSuperadminProviderDetail";
 import ArchivePanel from "./ArchivePanel";
 import InvoiceBasisPanel from "./InvoiceBasisPanel";
 import AgreementCard from "./AgreementCard";
+import ProviderDetailView from "./ProviderDetailView";
 import type { ContractOverview } from "@/lib/agreements/contractBindingCompute";
 import type { AgreementDocumentOverview } from "@/lib/agreements/buildAgreementDocumentOverview";
 import { asPlanTier } from "@/lib/cms/menuDayContract";
@@ -72,7 +74,10 @@ type CompanyDetails = {
   };
 };
 
-type ApiOk = { ok: true; rid: string; data: CompanyDetails };
+type EntityFetchOk =
+  | { kind: "provider"; rid: string; data: SuperadminProviderDetail }
+  | { kind: "company"; rid: string; data: CompanyDetails };
+
 type ApiErr = {
   ok: false;
   rid?: string;
@@ -245,7 +250,7 @@ async function getBaseUrl() {
   return `${proto}://${host}`.replace(/\/$/, "");
 }
 
-async function fetchCompanyDetails(companyId: string): Promise<ApiOk | ApiErr> {
+async function fetchCompanyDetails(companyId: string): Promise<EntityFetchOk | ApiErr> {
   const c = await cookies();
   const base = await getBaseUrl();
 
@@ -293,11 +298,19 @@ async function fetchCompanyDetails(companyId: string): Promise<ApiOk | ApiErr> {
   }
 
   if (json?.ok === true) {
+    const raw = json?.data;
+    if (raw?.entityKind === "provider" && raw?.provider) {
+      return {
+        kind: "provider",
+        rid: safeStr(json?.rid),
+        data: raw as SuperadminProviderDetail,
+      };
+    }
     return {
-      ok: true,
+      kind: "company",
       rid: safeStr(json?.rid),
-      data: normalizeCompanyDetails(json?.data),
-    } as ApiOk;
+      data: normalizeCompanyDetails(raw),
+    };
   }
 
   return {
@@ -319,7 +332,7 @@ export default async function SuperadminCompanyDetailPage(props: {
 
   const res = await fetchCompanyDetails(companyId);
 
-  if (!res || (res as any).ok !== true) {
+  if (!res || !("kind" in res)) {
     const err = res as ApiErr;
     return (
       <div className="lp-select-text mx-auto max-w-6xl px-4 py-10">
@@ -347,8 +360,11 @@ export default async function SuperadminCompanyDetailPage(props: {
     );
   }
 
-  const ok = res as ApiOk;
-  const data = ok.data;
+  if (res.kind === "provider") {
+    return <ProviderDetailView data={res.data} />;
+  }
+
+  const data = res.data;
   const company = data.company;
   const pipe = data.registration_pipeline;
   const employees = Array.isArray(data.employees) ? data.employees : [];

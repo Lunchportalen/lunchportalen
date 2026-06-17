@@ -12,6 +12,7 @@ import {
   matchesHardDeleteConfirmation,
   type CompanyDependencyCounts,
 } from "@/lib/server/superadmin/companyRemovalPolicy";
+import { PROTECTED_SYSTEM_COMPANY_MESSAGE } from "@/lib/server/superadmin/superadminEntityKind";
 
 const ROOT = process.cwd();
 const ZERO: CompanyDependencyCounts = {
@@ -155,6 +156,18 @@ describe("companyRemovalPolicy", () => {
     });
     expect(e.canHardDelete).toBe(false);
     expect(e.protectedPilot).toBe(true);
+  });
+
+  it("Lunchportalen systemorganisasjon blokkerer hard-delete og arkiv", () => {
+    const e = evaluateCompanyRemovalEligibility({
+      companyName: "Lunchportalen QA",
+      orgnr: "999999999",
+      deletedAt: null,
+      dependencies: ZERO,
+    });
+    expect(e.canHardDelete).toBe(false);
+    expect(e.canArchive).toBe(false);
+    expect(e.archiveBlockers).toContain(PROTECTED_SYSTEM_COMPANY_MESSAGE);
   });
 
   it("ukjent dependency count fail-closer", () => {
