@@ -276,4 +276,24 @@ describe("Superadmin provider-first wiring", () => {
     expect(client).toContain("Kunder");
     expect(client).toContain("Aktive avtaler");
   });
+
+  it("provider row open link bruker provider id og navigerer uten preventDefault", () => {
+    const client = readFileSync(join(ROOT, "app/superadmin/companies/companies-client.tsx"), "utf8");
+    expect(client).toContain("function providerDetailHref(id: string)");
+    expect(client).toContain("openProviderDetail");
+    expect(client).toContain('isProvider ? "Åpne leverandør" : "Åpne"');
+    expect(client).not.toMatch(/Åpne leverandør[\s\S]{0,120}onClick=\{\(e\) => stop\(e/);
+  });
+
+  it("detail API aksepterer seed provider uuid (Melhus)", () => {
+    const route = readFileSync(join(ROOT, "app/api/superadmin/companies/[companyId]/route.ts"), "utf8");
+    expect(route).toContain("function isUuidLike");
+    const melhusId = "11111111-1111-1111-1111-111111111111";
+    const pattern = /function isUuidLike\(v: unknown\) \{[\s\S]*?return \/(.+?)\/.test\(/;
+    const match = route.match(pattern);
+    expect(match).not.toBeNull();
+    const regex = new RegExp(match![1]!);
+    expect(regex.test(melhusId)).toBe(true);
+    expect(regex.test("not-a-uuid")).toBe(false);
+  });
 });
