@@ -1,0 +1,561 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+
+import {
+  CATEGORY_LABELS,
+  PLAN_CATEGORIES,
+  PLAN_TIERS,
+  type Category,
+  type PlanTier,
+} from "@/lib/cms/menuDayContract";
+import {
+  ENTERPRISE_UPGRADE_LABELS,
+  ENTERPRISE_UPGRADE_TYPES,
+  PROVIDER_MENU_BUILDER_COPY,
+  WEEKDAY_LABELS,
+  WEEKDAY_KEYS,
+  categoryLabel,
+  computeMarginEstimate,
+  slotKey,
+  summarizeWeekStatus,
+  validateEnterprisePublish,
+  weekDatesFromStart,
+  type EnterpriseUpgradeType,
+  type ProviderMenuSlotState,
+} from "@/lib/providers/providerMenuPackageSurface";
+import {
+  formatPriceExVatLabel,
+  formatPriceIncVatLabel,
+  type ProviderMenuPriceView,
+} from "@/lib/providers/providerMenuPriceDisplay";
+
+type MenuWeekResponse = {
+  ok: boolean;
+  rid?: string;
+  message?: string;
+  data?: {
+    weekStart: string;
+    dates: string[];
+    items: Array<{
+      id: string;
+      date: string;
+      tier: PlanTier;
+      category: Category;
+      mealTitle: string;
+      description: string;
+      allergens: string[];
+      estimatedCostPerPortion: number | null;
+      sourcePackage: PlanTier | null;
+      upgradeType: string | null;
+      upgradeNote: string | null;
+      status: "draft" | "published";
+    }>;
+    prices: Record<PlanTier, ProviderMenuPriceView>;
+  };
+};
+
+const TIER_LABELS: Record<PlanTier, string> = {
+  BASIS: "Basis",
+  LUXUS: "Luxus",
+  ENTERPRISE: "Enterprise",
+};
+
+function shiftWeekStart(weekStart: string, deltaWeeks: number): string {
+  const [y, m, d] = weekStart.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + deltaWeeks * 7);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+function todayWeekStart(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const iso = `${y}-${m}-${day}`;
+  const monday = new Date(iso);
+  const dow = monday.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  monday.setDate(monday.getDate() + diff);
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+}
+
+function emptySlot(date: string, tier: PlanTier, category: Category): ProviderMenuSlotState {
+  return {
+    date,
+    tier,
+    category,
+    mealTitle: "",
+    description: "",
+    allergensText: "",
+    estimatedCostPerPortion: null,
+    sourcePackage: null,
+    upgradeType: null,
+    upgradeNote: "",
+    status: "empty",
+  };
+}
+
+export default function ProviderMenuBuilder() {
+  const [weekStart, setWeekStart] = useState(todayWeekStart);
+  const [tier, setTier] = useState<PlanTier>("BASIS");
+  const [selected, setSelected] = useState<{ date: string; category: Category } | null>(null);
+  const [prices, setPrices] = useState<Record<PlanTier, ProviderMenuPriceView> | null>(null);
+  const [slots, setSlots] = useState<Record<string, ProviderMenuSlotState>>({});
+  const [form, setForm] = useState<ProviderMenuSlotState | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmWarnings, setConfirmWarnings] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(true);
+
+  const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
+  const categories = PLAN_CATEGORIES[tier];
+  const tierPrice = prices?.[tier];
+
+  const loadWeek = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/provider/menu-days?weekStart=${encodeURIComponent(weekStart)}`, {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+      });
+      const json = (await res.json()) as MenuWeekResponse;
+      if (!res.ok || !json.ok || !json.data) {
+        setError(json.message ?? "Kunne ikke laste meny.");
+        setLoading(false);
+        return;
+      }
+      setPrices(json.data.prices);
+      const next: Record<string, ProviderMenuSlotState> = {};
+      for (const date of json.data.dates) {
+        for (const t of PLAN_TIERS) {
+          for (const c of PLAN_CATEGORIES[t]) {
+            next[slotKey(date, t, c)] = emptySlot(date, t, c);
+          }
+        }
+      }
+      for (const item of json.data.items) {
+        const key = slotKey(item.date, item.tier, item.category);
+        next[key] = {
+          date: item.date,
+          tier: item.tier,
+          category: item.category,
+          mealTitle: item.mealTitle,
+          description: item.description,
+          allergensText: item.allergens.join(", "),
+          estimatedCostPerPortion: item.estimatedCostPerPortion,
+          sourcePackage: item.sourcePackage,
+          upgradeType: (item.upgradeType as EnterpriseUpgradeType | null) ?? null,
+          upgradeNote: item.upgradeNote ?? "",
+          status: item.status,
+          docId: item.id,
+        };
+      }
+      setSlots(next);
+    } catch {
+      setError("Kunne ikke laste meny.");
+    } finally {
+      setLoading(false);
+    }
+  }, [weekStart]);
+
+  useEffect(() => {
+    void loadWeek();
+  }, [loadWeek]);
+
+  const tierSlots = useMemo(
+    () =>
+      weekDates.flatMap((date) =>
+        categories.map((category) => slots[slotKey(date, tier, category)] ?? emptySlot(date, tier, category)),
+      ),
+    [weekDates, categories, slots, tier],
+  );
+
+  const weekStatus = summarizeWeekStatus(tierSlots);
+
+  function selectSlot(date: string, category: Category) {
+    setSelected({ date, category });
+    const existing = slots[slotKey(date, tier, category)] ?? emptySlot(date, tier, category);
+    setForm({ ...existing });
+    setMessage(null);
+    setError(null);
+    setConfirmWarnings(false);
+  }
+
+  function copyFromPackage(source: PlanTier) {
+    if (!form || !selected) return;
+    const sourceSlot = slots[slotKey(selected.date, source, selected.category)];
+    if (!sourceSlot || sourceSlot.status === "empty") {
+      setError(`Ingen ${TIER_LABELS[source]}-meny å kopiere for denne dagen/kategorien.`);
+      return;
+    }
+    setForm({
+      ...form,
+      mealTitle: sourceSlot.mealTitle,
+      description: sourceSlot.description,
+      allergensText: sourceSlot.allergensText,
+      estimatedCostPerPortion: sourceSlot.estimatedCostPerPortion,
+      sourcePackage: source,
+      upgradeType: form.upgradeType,
+      upgradeNote: form.upgradeNote,
+      status: "draft",
+    });
+    setMessage(`Kopiert fra ${TIER_LABELS[source]}. Legg til Enterprise-upgrade før publisering.`);
+  }
+
+  async function save(status: "draft" | "published") {
+    if (!form) return;
+    setError(null);
+    setMessage(null);
+
+    const luxusSlot =
+      form.tier === "ENTERPRISE" && selected
+        ? slots[slotKey(selected.date, "LUXUS", selected.category)]
+        : null;
+
+    const payload = {
+      date: form.date,
+      tier: form.tier,
+      category: form.category,
+      mealTitle: form.mealTitle,
+      description: form.description,
+      allergensText: form.allergensText || null,
+      estimatedCostPerPortion: form.estimatedCostPerPortion,
+      sourcePackage: form.sourcePackage,
+      upgradeType: form.upgradeType,
+      upgradeNote: form.upgradeNote || null,
+      luxusEstimatedCost: luxusSlot?.estimatedCostPerPortion ?? null,
+      confirmWarnings: status === "published" ? confirmWarnings : false,
+      status,
+    };
+
+    const res = await fetch("/api/provider/menu-days", {
+      method: "POST",
+      headers: { "content-type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = (await res.json()) as MenuWeekResponse & {
+      data?: { warnings?: string[]; rid?: string; message?: string };
+    };
+
+    if (!res.ok || !json.ok) {
+      const rid = json.rid ? ` (RID: ${json.rid})` : "";
+      setError((json.message ?? "Kunne ikke lagre meny.") + rid);
+      return;
+    }
+
+    const warnings = (json.data as { warnings?: string[] } | undefined)?.warnings ?? [];
+    if (warnings.length > 0 && status === "published" && !confirmWarnings) {
+      setError(`${warnings[0]} Bekreft for å publisere likevel.`);
+      return;
+    }
+
+    setMessage(status === "published" ? "Meny publisert." : "Utkast lagret.");
+    setConfirmWarnings(false);
+    await loadWeek();
+  }
+
+  const enterpriseWarnings =
+    form && tierPrice
+      ? validateEnterprisePublish({
+          tier: form.tier,
+          mealTitle: form.mealTitle,
+          description: form.description,
+          sourcePackage: form.sourcePackage,
+          upgradeType: form.upgradeType,
+          upgradeNote: form.upgradeNote,
+          estimatedCostPerPortion: form.estimatedCostPerPortion,
+          luxusEstimatedCost:
+            selected != null ? slots[slotKey(selected.date, "LUXUS", selected.category)]?.estimatedCostPerPortion ?? null : null,
+          priceExVatNok: tierPrice.priceExVatNok,
+        })
+      : [];
+
+  const margin =
+    form && tierPrice
+      ? computeMarginEstimate(
+          {
+            priceExVatNok: tierPrice.priceExVatNok,
+            vatRate: tierPrice.vatRate,
+            priceIncVatNok: tierPrice.priceIncVatNok,
+          },
+          form.estimatedCostPerPortion,
+        )
+      : null;
+
+  return (
+    <div className="ds-provider-menu-builder">
+      <header className="ds-provider-menu-builder__header">
+        <div>
+          <p className="ds-body ds-provider-menu-builder__lead">{PROVIDER_MENU_BUILDER_COPY.lead}</p>
+          <p className="ds-provider-menu-builder__status" role="status">
+            Status: <strong>{weekStatus}</strong>
+          </p>
+        </div>
+        <div className="ds-provider-menu-builder__week-nav">
+          <button type="button" className="ds-btn ds-btn--ghost" onClick={() => setWeekStart((w) => shiftWeekStart(w, -1))}>
+            Forrige uke
+          </button>
+          <span className="ds-provider-menu-builder__week-label">Uke fra {weekStart}</span>
+          <button type="button" className="ds-btn ds-btn--ghost" onClick={() => setWeekStart((w) => shiftWeekStart(w, 1))}>
+            Neste uke
+          </button>
+        </div>
+      </header>
+
+      <div className="ds-provider-menu-builder__tabs" role="tablist" aria-label="Menypakker">
+        {PLAN_TIERS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tier === t}
+            className={`ds-provider-menu-builder__tab${tier === t ? " is-active" : ""}`}
+            onClick={() => {
+              setTier(t);
+              setSelected(null);
+              setForm(null);
+            }}
+          >
+            {TIER_LABELS[t]}
+            {prices?.[t] ? (
+              <span className="ds-provider-menu-builder__tab-price">
+                {formatPriceExVatLabel(prices[t].priceExVatNok)}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+
+      {tierPrice ? (
+        <p className="ds-provider-menu-builder__price-banner">
+          {formatPriceExVatLabel(tierPrice.priceExVatNok)} · {formatPriceIncVatLabel(tierPrice.priceIncVatNok)}
+          {tierPrice.source === "provider_price_rules" ? " (leverandørpris)" : " (standardpris)"}
+        </p>
+      ) : null}
+
+      {loading ? <p className="ds-body">Laster meny…</p> : null}
+      {error ? (
+        <p className="ds-provider-menu-builder__error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {message ? (
+        <p className="ds-provider-success" role="status">
+          {message}
+        </p>
+      ) : null}
+
+      <div className="ds-provider-menu-builder__grid">
+        {weekDates.map((date, idx) => (
+          <div key={date} className="ds-provider-menu-builder__day-col">
+            <h3 className="ds-h4">{WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!]}</h3>
+            <p className="ds-provider-menu-builder__day-date">{date}</p>
+            {categories.map((category) => {
+              const slot = slots[slotKey(date, tier, category)] ?? emptySlot(date, tier, category);
+              const isSelected = selected?.date === date && selected.category === category;
+              return (
+                <button
+                  key={`${date}-${category}`}
+                  type="button"
+                  className={`ds-provider-menu-builder__cell${isSelected ? " is-selected" : ""}${slot.status === "published" ? " is-published" : slot.status === "draft" ? " is-draft" : ""}`}
+                  onClick={() => selectSlot(date, category)}
+                >
+                  <span className="ds-provider-menu-builder__cell-cat">{categoryLabel(category)}</span>
+                  <span className="ds-provider-menu-builder__cell-title">
+                    {slot.mealTitle || "—"}
+                  </span>
+                  <span className="ds-provider-menu-builder__cell-status">
+                    {slot.status === "published"
+                      ? "Publisert"
+                      : slot.status === "draft"
+                        ? "Utkast"
+                        : "Tom"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {form ? (
+        <section className="ds-card ds-provider-menu-builder__editor" aria-label="Rediger meny">
+          <h3 className="ds-h4">
+            {TIER_LABELS[form.tier]} · {form.date} · {CATEGORY_LABELS[form.category]}
+          </h3>
+
+          <label className="ds-provider-menu-builder__field">
+            Rettens navn
+            <input
+              value={form.mealTitle}
+              onChange={(e) => setForm({ ...form, mealTitle: e.target.value })}
+              maxLength={120}
+            />
+          </label>
+
+          <label className="ds-provider-menu-builder__field">
+            Beskrivelse
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              maxLength={4000}
+            />
+          </label>
+
+          <label className="ds-provider-menu-builder__field">
+            Allergener (kommaseparert)
+            <input
+              value={form.allergensText}
+              onChange={(e) => setForm({ ...form, allergensText: e.target.value })}
+              placeholder="F.eks. melk, hvete"
+            />
+          </label>
+
+          <label className="ds-provider-menu-builder__field">
+            Estimert råvarekost (kr)
+            <input
+              type="number"
+              min={0}
+              max={90}
+              step={0.5}
+              value={form.estimatedCostPerPortion ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  estimatedCostPerPortion: e.target.value === "" ? null : Number(e.target.value),
+                })
+              }
+            />
+          </label>
+
+          {margin ? (
+            <div className="ds-provider-menu-builder__margin">
+              <p>
+                Pris eks. mva: <strong>{formatPriceExVatLabel(margin.priceExVatNok)}</strong>
+              </p>
+              {margin.estimatedCostNok != null ? (
+                <>
+                  <p>
+                    Estimert kost: <strong>{margin.estimatedCostNok.toLocaleString("nb-NO")} kr</strong>
+                  </p>
+                  <p>
+                    Estimert bruttofortjeneste:{" "}
+                    <strong>{margin.grossMarginNok?.toLocaleString("nb-NO") ?? "—"} kr</strong>
+                    {margin.marginPercent != null ? ` (${margin.marginPercent} %)` : ""}
+                  </p>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
+          {form.tier === "ENTERPRISE" ? (
+            <fieldset className="ds-provider-menu-builder__enterprise">
+              <legend>Enterprise-verdi</legend>
+              <div className="ds-provider-menu-builder__copy-actions">
+                <button type="button" className="ds-btn ds-btn--ghost" onClick={() => copyFromPackage("BASIS")}>
+                  Bygg fra Basis
+                </button>
+                <button type="button" className="ds-btn ds-btn--ghost" onClick={() => copyFromPackage("LUXUS")}>
+                  Bygg fra Luxus
+                </button>
+              </div>
+              <label className="ds-provider-menu-builder__field">
+                Basert på
+                <select
+                  value={form.sourcePackage ?? ""}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      sourcePackage: (e.target.value as PlanTier) || null,
+                    })
+                  }
+                >
+                  <option value="">Ingen</option>
+                  <option value="BASIS">Basis</option>
+                  <option value="LUXUS">Luxus</option>
+                </select>
+              </label>
+              <label className="ds-provider-menu-builder__field">
+                Upgrade-type
+                <select
+                  value={form.upgradeType ?? ""}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      upgradeType: (e.target.value as EnterpriseUpgradeType) || null,
+                    })
+                  }
+                >
+                  <option value="">Velg type</option>
+                  {ENTERPRISE_UPGRADE_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {ENTERPRISE_UPGRADE_LABELS[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="ds-provider-menu-builder__field">
+                Upgrade-beskrivelse
+                <textarea
+                  rows={2}
+                  value={form.upgradeNote}
+                  onChange={(e) => setForm({ ...form, upgradeNote: e.target.value })}
+                  maxLength={500}
+                />
+              </label>
+              {enterpriseWarnings.map((w) => (
+                <p
+                  key={w.code}
+                  className={w.blocking ? "ds-provider-menu-builder__error" : "ds-provider-menu-builder__warn"}
+                  role="status"
+                >
+                  {w.message}
+                </p>
+              ))}
+            </fieldset>
+          ) : null}
+
+          {enterpriseWarnings.some((w) => !w.blocking) ? (
+            <label className="ds-provider-menu-builder__confirm">
+              <input
+                type="checkbox"
+                checked={confirmWarnings}
+                onChange={(e) => setConfirmWarnings(e.target.checked)}
+              />
+              Jeg bekrefter publisering til tross for advarsel.
+            </label>
+          ) : null}
+
+          <div className="ds-provider-meny-actions">
+            <button
+              type="button"
+              className="ds-btn"
+              disabled={pending}
+              onClick={() => startTransition(() => save("draft"))}
+            >
+              {pending ? "Lagrer…" : "Lagre utkast"}
+            </button>
+            <button
+              type="button"
+              className="ds-btn ds-btn--primary"
+              disabled={pending}
+              onClick={() => startTransition(() => save("published"))}
+            >
+              {pending ? "Publiserer…" : "Publiser"}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <p className="ds-body">Velg en dag og kategori for å redigere meny.</p>
+      )}
+    </div>
+  );
+}

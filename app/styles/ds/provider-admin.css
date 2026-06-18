@@ -1432,6 +1432,209 @@
   border-radius: 999px;
 }
 
+/* Provider menu builder (/leverandor/meny) */
+.ds-provider-menu-builder {
+  display: grid;
+  gap: 16px;
+}
+
+.ds-provider-menu-builder__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.ds-provider-menu-builder__lead {
+  margin: 0;
+}
+
+.ds-provider-menu-builder__status {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-menu-builder__week-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ds-provider-menu-builder__week-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ds-provider-menu-builder__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ds-provider-menu-builder__tab {
+  display: grid;
+  gap: 4px;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface, #fff);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.ds-provider-menu-builder__tab.is-active {
+  border-color: var(--ds-text);
+  background: rgba(17, 17, 17, 0.04);
+}
+
+.ds-provider-menu-builder__tab-price {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-menu-builder__price-banner {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(17, 17, 17, 0.03);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ds-provider-menu-builder__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  overflow-x: auto;
+}
+
+.ds-provider-menu-builder__day-col {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ds-provider-menu-builder__day-date {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-menu-builder__cell {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface, #fff);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  min-height: 72px;
+}
+
+.ds-provider-menu-builder__cell.is-selected {
+  border-color: var(--ds-text);
+  box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.08);
+}
+
+.ds-provider-menu-builder__cell.is-published {
+  border-color: rgba(16, 120, 72, 0.35);
+}
+
+.ds-provider-menu-builder__cell.is-draft {
+  border-style: dashed;
+}
+
+.ds-provider-menu-builder__cell-cat {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-menu-builder__cell-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ds-provider-menu-builder__cell-status {
+  font-size: 12px;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-menu-builder__editor {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.ds-provider-menu-builder__field {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ds-provider-menu-builder__field input,
+.ds-provider-menu-builder__field textarea,
+.ds-provider-menu-builder__field select {
+  font: inherit;
+  font-weight: 400;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--ds-line);
+  min-height: 44px;
+}
+
+.ds-provider-menu-builder__margin {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(17, 17, 17, 0.03);
+  font-size: 14px;
+}
+
+.ds-provider-menu-builder__enterprise {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--ds-line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.ds-provider-menu-builder__copy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ds-provider-menu-builder__warn {
+  margin: 0;
+  font-size: 13px;
+  color: #b25000;
+}
+
+.ds-provider-menu-builder__error {
+  margin: 0;
+  color: #c0392b;
+  font-weight: 700;
+}
+
+.ds-provider-menu-builder__confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  min-height: 44px;
+}
+
 /* Provider customer detail workspace (/leverandor/kunder/[id]) */
 .ds-provider-customer-command {
   display: grid;

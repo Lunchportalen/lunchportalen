@@ -19,6 +19,10 @@ import {
   parseMenuDayRequestBody,
   type MenuDayStatus,
 } from "@/lib/provider-menu/menuDayPayload";
+import { loadProviderMenuDaysForDates } from "@/lib/provider-menu/loadProviderMenuDays";
+import { osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { loadProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
+import { weekDatesFromStart } from "@/lib/providers/providerMenuPackageSurface";
 import { requireSanityWrite } from "@/lib/sanity/client";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -169,21 +173,67 @@ export async function POST(req: NextRequest) {
     providerId: provider.id,
   });
 
+    return jsonOk(
+    rid,
+    {
+      ...sanitizeResponse({
+        docId: payloadResult.docId,
+        providerSlug: provider.slug,
+        providerName: provider.name,
+        date: payloadResult.payload.date,
+        tier: payloadResult.payload.planTier,
+        category: payloadResult.payload.category,
+        mealTitle: payloadResult.payload.mealTitle,
+        status: payloadResult.status,
+        approvedForPublish: payloadResult.payload.approvedForPublish,
+        customerVisible: payloadResult.payload.customerVisible,
+        syncStatus,
+      }),
+      warnings: payloadResult.warnings ?? [],
+    },
+    200,
+  );
+}
+
+export async function GET(req: NextRequest) {
+  const rid = makeRid("prov_menu");
+
+  const auth = await getAuthContext();
+  if (!auth.ok || !auth.user?.id) {
+    return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHORIZED");
+  }
+
+  const userId = String(auth.user.id).trim();
+  const ctx = await getProviderAdminContext(userId);
+  const provider = ctx.primaryProvider;
+  if (!provider) {
+    return jsonErr(rid, "Ingen leverandørtilgang.", 403, "FORBIDDEN");
+  }
+
+  const canView = await hasProviderRole(userId, provider.id, "provider_viewer");
+  if (!canView) {
+    return jsonErr(rid, "Du har ikke tilgang til meny.", 403, "FORBIDDEN");
+  }
+
+  const weekStart = String(req.nextUrl.searchParams.get("weekStart") ?? "").trim();
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(weekStart) ? weekStart : startOfWeekISO(osloTodayISODate());
+  const dates = weekDatesFromStart(base);
+
+  const [items, prices] = await Promise.all([
+    loadProviderMenuDaysForDates(provider.id, dates),
+    loadProviderMenuPrices(provider.id),
+  ]);
+
   return jsonOk(
     rid,
-    sanitizeResponse({
-      docId: payloadResult.docId,
+    {
+      weekStart: base,
+      dates,
+      items,
+      prices,
+      providerId: provider.id,
       providerSlug: provider.slug,
-      providerName: provider.name,
-      date: payloadResult.payload.date,
-      tier: payloadResult.payload.planTier,
-      category: payloadResult.payload.category,
-      mealTitle: payloadResult.payload.mealTitle,
-      status: payloadResult.status,
-      approvedForPublish: payloadResult.payload.approvedForPublish,
-      customerVisible: payloadResult.payload.customerVisible,
-      syncStatus,
-    }),
+    },
     200,
   );
 }

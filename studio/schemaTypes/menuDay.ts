@@ -399,6 +399,44 @@ export default defineType({
     }),
 
     defineField({
+      name: "enterpriseSourcePackage",
+      title: "Enterprise — basert på",
+      type: "string",
+      options: {
+        list: [
+          { title: "Ingen", value: "" },
+          { title: "Basis", value: "BASIS" },
+          { title: "Luxus", value: "LUXUS" },
+        ],
+        layout: "radio",
+      },
+    }),
+
+    defineField({
+      name: "enterpriseUpgradeType",
+      title: "Enterprise — upgrade-type",
+      type: "string",
+      options: {
+        list: [
+          { title: "Premium protein", value: "PREMIUM_PROTEIN" },
+          { title: "Ekstra tilbehør", value: "EXTRA_SIDE" },
+          { title: "Dessert/frukt", value: "DESSERT_FRUIT" },
+          { title: "Større porsjon", value: "LARGER_PORTION" },
+          { title: "Prioritert levering", value: "PRIORITY_DELIVERY" },
+          { title: "Annet", value: "OTHER" },
+        ],
+        layout: "dropdown",
+      },
+    }),
+
+    defineField({
+      name: "enterpriseUpgradeNote",
+      title: "Enterprise — upgrade-beskrivelse",
+      type: "text",
+      rows: 3,
+    }),
+
+    defineField({
       name: "isFishDish",
       title: "Fiskerett",
       type: "boolean",

@@ -6,7 +6,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
-import ProviderMenuEditor from "@/components/providers/ProviderMenuEditor";
+import ProviderMenuBuilder from "@/components/providers/ProviderMenuBuilder";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
@@ -30,12 +30,12 @@ export default async function LeverandorMenyPage() {
         <div>
           <p className="ds-eyebrow">Leverandør</p>
           <h1 className="ds-h2">Meny</h1>
-          <p className="ds-lead">Publiser en enkel meny for egne bedriftskunder.</p>
+          <p className="ds-lead">Planlegg og publiser meny for Basis, Luxus og Enterprise.</p>
         </div>
       </header>
 
       {canEdit ? (
-        <ProviderMenuEditor />
+        <ProviderMenuBuilder />
       ) : (
         <section className="ds-card ds-provider-meny-card">
           <h2 className="ds-h3">Kun visning</h2>

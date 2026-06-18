@@ -5,6 +5,8 @@
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
+vi.mock("server-only", () => ({}));
+
 const PROVIDER_ID = "22222222-2222-2222-2222-222222222222";
 
 const mockGetAuthContext = vi.hoisted(() => vi.fn());
@@ -38,6 +40,21 @@ vi.mock("@/lib/menu-publish/syncMenuServiceDaysFromMenuDay", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({}),
 }));
+
+const mockLoadMenuDays = vi.hoisted(() => vi.fn());
+const mockLoadPrices = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/provider-menu/loadProviderMenuDays", () => ({
+  loadProviderMenuDaysForDates: (...args: unknown[]) => mockLoadMenuDays(...args),
+}));
+
+vi.mock("@/lib/providers/providerMenuPriceConfig", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/providers/providerMenuPriceConfig")>();
+  return {
+    ...actual,
+    loadProviderMenuPrices: (...args: unknown[]) => mockLoadPrices(...args),
+  };
+});
 
 function mkReq(body: Record<string, unknown>) {
   return new Request("http://localhost/api/provider/menu-days", {
@@ -182,5 +199,85 @@ describe("POST /api/provider/menu-days", () => {
     const { POST } = await import("@/app/api/provider/menu-days/route");
     const res = await POST(mkReq({ ...validBody, tier: "INVALID" }) as any);
     expect(res.status).toBe(422);
+  });
+});
+
+function mkGetReq(weekStart?: string) {
+  const url = new URL("http://localhost/api/provider/menu-days");
+  if (weekStart) url.searchParams.set("weekStart", weekStart);
+  return { nextUrl: url } as any;
+}
+
+function authedViewer() {
+  mockGetAuthContext.mockResolvedValue({
+    ok: true,
+    user: { id: "user-1", email: "viewer@provider.no" },
+  });
+  mockGetProviderAdminContext.mockResolvedValue({
+    primaryProvider: {
+      id: PROVIDER_ID,
+      name: "Provider B AS",
+      slug: "provider-b",
+    },
+  });
+  mockHasProviderRole.mockResolvedValue(true);
+  mockLoadMenuDays.mockResolvedValue([]);
+  mockLoadPrices.mockResolvedValue({
+    BASIS: { tier: "BASIS", priceExVatNok: 90, vatRate: 0.15, priceIncVatNok: 103.5, source: "fallback" },
+    LUXUS: { tier: "LUXUS", priceExVatNok: 130, vatRate: 0.15, priceIncVatNok: 149.5, source: "fallback" },
+    ENTERPRISE: {
+      tier: "ENTERPRISE",
+      priceExVatNok: 170,
+      vatRate: 0.15,
+      priceIncVatNok: 195.5,
+      source: "fallback",
+    },
+  });
+}
+
+describe("GET /api/provider/menu-days", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("unauthenticated request rejected", async () => {
+    mockGetAuthContext.mockResolvedValue({ ok: false, user: null });
+    const { GET } = await import("@/app/api/provider/menu-days/route");
+    const res = await GET(mkGetReq("2026-06-15") as any);
+    expect(res.status).toBe(401);
+  });
+
+  test("returns week items and prices for scoped provider", async () => {
+    authedViewer();
+    mockLoadMenuDays.mockResolvedValue([
+      {
+        id: `menuDay-${PROVIDER_ID}-2026-06-16-BASIS-varmrett`,
+        date: "2026-06-16",
+        tier: "BASIS",
+        category: "varmrett",
+        mealTitle: "Kyllinggryte",
+        description: "Med rotgrønnsaker.",
+        allergens: ["melk"],
+        estimatedCostPerPortion: 35,
+        sourcePackage: null,
+        upgradeType: null,
+        upgradeNote: null,
+        status: "published",
+      },
+    ]);
+
+    const { GET } = await import("@/app/api/provider/menu-days/route");
+    const res = await GET(mkGetReq("2026-06-15") as any);
+    const json = await readJson(res);
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.data.weekStart).toBe("2026-06-15");
+    expect(json.data.dates).toHaveLength(5);
+    expect(json.data.providerId).toBe(PROVIDER_ID);
+    expect(json.data.prices.BASIS.priceExVatNok).toBe(90);
+    expect(json.data.prices.ENTERPRISE.priceIncVatNok).toBe(195.5);
+    expect(mockLoadMenuDays).toHaveBeenCalledWith(PROVIDER_ID, expect.any(Array));
+    expect(mockLoadPrices).toHaveBeenCalledWith(PROVIDER_ID);
   });
 });
