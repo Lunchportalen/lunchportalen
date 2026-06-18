@@ -19,6 +19,7 @@ import {
   hasMultipleActiveAgreements,
   sortAgreementsForDisplay,
 } from "@/lib/providers/providerCustomerAgreementSurface";
+import { PROVIDER_CUSTOMER_ACTIVITY_EMPTY } from "@/lib/providers/providerCustomerDetailActivity";
 
 type DialogState = {
   open: boolean;
@@ -112,8 +113,12 @@ export default function CustomerDetailClient({
           <div className="ds-admin-kpi__value">{detail.stats.employeesCount}</div>
         </div>
         <div className="ds-admin-kpi">
-          <div className="ds-admin-kpi__label">Aktive ordre totalt</div>
+          <div className="ds-admin-kpi__label">Aktive ordre</div>
           <div className="ds-admin-kpi__value">{detail.stats.activeOrdersCount}</div>
+        </div>
+        <div className="ds-admin-kpi">
+          <div className="ds-admin-kpi__label">Ordrehistorikk</div>
+          <div className="ds-admin-kpi__value">{detail.stats.historicalOrdersCount}</div>
         </div>
         <div className="ds-admin-kpi">
           <div className="ds-admin-kpi__label">Omsetning 30 dager</div>
@@ -164,9 +169,32 @@ export default function CustomerDetailClient({
         <p className="ds-body ds-section">Du har lesetilgang. Endringer krever administratortilgang.</p>
       ) : null}
 
-      <section className="ds-section">
+      <section className="ds-section ds-provider-detail-section">
         <h2 className="ds-h2">Ansatte</h2>
-        <p className="ds-body">Oversikt over ansatte er ikke tilgjengelig ennå.</p>
+        {detail.employees.length === 0 ? (
+          <p className="ds-body">Ingen ansatte registrert for denne kunden ennå.</p>
+        ) : (
+          <div className="ds-provider-customer-list ds-provider-customer-list--desktop">
+            <table className="ds-provider-customer-table">
+              <thead>
+                <tr>
+                  <th scope="col">Navn</th>
+                  <th scope="col">E-post</th>
+                  <th scope="col">Rolle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.employees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td>{employee.name}</td>
+                    <td>{employee.email ?? "—"}</td>
+                    <td>{employee.role ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="ds-section">
@@ -231,41 +259,53 @@ export default function CustomerDetailClient({
         )}
       </section>
 
-      <section className="ds-section">
+      <section className="ds-section ds-provider-detail-section">
         <h2 className="ds-h2">Ordrer</h2>
         {detail.orders.length === 0 ? (
-          <p className="ds-body">Ingen ordrer.</p>
+          <p className="ds-body">Ingen ordre registrert for denne kunden ennå.</p>
         ) : (
-          <ul className="ds-provider-activity">
-            {detail.orders.map((o) => (
-              <li key={o.id} className="ds-provider-activity__row">
-                <span className="ds-provider-activity__action">
-                  {o.date} · {o.status}
-                </span>
-                <span className="ds-provider-activity__meta">
-                  {o.lineTotal != null
-                    ? new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK" }).format(o.lineTotal)
-                    : "—"}
-                </span>
+          <ul className="ds-provider-order-history">
+            {detail.orders.map((order) => (
+              <li key={order.id} className="ds-provider-order-history__item">
+                <div className="ds-provider-order-history__head">
+                  <span className="ds-provider-order-history__date">{order.date}</span>
+                  <span className="ds-provider-order-history__status">{order.status}</span>
+                  {order.employeeName ? (
+                    <span className="ds-provider-order-history__meta">{order.employeeName}</span>
+                  ) : null}
+                  {order.totalNok != null ? (
+                    <span className="ds-provider-order-history__total">
+                      {new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK" }).format(order.totalNok)}
+                    </span>
+                  ) : null}
+                </div>
+                {order.lines.length > 0 ? (
+                  <ul className="ds-provider-order-history__lines">
+                    {order.lines.map((line, idx) => (
+                      <li key={`${order.id}-${idx}`}>{line.displayLine}</li>
+                    ))}
+                  </ul>
+                ) : null}
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <section className="ds-section">
+      <section className="ds-section ds-provider-detail-section">
         <h2 className="ds-h2">Aktivitet</h2>
         {detail.activity.length === 0 ? (
-          <p className="ds-body">Ingen hendelser.</p>
+          <div className="ds-provider-empty">
+            <p className="ds-provider-empty__title">{PROVIDER_CUSTOMER_ACTIVITY_EMPTY.title}</p>
+            <p className="ds-provider-empty__text">{PROVIDER_CUSTOMER_ACTIVITY_EMPTY.text}</p>
+          </div>
         ) : (
           <div className="ds-provider-activity">
             {detail.activity.map((row) => (
               <article key={row.id} className="ds-provider-activity__row">
-                <div className="ds-provider-activity__action">
-                  {row.action} · {row.entityType}
-                </div>
-                <div className="ds-provider-activity__meta">{row.createdAt}</div>
-                {row.reason ? <p className="ds-body ds-provider-activity__meta--desktop">{row.reason}</p> : null}
+                <div className="ds-provider-activity__action">{row.title}</div>
+                <div className="ds-provider-activity__meta">{row.timestamp}</div>
+                {row.summary ? <p className="ds-body ds-provider-activity__meta--desktop">{row.summary}</p> : null}
               </article>
             ))}
           </div>
