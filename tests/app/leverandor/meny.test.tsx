@@ -53,14 +53,18 @@ describe("ProviderMenuBuilder", () => {
   test("Enterprise value builder section exists in source", () => {
     const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"), "utf8");
     expect(source).toContain("Enterprise-verdi");
-    expect(source).toContain("Bygg fra Basis");
-    expect(source).toContain("Bygg fra Luxus");
-    expect(source).toContain("formatPriceExVatLabel");
+    expect(source).toContain("provider-menu-week-grid");
+    expect(source).toContain("mergeProviderMenuRowsIntoSlots");
+    expect(source).toContain("startOfWeekISO(osloTodayISODate())");
     expect(source).toContain("formatPriceIncVatLabel");
-    expect(source).toContain("Lagre utkast");
     expect(source).not.toMatch(/SANITY_WRITE_TOKEN/i);
-    expect(source).not.toMatch(/requireSanityWrite/i);
     expect(source).toContain("/api/provider/menu-days");
+  });
+
+  test("desktop week grid uses 5 day columns in CSS", () => {
+    const css = readFileSync(resolve(process.cwd(), "app/styles/ds/provider-admin.css"), "utf8");
+    expect(css).toContain("grid-template-columns: repeat(5, minmax(180px, 1fr))");
+    expect(css).not.toContain("repeat(auto-fit, minmax(160px, 1fr))");
   });
 });
 

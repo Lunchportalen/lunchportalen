@@ -2,7 +2,10 @@
 import "server-only";
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
+import { PLAN_TIERS } from "@/lib/cms/menuDayContract";
 import { menuDayProviderGroqClause } from "@/lib/cms/menuDayProviderFilter";
+import { MELHUS_PROVIDER_SANITY_ID } from "@/lib/cms/providerSanityConstants";
+import { canonicalMenuCategory, menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import { sanityServer } from "@/lib/sanity/server";
 
 export type ProviderMenuDayRow = {
@@ -41,14 +44,20 @@ const PROVIDER_MENU_PROJECTION = `
 export async function loadProviderMenuDaysForDates(
   providerId: string,
   dates: string[],
+  opts?: { providerSlug?: string | null },
 ): Promise<ProviderMenuDayRow[]> {
   const cleaned = [...new Set(dates.map((d) => String(d ?? "").trim()).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)))];
   if (!providerId || cleaned.length === 0) return [];
 
   const provider = menuDayProviderGroqClause({
     providerRef: providerId,
-    providerSlug: null,
+    providerSlug: opts?.providerSlug ?? null,
   });
+
+  const melhusLegacy =
+    providerId === MELHUS_PROVIDER_SANITY_ID
+      ? " || !defined(provider) || provider._ref == null"
+      : "";
 
   const rows = await sanityServer.fetch<
     Array<{
@@ -70,7 +79,7 @@ export async function loadProviderMenuDaysForDates(
     `*[
       _type == "menuDay" &&
       date in $dates &&
-      (${provider.clause}) &&
+      ((${provider.clause})${melhusLegacy}) &&
       !(_id in path("drafts.**"))
     ] | order(date asc, planTier asc, category asc){
       ${PROVIDER_MENU_PROJECTION}
@@ -79,21 +88,40 @@ export async function loadProviderMenuDaysForDates(
   );
 
   const list = Array.isArray(rows) ? rows : [];
-  return list.map((row) => {
+  const out: ProviderMenuDayRow[] = [];
+
+  for (const row of list) {
+    const tierRaw = String(row.planTier ?? "").trim().toUpperCase();
+    const tier = PLAN_TIERS.includes(tierRaw as PlanTier) ? (tierRaw as PlanTier) : null;
+    if (!tier) continue;
+
+    let category = canonicalMenuCategory(row.category);
+    if (!category && tier) {
+      // Legacy varmrett-only menuDay rows may omit category — preserve as varmrett when content exists.
+      if (menuSlotHasContent({ mealTitle: row.mealTitle, description: row.description, docId: row._id })) {
+        category = "varmrett";
+      }
+    }
+    if (!category) continue;
+
     const published = Boolean(row.approvedForPublish) && Boolean(row.customerVisible);
-    const tier = String(row.planTier ?? "").toUpperCase() as PlanTier;
     const sourceRaw = String(row.enterpriseSourcePackage ?? "").trim().toUpperCase();
     const sourcePackage =
       sourceRaw === "BASIS" || sourceRaw === "LUXUS" || sourceRaw === "ENTERPRISE"
         ? (sourceRaw as PlanTier)
         : null;
-    return {
+
+    const mealTitle = String(row.mealTitle ?? "").trim();
+    const description = String(row.description ?? "").trim();
+    if (!menuSlotHasContent({ mealTitle, description, docId: row._id }) && !published) continue;
+
+    out.push({
       id: row._id,
       date: row.date,
       tier,
-      category: row.category,
-      mealTitle: String(row.mealTitle ?? "").trim(),
-      description: String(row.description ?? "").trim(),
+      category,
+      mealTitle,
+      description,
       allergens: Array.isArray(row.allergens) ? row.allergens.map(String) : [],
       estimatedCostPerPortion:
         row.estimatedCostPerPortion != null && Number.isFinite(Number(row.estimatedCostPerPortion))
@@ -105,6 +133,21 @@ export async function loadProviderMenuDaysForDates(
       approvedForPublish: Boolean(row.approvedForPublish),
       customerVisible: Boolean(row.customerVisible),
       status: published ? "published" : "draft",
-    };
-  });
+    });
+  }
+
+  return out;
+}
+
+export async function loadProviderMenuDaySlot(
+  providerId: string,
+  input: { date: string; tier: PlanTier; category: Category },
+  opts?: { providerSlug?: string | null },
+): Promise<ProviderMenuDayRow | null> {
+  const rows = await loadProviderMenuDaysForDates(providerId, [input.date], opts);
+  const category = canonicalMenuCategory(input.category);
+  if (!category) return null;
+  return (
+    rows.find((r) => r.date === input.date && r.tier === input.tier && r.category === category) ?? null
+  );
 }

@@ -19,7 +19,9 @@ import {
   parseMenuDayRequestBody,
   type MenuDayStatus,
 } from "@/lib/provider-menu/menuDayPayload";
-import { loadProviderMenuDaysForDates } from "@/lib/provider-menu/loadProviderMenuDays";
+import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
+import { canonicalMenuCategory } from "@/lib/provider-menu/menuCategoryCanonical";
+import { loadProviderMenuDaysForDates, loadProviderMenuDaySlot } from "@/lib/provider-menu/loadProviderMenuDays";
 import { osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { loadProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
 import { weekDatesFromStart } from "@/lib/providers/providerMenuPackageSurface";
@@ -140,8 +142,20 @@ export async function POST(req: NextRequest) {
     return jsonErr(rid, "Ugyldig forespørsel. Sjekk alle felt.", 422, "INVALID_BODY");
   }
 
+  const tier = String(parsed.tier ?? "").trim().toUpperCase() as PlanTier;
+  const category = canonicalMenuCategory(parsed.category);
+  if (!category) {
+    return jsonErr(rid, "Ugyldig kategori.", 422, "VALIDATION_ERROR");
+  }
+
+  const existingSlot = await loadProviderMenuDaySlot(
+    provider.id,
+    { date: parsed.date, tier, category },
+    { providerSlug: provider.slug },
+  );
+
   // Ignore any client-supplied providerId — always use server-resolved provider.
-  const payloadResult = buildMenuDayPayload(provider.id, parsed);
+  const payloadResult = buildMenuDayPayload(provider.id, parsed, { existingSlot });
   if (payloadResult.ok === false) {
     return jsonErr(rid, payloadResult.error, 422, "VALIDATION_ERROR");
   }
@@ -220,7 +234,7 @@ export async function GET(req: NextRequest) {
   const dates = weekDatesFromStart(base);
 
   const [items, prices] = await Promise.all([
-    loadProviderMenuDaysForDates(provider.id, dates),
+    loadProviderMenuDaysForDates(provider.id, dates, { providerSlug: provider.slug }),
     loadProviderMenuPrices(provider.id),
   ]);
 

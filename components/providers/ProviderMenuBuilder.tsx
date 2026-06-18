@@ -9,6 +9,15 @@ import {
   type Category,
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
+import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { categoriesForTierInOrder, menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
+import {
+  mergeProviderMenuRowsIntoSlots,
+  resolveProviderMenuSlot,
+  slotDisplayStatus,
+  slotDisplayTitle,
+  type ResolvedProviderMenuSlot,
+} from "@/lib/provider-menu/mergeProviderMenuSlots";
 import {
   ENTERPRISE_UPGRADE_LABELS,
   ENTERPRISE_UPGRADE_TYPES,
@@ -21,8 +30,8 @@ import {
   summarizeWeekStatus,
   validateEnterprisePublish,
   weekDatesFromStart,
+  parseAllergensDisplay,
   type EnterpriseUpgradeType,
-  type ProviderMenuSlotState,
 } from "@/lib/providers/providerMenuPackageSurface";
 import {
   formatPriceExVatLabel,
@@ -62,29 +71,14 @@ const TIER_LABELS: Record<PlanTier, string> = {
 };
 
 function shiftWeekStart(weekStart: string, deltaWeeks: number): string {
-  const [y, m, d] = weekStart.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + deltaWeeks * 7);
-  const yy = dt.getUTCFullYear();
-  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(dt.getUTCDate()).padStart(2, "0");
-  return `${yy}-${mm}-${dd}`;
+  return addDaysISO(weekStart, deltaWeeks * 7);
 }
 
 function todayWeekStart(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const iso = `${y}-${m}-${day}`;
-  const monday = new Date(iso);
-  const dow = monday.getDay();
-  const diff = dow === 0 ? -6 : 1 - dow;
-  monday.setDate(monday.getDate() + diff);
-  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+  return startOfWeekISO(osloTodayISODate());
 }
 
-function emptySlot(date: string, tier: PlanTier, category: Category): ProviderMenuSlotState {
+function emptySlot(date: string, tier: PlanTier, category: Category): ResolvedProviderMenuSlot {
   return {
     date,
     tier,
@@ -97,6 +91,7 @@ function emptySlot(date: string, tier: PlanTier, category: Category): ProviderMe
     upgradeType: null,
     upgradeNote: "",
     status: "empty",
+    contentSource: "empty",
   };
 }
 
@@ -105,8 +100,8 @@ export default function ProviderMenuBuilder() {
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [selected, setSelected] = useState<{ date: string; category: Category } | null>(null);
   const [prices, setPrices] = useState<Record<PlanTier, ProviderMenuPriceView> | null>(null);
-  const [slots, setSlots] = useState<Record<string, ProviderMenuSlotState>>({});
-  const [form, setForm] = useState<ProviderMenuSlotState | null>(null);
+  const [slots, setSlots] = useState<Record<string, ResolvedProviderMenuSlot>>({});
+  const [form, setForm] = useState<ResolvedProviderMenuSlot | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmWarnings, setConfirmWarnings] = useState(false);
@@ -114,7 +109,7 @@ export default function ProviderMenuBuilder() {
   const [loading, setLoading] = useState(true);
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
-  const categories = PLAN_CATEGORIES[tier];
+  const categories = useMemo(() => categoriesForTierInOrder(PLAN_CATEGORIES[tier]), [tier]);
   const tierPrice = prices?.[tier];
 
   const loadWeek = useCallback(async () => {
@@ -132,31 +127,24 @@ export default function ProviderMenuBuilder() {
         return;
       }
       setPrices(json.data.prices);
-      const next: Record<string, ProviderMenuSlotState> = {};
+      const merged = mergeProviderMenuRowsIntoSlots(
+        json.data.items.map((item) => ({
+          ...item,
+          approvedForPublish: item.status === "published",
+          customerVisible: item.status === "published",
+        })),
+      );
+      const next: Record<string, ResolvedProviderMenuSlot> = { ...merged };
+
       for (const date of json.data.dates) {
         for (const t of PLAN_TIERS) {
           for (const c of PLAN_CATEGORIES[t]) {
-            next[slotKey(date, t, c)] = emptySlot(date, t, c);
+            const key = slotKey(date, t, c);
+            if (!next[key]) next[key] = emptySlot(date, t, c);
           }
         }
       }
-      for (const item of json.data.items) {
-        const key = slotKey(item.date, item.tier, item.category);
-        next[key] = {
-          date: item.date,
-          tier: item.tier,
-          category: item.category,
-          mealTitle: item.mealTitle,
-          description: item.description,
-          allergensText: item.allergens.join(", "),
-          estimatedCostPerPortion: item.estimatedCostPerPortion,
-          sourcePackage: item.sourcePackage,
-          upgradeType: (item.upgradeType as EnterpriseUpgradeType | null) ?? null,
-          upgradeNote: item.upgradeNote ?? "",
-          status: item.status,
-          docId: item.id,
-        };
-      }
+
       setSlots(next);
     } catch {
       setError("Kunne ikke laste meny.");
@@ -172,7 +160,7 @@ export default function ProviderMenuBuilder() {
   const tierSlots = useMemo(
     () =>
       weekDates.flatMap((date) =>
-        categories.map((category) => slots[slotKey(date, tier, category)] ?? emptySlot(date, tier, category)),
+        categories.map((category) => resolveProviderMenuSlot(slots, date, tier, category)),
       ),
     [weekDates, categories, slots, tier],
   );
@@ -181,7 +169,7 @@ export default function ProviderMenuBuilder() {
 
   function selectSlot(date: string, category: Category) {
     setSelected({ date, category });
-    const existing = slots[slotKey(date, tier, category)] ?? emptySlot(date, tier, category);
+    const existing = resolveProviderMenuSlot(slots, date, tier, category);
     setForm({ ...existing });
     setMessage(null);
     setError(null);
@@ -190,8 +178,8 @@ export default function ProviderMenuBuilder() {
 
   function copyFromPackage(source: PlanTier) {
     if (!form || !selected) return;
-    const sourceSlot = slots[slotKey(selected.date, source, selected.category)];
-    if (!sourceSlot || sourceSlot.status === "empty") {
+    const sourceSlot = resolveProviderMenuSlot(slots, selected.date, source, selected.category);
+    if (!menuSlotHasContent(sourceSlot) && sourceSlot.status === "empty") {
       setError(`Ingen ${TIER_LABELS[source]}-meny å kopiere for denne dagen/kategorien.`);
       return;
     }
@@ -205,6 +193,7 @@ export default function ProviderMenuBuilder() {
       upgradeType: form.upgradeType,
       upgradeNote: form.upgradeNote,
       status: "draft",
+      contentSource: "draft",
     });
     setMessage(`Kopiert fra ${TIER_LABELS[source]}. Legg til Enterprise-upgrade før publisering.`);
   }
@@ -352,32 +341,30 @@ export default function ProviderMenuBuilder() {
         </p>
       ) : null}
 
-      <div className="ds-provider-menu-builder__grid">
+      <div className="ds-provider-menu-builder__grid provider-menu-week-grid">
         {weekDates.map((date, idx) => (
           <div key={date} className="ds-provider-menu-builder__day-col">
             <h3 className="ds-h4">{WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!]}</h3>
             <p className="ds-provider-menu-builder__day-date">{date}</p>
             {categories.map((category) => {
-              const slot = slots[slotKey(date, tier, category)] ?? emptySlot(date, tier, category);
+              const slot = resolveProviderMenuSlot(slots, date, tier, category);
               const isSelected = selected?.date === date && selected.category === category;
+              const hasContent = menuSlotHasContent(slot);
               return (
                 <button
                   key={`${date}-${category}`}
                   type="button"
-                  className={`ds-provider-menu-builder__cell${isSelected ? " is-selected" : ""}${slot.status === "published" ? " is-published" : slot.status === "draft" ? " is-draft" : ""}`}
+                  className={`ds-provider-menu-builder__cell${isSelected ? " is-selected" : ""}${slot.status === "published" ? " is-published" : slot.status === "draft" || hasContent ? " is-draft" : " is-empty"}`}
                   onClick={() => selectSlot(date, category)}
                 >
                   <span className="ds-provider-menu-builder__cell-cat">{categoryLabel(category)}</span>
-                  <span className="ds-provider-menu-builder__cell-title">
-                    {slot.mealTitle || "—"}
-                  </span>
-                  <span className="ds-provider-menu-builder__cell-status">
-                    {slot.status === "published"
-                      ? "Publisert"
-                      : slot.status === "draft"
-                        ? "Utkast"
-                        : "Tom"}
-                  </span>
+                  <span className="ds-provider-menu-builder__cell-title">{slotDisplayTitle(slot)}</span>
+                  {slot.allergensText ? (
+                    <span className="ds-provider-menu-builder__cell-allergens">
+                      {parseAllergensDisplay(null, slot.allergensText)}
+                    </span>
+                  ) : null}
+                  <span className="ds-provider-menu-builder__cell-status">{slotDisplayStatus(slot)}</span>
                 </button>
               );
             })}
