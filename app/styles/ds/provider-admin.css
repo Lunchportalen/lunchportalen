@@ -101,6 +101,54 @@
   color: var(--ds-text);
 }
 
+.ds-provider-detail-section + .ds-provider-detail-section {
+  margin-top: clamp(8px, 2vw, 16px);
+}
+
+.ds-provider-order-history {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ds-provider-order-history__item {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--ds-radius-md, 22px);
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface);
+  box-shadow: var(--ds-shadow-card, 0 20px 60px rgba(17, 17, 17, 0.06));
+}
+
+.ds-provider-order-history__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+}
+
+.ds-provider-order-history__date,
+.ds-provider-order-history__status {
+  font-weight: 700;
+  color: var(--ds-text);
+}
+
+.ds-provider-order-history__meta,
+.ds-provider-order-history__total {
+  font-size: 13px;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-order-history__lines {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ds-text);
+  font-size: 14px;
+}
+
 /* Logo-variant: lys, nøytral flate slik at mørke logoer forblir lesbare. */
 .ds-provider-nav__mark.ds-provider-nav__mark--logo {
   background: var(--ds-surface, #fff);

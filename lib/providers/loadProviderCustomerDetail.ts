@@ -2,14 +2,29 @@
 import "server-only";
 
 import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
-import { supabaseServer } from "@/lib/supabase/server";
-
-import type { ProviderActivityItem } from "@/lib/providers/loadProviderDashboard";
+import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
+import {
+  buildKitchenOrderItemDisplay,
+  dayChoiceKey,
+  profileDisplayName,
+} from "@/lib/providers/kitchenOrderDisplay";
+import {
+  mapProviderCustomerDetailActivity,
+  type ProviderCustomerActivityItem,
+} from "@/lib/providers/providerCustomerDetailActivity";
+import {
+  buildAllowedDayChoiceKeys,
+  fetchProviderOrderEnrichment,
+} from "@/lib/providers/providerOrderEnrichment";
+import { buildVariantTitleLookup } from "@/lib/kitchen/kitchenMealNote";
 import type { ProviderCustomerStatus } from "@/lib/providers/customerTypes";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export type ProviderCompanyDetail = {
   id: string;
   name: string;
+  orgnr: string | null;
   status: ProviderCustomerStatus;
   providerId: string;
   suspendedAt: string | null;
@@ -23,7 +38,32 @@ export type ProviderCompanyDetail = {
 export type ProviderCompanyStats = {
   employeesCount: number;
   activeOrdersCount: number;
+  historicalOrdersCount: number;
   monthlyRevenueNok: number;
+};
+
+export type ProviderEmployeeRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  role: string | null;
+};
+
+export type ProviderOrderLineRow = {
+  quantity: number;
+  productName: string;
+  choiceLabel: string | null;
+  variantTitle: string | null;
+  displayLine: string;
+};
+
+export type ProviderOrderRow = {
+  id: string;
+  date: string;
+  status: string;
+  totalNok: number | null;
+  employeeName: string | null;
+  lines: ProviderOrderLineRow[];
 };
 
 export type ProviderAgreementRow = {
@@ -43,21 +83,17 @@ export type ProviderCompanyLocationRow = {
   address: string | null;
 };
 
-export type ProviderOrderRow = {
-  id: string;
-  date: string;
-  status: string;
-  lineTotal: number | null;
-};
-
 export type ProviderCustomerDetail = {
   company: ProviderCompanyDetail;
   stats: ProviderCompanyStats;
+  employees: ProviderEmployeeRow[];
   agreements: ProviderAgreementRow[];
   locations: ProviderCompanyLocationRow[];
   orders: ProviderOrderRow[];
-  activity: ProviderActivityItem[];
+  activity: ProviderCustomerActivityItem[];
 };
+
+const OPEN_ORDER_STATUSES = ["ACTIVE", "PREPARED", "DISPATCHED"] as const;
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -72,6 +108,10 @@ function safeNum(v: unknown): number {
   return 0;
 }
 
+function centsToNok(cents: unknown): number {
+  return safeNum(cents) / 100;
+}
+
 function deriveStatus(row: {
   deleted_at?: string | null;
   suspended_at?: string | null;
@@ -83,8 +123,61 @@ function deriveStatus(row: {
   return "ACTIVE";
 }
 
+async function loadScopedEmployees(companyId: string): Promise<ProviderEmployeeRow[]> {
+  try {
+    const admin = supabaseAdmin();
+    const { data, error } = await admin
+      .from("profiles")
+      .select("id, full_name, email, role, disabled_at")
+      .eq("company_id", companyId)
+      .is("disabled_at", null)
+      .order("full_name", { ascending: true })
+      .limit(100);
+
+    if (error || !Array.isArray(data)) return [];
+
+    return data.map((row: Record<string, unknown>) => ({
+      id: safeStr(row.id),
+      name: profileDisplayName({
+        full_name: row.full_name != null ? String(row.full_name) : null,
+        email: row.email != null ? String(row.email) : null,
+      }),
+      email: row.email != null ? safeStr(row.email) : null,
+      role: row.role != null ? safeStr(row.role) : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function loadScopedActivity(companyId: string): Promise<ProviderCustomerActivityItem[]> {
+  try {
+    const admin = supabaseAdmin();
+    const filter = `entity_id.eq.${companyId},company_id.eq.${companyId},detail->>company_id.eq.${companyId}`;
+    const { data, error } = await admin
+      .from("audit_events")
+      .select("id, created_at, action, summary")
+      .or(filter)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (error || !Array.isArray(data)) return [];
+
+    return mapProviderCustomerDetailActivity(
+      data.map((row: Record<string, unknown>) => ({
+        id: safeStr(row.id),
+        createdAt: String(row.created_at ?? ""),
+        action: safeStr(row.action),
+        summary: row.summary != null ? String(row.summary) : null,
+      })),
+    );
+  } catch {
+    return [];
+  }
+}
+
 /**
- * Load one company in provider scope. Returns null when missing or cross-provider.
+ * Load one company in provider scope. Returns null when missing, cross-provider, or self-customer.
  */
 export async function loadProviderCustomerDetail(
   providerId: string,
@@ -97,17 +190,36 @@ export async function loadProviderCustomerDetail(
   const sb = await supabaseServer();
   const { data: row, error } = await (sb as any)
     .from("companies")
-    .select(
-      "id, name, provider_id, updated_at, deleted_at, suspended_at, suspended_reason, paused_at, paused_reason",
-    )
+    .select("id, name, orgnr, provider_id, updated_at, deleted_at, suspended_at, suspended_reason, paused_at, paused_reason")
     .eq("id", cid)
     .maybeSingle();
 
   if (error || !row || safeStr(row.provider_id) !== pid) return null;
 
+  const { data: providerRow } = await sb.from("providers").select("id, name, org_number").eq("id", pid).maybeSingle();
+  if (
+    isProviderSelfCustomer(
+      {
+        id: cid,
+        name: safeStr(row.name) || null,
+        orgnr: (row.orgnr as string | null | undefined) ?? null,
+      },
+      providerRow
+        ? {
+            id: pid,
+            name: safeStr((providerRow as { name?: string }).name) || null,
+            orgNumber: (providerRow as { org_number?: string | null }).org_number ?? null,
+          }
+        : { id: pid, name: null, orgNumber: null },
+    )
+  ) {
+    return null;
+  }
+
   const company: ProviderCompanyDetail = {
     id: cid,
     name: safeStr(row.name) || "Uten navn",
+    orgnr: (row.orgnr as string | null | undefined) ?? null,
     status: deriveStatus(row),
     providerId: pid,
     suspendedAt: row.suspended_at != null ? String(row.suspended_at) : null,
@@ -121,35 +233,84 @@ export async function loadProviderCustomerDetail(
   const today = osloTodayISODate();
   const monthStart = addDaysISO(today, -30);
 
-  const [employeesP, ordersActiveP, ordersMonthP, agreementsP, locationsP, ordersP, activityP] = await Promise.all([
-    sb.from("profiles").select("id", { count: "exact", head: true }).eq("company_id", cid).is("disabled_at", null),
-    sb.from("orders").select("id", { count: "exact", head: true }).eq("company_id", cid).eq("status", "ACTIVE"),
-    sb.from("orders").select("line_total").eq("company_id", cid).gte("date", monthStart).lte("date", today).in("status", ["ACTIVE", "PAUSED"]),
+  const [employees, agreementsP, locationsP, ordersAllP, ordersOpenP, ordersMonthP, activity] = await Promise.all([
+    loadScopedEmployees(cid),
     sb
       .from("agreements")
       .select("id, status, created_at, starts_at, ends_at, delivery_days, location_id, tier")
       .eq("company_id", cid)
+      .eq("provider_id", pid)
       .order("created_at", { ascending: false })
       .limit(10),
     sb.from("company_locations").select("id, name, address").eq("company_id", cid).limit(50),
-    sb.from("orders").select("id, date, status, line_total").eq("company_id", cid).order("date", { ascending: false }).limit(20),
-    (sb as any)
-      .from("lifecycle_audit_log")
-      .select("id, created_at, action, entity_type, reason")
-      .eq("entity_type", "company")
-      .eq("entity_id", cid)
-      .order("created_at", { ascending: false })
-      .limit(10),
+    sb
+      .from("orders")
+      .select("id, date, status, gross_cents_inc_vat, user_id, location_id, slot")
+      .eq("provider_id", pid)
+      .eq("company_id", cid)
+      .order("date", { ascending: false })
+      .limit(30),
+    sb
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("provider_id", pid)
+      .eq("company_id", cid)
+      .in("status", [...OPEN_ORDER_STATUSES]),
+    sb
+      .from("orders")
+      .select("gross_cents_inc_vat")
+      .eq("provider_id", pid)
+      .eq("company_id", cid)
+      .gte("date", monthStart)
+      .lte("date", today),
+    loadScopedActivity(cid),
   ]);
+
+  const orderRows = Array.isArray(ordersAllP.data) ? ordersAllP.data : [];
+  const scopedOrderIds = orderRows.map((r) => safeStr((r as { id?: string }).id)).filter(Boolean);
+  const userIds = [...new Set(orderRows.map((r) => safeStr((r as { user_id?: string }).user_id)).filter(Boolean))];
+  const locationIds = [
+    ...new Set(orderRows.map((r) => safeStr((r as { location_id?: string }).location_id)).filter(Boolean)),
+  ];
+
+  const minDate = orderRows.length
+    ? orderRows.reduce((acc, r) => {
+        const d = safeStr((r as { date?: string }).date);
+        return !acc || (d && d < acc) ? d : acc;
+      }, "")
+    : today;
+  const maxDate = orderRows.length
+    ? orderRows.reduce((acc, r) => {
+        const d = safeStr((r as { date?: string }).date);
+        return !acc || (d && d > acc) ? d : acc;
+      }, "")
+    : today;
+
+  const { profileById, dayChoiceMap, itemsByOrder } = await fetchProviderOrderEnrichment({
+    scopedOrderIds,
+    userIds,
+    locationIds,
+    allowedDayChoiceKeys: buildAllowedDayChoiceKeys(orderRows),
+    dateFrom: minDate || today,
+    dateToExclusive: addDaysISO(maxDate || today, 1),
+  });
+
+  let variantLookup = new Map<string, string>();
+  try {
+    variantLookup = await buildVariantTitleLookup();
+  } catch {
+    /* optional */
+  }
 
   let monthlyRevenueNok = 0;
   for (const o of Array.isArray(ordersMonthP.data) ? ordersMonthP.data : []) {
-    monthlyRevenueNok += safeNum((o as { line_total?: unknown }).line_total);
+    monthlyRevenueNok += centsToNok((o as { gross_cents_inc_vat?: unknown }).gross_cents_inc_vat);
   }
 
   const stats: ProviderCompanyStats = {
-    employeesCount: safeNum(employeesP.count),
-    activeOrdersCount: safeNum(ordersActiveP.count),
+    employeesCount: employees.length,
+    activeOrdersCount: safeNum(ordersOpenP.count),
+    historicalOrdersCount: orderRows.length,
     monthlyRevenueNok,
   };
 
@@ -176,22 +337,64 @@ export async function loadProviderCustomerDetail(
     }),
   );
 
-  const orders: ProviderOrderRow[] = (Array.isArray(ordersP.data) ? ordersP.data : []).map((o: Record<string, unknown>) => ({
-    id: safeStr(o.id),
-    date: safeStr(o.date),
-    status: safeStr(o.status),
-    lineTotal: o.line_total != null ? safeNum(o.line_total) : null,
-  }));
+  const orders: ProviderOrderRow[] = orderRows.map((raw) => {
+    const r = raw as Record<string, unknown>;
+    const id = safeStr(r.id);
+    const companyId = cid;
+    const locationId = r.location_id != null ? safeStr(r.location_id) : null;
+    const userId = safeStr(r.user_id);
+    const date = safeStr(r.date);
+    const choiceKey = dayChoiceKey({ companyId, locationId, userId, date });
+    const choiceCtx = dayChoiceMap.get(choiceKey)?.choice ?? null;
+    const rawItems = itemsByOrder.get(id) ?? [];
 
-  const activity: ProviderActivityItem[] = (Array.isArray(activityP.data) ? activityP.data : []).map(
-    (a: Record<string, unknown>) => ({
-      id: safeStr(a.id),
-      createdAt: String(a.created_at ?? ""),
-      action: safeStr(a.action),
-      entityType: safeStr(a.entity_type),
-      reason: a.reason != null ? String(a.reason) : null,
-    }),
-  );
+    const lines: ProviderOrderLineRow[] =
+      rawItems.length > 0
+        ? rawItems.map((item) => {
+            const display = buildKitchenOrderItemDisplay({
+              productNameSnapshot: item.productNameSnapshot,
+              quantity: item.quantity,
+              choice: choiceCtx,
+              variantLookup,
+            });
+            return {
+              quantity: display.quantity,
+              productName: display.productName,
+              choiceLabel: display.choiceLabel,
+              variantTitle: display.variantTitle,
+              displayLine: display.displayLine,
+            };
+          })
+        : choiceCtx
+          ? [
+              {
+                ...buildKitchenOrderItemDisplay({
+                  productNameSnapshot: null,
+                  quantity: 1,
+                  choice: choiceCtx,
+                  variantLookup,
+                }),
+                displayLine: buildKitchenOrderItemDisplay({
+                  productNameSnapshot: null,
+                  quantity: 1,
+                  choice: choiceCtx,
+                  variantLookup,
+                }).displayLine,
+              },
+            ]
+          : [];
 
-  return { company, stats, agreements, locations, orders, activity };
+    const profile = userId ? profileById.get(userId) : null;
+
+    return {
+      id,
+      date,
+      status: safeStr(r.status) || "UNKNOWN",
+      totalNok: r.gross_cents_inc_vat != null ? centsToNok(r.gross_cents_inc_vat) : null,
+      employeeName: profile ? profileDisplayName(profile) : null,
+      lines,
+    };
+  });
+
+  return { company, stats, employees, agreements, locations, orders, activity };
 }
