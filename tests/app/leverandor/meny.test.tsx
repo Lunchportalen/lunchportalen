@@ -47,18 +47,33 @@ describe("ProviderMenuBuilder", () => {
     expect(html).toContain("Enterprise");
     expect(html).toContain("Mandag");
     expect(html).toContain("Fredag");
-    expect(html).toContain("Velg en dag og kategori");
+    expect(html).toContain("Ost &amp; Skinke");
+    expect(html).toContain("Fast valg");
+    expect(html).not.toContain("Pad Thai nudler");
+    expect(html).toContain("Mangler varmmat fra Sanity/bank");
+    expect(html).toContain("Publiser kategori");
   });
 
   test("Enterprise value builder section exists in source", () => {
     const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"), "utf8");
-    expect(source).toContain("Enterprise-verdi");
+    expect(source).toContain("providerMenuTierContract");
+    expect(source).toContain("providerMenuCatalogSurface");
     expect(source).toContain("provider-menu-week-grid");
-    expect(source).toContain("mergeProviderMenuRowsIntoSlots");
-    expect(source).toContain("startOfWeekISO(osloTodayISODate())");
-    expect(source).toContain("formatPriceIncVatLabel");
+    expect(source).toContain("resolveVariantRowsForDay");
+    expect(source).toContain("Enterprise-verdi");
     expect(source).not.toMatch(/SANITY_WRITE_TOKEN/i);
     expect(source).toContain("/api/provider/menu-days");
+  });
+
+  test("tier contract file exists with correct Basis scope", () => {
+    const source = readFileSync(resolve(process.cwd(), "lib/provider-menu/providerMenuTierContract.ts"), "utf8");
+    expect(source).toContain("seed-lunch-categories-v2.ts");
+    expect(source).toContain("Ost & Skinke");
+    expect(source).toContain("Laks & Eggerøre");
+    expect(source).toContain("Kyllingkarri");
+    expect(source).toContain("Fast pakke: 6 maki + 2 nigiri + 1 tempura");
+    expect(source).toContain("BASIS_WORKSPACE_CATEGORIES");
+    expect(source).toContain('categoriesForTierInOrder(PLAN_CATEGORIES.BASIS)');
   });
 
   test("desktop week grid uses 5 day columns in CSS", () => {
@@ -82,6 +97,8 @@ describe("LeverandorMenyPage", () => {
 describe("provider menu safety guards", () => {
   const guardedFiles = [
     "components/providers/ProviderMenuBuilder.tsx",
+    "lib/provider-menu/providerMenuTierContract.ts",
+    "lib/provider-menu/providerMenuCatalogSurface.ts",
     "app/api/provider/menu-days/route.ts",
     "lib/provider-menu/menuDayPayload.ts",
     "lib/providers/providerMenuPackageSurface.ts",
