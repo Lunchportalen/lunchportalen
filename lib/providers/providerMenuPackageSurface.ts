@@ -11,7 +11,7 @@ import {
 
 export const PROVIDER_MENU_BUILDER_COPY = {
   title: "Meny",
-  lead: "Planlegg og publiser meny for Basis, Luxus og Enterprise.",
+  lead: "Planlegg, vedlikehold og publiser menyer for Basis, Luxus og Enterprise.",
   status: {
     draft: "Utkast",
     published: "Publisert",
