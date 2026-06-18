@@ -87,10 +87,82 @@ describe("buildMenuDayPayload", () => {
     if (res.ok === false) expect(res.field).toBe("category");
   });
 
-  test("rejects missing mealTitle", () => {
-    const res = buildMenuDayPayload(PROVIDER_B, { ...validInput, mealTitle: "" });
+  test("draft allows incomplete mealTitle and description", () => {
+    const res = buildMenuDayPayload(PROVIDER_B, {
+      ...validInput,
+      mealTitle: "",
+      description: "",
+      status: "draft",
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.payload.mealTitle).toBe("Utkast");
+    expect(res.payload.approvedForPublish).toBe(false);
+  });
+
+  test("published requires mealTitle and description", () => {
+    const res = buildMenuDayPayload(PROVIDER_B, { ...validInput, mealTitle: "", status: "published" });
     expect(res.ok).toBe(false);
     if (res.ok === false) expect(res.field).toBe("mealTitle");
+  });
+
+  test("Enterprise publish requires upgrade when sourcePackage set", () => {
+    const res = buildMenuDayPayload(PROVIDER_B, {
+      ...validInput,
+      tier: "ENTERPRISE",
+      category: "varmrett",
+      status: "published",
+      sourcePackage: "LUXUS",
+      upgradeNote: "",
+      upgradeType: null,
+    });
+    expect(res.ok).toBe(false);
+    if (res.ok === false) expect(res.field).toBe("upgradeNote");
+  });
+
+  test("Enterprise publish accepts upgrade note", () => {
+    const res = buildMenuDayPayload(PROVIDER_B, {
+      ...validInput,
+      tier: "ENTERPRISE",
+      category: "varmrett",
+      status: "published",
+      sourcePackage: "LUXUS",
+      upgradeNote: "Inkluderer dessert og større porsjon",
+      upgradeType: "DESSERT_FRUIT",
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  test("Enterprise soft warning requires confirmWarnings to publish", () => {
+    const res = buildMenuDayPayload(PROVIDER_B, {
+      ...validInput,
+      tier: "ENTERPRISE",
+      category: "varmrett",
+      status: "published",
+      mealTitle: "Premium rett",
+      description: "Uten upgrade-felt",
+      sourcePackage: null,
+      upgradeNote: "",
+      upgradeType: null,
+    });
+    expect(res.ok).toBe(false);
+    if (res.ok === false) expect(res.field).toBe("confirmWarnings");
+  });
+
+  test("Enterprise publish succeeds with confirmWarnings", () => {
+    const res = buildMenuDayPayload(PROVIDER_B, {
+      ...validInput,
+      tier: "ENTERPRISE",
+      category: "varmrett",
+      status: "published",
+      mealTitle: "Premium rett",
+      description: "Uten upgrade-felt men bekreftet",
+      sourcePackage: null,
+      upgradeNote: "",
+      upgradeType: null,
+      confirmWarnings: true,
+    });
+    expect(res.ok).toBe(true);
   });
 
   test("rejects invalid date", () => {
@@ -124,6 +196,12 @@ describe("parseMenuDayRequestBody", () => {
       description: "Beskrivelse",
       allergensText: "melk",
       status: "draft",
+      estimatedCostPerPortion: null,
+      sourcePackage: null,
+      upgradeType: null,
+      upgradeNote: null,
+      confirmWarnings: false,
+      luxusEstimatedCost: null,
     });
   });
 

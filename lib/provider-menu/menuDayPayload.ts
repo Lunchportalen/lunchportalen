@@ -8,6 +8,12 @@ import {
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
 import { MELHUS_PROVIDER_SANITY_ID } from "@/lib/cms/providerSanityConstants";
+import {
+  ENTERPRISE_UPGRADE_TYPES,
+  validateEnterprisePublish,
+  type EnterpriseUpgradeType,
+} from "@/lib/providers/providerMenuPackageSurface";
+import { fallbackProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
 
 export type MenuDayStatus = "draft" | "published";
 
@@ -19,6 +25,12 @@ export type MenuDayInput = {
   description: string;
   allergensText?: string | null;
   status: MenuDayStatus;
+  estimatedCostPerPortion?: number | null;
+  sourcePackage?: string | null;
+  upgradeType?: string | null;
+  upgradeNote?: string | null;
+  confirmWarnings?: boolean;
+  luxusEstimatedCost?: number | null;
 };
 
 export type SanityMenuDayPayload = {
@@ -31,6 +43,10 @@ export type SanityMenuDayPayload = {
   mealTitle: string;
   description: string;
   allergens?: string[];
+  estimatedCostPerPortion?: number;
+  enterpriseSourcePackage?: string;
+  enterpriseUpgradeType?: string;
+  enterpriseUpgradeNote?: string;
   approvedForPublish: boolean;
   customerVisible: boolean;
   approvedAt?: string;
@@ -38,7 +54,7 @@ export type SanityMenuDayPayload = {
 };
 
 export type MenuDayPayloadResult =
-  | { ok: true; payload: SanityMenuDayPayload; docId: string; status: MenuDayStatus }
+  | { ok: true; payload: SanityMenuDayPayload; docId: string; status: MenuDayStatus; warnings?: string[] }
   | { ok: false; error: string; field?: string };
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -73,6 +89,18 @@ function parseAllergensText(text: string | null | undefined): string[] | undefin
     .slice(0, 32)
     .map((p) => p.slice(0, 64));
   return parts.length ? parts : undefined;
+}
+
+function parseEstimatedCost(raw: unknown): number | null {
+  if (raw == null || raw === "") return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0 || n > 90) return null;
+  return Math.round(n * 100) / 100;
+}
+
+function parseUpgradeType(raw: unknown): EnterpriseUpgradeType | null {
+  const v = String(raw ?? "").trim().toUpperCase();
+  return ENTERPRISE_UPGRADE_TYPES.includes(v as EnterpriseUpgradeType) ? (v as EnterpriseUpgradeType) : null;
 }
 
 /**
@@ -140,28 +168,64 @@ export function buildMenuDayPayload(
     };
   }
 
-  const mealTitle = safeTrim(input.mealTitle, 120);
-  if (!mealTitle) {
-    return { ok: false, error: "Rettens navn er påkrevd.", field: "mealTitle" };
-  }
-  if (mealTitle.length < 2) {
-    return { ok: false, error: "Rettens navn må være minst 2 tegn.", field: "mealTitle" };
-  }
-
-  const description = safeTrim(input.description, 4000);
-  if (!description) {
-    return { ok: false, error: "Beskrivelse er påkrevd.", field: "description" };
-  }
-
   const status = parseStatus(input.status);
   if (!status) {
     return { ok: false, error: "Status må være «draft» eller «published».", field: "status" };
   }
 
+  const isPublished = status === "published";
+  const mealTitle = safeTrim(input.mealTitle, 120);
+  const description = safeTrim(input.description, 4000);
+
+  if (isPublished) {
+    if (!mealTitle) {
+      return { ok: false, error: "Rettens navn er påkrevd ved publisering.", field: "mealTitle" };
+    }
+    if (mealTitle.length < 2) {
+      return { ok: false, error: "Rettens navn må være minst 2 tegn.", field: "mealTitle" };
+    }
+    if (!description) {
+      return { ok: false, error: "Beskrivelse er påkrevd ved publisering.", field: "description" };
+    }
+  } else if (mealTitle && mealTitle.length < 2) {
+    return { ok: false, error: "Rettens navn må være minst 2 tegn.", field: "mealTitle" };
+  }
+
+  const sourcePackage = parseTier(input.sourcePackage);
+  const upgradeType = parseUpgradeType(input.upgradeType);
+  const upgradeNote = safeTrim(input.upgradeNote, 500);
+  const estimatedCostPerPortion = parseEstimatedCost(input.estimatedCostPerPortion);
+  const luxusEstimatedCost = parseEstimatedCost(input.luxusEstimatedCost);
+  const priceExVatNok = fallbackProviderMenuPrices()[tier].priceExVatNok;
+
+  const enterpriseWarnings = validateEnterprisePublish({
+    tier,
+    mealTitle,
+    description,
+    sourcePackage,
+    upgradeType,
+    upgradeNote,
+    estimatedCostPerPortion,
+    luxusEstimatedCost,
+    priceExVatNok,
+  });
+
+  const blocking = enterpriseWarnings.filter((w) => w.blocking);
+  if (isPublished && blocking.length > 0) {
+    return { ok: false, error: blocking[0]!.message, field: "upgradeNote" };
+  }
+
+  const softWarnings = enterpriseWarnings.filter((w) => !w.blocking).map((w) => w.message);
+  if (isPublished && softWarnings.length > 0 && !input.confirmWarnings) {
+    return {
+      ok: false,
+      error: `${softWarnings[0]} Bekreft for å publisere likevel.`,
+      field: "confirmWarnings",
+    };
+  }
+
   const allergens = parseAllergensText(input.allergensText);
   const now = new Date().toISOString();
-  const isPublished = status === "published";
-
   const docId = buildMenuDayDocId(providerId, date, tier, category);
 
   const payload: SanityMenuDayPayload = {
@@ -171,22 +235,30 @@ export function buildMenuDayPayload(
     date,
     planTier: tier,
     category,
-    mealTitle,
-    description,
+    mealTitle: mealTitle || "Utkast",
+    description: description || "Utkast — ikke publisert.",
     approvedForPublish: isPublished,
     customerVisible: isPublished,
   };
 
-  if (allergens) {
-    payload.allergens = allergens;
-  }
+  if (allergens) payload.allergens = allergens;
+  if (estimatedCostPerPortion != null) payload.estimatedCostPerPortion = estimatedCostPerPortion;
+  if (sourcePackage) payload.enterpriseSourcePackage = sourcePackage;
+  if (upgradeType) payload.enterpriseUpgradeType = upgradeType;
+  if (upgradeNote) payload.enterpriseUpgradeNote = upgradeNote;
 
   if (isPublished) {
     payload.approvedAt = now;
     payload.customerVisibleSetAt = now;
   }
 
-  return { ok: true, payload, docId, status };
+  return {
+    ok: true,
+    payload,
+    docId,
+    status,
+    warnings: softWarnings.length > 0 ? softWarnings : undefined,
+  };
 }
 
 export function parseMenuDayRequestBody(raw: unknown): MenuDayInput | null {
@@ -202,5 +274,11 @@ export function parseMenuDayRequestBody(raw: unknown): MenuDayInput | null {
     description: safeTrim(o.description, 4000),
     allergensText: o.allergensText != null ? safeTrim(o.allergensText, 2000) : null,
     status,
+    estimatedCostPerPortion: parseEstimatedCost(o.estimatedCostPerPortion),
+    sourcePackage: o.sourcePackage != null ? safeTrim(o.sourcePackage, 32) : null,
+    upgradeType: o.upgradeType != null ? safeTrim(o.upgradeType, 64) : null,
+    upgradeNote: o.upgradeNote != null ? safeTrim(o.upgradeNote, 500) : null,
+    confirmWarnings: Boolean(o.confirmWarnings),
+    luxusEstimatedCost: parseEstimatedCost(o.luxusEstimatedCost),
   };
 }
