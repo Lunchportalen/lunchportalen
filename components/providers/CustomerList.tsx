@@ -110,9 +110,11 @@ export default function CustomerList({
           <thead>
             <tr>
               <th scope="col">{copy.tableHeaders.name}</th>
+              <th scope="col">{copy.tableHeaders.orgnr}</th>
               <th scope="col">{copy.tableHeaders.status}</th>
               <th scope="col">{copy.tableHeaders.employees}</th>
               <th scope="col">{copy.tableHeaders.ordersThisWeek}</th>
+              <th scope="col">{copy.tableHeaders.invoice}</th>
               <th scope="col">{copy.tableHeaders.lastUpdated}</th>
               {canManage ? <th scope="col" className="text-right">Handlinger</th> : null}
             </tr>
@@ -120,7 +122,7 @@ export default function CustomerList({
           <tbody>
             {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={canManage ? 6 : 5} className="ds-provider-reg-empty">
+                  <td colSpan={canManage ? 8 : 7} className="ds-provider-reg-empty">
                   {emptyState.title}
                   <span className="ds-provider-reg-meta">{emptyState.text}</span>
                 </td>
@@ -133,11 +135,13 @@ export default function CustomerList({
                       {row.name}
                     </Link>
                   </td>
+                  <td>{row.orgnr ?? "—"}</td>
                   <td>
                     <span className={statusBadgeClass(row.status)}>{providerCustomerStatusLabel(row.status)}</span>
                   </td>
                   <td>{row.employeesCount}</td>
                   <td>{row.ordersThisWeek}</td>
+                  <td>{row.invoiceMethodLabel}</td>
                     <td>{formatProviderCustomerUpdated(row.updatedAt, locale)}</td>
                     {canManage ? (
                       <td className="text-right">
@@ -184,7 +188,8 @@ export default function CustomerList({
               <Link href={`/leverandor/kunder/${row.id}`} className="block">
                 <div className="ds-card__title">{row.name}</div>
                 <span className={statusBadgeClass(row.status)}>{providerCustomerStatusLabel(row.status)}</span>
-                <p className="ds-card__text">{copy.mobileMeta(row.employeesCount, row.ordersThisWeek)}</p>
+                <p className="ds-card__text">{copy.mobileMeta(row.employeesCount, row.ordersThisWeek, row.invoiceMethodLabel)}</p>
+                {row.orgnr ? <p className="ds-provider-activity__meta">Org.nr: {row.orgnr}</p> : null}
                 <p className="ds-provider-activity__meta">
                   {copy.mobileUpdatedPrefix} {formatProviderCustomerUpdated(row.updatedAt, locale)}
                 </p>

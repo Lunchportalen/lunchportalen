@@ -9,6 +9,7 @@ export type ProviderCustomerRow = {
   status: ProviderCustomerStatus;
   employeesCount: number;
   ordersThisWeek: number;
+  invoiceMethodLabel: string;
   updatedAt: string | null;
 };
 

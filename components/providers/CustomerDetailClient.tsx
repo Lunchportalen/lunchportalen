@@ -19,6 +19,11 @@ import {
   hasMultipleActiveAgreements,
   sortAgreementsForDisplay,
 } from "@/lib/providers/providerCustomerAgreementSurface";
+import {
+  PROVIDER_CUSTOMER_DETAIL_COPY,
+  buildBillingBasisDisplay,
+  buildCustomerIdentityDisplay,
+} from "@/lib/providers/providerCustomerDetailSurface";
 import { PROVIDER_CUSTOMER_ACTIVITY_EMPTY } from "@/lib/providers/providerCustomerDetailActivity";
 import ProviderCustomerAgreementEditDialog from "@/components/providers/ProviderCustomerAgreementEditDialog";
 
@@ -54,6 +59,20 @@ export default function CustomerDetailClient({
   const isSuspended = displayStatus === "SUSPENDED" || Boolean(company.suspendedAt);
   const isPaused = displayStatus === "PAUSED" || Boolean(company.pausedAt);
   const isDeleted = displayStatus === "DELETED" || Boolean(company.deletedAt);
+
+  const identity = buildCustomerIdentityDisplay({
+    companyName: company.name,
+    orgnr: company.orgnr,
+    status: displayStatus,
+    contactName: company.contactName,
+    contactEmail: company.contactEmail,
+    contactPhone: company.contactPhone,
+    locationName: detail.primaryLocationName,
+    locationAddress: detail.primaryLocationAddress,
+    companyAddress: company.companyAddress,
+    activeAgreementStatus: detail.activeAgreementStatus,
+  });
+  const billingDisplay = buildBillingBasisDisplay(detail.billingBasis, detail.invoice);
 
   async function runAction(
     variant: SuspendDialogVariant,
@@ -172,32 +191,41 @@ export default function CustomerDetailClient({
         <p className="ds-body ds-section">Du har lesetilgang. Endringer krever administratortilgang.</p>
       ) : null}
 
-      <section className="ds-section ds-provider-detail-section">
-        <h2 className="ds-h2">Ansatte</h2>
-        {detail.employees.length === 0 ? (
-          <p className="ds-body">Ingen ansatte registrert for denne kunden ennå.</p>
-        ) : (
-          <div className="ds-provider-customer-list ds-provider-customer-list--desktop">
-            <table className="ds-provider-customer-table">
-              <thead>
-                <tr>
-                  <th scope="col">Navn</th>
-                  <th scope="col">E-post</th>
-                  <th scope="col">Rolle</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.employees.map((employee) => (
-                  <tr key={employee.id}>
-                    <td>{employee.name}</td>
-                    <td>{employee.email ?? "—"}</td>
-                    <td>{employee.role ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <section className="ds-section ds-provider-detail-section ds-provider-customer-identity">
+        <h2 className="ds-h2">{PROVIDER_CUSTOMER_DETAIL_COPY.identityTitle}</h2>
+        <article className="ds-card ds-provider-identity-card">
+          <p className="ds-h4">{identity.companyName}</p>
+          <dl className="ds-provider-reg-detail">
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.orgnr}</dt>
+              <dd>{identity.orgnrLabel}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{identity.statusLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.contact}</dt>
+              <dd>{identity.contactName}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.email}</dt>
+              <dd>{identity.contactEmail}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.phone}</dt>
+              <dd>{identity.contactPhone}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.deliveryAddress}</dt>
+              <dd>{identity.deliveryAddress}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.agreementStatus}</dt>
+              <dd>{identity.agreementStatusLabel}</dd>
+            </div>
+          </dl>
+        </article>
       </section>
 
       <section className="ds-section">
@@ -272,7 +300,7 @@ export default function CustomerDetailClient({
                     </div>
                     <div>
                       <dt>{PROVIDER_AGREEMENT_COPY.labels.location}</dt>
-                      <dd>{display.locationLabel}</dd>
+                      <dd className="ds-provider-delivery-address">{display.locationLabel}</dd>
                     </div>
                     {display.packageLabel !== PROVIDER_AGREEMENT_COPY.packageMissing ? (
                       <div>
@@ -290,6 +318,65 @@ export default function CustomerDetailClient({
               );
             })}
           </>
+        )}
+      </section>
+
+      <section className="ds-section ds-provider-detail-section ds-provider-billing-basis">
+        <h2 className="ds-h2">{PROVIDER_CUSTOMER_DETAIL_COPY.billingBasisTitle}</h2>
+        <article className="ds-card">
+          <dl className="ds-provider-billing-kpis">
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.ordersThisMonth}</dt>
+              <dd>{billingDisplay.ordersLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenue}</dt>
+              <dd>{billingDisplay.revenueLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.commission}</dt>
+              <dd>{billingDisplay.commissionLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.invoiceMethod}</dt>
+              <dd>{billingDisplay.methodLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.invoiceRecipient}</dt>
+              <dd>{billingDisplay.recipientLabel}</dd>
+            </div>
+          </dl>
+          {billingDisplay.incomplete ? (
+            <p className="ds-body ds-provider-billing-inactive">{PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete}</p>
+          ) : null}
+        </article>
+      </section>
+
+      <section className="ds-section ds-provider-detail-section">
+        <h2 className="ds-h2">Ansatte</h2>
+        {detail.employees.length === 0 ? (
+          <p className="ds-body">Ingen ansatte registrert for denne kunden ennå.</p>
+        ) : (
+          <div className="ds-provider-customer-list ds-provider-customer-list--desktop">
+            <table className="ds-provider-customer-table">
+              <thead>
+                <tr>
+                  <th scope="col">Navn</th>
+                  <th scope="col">E-post</th>
+                  <th scope="col">Rolle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.employees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td>{employee.name}</td>
+                    <td>{employee.email ?? "—"}</td>
+                    <td>{employee.role ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

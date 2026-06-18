@@ -1,5 +1,7 @@
 // lib/providers/providerCustomerAgreementSurface.ts
 // Provider-facing copy og ren displaymodell for avtaleseksjonen på /leverandor/kunder/[id].
+
+import { formatDeliveryAddress } from "@/lib/providers/providerCustomerBilling";
 //
 // Domeneregler:
 // - 1 kunde = 1 aktiv kundeavtale; dager/lokasjon/nivå er detaljer UNDER avtalen.
@@ -18,13 +20,13 @@ export const PROVIDER_AGREEMENT_COPY = {
     period: "Avtaleperiode",
     deliveryDays: "Leveringsdager",
     dayMenus: "Leveringsdager og meny",
-    location: "Lokasjon",
+    location: "Leveringsadresse",
     package: "Avtalenivå",
   },
   deliveryDaysWarning: "Avtalen inneholder leveringsdager utenfor ordinær lunsjlevering.",
   multipleActiveWarning: "Flere aktive avtaler er registrert for denne kunden.",
   packageMissing: "Ikke spesifisert i avtalevisningen ennå",
-  locationMissing: "Ikke spesifisert",
+  locationMissing: "Leveringsadresse ikke satt",
   notSpecified: "Ikke spesifisert",
   noEndDate: "Ingen sluttdato",
   empty: {
@@ -155,10 +157,10 @@ function locationLabelFor(locationId: string | null | undefined, locations: Agre
   if (!id) return PROVIDER_AGREEMENT_COPY.locationMissing;
   const match = (Array.isArray(locations) ? locations : []).find((l) => l.id === id);
   if (!match) return PROVIDER_AGREEMENT_COPY.locationMissing;
-  const name = String(match.name ?? "").trim();
-  const address = String(match.address ?? "").trim();
-  if (name && address) return `${name} · ${address}`;
-  return name || address || PROVIDER_AGREEMENT_COPY.locationMissing;
+  return formatDeliveryAddress({
+    locationName: match.name,
+    locationAddress: match.address,
+  });
 }
 
 function dayMenusDisplay(

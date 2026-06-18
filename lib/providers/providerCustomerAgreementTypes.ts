@@ -2,6 +2,7 @@
 // Shared read/patch shapes for provider-owned customer agreement editing.
 
 import type { DayKey, Tier } from "@/lib/agreements/normalize";
+import type { InvoiceMethod } from "@/lib/providers/providerCustomerBilling";
 
 export type ProviderAgreementDayMenu = {
   day: DayKey;
@@ -12,6 +13,16 @@ export type ProviderAgreementContact = {
   name: string | null;
   email: string | null;
   phone: string | null;
+};
+
+export type ProviderAgreementBilling = {
+  method: InvoiceMethod | null;
+  methodLabel: string;
+  invoiceEmail: string | null;
+  orgnr: string | null;
+  ehfEndpoint: string | null;
+  contact: ProviderAgreementContact;
+  recipientLabel: string;
 };
 
 export type ProviderAgreementLocation = {
@@ -39,6 +50,7 @@ export type ProviderAgreementReadModel = {
   contact: ProviderAgreementContact;
   deliveryWindow: ProviderAgreementDeliveryWindow;
   deliveryNote: string | null;
+  billing: ProviderAgreementBilling;
   updatedAt: string | null;
   warnings?: string[];
 };
@@ -64,6 +76,17 @@ export type ProviderAgreementPatchInput = {
   status?: unknown;
   reason?: unknown;
   deliveryNote?: unknown;
+  billing?: {
+    method?: unknown;
+    invoiceEmail?: unknown;
+    orgnr?: unknown;
+    ehfEndpoint?: unknown;
+    contact?: {
+      name?: unknown;
+      email?: unknown;
+      phone?: unknown;
+    };
+  };
 };
 
 export type ProviderAgreementPatchPayload = {
@@ -87,6 +110,17 @@ export type ProviderAgreementPatchPayload = {
   status?: "ACTIVE" | "PAUSED";
   reason?: string | null;
   deliveryNote?: string | null;
+  billing?: {
+    method: InvoiceMethod;
+    invoiceEmail?: string;
+    orgnr?: string;
+    ehfEndpoint?: string;
+    contact?: {
+      name?: string;
+      email?: string;
+      phone?: string;
+    };
+  };
 };
 
 export type ProviderAgreementUpdateResult = ProviderAgreementReadModel & {

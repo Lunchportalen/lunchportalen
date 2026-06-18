@@ -18,6 +18,13 @@ import {
 } from "@/lib/providers/providerOrderEnrichment";
 import { buildVariantTitleLookup } from "@/lib/kitchen/kitchenMealNote";
 import type { ProviderCustomerStatus } from "@/lib/providers/customerTypes";
+import {
+  buildProviderInvoiceSettings,
+  computeBillingBasis,
+  resolveCompanyOrgnr,
+  type ProviderBillingBasis,
+  type ProviderInvoiceSettings,
+} from "@/lib/providers/providerCustomerBilling";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -27,6 +34,10 @@ export type ProviderCompanyDetail = {
   orgnr: string | null;
   status: ProviderCustomerStatus;
   providerId: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  companyAddress: string | null;
   suspendedAt: string | null;
   suspendedReason: string | null;
   pausedAt: string | null;
@@ -87,6 +98,12 @@ export type ProviderCompanyLocationRow = {
 export type ProviderCustomerDetail = {
   company: ProviderCompanyDetail;
   stats: ProviderCompanyStats;
+  invoice: ProviderInvoiceSettings;
+  billingBasis: ProviderBillingBasis;
+  ordersThisMonth: number;
+  primaryLocationName: string | null;
+  primaryLocationAddress: string | null;
+  activeAgreementStatus: string | null;
   employees: ProviderEmployeeRow[];
   agreements: ProviderAgreementRow[];
   locations: ProviderCompanyLocationRow[];
@@ -218,7 +235,9 @@ export async function loadProviderCustomerDetail(
   const sb = await supabaseServer();
   const { data: row, error } = await (sb as any)
     .from("companies")
-    .select("id, name, orgnr, provider_id, updated_at, deleted_at, suspended_at, suspended_reason, paused_at, paused_reason")
+    .select(
+      "id, name, orgnr, organization_number, provider_id, updated_at, deleted_at, suspended_at, suspended_reason, paused_at, paused_reason, contact_name, contact_email, contact_phone, address, billing_email, ehf_enabled, ehf_endpoint",
+    )
     .eq("id", cid)
     .maybeSingle();
 
@@ -247,9 +266,13 @@ export async function loadProviderCustomerDetail(
   const company: ProviderCompanyDetail = {
     id: cid,
     name: safeStr(row.name) || "Uten navn",
-    orgnr: (row.orgnr as string | null | undefined) ?? null,
+    orgnr: resolveCompanyOrgnr(row.orgnr, row.organization_number),
     status: deriveStatus(row),
     providerId: pid,
+    contactName: row.contact_name != null ? safeStr(row.contact_name) || null : null,
+    contactEmail: row.contact_email != null ? safeStr(row.contact_email) || null : null,
+    contactPhone: row.contact_phone != null ? safeStr(row.contact_phone) || null : null,
+    companyAddress: row.address != null ? safeStr(row.address) || null : null,
     suspendedAt: row.suspended_at != null ? String(row.suspended_at) : null,
     suspendedReason: row.suspended_reason != null ? String(row.suspended_reason) : null,
     pausedAt: row.paused_at != null ? String(row.paused_at) : null,
@@ -257,6 +280,17 @@ export async function loadProviderCustomerDetail(
     deletedAt: row.deleted_at != null ? String(row.deleted_at) : null,
     updatedAt: row.updated_at != null ? String(row.updated_at) : null,
   };
+
+  const invoice = buildProviderInvoiceSettings({
+    orgnr: row.orgnr,
+    organizationNumber: row.organization_number,
+    billingEmail: row.billing_email,
+    ehfEnabled: row.ehf_enabled,
+    ehfEndpoint: row.ehf_endpoint,
+    contactName: row.contact_name,
+    contactEmail: row.contact_email,
+    contactPhone: row.contact_phone,
+  });
 
   const today = osloTodayISODate();
   const monthStart = addDaysISO(today, -30);
@@ -331,9 +365,12 @@ export async function loadProviderCustomerDetail(
   }
 
   let monthlyRevenueNok = 0;
-  for (const o of Array.isArray(ordersMonthP.data) ? ordersMonthP.data : []) {
+  const monthOrders = Array.isArray(ordersMonthP.data) ? ordersMonthP.data : [];
+  for (const o of monthOrders) {
     monthlyRevenueNok += centsToNok((o as { gross_cents_inc_vat?: unknown }).gross_cents_inc_vat);
   }
+  const ordersThisMonth = monthOrders.length;
+  const billingBasis = computeBillingBasis({ ordersThisMonth, revenueNok: monthlyRevenueNok });
 
   const stats: ProviderCompanyStats = {
     employeesCount: employees.length,
@@ -430,5 +467,25 @@ export async function loadProviderCustomerDetail(
     };
   });
 
-  return { company, stats, employees, agreements, locations, orders, activity };
+  const activeAgreement = agreements.find((a) => String(a.status).toUpperCase() === "ACTIVE") ?? agreements[0] ?? null;
+  const primaryLocation =
+    activeAgreement?.locationId != null
+      ? locations.find((l) => l.id === activeAgreement.locationId) ?? null
+      : locations[0] ?? null;
+
+  return {
+    company,
+    stats,
+    invoice,
+    billingBasis,
+    ordersThisMonth,
+    primaryLocationName: primaryLocation?.name ?? null,
+    primaryLocationAddress: primaryLocation?.address ?? null,
+    activeAgreementStatus: activeAgreement?.status ?? null,
+    employees,
+    agreements,
+    locations,
+    orders,
+    activity,
+  };
 }

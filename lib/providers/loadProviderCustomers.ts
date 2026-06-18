@@ -9,6 +9,7 @@ import type {
   ProviderCustomersPage,
 } from "@/lib/providers/customerTypes";
 import { buildCustomerStatusCounts } from "@/lib/providers/providerCustomersSurface";
+import { buildProviderInvoiceSettings, invoiceMethodLabel } from "@/lib/providers/providerCustomerBilling";
 import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -130,7 +131,10 @@ export async function loadProviderCustomers(
   // slik at statuschip-tellinger kan beregnes fra samme resultatsett uten ekstra query.
   let query = (sb as any)
     .from("companies")
-    .select("id, name, orgnr, updated_at, deleted_at, suspended_at, paused_at", { count: "exact" })
+    .select(
+      "id, name, orgnr, organization_number, updated_at, deleted_at, suspended_at, paused_at, billing_email, ehf_enabled, ehf_endpoint",
+      { count: "exact" },
+    )
     .eq("provider_id", pid)
     .order("updated_at", { ascending: false });
 
@@ -146,14 +150,22 @@ export async function loadProviderCustomers(
   const mapped = allRows
     .map((row: Record<string, unknown>) => {
       const status = deriveStatus(row as { deleted_at?: string | null; suspended_at?: string | null; paused_at?: string | null });
+      const invoice = buildProviderInvoiceSettings({
+        orgnr: row.orgnr,
+        organizationNumber: row.organization_number,
+        billingEmail: row.billing_email,
+        ehfEnabled: row.ehf_enabled,
+        ehfEndpoint: row.ehf_endpoint,
+      });
       return {
         id: safeStr(row.id),
         name: safeStr(row.name) || "Uten navn",
-        orgnr: (row.orgnr as string | null | undefined) ?? null,
+        orgnr: invoice.orgnr,
         status,
         updatedAt: row.updated_at != null ? String(row.updated_at) : null,
         employeesCount: 0,
         ordersThisWeek: 0,
+        invoiceMethodLabel: invoiceMethodLabel(invoice.method),
       };
     })
     .filter((row) =>
