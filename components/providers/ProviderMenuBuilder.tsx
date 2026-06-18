@@ -10,24 +10,30 @@ import {
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
-import { categoriesForTierInOrder, menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
+import {
+  contractForCategory,
+  isSanityDrivenCategory,
+} from "@/lib/provider-menu/basisMenuContract";
+import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import {
   mergeProviderMenuRowsIntoSlots,
   resolveProviderMenuSlot,
-  slotDisplayStatus,
-  slotDisplayTitle,
   type ResolvedProviderMenuSlot,
 } from "@/lib/provider-menu/mergeProviderMenuSlots";
+import {
+  providerWorkspaceCategories,
+  resolveVariantRowsForDay,
+  summarizeWorkspaceWeekStatus,
+  type ProviderVariantDisplayRow,
+} from "@/lib/provider-menu/providerMenuCatalogSurface";
 import {
   ENTERPRISE_UPGRADE_LABELS,
   ENTERPRISE_UPGRADE_TYPES,
   PROVIDER_MENU_BUILDER_COPY,
   WEEKDAY_LABELS,
   WEEKDAY_KEYS,
-  categoryLabel,
   computeMarginEstimate,
   slotKey,
-  summarizeWeekStatus,
   validateEnterprisePublish,
   weekDatesFromStart,
   parseAllergensDisplay,
@@ -109,8 +115,18 @@ export default function ProviderMenuBuilder() {
   const [loading, setLoading] = useState(true);
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
-  const categories = useMemo(() => categoriesForTierInOrder(PLAN_CATEGORIES[tier]), [tier]);
+  const categories = useMemo(() => providerWorkspaceCategories(tier), [tier]);
   const tierPrice = prices?.[tier];
+
+  function variantRowClass(row: ProviderVariantDisplayRow, selected: boolean): string {
+    const parts = ["ds-provider-menu-builder__variant"];
+    if (selected) parts.push("is-selected");
+    if (row.status === "Publisert") parts.push("is-published");
+    else if (row.status === "Utkast" || row.status === "Eksisterende") parts.push("is-draft");
+    else if (row.status === "Fast valg") parts.push("is-fixed");
+    else parts.push("is-missing");
+    return parts.join(" ");
+  }
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -157,15 +173,7 @@ export default function ProviderMenuBuilder() {
     void loadWeek();
   }, [loadWeek]);
 
-  const tierSlots = useMemo(
-    () =>
-      weekDates.flatMap((date) =>
-        categories.map((category) => resolveProviderMenuSlot(slots, date, tier, category)),
-      ),
-    [weekDates, categories, slots, tier],
-  );
-
-  const weekStatus = summarizeWeekStatus(tierSlots);
+  const weekStatus = summarizeWorkspaceWeekStatus(slots, weekDates, tier);
 
   function selectSlot(date: string, category: Category) {
     setSelected({ date, category });
@@ -347,25 +355,50 @@ export default function ProviderMenuBuilder() {
             <h3 className="ds-h4">{WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!]}</h3>
             <p className="ds-provider-menu-builder__day-date">{date}</p>
             {categories.map((category) => {
-              const slot = resolveProviderMenuSlot(slots, date, tier, category);
-              const isSelected = selected?.date === date && selected.category === category;
-              const hasContent = menuSlotHasContent(slot);
+              const contract = contractForCategory(category);
+              const rows = resolveVariantRowsForDay(slots, date, tier, category);
+              const isCategorySelected = selected?.date === date && selected.category === category;
               return (
-                <button
-                  key={`${date}-${category}`}
-                  type="button"
-                  className={`ds-provider-menu-builder__cell${isSelected ? " is-selected" : ""}${slot.status === "published" ? " is-published" : slot.status === "draft" || hasContent ? " is-draft" : " is-empty"}`}
-                  onClick={() => selectSlot(date, category)}
-                >
-                  <span className="ds-provider-menu-builder__cell-cat">{categoryLabel(category)}</span>
-                  <span className="ds-provider-menu-builder__cell-title">{slotDisplayTitle(slot)}</span>
-                  {slot.allergensText ? (
-                    <span className="ds-provider-menu-builder__cell-allergens">
-                      {parseAllergensDisplay(null, slot.allergensText)}
-                    </span>
-                  ) : null}
-                  <span className="ds-provider-menu-builder__cell-status">{slotDisplayStatus(slot)}</span>
-                </button>
+                <section key={`${date}-${category}`} className="ds-provider-menu-builder__category-block">
+                  <div className="ds-provider-menu-builder__category-head">
+                    <h4 className="ds-provider-menu-builder__category-title">
+                      {contract?.categoryLabel ?? CATEGORY_LABELS[category]}
+                    </h4>
+                    {!isSanityDrivenCategory(category) ? (
+                      <button
+                        type="button"
+                        className="ds-btn ds-btn--ghost ds-provider-menu-builder__category-edit"
+                        onClick={() => selectSlot(date, category)}
+                      >
+                        Publiser kategori
+                      </button>
+                    ) : null}
+                  </div>
+                  {rows.map((row) => {
+                    const rowKey = row.variant?.key ?? `${category}-varmrett`;
+                    const isSelected = isCategorySelected && row.editable;
+                    const className = variantRowClass(row, isSelected);
+                    if (!row.editable) {
+                      return (
+                        <div key={`${date}-${category}-${rowKey}`} className={className}>
+                          <span className="ds-provider-menu-builder__cell-title">{row.title}</span>
+                          <span className="ds-provider-menu-builder__cell-status">{row.status}</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button
+                        key={`${date}-${category}-${rowKey}`}
+                        type="button"
+                        className={className}
+                        onClick={() => selectSlot(date, category)}
+                      >
+                        <span className="ds-provider-menu-builder__cell-title">{row.title}</span>
+                        <span className="ds-provider-menu-builder__cell-status">{row.status}</span>
+                      </button>
+                    );
+                  })}
+                </section>
               );
             })}
           </div>
@@ -377,6 +410,12 @@ export default function ProviderMenuBuilder() {
           <h3 className="ds-h4">
             {TIER_LABELS[form.tier]} · {form.date} · {CATEGORY_LABELS[form.category]}
           </h3>
+          {!isSanityDrivenCategory(form.category) ? (
+            <p className="ds-body ds-provider-menu-builder__fixed-note">
+              Faste valg hentes fra lunchCategory-katalogen. Publiser kategorien for å aktivere
+              levering — variantene under er allerede definert.
+            </p>
+          ) : null}
 
           <label className="ds-provider-menu-builder__field">
             Rettens navn
@@ -541,7 +580,7 @@ export default function ProviderMenuBuilder() {
           </div>
         </section>
       ) : (
-        <p className="ds-body">Velg en dag og kategori for å redigere meny.</p>
+        <p className="ds-body">Velg varmmat eller «Publiser kategori» for å redigere meny.</p>
       )}
     </div>
   );

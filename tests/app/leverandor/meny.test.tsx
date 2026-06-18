@@ -47,18 +47,28 @@ describe("ProviderMenuBuilder", () => {
     expect(html).toContain("Enterprise");
     expect(html).toContain("Mandag");
     expect(html).toContain("Fredag");
-    expect(html).toContain("Velg en dag og kategori");
+    expect(html).toContain("Ost &amp; skinke");
+    expect(html).toContain("Fast valg");
+    expect(html).toContain("Mangler varmmat fra Sanity");
+    expect(html).toContain("Publiser kategori");
   });
 
   test("Enterprise value builder section exists in source", () => {
     const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"), "utf8");
-    expect(source).toContain("Enterprise-verdi");
+    expect(source).toContain("basisMenuContract");
+    expect(source).toContain("providerMenuCatalogSurface");
     expect(source).toContain("provider-menu-week-grid");
-    expect(source).toContain("mergeProviderMenuRowsIntoSlots");
-    expect(source).toContain("startOfWeekISO(osloTodayISODate())");
-    expect(source).toContain("formatPriceIncVatLabel");
+    expect(source).toContain("resolveVariantRowsForDay");
     expect(source).not.toMatch(/SANITY_WRITE_TOKEN/i);
     expect(source).toContain("/api/provider/menu-days");
+  });
+
+  test("basis contract file exists with forensic source", () => {
+    const source = readFileSync(resolve(process.cwd(), "lib/provider-menu/basisMenuContract.ts"), "utf8");
+    expect(source).toContain("seed-lunch-categories-v2.ts");
+    expect(source).toContain("Ost & skinke");
+    expect(source).toContain("Fast meny");
+    expect(source).toContain("Pad med mamuang");
   });
 
   test("desktop week grid uses 5 day columns in CSS", () => {
@@ -82,6 +92,8 @@ describe("LeverandorMenyPage", () => {
 describe("provider menu safety guards", () => {
   const guardedFiles = [
     "components/providers/ProviderMenuBuilder.tsx",
+    "lib/provider-menu/basisMenuContract.ts",
+    "lib/provider-menu/providerMenuCatalogSurface.ts",
     "app/api/provider/menu-days/route.ts",
     "lib/provider-menu/menuDayPayload.ts",
     "lib/providers/providerMenuPackageSurface.ts",
