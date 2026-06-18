@@ -2,42 +2,38 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
+import ProviderMenuCatalogView from "@/components/providers/ProviderMenuCatalogView";
+import ProviderMenuEditorPanel from "@/components/providers/ProviderMenuEditorPanel";
+import ProviderMenuWeekPlanner, {
+  type WeekSelection,
+} from "@/components/providers/ProviderMenuWeekPlanner";
 import {
-  CATEGORY_LABELS,
   PLAN_CATEGORIES,
   PLAN_TIERS,
   type Category,
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
 import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
-import {
-  contractForCategory,
-  isSanityDrivenCategory,
-} from "@/lib/provider-menu/providerMenuTierContract";
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
+import {
+  catalogVariantByKey,
+  type MenuCatalogVariant,
+} from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import {
   mergeProviderMenuRowsIntoSlots,
   resolveProviderMenuSlot,
   type ResolvedProviderMenuSlot,
 } from "@/lib/provider-menu/mergeProviderMenuSlots";
+import { summarizeWorkspaceWeekStatus } from "@/lib/provider-menu/providerMenuCatalogSurface";
+import { buildEditorContext } from "@/lib/provider-menu/providerMenuWorkspace";
 import {
-  providerWorkspaceCategories,
-  resolveVariantRowsForDay,
-  summarizeWorkspaceWeekStatus,
-  type ProviderVariantDisplayRow,
-} from "@/lib/provider-menu/providerMenuCatalogSurface";
-import {
-  ENTERPRISE_UPGRADE_LABELS,
-  ENTERPRISE_UPGRADE_TYPES,
   PROVIDER_MENU_BUILDER_COPY,
-  WEEKDAY_LABELS,
   WEEKDAY_KEYS,
+  WEEKDAY_LABELS,
   computeMarginEstimate,
   slotKey,
   validateEnterprisePublish,
   weekDatesFromStart,
-  parseAllergensDisplay,
-  type EnterpriseUpgradeType,
 } from "@/lib/providers/providerMenuPackageSurface";
 import {
   formatPriceExVatLabel,
@@ -70,6 +66,8 @@ type MenuWeekResponse = {
   };
 };
 
+type WorkspaceView = "week" | "catalog";
+
 const TIER_LABELS: Record<PlanTier, string> = {
   BASIS: "Basis",
   LUXUS: "Luxus",
@@ -101,10 +99,17 @@ function emptySlot(date: string, tier: PlanTier, category: Category): ResolvedPr
   };
 }
 
+function weekdayLabelForDate(date: string, weekDates: string[]): string {
+  const idx = weekDates.indexOf(date);
+  if (idx < 0) return date;
+  return WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? date;
+}
+
 export default function ProviderMenuBuilder() {
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
-  const [selected, setSelected] = useState<{ date: string; category: Category } | null>(null);
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
+  const [selected, setSelected] = useState<WeekSelection | null>(null);
   const [prices, setPrices] = useState<Record<PlanTier, ProviderMenuPriceView> | null>(null);
   const [slots, setSlots] = useState<Record<string, ResolvedProviderMenuSlot>>({});
   const [form, setForm] = useState<ResolvedProviderMenuSlot | null>(null);
@@ -115,18 +120,8 @@ export default function ProviderMenuBuilder() {
   const [loading, setLoading] = useState(true);
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
-  const categories = useMemo(() => providerWorkspaceCategories(tier), [tier]);
   const tierPrice = prices?.[tier];
-
-  function variantRowClass(row: ProviderVariantDisplayRow, selected: boolean): string {
-    const parts = ["ds-provider-menu-builder__variant"];
-    if (selected) parts.push("is-selected");
-    if (row.status === "Publisert") parts.push("is-published");
-    else if (row.status === "Utkast" || row.status === "Eksisterende") parts.push("is-draft");
-    else if (row.status === "Fast valg") parts.push("is-fixed");
-    else parts.push("is-missing");
-    return parts.join(" ");
-  }
+  const weekStatus = summarizeWorkspaceWeekStatus(slots, weekDates, tier);
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -173,15 +168,30 @@ export default function ProviderMenuBuilder() {
     void loadWeek();
   }, [loadWeek]);
 
-  const weekStatus = summarizeWorkspaceWeekStatus(slots, weekDates, tier);
-
-  function selectSlot(date: string, category: Category) {
-    setSelected({ date, category });
-    const existing = resolveProviderMenuSlot(slots, date, tier, category);
+  function openSelection(sel: WeekSelection) {
+    setSelected(sel);
+    const existing = resolveProviderMenuSlot(slots, sel.date, tier, sel.category);
     setForm({ ...existing });
     setMessage(null);
     setError(null);
     setConfirmWarnings(false);
+    setWorkspaceView("week");
+  }
+
+  function openCatalogVariant(variant: MenuCatalogVariant) {
+    const firstDate = weekDates[0];
+    if (!firstDate) return;
+    openSelection({
+      date: firstDate,
+      category: variant.category,
+      variantKey: variant.id.split(":")[1],
+      variantLabel: variant.label,
+    });
+  }
+
+  function closeEditor() {
+    setSelected(null);
+    setForm(null);
   }
 
   function copyFromPackage(source: PlanTier) {
@@ -258,6 +268,23 @@ export default function ProviderMenuBuilder() {
     await loadWeek();
   }
 
+  const editorContext =
+    selected && form
+      ? buildEditorContext({
+          tier,
+          tierLabel: TIER_LABELS[tier],
+          weekdayLabel: weekdayLabelForDate(selected.date, weekDates),
+          date: selected.date,
+          category: selected.category,
+          variantLabel: selected.variantLabel ?? null,
+        })
+      : null;
+
+  const catalogVariant =
+    selected?.variantKey && selected.category
+      ? catalogVariantByKey(selected.category, selected.variantKey)
+      : null;
+
   const enterpriseWarnings =
     form && tierPrice
       ? validateEnterprisePublish({
@@ -269,7 +296,9 @@ export default function ProviderMenuBuilder() {
           upgradeNote: form.upgradeNote,
           estimatedCostPerPortion: form.estimatedCostPerPortion,
           luxusEstimatedCost:
-            selected != null ? slots[slotKey(selected.date, "LUXUS", selected.category)]?.estimatedCostPerPortion ?? null : null,
+            selected != null
+              ? slots[slotKey(selected.date, "LUXUS", selected.category)]?.estimatedCostPerPortion ?? null
+              : null,
           priceExVatNok: tierPrice.priceExVatNok,
         })
       : [];
@@ -287,26 +316,26 @@ export default function ProviderMenuBuilder() {
       : null;
 
   return (
-    <div className="ds-provider-menu-builder">
-      <header className="ds-provider-menu-builder__header">
-        <div>
-          <p className="ds-body ds-provider-menu-builder__lead">{PROVIDER_MENU_BUILDER_COPY.lead}</p>
-          <p className="ds-provider-menu-builder__status" role="status">
+    <div className="ds-provider-menu-workspace">
+      <header className="ds-provider-menu-workspace__command">
+        <div className="ds-provider-menu-workspace__command-main">
+          <p className="ds-body ds-provider-menu-workspace__lead">{PROVIDER_MENU_BUILDER_COPY.lead}</p>
+          <p className="ds-provider-menu-workspace__status" role="status">
             Status: <strong>{weekStatus}</strong>
           </p>
         </div>
-        <div className="ds-provider-menu-builder__week-nav">
+        <div className="ds-provider-menu-workspace__week-nav">
           <button type="button" className="ds-btn ds-btn--ghost" onClick={() => setWeekStart((w) => shiftWeekStart(w, -1))}>
             Forrige uke
           </button>
-          <span className="ds-provider-menu-builder__week-label">Uke fra {weekStart}</span>
+          <span className="ds-provider-menu-workspace__week-label">Uke fra {weekStart}</span>
           <button type="button" className="ds-btn ds-btn--ghost" onClick={() => setWeekStart((w) => shiftWeekStart(w, 1))}>
             Neste uke
           </button>
         </div>
       </header>
 
-      <div className="ds-provider-menu-builder__tabs" role="tablist" aria-label="Menypakker">
+      <div className="ds-provider-menu-workspace__tabs" role="tablist" aria-label="Menypakker">
         {PLAN_TIERS.map((t) => (
           <button
             key={t}
@@ -316,14 +345,13 @@ export default function ProviderMenuBuilder() {
             className={`ds-provider-menu-builder__tab${tier === t ? " is-active" : ""}`}
             onClick={() => {
               setTier(t);
-              setSelected(null);
-              setForm(null);
+              closeEditor();
             }}
           >
             {TIER_LABELS[t]}
             {prices?.[t] ? (
               <span className="ds-provider-menu-builder__tab-price">
-                {formatPriceExVatLabel(prices[t].priceExVatNok)}
+                {formatPriceExVatLabel(prices[t].priceExVatNok)} · {formatPriceIncVatLabel(prices[t].priceIncVatNok)}
               </span>
             ) : null}
           </button>
@@ -331,11 +359,32 @@ export default function ProviderMenuBuilder() {
       </div>
 
       {tierPrice ? (
-        <p className="ds-provider-menu-builder__price-banner">
+        <p className="ds-provider-menu-workspace__price">
           {formatPriceExVatLabel(tierPrice.priceExVatNok)} · {formatPriceIncVatLabel(tierPrice.priceIncVatNok)}
           {tierPrice.source === "provider_price_rules" ? " (leverandørpris)" : " (standardpris)"}
         </p>
       ) : null}
+
+      <div className="ds-provider-menu-workspace__view-tabs" role="tablist" aria-label="Workspace">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={workspaceView === "week"}
+          className={`ds-provider-menu-workspace__view-tab${workspaceView === "week" ? " is-active" : ""}`}
+          onClick={() => setWorkspaceView("week")}
+        >
+          Ukeplanlegger
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={workspaceView === "catalog"}
+          className={`ds-provider-menu-workspace__view-tab${workspaceView === "catalog" ? " is-active" : ""}`}
+          onClick={() => setWorkspaceView("catalog")}
+        >
+          Menykatalog
+        </button>
+      </div>
 
       {loading ? <p className="ds-body">Laster meny…</p> : null}
       {error ? (
@@ -349,256 +398,40 @@ export default function ProviderMenuBuilder() {
         </p>
       ) : null}
 
-      <div className="ds-provider-menu-builder__grid provider-menu-week-grid">
-        {weekDates.map((date, idx) => (
-          <div key={date} className="ds-provider-menu-builder__day-col">
-            <h3 className="ds-h4">{WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!]}</h3>
-            <p className="ds-provider-menu-builder__day-date">{date}</p>
-            {categories.map((category) => {
-              const contract = contractForCategory(category);
-              const rows = resolveVariantRowsForDay(slots, date, tier, category);
-              const isCategorySelected = selected?.date === date && selected.category === category;
-              const enterpriseRow = tier === "ENTERPRISE" ? rows[0] : null;
-              return (
-                <section key={`${date}-${category}`} className="ds-provider-menu-builder__category-block">
-                  <div className="ds-provider-menu-builder__category-head">
-                    <h4 className="ds-provider-menu-builder__category-title">
-                      {contract?.categoryLabel ?? CATEGORY_LABELS[category]}
-                    </h4>
-                    {!isSanityDrivenCategory(category) ? (
-                      <button
-                        type="button"
-                        className="ds-btn ds-btn--ghost ds-provider-menu-builder__category-edit"
-                        onClick={() => selectSlot(date, category)}
-                      >
-                        Publiser kategori
-                      </button>
-                    ) : null}
-                  </div>
-                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseSourceLabel ? (
-                    <p className="ds-provider-menu-builder__enterprise-source">{enterpriseRow.enterpriseSourceLabel}</p>
-                  ) : null}
-                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseUpgradeLabel ? (
-                    <p className="ds-provider-menu-builder__enterprise-upgrade">
-                      Upgrade: {enterpriseRow.enterpriseUpgradeLabel}
-                    </p>
-                  ) : null}
-                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseUpgradeNote ? (
-                    <p className="ds-provider-menu-builder__enterprise-note">{enterpriseRow.enterpriseUpgradeNote}</p>
-                  ) : null}
-                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseWeakValue ? (
-                    <p className="ds-provider-menu-builder__warn" role="status">
-                      Enterprise bør ha tydelig merverdi sammenlignet med Luxus.
-                    </p>
-                  ) : null}
-                  {rows.map((row) => {
-                    const rowKey = row.variant?.key ?? `${category}-varmrett`;
-                    const isSelected = isCategorySelected && row.editable;
-                    const className = variantRowClass(row, isSelected);
-                    if (!row.editable) {
-                      return (
-                        <div key={`${date}-${category}-${rowKey}`} className={className}>
-                          <span className="ds-provider-menu-builder__cell-title">{row.title}</span>
-                          <span className="ds-provider-menu-builder__cell-status">{row.status}</span>
-                        </div>
-                      );
-                    }
-                    return (
-                      <button
-                        key={`${date}-${category}-${rowKey}`}
-                        type="button"
-                        className={className}
-                        onClick={() => selectSlot(date, category)}
-                      >
-                        <span className="ds-provider-menu-builder__cell-title">{row.title}</span>
-                        <span className="ds-provider-menu-builder__cell-status">{row.status}</span>
-                      </button>
-                    );
-                  })}
-                </section>
-              );
-            })}
-          </div>
-        ))}
+      <div className="ds-provider-menu-workspace__body">
+        <div className="ds-provider-menu-workspace__planner">
+          {workspaceView === "week" ? (
+            <ProviderMenuWeekPlanner
+              tier={tier}
+              weekDates={weekDates}
+              slots={slots}
+              selected={selected}
+              onSelect={openSelection}
+            />
+          ) : (
+            <ProviderMenuCatalogView tier={tier} onSelectVariant={openCatalogVariant} />
+          )}
+        </div>
+
+        <ProviderMenuEditorPanel
+          open={Boolean(form && selected)}
+          context={editorContext}
+          form={form}
+          onFormChange={setForm}
+          onClose={closeEditor}
+          onSaveDraft={() => startTransition(() => save("draft"))}
+          onPublish={() => startTransition(() => save("published"))}
+          onCopyFromBasis={() => copyFromPackage("BASIS")}
+          onCopyFromLuxus={() => copyFromPackage("LUXUS")}
+          pending={pending}
+          margin={margin}
+          enterpriseWarnings={enterpriseWarnings}
+          confirmWarnings={confirmWarnings}
+          onConfirmWarningsChange={setConfirmWarnings}
+          catalogVariantAllergens={catalogVariant?.allergens}
+          imageUrl={catalogVariant?.imageUrl ?? null}
+        />
       </div>
-
-      {form ? (
-        <section className="ds-card ds-provider-menu-builder__editor" aria-label="Rediger meny">
-          <h3 className="ds-h4">
-            {TIER_LABELS[form.tier]} · {form.date} · {CATEGORY_LABELS[form.category]}
-          </h3>
-          {!isSanityDrivenCategory(form.category) ? (
-            <p className="ds-body ds-provider-menu-builder__fixed-note">
-              Faste valg hentes fra lunchCategory-katalogen. Publiser kategorien for å aktivere
-              levering — variantene under er allerede definert.
-            </p>
-          ) : null}
-
-          <label className="ds-provider-menu-builder__field">
-            Rettens navn
-            <input
-              value={form.mealTitle}
-              onChange={(e) => setForm({ ...form, mealTitle: e.target.value })}
-              maxLength={120}
-            />
-          </label>
-
-          <label className="ds-provider-menu-builder__field">
-            Beskrivelse
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              maxLength={4000}
-            />
-          </label>
-
-          <label className="ds-provider-menu-builder__field">
-            Allergener (kommaseparert)
-            <input
-              value={form.allergensText}
-              onChange={(e) => setForm({ ...form, allergensText: e.target.value })}
-              placeholder="F.eks. melk, hvete"
-            />
-          </label>
-
-          <label className="ds-provider-menu-builder__field">
-            Estimert råvarekost (kr)
-            <input
-              type="number"
-              min={0}
-              max={90}
-              step={0.5}
-              value={form.estimatedCostPerPortion ?? ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  estimatedCostPerPortion: e.target.value === "" ? null : Number(e.target.value),
-                })
-              }
-            />
-          </label>
-
-          {margin ? (
-            <div className="ds-provider-menu-builder__margin">
-              <p>
-                Pris eks. mva: <strong>{formatPriceExVatLabel(margin.priceExVatNok)}</strong>
-              </p>
-              {margin.estimatedCostNok != null ? (
-                <>
-                  <p>
-                    Estimert kost: <strong>{margin.estimatedCostNok.toLocaleString("nb-NO")} kr</strong>
-                  </p>
-                  <p>
-                    Estimert bruttofortjeneste:{" "}
-                    <strong>{margin.grossMarginNok?.toLocaleString("nb-NO") ?? "—"} kr</strong>
-                    {margin.marginPercent != null ? ` (${margin.marginPercent} %)` : ""}
-                  </p>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-
-          {form.tier === "ENTERPRISE" ? (
-            <fieldset className="ds-provider-menu-builder__enterprise">
-              <legend>Enterprise-verdi</legend>
-              <div className="ds-provider-menu-builder__copy-actions">
-                <button type="button" className="ds-btn ds-btn--ghost" onClick={() => copyFromPackage("BASIS")}>
-                  Bygg fra Basis
-                </button>
-                <button type="button" className="ds-btn ds-btn--ghost" onClick={() => copyFromPackage("LUXUS")}>
-                  Bygg fra Luxus
-                </button>
-              </div>
-              <label className="ds-provider-menu-builder__field">
-                Basert på
-                <select
-                  value={form.sourcePackage ?? ""}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      sourcePackage: (e.target.value as PlanTier) || null,
-                    })
-                  }
-                >
-                  <option value="">Ingen</option>
-                  <option value="BASIS">Basis</option>
-                  <option value="LUXUS">Luxus</option>
-                </select>
-              </label>
-              <label className="ds-provider-menu-builder__field">
-                Upgrade-type
-                <select
-                  value={form.upgradeType ?? ""}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      upgradeType: (e.target.value as EnterpriseUpgradeType) || null,
-                    })
-                  }
-                >
-                  <option value="">Velg type</option>
-                  {ENTERPRISE_UPGRADE_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {ENTERPRISE_UPGRADE_LABELS[t]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="ds-provider-menu-builder__field">
-                Upgrade-beskrivelse
-                <textarea
-                  rows={2}
-                  value={form.upgradeNote}
-                  onChange={(e) => setForm({ ...form, upgradeNote: e.target.value })}
-                  maxLength={500}
-                />
-              </label>
-              {enterpriseWarnings.map((w) => (
-                <p
-                  key={w.code}
-                  className={w.blocking ? "ds-provider-menu-builder__error" : "ds-provider-menu-builder__warn"}
-                  role="status"
-                >
-                  {w.message}
-                </p>
-              ))}
-            </fieldset>
-          ) : null}
-
-          {enterpriseWarnings.some((w) => !w.blocking) ? (
-            <label className="ds-provider-menu-builder__confirm">
-              <input
-                type="checkbox"
-                checked={confirmWarnings}
-                onChange={(e) => setConfirmWarnings(e.target.checked)}
-              />
-              Jeg bekrefter publisering til tross for advarsel.
-            </label>
-          ) : null}
-
-          <div className="ds-provider-meny-actions">
-            <button
-              type="button"
-              className="ds-btn"
-              disabled={pending}
-              onClick={() => startTransition(() => save("draft"))}
-            >
-              {pending ? "Lagrer…" : "Lagre utkast"}
-            </button>
-            <button
-              type="button"
-              className="ds-btn ds-btn--primary"
-              disabled={pending}
-              onClick={() => startTransition(() => save("published"))}
-            >
-              {pending ? "Publiserer…" : "Publiser"}
-            </button>
-          </div>
-        </section>
-      ) : (
-        <p className="ds-body">Velg varmmat eller «Publiser kategori» for å redigere meny.</p>
-      )}
     </div>
   );
 }
