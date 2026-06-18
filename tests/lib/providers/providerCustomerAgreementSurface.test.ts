@@ -127,6 +127,21 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
     expect(all).not.toMatch(/\d{4}-\d{2}-\d{2}T/);
   });
 
+  it("per-dag meny vises når dayMenus finnes", () => {
+    const d = buildAgreementDisplay(
+      {
+        ...melhusRow,
+        dayMenus: [
+          { day: "mon", plan: "BASIS" },
+          { day: "tue", plan: "LUXUS" },
+        ],
+      },
+      locations,
+    );
+    expect(d.dayMenusLines).toEqual(["Mandag · Basis", "Tirsdag · Luxus"]);
+    expect(d.dayMenusLabel).toContain("Mandag · Basis");
+  });
+
   it("manglende data gir trygge fallbacks", () => {
     const d = buildAgreementDisplay(
       { id: "agr-2", status: "PENDING", createdAt: null, deliveryDays: [], locationId: null, tier: null },

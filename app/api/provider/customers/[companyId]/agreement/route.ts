@@ -81,7 +81,11 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx): Promise<Response> 
       return jsonErr(auth.rid, agreementErrorMessage(result.code, result.message), result.status, result.code);
     }
 
-    return jsonOk(auth.rid, { agreement: result.data, message: "Avtalen er oppdatert." }, 200);
+    return jsonOk(auth.rid, {
+      agreement: result.data,
+      message: "Avtalen er oppdatert.",
+      warnings: result.data.warnings ?? [],
+    }, 200);
   } catch {
     return jsonErr(auth.rid, "Kunne ikke oppdatere avtale — serverfeil under utførelse.", 500, "EXECUTION_FAILED");
   }
