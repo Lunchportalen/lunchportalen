@@ -21,7 +21,7 @@ export const PROVIDER_MENU_BUILDER_COPY = {
   allergensNone: "Ingen allergener oppgitt",
   allergensPrefix: "Allergener:",
   enterpriseWeakValue:
-    "Enterprise bør ha tydelig ekstra verdi sammenlignet med Basis/Luxus.",
+    "Enterprise bør ha tydelig merverdi sammenlignet med Luxus.",
   enterpriseLowMargin: "Denne Enterprise-retten kan gi lavere margin enn Luxus. Kontroller råvarekost.",
   enterpriseUpgradeRequired:
     "Enterprise som gjenbruker Basis/Luxus må ha upgrade-type eller upgrade-beskrivelse ved publisering.",
@@ -43,6 +43,7 @@ export const ENTERPRISE_UPGRADE_TYPES = [
   "EXTRA_SIDE",
   "DESSERT_FRUIT",
   "LARGER_PORTION",
+  "PREMIUM_LABELING",
   "PRIORITY_DELIVERY",
   "OTHER",
 ] as const;
@@ -52,10 +53,11 @@ export type EnterpriseUpgradeType = (typeof ENTERPRISE_UPGRADE_TYPES)[number];
 export const ENTERPRISE_UPGRADE_LABELS: Record<EnterpriseUpgradeType, string> = {
   PREMIUM_PROTEIN: "Premium protein",
   EXTRA_SIDE: "Ekstra tilbehør",
-  DESSERT_FRUIT: "Dessert/frukt",
+  DESSERT_FRUIT: "Dessert/frukt/snack",
   LARGER_PORTION: "Større porsjon",
-  PRIORITY_DELIVERY: "Prioritert levering",
-  OTHER: "Annet",
+  PREMIUM_LABELING: "Premium merking/kontroll",
+  PRIORITY_DELIVERY: "Prioritert leveringsvindu",
+  OTHER: "Egen/annet",
 };
 
 export type ProviderMenuSlotKey = `${string}:${PlanTier}:${Category}`;

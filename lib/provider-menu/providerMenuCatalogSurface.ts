@@ -1,16 +1,18 @@
 // lib/provider-menu/providerMenuCatalogSurface.ts
-// Provider menu builder display: fixed catalog + published menuDay overlay.
+// Provider menu builder display: tier contract + published menuDay overlay.
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
+import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
+import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
+import { resolveProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import {
   fixedVariantsForCategory,
   isSanityDrivenCategory,
   workspaceCategoriesForTier,
   type FixedMenuVariant,
-} from "@/lib/provider-menu/basisMenuContract";
-import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
-import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
-import { resolveProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
+} from "@/lib/provider-menu/providerMenuTierContract";
+import type { EnterpriseUpgradeType } from "@/lib/providers/providerMenuPackageSurface";
+import { ENTERPRISE_UPGRADE_LABELS } from "@/lib/providers/providerMenuPackageSurface";
 
 export type VariantDisplayStatus =
   | "Fast valg"
@@ -18,7 +20,7 @@ export type VariantDisplayStatus =
   | "Utkast"
   | "Eksisterende"
   | "Mangler publisering"
-  | "Mangler varmmat fra Sanity";
+  | "Mangler varmmat fra Sanity/bank";
 
 export type ProviderVariantDisplayRow = {
   category: Category;
@@ -27,10 +29,36 @@ export type ProviderVariantDisplayRow = {
   status: VariantDisplayStatus;
   editable: boolean;
   sanityDriven: boolean;
+  enterpriseSourceLabel?: string | null;
+  enterpriseUpgradeLabel?: string | null;
+  enterpriseUpgradeNote?: string | null;
+  enterpriseWeakValue?: boolean;
 };
 
 export function providerWorkspaceCategories(tier: PlanTier): Category[] {
   return workspaceCategoriesForTier(tier);
+}
+
+function enterpriseSourceLabel(sourcePackage: PlanTier | null | undefined): string | null {
+  if (sourcePackage === "BASIS") return "Basert på Basis";
+  if (sourcePackage === "LUXUS") return "Basert på Luxus";
+  if (sourcePackage === "ENTERPRISE") return "Egen Enterprise";
+  return null;
+}
+
+function enterpriseUpgradeLabel(upgradeType: EnterpriseUpgradeType | null | undefined): string | null {
+  if (!upgradeType) return null;
+  return ENTERPRISE_UPGRADE_LABELS[upgradeType] ?? upgradeType;
+}
+
+function enterpriseWeakValue(
+  tier: PlanTier,
+  menuSlot: ResolvedProviderMenuSlot,
+  hasUpgrade: boolean,
+): boolean {
+  if (tier !== "ENTERPRISE") return false;
+  if (!menuSlotHasContent(menuSlot)) return false;
+  return !hasUpgrade;
 }
 
 export function resolveVariantRowsForDay(
@@ -41,10 +69,20 @@ export function resolveVariantRowsForDay(
 ): ProviderVariantDisplayRow[] {
   const menuSlot = resolveProviderMenuSlot(slots, date, tier, category);
   const sanityDriven = isSanityDrivenCategory(category);
+  const hasUpgrade = Boolean(menuSlot.upgradeType) || String(menuSlot.upgradeNote ?? "").trim().length >= 8;
+  const enterpriseMeta =
+    tier === "ENTERPRISE"
+      ? {
+          enterpriseSourceLabel: enterpriseSourceLabel(menuSlot.sourcePackage),
+          enterpriseUpgradeLabel: enterpriseUpgradeLabel(menuSlot.upgradeType),
+          enterpriseUpgradeNote: menuSlot.upgradeNote?.trim() || null,
+          enterpriseWeakValue: enterpriseWeakValue(tier, menuSlot, hasUpgrade),
+        }
+      : {};
 
   if (sanityDriven) {
     const hasContent = menuSlotHasContent(menuSlot);
-    let status: VariantDisplayStatus = "Mangler varmmat fra Sanity";
+    let status: VariantDisplayStatus = "Mangler varmmat fra Sanity/bank";
     if (menuSlot.status === "published") status = "Publisert";
     else if (menuSlot.status === "draft" && hasContent) status = "Utkast";
     else if (hasContent) status = "Eksisterende";
@@ -53,10 +91,11 @@ export function resolveVariantRowsForDay(
       {
         category,
         variant: null,
-        title: hasContent ? menuSlot.mealTitle.trim() : "Varmmat",
+        title: hasContent ? menuSlot.mealTitle.trim() : "Varmrett",
         status,
         editable: true,
         sanityDriven: true,
+        ...enterpriseMeta,
       },
     ];
   }
@@ -78,6 +117,7 @@ export function resolveVariantRowsForDay(
       status,
       editable: false,
       sanityDriven: false,
+      ...enterpriseMeta,
     };
   });
 }
@@ -97,7 +137,7 @@ export function summarizeWorkspaceWeekStatus(
       const rows = resolveVariantRowsForDay(slots, date, tier, category);
       for (const row of rows) {
         total += 1;
-        if (row.status !== "Mangler varmmat fra Sanity" && row.status !== "Mangler publisering") {
+        if (row.status !== "Mangler varmmat fra Sanity/bank" && row.status !== "Mangler publisering") {
           filled += 1;
         }
         if (row.status === "Publisert") published += 1;

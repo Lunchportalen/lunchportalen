@@ -13,7 +13,7 @@ import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import {
   contractForCategory,
   isSanityDrivenCategory,
-} from "@/lib/provider-menu/basisMenuContract";
+} from "@/lib/provider-menu/providerMenuTierContract";
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import {
   mergeProviderMenuRowsIntoSlots,
@@ -358,6 +358,7 @@ export default function ProviderMenuBuilder() {
               const contract = contractForCategory(category);
               const rows = resolveVariantRowsForDay(slots, date, tier, category);
               const isCategorySelected = selected?.date === date && selected.category === category;
+              const enterpriseRow = tier === "ENTERPRISE" ? rows[0] : null;
               return (
                 <section key={`${date}-${category}`} className="ds-provider-menu-builder__category-block">
                   <div className="ds-provider-menu-builder__category-head">
@@ -374,6 +375,22 @@ export default function ProviderMenuBuilder() {
                       </button>
                     ) : null}
                   </div>
+                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseSourceLabel ? (
+                    <p className="ds-provider-menu-builder__enterprise-source">{enterpriseRow.enterpriseSourceLabel}</p>
+                  ) : null}
+                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseUpgradeLabel ? (
+                    <p className="ds-provider-menu-builder__enterprise-upgrade">
+                      Upgrade: {enterpriseRow.enterpriseUpgradeLabel}
+                    </p>
+                  ) : null}
+                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseUpgradeNote ? (
+                    <p className="ds-provider-menu-builder__enterprise-note">{enterpriseRow.enterpriseUpgradeNote}</p>
+                  ) : null}
+                  {tier === "ENTERPRISE" && enterpriseRow?.enterpriseWeakValue ? (
+                    <p className="ds-provider-menu-builder__warn" role="status">
+                      Enterprise bør ha tydelig merverdi sammenlignet med Luxus.
+                    </p>
+                  ) : null}
                   {rows.map((row) => {
                     const rowKey = row.variant?.key ?? `${category}-varmrett`;
                     const isSelected = isCategorySelected && row.editable;

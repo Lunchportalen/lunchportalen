@@ -1612,6 +1612,19 @@ button.ds-provider-menu-builder__variant {
   border-color: rgba(230, 0, 126, 0.25);
 }
 
+.ds-provider-menu-builder__enterprise-source,
+.ds-provider-menu-builder__enterprise-upgrade,
+.ds-provider-menu-builder__enterprise-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--ds-text-soft);
+  line-height: 1.35;
+}
+
+.ds-provider-menu-builder__enterprise-upgrade {
+  font-weight: 700;
+}
+
 .ds-provider-menu-builder__fixed-note {
   margin: 0 0 12px;
   color: var(--ds-text-soft);
