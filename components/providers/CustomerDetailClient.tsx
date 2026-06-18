@@ -143,7 +143,7 @@ export default function CustomerDetailClient({
           <div className="ds-admin-kpi__value">{detail.stats.historicalOrdersCount}</div>
         </div>
         <div className="ds-admin-kpi">
-          <div className="ds-admin-kpi__label">Omsetning 30 dager</div>
+          <div className="ds-admin-kpi__label">Omsetning 30 dager (inkl. mva)</div>
           <div className="ds-admin-kpi__value">
             {new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 0 }).format(
               detail.stats.monthlyRevenueNok,
@@ -195,7 +195,7 @@ export default function CustomerDetailClient({
         <h2 className="ds-h2">{PROVIDER_CUSTOMER_DETAIL_COPY.identityTitle}</h2>
         <article className="ds-card ds-provider-identity-card">
           <p className="ds-h4">{identity.companyName}</p>
-          <dl className="ds-provider-reg-detail">
+          <dl className="ds-provider-reg-detail ds-provider-identity-grid">
             <div>
               <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.orgnr}</dt>
               <dd>{identity.orgnrLabel}</dd>
@@ -323,19 +323,33 @@ export default function CustomerDetailClient({
 
       <section className="ds-section ds-provider-detail-section ds-provider-billing-basis">
         <h2 className="ds-h2">{PROVIDER_CUSTOMER_DETAIL_COPY.billingBasisTitle}</h2>
-        <article className="ds-card">
-          <dl className="ds-provider-billing-kpis">
+        <article className="ds-card ds-provider-billing-basis-card">
+          <dl className="ds-provider-billing-kpis ds-provider-billing-kpis--wide">
             <div>
               <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.ordersThisMonth}</dt>
               <dd>{billingDisplay.ordersLabel}</dd>
             </div>
             <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenue}</dt>
-              <dd>{billingDisplay.revenueLabel}</dd>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenueExVat}</dt>
+              <dd>{billingDisplay.revenueExVatLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.vat}</dt>
+              <dd>{billingDisplay.vatLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenueIncVat}</dt>
+              <dd>{billingDisplay.revenueIncVatLabel}</dd>
+            </div>
+            <div>
+              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.commissionBase}</dt>
+              <dd>{billingDisplay.commissionBaseLabel}</dd>
             </div>
             <div>
               <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.commission}</dt>
-              <dd>{billingDisplay.commissionLabel}</dd>
+              <dd>
+                {billingDisplay.commissionAmountLabel} ({billingDisplay.commissionRateLabel})
+              </dd>
             </div>
             <div>
               <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.invoiceMethod}</dt>
@@ -346,7 +360,10 @@ export default function CustomerDetailClient({
               <dd>{billingDisplay.recipientLabel}</dd>
             </div>
           </dl>
-          {billingDisplay.incomplete ? (
+          {billingDisplay.note ? (
+            <p className="ds-body ds-provider-billing-inactive">{billingDisplay.note}</p>
+          ) : null}
+          {billingDisplay.confidence === "incomplete" ? (
             <p className="ds-body ds-provider-billing-inactive">{PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete}</p>
           ) : null}
         </article>

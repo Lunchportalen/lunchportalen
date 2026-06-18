@@ -882,12 +882,37 @@
 }
 
 .ds-provider-customer-identity .ds-provider-identity-card,
-.ds-provider-billing-basis .ds-card {
+.ds-provider-billing-basis .ds-provider-billing-basis-card {
   margin-top: 8px;
 }
 
+.ds-provider-identity-grid {
+  display: grid;
+  gap: 10px 20px;
+}
+
+@media (min-width: 768px) {
+  .ds-provider-identity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-provider-identity-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ds-provider-billing-kpis--wide {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .ds-provider-detail-section {
-  margin-top: 20px;
+  margin-top: 16px;
+}
+
+.ds-section.ds-provider-detail-section + .ds-section.ds-provider-detail-section {
+  margin-top: 12px;
 }
 
 .ds-provider-dialog select {

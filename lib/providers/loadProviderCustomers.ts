@@ -10,6 +10,7 @@ import type {
 } from "@/lib/providers/customerTypes";
 import { buildCustomerStatusCounts } from "@/lib/providers/providerCustomersSurface";
 import { buildProviderInvoiceSettings, invoiceMethodLabel } from "@/lib/providers/providerCustomerBilling";
+import { loadProviderCustomerCountsForCompanies } from "@/lib/providers/providerCustomerCounts";
 import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -47,46 +48,12 @@ function matchesFilter(status: ProviderCustomerStatus, filter: ProviderCustomerF
 }
 
 async function enrichCounts(
-  sb: Awaited<ReturnType<typeof supabaseServer>>,
+  providerId: string,
   companyIds: string[],
   weekStart: string,
   weekEnd: string,
 ) {
-  const employees = new Map<string, number>();
-  const orders = new Map<string, number>();
-  if (!companyIds.length) return { employees, orders };
-
-  const [{ data: profs }, { data: ords }] = await Promise.all([
-    sb
-      .from("profiles")
-      .select("company_id")
-      .in("company_id", companyIds)
-      .is("disabled_at", null),
-    sb
-      .from("orders")
-      .select("company_id")
-      .in("company_id", companyIds)
-      .gte("date", weekStart)
-      .lt("date", weekEnd)
-      .eq("status", "ACTIVE"),
-  ]);
-
-  for (const id of companyIds) {
-    employees.set(id, 0);
-    orders.set(id, 0);
-  }
-
-  for (const row of Array.isArray(profs) ? profs : []) {
-    const cid = safeStr((row as { company_id?: string }).company_id);
-    if (cid) employees.set(cid, (employees.get(cid) ?? 0) + 1);
-  }
-
-  for (const row of Array.isArray(ords) ? ords : []) {
-    const cid = safeStr((row as { company_id?: string }).company_id);
-    if (cid) orders.set(cid, (orders.get(cid) ?? 0) + 1);
-  }
-
-  return { employees, orders };
+  return loadProviderCustomerCountsForCompanies(providerId, companyIds, weekStart, weekEnd);
 }
 
 /**
@@ -163,8 +130,9 @@ export async function loadProviderCustomers(
         orgnr: invoice.orgnr,
         status,
         updatedAt: row.updated_at != null ? String(row.updated_at) : null,
-        employeesCount: 0,
-        ordersThisWeek: 0,
+        employeesCount: null as number | null,
+        ordersThisWeek: null as number | null,
+        historicalOrdersCount: null as number | null,
         invoiceMethodLabel: invoiceMethodLabel(invoice.method),
       };
     })
@@ -184,13 +152,17 @@ export async function loadProviderCustomers(
   const pageRows = filtered.slice(sliceStart, sliceStart + PAGE_SIZE);
 
   const ids = pageRows.map((c) => c.id).filter(Boolean);
-  const { employees, orders } = await enrichCounts(sb, ids, weekStart, weekEnd);
+  const { byCompanyId } = await enrichCounts(pid, ids, weekStart, weekEnd);
 
-  const customers = pageRows.map((c) => ({
-    ...c,
-    employeesCount: employees.get(c.id) ?? 0,
-    ordersThisWeek: orders.get(c.id) ?? 0,
-  }));
+  const customers = pageRows.map((c) => {
+    const counts = byCompanyId.get(c.id);
+    return {
+      ...c,
+      employeesCount: counts?.employeesCount ?? null,
+      ordersThisWeek: counts?.ordersThisWeek ?? null,
+      historicalOrdersCount: counts?.historicalOrdersCount ?? null,
+    };
+  });
 
   return {
     customers,

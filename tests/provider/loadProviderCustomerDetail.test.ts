@@ -43,8 +43,10 @@ function mkSb(state: {
     const b: any = {
       _eq: [] as Array<{ col: string; val: unknown }>,
       _head: false,
-      select: (_cols?: string, opts?: { count?: string; head?: boolean }) => {
+      _gte: false,
+      select: (cols?: string, opts?: { count?: string; head?: boolean }) => {
         if (opts?.head) b._head = true;
+        b._cols = cols;
         return b;
       },
       eq: (col: string, val: unknown) => {
@@ -52,7 +54,10 @@ function mkSb(state: {
         return b;
       },
       in: () => b,
-      gte: () => b,
+      gte: () => {
+        b._gte = true;
+        return b;
+      },
       lte: () => b,
       is: () => b,
       order: () => b,
@@ -66,6 +71,7 @@ function mkSb(state: {
         if (table === "agreements") resolve({ data: state.agreements ?? [], error: null });
         else if (table === "company_locations") resolve({ data: state.locations ?? [], error: null });
         else if (table === "orders" && b._head) resolve({ data: null, error: null, count: state.ordersOpenCount ?? 0 });
+        else if (table === "orders" && b._gte) resolve({ data: state.ordersMonth ?? [], error: null });
         else if (table === "orders") resolve({ data: state.orders ?? [], error: null });
         else resolve({ data: [], error: null });
       },
@@ -134,9 +140,18 @@ describe("loadProviderCustomerDetail", () => {
             date: "2026-06-16",
             status: "DELIVERED",
             gross_cents_inc_vat: 10350,
+            subtotal_cents_ex_vat: 8280,
+            vat_cents: 2070,
             user_id: "user-1",
             location_id: null,
             slot: "lunch",
+          },
+        ],
+        ordersMonth: [
+          {
+            gross_cents_inc_vat: 10350,
+            subtotal_cents_ex_vat: 8280,
+            vat_cents: 2070,
           },
         ],
         ordersOpenCount: 0,
@@ -146,8 +161,15 @@ describe("loadProviderCustomerDetail", () => {
     vi.mocked(supabaseAdmin).mockReturnValue({
       from: (table: string) => {
         const b: any = {
+          _in: null as { col: string; vals: unknown[] } | null,
           select: () => b,
           eq: () => b,
+          in: (col: string, vals: unknown[]) => {
+            b._in = { col, vals };
+            return b;
+          },
+          gte: () => b,
+          lt: () => b,
           is: () => b,
           or: () => b,
           order: () => b,
@@ -156,9 +178,26 @@ describe("loadProviderCustomerDetail", () => {
             if (table === "profiles") {
               resolve({
                 data: [
-                  { id: "p1", full_name: "Thomas Johansen", email: "thomas@pettersenco.no", role: "employee" },
-                  { id: "p2", full_name: "Thomas", email: "hei@pettersenco.no", role: "company_admin" },
+                  {
+                    company_id: PETTERSEN_ID,
+                    id: "p1",
+                    full_name: "Thomas Johansen",
+                    email: "thomas@pettersenco.no",
+                    role: "employee",
+                  },
+                  {
+                    company_id: PETTERSEN_ID,
+                    id: "p2",
+                    full_name: "Thomas",
+                    email: "hei@pettersenco.no",
+                    role: "company_admin",
+                  },
                 ],
+                error: null,
+              });
+            } else if (table === "orders") {
+              resolve({
+                data: [{ company_id: PETTERSEN_ID }],
                 error: null,
               });
             } else if (table === "audit_events") {
@@ -186,6 +225,8 @@ describe("loadProviderCustomerDetail", () => {
 
     expect(detail.stats.employeesCount).toBe(2);
     expect(detail.stats.historicalOrdersCount).toBe(1);
+    expect(detail.billingBasis.confidence).toBe("complete");
+    expect(detail.billingBasis.commissionBaseLabel).toBe("eks. mva");
     expect(detail.employees).toHaveLength(2);
     expect(detail.orders).toHaveLength(1);
     expect(detail.orders[0]?.status).toBe("DELIVERED");
