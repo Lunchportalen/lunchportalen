@@ -14,6 +14,8 @@ import {
   type EnterpriseUpgradeType,
 } from "@/lib/providers/providerMenuPackageSurface";
 import { fallbackProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
+import type { ProviderMenuDayRow } from "@/lib/provider-menu/loadProviderMenuDays";
+import { canonicalMenuCategory, menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 
 export type MenuDayStatus = "draft" | "published";
 
@@ -70,8 +72,23 @@ function parseTier(raw: unknown): PlanTier | null {
 }
 
 function parseCategory(raw: unknown): Category | null {
-  const category = String(raw ?? "").trim().toLowerCase();
-  return CATEGORIES.includes(category as Category) ? (category as Category) : null;
+  return canonicalMenuCategory(raw);
+}
+
+function incomingPayloadIsEmpty(input: MenuDayInput): boolean {
+  const mealTitle = safeTrim(input.mealTitle, 120);
+  const description = safeTrim(input.description, 4000);
+  const allergens = parseAllergensText(input.allergensText);
+  return (
+    isPlaceholderTitle(mealTitle) &&
+    isPlaceholderTitle(description) &&
+    (!allergens || allergens.length === 0)
+  );
+}
+
+function isPlaceholderTitle(value: string): boolean {
+  const t = String(value ?? "").trim();
+  return !t || t === "Utkast" || t === "Utkast — ikke publisert.";
 }
 
 function parseStatus(raw: unknown): MenuDayStatus | null {
@@ -127,6 +144,7 @@ export function buildMenuDayDocId(
 export function buildMenuDayPayload(
   serverProviderId: string,
   input: MenuDayInput,
+  opts?: { existingSlot?: ProviderMenuDayRow | null },
 ): MenuDayPayloadResult {
   const providerId = safeTrim(serverProviderId, 64);
   if (!providerId) {
@@ -171,6 +189,17 @@ export function buildMenuDayPayload(
   const status = parseStatus(input.status);
   if (!status) {
     return { ok: false, error: "Status må være «draft» eller «published».", field: "status" };
+  }
+
+  const existing = opts?.existingSlot ?? null;
+  const existingHasContent = existing != null && menuSlotHasContent(existing);
+  if (existingHasContent && incomingPayloadIsEmpty(input)) {
+    return {
+      ok: false,
+      error:
+        "Eksisterende meny kan ikke overskrives med tomme verdier. Åpne kortet og rediger eksplisitt.",
+      field: "mealTitle",
+    };
   }
 
   const isPublished = status === "published";

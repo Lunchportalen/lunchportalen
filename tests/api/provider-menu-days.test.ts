@@ -46,7 +46,10 @@ const mockLoadPrices = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/provider-menu/loadProviderMenuDays", () => ({
   loadProviderMenuDaysForDates: (...args: unknown[]) => mockLoadMenuDays(...args),
+  loadProviderMenuDaySlot: (...args: unknown[]) => mockLoadMenuDaySlot(...args),
 }));
+
+const mockLoadMenuDaySlot = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/providers/providerMenuPriceConfig", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/providers/providerMenuPriceConfig")>();
@@ -100,6 +103,7 @@ function authedProvider() {
 describe("POST /api/provider/menu-days", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLoadMenuDaySlot.mockResolvedValue(null);
   });
 
   test("unauthenticated request rejected", async () => {
@@ -238,6 +242,7 @@ function authedViewer() {
 describe("GET /api/provider/menu-days", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLoadMenuDaySlot.mockResolvedValue(null);
   });
 
   test("unauthenticated request rejected", async () => {
@@ -277,7 +282,9 @@ describe("GET /api/provider/menu-days", () => {
     expect(json.data.providerId).toBe(PROVIDER_ID);
     expect(json.data.prices.BASIS.priceExVatNok).toBe(90);
     expect(json.data.prices.ENTERPRISE.priceIncVatNok).toBe(195.5);
-    expect(mockLoadMenuDays).toHaveBeenCalledWith(PROVIDER_ID, expect.any(Array));
+    expect(mockLoadMenuDays).toHaveBeenCalledWith(PROVIDER_ID, expect.any(Array), {
+      providerSlug: "provider-b",
+    });
     expect(mockLoadPrices).toHaveBeenCalledWith(PROVIDER_ID);
   });
 });

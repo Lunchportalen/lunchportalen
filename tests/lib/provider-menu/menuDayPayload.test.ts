@@ -76,9 +76,16 @@ describe("buildMenuDayPayload", () => {
   });
 
   test("rejects invalid category", () => {
-    const res = buildMenuDayPayload(PROVIDER_B, { ...validInput, category: "varmmat" });
+    const res = buildMenuDayPayload(PROVIDER_B, { ...validInput, category: "INVALID_CAT" });
     expect(res.ok).toBe(false);
     if (res.ok === false) expect(res.field).toBe("category");
+  });
+
+  test("canonicalizes varmmat alias to varmrett", () => {
+    const res = buildMenuDayPayload(PROVIDER_B, { ...validInput, category: "varmmat" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.payload.category).toBe("varmrett");
   });
 
   test("rejects category not allowed for tier", () => {
@@ -163,6 +170,38 @@ describe("buildMenuDayPayload", () => {
       confirmWarnings: true,
     });
     expect(res.ok).toBe(true);
+  });
+
+  test("rejects empty overwrite of existing published item", () => {
+    const res = buildMenuDayPayload(
+      PROVIDER_B,
+      {
+        ...validInput,
+        mealTitle: "",
+        description: "",
+        status: "published",
+      },
+      {
+        existingSlot: {
+          id: "menuDay-existing",
+          date: "2026-06-16",
+          tier: "BASIS",
+          category: "varmrett",
+          mealTitle: "Eksisterende gryte",
+          description: "Med potet",
+          allergens: [],
+          estimatedCostPerPortion: null,
+          sourcePackage: null,
+          upgradeType: null,
+          upgradeNote: null,
+          approvedForPublish: true,
+          customerVisible: true,
+          status: "published",
+        },
+      },
+    );
+    expect(res.ok).toBe(false);
+    if (res.ok === false) expect(res.field).toBe("mealTitle");
   });
 
   test("rejects invalid date", () => {
