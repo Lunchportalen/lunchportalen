@@ -3,7 +3,10 @@ import "server-only";
 
 import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
+import { digitsOnlyOrgnr } from "@/lib/orgnr/no";
 import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
+import type { InvoiceMethod } from "@/lib/providers/providerCustomerBilling";
+import { suggestEhfEndpoint } from "@/lib/providers/providerCustomerBilling";
 import type {
   ProviderAgreementDayMenu,
   ProviderAgreementPatchInput,
@@ -139,6 +142,74 @@ function parseDayMenus(raw: unknown): ValidationResult & { dayMenus?: ProviderAg
     dayMenus.push({ day, plan });
   }
   return { ok: true, value: { dayMenus }, dayMenus };
+}
+
+function parseBilling(raw: unknown): ValidationResult & { billing?: ProviderAgreementPatchPayload["billing"] } {
+  if (raw == null || typeof raw !== "object") {
+    return { ok: false, code: "INVALID_BILLING", message: "Ugyldig faktureringsinformasjon." };
+  }
+  const methodRaw = safeStr((raw as { method?: unknown }).method).toUpperCase();
+  if (methodRaw !== "EMAIL" && methodRaw !== "EHF") {
+    return { ok: false, code: "INVALID_INVOICE_METHOD", message: "Fakturametode må være E-post eller EHF." };
+  }
+  const method = methodRaw as InvoiceMethod;
+  const billing: NonNullable<ProviderAgreementPatchPayload["billing"]> = { method };
+
+  if (method === "EMAIL") {
+    const email = trimMax((raw as { invoiceEmail?: unknown }).invoiceEmail, MAX_EMAIL)?.toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return { ok: false, code: "INVALID_INVOICE_EMAIL", message: "Faktura e-post må være en gyldig e-postadresse." };
+    }
+    billing.invoiceEmail = email;
+  }
+
+  if (method === "EHF") {
+    const orgnr = digitsOnlyOrgnr((raw as { orgnr?: unknown }).orgnr);
+    let endpoint = safeStr((raw as { ehfEndpoint?: unknown }).ehfEndpoint);
+    if (!endpoint && orgnr) {
+      endpoint = suggestEhfEndpoint(orgnr) ?? "";
+    }
+    if (!endpoint) {
+      return { ok: false, code: "MISSING_EHF_ENDPOINT", message: "EHF-endepunkt må angis." };
+    }
+    if (orgnr && orgnr.length !== 9) {
+      return { ok: false, code: "INVALID_ORGNR", message: "Organisasjonsnummer må være 9 siffer." };
+    }
+    billing.ehfEndpoint = endpoint.slice(0, MAX_ADDRESS);
+    if (orgnr) billing.orgnr = orgnr;
+  }
+
+  const contactRaw = (raw as { contact?: unknown }).contact;
+  if (contactRaw !== undefined) {
+    if (contactRaw == null || typeof contactRaw !== "object") {
+      return { ok: false, code: "INVALID_BILLING_CONTACT", message: "Ugyldig fakturakontakt." };
+    }
+    const contact: { name?: string; email?: string; phone?: string } = {};
+    if ((contactRaw as { name?: unknown }).name !== undefined) {
+      contact.name = trimMax((contactRaw as { name?: unknown }).name, MAX_NAME) ?? "";
+    }
+    if ((contactRaw as { email?: unknown }).email !== undefined) {
+      const email = trimMax((contactRaw as { email?: unknown }).email, MAX_EMAIL)?.toLowerCase();
+      if (email) {
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+          return { ok: false, code: "INVALID_BILLING_CONTACT_EMAIL", message: "Ugyldig e-post for fakturakontakt." };
+        }
+        contact.email = email;
+      } else {
+        contact.email = "";
+      }
+    }
+    if ((contactRaw as { phone?: unknown }).phone !== undefined) {
+      const digits = normalizeNoPhone((contactRaw as { phone?: unknown }).phone);
+      if (digits && !isValidNoPhone(digits)) {
+        return { ok: false, code: "INVALID_BILLING_CONTACT_PHONE", message: "Telefon må være 8 siffer." };
+      }
+      contact.phone = digits || "";
+    }
+    if (Object.keys(contact).length > 0) billing.contact = contact;
+  }
+
+  return { ok: true, value: { billing }, billing };
 }
 
 export function validateProviderAgreementPatch(raw: ProviderAgreementPatchInput): ValidationResult {
@@ -282,6 +353,12 @@ export function validateProviderAgreementPatch(raw: ProviderAgreementPatchInput)
   if (raw.deliveryNote !== undefined) {
     const note = trimMax(raw.deliveryNote, MAX_NOTE);
     out.deliveryNote = note ?? null;
+  }
+
+  if (raw.billing !== undefined) {
+    const parsed = parseBilling(raw.billing);
+    if (parsed.ok === false) return parsed;
+    out.billing = parsed.billing;
   }
 
   if (Object.keys(out).length === 0) {

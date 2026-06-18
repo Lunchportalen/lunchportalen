@@ -877,6 +877,19 @@
   margin: 2px 0 0;
 }
 
+.ds-provider-delivery-address {
+  white-space: pre-line;
+}
+
+.ds-provider-customer-identity .ds-provider-identity-card,
+.ds-provider-billing-basis .ds-card {
+  margin-top: 8px;
+}
+
+.ds-provider-detail-section {
+  margin-top: 20px;
+}
+
 .ds-provider-dialog select {
   width: 100%;
   min-height: 48px;

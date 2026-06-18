@@ -9,10 +9,15 @@ import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
 import { logIncident } from "@/lib/observability/incident";
 import type {
   ProviderAgreementDayMenu,
+  ProviderAgreementBilling,
   ProviderAgreementPatchInput,
   ProviderAgreementReadModel,
   ProviderAgreementUpdateResult,
 } from "@/lib/providers/providerCustomerAgreementTypes";
+import {
+  buildProviderInvoiceSettings,
+  invoiceMethodLabel,
+} from "@/lib/providers/providerCustomerBilling";
 import { loadProviderScopedCustomer } from "@/lib/server/provider/providerCustomerRemoval";
 import {
   defaultPlanFromDayMenus,
@@ -47,10 +52,55 @@ type LocationRow = {
   address: string | null;
 };
 
+type CompanyBillingRow = {
+  orgnr: string | null;
+  organization_number: string | null;
+  billing_email: string | null;
+  ehf_enabled: boolean;
+  ehf_endpoint: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+};
+
 type DayMenuRow = {
   weekday: string;
   tier: string;
 };
+
+async function loadCompanyBilling(admin: SupabaseClient, companyId: string): Promise<CompanyBillingRow | null> {
+  const { data, error } = await admin
+    .from("companies")
+    .select(
+      "orgnr,organization_number,billing_email,ehf_enabled,ehf_endpoint,contact_name,contact_email,contact_phone",
+    )
+    .eq("id", companyId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as CompanyBillingRow;
+}
+
+function buildBillingReadModel(row: CompanyBillingRow | null): ProviderAgreementBilling {
+  const settings = buildProviderInvoiceSettings({
+    orgnr: row?.orgnr,
+    organizationNumber: row?.organization_number,
+    billingEmail: row?.billing_email,
+    ehfEnabled: row?.ehf_enabled,
+    ehfEndpoint: row?.ehf_endpoint,
+    contactName: row?.contact_name,
+    contactEmail: row?.contact_email,
+    contactPhone: row?.contact_phone,
+  });
+  return {
+    method: settings.method,
+    methodLabel: invoiceMethodLabel(settings.method),
+    invoiceEmail: settings.invoiceEmail,
+    orgnr: settings.orgnr,
+    ehfEndpoint: settings.ehfEndpoint,
+    contact: settings.billingContact,
+    recipientLabel: settings.recipientLabel,
+  };
+}
 
 export type ProviderAgreementActor = {
   rid: string;
@@ -174,6 +224,7 @@ function snapshotFromState(input: {
   location: LocationRow | null;
   phone: string | null;
   dayMenus: ProviderAgreementDayMenu[];
+  billing?: ProviderAgreementBilling;
 }): Record<string, unknown> {
   const days = normalizeDeliveryDaysStrict(input.agreement.delivery_days).days;
   const from = timeFromDbValue(input.agreement.slot_start);
@@ -193,6 +244,7 @@ function snapshotFromState(input: {
     deliveryWindow: from && to ? { from, to, label: buildWindowLabel(from, to) } : null,
     status: input.agreement.status,
     deliveryNote: input.agreement.comment_from_company,
+    billing: input.billing ?? null,
   };
 }
 
@@ -201,6 +253,7 @@ function buildReadModel(input: {
   location: LocationRow | null;
   phone: string | null;
   dayMenus: ProviderAgreementDayMenu[];
+  billing: ProviderAgreementBilling;
   warnings?: string[];
 }): ProviderAgreementUpdateResult {
   const days = normalizeDeliveryDaysStrict(input.agreement.delivery_days).days;
@@ -234,6 +287,7 @@ function buildReadModel(input: {
       label: buildWindowLabel(from, to),
     },
     deliveryNote: input.agreement.comment_from_company,
+    billing: input.billing,
     updatedAt: input.agreement.updated_at,
     warnings: input.warnings,
   };
@@ -307,17 +361,19 @@ export async function loadProviderCustomerAgreement(
     return err(409, "NO_ACTIVE_AGREEMENT", "Firma har ingen aktiv avtale.");
   }
 
-  const [location, phone, dayRows] = await Promise.all([
+  const [location, phone, dayRows, billingRow] = await Promise.all([
     loadLocation(admin, agreement.location_id),
     loadRegistrationPhone(admin, agreement.id),
     loadAgreementDayMenuRows(admin, agreement.id),
+    loadCompanyBilling(admin, companyId),
   ]);
 
   const deliveryDays = normalizeDeliveryDaysStrict(agreement.delivery_days).days;
   const fallback = normTierValue(agreement.tier);
   const dayMenus = buildDayMenusFromRows(deliveryDays, dayRows, fallback);
+  const billing = buildBillingReadModel(billingRow);
 
-  return { ok: true, data: buildReadModel({ agreement, location, phone, dayMenus }) };
+  return { ok: true, data: buildReadModel({ agreement, location, phone, dayMenus, billing }) };
 }
 
 export async function executeProviderCustomerAgreementUpdate(
@@ -368,11 +424,13 @@ export async function executeProviderCustomerAgreementUpdate(
   }
 
   const patch = validated.value;
-  const [locationBefore, phoneBefore, dayRowsBefore] = await Promise.all([
+  const [locationBefore, phoneBefore, dayRowsBefore, billingBeforeRow] = await Promise.all([
     loadLocation(admin, agreement.location_id),
     loadRegistrationPhone(admin, agreement.id),
     loadAgreementDayMenuRows(admin, agreement.id),
+    loadCompanyBilling(admin, companyId),
   ]);
+  const billingBefore = buildBillingReadModel(billingBeforeRow);
   const deliveryDaysBefore = normalizeDeliveryDaysStrict(agreement.delivery_days).days;
   const dayMenusBefore = buildDayMenusFromRows(
     deliveryDaysBefore,
@@ -384,11 +442,13 @@ export async function executeProviderCustomerAgreementUpdate(
     location: locationBefore,
     phone: phoneBefore,
     dayMenus: dayMenusBefore,
+    billing: billingBefore,
   });
 
+  const auditAction = patch.billing ? "provider.customer.billing.update.attempt" : "provider.customer.agreement.update.attempt";
   await writeAgreementAudit({
     rid: actor.rid,
-    action: "provider.customer.agreement.update.attempt",
+    action: auditAction,
     agreementId: agreement.id,
     companyId,
     locationId: agreement.location_id,
@@ -447,6 +507,37 @@ export async function executeProviderCustomerAgreementUpdate(
     changedFields.push("deliveryNote");
   }
 
+  const companyBillingUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (patch.billing) {
+    if (patch.billing.method === "EMAIL") {
+      companyBillingUpdate.billing_email = patch.billing.invoiceEmail ?? null;
+      companyBillingUpdate.ehf_enabled = false;
+      companyBillingUpdate.ehf_endpoint = null;
+      changedFields.push("billing.method", "billing.invoiceEmail");
+    }
+    if (patch.billing.method === "EHF") {
+      companyBillingUpdate.ehf_enabled = true;
+      companyBillingUpdate.ehf_endpoint = patch.billing.ehfEndpoint ?? null;
+      if (patch.billing.orgnr) companyBillingUpdate.orgnr = patch.billing.orgnr;
+      changedFields.push("billing.method", "billing.ehfEndpoint");
+      if (patch.billing.orgnr) changedFields.push("billing.orgnr");
+    }
+    if (patch.billing.contact) {
+      if (patch.billing.contact.name !== undefined) {
+        companyBillingUpdate.contact_name = patch.billing.contact.name || null;
+        changedFields.push("billing.contact.name");
+      }
+      if (patch.billing.contact.email !== undefined) {
+        companyBillingUpdate.contact_email = patch.billing.contact.email || null;
+        changedFields.push("billing.contact.email");
+      }
+      if (patch.billing.contact.phone !== undefined) {
+        companyBillingUpdate.contact_phone = patch.billing.contact.phone || null;
+        changedFields.push("billing.contact.phone");
+      }
+    }
+  }
+
   try {
     if (Object.keys(agreementUpdate).length > 1) {
       const { error: updErr } = await admin.from("agreements").update(agreementUpdate).eq("id", agreement.id);
@@ -466,6 +557,15 @@ export async function executeProviderCustomerAgreementUpdate(
         throwIfDbError(locErr, "Kunne ikke oppdatere lokasjon");
         changedFields.push("location");
       }
+    }
+
+    if (patch.billing && Object.keys(companyBillingUpdate).length > 1) {
+      const { error: billingErr } = await admin
+        .from("companies")
+        .update(companyBillingUpdate)
+        .eq("id", companyId)
+        .eq("provider_id", providerId);
+      throwIfDbError(billingErr, "Kunne ikke oppdatere fakturering");
     }
 
     if (patch.contact?.phone !== undefined) {
@@ -512,11 +612,13 @@ export async function executeProviderCustomerAgreementUpdate(
       return err(500, "RELOAD_FAILED", "Avtalen ble oppdatert, men kunne ikke lastes på nytt.");
     }
 
-    const [locationAfter, phoneAfter, dayRowsAfter] = await Promise.all([
+    const [locationAfter, phoneAfter, dayRowsAfter, billingAfterRow] = await Promise.all([
       loadLocation(admin, refreshed.location_id),
       loadRegistrationPhone(admin, refreshed.id),
       loadAgreementDayMenuRows(admin, refreshed.id),
+      loadCompanyBilling(admin, companyId),
     ]);
+    const billingAfter = buildBillingReadModel(billingAfterRow);
     const deliveryDaysAfter = normalizeDeliveryDaysStrict(refreshed.delivery_days).days;
     const dayMenusAfter = buildDayMenusFromRows(
       deliveryDaysAfter,
@@ -528,11 +630,15 @@ export async function executeProviderCustomerAgreementUpdate(
       location: locationAfter,
       phone: phoneAfter,
       dayMenus: dayMenusAfter,
+      billing: billingAfter,
     });
 
+    const successAction = patch.billing
+      ? "provider.customer.billing.update.success"
+      : "provider.customer.agreement.update.success";
     await writeAgreementAudit({
       rid: actor.rid,
-      action: "provider.customer.agreement.update.success",
+      action: successAction,
       agreementId: agreement.id,
       companyId,
       locationId: refreshed.location_id,
@@ -556,6 +662,7 @@ export async function executeProviderCustomerAgreementUpdate(
         location: locationAfter,
         phone: phoneAfter,
         dayMenus: dayMenusAfter,
+        billing: billingAfter,
         warnings: warnings.length > 0 ? warnings : undefined,
       }),
     };

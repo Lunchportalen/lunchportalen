@@ -170,9 +170,16 @@ function baseState(): State {
       {
         id: PETTERSEN_ID,
         name: "Pettersen&Co",
-        orgnr: "987654321",
+        orgnr: "928038777",
+        organization_number: "928038777",
         provider_id: MELHUS_PROVIDER_ID,
         deleted_at: null,
+        billing_email: null,
+        ehf_enabled: false,
+        ehf_endpoint: null,
+        contact_name: "Thomas",
+        contact_email: "hei@pettersenco.no",
+        contact_phone: null,
       },
       {
         id: OTHER_PROVIDER_ID,
@@ -248,6 +255,28 @@ describe("provider customer agreement validation", () => {
     expect(res.ok).toBe(false);
     if (res.ok === false) expect(res.code).toBe("INVALID_DELIVERY_WINDOW");
   });
+
+  it("EMAIL krever gyldig faktura e-post", () => {
+    const res = validateProviderAgreementPatch({ billing: { method: "EMAIL", invoiceEmail: "bad" } });
+    expect(res.ok).toBe(false);
+    if (res.ok === false) expect(res.code).toBe("INVALID_INVOICE_EMAIL");
+  });
+
+  it("EHF krever endepunkt eller orgnr", () => {
+    const res = validateProviderAgreementPatch({ billing: { method: "EHF" } });
+    expect(res.ok).toBe(false);
+    if (res.ok === false) expect(res.code).toBe("MISSING_EHF_ENDPOINT");
+  });
+
+  it("EHF foreslår endepunkt fra norsk orgnr", () => {
+    const res = validateProviderAgreementPatch({
+      billing: { method: "EHF", orgnr: "928038777" },
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.value.billing?.ehfEndpoint).toBe("0192:928038777");
+    }
+  });
 });
 
 describe("provider customer agreement service", () => {
@@ -255,13 +284,15 @@ describe("provider customer agreement service", () => {
     vi.clearAllMocks();
   });
 
-  it("provider_admin kan laste avtale med per-dag meny", async () => {
+  it("provider_admin kan laste avtale med per-dag meny og fakturering", async () => {
     const admin = mkAdmin(baseState());
     const res = await loadProviderCustomerAgreement(admin as any, MELHUS_PROVIDER_ID, PETTERSEN_ID);
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.data.agreementId).toBe(AGREEMENT_ID);
       expect(res.data.defaultPlan).toBe("BASIS");
+      expect(res.data.billing.orgnr).toBe("928038777");
+      expect(res.data.billing.methodLabel).toBe("Ikke valgt");
       expect(res.data.dayMenus).toEqual(
         expect.arrayContaining([
           { day: "mon", plan: "BASIS" },
@@ -269,6 +300,55 @@ describe("provider customer agreement service", () => {
         ]),
       );
     }
+  });
+
+  it("provider_admin kan oppdatere fakturametode for egen kunde", async () => {
+    const state = baseState();
+    const admin = mkAdmin(state);
+    const res = await executeProviderCustomerAgreementUpdate(
+      admin as any,
+      { rid: "rid_test", userId: "user-1", email: "admin@melhus.no" },
+      {
+        providerId: MELHUS_PROVIDER_ID,
+        companyId: PETTERSEN_ID,
+        patch: {
+          billing: {
+            method: "EHF",
+            orgnr: "928038777",
+            contact: { name: "Thomas", email: "faktura@pettersenco.no" },
+          },
+        },
+      },
+    );
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data.billing.method).toBe("EHF");
+      expect(res.data.billing.ehfEndpoint).toBe("0192:928038777");
+    }
+    expect(state.companies[0].ehf_enabled).toBe(true);
+    expect(state.companies[0].ehf_endpoint).toBe("0192:928038777");
+  });
+
+  it("billing-oppdatering rører ikke eksisterende ordre", async () => {
+    const state = baseState();
+    const admin = mkAdmin(state);
+    const before = JSON.stringify(state.orders);
+    await executeProviderCustomerAgreementUpdate(
+      admin as any,
+      { rid: "rid_test", userId: "user-1", email: "admin@melhus.no" },
+      {
+        providerId: MELHUS_PROVIDER_ID,
+        companyId: PETTERSEN_ID,
+        patch: {
+          billing: {
+            method: "EMAIL",
+            invoiceEmail: "faktura@pettersenco.no",
+          },
+        },
+      },
+    );
+    expect(JSON.stringify(state.orders)).toBe(before);
+    expect(state.companies[0].billing_email).toBe("faktura@pettersenco.no");
   });
 
   it("provider_admin kan oppdatere per-dag meny", async () => {

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import type { DayKey, Tier } from "@/lib/agreements/normalize";
+import type { InvoiceMethod } from "@/lib/providers/providerCustomerBilling";
+import { suggestEhfEndpoint } from "@/lib/providers/providerCustomerBilling";
 import type { ProviderAgreementReadModel } from "@/lib/providers/providerCustomerAgreementTypes";
 
 type ApiErr = {
@@ -107,6 +109,13 @@ export default function ProviderCustomerAgreementEditDialog(props: {
   const [status, setStatus] = useState<"ACTIVE" | "PAUSED">("ACTIVE");
   const [deliveryNote, setDeliveryNote] = useState("");
   const [reason, setReason] = useState("");
+  const [invoiceMethod, setInvoiceMethod] = useState<InvoiceMethod>("EMAIL");
+  const [invoiceEmail, setInvoiceEmail] = useState("");
+  const [billingOrgnr, setBillingOrgnr] = useState("");
+  const [ehfEndpoint, setEhfEndpoint] = useState("");
+  const [billingContactName, setBillingContactName] = useState("");
+  const [billingContactEmail, setBillingContactEmail] = useState("");
+  const [billingContactPhone, setBillingContactPhone] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -145,6 +154,14 @@ export default function ProviderCustomerAgreementEditDialog(props: {
       setStatus(data.status === "PAUSED" ? "PAUSED" : "ACTIVE");
       setDeliveryNote(data.deliveryNote ?? "");
       setReason("");
+      const billing = data.billing;
+      setInvoiceMethod(billing.method === "EHF" ? "EHF" : "EMAIL");
+      setInvoiceEmail(billing.invoiceEmail ?? "");
+      setBillingOrgnr(billing.orgnr ?? "");
+      setEhfEndpoint(billing.ehfEndpoint ?? suggestEhfEndpoint(billing.orgnr) ?? "");
+      setBillingContactName(billing.contact.name ?? "");
+      setBillingContactEmail(billing.contact.email ?? "");
+      setBillingContactPhone(billing.contact.phone ?? "");
     })();
   }, [open, companyId, apiUrl]);
 
@@ -181,7 +198,27 @@ export default function ProviderCustomerAgreementEditDialog(props: {
     if (contactEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail.trim())) {
       return "Ugyldig e-postadresse.";
     }
+    if (invoiceMethod === "EMAIL") {
+      if (!invoiceEmail.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(invoiceEmail.trim())) {
+        return "Faktura e-post må være en gyldig e-postadresse.";
+      }
+    }
+    if (invoiceMethod === "EHF") {
+      const orgDigits = billingOrgnr.replace(/\D/g, "");
+      const endpoint = ehfEndpoint.trim() || suggestEhfEndpoint(orgDigits) || "";
+      if (!endpoint) return "EHF-endepunkt må angis.";
+      if (orgDigits && orgDigits.length !== 9) return "Organisasjonsnummer må være 9 siffer.";
+    }
+    if (billingContactEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(billingContactEmail.trim())) {
+      return "Ugyldig e-post for fakturakontakt.";
+    }
     return null;
+  }
+
+  function handleBillingOrgnrChange(value: string) {
+    setBillingOrgnr(value);
+    const suggested = suggestEhfEndpoint(value);
+    if (suggested) setEhfEndpoint(suggested);
   }
 
   function submit() {
@@ -215,6 +252,20 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         },
         status,
         deliveryNote: deliveryNote.trim() || null,
+        billing: {
+          method: invoiceMethod,
+          invoiceEmail: invoiceMethod === "EMAIL" ? invoiceEmail.trim() : undefined,
+          orgnr: invoiceMethod === "EHF" ? billingOrgnr.trim() : undefined,
+          ehfEndpoint:
+            invoiceMethod === "EHF"
+              ? ehfEndpoint.trim() || suggestEhfEndpoint(billingOrgnr) || undefined
+              : undefined,
+          contact: {
+            name: billingContactName.trim(),
+            email: billingContactEmail.trim(),
+            phone: billingContactPhone.trim(),
+          },
+        },
       };
       if (reason.trim()) payload.reason = reason.trim();
 
@@ -391,6 +442,99 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                   />
                 </label>
               </div>
+            </fieldset>
+
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-semibold text-neutral-800">Fakturering</legend>
+              <div className="flex flex-wrap gap-2">
+                <label className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
+                  <input
+                    type="radio"
+                    name="invoiceMethod"
+                    value="EMAIL"
+                    checked={invoiceMethod === "EMAIL"}
+                    onChange={() => setInvoiceMethod("EMAIL")}
+                    disabled={pending}
+                  />
+                  E-post
+                </label>
+                <label className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
+                  <input
+                    type="radio"
+                    name="invoiceMethod"
+                    value="EHF"
+                    checked={invoiceMethod === "EHF"}
+                    onChange={() => setInvoiceMethod("EHF")}
+                    disabled={pending}
+                  />
+                  EHF
+                </label>
+              </div>
+              {invoiceMethod === "EMAIL" ? (
+                <label className="block text-xs font-semibold text-neutral-600">
+                  Faktura e-post
+                  <input
+                    type="email"
+                    value={invoiceEmail}
+                    onChange={(e) => setInvoiceEmail(e.target.value)}
+                    className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                    disabled={pending}
+                  />
+                </label>
+              ) : (
+                <>
+                  <label className="block text-xs font-semibold text-neutral-600">
+                    Organisasjonsnummer
+                    <input
+                      inputMode="numeric"
+                      value={billingOrgnr}
+                      onChange={(e) => handleBillingOrgnrChange(e.target.value)}
+                      className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                      disabled={pending}
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold text-neutral-600">
+                    EHF-endepunkt
+                    <input
+                      value={ehfEndpoint}
+                      onChange={(e) => setEhfEndpoint(e.target.value)}
+                      placeholder="0192:928038777"
+                      className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                      disabled={pending}
+                    />
+                  </label>
+                </>
+              )}
+              <p className="text-xs font-semibold text-neutral-700">Fakturakontakt</p>
+              <label className="block text-xs font-semibold text-neutral-600">
+                Navn
+                <input
+                  value={billingContactName}
+                  onChange={(e) => setBillingContactName(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                  disabled={pending}
+                />
+              </label>
+              <label className="block text-xs font-semibold text-neutral-600">
+                E-post
+                <input
+                  type="email"
+                  value={billingContactEmail}
+                  onChange={(e) => setBillingContactEmail(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                  disabled={pending}
+                />
+              </label>
+              <label className="block text-xs font-semibold text-neutral-600">
+                Telefon
+                <input
+                  inputMode="numeric"
+                  value={billingContactPhone}
+                  onChange={(e) => setBillingContactPhone(e.target.value)}
+                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                  disabled={pending}
+                />
+              </label>
             </fieldset>
 
             <fieldset className="space-y-2">

@@ -20,12 +20,15 @@ export const PROVIDER_CUSTOMERS_COPY = {
   ctaTitle: "Nye bedriftskunder kommer inn via kontrollert registrering.",
   tableHeaders: {
     name: "Bedrift",
+    orgnr: "Org.nr",
     status: "Status",
     employees: "Ansatte",
     ordersThisWeek: "Ordre denne uken",
+    invoice: "Faktura",
     lastUpdated: "Sist oppdatert",
   },
-  mobileMeta: (employees: number, orders: number) => `${employees} ansatte · ${orders} ordre denne uken`,
+  mobileMeta: (employees: number, orders: number, invoice: string) =>
+    `${employees} ansatte · ${orders} ordre denne uken · Faktura: ${invoice}`,
   mobileUpdatedPrefix: "Sist oppdatert",
   paginationAria: "Paginering",
   paginationPrev: "Forrige",

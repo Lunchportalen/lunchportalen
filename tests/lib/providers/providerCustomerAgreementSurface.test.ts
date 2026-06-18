@@ -119,7 +119,7 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
     expect(d.periodLabel).toBe("Fra 10. mai 2026 · Ingen sluttdato");
     expect(d.deliveryDaysLabel).toBe("Mandag–fredag");
     expect(d.deliveryDaysWarning).toBeNull();
-    expect(d.locationLabel).toBe("Hovedkontor · Melhusvegen 1");
+    expect(d.locationLabel).toBe("Hovedkontor\nMelhusvegen 1");
     expect(d.packageLabel).toBe("Basis");
 
     const all = JSON.stringify(d);
@@ -152,13 +152,13 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
     expect(d.createdLabel).toBe("Ikke spesifisert");
     expect(d.periodLabel).toBeNull();
     expect(d.deliveryDaysLabel).toBe("Ikke spesifisert");
-    expect(d.locationLabel).toBe("Ikke spesifisert");
+    expect(d.locationLabel).toBe("Leveringsadresse ikke satt");
     expect(d.packageLabel).toBe("Ikke spesifisert i avtalevisningen ennå");
   });
 
   it("ukjent location_id gir «Ikke spesifisert», aldri feil lokasjon", () => {
     const d = buildAgreementDisplay({ ...melhusRow, locationId: "loc-unknown" }, locations);
-    expect(d.locationLabel).toBe("Ikke spesifisert");
+    expect(d.locationLabel).toBe("Leveringsadresse ikke satt");
   });
 });
 
