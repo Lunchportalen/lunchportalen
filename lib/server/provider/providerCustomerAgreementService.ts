@@ -8,12 +8,14 @@ import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
 import { logIncident } from "@/lib/observability/incident";
 import type {
+  ProviderAgreementDayMenu,
   ProviderAgreementPatchInput,
-  ProviderAgreementPatchPayload,
   ProviderAgreementReadModel,
+  ProviderAgreementUpdateResult,
 } from "@/lib/providers/providerCustomerAgreementTypes";
 import { loadProviderScopedCustomer } from "@/lib/server/provider/providerCustomerRemoval";
 import {
+  defaultPlanFromDayMenus,
   timeFromDbValue,
   timeToDbValue,
   validateProviderAgreementPatch,
@@ -45,6 +47,11 @@ type LocationRow = {
   address: string | null;
 };
 
+type DayMenuRow = {
+  weekday: string;
+  tier: string;
+};
+
 export type ProviderAgreementActor = {
   rid: string;
   userId: string;
@@ -64,9 +71,50 @@ function err(status: number, code: string, message: string): ProviderAgreementSe
   return { ok: false, status, code, message };
 }
 
+function dbErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    return safeStr((error as { message?: string }).message) || "Databasefeil.";
+  }
+  return safeStr(error) || "Databasefeil.";
+}
+
+function throwIfDbError(error: unknown, context: string): void {
+  if (error) {
+    const wrapped = new Error(`${context}: ${dbErrorMessage(error)}`);
+    (wrapped as { cause?: unknown }).cause = error;
+    throw wrapped;
+  }
+}
+
 function buildWindowLabel(from: string | null, to: string | null): string | null {
   if (!from || !to) return null;
   return `${from}–${to}`;
+}
+
+function normTierValue(v: unknown): Tier | null {
+  const s = safeStr(v).toUpperCase();
+  if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
+  return null;
+}
+
+function buildDayMenusFromRows(
+  deliveryDays: DayKey[],
+  rows: DayMenuRow[],
+  fallbackTier: Tier | null,
+): ProviderAgreementDayMenu[] {
+  const byDay = new Map<DayKey, Tier>();
+  for (const row of rows) {
+    const day = safeStr(row.weekday).toLowerCase();
+    const tier = normTierValue(row.tier);
+    if ((DAY_KEYS as readonly string[]).includes(day) && tier) {
+      byDay.set(day as DayKey, tier);
+    }
+  }
+  const fallback = fallbackTier ?? "BASIS";
+  return deliveryDays.map((day) => ({
+    day,
+    plan: byDay.get(day) ?? fallback,
+  }));
 }
 
 async function loadActiveAgreement(
@@ -88,6 +136,15 @@ async function loadActiveAgreement(
 
   if (error || !data?.id) return null;
   return data as AgreementRow;
+}
+
+async function loadAgreementDayMenuRows(admin: SupabaseClient, agreementId: string): Promise<DayMenuRow[]> {
+  const { data, error } = await admin
+    .from("agreement_delivery_days")
+    .select("weekday,tier")
+    .eq("agreement_id", agreementId);
+  if (error) return [];
+  return Array.isArray(data) ? (data as DayMenuRow[]) : [];
 }
 
 async function loadLocation(admin: SupabaseClient, locationId: string): Promise<LocationRow | null> {
@@ -116,13 +173,15 @@ function snapshotFromState(input: {
   agreement: AgreementRow;
   location: LocationRow | null;
   phone: string | null;
+  dayMenus: ProviderAgreementDayMenu[];
 }): Record<string, unknown> {
   const days = normalizeDeliveryDaysStrict(input.agreement.delivery_days).days;
   const from = timeFromDbValue(input.agreement.slot_start);
   const to = timeFromDbValue(input.agreement.slot_end);
   return {
-    plan: safeStr(input.agreement.tier).toUpperCase() || null,
+    defaultPlan: safeStr(input.agreement.tier).toUpperCase() || null,
     deliveryDays: days,
+    dayMenus: input.dayMenus,
     location: input.location
       ? { id: input.location.id, name: input.location.name, address: input.location.address }
       : null,
@@ -141,12 +200,14 @@ function buildReadModel(input: {
   agreement: AgreementRow;
   location: LocationRow | null;
   phone: string | null;
-}): ProviderAgreementReadModel {
+  dayMenus: ProviderAgreementDayMenu[];
+  warnings?: string[];
+}): ProviderAgreementUpdateResult {
   const days = normalizeDeliveryDaysStrict(input.agreement.delivery_days).days;
   const from = timeFromDbValue(input.agreement.slot_start);
   const to = timeFromDbValue(input.agreement.slot_end);
   const tier = safeStr(input.agreement.tier).toUpperCase();
-  const plan =
+  const defaultPlan =
     tier === "BASIS" || tier === "LUXUS" || tier === "ENTERPRISE" ? (tier as Tier) : null;
 
   return {
@@ -154,8 +215,9 @@ function buildReadModel(input: {
     companyId: input.agreement.company_id,
     providerId: input.agreement.provider_id,
     status: input.agreement.status,
-    plan,
+    defaultPlan,
     deliveryDays: days,
+    dayMenus: input.dayMenus,
     location: {
       id: input.location?.id ?? input.agreement.location_id,
       name: input.location?.name ?? null,
@@ -173,23 +235,27 @@ function buildReadModel(input: {
     },
     deliveryNote: input.agreement.comment_from_company,
     updatedAt: input.agreement.updated_at,
+    warnings: input.warnings,
   };
 }
 
-async function syncAgreementDayTiers(
+async function syncAgreementDayMenus(
   admin: SupabaseClient,
   agreementId: string,
-  deliveryDays: DayKey[],
-  tier: Tier,
+  dayMenus: ProviderAgreementDayMenu[],
 ): Promise<void> {
-  await admin.from("agreement_delivery_days").delete().eq("agreement_id", agreementId);
-  if (deliveryDays.length === 0) return;
-  const rows = deliveryDays.map((weekday) => ({
+  const { error: delErr } = await admin.from("agreement_delivery_days").delete().eq("agreement_id", agreementId);
+  throwIfDbError(delErr, "Kunne ikke oppdatere meny per dag");
+
+  if (dayMenus.length === 0) return;
+
+  const rows = dayMenus.map(({ day, plan }) => ({
     agreement_id: agreementId,
-    weekday,
-    tier,
+    weekday: day,
+    tier: plan,
   }));
-  await admin.from("agreement_delivery_days").insert(rows);
+  const { error: insErr } = await admin.from("agreement_delivery_days").insert(rows);
+  throwIfDbError(insErr, "Kunne ikke lagre meny per dag");
 }
 
 async function writeAgreementAudit(input: {
@@ -200,8 +266,9 @@ async function writeAgreementAudit(input: {
   locationId: string | null;
   actor: ProviderAgreementActor;
   detail: Record<string, unknown>;
+  must?: boolean;
 }) {
-  await auditWriteMust({
+  const write = auditWriteMust({
     rid: input.rid,
     action: input.action,
     entity_type: "agreement",
@@ -214,6 +281,11 @@ async function writeAgreementAudit(input: {
     summary: "Provider oppdaterte kundeavtale",
     detail: input.detail,
   });
+  if (input.must) {
+    await write;
+  } else {
+    await write.catch(() => undefined);
+  }
 }
 
 export async function loadProviderCustomerAgreement(
@@ -235,12 +307,17 @@ export async function loadProviderCustomerAgreement(
     return err(409, "NO_ACTIVE_AGREEMENT", "Firma har ingen aktiv avtale.");
   }
 
-  const [location, phone] = await Promise.all([
+  const [location, phone, dayRows] = await Promise.all([
     loadLocation(admin, agreement.location_id),
     loadRegistrationPhone(admin, agreement.id),
+    loadAgreementDayMenuRows(admin, agreement.id),
   ]);
 
-  return { ok: true, data: buildReadModel({ agreement, location, phone }) };
+  const deliveryDays = normalizeDeliveryDaysStrict(agreement.delivery_days).days;
+  const fallback = normTierValue(agreement.tier);
+  const dayMenus = buildDayMenusFromRows(deliveryDays, dayRows, fallback);
+
+  return { ok: true, data: buildReadModel({ agreement, location, phone, dayMenus }) };
 }
 
 export async function executeProviderCustomerAgreementUpdate(
@@ -251,8 +328,9 @@ export async function executeProviderCustomerAgreementUpdate(
     companyId: string;
     patch: ProviderAgreementPatchInput;
   },
-): Promise<ProviderAgreementServiceResult<ProviderAgreementReadModel>> {
+): Promise<ProviderAgreementServiceResult<ProviderAgreementUpdateResult>> {
   const { providerId, companyId } = input;
+  const warnings: string[] = [];
 
   const scoped = await loadProviderScopedCustomer(admin, providerId, companyId);
   if ("code" in scoped) {
@@ -284,17 +362,29 @@ export async function executeProviderCustomerAgreementUpdate(
         code: validated.code,
         message: validated.message,
       },
-    }).catch(() => undefined);
-    const status = validated.code.startsWith("INVALID") || validated.code.includes("EMPTY") ? 400 : 422;
+    });
+    const status = validated.code.startsWith("INVALID") || validated.code.includes("EMPTY") || validated.code.includes("MISSING") ? 400 : 422;
     return err(status, validated.code, validated.message);
   }
 
   const patch = validated.value;
-  const [locationBefore, phoneBefore] = await Promise.all([
+  const [locationBefore, phoneBefore, dayRowsBefore] = await Promise.all([
     loadLocation(admin, agreement.location_id),
     loadRegistrationPhone(admin, agreement.id),
+    loadAgreementDayMenuRows(admin, agreement.id),
   ]);
-  const before = snapshotFromState({ agreement, location: locationBefore, phone: phoneBefore });
+  const deliveryDaysBefore = normalizeDeliveryDaysStrict(agreement.delivery_days).days;
+  const dayMenusBefore = buildDayMenusFromRows(
+    deliveryDaysBefore,
+    dayRowsBefore,
+    normTierValue(agreement.tier),
+  );
+  const before = snapshotFromState({
+    agreement,
+    location: locationBefore,
+    phone: phoneBefore,
+    dayMenus: dayMenusBefore,
+  });
 
   await writeAgreementAudit({
     rid: actor.rid,
@@ -311,18 +401,27 @@ export async function executeProviderCustomerAgreementUpdate(
       before,
       reason: patch.reason ?? null,
     },
-  }).catch(() => undefined);
+  });
 
   const agreementUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() };
   const changedFields: string[] = [];
 
-  if (patch.plan) {
-    agreementUpdate.tier = patch.plan;
-    changedFields.push("plan");
-  }
+  const nextDayMenus =
+    patch.dayMenus ??
+    (patch.plan && patch.deliveryDays
+      ? patch.deliveryDays.map((day) => ({ day, plan: patch.plan! }))
+      : undefined);
+
   if (patch.deliveryDays) {
     agreementUpdate.delivery_days = patch.deliveryDays;
     changedFields.push("deliveryDays");
+  }
+  if (nextDayMenus) {
+    agreementUpdate.tier = defaultPlanFromDayMenus(nextDayMenus);
+    changedFields.push("dayMenus", "defaultPlan");
+  } else if (patch.plan) {
+    agreementUpdate.tier = patch.plan;
+    changedFields.push("defaultPlan");
   }
   if (patch.status) {
     agreementUpdate.status = patch.status;
@@ -351,7 +450,7 @@ export async function executeProviderCustomerAgreementUpdate(
   try {
     if (Object.keys(agreementUpdate).length > 1) {
       const { error: updErr } = await admin.from("agreements").update(agreementUpdate).eq("id", agreement.id);
-      if (updErr) throw updErr;
+      throwIfDbError(updErr, "Kunne ikke oppdatere avtale");
     }
 
     if (patch.location && locationBefore) {
@@ -364,33 +463,48 @@ export async function executeProviderCustomerAgreementUpdate(
           .update(locUpdate)
           .eq("id", locationBefore.id)
           .eq("company_id", companyId);
-        if (locErr) throw locErr;
+        throwIfDbError(locErr, "Kunne ikke oppdatere lokasjon");
         changedFields.push("location");
       }
     }
 
     if (patch.contact?.phone !== undefined) {
-      const { data: regRows } = await admin
-        .from("company_registrations")
-        .select("id")
-        .eq("agreement_id", agreement.id)
-        .limit(1);
-      if (Array.isArray(regRows) && regRows.length > 0) {
-        await admin
+      try {
+        const { data: regRows, error: regLookupErr } = await admin
           .from("company_registrations")
-          .update({ contact_phone: patch.contact.phone || null, updated_at: new Date().toISOString() })
-          .eq("id", (regRows[0] as { id: string }).id);
+          .select("id")
+          .eq("agreement_id", agreement.id)
+          .limit(1);
+        throwIfDbError(regLookupErr, "Kunne ikke slå opp registrering for telefon");
+        if (Array.isArray(regRows) && regRows.length > 0) {
+          const { error: regErr } = await admin
+            .from("company_registrations")
+            .update({ contact_phone: patch.contact.phone || null, updated_at: new Date().toISOString() })
+            .eq("id", (regRows[0] as { id: string }).id);
+          throwIfDbError(regErr, "Kunne ikke oppdatere telefon");
+          changedFields.push("contact.phone");
+        } else {
+          warnings.push("Telefon ble ikke lagret fordi kunden ikke har koblet registrering.");
+        }
+      } catch (phoneErr: unknown) {
+        warnings.push(
+          phoneErr instanceof Error ? phoneErr.message : "Telefon kunne ikke lagres, men øvrige felter ble oppdatert.",
+        );
       }
-      changedFields.push("contact.phone");
     }
 
-    const nextDays = patch.deliveryDays ?? normalizeDeliveryDaysStrict(agreement.delivery_days).days;
-    const currentTier = safeStr(agreement.tier).toUpperCase();
-    const effectiveTier = (patch.plan ?? currentTier) as Tier;
-    if (patch.plan || patch.deliveryDays) {
-      const tier: Tier =
-        effectiveTier === "LUXUS" || effectiveTier === "ENTERPRISE" ? effectiveTier : "BASIS";
-      await syncAgreementDayTiers(admin, agreement.id, nextDays, tier);
+    const effectiveDeliveryDays =
+      patch.deliveryDays ?? normalizeDeliveryDaysStrict(agreement.delivery_days).days;
+    let menusToSync = nextDayMenus;
+    if (!menusToSync && patch.plan) {
+      menusToSync = effectiveDeliveryDays.map((day) => ({ day, plan: patch.plan! }));
+    }
+    if (!menusToSync && patch.deliveryDays) {
+      const fallback = normTierValue(agreement.tier) ?? "BASIS";
+      menusToSync = buildDayMenusFromRows(effectiveDeliveryDays, dayRowsBefore, fallback);
+    }
+    if (menusToSync) {
+      await syncAgreementDayMenus(admin, agreement.id, menusToSync);
     }
 
     const refreshed = await loadActiveAgreement(admin, providerId, companyId);
@@ -398,11 +512,23 @@ export async function executeProviderCustomerAgreementUpdate(
       return err(500, "RELOAD_FAILED", "Avtalen ble oppdatert, men kunne ikke lastes på nytt.");
     }
 
-    const [locationAfter, phoneAfter] = await Promise.all([
+    const [locationAfter, phoneAfter, dayRowsAfter] = await Promise.all([
       loadLocation(admin, refreshed.location_id),
       loadRegistrationPhone(admin, refreshed.id),
+      loadAgreementDayMenuRows(admin, refreshed.id),
     ]);
-    const after = snapshotFromState({ agreement: refreshed, location: locationAfter, phone: phoneAfter });
+    const deliveryDaysAfter = normalizeDeliveryDaysStrict(refreshed.delivery_days).days;
+    const dayMenusAfter = buildDayMenusFromRows(
+      deliveryDaysAfter,
+      dayRowsAfter,
+      normTierValue(refreshed.tier),
+    );
+    const after = snapshotFromState({
+      agreement: refreshed,
+      location: locationAfter,
+      phone: phoneAfter,
+      dayMenus: dayMenusAfter,
+    });
 
     await writeAgreementAudit({
       rid: actor.rid,
@@ -419,10 +545,20 @@ export async function executeProviderCustomerAgreementUpdate(
         before,
         after,
         reason: patch.reason ?? null,
+        warnings,
       },
     });
 
-    return { ok: true, data: buildReadModel({ agreement: refreshed, location: locationAfter, phone: phoneAfter }) };
+    return {
+      ok: true,
+      data: buildReadModel({
+        agreement: refreshed,
+        location: locationAfter,
+        phone: phoneAfter,
+        dayMenus: dayMenusAfter,
+        warnings: warnings.length > 0 ? warnings : undefined,
+      }),
+    };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     await logIncident({
@@ -448,8 +584,9 @@ export async function executeProviderCustomerAgreementUpdate(
         error: message,
         reason: patch.reason ?? null,
       },
-    }).catch(() => undefined);
-    return err(500, "UPDATE_FAILED", "Kunne ikke oppdatere avtale.");
+    });
+    const userMessage = message.startsWith("Kunne ikke") ? message : `Kunne ikke oppdatere avtale: ${message}`;
+    return err(500, "UPDATE_FAILED", userMessage);
   }
 }
 

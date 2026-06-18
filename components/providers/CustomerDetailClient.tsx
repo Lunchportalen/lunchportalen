@@ -257,17 +257,29 @@ export default function CustomerDetailClient({
                       </div>
                     ) : null}
                     <div>
-                      <dt>{PROVIDER_AGREEMENT_COPY.labels.deliveryDays}</dt>
-                      <dd>{display.deliveryDaysLabel}</dd>
+                      <dt>{PROVIDER_AGREEMENT_COPY.labels.dayMenus}</dt>
+                      <dd>
+                        {display.dayMenusLines.length > 0 ? (
+                          <ul className="ds-provider-day-menus">
+                            {display.dayMenusLines.map((line) => (
+                              <li key={line}>{line}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          display.dayMenusLabel
+                        )}
+                      </dd>
                     </div>
                     <div>
                       <dt>{PROVIDER_AGREEMENT_COPY.labels.location}</dt>
                       <dd>{display.locationLabel}</dd>
                     </div>
-                    <div>
-                      <dt>{PROVIDER_AGREEMENT_COPY.labels.package}</dt>
-                      <dd>{display.packageLabel}</dd>
-                    </div>
+                    {display.packageLabel !== PROVIDER_AGREEMENT_COPY.packageMissing ? (
+                      <div>
+                        <dt>{PROVIDER_AGREEMENT_COPY.labels.package}</dt>
+                        <dd>{display.packageLabel} (standard)</dd>
+                      </div>
+                    ) : null}
                   </dl>
                   {display.deliveryDaysWarning ? (
                     <p className="ds-provider-agreement-warning" role="status">
@@ -339,8 +351,8 @@ export default function CustomerDetailClient({
         companyId={company.id}
         companyName={company.name}
         onClose={() => setAgreementEditOpen(false)}
-        onDone={() => {
-          setSuccess("Avtalen er oppdatert.");
+        onDone={(message) => {
+          setSuccess(message ?? "Avtalen er oppdatert.");
           router.refresh();
         }}
       />

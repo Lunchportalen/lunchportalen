@@ -17,6 +17,7 @@ export const PROVIDER_AGREEMENT_COPY = {
     created: "Opprettet",
     period: "Avtaleperiode",
     deliveryDays: "Leveringsdager",
+    dayMenus: "Leveringsdager og meny",
     location: "Lokasjon",
     package: "Avtalenivå",
   },
@@ -127,6 +128,7 @@ export type ProviderAgreementSourceRow = {
   startsAt?: string | null;
   endsAt?: string | null;
   deliveryDays?: string[] | null;
+  dayMenus?: ReadonlyArray<{ day: string; plan: string }> | null;
   locationId?: string | null;
   tier?: string | null;
 };
@@ -140,6 +142,8 @@ export type ProviderAgreementDisplay = {
   periodLabel: string | null;
   deliveryDaysLabel: string;
   deliveryDaysWarning: string | null;
+  dayMenusLabel: string;
+  dayMenusLines: string[];
   locationLabel: string;
   packageLabel: string;
 };
@@ -157,6 +161,38 @@ function locationLabelFor(locationId: string | null | undefined, locations: Agre
   return name || address || PROVIDER_AGREEMENT_COPY.locationMissing;
 }
 
+function dayMenusDisplay(
+  deliveryDays: unknown,
+  dayMenus: ReadonlyArray<{ day: string; plan: string }> | null | undefined,
+  fallbackTier: unknown,
+): { label: string; lines: string[] } {
+  const menus = Array.isArray(dayMenus) ? dayMenus : [];
+  if (menus.length > 0) {
+    const lines = WEEKDAY_ORDER.filter((k) => menus.some((m) => safeStr(m.day).toLowerCase() === k)).map((k) => {
+      const match = menus.find((m) => safeStr(m.day).toLowerCase() === k);
+      const plan = agreementTierLabel(match?.plan ?? fallbackTier);
+      return `${WEEKDAY_FULL_LABELS[k]} · ${plan}`;
+    });
+    if (lines.length > 0) {
+      return { label: lines.join(", "), lines };
+    }
+  }
+
+  const days = agreementDeliveryDaysDisplay(deliveryDays);
+  const tier = agreementTierLabel(fallbackTier);
+  if (days.label === "Mandag–fredag") {
+    return { label: `Mandag–fredag · ${tier}`, lines: [`Mandag–fredag: ${tier}`] };
+  }
+  if (days.label !== PROVIDER_AGREEMENT_COPY.notSpecified) {
+    return { label: `${days.label} · ${tier}`, lines: [`${days.label}: ${tier}`] };
+  }
+  return { label: PROVIDER_AGREEMENT_COPY.notSpecified, lines: [] };
+}
+
+function safeStr(v: unknown) {
+  return String(v ?? "").trim();
+}
+
 /** Bygger provider-safe displaymodell for ett avtale-kort. */
 export function buildAgreementDisplay(
   row: ProviderAgreementSourceRow,
@@ -164,6 +200,7 @@ export function buildAgreementDisplay(
 ): ProviderAgreementDisplay {
   const status = String(row.status ?? "").trim().toUpperCase();
   const days = agreementDeliveryDaysDisplay(row.deliveryDays);
+  const menu = dayMenusDisplay(row.deliveryDays, row.dayMenus, row.tier);
   const created = formatAgreementDate(row.createdAt);
   const starts = formatAgreementDate(row.startsAt);
   const ends = formatAgreementDate(row.endsAt);
@@ -181,6 +218,8 @@ export function buildAgreementDisplay(
     periodLabel,
     deliveryDaysLabel: days.label,
     deliveryDaysWarning: days.warning,
+    dayMenusLabel: menu.label,
+    dayMenusLines: menu.lines,
     locationLabel: locationLabelFor(row.locationId, locations),
     packageLabel: agreementTierLabel(row.tier),
   };

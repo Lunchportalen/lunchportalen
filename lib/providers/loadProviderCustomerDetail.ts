@@ -73,6 +73,7 @@ export type ProviderAgreementRow = {
   startsAt: string | null;
   endsAt: string | null;
   deliveryDays: string[];
+  dayMenus: Array<{ day: string; plan: string }>;
   locationId: string | null;
   tier: string | null;
 };
@@ -121,6 +122,33 @@ function deriveStatus(row: {
   if (row.suspended_at) return "SUSPENDED";
   if (row.paused_at) return "PAUSED";
   return "ACTIVE";
+}
+
+async function loadAgreementDayMenusByAgreementIds(
+  agreementIds: string[],
+): Promise<Map<string, Array<{ day: string; plan: string }>>> {
+  const map = new Map<string, Array<{ day: string; plan: string }>>();
+  if (agreementIds.length === 0) return map;
+  try {
+    const admin = supabaseAdmin();
+    const { data, error } = await (admin as any)
+      .from("agreement_delivery_days")
+      .select("agreement_id,weekday,tier")
+      .in("agreement_id", agreementIds);
+    if (error || !Array.isArray(data)) return map;
+    for (const row of data as Array<{ agreement_id?: string; weekday?: string; tier?: string }>) {
+      const agreementId = safeStr(row.agreement_id);
+      const day = safeStr(row.weekday).toLowerCase();
+      const plan = safeStr(row.tier).toUpperCase();
+      if (!agreementId || !day || !plan) continue;
+      const list = map.get(agreementId) ?? [];
+      list.push({ day, plan });
+      map.set(agreementId, list);
+    }
+  } catch {
+    return map;
+  }
+  return map;
 }
 
 async function loadScopedEmployees(companyId: string): Promise<ProviderEmployeeRow[]> {
@@ -314,9 +342,14 @@ export async function loadProviderCustomerDetail(
     monthlyRevenueNok,
   };
 
-  const agreements: ProviderAgreementRow[] = (Array.isArray(agreementsP.data) ? agreementsP.data : []).map(
-    (a: Record<string, unknown>) => ({
-      id: safeStr(a.id),
+  const agreementRows = Array.isArray(agreementsP.data) ? agreementsP.data : [];
+  const agreementIds = agreementRows.map((a) => safeStr((a as { id?: string }).id)).filter(Boolean);
+  const dayMenusByAgreement = await loadAgreementDayMenusByAgreementIds(agreementIds);
+
+  const agreements: ProviderAgreementRow[] = agreementRows.map((a: Record<string, unknown>) => {
+    const id = safeStr(a.id);
+    return {
+      id,
       status: safeStr(a.status) || "UNKNOWN",
       createdAt: a.created_at != null ? String(a.created_at) : null,
       startsAt: a.starts_at != null ? String(a.starts_at) : null,
@@ -324,10 +357,11 @@ export async function loadProviderCustomerDetail(
       deliveryDays: Array.isArray(a.delivery_days)
         ? a.delivery_days.map((d) => safeStr(d).toLowerCase()).filter(Boolean)
         : [],
+      dayMenus: dayMenusByAgreement.get(id) ?? [],
       locationId: a.location_id != null ? safeStr(a.location_id) : null,
       tier: a.tier != null ? safeStr(a.tier) : null,
-    }),
-  );
+    };
+  });
 
   const locations: ProviderCompanyLocationRow[] = (Array.isArray(locationsP.data) ? locationsP.data : []).map(
     (l: Record<string, unknown>) => ({

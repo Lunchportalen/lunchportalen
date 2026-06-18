@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
-import type { DayKey } from "@/lib/agreements/normalize";
+import type { DayKey, Tier } from "@/lib/agreements/normalize";
 import type { ProviderAgreementReadModel } from "@/lib/providers/providerCustomerAgreementTypes";
 
 type ApiErr = {
@@ -21,11 +21,40 @@ const WEEKDAYS: Array<{ key: DayKey; label: string }> = [
   { key: "fri", label: "Fredag" },
 ];
 
-const PLANS = [
+const PLANS: Array<{ value: Tier; label: string }> = [
   { value: "BASIS", label: "Basis" },
   { value: "LUXUS", label: "Luxus" },
   { value: "ENTERPRISE", label: "Enterprise" },
-] as const;
+];
+
+type DayEditorState = Record<DayKey, { enabled: boolean; plan: Tier }>;
+
+function defaultDayState(plan: Tier = "BASIS"): DayEditorState {
+  return {
+    mon: { enabled: true, plan },
+    tue: { enabled: true, plan },
+    wed: { enabled: true, plan },
+    thu: { enabled: true, plan },
+    fri: { enabled: true, plan },
+  };
+}
+
+function dayStateFromAgreement(data: ProviderAgreementReadModel): DayEditorState {
+  const fallback = data.defaultPlan ?? "BASIS";
+  const state = defaultDayState(fallback);
+  const active = new Set(data.deliveryDays);
+  for (const key of WEEKDAYS.map((d) => d.key)) {
+    state[key].enabled = active.has(key);
+  }
+  for (const menu of data.dayMenus) {
+    const key = menu.day;
+    if (key in state) {
+      state[key].plan = menu.plan;
+      state[key].enabled = active.has(key);
+    }
+  }
+  return state;
+}
 
 async function readJsonSafe(res: Response) {
   const t = await res.text();
@@ -56,7 +85,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
   companyId: string;
   companyName: string;
   onClose: () => void;
-  onDone: () => void;
+  onDone: (message?: string) => void;
 }) {
   const { open, companyId, companyName, onClose, onDone } = props;
   const apiUrl = `/api/provider/customers/${encodeURIComponent(companyId)}/agreement`;
@@ -64,10 +93,10 @@ export default function ProviderCustomerAgreementEditDialog(props: {
   const [loading, setLoading] = useState(false);
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [fieldErr, setFieldErr] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<ProviderAgreementReadModel | null>(null);
 
-  const [plan, setPlan] = useState("BASIS");
-  const [deliveryDays, setDeliveryDays] = useState<DayKey[]>(["mon", "tue", "wed", "thu", "fri"]);
+  const [dayState, setDayState] = useState<DayEditorState>(defaultDayState());
   const [locationName, setLocationName] = useState("");
   const [locationAddress, setLocationAddress] = useState("");
   const [contactName, setContactName] = useState("");
@@ -82,6 +111,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
   useEffect(() => {
     if (!open) return;
     setErr(null);
+    setFieldErr(null);
     setLoaded(null);
     setLoading(true);
 
@@ -91,7 +121,12 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         credentials: "same-origin",
         headers: { Accept: "application/json" },
       });
-      const body = (await readJsonSafe(res)) as { ok?: boolean; data?: ProviderAgreementReadModel; rid?: string; message?: string } | null;
+      const body = (await readJsonSafe(res)) as {
+        ok?: boolean;
+        data?: ProviderAgreementReadModel;
+        rid?: string;
+        message?: string;
+      } | null;
       setLoading(false);
       if (!res.ok || body?.ok !== true || !body.data) {
         setErr(parseApiMessage(body as ApiErr, "Kunne ikke laste avtale."));
@@ -99,8 +134,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
       }
       const data = body.data;
       setLoaded(data);
-      setPlan(data.plan ?? "BASIS");
-      setDeliveryDays(data.deliveryDays.length > 0 ? data.deliveryDays : ["mon", "tue", "wed", "thu", "fri"]);
+      setDayState(dayStateFromAgreement(data));
       setLocationName(data.location.name ?? "");
       setLocationAddress(data.location.address ?? "");
       setContactName(data.contact.name ?? "");
@@ -114,27 +148,58 @@ export default function ProviderCustomerAgreementEditDialog(props: {
     })();
   }, [open, companyId, apiUrl]);
 
-  const canSubmit = useMemo(() => {
-    return Boolean(loaded) && deliveryDays.length > 0 && !loading && !pending;
-  }, [loaded, deliveryDays.length, loading, pending]);
+  const activeDays = useMemo(
+    () => WEEKDAYS.map((d) => d.key).filter((key) => dayState[key].enabled),
+    [dayState],
+  );
 
-  function toggleDay(key: DayKey) {
-    setDeliveryDays((prev) => {
-      if (prev.includes(key)) {
-        const next = prev.filter((d) => d !== key);
-        return next.length > 0 ? next : prev;
-      }
-      return [...prev, key].sort((a, b) => WEEKDAYS.findIndex((w) => w.key === a) - WEEKDAYS.findIndex((w) => w.key === b));
+  const canSubmit = useMemo(() => {
+    return Boolean(loaded) && activeDays.length > 0 && !loading && !pending;
+  }, [loaded, activeDays.length, loading, pending]);
+
+  function setDayEnabled(key: DayKey, enabled: boolean) {
+    setDayState((prev) => {
+      const next = { ...prev };
+      const enabledCount = WEEKDAYS.filter((d) => (d.key === key ? enabled : next[d.key].enabled)).length;
+      if (!enabled && enabledCount === 0) return prev;
+      next[key] = { ...next[key], enabled };
+      return next;
     });
+    setFieldErr(null);
+  }
+
+  function setDayPlan(key: DayKey, plan: Tier) {
+    setDayState((prev) => ({ ...prev, [key]: { ...prev[key], plan } }));
+    setFieldErr(null);
+  }
+
+  function validateLocal(): string | null {
+    if (activeDays.length === 0) return "Velg minst én leveringsdag.";
+    for (const key of activeDays) {
+      if (!dayState[key].plan) return `Velg meny for ${WEEKDAYS.find((d) => d.key === key)?.label ?? key}.`;
+    }
+    if (contactEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail.trim())) {
+      return "Ugyldig e-postadresse.";
+    }
+    return null;
   }
 
   function submit() {
     if (!loaded) return;
+    const localErr = validateLocal();
+    if (localErr) {
+      setFieldErr(localErr);
+      return;
+    }
     setErr(null);
+    setFieldErr(null);
+
     startTransition(async () => {
+      const deliveryDays = activeDays;
+      const dayMenus = activeDays.map((day) => ({ day, plan: dayState[day].plan }));
       const payload: Record<string, unknown> = {
-        plan,
         deliveryDays,
+        dayMenus,
         location: {
           name: locationName.trim(),
           address: locationAddress.trim(),
@@ -159,12 +224,22 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload),
       });
-      const body = (await readJsonSafe(res)) as { ok?: boolean; message?: string; rid?: string } | null;
+      const body = (await readJsonSafe(res)) as {
+        ok?: boolean;
+        message?: string;
+        rid?: string;
+        data?: { agreement?: ProviderAgreementReadModel; message?: string; warnings?: string[] };
+      } | null;
       if (!res.ok || body?.ok !== true) {
         setErr(parseApiMessage(body as ApiErr, "Kunne ikke lagre avtale."));
         return;
       }
-      onDone();
+      const warnings = body?.data?.warnings ?? body?.data?.agreement?.warnings ?? [];
+      const message =
+        warnings.length > 0
+          ? `Avtalen er oppdatert. ${warnings.join(" ")}`
+          : body?.data?.message ?? "Avtalen er oppdatert.";
+      onDone(message);
       onClose();
     });
   }
@@ -181,7 +256,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         disabled={pending || loading}
       />
       <div
-        className="relative max-h-[90vh] w-[min(92vw,640px)] overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl"
+        className="relative max-h-[90vh] w-[min(92vw,680px)] overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="provider-agreement-edit-title"
@@ -198,39 +273,41 @@ export default function ProviderCustomerAgreementEditDialog(props: {
 
         {!loading && loaded ? (
           <div className="mt-5 space-y-6">
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-semibold text-neutral-800">Meny / avtalenivå</legend>
-              <div className="flex flex-wrap gap-2">
-                {PLANS.map((p) => (
-                  <label key={p.value} className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
-                    <input
-                      type="radio"
-                      name="plan"
-                      value={p.value}
-                      checked={plan === p.value}
-                      onChange={() => setPlan(p.value)}
-                      disabled={pending}
-                    />
-                    {p.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-semibold text-neutral-800">Leveringsdager</legend>
-              <div className="flex flex-wrap gap-2">
-                {WEEKDAYS.map((d) => (
-                  <label key={d.key} className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={deliveryDays.includes(d.key)}
-                      onChange={() => toggleDay(d.key)}
-                      disabled={pending}
-                    />
-                    {d.label}
-                  </label>
-                ))}
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-semibold text-neutral-800">Meny per leveringsdag</legend>
+              <p className="text-xs text-neutral-500">Velg hvilken meny kunden skal ha per leveringsdag.</p>
+              <div className="space-y-2">
+                {WEEKDAYS.map((d) => {
+                  const row = dayState[d.key];
+                  return (
+                    <div key={d.key} className="ds-provider-day-menu-row grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border px-3 py-2">
+                      <label className="inline-flex items-center gap-2 text-sm font-medium text-neutral-800">
+                        <input
+                          type="checkbox"
+                          checked={row.enabled}
+                          onChange={(e) => setDayEnabled(d.key, e.target.checked)}
+                          disabled={pending}
+                        />
+                        {d.label}
+                      </label>
+                      <div className={`flex flex-wrap gap-1 ${row.enabled ? "" : "opacity-40 pointer-events-none"}`}>
+                        {PLANS.map((p) => (
+                          <label key={p.value} className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs">
+                            <input
+                              type="radio"
+                              name={`plan-${d.key}`}
+                              value={p.value}
+                              checked={row.plan === p.value}
+                              onChange={() => setDayPlan(d.key, p.value)}
+                              disabled={pending || !row.enabled}
+                            />
+                            {p.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               <p className="text-xs text-neutral-500">Lunsjlevering mandag–fredag. Helg støttes ikke.</p>
             </fieldset>
@@ -367,6 +444,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
           </div>
         ) : null}
 
+        {fieldErr ? <p className="mt-4 text-sm font-semibold text-red-700">{fieldErr}</p> : null}
         {err ? <p className="mt-4 text-sm font-semibold text-red-700">{err}</p> : null}
 
         <div className="mt-6 flex justify-end gap-2">
