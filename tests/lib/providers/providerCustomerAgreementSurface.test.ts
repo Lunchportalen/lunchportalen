@@ -7,6 +7,7 @@ import {
   agreementStatusTone,
   agreementTierLabel,
   agreementPackageLabel,
+  agreementLocationLabel,
   buildAgreementDisplay,
   formatAgreementDate,
   hasMultipleActiveAgreements,
@@ -158,9 +159,44 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
     expect(d.packageLabel).toBe("Ikke spesifisert i avtalevisningen ennå");
   });
 
-  it("ukjent location_id gir «Ikke spesifisert», aldri feil lokasjon", () => {
+  it("ukjent location_id gir «Leveringsadresse ikke satt», aldri feil lokasjon", () => {
     const d = buildAgreementDisplay({ ...melhusRow, locationId: "loc-unknown" }, locations);
     expect(d.locationLabel).toBe("Leveringsadresse ikke satt");
+  });
+
+  it("viser leveringsadresse når location_id matcher company_locations", () => {
+    const d = buildAgreementDisplay(melhusRow, locations);
+    expect(d.locationLabel).toBe("Hovedkontor\nMelhusvegen 1");
+  });
+});
+
+describe("agreementLocationLabel — leveringsadresse-sannhet", () => {
+  const locations = [
+    { id: "loc-1", name: "Hovedlokasjon", address: "Sluppenvegen 25, 7037 Trondheim" },
+  ];
+
+  it("viser navn + adresse når begge finnes", () => {
+    expect(agreementLocationLabel("loc-1", locations)).toBe(
+      "Hovedlokasjon\nSluppenvegen 25, 7037 Trondheim",
+    );
+  });
+
+  it("viser bare adresse når navn mangler", () => {
+    expect(agreementLocationLabel("loc-2", [{ id: "loc-2", name: "", address: "Gate 1" }])).toBe("Gate 1");
+  });
+
+  it("viser bare navn når adresse mangler", () => {
+    expect(agreementLocationLabel("loc-3", [{ id: "loc-3", name: "Hovedlokasjon", address: null }])).toBe(
+      "Hovedlokasjon",
+    );
+  });
+
+  it("fallback til eneste lokasjon når agreement.location_id mangler", () => {
+    expect(agreementLocationLabel(null, locations)).toBe("Hovedlokasjon\nSluppenvegen 25, 7037 Trondheim");
+  });
+
+  it("viser Leveringsadresse ikke satt når ingen data finnes", () => {
+    expect(agreementLocationLabel(null, [])).toBe("Leveringsadresse ikke satt");
   });
 });
 

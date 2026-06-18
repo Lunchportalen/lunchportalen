@@ -170,6 +170,25 @@ async function loadAgreementDayMenusByAgreementIds(
   return map;
 }
 
+async function loadScopedCompanyLocations(companyId: string): Promise<ProviderCompanyLocationRow[]> {
+  try {
+    const admin = supabaseAdmin();
+    const { data, error } = await admin
+      .from("company_locations")
+      .select("id, name, address")
+      .eq("company_id", companyId)
+      .limit(50);
+    if (error || !Array.isArray(data)) return [];
+    return data.map((l: Record<string, unknown>) => ({
+      id: safeStr(l.id),
+      name: safeStr(l.name),
+      address: l.address != null ? safeStr(l.address) : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function loadScopedEmployees(companyId: string): Promise<ProviderEmployeeRow[]> {
   try {
     const admin = supabaseAdmin();
@@ -299,7 +318,7 @@ export async function loadProviderCustomerDetail(
   const weekStart = startOfWeekISO(today);
   const weekEnd = addDaysISO(weekStart, 7);
 
-  const [employees, agreementsP, locationsP, ordersAllP, ordersOpenP, ordersMonthP, activity, customerCounts] =
+  const [employees, agreementsP, locations, ordersAllP, ordersOpenP, ordersMonthP, activity, customerCounts] =
     await Promise.all([
     loadScopedEmployees(cid),
     sb
@@ -309,7 +328,7 @@ export async function loadProviderCustomerDetail(
       .eq("provider_id", pid)
       .order("created_at", { ascending: false })
       .limit(10),
-    sb.from("company_locations").select("id, name, address").eq("company_id", cid).limit(50),
+    loadScopedCompanyLocations(cid),
     sb
       .from("orders")
       .select("id, date, status, gross_cents_inc_vat, user_id, location_id, slot")
@@ -408,14 +427,6 @@ export async function loadProviderCustomerDetail(
       tier: a.tier != null ? safeStr(a.tier) : null,
     };
   });
-
-  const locations: ProviderCompanyLocationRow[] = (Array.isArray(locationsP.data) ? locationsP.data : []).map(
-    (l: Record<string, unknown>) => ({
-      id: safeStr(l.id),
-      name: safeStr(l.name),
-      address: l.address != null ? safeStr(l.address) : null,
-    }),
-  );
 
   const orders: ProviderOrderRow[] = orderRows.map((raw) => {
     const r = raw as Record<string, unknown>;

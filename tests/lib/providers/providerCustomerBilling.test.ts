@@ -13,6 +13,8 @@ import {
 } from "@/lib/providers/providerCustomerBilling";
 import {
   buildBillingBasisDisplay,
+  buildBillingBasisBadges,
+  buildBillingBasisStatusLabel,
   buildCustomerIdentityDisplay,
 } from "@/lib/providers/providerCustomerDetailSurface";
 import { PROVIDER_AGREEMENT_COPY } from "@/lib/providers/providerCustomerAgreementSurface";
@@ -93,6 +95,29 @@ describe("providerCustomerDetailSurface", () => {
     );
     expect(display.confidence).toBe("incomplete");
     expect(display.revenueIncVatLabel).toBe("Fakturagrunnlag ikke komplett");
+    expect(display.statusLabel).toBe("Mangler ordregrunnlag");
+    expect(display.periodLabel).toBe("Siste 30 dager");
+  });
+
+  it("viser klar status og complete-note når mva-splitt finnes", () => {
+    const basis = computeBillingBasis({
+      ordersThisMonth: 2,
+      revenueExVatNok: 200,
+      vatNok: 50,
+      revenueIncVatNok: 250,
+    });
+    const invoice = buildProviderInvoiceSettings({ billingEmail: "faktura@test.no" });
+    const display = buildBillingBasisDisplay(basis, invoice);
+    expect(display.statusLabel).toBe("Klar til fakturagrunnlag");
+    expect(display.note).toBe("Provisjon beregnes av omsetning eks. mva.");
+    expect(buildBillingBasisBadges(basis).ordersBadge).toBe("2 ordre denne måneden");
+  });
+
+  it("viser gross-only forklaring kun når confidence er gross_only", () => {
+    const basis = computeBillingBasis({ ordersThisMonth: 1, revenueIncVatNok: 103.5 });
+    const display = buildBillingBasisDisplay(basis, buildProviderInvoiceSettings({}));
+    expect(display.note).toContain("inkl. mva");
+    expect(buildBillingBasisStatusLabel(basis, buildProviderInvoiceSettings({}))).toBe("Mangler fakturamottaker");
   });
 });
 
