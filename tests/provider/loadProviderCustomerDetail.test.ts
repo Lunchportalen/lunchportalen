@@ -133,7 +133,15 @@ describe("loadProviderCustomerDetail", () => {
           provider_id: MELHUS_PROVIDER_ID,
         },
         provider: { id: MELHUS_PROVIDER_ID, name: "Melhus Catering AS", org_number: "999999999" },
-        agreements: [{ id: "agr-1", status: "ACTIVE", created_at: "2026-05-01", delivery_days: ["mon"] }],
+        agreements: [
+          {
+            id: "agr-1",
+            status: "ACTIVE",
+            created_at: "2026-05-01",
+            delivery_days: ["mon"],
+            location_id: "loc-1",
+          },
+        ],
         orders: [
           {
             id: "order-1",
@@ -212,6 +220,17 @@ describe("loadProviderCustomerDetail", () => {
                 ],
                 error: null,
               });
+            } else if (table === "company_locations") {
+              resolve({
+                data: [
+                  {
+                    id: "loc-1",
+                    name: "Hovedlokasjon",
+                    address: "Sluppenvegen 25, 7037 Trondheim",
+                  },
+                ],
+                error: null,
+              });
             } else resolve({ data: [], error: null });
           },
         };
@@ -233,6 +252,10 @@ describe("loadProviderCustomerDetail", () => {
     expect(detail.orders[0]?.lines[0]?.productName).toBe("Paasmurt");
     expect(detail.activity[0]?.title).toBe("Kunderegistrering mottatt");
     expect(detail.agreements).toHaveLength(1);
+    expect(detail.locations).toHaveLength(1);
+    expect(detail.locations[0]?.name).toBe("Hovedlokasjon");
+    expect(detail.primaryLocationName).toBe("Hovedlokasjon");
+    expect(detail.primaryLocationAddress).toBe("Sluppenvegen 25, 7037 Trondheim");
   });
 
   it("bruker ikke line_total eller lifecycle_audit_log", () => {
@@ -245,6 +268,8 @@ describe("loadProviderCustomerDetail", () => {
     expect(loader).toContain("audit_events");
     expect(loader).not.toContain("lp_order_set");
     expect(loader).not.toContain("lp_order_advance_status");
+    expect(loader).toContain("loadScopedCompanyLocations");
+    expect(client).toContain("ProviderDetailAccordionSection");
     expect(client).not.toContain("Oversikt over ansatte er ikke tilgjengelig ennå");
     expect(client).not.toContain("Ingen ordrer.");
   });

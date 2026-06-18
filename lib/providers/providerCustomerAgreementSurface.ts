@@ -176,15 +176,37 @@ export type ProviderAgreementDisplay = {
 
 export type AgreementLocationLookup = ReadonlyArray<{ id: string; name: string; address: string | null }>;
 
-function locationLabelFor(locationId: string | null | undefined, locations: AgreementLocationLookup): string {
+/**
+ * Leveringsadresse for avtalekort — samme sannhet som edit-dialog når locations er lastet.
+ * Trygg fallback: én company_location når agreement.location_id mangler.
+ */
+export function agreementLocationLabel(
+  locationId: string | null | undefined,
+  locations: AgreementLocationLookup,
+): string {
   const id = String(locationId ?? "").trim();
-  if (!id) return PROVIDER_AGREEMENT_COPY.locationMissing;
-  const match = (Array.isArray(locations) ? locations : []).find((l) => l.id === id);
-  if (!match) return PROVIDER_AGREEMENT_COPY.locationMissing;
-  return formatDeliveryAddress({
-    locationName: match.name,
-    locationAddress: match.address,
-  });
+  const list = Array.isArray(locations) ? locations : [];
+
+  if (id) {
+    const match = list.find((l) => l.id === id);
+    if (match) {
+      return formatDeliveryAddress({
+        locationName: match.name,
+        locationAddress: match.address,
+      });
+    }
+  }
+
+  if (!id && list.length === 1) {
+    const only = list[0];
+    const label = formatDeliveryAddress({
+      locationName: only.name,
+      locationAddress: only.address,
+    });
+    if (label !== PROVIDER_AGREEMENT_COPY.locationMissing) return label;
+  }
+
+  return PROVIDER_AGREEMENT_COPY.locationMissing;
 }
 
 function dayMenusDisplay(
@@ -246,7 +268,7 @@ export function buildAgreementDisplay(
     deliveryDaysWarning: days.warning,
     dayMenusLabel: menu.label,
     dayMenusLines: menu.lines,
-    locationLabel: locationLabelFor(row.locationId, locations),
+    locationLabel: agreementLocationLabel(row.locationId, locations),
     packageLabel: agreementPackageLabel(row.dayMenus, row.tier),
   };
 }

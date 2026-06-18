@@ -1431,3 +1431,203 @@
   margin: 4px 0 4px;
   border-radius: 999px;
 }
+
+/* Provider customer detail workspace (/leverandor/kunder/[id]) */
+.ds-provider-customer-command {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ds-line);
+}
+
+.ds-provider-customer-command__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.ds-provider-customer-command__title-row .ds-h2 {
+  margin: 0;
+}
+
+.ds-provider-customer-command__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+
+.ds-provider-customer-command__meta dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-customer-command__meta dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.ds-provider-customer-command__kpis {
+  margin: 0;
+}
+
+.ds-provider-customer-command__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ds-provider-customer-command__actions .ds-btn {
+  min-height: 48px;
+}
+
+.ds-provider-accordion {
+  margin-top: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--ds-line);
+  background: var(--ds-surface, #fff);
+  overflow: hidden;
+}
+
+.ds-provider-accordion__heading {
+  margin: 0;
+}
+
+.ds-provider-accordion__trigger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 18px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ds-provider-accordion__trigger:focus-visible {
+  outline: 3px solid rgb(230, 184, 0);
+  outline-offset: -3px;
+}
+
+.ds-provider-accordion__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--ds-text);
+}
+
+.ds-provider-accordion__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.ds-provider-accordion__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--ds-bg-soft, rgba(17, 17, 17, 0.06));
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-accordion__chevron {
+  margin-left: auto;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-accordion__panel {
+  padding: 0 18px 18px;
+}
+
+.ds-provider-accordion__panel:not(.is-open) {
+  display: none;
+}
+
+.ds-provider-billing-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.ds-provider-billing-panel__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(16, 120, 72, 0.06);
+  border: 1px solid rgba(16, 120, 72, 0.15);
+}
+
+.ds-provider-billing-panel__status-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-billing-panel__status-value {
+  font-weight: 800;
+  color: #107848;
+}
+
+.ds-provider-billing-panel__grid {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .ds-provider-billing-panel__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 20px;
+  }
+}
+
+.ds-provider-billing-panel__row {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(17, 17, 17, 0.02);
+}
+
+.ds-provider-billing-panel__row--emphasis .ds-provider-billing-panel__value {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.ds-provider-billing-panel__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-text-soft);
+}
+
+.ds-provider-billing-panel__value {
+  font-weight: 700;
+  color: var(--ds-text);
+}
+
+.ds-provider-billing-panel__note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ds-text-soft);
+}

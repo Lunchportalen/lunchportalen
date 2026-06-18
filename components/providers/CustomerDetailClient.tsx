@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import {
   deleteCustomer,
@@ -15,17 +15,20 @@ import type { ProviderCustomerDetail } from "@/lib/providers/loadProviderCustome
 import { providerCustomerStatusLabel } from "@/lib/providers/customerTypes";
 import {
   PROVIDER_AGREEMENT_COPY,
+  agreementPackageLabel,
   buildAgreementDisplay,
   hasMultipleActiveAgreements,
   sortAgreementsForDisplay,
 } from "@/lib/providers/providerCustomerAgreementSurface";
 import {
   PROVIDER_CUSTOMER_DETAIL_COPY,
+  buildBillingBasisBadges,
   buildBillingBasisDisplay,
   buildCustomerIdentityDisplay,
 } from "@/lib/providers/providerCustomerDetailSurface";
 import { PROVIDER_CUSTOMER_ACTIVITY_EMPTY } from "@/lib/providers/providerCustomerDetailActivity";
 import ProviderCustomerAgreementEditDialog from "@/components/providers/ProviderCustomerAgreementEditDialog";
+import ProviderDetailAccordionSection from "@/components/providers/ProviderDetailAccordionSection";
 
 type DialogState = {
   open: boolean;
@@ -38,6 +41,14 @@ function statusBadgeClass(status: ProviderCustomerDetail["company"]["status"]) {
   if (status === "SUSPENDED") return "ds-provider-status-badge ds-provider-status-badge--suspended";
   return "ds-provider-status-badge ds-provider-status-badge--deleted";
 }
+
+function formatNokCompact(amount: number) {
+  return new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 0 }).format(
+    amount,
+  );
+}
+
+const EMPLOYEE_PREVIEW_LIMIT = 10;
 
 export default function CustomerDetailClient({
   detail,
@@ -60,6 +71,13 @@ export default function CustomerDetailClient({
   const isPaused = displayStatus === "PAUSED" || Boolean(company.pausedAt);
   const isDeleted = displayStatus === "DELETED" || Boolean(company.deletedAt);
 
+  const activeAgreement =
+    detail.agreements.find((a) => String(a.status).toUpperCase() === "ACTIVE") ?? detail.agreements[0] ?? null;
+
+  const agreementLevel = activeAgreement
+    ? agreementPackageLabel(activeAgreement.dayMenus, activeAgreement.tier)
+    : PROVIDER_AGREEMENT_COPY.packageMissing;
+
   const identity = buildCustomerIdentityDisplay({
     companyName: company.name,
     orgnr: company.orgnr,
@@ -73,6 +91,17 @@ export default function CustomerDetailClient({
     activeAgreementStatus: detail.activeAgreementStatus,
   });
   const billingDisplay = buildBillingBasisDisplay(detail.billingBasis, detail.invoice);
+  const billingBadges = buildBillingBasisBadges(detail.billingBasis);
+
+  const employeePreview = useMemo(
+    () => detail.employees.slice(0, EMPLOYEE_PREVIEW_LIMIT),
+    [detail.employees],
+  );
+
+  const historicalOrdersBadge =
+    detail.stats.historicalOrdersCount === 1
+      ? "1 historisk"
+      : `${detail.stats.historicalOrdersCount} historiske`;
 
   async function runAction(
     variant: SuspendDialogVariant,
@@ -111,11 +140,101 @@ export default function CustomerDetailClient({
 
   return (
     <>
-      <header className="ds-provider-topbar">
-        <div>
+      <header className="ds-provider-customer-command">
+        <div className="ds-provider-customer-command__intro">
           <p className="ds-eyebrow">Kunde</p>
-          <h1 className="ds-h2">{company.name}</h1>
-          <span className={statusBadgeClass(displayStatus)}>{providerCustomerStatusLabel(displayStatus)}</span>
+          <div className="ds-provider-customer-command__title-row">
+            <h1 className="ds-h2">{company.name}</h1>
+            <span className={statusBadgeClass(displayStatus)}>{providerCustomerStatusLabel(displayStatus)}</span>
+          </div>
+          <dl className="ds-provider-customer-command__meta">
+            <div>
+              <dt>Org.nr</dt>
+              <dd>{identity.orgnrLabel}</dd>
+            </div>
+            <div>
+              <dt>Fakturametode</dt>
+              <dd>{billingDisplay.methodLabel}</dd>
+            </div>
+            <div>
+              <dt>Avtalenivå</dt>
+              <dd>{agreementLevel}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="ds-admin-kpi-row ds-provider-customer-command__kpis">
+          <div className="ds-admin-kpi">
+            <div className="ds-admin-kpi__label">Ansatte</div>
+            <div className="ds-admin-kpi__value">{detail.stats.employeesCount}</div>
+          </div>
+          <div className="ds-admin-kpi">
+            <div className="ds-admin-kpi__label">Aktive ordre</div>
+            <div className="ds-admin-kpi__value">{detail.stats.activeOrdersCount}</div>
+          </div>
+          <div className="ds-admin-kpi">
+            <div className="ds-admin-kpi__label">Ordrehistorikk</div>
+            <div className="ds-admin-kpi__value">{detail.stats.historicalOrdersCount}</div>
+          </div>
+          <div className="ds-admin-kpi">
+            <div className="ds-admin-kpi__label">Omsetning 30 dager</div>
+            <div className="ds-admin-kpi__value">{formatNokCompact(detail.stats.monthlyRevenueNok)}</div>
+          </div>
+          <div className="ds-admin-kpi">
+            <div className="ds-admin-kpi__label">Provisjon 5 %</div>
+            <div className="ds-admin-kpi__value">{billingDisplay.commissionAmountLabel}</div>
+          </div>
+        </div>
+
+        <div className="ds-provider-customer-command__actions">
+          {canManage && activeAgreement ? (
+            <button
+              type="button"
+              className="ds-btn ds-btn--primary"
+              onClick={() => {
+                setSuccess(null);
+                setAgreementEditOpen(true);
+              }}
+            >
+              Endre avtale
+            </button>
+          ) : null}
+          {canManage ? (
+            <>
+              <button
+                type="button"
+                className="ds-btn ds-btn--ghost"
+                disabled={pending || isDeleted}
+                onClick={() => setDialog({ open: true, variant: "pause" })}
+              >
+                Pause
+              </button>
+              <button
+                type="button"
+                className="ds-btn ds-btn--ghost"
+                disabled={pending || isDeleted}
+                onClick={() => setDialog({ open: true, variant: "suspend" })}
+              >
+                Suspender
+              </button>
+              <button
+                type="button"
+                className="ds-btn ds-btn--ghost"
+                disabled={pending || isDeleted}
+                onClick={() => setDialog({ open: true, variant: "delete" })}
+              >
+                Fjern kunde
+              </button>
+              <button
+                type="button"
+                className="ds-btn ds-btn--secondary"
+                disabled={pending || (!isSuspended && !isPaused && !isDeleted)}
+                onClick={() => setDialog({ open: true, variant: "resume" })}
+              >
+                Gjenopprett
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
 
@@ -129,64 +248,6 @@ export default function CustomerDetailClient({
         </section>
       ) : null}
 
-      <div className="ds-admin-kpi-row ds-section">
-        <div className="ds-admin-kpi">
-          <div className="ds-admin-kpi__label">Ansatte</div>
-          <div className="ds-admin-kpi__value">{detail.stats.employeesCount}</div>
-        </div>
-        <div className="ds-admin-kpi">
-          <div className="ds-admin-kpi__label">Aktive ordre</div>
-          <div className="ds-admin-kpi__value">{detail.stats.activeOrdersCount}</div>
-        </div>
-        <div className="ds-admin-kpi">
-          <div className="ds-admin-kpi__label">Ordrehistorikk</div>
-          <div className="ds-admin-kpi__value">{detail.stats.historicalOrdersCount}</div>
-        </div>
-        <div className="ds-admin-kpi">
-          <div className="ds-admin-kpi__label">Omsetning 30 dager (inkl. mva)</div>
-          <div className="ds-admin-kpi__value">
-            {new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 0 }).format(
-              detail.stats.monthlyRevenueNok,
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="ds-provider-action-bar">
-        <button
-          type="button"
-          className="ds-btn ds-btn--ghost"
-          disabled={!canManage || pending || isDeleted}
-          onClick={() => setDialog({ open: true, variant: "pause" })}
-        >
-          Pause
-        </button>
-        <button
-          type="button"
-          className="ds-btn ds-btn--ghost"
-          disabled={!canManage || pending || isDeleted}
-          onClick={() => setDialog({ open: true, variant: "suspend" })}
-        >
-          Suspender
-        </button>
-        <button
-          type="button"
-          className="ds-btn ds-btn--ghost"
-          disabled={!canManage || pending || isDeleted}
-          onClick={() => setDialog({ open: true, variant: "delete" })}
-        >
-          Slett
-        </button>
-        <button
-          type="button"
-          className="ds-btn ds-btn--primary"
-          disabled={!canManage || pending || (!isSuspended && !isPaused && !isDeleted)}
-          onClick={() => setDialog({ open: true, variant: "resume" })}
-        >
-          Gjenopprett
-        </button>
-      </div>
-
       {!canManage ? (
         <p className="ds-body ds-section">Du har lesetilgang. Endringer krever administratortilgang.</p>
       ) : null}
@@ -194,7 +255,6 @@ export default function CustomerDetailClient({
       <section className="ds-section ds-provider-detail-section ds-provider-customer-identity">
         <h2 className="ds-h2">{PROVIDER_CUSTOMER_DETAIL_COPY.identityTitle}</h2>
         <article className="ds-card ds-provider-identity-card">
-          <p className="ds-h4">{identity.companyName}</p>
           <dl className="ds-provider-reg-detail ds-provider-identity-grid">
             <div>
               <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.orgnr}</dt>
@@ -231,18 +291,6 @@ export default function CustomerDetailClient({
       <section className="ds-section">
         <div className="ds-provider-section-head">
           <h2 className="ds-h2">{PROVIDER_AGREEMENT_COPY.sectionTitle}</h2>
-          {canManage && detail.agreements.some((a) => String(a.status).toUpperCase() === "ACTIVE") ? (
-            <button
-              type="button"
-              className="ds-btn ds-btn--secondary"
-              onClick={() => {
-                setSuccess(null);
-                setAgreementEditOpen(true);
-              }}
-            >
-              Endre avtale
-            </button>
-          ) : null}
         </div>
         {success ? (
           <p className="ds-provider-success" role="status">
@@ -321,56 +369,86 @@ export default function CustomerDetailClient({
         )}
       </section>
 
-      <section className="ds-section ds-provider-detail-section ds-provider-billing-basis">
-        <h2 className="ds-h2">{PROVIDER_CUSTOMER_DETAIL_COPY.billingBasisTitle}</h2>
-        <article className="ds-card ds-provider-billing-basis-card">
-          <dl className="ds-provider-billing-kpis ds-provider-billing-kpis--wide">
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.ordersThisMonth}</dt>
-              <dd>{billingDisplay.ordersLabel}</dd>
+      <ProviderDetailAccordionSection
+        title={PROVIDER_CUSTOMER_DETAIL_COPY.billingBasisTitle}
+        badges={[billingBadges.ordersBadge, billingBadges.commissionBadge]}
+        defaultOpen
+      >
+        <article className="ds-provider-billing-panel">
+          <div className="ds-provider-billing-panel__status">
+            <span className="ds-provider-billing-panel__status-label">
+              {PROVIDER_CUSTOMER_DETAIL_COPY.labels.billingStatus}
+            </span>
+            <span className="ds-provider-billing-panel__status-value">{billingDisplay.statusLabel}</span>
+          </div>
+          <div className="ds-provider-billing-panel__grid">
+            <div className="ds-provider-billing-panel__row">
+              <span className="ds-provider-billing-panel__label">{PROVIDER_CUSTOMER_DETAIL_COPY.labels.period}</span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.periodLabel}</span>
             </div>
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenueExVat}</dt>
-              <dd>{billingDisplay.revenueExVatLabel}</dd>
+            <div className="ds-provider-billing-panel__row">
+              <span className="ds-provider-billing-panel__label">
+                {PROVIDER_CUSTOMER_DETAIL_COPY.labels.ordersThisMonth}
+              </span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.ordersLabel} ordre</span>
             </div>
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.vat}</dt>
-              <dd>{billingDisplay.vatLabel}</dd>
+            <div className="ds-provider-billing-panel__row">
+              <span className="ds-provider-billing-panel__label">
+                {PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenueExVat}
+              </span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.revenueExVatLabel}</span>
             </div>
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenueIncVat}</dt>
-              <dd>{billingDisplay.revenueIncVatLabel}</dd>
+            <div className="ds-provider-billing-panel__row">
+              <span className="ds-provider-billing-panel__label">{PROVIDER_CUSTOMER_DETAIL_COPY.labels.vat}</span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.vatLabel}</span>
             </div>
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.commissionBase}</dt>
-              <dd>{billingDisplay.commissionBaseLabel}</dd>
+            <div className="ds-provider-billing-panel__row ds-provider-billing-panel__row--emphasis">
+              <span className="ds-provider-billing-panel__label">
+                {PROVIDER_CUSTOMER_DETAIL_COPY.labels.revenueIncVat}
+              </span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.revenueIncVatLabel}</span>
             </div>
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.commission}</dt>
-              <dd>
+            <div className="ds-provider-billing-panel__row">
+              <span className="ds-provider-billing-panel__label">
+                {PROVIDER_CUSTOMER_DETAIL_COPY.labels.commissionBase}
+              </span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.commissionBaseLabel}</span>
+            </div>
+            <div className="ds-provider-billing-panel__row ds-provider-billing-panel__row--emphasis">
+              <span className="ds-provider-billing-panel__label">
+                {PROVIDER_CUSTOMER_DETAIL_COPY.labels.commission}
+              </span>
+              <span className="ds-provider-billing-panel__value">
                 {billingDisplay.commissionAmountLabel} ({billingDisplay.commissionRateLabel})
-              </dd>
+              </span>
             </div>
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.invoiceMethod}</dt>
-              <dd>{billingDisplay.methodLabel}</dd>
+            <div className="ds-provider-billing-panel__row">
+              <span className="ds-provider-billing-panel__label">
+                {PROVIDER_CUSTOMER_DETAIL_COPY.labels.invoiceMethod}
+              </span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.methodLabel}</span>
             </div>
-            <div>
-              <dt>{PROVIDER_CUSTOMER_DETAIL_COPY.labels.invoiceRecipient}</dt>
-              <dd>{billingDisplay.recipientLabel}</dd>
+            <div className="ds-provider-billing-panel__row">
+              <span className="ds-provider-billing-panel__label">
+                {PROVIDER_CUSTOMER_DETAIL_COPY.labels.invoiceRecipient}
+              </span>
+              <span className="ds-provider-billing-panel__value">{billingDisplay.recipientLabel}</span>
             </div>
-          </dl>
+          </div>
           {billingDisplay.note ? (
-            <p className="ds-body ds-provider-billing-inactive">{billingDisplay.note}</p>
+            <p className="ds-provider-billing-panel__note">{billingDisplay.note}</p>
           ) : null}
           {billingDisplay.confidence === "incomplete" ? (
-            <p className="ds-body ds-provider-billing-inactive">{PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete}</p>
+            <p className="ds-provider-billing-panel__note">{PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete}</p>
           ) : null}
         </article>
-      </section>
+      </ProviderDetailAccordionSection>
 
-      <section className="ds-section ds-provider-detail-section">
-        <h2 className="ds-h2">Ansatte</h2>
+      <ProviderDetailAccordionSection
+        title="Ansatte"
+        badges={[String(detail.stats.employeesCount)]}
+        defaultOpen={detail.employees.length > 0 && detail.employees.length <= 3}
+      >
         {detail.employees.length === 0 ? (
           <p className="ds-body">Ingen ansatte registrert for denne kunden ennå.</p>
         ) : (
@@ -384,7 +462,7 @@ export default function CustomerDetailClient({
                 </tr>
               </thead>
               <tbody>
-                {detail.employees.map((employee) => (
+                {employeePreview.map((employee) => (
                   <tr key={employee.id}>
                     <td>{employee.name}</td>
                     <td>{employee.email ?? "—"}</td>
@@ -395,10 +473,9 @@ export default function CustomerDetailClient({
             </table>
           </div>
         )}
-      </section>
+      </ProviderDetailAccordionSection>
 
-      <section className="ds-section ds-provider-detail-section">
-        <h2 className="ds-h2">Ordrer</h2>
+      <ProviderDetailAccordionSection title="Ordrer" badges={[historicalOrdersBadge]}>
         {detail.orders.length === 0 ? (
           <p className="ds-body">Ingen ordre registrert for denne kunden ennå.</p>
         ) : (
@@ -428,10 +505,12 @@ export default function CustomerDetailClient({
             ))}
           </ul>
         )}
-      </section>
+      </ProviderDetailAccordionSection>
 
-      <section className="ds-section ds-provider-detail-section">
-        <h2 className="ds-h2">Aktivitet</h2>
+      <ProviderDetailAccordionSection
+        title="Aktivitet"
+        badges={detail.activity.length > 0 ? [String(detail.activity.length)] : undefined}
+      >
         {detail.activity.length === 0 ? (
           <div className="ds-provider-empty">
             <p className="ds-provider-empty__title">{PROVIDER_CUSTOMER_ACTIVITY_EMPTY.title}</p>
@@ -448,7 +527,7 @@ export default function CustomerDetailClient({
             ))}
           </div>
         )}
-      </section>
+      </ProviderDetailAccordionSection>
 
       <ProviderCustomerAgreementEditDialog
         open={agreementEditOpen}

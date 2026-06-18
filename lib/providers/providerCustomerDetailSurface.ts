@@ -14,13 +14,21 @@ import { agreementStatusLabel } from "@/lib/providers/providerCustomerAgreementS
 export const PROVIDER_CUSTOMER_DETAIL_COPY = {
   identityTitle: "Kundeinformasjon",
   billingBasisTitle: "Fakturagrunnlag",
+  billingPeriodLabel: "Siste 30 dager",
   orgnrMissing: "Org.nr ikke registrert",
   contactMissing: "—",
   agreementStatusMissing: "Ingen aktiv avtale",
   billingIncomplete: "Fakturagrunnlag ikke komplett",
   vatNotSpecified: "Ikke spesifisert",
   grossOnlyNote:
-    "Tallene vises inkl. mva fordi ordregrunnlaget ikke har separat mva-splitt ennå.",
+    "Tallene vises inkl. mva fordi ordregrunnlaget mangler separat mva-splitt.",
+  completeCommissionNote: "Provisjon beregnes av omsetning eks. mva.",
+  billingStatus: {
+    ready: "Klar til fakturagrunnlag",
+    missingVat: "Mangler mva-splitt",
+    missingRecipient: "Mangler fakturamottaker",
+    missingOrders: "Mangler ordregrunnlag",
+  },
   labels: {
     orgnr: "Org.nr",
     contact: "Kontakt",
@@ -28,14 +36,17 @@ export const PROVIDER_CUSTOMER_DETAIL_COPY = {
     phone: "Telefon",
     deliveryAddress: "Leveringsadresse",
     agreementStatus: "Avtalestatus",
-    ordersThisMonth: "Ordre denne måneden",
+    period: "Periode",
+    ordersThisMonth: "Ordregrunnlag",
     revenueExVat: "Omsetning eks. mva",
     vat: "Mva",
     revenueIncVat: "Omsetning inkl. mva",
     commissionBase: "Provisjonsgrunnlag",
-    commission: "Lunchportalen-provisjon",
+    commission: "Provisjon 5 %",
+    commissionRate: "Provisjonssats",
     invoiceMethod: "Fakturametode",
     invoiceRecipient: "Fakturamottaker",
+    billingStatus: "Status",
   },
 } as const;
 
@@ -82,6 +93,7 @@ export function buildCustomerIdentityDisplay(input: {
 }
 
 export type ProviderBillingBasisDisplay = {
+  periodLabel: string;
   ordersLabel: string;
   revenueExVatLabel: string;
   vatLabel: string;
@@ -91,9 +103,40 @@ export type ProviderBillingBasisDisplay = {
   commissionRateLabel: "5 %";
   methodLabel: string;
   recipientLabel: string;
+  statusLabel: string;
   confidence: ProviderBillingBasisConfidence;
   note: string | null;
 };
+
+export function buildBillingBasisStatusLabel(
+  basis: ProviderBillingBasis,
+  invoice: ProviderInvoiceSettings,
+): string {
+  if (basis.ordersThisMonth === 0 && basis.confidence === "incomplete") {
+    return PROVIDER_CUSTOMER_DETAIL_COPY.billingStatus.missingOrders;
+  }
+  if (basis.confidence === "incomplete") {
+    return PROVIDER_CUSTOMER_DETAIL_COPY.billingStatus.missingVat;
+  }
+  if (!invoice.method || invoice.recipientLabel === "Ikke valgt") {
+    return PROVIDER_CUSTOMER_DETAIL_COPY.billingStatus.missingRecipient;
+  }
+  return PROVIDER_CUSTOMER_DETAIL_COPY.billingStatus.ready;
+}
+
+export function buildBillingBasisBadges(
+  basis: ProviderBillingBasis,
+): { ordersBadge: string; commissionBadge: string } {
+  const ordersBadge =
+    basis.ordersThisMonth === 1
+      ? "1 ordre denne måneden"
+      : `${basis.ordersThisMonth} ordre denne måneden`;
+  const commissionBadge =
+    basis.confidence === "incomplete"
+      ? "Provisjon ikke klar"
+      : `${formatNok(basis.commissionNok)} provisjon`;
+  return { ordersBadge, commissionBadge };
+}
 
 export function buildBillingBasisDisplay(
   basis: ProviderBillingBasis,
@@ -102,6 +145,7 @@ export function buildBillingBasisDisplay(
   const incomplete = basis.confidence === "incomplete";
 
   return {
+    periodLabel: PROVIDER_CUSTOMER_DETAIL_COPY.billingPeriodLabel,
     ordersLabel: String(basis.ordersThisMonth),
     revenueExVatLabel:
       basis.confidence === "complete" && basis.revenueExVatNok != null
@@ -130,7 +174,13 @@ export function buildBillingBasisDisplay(
     commissionRateLabel: "5 %",
     methodLabel: invoice.methodLabel,
     recipientLabel: invoice.recipientLabel,
+    statusLabel: buildBillingBasisStatusLabel(basis, invoice),
     confidence: basis.confidence,
-    note: basis.confidence === "gross_only" ? PROVIDER_CUSTOMER_DETAIL_COPY.grossOnlyNote : null,
+    note:
+      basis.confidence === "gross_only"
+        ? PROVIDER_CUSTOMER_DETAIL_COPY.grossOnlyNote
+        : basis.confidence === "complete"
+          ? PROVIDER_CUSTOMER_DETAIL_COPY.completeCommissionNote
+          : null,
   };
 }
