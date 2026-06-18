@@ -109,6 +109,30 @@ export function agreementTierLabel(tier: unknown): string {
   return TIER_LABELS[t] ?? PROVIDER_AGREEMENT_COPY.packageMissing;
 }
 
+const KNOWN_TIERS = new Set(["BASIS", "LUXUS", "ENTERPRISE"]);
+
+/**
+ * Avtalenivå for kortvisning: utledes fra aktive dayMenus når de finnes.
+ * Flere ulike nivå → Mix. Ett nivå → Basis/Luxus/Enterprise. Uten dayMenus → agreements.tier.
+ */
+export function agreementPackageLabel(
+  dayMenus: ReadonlyArray<{ day: string; plan: string }> | null | undefined,
+  fallbackTier: unknown,
+): string {
+  const menus = Array.isArray(dayMenus) ? dayMenus : [];
+  const activePlans = menus
+    .map((m) => safeStr(m.plan).toUpperCase())
+    .filter((p) => KNOWN_TIERS.has(p));
+
+  if (activePlans.length > 0) {
+    const unique = new Set(activePlans);
+    if (unique.size > 1) return "Mix";
+    return agreementTierLabel(activePlans[0]);
+  }
+
+  return agreementTierLabel(fallbackTier);
+}
+
 /** Locale-formatert dato («10. mai 2026») — aldri rå ISO i UI. */
 export function formatAgreementDate(iso: unknown): string | null {
   const raw = String(iso ?? "").trim();
@@ -223,7 +247,7 @@ export function buildAgreementDisplay(
     dayMenusLabel: menu.label,
     dayMenusLines: menu.lines,
     locationLabel: locationLabelFor(row.locationId, locations),
-    packageLabel: agreementTierLabel(row.tier),
+    packageLabel: agreementPackageLabel(row.dayMenus, row.tier),
   };
 }
 

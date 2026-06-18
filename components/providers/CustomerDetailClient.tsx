@@ -305,7 +305,7 @@ export default function CustomerDetailClient({
                     {display.packageLabel !== PROVIDER_AGREEMENT_COPY.packageMissing ? (
                       <div>
                         <dt>{PROVIDER_AGREEMENT_COPY.labels.package}</dt>
-                        <dd>{display.packageLabel} (standard)</dd>
+                        <dd>{display.packageLabel}</dd>
                       </div>
                     ) : null}
                   </dl>

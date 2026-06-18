@@ -6,6 +6,7 @@ import {
   agreementStatusLabel,
   agreementStatusTone,
   agreementTierLabel,
+  agreementPackageLabel,
   buildAgreementDisplay,
   formatAgreementDate,
   hasMultipleActiveAgreements,
@@ -140,6 +141,7 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
     );
     expect(d.dayMenusLines).toEqual(["Mandag · Basis", "Tirsdag · Luxus"]);
     expect(d.dayMenusLabel).toContain("Mandag · Basis");
+    expect(d.packageLabel).toBe("Mix");
   });
 
   it("manglende data gir trygge fallbacks", () => {
@@ -159,6 +161,70 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
   it("ukjent location_id gir «Ikke spesifisert», aldri feil lokasjon", () => {
     const d = buildAgreementDisplay({ ...melhusRow, locationId: "loc-unknown" }, locations);
     expect(d.locationLabel).toBe("Leveringsadresse ikke satt");
+  });
+});
+
+describe("agreementPackageLabel — per-dag nivå i avtalekort", () => {
+  it("kun Basis viser Avtalenivå: Basis", () => {
+    expect(
+      agreementPackageLabel(
+        [
+          { day: "mon", plan: "BASIS" },
+          { day: "tue", plan: "BASIS" },
+        ],
+        "LUXUS",
+      ),
+    ).toBe("Basis");
+  });
+
+  it("kun Luxus viser Avtalenivå: Luxus", () => {
+    expect(agreementPackageLabel([{ day: "wed", plan: "LUXUS" }], "BASIS")).toBe("Luxus");
+  });
+
+  it("kun Enterprise viser Avtalenivå: Enterprise", () => {
+    expect(agreementPackageLabel([{ day: "fri", plan: "ENTERPRISE" }], "BASIS")).toBe("Enterprise");
+  });
+
+  it("flere nivå viser Mix", () => {
+    expect(
+      agreementPackageLabel(
+        [
+          { day: "mon", plan: "BASIS" },
+          { day: "tue", plan: "LUXUS" },
+          { day: "wed", plan: "LUXUS" },
+          { day: "thu", plan: "BASIS" },
+          { day: "fri", plan: "ENTERPRISE" },
+        ],
+        "BASIS",
+      ),
+    ).toBe("Mix");
+  });
+
+  it("Basis/Luxus/Enterprise-kombinasjon viser Mix, ikke global fallback", () => {
+    const d = buildAgreementDisplay(
+      {
+        id: "agr-mix",
+        status: "ACTIVE",
+        createdAt: "2026-05-10",
+        deliveryDays: ["mon", "tue", "wed", "thu", "fri"],
+        dayMenus: [
+          { day: "mon", plan: "BASIS" },
+          { day: "tue", plan: "LUXUS" },
+          { day: "wed", plan: "LUXUS" },
+          { day: "thu", plan: "BASIS" },
+          { day: "fri", plan: "ENTERPRISE" },
+        ],
+        tier: "BASIS",
+      },
+      [],
+    );
+    expect(d.packageLabel).toBe("Mix");
+    expect(JSON.stringify(d)).not.toContain("(standard)");
+  });
+
+  it("uten dayMenus bruker agreements.tier fallback", () => {
+    expect(agreementPackageLabel(null, "LUXUS")).toBe("Luxus");
+    expect(agreementPackageLabel([], "ENTERPRISE")).toBe("Enterprise");
   });
 });
 
