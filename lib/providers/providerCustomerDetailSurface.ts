@@ -6,6 +6,7 @@ import {
   formatDeliveryAddressInline,
   formatNok,
   type ProviderBillingBasis,
+  type ProviderBillingBasisConfidence,
   type ProviderInvoiceSettings,
 } from "@/lib/providers/providerCustomerBilling";
 import { agreementStatusLabel } from "@/lib/providers/providerCustomerAgreementSurface";
@@ -17,6 +18,9 @@ export const PROVIDER_CUSTOMER_DETAIL_COPY = {
   contactMissing: "—",
   agreementStatusMissing: "Ingen aktiv avtale",
   billingIncomplete: "Fakturagrunnlag ikke komplett",
+  vatNotSpecified: "Ikke spesifisert",
+  grossOnlyNote:
+    "Tallene vises inkl. mva fordi ordregrunnlaget ikke har separat mva-splitt ennå.",
   labels: {
     orgnr: "Org.nr",
     contact: "Kontakt",
@@ -25,7 +29,10 @@ export const PROVIDER_CUSTOMER_DETAIL_COPY = {
     deliveryAddress: "Leveringsadresse",
     agreementStatus: "Avtalestatus",
     ordersThisMonth: "Ordre denne måneden",
-    revenue: "Omsetning",
+    revenueExVat: "Omsetning eks. mva",
+    vat: "Mva",
+    revenueIncVat: "Omsetning inkl. mva",
+    commissionBase: "Provisjonsgrunnlag",
     commission: "Lunchportalen-provisjon",
     invoiceMethod: "Fakturametode",
     invoiceRecipient: "Fakturamottaker",
@@ -76,25 +83,54 @@ export function buildCustomerIdentityDisplay(input: {
 
 export type ProviderBillingBasisDisplay = {
   ordersLabel: string;
-  revenueLabel: string;
-  commissionLabel: string;
+  revenueExVatLabel: string;
+  vatLabel: string;
+  revenueIncVatLabel: string;
+  commissionBaseLabel: string;
+  commissionAmountLabel: string;
+  commissionRateLabel: "5 %";
   methodLabel: string;
   recipientLabel: string;
-  incomplete: boolean;
+  confidence: ProviderBillingBasisConfidence;
+  note: string | null;
 };
 
 export function buildBillingBasisDisplay(
   basis: ProviderBillingBasis,
   invoice: ProviderInvoiceSettings,
 ): ProviderBillingBasisDisplay {
+  const incomplete = basis.confidence === "incomplete";
+
   return {
     ordersLabel: String(basis.ordersThisMonth),
-    revenueLabel: basis.complete ? formatNok(basis.revenueNok) : PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete,
-    commissionLabel: basis.complete
-      ? `${formatNok(basis.commissionNok)} (${basis.commissionRateLabel})`
-      : PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete,
+    revenueExVatLabel:
+      basis.confidence === "complete" && basis.revenueExVatNok != null
+        ? formatNok(basis.revenueExVatNok)
+        : incomplete
+          ? PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete
+          : PROVIDER_CUSTOMER_DETAIL_COPY.vatNotSpecified,
+    vatLabel:
+      basis.confidence === "complete" && basis.vatNok != null
+        ? formatNok(basis.vatNok)
+        : incomplete
+          ? PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete
+          : PROVIDER_CUSTOMER_DETAIL_COPY.vatNotSpecified,
+    revenueIncVatLabel:
+      basis.confidence !== "incomplete" && basis.revenueIncVatNok > 0
+        ? formatNok(basis.revenueIncVatNok)
+        : PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete,
+    commissionBaseLabel:
+      basis.confidence === "incomplete"
+        ? PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete
+        : basis.commissionBaseLabel,
+    commissionAmountLabel:
+      basis.confidence === "incomplete"
+        ? PROVIDER_CUSTOMER_DETAIL_COPY.billingIncomplete
+        : formatNok(basis.commissionNok),
+    commissionRateLabel: "5 %",
     methodLabel: invoice.methodLabel,
     recipientLabel: invoice.recipientLabel,
-    incomplete: !basis.complete,
+    confidence: basis.confidence,
+    note: basis.confidence === "gross_only" ? PROVIDER_CUSTOMER_DETAIL_COPY.grossOnlyNote : null,
   };
 }

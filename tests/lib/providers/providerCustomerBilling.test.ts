@@ -52,12 +52,13 @@ describe("providerCustomerBilling", () => {
     expect(settings.billingContact.name).toBe("Thomas");
   });
 
-  it("beregner 5 % provisjonsgrunnlag", () => {
-    const basis = computeBillingBasis({ ordersThisMonth: 1, revenueNok: 103.5 });
+  it("beregner 5 % provisjonsgrunnlag fra inkl. mva når bare gross finnes", () => {
+    const basis = computeBillingBasis({ ordersThisMonth: 1, revenueIncVatNok: 103.5 });
     expect(basis.ordersThisMonth).toBe(1);
-    expect(basis.revenueNok).toBe(103.5);
+    expect(basis.revenueIncVatNok).toBe(103.5);
     expect(basis.commissionNok).toBeCloseTo(103.5 * LUNCHPORTALEN_COMMISSION_RATE, 2);
-    expect(basis.commissionRateLabel).toBe("5 %");
+    expect(basis.commissionBaseLabel).toBe("inkl. mva");
+    expect(basis.confidence).toBe("gross_only");
   });
 
   it("formaterer leveringsadresse med navn og adresse", () => {
@@ -87,11 +88,11 @@ describe("providerCustomerDetailSurface", () => {
 
   it("viser fakturagrunnlag ikke komplett uten ordregrunnlag", () => {
     const display = buildBillingBasisDisplay(
-      computeBillingBasis({ ordersThisMonth: 0, revenueNok: 0 }),
+      computeBillingBasis({ ordersThisMonth: 0, revenueIncVatNok: 0 }),
       buildProviderInvoiceSettings({ ehfEnabled: true, ehfEndpoint: "0192:928038777", orgnr: "928038777" }),
     );
-    expect(display.incomplete).toBe(true);
-    expect(display.revenueLabel).toBe("Fakturagrunnlag ikke komplett");
+    expect(display.confidence).toBe("incomplete");
+    expect(display.revenueIncVatLabel).toBe("Fakturagrunnlag ikke komplett");
   });
 });
 

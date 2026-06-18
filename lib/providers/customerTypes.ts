@@ -7,8 +7,9 @@ export type ProviderCustomerRow = {
   name: string;
   orgnr: string | null;
   status: ProviderCustomerStatus;
-  employeesCount: number;
-  ordersThisWeek: number;
+  employeesCount: number | null;
+  ordersThisWeek: number | null;
+  historicalOrdersCount: number | null;
   invoiceMethodLabel: string;
   updatedAt: string | null;
 };

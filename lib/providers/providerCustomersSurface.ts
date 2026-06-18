@@ -24,16 +24,22 @@ export const PROVIDER_CUSTOMERS_COPY = {
     status: "Status",
     employees: "Ansatte",
     ordersThisWeek: "Ordre denne uken",
+    historicalOrders: "Historikk",
     invoice: "Faktura",
     lastUpdated: "Sist oppdatert",
   },
-  mobileMeta: (employees: number, orders: number, invoice: string) =>
-    `${employees} ansatte · ${orders} ordre denne uken · Faktura: ${invoice}`,
+  mobileMeta: (employees: number | null, orders: number | null, history: number | null, invoice: string) =>
+    `${employees ?? "—"} ansatte · ${orders ?? "—"} ordre denne uken · ${history ?? "—"} i historikk · Faktura: ${invoice}`,
   mobileUpdatedPrefix: "Sist oppdatert",
   paginationAria: "Paginering",
   paginationPrev: "Forrige",
   paginationNext: "Neste",
 } as const;
+
+export function formatProviderCustomerCount(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return String(Math.max(0, Math.floor(value)));
+}
 
 export function providerCustomersSubheading(providerName: string): string {
   const name = String(providerName ?? "").trim();

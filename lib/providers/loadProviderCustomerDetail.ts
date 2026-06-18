@@ -1,7 +1,7 @@
 // lib/providers/loadProviderCustomerDetail.ts
 import "server-only";
 
-import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
+import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 import {
   buildKitchenOrderItemDisplay,
@@ -22,9 +22,11 @@ import {
   buildProviderInvoiceSettings,
   computeBillingBasis,
   resolveCompanyOrgnr,
+  sumOrderRevenueCents,
   type ProviderBillingBasis,
   type ProviderInvoiceSettings,
 } from "@/lib/providers/providerCustomerBilling";
+import { loadProviderCustomerCountsForCompanies } from "@/lib/providers/providerCustomerCounts";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -294,8 +296,11 @@ export async function loadProviderCustomerDetail(
 
   const today = osloTodayISODate();
   const monthStart = addDaysISO(today, -30);
+  const weekStart = startOfWeekISO(today);
+  const weekEnd = addDaysISO(weekStart, 7);
 
-  const [employees, agreementsP, locationsP, ordersAllP, ordersOpenP, ordersMonthP, activity] = await Promise.all([
+  const [employees, agreementsP, locationsP, ordersAllP, ordersOpenP, ordersMonthP, activity, customerCounts] =
+    await Promise.all([
     loadScopedEmployees(cid),
     sb
       .from("agreements")
@@ -320,12 +325,13 @@ export async function loadProviderCustomerDetail(
       .in("status", [...OPEN_ORDER_STATUSES]),
     sb
       .from("orders")
-      .select("gross_cents_inc_vat")
+      .select("gross_cents_inc_vat, subtotal_cents_ex_vat, vat_cents")
       .eq("provider_id", pid)
       .eq("company_id", cid)
       .gte("date", monthStart)
       .lte("date", today),
     loadScopedActivity(cid),
+    loadProviderCustomerCountsForCompanies(pid, [cid], weekStart, weekEnd),
   ]);
 
   const orderRows = Array.isArray(ordersAllP.data) ? ordersAllP.data : [];
@@ -364,19 +370,22 @@ export async function loadProviderCustomerDetail(
     /* optional */
   }
 
-  let monthlyRevenueNok = 0;
   const monthOrders = Array.isArray(ordersMonthP.data) ? ordersMonthP.data : [];
-  for (const o of monthOrders) {
-    monthlyRevenueNok += centsToNok((o as { gross_cents_inc_vat?: unknown }).gross_cents_inc_vat);
-  }
+  const revenueTotals = sumOrderRevenueCents(monthOrders);
   const ordersThisMonth = monthOrders.length;
-  const billingBasis = computeBillingBasis({ ordersThisMonth, revenueNok: monthlyRevenueNok });
+  const billingBasis = computeBillingBasis({
+    ordersThisMonth,
+    revenueExVatNok: revenueTotals.hasExVat ? revenueTotals.revenueExVatNok : null,
+    vatNok: revenueTotals.hasVat ? revenueTotals.vatNok : null,
+    revenueIncVatNok: revenueTotals.revenueIncVatNok,
+  });
 
+  const scopedCounts = customerCounts.byCompanyId.get(cid);
   const stats: ProviderCompanyStats = {
-    employeesCount: employees.length,
+    employeesCount: scopedCounts?.employeesCount ?? employees.length,
     activeOrdersCount: safeNum(ordersOpenP.count),
-    historicalOrdersCount: orderRows.length,
-    monthlyRevenueNok,
+    historicalOrdersCount: scopedCounts?.historicalOrdersCount ?? orderRows.length,
+    monthlyRevenueNok: revenueTotals.revenueIncVatNok,
   };
 
   const agreementRows = Array.isArray(agreementsP.data) ? agreementsP.data : [];

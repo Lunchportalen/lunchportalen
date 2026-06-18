@@ -24,11 +24,18 @@ export type ProviderInvoiceSettings = {
   recipientLabel: string;
 };
 
+export type ProviderBillingBasisConfidence = "complete" | "gross_only" | "incomplete";
+
 export type ProviderBillingBasis = {
   ordersThisMonth: number;
-  revenueNok: number;
+  revenueExVatNok: number | null;
+  vatNok: number | null;
+  revenueIncVatNok: number;
   commissionNok: number;
   commissionRateLabel: string;
+  commissionBaseLabel: string;
+  confidence: ProviderBillingBasisConfidence;
+  /** @deprecated use confidence + labeled fields */
   complete: boolean;
 };
 
@@ -111,18 +118,114 @@ export function buildProviderInvoiceSettings(input: {
 
 export function computeBillingBasis(input: {
   ordersThisMonth: number;
-  revenueNok: number;
+  revenueExVatNok?: number | null;
+  vatNok?: number | null;
+  revenueIncVatNok?: number;
+  /** @deprecated use revenueIncVatNok */
+  revenueNok?: number;
 }): ProviderBillingBasis {
   const ordersThisMonth = Math.max(0, Math.floor(input.ordersThisMonth));
-  const revenueNok = Number.isFinite(input.revenueNok) && input.revenueNok >= 0 ? input.revenueNok : 0;
-  const commissionNok = Math.round(revenueNok * LUNCHPORTALEN_COMMISSION_RATE * 100) / 100;
+  const revenueIncVatNok =
+    Number.isFinite(input.revenueIncVatNok) && input.revenueIncVatNok! >= 0
+      ? input.revenueIncVatNok!
+      : Number.isFinite(input.revenueNok) && input.revenueNok! >= 0
+        ? input.revenueNok!
+        : 0;
+
+  const hasExVat = input.revenueExVatNok != null && Number.isFinite(input.revenueExVatNok) && input.revenueExVatNok >= 0;
+  const hasVat = input.vatNok != null && Number.isFinite(input.vatNok) && input.vatNok >= 0;
+  const hasGross = revenueIncVatNok > 0;
+
+  let confidence: ProviderBillingBasisConfidence = "incomplete";
+  let commissionBase = 0;
+  let commissionBaseLabel = "Ikke tilgjengelig";
+
+  if (ordersThisMonth === 0 && !hasGross && !hasExVat) {
+    confidence = "incomplete";
+  } else if (hasExVat && hasVat && hasGross) {
+    confidence = "complete";
+    commissionBase = input.revenueExVatNok!;
+    commissionBaseLabel = "eks. mva";
+  } else if (hasGross) {
+    confidence = "gross_only";
+    commissionBase = revenueIncVatNok;
+    commissionBaseLabel = "inkl. mva";
+  } else {
+    confidence = "incomplete";
+  }
+
+  const commissionNok =
+    confidence === "incomplete" ? 0 : Math.round(commissionBase * LUNCHPORTALEN_COMMISSION_RATE * 100) / 100;
+
   return {
     ordersThisMonth,
-    revenueNok,
+    revenueExVatNok: hasExVat ? input.revenueExVatNok! : null,
+    vatNok: hasVat ? input.vatNok! : null,
+    revenueIncVatNok,
     commissionNok,
     commissionRateLabel: "5 %",
-    complete: ordersThisMonth > 0 || revenueNok > 0,
+    commissionBaseLabel,
+    confidence,
+    complete: confidence !== "incomplete",
   };
+}
+
+export function sumOrderRevenueCents(
+  rows: ReadonlyArray<{
+    gross_cents_inc_vat?: unknown;
+    subtotal_cents_ex_vat?: unknown;
+    vat_cents?: unknown;
+  }>,
+): {
+  revenueExVatNok: number;
+  vatNok: number;
+  revenueIncVatNok: number;
+  hasExVat: boolean;
+  hasVat: boolean;
+  hasGross: boolean;
+} {
+  let exCents = 0;
+  let vatCents = 0;
+  let grossCents = 0;
+  let hasExVat = false;
+  let hasVat = false;
+  let hasGross = false;
+
+  for (const row of rows) {
+    const gross = safeNum(row.gross_cents_inc_vat);
+    const ex = safeNum(row.subtotal_cents_ex_vat);
+    const vat = safeNum(row.vat_cents);
+    if (gross > 0) {
+      grossCents += gross;
+      hasGross = true;
+    }
+    if (ex > 0) {
+      exCents += ex;
+      hasExVat = true;
+    }
+    if (vat > 0) {
+      vatCents += vat;
+      hasVat = true;
+    }
+  }
+
+  return {
+    revenueExVatNok: exCents / 100,
+    vatNok: vatCents / 100,
+    revenueIncVatNok: grossCents / 100,
+    hasExVat,
+    hasVat,
+    hasGross,
+  };
+}
+
+function safeNum(v: unknown): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim()) {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return 0;
 }
 
 export function formatDeliveryAddress(input: {
