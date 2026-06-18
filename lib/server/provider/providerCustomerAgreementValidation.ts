@@ -5,6 +5,7 @@ import { normalizeDeliveryDaysStrict } from "@/lib/agreements/deliveryDays";
 import { DAY_KEYS, type DayKey, type Tier } from "@/lib/agreements/normalize";
 import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
 import type {
+  ProviderAgreementDayMenu,
   ProviderAgreementPatchInput,
   ProviderAgreementPatchPayload,
 } from "@/lib/providers/providerCustomerAgreementTypes";
@@ -21,6 +22,24 @@ const MAX_NOTE = 2000;
 
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
+const DAY_ALIASES: Record<string, DayKey> = {
+  mon: "mon",
+  monday: "mon",
+  mandag: "mon",
+  tue: "tue",
+  tuesday: "tue",
+  tirsdag: "tue",
+  wed: "wed",
+  wednesday: "wed",
+  onsdag: "wed",
+  thu: "thu",
+  thursday: "thu",
+  torsdag: "thu",
+  fri: "fri",
+  friday: "fri",
+  fredag: "fri",
+};
+
 export type ValidationOk = { ok: true; value: ProviderAgreementPatchPayload };
 export type ValidationErr = { ok: false; code: string; message: string };
 export type ValidationResult = ValidationOk | ValidationErr;
@@ -29,6 +48,12 @@ function normTier(v: unknown): Tier | null {
   const s = safeStr(v).toUpperCase();
   if (s === "BASIS" || s === "LUXUS" || s === "ENTERPRISE") return s;
   return null;
+}
+
+function normDayKey(v: unknown): DayKey | null {
+  const s = safeStr(v).toLowerCase();
+  if ((DAY_KEYS as readonly string[]).includes(s)) return s as DayKey;
+  return DAY_ALIASES[s] ?? null;
 }
 
 function parseTime(v: unknown): string | null {
@@ -56,11 +81,90 @@ function trimMax(v: unknown, max: number): string | undefined {
   return s.slice(0, max);
 }
 
+function parseDeliveryDays(raw: unknown): ValidationResult & { days?: DayKey[] } {
+  if (!Array.isArray(raw)) {
+    return { ok: false, code: "INVALID_DELIVERY_DAYS", message: "Leveringsdager må være en liste." };
+  }
+  const norm = normalizeDeliveryDaysStrict(raw);
+  if (norm.days.length === 0) {
+    return { ok: false, code: "EMPTY_DELIVERY_DAYS", message: "Velg minst én leveringsdag." };
+  }
+  if (norm.unknown.length > 0) {
+    return { ok: false, code: "INVALID_DELIVERY_DAY", message: "Ugyldig leveringsdag." };
+  }
+  const unique = new Set(norm.days);
+  if (unique.size !== norm.days.length) {
+    return { ok: false, code: "DUPLICATE_DELIVERY_DAY", message: "Leveringsdager kan ikke dupliseres." };
+  }
+  const weekend = raw.some((d) => {
+    const s = safeStr(d).toLowerCase();
+    return s === "sat" || s === "sun" || s === "lørdag" || s === "søndag";
+  });
+  if (weekend) {
+    return {
+      ok: false,
+      code: "WEEKEND_NOT_SUPPORTED",
+      message: "Lunchportalen støtter kun lunsjlevering mandag–fredag.",
+    };
+  }
+  return {
+    ok: true,
+    value: { deliveryDays: norm.days.filter((d): d is DayKey => (DAY_KEYS as readonly string[]).includes(d)) },
+    days: norm.days.filter((d): d is DayKey => (DAY_KEYS as readonly string[]).includes(d)),
+  };
+}
+
+function parseDayMenus(raw: unknown): ValidationResult & { dayMenus?: ProviderAgreementDayMenu[] } {
+  if (!Array.isArray(raw)) {
+    return { ok: false, code: "INVALID_DAY_MENUS", message: "Meny per dag må være en liste." };
+  }
+  const seen = new Set<DayKey>();
+  const dayMenus: ProviderAgreementDayMenu[] = [];
+  for (const row of raw) {
+    if (row == null || typeof row !== "object") {
+      return { ok: false, code: "INVALID_DAY_MENUS", message: "Ugyldig meny per dag." };
+    }
+    const day = normDayKey((row as { day?: unknown }).day);
+    const plan = normTier((row as { plan?: unknown }).plan);
+    if (!day) {
+      return { ok: false, code: "INVALID_DELIVERY_DAY", message: "Ugyldig ukedag i meny per dag." };
+    }
+    if (!plan) {
+      return { ok: false, code: "INVALID_PLAN", message: "Ugyldig avtalenivå. Velg Basis, Luxus eller Enterprise." };
+    }
+    if (seen.has(day)) {
+      return { ok: false, code: "DUPLICATE_DAY_MENU", message: "Meny kan bare angis én gang per dag." };
+    }
+    seen.add(day);
+    dayMenus.push({ day, plan });
+  }
+  return { ok: true, value: { dayMenus }, dayMenus };
+}
+
 export function validateProviderAgreementPatch(raw: ProviderAgreementPatchInput): ValidationResult {
   const out: ProviderAgreementPatchPayload = {};
   const keys = Object.keys(raw ?? {});
   if (keys.length === 0) {
     return { ok: false, code: "EMPTY_PATCH", message: "Ingen endringer angitt." };
+  }
+
+  let activeDays: DayKey[] | undefined;
+
+  if (raw.deliveryDays !== undefined) {
+    const parsed = parseDeliveryDays(raw.deliveryDays);
+    if (parsed.ok === false) return parsed;
+    out.deliveryDays = parsed.days;
+    activeDays = parsed.days;
+  }
+
+  if (raw.dayMenus !== undefined) {
+    const parsed = parseDayMenus(raw.dayMenus);
+    if (parsed.ok === false) return parsed;
+    out.dayMenus = parsed.dayMenus;
+    if (!activeDays) {
+      activeDays = parsed.dayMenus!.map((m) => m.day);
+      out.deliveryDays = activeDays;
+    }
   }
 
   if (raw.plan !== undefined) {
@@ -69,35 +173,35 @@ export function validateProviderAgreementPatch(raw: ProviderAgreementPatchInput)
       return { ok: false, code: "INVALID_PLAN", message: "Ugyldig avtalenivå. Velg Basis, Luxus eller Enterprise." };
     }
     out.plan = tier;
+    if (!out.dayMenus && activeDays) {
+      out.dayMenus = activeDays.map((day) => ({ day, plan: tier }));
+    }
   }
 
-  if (raw.deliveryDays !== undefined) {
-    if (!Array.isArray(raw.deliveryDays)) {
-      return { ok: false, code: "INVALID_DELIVERY_DAYS", message: "Leveringsdager må være en liste." };
+  if (activeDays && out.dayMenus) {
+    const activeSet = new Set(activeDays);
+    const menuSet = new Set(out.dayMenus.map((m) => m.day));
+    for (const day of activeDays) {
+      if (!menuSet.has(day)) {
+        return {
+          ok: false,
+          code: "MISSING_DAY_MENU",
+          message: `Velg meny for ${day}.`,
+        };
+      }
     }
-    const norm = normalizeDeliveryDaysStrict(raw.deliveryDays);
-    if (norm.days.length === 0) {
-      return { ok: false, code: "EMPTY_DELIVERY_DAYS", message: "Velg minst én leveringsdag." };
+    for (const menu of out.dayMenus) {
+      if (!activeSet.has(menu.day)) {
+        return {
+          ok: false,
+          code: "INACTIVE_DAY_MENU",
+          message: "Meny kan bare settes for aktive leveringsdager.",
+        };
+      }
     }
-    if (norm.unknown.length > 0) {
-      return { ok: false, code: "INVALID_DELIVERY_DAY", message: "Ugyldig leveringsdag." };
-    }
-    const unique = new Set(norm.days);
-    if (unique.size !== norm.days.length) {
-      return { ok: false, code: "DUPLICATE_DELIVERY_DAY", message: "Leveringsdager kan ikke dupliseres." };
-    }
-    const weekend = raw.deliveryDays.some((d) => {
-      const s = safeStr(d).toLowerCase();
-      return s === "sat" || s === "sun" || s === "lørdag" || s === "søndag";
-    });
-    if (weekend) {
-      return {
-        ok: false,
-        code: "WEEKEND_NOT_SUPPORTED",
-        message: "Lunchportalen støtter kun lunsjlevering mandag–fredag.",
-      };
-    }
-    out.deliveryDays = norm.days.filter((d): d is DayKey => (DAY_KEYS as readonly string[]).includes(d));
+    out.deliveryDays = activeDays;
+  } else if (out.dayMenus && !out.deliveryDays) {
+    out.deliveryDays = out.dayMenus.map((m) => m.day);
   }
 
   if (raw.location !== undefined) {
@@ -123,8 +227,7 @@ export function validateProviderAgreementPatch(raw: ProviderAgreementPatchInput)
     const contact: { name?: string; email?: string; phone?: string } = {};
     if (raw.contact.name !== undefined) {
       const name = trimMax(raw.contact.name, MAX_NAME);
-      if (name) contact.name = name;
-      else contact.name = "";
+      contact.name = name ?? "";
     }
     if (raw.contact.email !== undefined) {
       const email = trimMax(raw.contact.email, MAX_EMAIL)?.toLowerCase();
@@ -194,4 +297,11 @@ export function timeToDbValue(hhmm: string): string {
 
 export function timeFromDbValue(raw: unknown): string | null {
   return parseTime(raw);
+}
+
+export function defaultPlanFromDayMenus(dayMenus: ProviderAgreementDayMenu[]): Tier {
+  if (dayMenus.length === 0) return "BASIS";
+  const order = DAY_KEYS as readonly DayKey[];
+  const sorted = [...dayMenus].sort((a, b) => order.indexOf(a.day) - order.indexOf(b.day));
+  return sorted[0]?.plan ?? "BASIS";
 }

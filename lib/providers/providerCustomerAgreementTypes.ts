@@ -3,6 +3,11 @@
 
 import type { DayKey, Tier } from "@/lib/agreements/normalize";
 
+export type ProviderAgreementDayMenu = {
+  day: DayKey;
+  plan: Tier;
+};
+
 export type ProviderAgreementContact = {
   name: string | null;
   email: string | null;
@@ -26,18 +31,22 @@ export type ProviderAgreementReadModel = {
   companyId: string;
   providerId: string;
   status: string;
-  plan: Tier | null;
+  /** Global fallback tier on agreements.tier */
+  defaultPlan: Tier | null;
   deliveryDays: DayKey[];
+  dayMenus: ProviderAgreementDayMenu[];
   location: ProviderAgreementLocation;
   contact: ProviderAgreementContact;
   deliveryWindow: ProviderAgreementDeliveryWindow;
   deliveryNote: string | null;
   updatedAt: string | null;
+  warnings?: string[];
 };
 
 export type ProviderAgreementPatchInput = {
   plan?: unknown;
   deliveryDays?: unknown;
+  dayMenus?: unknown;
   location?: {
     name?: unknown;
     address?: unknown;
@@ -60,6 +69,7 @@ export type ProviderAgreementPatchInput = {
 export type ProviderAgreementPatchPayload = {
   plan?: Tier;
   deliveryDays?: DayKey[];
+  dayMenus?: ProviderAgreementDayMenu[];
   location?: {
     name?: string;
     address?: string;
@@ -77,4 +87,8 @@ export type ProviderAgreementPatchPayload = {
   status?: "ACTIVE" | "PAUSED";
   reason?: string | null;
   deliveryNote?: string | null;
+};
+
+export type ProviderAgreementUpdateResult = ProviderAgreementReadModel & {
+  warnings?: string[];
 };

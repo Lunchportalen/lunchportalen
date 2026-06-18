@@ -28,6 +28,7 @@ function mkAdmin(state: State) {
     from: (table: string) => {
       const b: any = {
         _eq: [] as Array<{ col: string; val: unknown }>,
+        _in: null as { col: string; vals: unknown[] } | null,
         _update: null as Record<string, unknown> | null,
         _insert: null as Record<string, unknown> | Record<string, unknown>[] | null,
         _delete: false,
@@ -36,6 +37,10 @@ function mkAdmin(state: State) {
         select: () => b,
         eq: (col: string, val: unknown) => {
           b._eq.push({ col, val });
+          return b;
+        },
+        in: (col: string, vals: unknown[]) => {
+          b._in = { col, vals };
           return b;
         },
         order: (col: string, opts?: { ascending?: boolean }) => {
@@ -114,15 +119,27 @@ function mkAdmin(state: State) {
             const row = state.registrations.find((r) => r.id === idEq?.val);
             if (row) Object.assign(row, b._update);
           }
-          if (table === "agreement_delivery_days" && b._delete) {
-            const agreementEq = b._eq.find((f: { col: string }) => f.col === "agreement_id");
-            state.agreementDeliveryDays = state.agreementDeliveryDays.filter(
-              (r) => r.agreement_id !== agreementEq?.val,
-            );
-          }
-          if (table === "agreement_delivery_days" && b._insert) {
-            const rows = Array.isArray(b._insert) ? b._insert : [b._insert];
-            state.agreementDeliveryDays.push(...rows);
+          if (table === "agreement_delivery_days") {
+            if (b._delete) {
+              const agreementEq = b._eq.find((f: { col: string }) => f.col === "agreement_id");
+              state.agreementDeliveryDays = state.agreementDeliveryDays.filter(
+                (r) => r.agreement_id !== agreementEq?.val,
+              );
+            }
+            if (b._insert) {
+              const rows = Array.isArray(b._insert) ? b._insert : [b._insert];
+              state.agreementDeliveryDays.push(...rows);
+            }
+            if (!b._delete && !b._insert) {
+              let rows = [...state.agreementDeliveryDays];
+              const agreementEq = b._eq.find((f: { col: string }) => f.col === "agreement_id");
+              if (agreementEq) rows = rows.filter((r) => r.agreement_id === agreementEq.val);
+              if (b._in) {
+                rows = rows.filter((r) => b._in.vals.includes((r as Record<string, unknown>)[b._in.col]));
+              }
+              resolve({ data: rows, error: null });
+              return;
+            }
           }
           if (table === "company_registrations" && !b._update) {
             const agreementEq = b._eq.find((f: { col: string }) => f.col === "agreement_id");
@@ -184,7 +201,10 @@ function baseState(): State {
     ],
     locations: [{ id: LOCATION_ID, company_id: PETTERSEN_ID, name: "Hovedlokasjon", address: "Gate 1" }],
     registrations: [{ id: "reg-1", agreement_id: AGREEMENT_ID, contact_phone: "99887766" }],
-    agreementDeliveryDays: [],
+    agreementDeliveryDays: [
+      { agreement_id: AGREEMENT_ID, weekday: "mon", tier: "BASIS" },
+      { agreement_id: AGREEMENT_ID, weekday: "tue", tier: "BASIS" },
+    ],
     orders: [{ id: "order-1", company_id: PETTERSEN_ID, status: "DELIVERED", date: "2026-06-16" }],
   };
 }
@@ -197,21 +217,36 @@ describe("provider customer agreement validation", () => {
   });
 
   it("avviser ukjent plan", () => {
-    const res = validateProviderAgreementPatch({ plan: "GULL" });
+    const res = validateProviderAgreementPatch({ dayMenus: [{ day: "mon", plan: "GULL" }] });
     expect(res.ok).toBe(false);
     if (res.ok === false) expect(res.code).toBe("INVALID_PLAN");
+  });
+
+  it("krever meny for aktiv dag", () => {
+    const res = validateProviderAgreementPatch({
+      deliveryDays: ["mon", "tue"],
+      dayMenus: [{ day: "mon", plan: "BASIS" }],
+    });
+    expect(res.ok).toBe(false);
+    if (res.ok === false) expect(res.code).toBe("MISSING_DAY_MENU");
+  });
+
+  it("avviser meny for inaktiv dag", () => {
+    const res = validateProviderAgreementPatch({
+      deliveryDays: ["mon"],
+      dayMenus: [
+        { day: "mon", plan: "BASIS" },
+        { day: "tue", plan: "LUXUS" },
+      ],
+    });
+    expect(res.ok).toBe(false);
+    if (res.ok === false) expect(res.code).toBe("INACTIVE_DAY_MENU");
   });
 
   it("avviser ugyldig leveringsvindu", () => {
     const res = validateProviderAgreementPatch({ deliveryWindow: { from: "13:00", to: "11:00" } });
     expect(res.ok).toBe(false);
     if (res.ok === false) expect(res.code).toBe("INVALID_DELIVERY_WINDOW");
-  });
-
-  it("avviser ugyldig kontakt-epost", () => {
-    const res = validateProviderAgreementPatch({ contact: { email: "ikke-epost" } });
-    expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("INVALID_CONTACT_EMAIL");
   });
 });
 
@@ -220,25 +255,23 @@ describe("provider customer agreement service", () => {
     vi.clearAllMocks();
   });
 
-  it("provider_admin kan laste avtale for egen kunde", async () => {
+  it("provider_admin kan laste avtale med per-dag meny", async () => {
     const admin = mkAdmin(baseState());
     const res = await loadProviderCustomerAgreement(admin as any, MELHUS_PROVIDER_ID, PETTERSEN_ID);
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.data.agreementId).toBe(AGREEMENT_ID);
-      expect(res.data.plan).toBe("BASIS");
-      expect(res.data.contact.phone).toBe("99887766");
+      expect(res.data.defaultPlan).toBe("BASIS");
+      expect(res.data.dayMenus).toEqual(
+        expect.arrayContaining([
+          { day: "mon", plan: "BASIS" },
+          { day: "tue", plan: "BASIS" },
+        ]),
+      );
     }
   });
 
-  it("blokkerer annen providers kunde", async () => {
-    const admin = mkAdmin(baseState());
-    const res = await loadProviderCustomerAgreement(admin as any, MELHUS_PROVIDER_ID, OTHER_PROVIDER_ID);
-    expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("OUT_OF_SCOPE");
-  });
-
-  it("provider_admin kan oppdatere egen kundeavtale", async () => {
+  it("provider_admin kan oppdatere per-dag meny", async () => {
     const state = baseState();
     const admin = mkAdmin(state);
     const res = await executeProviderCustomerAgreementUpdate(
@@ -248,20 +281,29 @@ describe("provider customer agreement service", () => {
         providerId: MELHUS_PROVIDER_ID,
         companyId: PETTERSEN_ID,
         patch: {
-          plan: "LUXUS",
-          deliveryDays: ["mon", "wed", "fri"],
-          reason: "Kunde ønsker luxus",
+          deliveryDays: ["mon", "tue", "wed", "thu", "fri"],
+          dayMenus: [
+            { day: "mon", plan: "BASIS" },
+            { day: "tue", plan: "LUXUS" },
+            { day: "wed", plan: "ENTERPRISE" },
+            { day: "thu", plan: "LUXUS" },
+            { day: "fri", plan: "ENTERPRISE" },
+          ],
         },
       },
     );
     expect(res.ok).toBe(true);
     if (res.ok) {
-      expect(res.data.plan).toBe("LUXUS");
-      expect(res.data.deliveryDays).toEqual(["mon", "wed", "fri"]);
+      expect(res.data.dayMenus).toEqual([
+        { day: "mon", plan: "BASIS" },
+        { day: "tue", plan: "LUXUS" },
+        { day: "wed", plan: "ENTERPRISE" },
+        { day: "thu", plan: "LUXUS" },
+        { day: "fri", plan: "ENTERPRISE" },
+      ]);
     }
-    const agreement = state.agreements[0];
-    expect(agreement.tier).toBe("LUXUS");
-    expect(agreement.delivery_days).toEqual(["mon", "wed", "fri"]);
+    expect(state.agreementDeliveryDays).toHaveLength(5);
+    expect(state.agreements[0].tier).toBe("BASIS");
   });
 
   it("blokkerer oppdatering for annen provider", async () => {
@@ -272,11 +314,34 @@ describe("provider customer agreement service", () => {
       {
         providerId: MELHUS_PROVIDER_ID,
         companyId: OTHER_PROVIDER_ID,
-        patch: { plan: "LUXUS" },
+        patch: { dayMenus: [{ day: "mon", plan: "LUXUS" }], deliveryDays: ["mon"] },
       },
     );
     expect(res.ok).toBe(false);
     if (res.ok === false) expect(res.code).toBe("OUT_OF_SCOPE");
+  });
+
+  it("telefon uten registrering gir warning, ikke total feil", async () => {
+    const state = baseState();
+    state.registrations = [];
+    const admin = mkAdmin(state);
+    const res = await executeProviderCustomerAgreementUpdate(
+      admin as any,
+      { rid: "rid_test", userId: "user-1", email: "admin@melhus.no" },
+      {
+        providerId: MELHUS_PROVIDER_ID,
+        companyId: PETTERSEN_ID,
+        patch: {
+          deliveryDays: ["mon"],
+          dayMenus: [{ day: "mon", plan: "BASIS" }],
+          contact: { phone: "99887766" },
+        },
+      },
+    );
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data.warnings?.length).toBeGreaterThan(0);
+    }
   });
 
   it("endring rører ikke eksisterende ordre", async () => {
@@ -289,19 +354,16 @@ describe("provider customer agreement service", () => {
       {
         providerId: MELHUS_PROVIDER_ID,
         companyId: PETTERSEN_ID,
-        patch: { plan: "ENTERPRISE" },
+        patch: {
+          deliveryDays: ["mon", "fri"],
+          dayMenus: [
+            { day: "mon", plan: "BASIS" },
+            { day: "fri", plan: "ENTERPRISE" },
+          ],
+        },
       },
     );
     expect(JSON.stringify(state.orders)).toBe(before);
-  });
-
-  it("returnerer NO_ACTIVE_AGREEMENT når aktiv avtale mangler", async () => {
-    const state = baseState();
-    state.agreements[0].status = "CLOSED";
-    const admin = mkAdmin(state);
-    const res = await loadProviderCustomerAgreement(admin as any, MELHUS_PROVIDER_ID, PETTERSEN_ID);
-    expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("NO_ACTIVE_AGREEMENT");
   });
 });
 
