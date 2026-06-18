@@ -1,6 +1,6 @@
 "use client";
 
-import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
+import type { PlanTier } from "@/lib/cms/menuDayContract";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import {
   ENTERPRISE_UPGRADE_LABELS,
@@ -12,8 +12,13 @@ import {
 import { formatPriceExVatLabel } from "@/lib/providers/providerMenuPriceDisplay";
 import type { EditorContext } from "@/lib/provider-menu/providerMenuWorkspace";
 import { editorContextLine } from "@/lib/provider-menu/providerMenuWorkspace";
-import { CATALOG_PERSISTENCE_GAP } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
+
+const TIER_SOURCE_LABELS: Record<PlanTier, string> = {
+  BASIS: "Basis",
+  LUXUS: "Luxus",
+  ENTERPRISE: "Enterprise",
+};
 
 type Props = {
   open: boolean;
@@ -54,10 +59,12 @@ export default function ProviderMenuEditorPanel({
 }: Props) {
   if (!open || !form || !context) {
     return (
-      <aside className="ds-provider-menu-editor" aria-label="Rediger meny" data-state="closed">
+      <aside className="provider-menu-inspector ds-provider-menu-editor" aria-label="Inspector" data-state="closed">
         <div className="ds-provider-menu-editor__empty">
           <p className="ds-h4">Velg en dag og kategori</p>
-          <p className="ds-body">Klikk en variant eller varmrett for å åpne redigering her — uten å scrolle ned.</p>
+          <p className="ds-body">
+            Klikk en variant eller varmmatrett for å redigere innhold, allergener og publisering.
+          </p>
         </div>
       </aside>
     );
@@ -68,7 +75,7 @@ export default function ProviderMenuEditorPanel({
   const isEnterpriseMode = context.mode === "enterprise";
 
   return (
-    <aside className="ds-provider-menu-editor is-open" aria-label="Rediger meny">
+    <aside className="provider-menu-inspector ds-provider-menu-editor is-open" aria-label="Inspector">
       <header className="ds-provider-menu-editor__head">
         <div>
           <p className="ds-provider-menu-editor__mode">
@@ -82,13 +89,13 @@ export default function ProviderMenuEditorPanel({
       </header>
 
       {isCatalogMode ? (
-        <p className="ds-body ds-provider-menu-editor__note">
+        <p className="ds-provider-menu-editor__note">
           Fast valg fra menykatalogen. Publiser kategorien for å aktivere levering denne dagen.
         </p>
       ) : null}
 
       {isVarmrettMode ? (
-        <p className="ds-body ds-provider-menu-editor__note">Kilde: Sanity/bank — rullerende varmmat per dag.</p>
+        <p className="ds-provider-menu-editor__note">Kilde: Sanity/bank — rullerende varmmat per dag.</p>
       ) : null}
 
       {catalogVariantAllergens && catalogVariantAllergens.length > 0 ? (
@@ -100,12 +107,8 @@ export default function ProviderMenuEditorPanel({
       {imageUrl ? (
         <img src={imageUrl} alt="" className="ds-provider-menu-editor__thumb" />
       ) : (
-        <div className="ds-provider-menu-editor__media-slot" aria-hidden="true">
-          Bilde valgfritt — media-ready
-        </div>
+        <p className="ds-provider-menu-editor__media-hint">Bilde er valgfritt og brukes kun der det gir verdi.</p>
       )}
-
-      <p className="ds-provider-menu-editor__gap-note">{CATALOG_PERSISTENCE_GAP}</p>
 
       {!isCatalogMode ? (
         <label className="ds-provider-menu-builder__field">
@@ -184,11 +187,41 @@ export default function ProviderMenuEditorPanel({
       ) : null}
 
       {isEnterpriseMode ? (
-        <fieldset className="ds-provider-menu-builder__enterprise">
+        <fieldset className="ds-provider-menu-builder__enterprise ds-provider-menu-editor__enterprise-premium">
           <legend>Enterprise-verdi</legend>
           <p className="ds-provider-menu-editor__enterprise-lead">
-            Hvorfor er dette verdt 170 kr eks. mva? Beskriv hva kunden får ekstra og hva det betyr for margin.
+            Hva får kunden ekstra for Enterprise?
           </p>
+
+          {(form.sourcePackage || form.upgradeType || form.upgradeNote) && (
+            <div className="ds-provider-menu-editor__enterprise-summary">
+              {form.sourcePackage ? (
+                <p>
+                  <span className="ds-provider-menu-editor__summary-label">Basert på</span>{" "}
+                  {TIER_SOURCE_LABELS[form.sourcePackage]}
+                </p>
+              ) : null}
+              {form.upgradeType ? (
+                <p>
+                  <span className="ds-provider-menu-editor__summary-label">Upgrade</span>{" "}
+                  {ENTERPRISE_UPGRADE_LABELS[form.upgradeType]}
+                </p>
+              ) : null}
+              {form.upgradeNote ? (
+                <p>
+                  <span className="ds-provider-menu-editor__summary-label">Kundeverdi</span> {form.upgradeNote}
+                </p>
+              ) : null}
+              {margin?.grossMarginNok != null ? (
+                <p>
+                  <span className="ds-provider-menu-editor__summary-label">Margin</span>{" "}
+                  {margin.grossMarginNok.toLocaleString("nb-NO")} kr
+                  {margin.marginPercent != null ? ` (${margin.marginPercent} %)` : ""}
+                </p>
+              ) : null}
+            </div>
+          )}
+
           <div className="ds-provider-menu-builder__copy-actions">
             <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromBasis}>
               Bygg fra Basis

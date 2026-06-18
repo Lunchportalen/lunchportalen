@@ -25,8 +25,8 @@ export default async function LeverandorMenyPage() {
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_kitchen");
 
   return (
-    <div className="ds-container ds-provider-meny-page">
-      <header className="ds-provider-topbar">
+    <div className="ds-provider-meny-page provider-menu-workspace-page">
+      <header className="ds-provider-topbar ds-provider-menu-page__header">
         <div>
           <p className="ds-eyebrow">Leverandør</p>
           <h1 className="ds-h2">Meny</h1>

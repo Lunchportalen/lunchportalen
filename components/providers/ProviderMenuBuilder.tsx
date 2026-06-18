@@ -123,6 +123,13 @@ export default function ProviderMenuBuilder() {
   const tierPrice = prices?.[tier];
   const weekStatus = summarizeWorkspaceWeekStatus(slots, weekDates, tier);
 
+  const statusChipClass = useMemo(() => {
+    if (weekStatus === "Publisert" || weekStatus === "Klar til publisering") return "is-published";
+    if (weekStatus === "Har utkast") return "is-draft";
+    if (weekStatus === "Mangler dager") return "is-missing";
+    return "is-neutral";
+  }, [weekStatus]);
+
   const loadWeek = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -319,10 +326,9 @@ export default function ProviderMenuBuilder() {
     <div className="ds-provider-menu-workspace">
       <header className="ds-provider-menu-workspace__command">
         <div className="ds-provider-menu-workspace__command-main">
-          <p className="ds-body ds-provider-menu-workspace__lead">{PROVIDER_MENU_BUILDER_COPY.lead}</p>
-          <p className="ds-provider-menu-workspace__status" role="status">
-            Status: <strong>{weekStatus}</strong>
-          </p>
+          <span className={`ds-provider-menu-workspace__status-chip ${statusChipClass}`} role="status">
+            {weekStatus}
+          </span>
         </div>
         <div className="ds-provider-menu-workspace__week-nav">
           <button type="button" className="ds-btn ds-btn--ghost" onClick={() => setWeekStart((w) => shiftWeekStart(w, -1))}>
@@ -398,7 +404,7 @@ export default function ProviderMenuBuilder() {
         </p>
       ) : null}
 
-      <div className="ds-provider-menu-workspace__body">
+      <div className="provider-menu-layout ds-provider-menu-workspace__body">
         <div className="ds-provider-menu-workspace__planner">
           {workspaceView === "week" ? (
             <ProviderMenuWeekPlanner
@@ -413,7 +419,8 @@ export default function ProviderMenuBuilder() {
           )}
         </div>
 
-        <ProviderMenuEditorPanel
+        <div className="ds-provider-menu-workspace__inspector">
+          <ProviderMenuEditorPanel
           open={Boolean(form && selected)}
           context={editorContext}
           form={form}
@@ -431,6 +438,7 @@ export default function ProviderMenuBuilder() {
           catalogVariantAllergens={catalogVariant?.allergens}
           imageUrl={catalogVariant?.imageUrl ?? null}
         />
+        </div>
       </div>
     </div>
   );
