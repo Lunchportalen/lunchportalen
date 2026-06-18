@@ -20,6 +20,7 @@ import {
   sortAgreementsForDisplay,
 } from "@/lib/providers/providerCustomerAgreementSurface";
 import { PROVIDER_CUSTOMER_ACTIVITY_EMPTY } from "@/lib/providers/providerCustomerDetailActivity";
+import ProviderCustomerAgreementEditDialog from "@/components/providers/ProviderCustomerAgreementEditDialog";
 
 type DialogState = {
   open: boolean;
@@ -43,6 +44,8 @@ export default function CustomerDetailClient({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<DialogState>({ open: false, variant: "suspend" });
+  const [agreementEditOpen, setAgreementEditOpen] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [optimisticStatus, setOptimisticStatus] = useState(detail.company.status);
 
@@ -198,7 +201,26 @@ export default function CustomerDetailClient({
       </section>
 
       <section className="ds-section">
-        <h2 className="ds-h2">{PROVIDER_AGREEMENT_COPY.sectionTitle}</h2>
+        <div className="ds-provider-section-head">
+          <h2 className="ds-h2">{PROVIDER_AGREEMENT_COPY.sectionTitle}</h2>
+          {canManage && detail.agreements.some((a) => String(a.status).toUpperCase() === "ACTIVE") ? (
+            <button
+              type="button"
+              className="ds-btn ds-btn--secondary"
+              onClick={() => {
+                setSuccess(null);
+                setAgreementEditOpen(true);
+              }}
+            >
+              Endre avtale
+            </button>
+          ) : null}
+        </div>
+        {success ? (
+          <p className="ds-provider-success" role="status">
+            {success}
+          </p>
+        ) : null}
         {detail.agreements.length === 0 ? (
           <div className="ds-provider-empty">
             <p className="ds-provider-empty__title">{PROVIDER_AGREEMENT_COPY.empty.title}</p>
@@ -311,6 +333,17 @@ export default function CustomerDetailClient({
           </div>
         )}
       </section>
+
+      <ProviderCustomerAgreementEditDialog
+        open={agreementEditOpen}
+        companyId={company.id}
+        companyName={company.name}
+        onClose={() => setAgreementEditOpen(false)}
+        onDone={() => {
+          setSuccess("Avtalen er oppdatert.");
+          router.refresh();
+        }}
+      />
 
       <SuspendDialog
         open={dialog.open}

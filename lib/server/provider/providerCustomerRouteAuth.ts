@@ -85,7 +85,7 @@ export type ProviderCustomerAdminAuth =
 export async function authorizeProviderCustomerAdmin(
   req: NextRequest,
   companyId: string,
-  action: "restore" | "remove"
+  action: "restore" | "remove" | "agreement"
 ): Promise<ProviderCustomerAdminAuth> {
   const rid = ridFromRequest(req);
   const auth = await getAuthContext({ rid, reqHeaders: req.headers });

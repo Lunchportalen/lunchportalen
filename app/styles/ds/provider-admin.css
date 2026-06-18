@@ -823,6 +823,30 @@
   margin: 4px 0 0;
 }
 
+.ds-provider-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ds-provider-section-head .ds-h2 {
+  margin: 0;
+}
+
+.ds-provider-success {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 120, 72, 0.25);
+  background: rgba(16, 120, 72, 0.06);
+  color: #107848;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .ds-provider-reg-detail {
   display: grid;
   gap: 10px;
