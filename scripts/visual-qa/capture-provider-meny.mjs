@@ -439,6 +439,37 @@ async function main() {
         path: resolve(OUT_DIR, "06b-inspector-enterprise-upgrade-panel.png"),
       });
       captures.push(resolve(OUT_DIR, "06b-inspector-enterprise-upgrade-panel.png"));
+
+      const suggestionVisible = await page.getByText("Foreslått Enterprise-upgrade").count();
+      if (suggestionVisible > 0) {
+        await inspector.first().screenshot({
+          path: resolve(OUT_DIR, "06c-inspector-enterprise-suggestion.png"),
+        });
+        captures.push(resolve(OUT_DIR, "06c-inspector-enterprise-suggestion.png"));
+      }
+
+      const useSuggestion = page.getByRole("button", { name: "Bruk forslag" });
+      if (await useSuggestion.count()) {
+        await useSuggestion.first().click();
+        await page.waitForTimeout(400);
+        await inspector.first().screenshot({
+          path: resolve(OUT_DIR, "06d-inspector-enterprise-after-suggestion.png"),
+        });
+        captures.push(resolve(OUT_DIR, "06d-inspector-enterprise-after-suggestion.png"));
+      }
+
+      const manualToggle = page.getByRole("button", { name: /Rediger manuelt|Skjul manuell redigering/ });
+      if (await manualToggle.count()) {
+        const toggleText = await manualToggle.first().innerText();
+        if (toggleText.includes("Rediger manuelt")) {
+          await manualToggle.first().click();
+          await page.waitForTimeout(300);
+        }
+        await inspector.first().screenshot({
+          path: resolve(OUT_DIR, "06e-inspector-enterprise-manual-editing.png"),
+        });
+        captures.push(resolve(OUT_DIR, "06e-inspector-enterprise-manual-editing.png"));
+      }
     }
   }
 

@@ -15,6 +15,7 @@ import {
   type ProviderVariantDisplayRow,
   type VariantDisplayStatus,
 } from "@/lib/provider-menu/providerMenuCatalogSurface";
+import type { EnterpriseUpgradeType } from "@/lib/providers/providerMenuPackageSurface";
 
 export type WorkspaceStatusChip = "published" | "draft" | "fixed" | "missing" | "suggestion";
 
@@ -484,4 +485,76 @@ export function summarizeDayCard(
     fixedGroups,
     premiumGroups,
   };
+}
+
+export type EnterpriseUpgradeQuickChoice = {
+  id: string;
+  label: string;
+  upgradeType: EnterpriseUpgradeType;
+  upgradeNote: string;
+};
+
+export const ENTERPRISE_DEFAULT_SUGGESTION = {
+  title: "Ekstra protein + dessert/frukt",
+  explanation: "Gir kunden mer verdi uten å lage en ny kjøkkenrett.",
+  upgradeType: "PREMIUM_PROTEIN" as EnterpriseUpgradeType,
+  upgradeNote: "Ekstra protein og dessert/frukt som premium tillegg til dagens Varmrett",
+  sourcePackage: "LUXUS" as PlanTier,
+};
+
+export const ENTERPRISE_UPGRADE_QUICK_CHOICES: EnterpriseUpgradeQuickChoice[] = [
+  {
+    id: "protein",
+    label: "Ekstra protein",
+    upgradeType: "PREMIUM_PROTEIN",
+    upgradeNote: "Ekstra protein til dagens Varmrett",
+  },
+  {
+    id: "portion",
+    label: "Større porsjon",
+    upgradeType: "LARGER_PORTION",
+    upgradeNote: "Større porsjon av dagens Varmrett",
+  },
+  {
+    id: "dessert",
+    label: "Dessert/frukt",
+    upgradeType: "DESSERT_FRUIT",
+    upgradeNote: "Dessert eller frukt som premium tillegg",
+  },
+  {
+    id: "topping",
+    label: "Premium topping",
+    upgradeType: "OTHER",
+    upgradeNote: "Premium topping til dagens Varmrett",
+  },
+  {
+    id: "side",
+    label: "Ekstra tilbehør",
+    upgradeType: "EXTRA_SIDE",
+    upgradeNote: "Ekstra tilbehør til dagens Varmrett",
+  },
+  {
+    id: "season",
+    label: "Sesongupgrade",
+    upgradeType: "OTHER",
+    upgradeNote: "Sesongbasert Enterprise-upgrade til dagens Varmrett",
+  },
+];
+
+export function applyEnterpriseUpgradePreset(
+  form: ResolvedProviderMenuSlot,
+  preset: Pick<EnterpriseUpgradeQuickChoice, "upgradeType" | "upgradeNote"> & {
+    sourcePackage?: PlanTier | null;
+  },
+): ResolvedProviderMenuSlot {
+  return {
+    ...form,
+    upgradeType: preset.upgradeType,
+    upgradeNote: preset.upgradeNote,
+    sourcePackage: preset.sourcePackage ?? form.sourcePackage ?? "LUXUS",
+  };
+}
+
+export function enterpriseUpgradeHasContent(form: ResolvedProviderMenuSlot): boolean {
+  return Boolean(form.upgradeType) || String(form.upgradeNote ?? "").trim().length >= 8;
 }

@@ -20,6 +20,10 @@ import {
   weekReadinessLabel,
   PACKAGE_CARD_COPY,
   SHARED_WARM_DISH_HINT,
+  ENTERPRISE_DEFAULT_SUGGESTION,
+  ENTERPRISE_UPGRADE_QUICK_CHOICES,
+  applyEnterpriseUpgradePreset,
+  enterpriseUpgradeHasContent,
 } from "@/lib/provider-menu/providerMenuWorkspace";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
@@ -219,5 +223,35 @@ describe("providerMenuWorkspace", () => {
     const metrics = summarizeWeekMetrics({}, dates, "BASIS", categories);
     const step = resolveNextStepAction({}, dates, "BASIS", metrics, ["Mandag", "Tirsdag"]);
     expect(step).toBe("Legg inn mandagens varmrett");
+  });
+
+  it("enterprise upgrade presets use existing enum values only", () => {
+    expect(ENTERPRISE_UPGRADE_QUICK_CHOICES).toHaveLength(6);
+    expect(ENTERPRISE_DEFAULT_SUGGESTION.upgradeType).toBe("PREMIUM_PROTEIN");
+    for (const choice of ENTERPRISE_UPGRADE_QUICK_CHOICES) {
+      expect(choice.upgradeNote).not.toMatch(/varmmrett/i);
+    }
+    expect(ENTERPRISE_DEFAULT_SUGGESTION.upgradeNote).toContain("Varmrett");
+  });
+
+  it("applyEnterpriseUpgradePreset fills form without API changes", () => {
+    const base: ResolvedProviderMenuSlot = {
+      date: "2026-06-16",
+      tier: "ENTERPRISE",
+      category: "varmrett",
+      mealTitle: "",
+      description: "",
+      allergensText: "",
+      estimatedCostPerPortion: null,
+      sourcePackage: null,
+      upgradeType: null,
+      upgradeNote: "",
+      status: "empty",
+      contentSource: "empty",
+    };
+    const next = applyEnterpriseUpgradePreset(base, ENTERPRISE_DEFAULT_SUGGESTION);
+    expect(next.upgradeType).toBe("PREMIUM_PROTEIN");
+    expect(next.sourcePackage).toBe("LUXUS");
+    expect(enterpriseUpgradeHasContent(next)).toBe(true);
   });
 });
