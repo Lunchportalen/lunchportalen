@@ -3,11 +3,9 @@
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
-import {
-  summarizeCategoryDay,
-  type CategoryDaySummary,
-} from "@/lib/provider-menu/providerMenuWorkspace";
+import { summarizeDayCard, type WorkspaceStatusChip } from "@/lib/provider-menu/providerMenuWorkspace";
 import { WEEKDAY_KEYS, WEEKDAY_LABELS } from "@/lib/providers/providerMenuPackageSurface";
+import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 
 export type WeekSelection = {
   date: string;
@@ -24,107 +22,131 @@ type Props = {
   onSelect: (sel: WeekSelection) => void;
 };
 
-function statusChipClass(chip: CategoryDaySummary["statusChip"]): string {
-  return `ds-provider-menu-day__status is-${chip}`;
+function dayStatusClass(chip: WorkspaceStatusChip): string {
+  return `menu-day-card__status is-${chip}`;
+}
+
+function formatDisplayDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}.${m}`;
 }
 
 export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, selected, onSelect }: Props) {
   const categories = providerWorkspaceCategories(tier);
+  const hasPremium = categories.some((c) => c === "sushi" || c === "pokebowl" || c === "thai");
 
   return (
     <div className="provider-menu-grid-scroll">
       <div className="provider-menu-days" role="region" aria-label="Ukeplanlegger">
-        {weekDates.map((date, idx) => (
-          <article key={date} className="ds-provider-menu-day">
-            <header className="ds-provider-menu-day__head">
-              <h3 className="ds-h4">{WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!]}</h3>
-              <time className="ds-provider-menu-day__date" dateTime={date}>
-                {date}
-              </time>
-            </header>
+        {weekDates.map((date, idx) => {
+          const weekdayLabel = WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? date;
+          const card = summarizeDayCard(slots, date, tier, weekdayLabel, categories);
+          const varmrett = card.varmrett;
+          const varmrettRow = varmrett.rows[0];
+          const varmrettMissing = varmrett.statusChip === "missing";
+          const varmrettSelected =
+            selected?.date === date && selected.category === "varmrett";
+          const varmrettSlot = varmrett.slot;
+          const costHint =
+            menuSlotHasContent(varmrettSlot) && varmrettSlot.estimatedCostPerPortion != null
+              ? `Kost ${varmrettSlot.estimatedCostPerPortion} kr`
+              : null;
 
-            {categories.map((category) => {
-              const summary = summarizeCategoryDay(slots, date, tier, category);
+          return (
+            <article key={date} className={`menu-day-card is-${card.dayStatus}`}>
+              <header className="menu-day-card__head">
+                <div>
+                  <h3 className="menu-day-card__weekday">{weekdayLabel}</h3>
+                  <time className="menu-day-card__date" dateTime={date}>
+                    {formatDisplayDate(date)}
+                  </time>
+                </div>
+                <span className={dayStatusClass(card.dayStatus)}>{card.dayStatusLabel}</span>
+              </header>
 
-              if (summary.isSanityDriven) {
-                const row = summary.rows[0];
-                const isRowSelected =
-                  selected?.date === date && selected.category === category && selected.variantKey === "varmrett";
-                return (
-                  <section
-                    key={`${date}-${category}`}
-                    className={`ds-provider-menu-day__varmrett${isRowSelected ? " is-selected" : ""}`}
-                  >
-                    <div className="ds-provider-menu-day__varmrett-head">
-                      <span className="ds-provider-menu-day__cat">{summary.categoryLabel}</span>
-                      <span className={statusChipClass(summary.statusChip)}>{summary.statusLabel}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="ds-provider-menu-day__varmrett-body"
-                      onClick={() =>
-                        onSelect({
-                          date,
-                          category,
-                          variantKey: "varmrett",
-                          variantLabel: row?.title,
-                        })
-                      }
-                    >
-                      <span className="ds-provider-menu-day__varmrett-title">{row?.title ?? "Varmrett"}</span>
-                      {row?.status === "Mangler varmmat fra Sanity/bank" ? (
-                        <span className="ds-provider-menu-day__varmrett-hint">Velg for å planlegge</span>
-                      ) : null}
-                    </button>
-                  </section>
-                );
-              }
+              <button
+                type="button"
+                className={`menu-day-card__hero${varmrettSelected ? " is-selected" : ""}${varmrettMissing ? " is-missing" : ""}`}
+                onClick={() =>
+                  onSelect({
+                    date,
+                    category: "varmrett",
+                    variantKey: "varmrett",
+                    variantLabel: varmrettRow?.title,
+                  })
+                }
+              >
+                <span className="menu-day-card__hero-label">Dagens varmmatrett</span>
+                {varmrettMissing ? (
+                  <>
+                    <span className="menu-day-card__hero-title">Varmrett mangler</span>
+                    <span className="menu-day-card__hero-hint">Velg for å planlegge</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="menu-day-card__hero-title">{varmrettRow?.title ?? "Varmrett"}</span>
+                    {costHint ? <span className="menu-day-card__hero-meta">{costHint}</span> : null}
+                    <span className="menu-day-card__hero-status">{varmrett.statusLabel}</span>
+                  </>
+                )}
+              </button>
 
-              return (
-                <section key={`${date}-${category}`} className="ds-provider-menu-day__category">
-                  <div className="ds-provider-menu-day__category-head">
-                    <span className="ds-provider-menu-day__cat">{summary.categoryLabel}</span>
-                    <span className={statusChipClass(summary.statusChip)}>{summary.statusLabel}</span>
-                    <button
-                      type="button"
-                      className="ds-provider-menu-day__edit-cat"
-                      onClick={() => onSelect({ date, category })}
-                    >
-                      Rediger
-                    </button>
-                  </div>
-                  <ul className="ds-provider-menu-day__variants">
-                    {summary.rows.map((row) => {
-                      const key = row.variant?.key ?? row.title;
-                      const rowSelected =
-                        selected?.date === date &&
-                        selected.category === category &&
-                        selected.variantKey === key;
+              {card.fixedGroups.length > 0 ? (
+                <section className="menu-day-card__group">
+                  <h4 className="menu-day-card__group-title">Faste valg</h4>
+                  <ul className="menu-day-card__group-list">
+                    {card.fixedGroups.map((group) => {
+                      const groupSelected =
+                        selected?.date === date && selected.category === group.category && !selected.variantKey;
                       return (
-                        <li key={`${date}-${category}-${key}`}>
+                        <li key={`${date}-${group.category}`}>
                           <button
                             type="button"
-                            className={`ds-provider-menu-day__variant-row${rowSelected ? " is-selected" : ""}`}
-                            onClick={() =>
-                              onSelect({
-                                date,
-                                category,
-                                variantKey: key,
-                                variantLabel: row.title,
-                              })
-                            }
+                            className={`menu-day-card__group-row${groupSelected ? " is-selected" : ""}`}
+                            onClick={() => onSelect({ date, category: group.category })}
                           >
-                            {row.title}
+                            <span className="menu-day-card__group-name">
+                              {group.categoryLabel} · {group.variantCount} valg
+                            </span>
+                            <span className="menu-day-card__group-detail">{group.summaryLine}</span>
+                            <span className="menu-day-card__group-action">Åpne</span>
                           </button>
                         </li>
                       );
                     })}
                   </ul>
                 </section>
-              );
-            })}
-          </article>
-        ))}
+              ) : null}
+
+              {hasPremium && card.premiumGroups.length > 0 ? (
+                <section className="menu-day-card__group menu-day-card__group--premium">
+                  <h4 className="menu-day-card__group-title">Premiumvalg</h4>
+                  <ul className="menu-day-card__group-list">
+                    {card.premiumGroups.map((group) => {
+                      const groupSelected =
+                        selected?.date === date && selected.category === group.category && !selected.variantKey;
+                      return (
+                        <li key={`${date}-${group.category}`}>
+                          <button
+                            type="button"
+                            className={`menu-day-card__group-row${groupSelected ? " is-selected" : ""}`}
+                            onClick={() => onSelect({ date, category: group.category })}
+                          >
+                            <span className="menu-day-card__group-name">
+                              {group.categoryLabel} · {group.summaryLine}
+                            </span>
+                            <span className="menu-day-card__group-action">Åpne</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ) : null}
+            </article>
+          );
+        })}
       </div>
     </div>
   );

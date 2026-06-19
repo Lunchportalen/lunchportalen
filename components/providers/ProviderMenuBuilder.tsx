@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
 import ProviderMenuCatalogView from "@/components/providers/ProviderMenuCatalogView";
+import ProviderMenuCommandHeader from "@/components/providers/ProviderMenuCommandHeader";
 import ProviderMenuEditorPanel from "@/components/providers/ProviderMenuEditorPanel";
+import ProviderMenuStatusRow from "@/components/providers/ProviderMenuStatusRow";
 import ProviderMenuWeekPlanner, {
   type WeekSelection,
 } from "@/components/providers/ProviderMenuWeekPlanner";
@@ -25,9 +27,14 @@ import {
   type ResolvedProviderMenuSlot,
 } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { summarizeWorkspaceWeekStatus } from "@/lib/provider-menu/providerMenuCatalogSurface";
-import { buildEditorContext } from "@/lib/provider-menu/providerMenuWorkspace";
+import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
+import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 import {
-  PROVIDER_MENU_BUILDER_COPY,
+  buildEditorContext,
+  summarizeWeekMetrics,
+  summarizeCategoryDay,
+} from "@/lib/provider-menu/providerMenuWorkspace";
+import {
   WEEKDAY_KEYS,
   WEEKDAY_LABELS,
   computeMarginEstimate,
@@ -121,7 +128,19 @@ export default function ProviderMenuBuilder() {
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
   const tierPrice = prices?.[tier];
+  const workspaceCategories = useMemo(() => providerWorkspaceCategories(tier), [tier]);
   const weekStatus = summarizeWorkspaceWeekStatus(slots, weekDates, tier);
+  const weekMetrics = useMemo(
+    () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories),
+    [slots, weekDates, tier, workspaceCategories],
+  );
+
+  const nextStepHint = useMemo(() => {
+    if (weekMetrics.varmrettMissing > 0) return "Neste: planlegg manglende varmrett";
+    if (weekMetrics.draftSlots > 0) return "Neste: publiser utkast";
+    if (weekStatus === "Klar til publisering") return "Uken er klar";
+    return "Neste: velg dag og kategori";
+  }, [weekMetrics, weekStatus]);
 
   const statusChipClass = useMemo(() => {
     if (weekStatus === "Publisert" || weekStatus === "Klar til publisering") return "is-published";
@@ -322,75 +341,40 @@ export default function ProviderMenuBuilder() {
         )
       : null;
 
+  const categoryVariantLabels =
+    selected && !selected.variantKey && !isSanityDrivenCategory(selected.category)
+      ? summarizeCategoryDay(slots, selected.date, tier, selected.category).rows.map((r) => r.title)
+      : undefined;
+
+  const categoryOnly = Boolean(
+    selected && !selected.variantKey && !isSanityDrivenCategory(selected.category),
+  );
+
   return (
-    <div className="ds-provider-menu-workspace">
-      <header className="ds-provider-menu-workspace__command">
-        <div className="ds-provider-menu-workspace__command-main">
-          <span className={`ds-provider-menu-workspace__status-chip ${statusChipClass}`} role="status">
-            {weekStatus}
-          </span>
-        </div>
-        <div className="ds-provider-menu-workspace__week-nav">
-          <button type="button" className="ds-btn ds-btn--ghost" onClick={() => setWeekStart((w) => shiftWeekStart(w, -1))}>
-            Forrige uke
-          </button>
-          <span className="ds-provider-menu-workspace__week-label">Uke fra {weekStart}</span>
-          <button type="button" className="ds-btn ds-btn--ghost" onClick={() => setWeekStart((w) => shiftWeekStart(w, 1))}>
-            Neste uke
-          </button>
-        </div>
-      </header>
+    <div className="ds-provider-menu-workspace provider-menu-workspace">
+      <ProviderMenuCommandHeader
+        tier={tier}
+        weekStatus={weekStatus}
+        statusChipClass={statusChipClass}
+        weekStart={weekStart}
+        prices={prices}
+        onTierChange={(t) => {
+          setTier(t);
+          closeEditor();
+        }}
+        onPrevWeek={() => setWeekStart((w) => shiftWeekStart(w, -1))}
+        onNextWeek={() => setWeekStart((w) => shiftWeekStart(w, 1))}
+        workspaceView={workspaceView}
+        onWorkspaceViewChange={setWorkspaceView}
+        nextStepHint={nextStepHint}
+      />
 
-      <div className="ds-provider-menu-workspace__tabs" role="tablist" aria-label="Menypakker">
-        {PLAN_TIERS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={tier === t}
-            className={`ds-provider-menu-builder__tab${tier === t ? " is-active" : ""}`}
-            onClick={() => {
-              setTier(t);
-              closeEditor();
-            }}
-          >
-            {TIER_LABELS[t]}
-            {prices?.[t] ? (
-              <span className="ds-provider-menu-builder__tab-price">
-                {formatPriceExVatLabel(prices[t].priceExVatNok)} · {formatPriceIncVatLabel(prices[t].priceIncVatNok)}
-              </span>
-            ) : null}
-          </button>
-        ))}
-      </div>
-
-      {tierPrice ? (
-        <p className="ds-provider-menu-workspace__price">
-          {formatPriceExVatLabel(tierPrice.priceExVatNok)} · {formatPriceIncVatLabel(tierPrice.priceIncVatNok)}
-          {tierPrice.source === "provider_price_rules" ? " (leverandørpris)" : " (standardpris)"}
-        </p>
-      ) : null}
-
-      <div className="ds-provider-menu-workspace__view-tabs" role="tablist" aria-label="Workspace">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={workspaceView === "week"}
-          className={`ds-provider-menu-workspace__view-tab${workspaceView === "week" ? " is-active" : ""}`}
-          onClick={() => setWorkspaceView("week")}
-        >
-          Ukeplanlegger
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={workspaceView === "catalog"}
-          className={`ds-provider-menu-workspace__view-tab${workspaceView === "catalog" ? " is-active" : ""}`}
-          onClick={() => setWorkspaceView("catalog")}
-        >
-          Menykatalog
-        </button>
-      </div>
+      <ProviderMenuStatusRow
+        weekStart={weekStart}
+        tierLabel={TIER_LABELS[tier]}
+        metrics={weekMetrics}
+        priceExVatNok={tierPrice?.priceExVatNok ?? null}
+      />
 
       {loading ? <p className="ds-body">Laster meny…</p> : null}
       {error ? (
@@ -424,6 +408,9 @@ export default function ProviderMenuBuilder() {
           open={Boolean(form && selected)}
           context={editorContext}
           form={form}
+          tier={tier}
+          categoryVariantLabels={categoryVariantLabels}
+          categoryOnly={categoryOnly}
           onFormChange={setForm}
           onClose={closeEditor}
           onSaveDraft={() => startTransition(() => save("draft"))}

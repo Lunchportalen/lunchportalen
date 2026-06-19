@@ -20,10 +20,15 @@ const TIER_SOURCE_LABELS: Record<PlanTier, string> = {
   ENTERPRISE: "Enterprise",
 };
 
+const LUXUS_PRICE_EX_VAT = 130;
+const ENTERPRISE_PRICE_EX_VAT = 170;
+
 type Props = {
   open: boolean;
   context: EditorContext | null;
   form: ResolvedProviderMenuSlot | null;
+  categoryVariantLabels?: string[];
+  categoryOnly?: boolean;
   onFormChange: (next: ResolvedProviderMenuSlot) => void;
   onClose: () => void;
   onSaveDraft: () => void;
@@ -37,12 +42,15 @@ type Props = {
   onConfirmWarningsChange: (v: boolean) => void;
   catalogVariantAllergens?: string[];
   imageUrl?: string | null;
+  tier: PlanTier;
 };
 
 export default function ProviderMenuEditorPanel({
   open,
   context,
   form,
+  categoryVariantLabels,
+  categoryOnly,
   onFormChange,
   onClose,
   onSaveDraft,
@@ -56,118 +64,170 @@ export default function ProviderMenuEditorPanel({
   onConfirmWarningsChange,
   catalogVariantAllergens,
   imageUrl,
+  tier,
 }: Props) {
   if (!open || !form || !context) {
     return (
-      <aside className="provider-menu-inspector ds-provider-menu-editor" aria-label="Inspector" data-state="closed">
-        <div className="ds-provider-menu-editor__empty">
-          <p className="ds-h4">Velg en dag og kategori</p>
-          <p className="ds-body">
-            Klikk en variant eller varmmatrett for å redigere innhold, allergener og publisering.
+      <aside className="provider-menu-inspector menu-inspector" aria-label="Inspector" data-state="closed">
+        <div className="menu-inspector__empty">
+          <p className="menu-inspector__empty-title">Velg en dag</p>
+          <p className="menu-inspector__empty-lead">
+            Klikk på varmmatrett, faste valg eller Enterprise-upgrade for å redigere.
           </p>
+          <ol className="menu-inspector__steps">
+            <li>Velg pakke (Basis, Luxus eller Enterprise)</li>
+            <li>Åpne en dag i ukeplanen</li>
+            <li>Rediger og publiser i panelet her</li>
+          </ol>
         </div>
       </aside>
     );
   }
 
-  const isCatalogMode = context.mode === "catalog";
-  const isVarmrettMode = context.mode === "varmrett";
-  const isEnterpriseMode = context.mode === "enterprise";
+  const isVarmrettMode = isSanityDrivenCategory(form.category);
+  const isCatalogMode = !isVarmrettMode && (context.mode === "catalog" || categoryOnly);
+  const isEnterpriseMode = tier === "ENTERPRISE" && isVarmrettMode;
+
+  const slotStatus =
+    form.status === "published" ? "Publisert" : form.status === "draft" ? "Utkast" : "Ikke publisert";
+
+  const enterpriseDelta = ENTERPRISE_PRICE_EX_VAT - LUXUS_PRICE_EX_VAT;
+  const luxusMargin =
+    margin?.estimatedCostNok != null
+      ? Math.round((LUXUS_PRICE_EX_VAT - margin.estimatedCostNok) * 100) / 100
+      : null;
+  const extraMargin =
+    margin?.grossMarginNok != null && luxusMargin != null
+      ? Math.round((margin.grossMarginNok - luxusMargin) * 100) / 100
+      : null;
 
   return (
-    <aside className="provider-menu-inspector ds-provider-menu-editor is-open" aria-label="Inspector">
-      <header className="ds-provider-menu-editor__head">
+    <aside className="provider-menu-inspector menu-inspector is-open" aria-label="Inspector">
+      <header className="menu-inspector__head">
         <div>
-          <p className="ds-provider-menu-editor__mode">
-            {isCatalogMode ? "Katalogvalg" : isVarmrettMode ? "Dagens varmmatrett" : "Enterprise upgrade"}
+          <p className="menu-inspector__mode">
+            {isCatalogMode && categoryOnly
+              ? "Faste valg"
+              : isVarmrettMode
+                ? "Dagens varmmatrett"
+                : "Enterprise upgrade"}
           </p>
-          <h3 className="ds-h4">{editorContextLine(context)}</h3>
+          <h3 className="menu-inspector__context">{editorContextLine(context)}</h3>
         </div>
-        <button type="button" className="ds-btn ds-btn--ghost ds-provider-menu-editor__close" onClick={onClose}>
+        <button type="button" className="ds-btn ds-btn--ghost menu-inspector__close" onClick={onClose}>
           Lukk
         </button>
       </header>
 
-      {isCatalogMode ? (
-        <p className="ds-provider-menu-editor__note">
-          Fast valg fra menykatalogen. Publiser kategorien for å aktivere levering denne dagen.
-        </p>
+      <section className="menu-inspector__section menu-inspector__section--status">
+        <h4 className="menu-inspector__section-title">Status</h4>
+        <p className="menu-inspector__status-value">{slotStatus}</p>
+      </section>
+
+      {isCatalogMode && categoryOnly && categoryVariantLabels && categoryVariantLabels.length > 0 ? (
+        <section className="menu-inspector__section">
+          <h4 className="menu-inspector__section-title">Katalogstyrte valg</h4>
+          <p className="menu-inspector__note">Dette er katalogstyrte valg. Publiser kategorien for denne dagen.</p>
+          <ul className="menu-inspector__variant-list">
+            {categoryVariantLabels.map((label) => (
+              <li key={label}>{label}</li>
+            ))}
+          </ul>
+          {catalogVariantAllergens && catalogVariantAllergens.length > 0 ? (
+            <p className="menu-inspector__meta">Allergener: {catalogVariantAllergens.join(", ")}</p>
+          ) : null}
+        </section>
       ) : null}
 
       {isVarmrettMode ? (
-        <p className="ds-provider-menu-editor__note">Kilde: Sanity/bank — rullerende varmmat per dag.</p>
+        <>
+          <section className="menu-inspector__section">
+            <h4 className="menu-inspector__section-title">Rett</h4>
+            <label className="menu-inspector__field">
+              Rettens navn
+              <input
+                value={form.mealTitle}
+                onChange={(e) => onFormChange({ ...form, mealTitle: e.target.value })}
+                maxLength={120}
+              />
+            </label>
+            <label className="menu-inspector__field">
+              Beskrivelse
+              <textarea
+                rows={3}
+                value={form.description}
+                onChange={(e) => onFormChange({ ...form, description: e.target.value })}
+                maxLength={4000}
+              />
+            </label>
+          </section>
+          <section className="menu-inspector__section">
+            <h4 className="menu-inspector__section-title">Allergener & kost</h4>
+            <label className="menu-inspector__field">
+              Allergener
+              <input
+                value={form.allergensText}
+                onChange={(e) => onFormChange({ ...form, allergensText: e.target.value })}
+                placeholder="F.eks. melk, hvete"
+              />
+            </label>
+            <label className="menu-inspector__field">
+              Estimert råvarekost (kr)
+              <input
+                type="number"
+                min={0}
+                max={200}
+                step={0.5}
+                value={form.estimatedCostPerPortion ?? ""}
+                onChange={(e) =>
+                  onFormChange({
+                    ...form,
+                    estimatedCostPerPortion: e.target.value === "" ? null : Number(e.target.value),
+                  })
+                }
+              />
+            </label>
+          </section>
+        </>
       ) : null}
 
-      {catalogVariantAllergens && catalogVariantAllergens.length > 0 ? (
-        <p className="ds-provider-menu-editor__allergens">
-          Allergener (katalog): {catalogVariantAllergens.join(", ")}
-        </p>
+      {isCatalogMode && !categoryOnly && context.variantLabel ? (
+        <section className="menu-inspector__section">
+          <h4 className="menu-inspector__section-title">Fast valg</h4>
+          <p className="menu-inspector__readonly-value">{context.variantLabel}</p>
+          <p className="menu-inspector__note">Katalogstyrt — publiser kategorien for å aktivere.</p>
+        </section>
       ) : null}
 
-      {imageUrl ? (
-        <img src={imageUrl} alt="" className="ds-provider-menu-editor__thumb" />
-      ) : (
-        <p className="ds-provider-menu-editor__media-hint">Bilde er valgfritt og brukes kun der det gir verdi.</p>
-      )}
-
-      {!isCatalogMode ? (
-        <label className="ds-provider-menu-builder__field">
-          Rettens navn
-          <input
-            value={form.mealTitle}
-            onChange={(e) => onFormChange({ ...form, mealTitle: e.target.value })}
-            maxLength={120}
-          />
-        </label>
-      ) : (
-        <div className="ds-provider-menu-editor__readonly">
-          <span className="ds-provider-menu-editor__readonly-label">Fast valg</span>
-          <strong>{context.variantLabel ?? form.mealTitle}</strong>
-        </div>
-      )}
-
-      <label className="ds-provider-menu-builder__field">
-        Beskrivelse
-        <textarea
-          rows={3}
-          value={form.description}
-          onChange={(e) => onFormChange({ ...form, description: e.target.value })}
-          maxLength={4000}
-          readOnly={isCatalogMode}
-        />
-      </label>
-
-      <label className="ds-provider-menu-builder__field">
-        Allergener (kommaseparert)
-        <input
-          value={form.allergensText}
-          onChange={(e) => onFormChange({ ...form, allergensText: e.target.value })}
-          placeholder="F.eks. melk, hvete"
-          readOnly={isCatalogMode && !isSanityDrivenCategory(form.category)}
-        />
-      </label>
-
-      {!isCatalogMode ? (
-        <label className="ds-provider-menu-builder__field">
-          Estimert råvarekost (kr)
-          <input
-            type="number"
-            min={0}
-            max={200}
-            step={0.5}
-            value={form.estimatedCostPerPortion ?? ""}
-            onChange={(e) =>
-              onFormChange({
-                ...form,
-                estimatedCostPerPortion: e.target.value === "" ? null : Number(e.target.value),
-              })
-            }
-          />
-        </label>
+      {!isVarmrettMode && !isCatalogMode ? (
+        <section className="menu-inspector__section">
+          <h4 className="menu-inspector__section-title">Innhold</h4>
+          <label className="menu-inspector__field">
+            Rettens navn
+            <input
+              value={form.mealTitle}
+              onChange={(e) => onFormChange({ ...form, mealTitle: e.target.value })}
+              maxLength={120}
+            />
+          </label>
+          <label className="menu-inspector__field">
+            Beskrivelse
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => onFormChange({ ...form, description: e.target.value })}
+              maxLength={4000}
+            />
+          </label>
+        </section>
       ) : null}
+
+      <p className="menu-inspector__media-hint">Bilde er valgfritt og brukes kun der det gir verdi.</p>
+      {imageUrl ? <img src={imageUrl} alt="" className="menu-inspector__thumb" /> : null}
 
       {margin ? (
-        <div className="ds-provider-menu-builder__margin">
+        <section className="menu-inspector__section menu-inspector__section--margin">
+          <h4 className="menu-inspector__section-title">Pris & margin</h4>
           <p>
             Pris eks. mva: <strong>{formatPriceExVatLabel(margin.priceExVatNok)}</strong>
           </p>
@@ -177,60 +237,52 @@ export default function ProviderMenuEditorPanel({
                 Estimert kost: <strong>{margin.estimatedCostNok.toLocaleString("nb-NO")} kr</strong>
               </p>
               <p>
-                Estimert bruttofortjeneste:{" "}
-                <strong>{margin.grossMarginNok?.toLocaleString("nb-NO") ?? "—"} kr</strong>
+                Dekningsbidrag: <strong>{margin.grossMarginNok?.toLocaleString("nb-NO") ?? "—"} kr</strong>
                 {margin.marginPercent != null ? ` (${margin.marginPercent} %)` : ""}
               </p>
             </>
-          ) : null}
-        </div>
+          ) : (
+            <p className="menu-inspector__note">Legg inn råvarekost for marginberegning.</p>
+          )}
+        </section>
       ) : null}
 
       {isEnterpriseMode ? (
-        <fieldset className="ds-provider-menu-builder__enterprise ds-provider-menu-editor__enterprise-premium">
-          <legend>Enterprise-verdi</legend>
-          <p className="ds-provider-menu-editor__enterprise-lead">
-            Hva får kunden ekstra for Enterprise?
+        <section className="menu-inspector__section menu-inspector__section--enterprise enterprise-premium">
+          <h4 className="menu-inspector__section-title">Enterprise-verdi</h4>
+          <p className="menu-inspector__enterprise-lead">
+            Kunden betaler <strong>+{enterpriseDelta} kr</strong> mer enn Luxus. Beskriv hva kunden får ekstra.
           </p>
 
-          {(form.sourcePackage || form.upgradeType || form.upgradeNote) && (
-            <div className="ds-provider-menu-editor__enterprise-summary">
-              {form.sourcePackage ? (
-                <p>
-                  <span className="ds-provider-menu-editor__summary-label">Basert på</span>{" "}
-                  {TIER_SOURCE_LABELS[form.sourcePackage]}
-                </p>
-              ) : null}
-              {form.upgradeType ? (
-                <p>
-                  <span className="ds-provider-menu-editor__summary-label">Upgrade</span>{" "}
-                  {ENTERPRISE_UPGRADE_LABELS[form.upgradeType]}
-                </p>
-              ) : null}
-              {form.upgradeNote ? (
-                <p>
-                  <span className="ds-provider-menu-editor__summary-label">Kundeverdi</span> {form.upgradeNote}
-                </p>
-              ) : null}
-              {margin?.grossMarginNok != null ? (
-                <p>
-                  <span className="ds-provider-menu-editor__summary-label">Margin</span>{" "}
-                  {margin.grossMarginNok.toLocaleString("nb-NO")} kr
-                  {margin.marginPercent != null ? ` (${margin.marginPercent} %)` : ""}
-                </p>
-              ) : null}
+          <div className="menu-inspector__enterprise-kpis">
+            <div className="menu-inspector__kpi">
+              <span className="menu-inspector__kpi-label">Merpris</span>
+              <span className="menu-inspector__kpi-value">+{enterpriseDelta} kr</span>
             </div>
-          )}
+            {margin?.estimatedCostNok != null ? (
+              <div className="menu-inspector__kpi">
+                <span className="menu-inspector__kpi-label">Est. råvarekost</span>
+                <span className="menu-inspector__kpi-value">{margin.estimatedCostNok} kr</span>
+              </div>
+            ) : null}
+            {extraMargin != null ? (
+              <div className="menu-inspector__kpi">
+                <span className="menu-inspector__kpi-label">Ekstra dekningsbidrag</span>
+                <span className="menu-inspector__kpi-value">{extraMargin} kr</span>
+              </div>
+            ) : null}
+          </div>
 
-          <div className="ds-provider-menu-builder__copy-actions">
-            <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromBasis}>
-              Bygg fra Basis
-            </button>
+          <div className="menu-inspector__copy-actions">
             <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromLuxus}>
               Bygg fra Luxus
             </button>
+            <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromBasis}>
+              Bygg fra Basis
+            </button>
           </div>
-          <label className="ds-provider-menu-builder__field">
+
+          <label className="menu-inspector__field">
             Basert på
             <select
               value={form.sourcePackage ?? ""}
@@ -246,7 +298,7 @@ export default function ProviderMenuEditorPanel({
               <option value="LUXUS">Luxus</option>
             </select>
           </label>
-          <label className="ds-provider-menu-builder__field">
+          <label className="menu-inspector__field">
             Upgrade-type
             <select
               value={form.upgradeType ?? ""}
@@ -265,30 +317,30 @@ export default function ProviderMenuEditorPanel({
               ))}
             </select>
           </label>
-          <label className="ds-provider-menu-builder__field">
-            Upgrade-beskrivelse
+          <label className="menu-inspector__field">
+            Hva får kunden ekstra?
             <textarea
               rows={3}
               value={form.upgradeNote}
               onChange={(e) => onFormChange({ ...form, upgradeNote: e.target.value })}
               maxLength={500}
-              placeholder="F.eks. ekstra laks, premium topping, ponzu, frukt ved siden av"
+              placeholder="Premium protein, større porsjon, dessert/frukt, ekstra tilbehør…"
             />
           </label>
           {enterpriseWarnings.map((w) => (
             <p
               key={w.code}
-              className={w.blocking ? "ds-provider-menu-builder__error" : "ds-provider-menu-builder__warn"}
+              className={w.blocking ? "menu-inspector__error" : "menu-inspector__warn"}
               role="status"
             >
               {w.message}
             </p>
           ))}
-        </fieldset>
+        </section>
       ) : null}
 
       {enterpriseWarnings.some((w) => !w.blocking) ? (
-        <label className="ds-provider-menu-builder__confirm">
+        <label className="menu-inspector__confirm">
           <input
             type="checkbox"
             checked={confirmWarnings}
@@ -298,14 +350,14 @@ export default function ProviderMenuEditorPanel({
         </label>
       ) : null}
 
-      <div className="ds-provider-meny-actions ds-provider-menu-editor__actions">
+      <footer className="menu-inspector__actions">
         <button type="button" className="ds-btn" disabled={pending} onClick={onSaveDraft}>
           {pending ? "Lagrer…" : "Lagre utkast"}
         </button>
         <button type="button" className="ds-btn ds-btn--primary" disabled={pending} onClick={onPublish}>
           {pending ? "Publiserer…" : "Publiser"}
         </button>
-      </div>
+      </footer>
     </aside>
   );
 }
