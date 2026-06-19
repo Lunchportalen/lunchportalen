@@ -1,4 +1,5 @@
 ﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement>
+@using System.Linq
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
 
@@ -6,62 +7,8 @@
     var eyebrow = Model.Value<string>("eyebrow") ?? "Hva du faktisk får";
     var heading = Model.Value<string>("heading") ?? "Full kontroll på firmalunsj – uten administrasjon";
     var text    = Model.Value<string>("text")    ?? "Ansatte bestiller selv og avbestiller selv. Ledelsen slipper oppfølging, og dere betaler kun for det som faktisk blir levert.";
-}
-
-@{
-    /* Alle rader har samme properties — LabelBasis/LabelLuxus er tomme strenger når ikke i bruk */
-    var categories = new[]
-    {
-        new {
-            Name = "Bestilling",
-            Rows = new[]
-            {
-                new { Label = "Ansatte bestiller fra mobil",          Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Avbestilling frem til kl. 08:00",      Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Meny synlig to uker frem i tid",       Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Push-varsling når ny meny er klar",    Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-            }
-        },
-        new {
-            Name = "Meny og variasjon",
-            Rows = new[]
-            {
-                new { Label = "Salatbar",                             Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Påsmurt",                              Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Varmmat (rullerende ukesmeny)",        Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Sushi, Pokebowl og Thaimat",          Basis = false, Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Premium råvarer og høyere kvalitet",   Basis = false, Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Antall valg per dag",                  Basis = false, Luxus = false, LabelBasis = "3 valg", LabelLuxus = "6 valg" },
-            }
-        },
-        new {
-            Name = "Administrasjon",
-            Rows = new[]
-            {
-                new { Label = "Oversikt for ledelsen",                Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Automatisk fakturering",               Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Produksjonsliste til kjøkken",         Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Ingen administrasjon for ledelsen",    Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-            }
-        },
-        new {
-            Name = "Levering",
-            Rows = new[]
-            {
-                new { Label = "Lunsj levert til arbeidsplassen",      Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Prioritert levering og oppfølging",    Basis = false, Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Redusert matsvinn",                    Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-            }
-        },
-        new {
-            Name = "Support",
-            Rows = new[]
-            {
-                new { Label = "E-poststøtte",                         Basis = true,  Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-                new { Label = "Prioritert support",                   Basis = false, Luxus = true,  LabelBasis = "", LabelLuxus = "" },
-            }
-        }
-    };
+    var categories = Model.Value<BlockListModel>("featureCategories");
+    var hasCategories = categories != null && categories.Any();
 }
 
 <section class="pr-features">
@@ -73,57 +20,108 @@
             <p class="pr-lead">@text</p>
         </div>
 
-        <div class="pr-feature-table pr-reveal" style="--delay:100ms">
+        @if (hasCategories)
+        {
+            <div class="pr-feature-table pr-reveal" style="--delay:100ms">
 
-            <div class="pr-feature-table__head">
-                <div class="pr-feature-table__col-label"></div>
-                <div class="pr-feature-table__col pr-feature-table__col--plan">Basis</div>
-                <div class="pr-feature-table__col pr-feature-table__col--plan pr-feature-table__col--featured">Luxus</div>
-            </div>
+                <div class="pr-feature-table__head">
+                    <div class="pr-feature-table__col-label"></div>
+                    <div class="pr-feature-table__col pr-feature-table__col--plan">Basis</div>
+                    <div class="pr-feature-table__col pr-feature-table__col--plan pr-feature-table__col--featured">Luxus</div>
+                    <div class="pr-feature-table__col pr-feature-table__col--plan">Enterprise</div>
+                </div>
 
-            @foreach (var cat in categories)
-            {
-                <div class="pr-feature-table__category">@cat.Name</div>
-
-                @foreach (var row in cat.Rows)
+                @foreach (var category in categories!)
                 {
-                    <div class="pr-feature__row">
-                        <div class="pr-feature__label">@row.Label</div>
+                    var categoryName = category.Content?.Value<string>("categoryName");
+                    var rows = category.Content?.Value<BlockListModel>("rows");
 
-                        <div class="pr-feature__cell">
-                            @if (!string.IsNullOrWhiteSpace(row.LabelBasis))
-                            {
-                                <span class="pr-feature__text">@row.LabelBasis</span>
-                            }
-                            else if (row.Basis)
-                            {
-                                <span class="pr-check" aria-label="Inkludert">✓</span>
-                            }
-                            else
-                            {
-                                <span class="pr-dash" aria-label="Ikke inkludert">–</span>
-                            }
-                        </div>
+                    if (string.IsNullOrWhiteSpace(categoryName) && (rows == null || !rows.Any()))
+                    {
+                        continue;
+                    }
 
-                        <div class="pr-feature__cell pr-feature__cell--featured">
-                            @if (!string.IsNullOrWhiteSpace(row.LabelLuxus))
-                            {
-                                <span class="pr-feature__text pr-feature__text--featured">@row.LabelLuxus</span>
-                            }
-                            else if (row.Luxus)
-                            {
-                                <span class="pr-check" aria-label="Inkludert">✓</span>
-                            }
-                            else
-                            {
-                                <span class="pr-dash" aria-label="Ikke inkludert">–</span>
-                            }
+                    if (!string.IsNullOrWhiteSpace(categoryName))
+                    {
+                        <div class="pr-feature-table__category">@categoryName</div>
+                    }
+
+                    if (rows == null || !rows.Any())
+                    {
+                        continue;
+                    }
+
+                    @foreach (var rowBlock in rows)
+                    {
+                        var row = rowBlock.Content;
+                        if (row == null) { continue; }
+
+                        var label = row.Value<string>("label");
+                        var basisIncluded = row.Value<bool>("basisIncluded");
+                        var basisText = row.Value<string>("basisText");
+                        var luxusIncluded = row.Value<bool>("luxusIncluded");
+                        var luxusText = row.Value<string>("luxusText");
+                        var enterpriseIncluded = row.Value<bool>("enterpriseIncluded");
+                        var enterpriseText = row.Value<string>("enterpriseText");
+
+                        if (string.IsNullOrWhiteSpace(label))
+                        {
+                            continue;
+                        }
+
+                        <div class="pr-feature__row">
+                            <div class="pr-feature__label">@label</div>
+
+                            <div class="pr-feature__cell">
+                                @if (!string.IsNullOrWhiteSpace(basisText))
+                                {
+                                    <span class="pr-feature__text">@basisText</span>
+                                }
+                                else if (basisIncluded)
+                                {
+                                    <span class="pr-check" aria-label="Inkludert">✓</span>
+                                }
+                                else
+                                {
+                                    <span class="pr-dash" aria-label="Ikke inkludert">–</span>
+                                }
+                            </div>
+
+                            <div class="pr-feature__cell pr-feature__cell--featured">
+                                @if (!string.IsNullOrWhiteSpace(luxusText))
+                                {
+                                    <span class="pr-feature__text pr-feature__text--featured">@luxusText</span>
+                                }
+                                else if (luxusIncluded)
+                                {
+                                    <span class="pr-check" aria-label="Inkludert">✓</span>
+                                }
+                                else
+                                {
+                                    <span class="pr-dash" aria-label="Ikke inkludert">–</span>
+                                }
+                            </div>
+
+                            <div class="pr-feature__cell">
+                                @if (!string.IsNullOrWhiteSpace(enterpriseText))
+                                {
+                                    <span class="pr-feature__text">@enterpriseText</span>
+                                }
+                                else if (enterpriseIncluded)
+                                {
+                                    <span class="pr-check" aria-label="Inkludert">✓</span>
+                                }
+                                else
+                                {
+                                    <span class="pr-dash" aria-label="Ikke inkludert">–</span>
+                                }
+                            </div>
                         </div>
-                    </div>
+                    }
                 }
-            }
 
-        </div>
+            </div>
+        }
 
     </div>
 </section>
