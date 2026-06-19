@@ -30,7 +30,7 @@ export default async function LeverandorMenyPage() {
         <div>
           <p className="ds-eyebrow">Leverandør</p>
           <h1 className="ds-h2">Meny</h1>
-          <p className="ds-lead">Planlegg, vedlikehold og publiser menyer for Basis, Luxus og Enterprise.</p>
+          <p className="ds-lead">Planlegg uke, sett dagens felles varmrett og publiser for bestilling.</p>
         </div>
       </header>
 

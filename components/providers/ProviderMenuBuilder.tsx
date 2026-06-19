@@ -26,13 +26,15 @@ import {
   resolveProviderMenuSlot,
   type ResolvedProviderMenuSlot,
 } from "@/lib/provider-menu/mergeProviderMenuSlots";
-import { summarizeWorkspaceWeekStatus } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 import {
   buildEditorContext,
   summarizeWeekMetrics,
   summarizeCategoryDay,
+  summarizeSharedVarmrettDay,
+  resolveSharedVarmrettSlot,
+  resolveNextStepAction,
 } from "@/lib/provider-menu/providerMenuWorkspace";
 import {
   WEEKDAY_KEYS,
@@ -129,25 +131,27 @@ export default function ProviderMenuBuilder() {
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
   const tierPrice = prices?.[tier];
   const workspaceCategories = useMemo(() => providerWorkspaceCategories(tier), [tier]);
-  const weekStatus = summarizeWorkspaceWeekStatus(slots, weekDates, tier);
   const weekMetrics = useMemo(
     () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories),
     [slots, weekDates, tier, workspaceCategories],
   );
 
-  const nextStepHint = useMemo(() => {
-    if (weekMetrics.varmrettMissing > 0) return "Neste: planlegg manglende varmrett";
-    if (weekMetrics.draftSlots > 0) return "Neste: publiser utkast";
-    if (weekStatus === "Klar til publisering") return "Uken er klar";
-    return "Neste: velg dag og kategori";
-  }, [weekMetrics, weekStatus]);
+  /** Cockpit display-only — varmrett publish state (aligned with day-card badges). */
+  const cockpitVarmrettDisplay = useMemo(() => {
+    let publishedDays = 0;
+    let draftDays = 0;
+    for (const date of weekDates) {
+      const shared = summarizeSharedVarmrettDay(slots, date);
+      if (shared.statusChip === "published") publishedDays += 1;
+      else if (shared.statusChip === "draft") draftDays += 1;
+    }
+    return { publishedDays, draftDays };
+  }, [slots, weekDates]);
 
-  const statusChipClass = useMemo(() => {
-    if (weekStatus === "Publisert" || weekStatus === "Klar til publisering") return "is-published";
-    if (weekStatus === "Har utkast") return "is-draft";
-    if (weekStatus === "Mangler dager") return "is-missing";
-    return "is-neutral";
-  }, [weekStatus]);
+  const nextStepHint = useMemo(() => {
+    const labels = weekDates.map((_, idx) => WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? "");
+    return resolveNextStepAction(slots, weekDates, tier, weekMetrics, labels);
+  }, [slots, weekDates, tier, weekMetrics]);
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -196,7 +200,19 @@ export default function ProviderMenuBuilder() {
 
   function openSelection(sel: WeekSelection) {
     setSelected(sel);
-    const existing = resolveProviderMenuSlot(slots, sel.date, tier, sel.category);
+    let existing = resolveProviderMenuSlot(slots, sel.date, tier, sel.category);
+
+    if (sel.category === "varmrett" && sel.editorFocus === "varmrett") {
+      const shared = resolveSharedVarmrettSlot(slots, sel.date);
+      existing = {
+        ...existing,
+        mealTitle: shared.mealTitle || existing.mealTitle,
+        description: shared.description || existing.description,
+        allergensText: shared.allergensText || existing.allergensText,
+        estimatedCostPerPortion: shared.estimatedCostPerPortion ?? existing.estimatedCostPerPortion,
+      };
+    }
+
     setForm({ ...existing });
     setMessage(null);
     setError(null);
@@ -303,7 +319,13 @@ export default function ProviderMenuBuilder() {
           date: selected.date,
           category: selected.category,
           variantLabel: selected.variantLabel ?? null,
+          editorFocus: selected.editorFocus,
         })
+      : null;
+
+  const sharedVarmrettTitle =
+    selected != null
+      ? resolveSharedVarmrettSlot(slots, selected.date).mealTitle.trim() || null
       : null;
 
   const catalogVariant =
@@ -312,7 +334,7 @@ export default function ProviderMenuBuilder() {
       : null;
 
   const enterpriseWarnings =
-    form && tierPrice
+    form && tierPrice && selected?.editorFocus === "enterprise-upgrade"
       ? validateEnterprisePublish({
           tier: form.tier,
           mealTitle: form.mealTitle,
@@ -350,12 +372,12 @@ export default function ProviderMenuBuilder() {
     selected && !selected.variantKey && !isSanityDrivenCategory(selected.category),
   );
 
+  const inspectorOpen = Boolean(form && selected);
+
   return (
     <div className="ds-provider-menu-workspace provider-menu-workspace">
       <ProviderMenuCommandHeader
         tier={tier}
-        weekStatus={weekStatus}
-        statusChipClass={statusChipClass}
         weekStart={weekStart}
         prices={prices}
         onTierChange={(t) => {
@@ -366,17 +388,18 @@ export default function ProviderMenuBuilder() {
         onNextWeek={() => setWeekStart((w) => shiftWeekStart(w, 1))}
         workspaceView={workspaceView}
         onWorkspaceViewChange={setWorkspaceView}
-        nextStepHint={nextStepHint}
       />
 
       <ProviderMenuStatusRow
         weekStart={weekStart}
         tierLabel={TIER_LABELS[tier]}
         metrics={weekMetrics}
+        varmrettPublishedDays={cockpitVarmrettDisplay.publishedDays}
+        varmrettDraftDays={cockpitVarmrettDisplay.draftDays}
         priceExVatNok={tierPrice?.priceExVatNok ?? null}
+        nextStep={nextStepHint}
       />
 
-      {loading ? <p className="ds-body">Laster meny…</p> : null}
       {error ? (
         <p className="ds-provider-menu-builder__error" role="alert">
           {error}
@@ -388,16 +411,33 @@ export default function ProviderMenuBuilder() {
         </p>
       ) : null}
 
-      <div className="provider-menu-layout ds-provider-menu-workspace__body">
-        <div className="ds-provider-menu-workspace__planner">
+      <div
+        className={`provider-menu-layout ds-provider-menu-workspace__body${inspectorOpen ? " is-inspector-open" : " is-inspector-idle"}${loading ? " is-week-loading" : ""}`}
+      >
+        <div className={`ds-provider-menu-workspace__planner${loading && !prices ? " is-initial-loading" : ""}`}>
           {workspaceView === "week" ? (
-            <ProviderMenuWeekPlanner
-              tier={tier}
-              weekDates={weekDates}
-              slots={slots}
-              selected={selected}
-              onSelect={openSelection}
-            />
+            <>
+              {loading && !prices ? (
+                <div className="menu-week-skeleton" aria-busy="true" aria-label="Laster meny">
+                  {weekDates.map((date) => (
+                    <div key={date} className="menu-week-skeleton__day" />
+                  ))}
+                </div>
+              ) : null}
+              <ProviderMenuWeekPlanner
+                tier={tier}
+                weekDates={weekDates}
+                slots={slots}
+                selected={selected}
+                onSelect={openSelection}
+              />
+              {!inspectorOpen ? (
+                <p className="menu-planner-idle-hint">
+                  <span className="menu-planner-idle-hint__mark" aria-hidden="true" />
+                  Velg en dag i ukeplanen for å redigere varmrett, valg eller Enterprise-upgrade.
+                </p>
+              ) : null}
+            </>
           ) : (
             <ProviderMenuCatalogView tier={tier} onSelectVariant={openCatalogVariant} />
           )}
@@ -405,10 +445,12 @@ export default function ProviderMenuBuilder() {
 
         <div className="ds-provider-menu-workspace__inspector">
           <ProviderMenuEditorPanel
-          open={Boolean(form && selected)}
+          open={inspectorOpen}
           context={editorContext}
           form={form}
           tier={tier}
+          editorFocus={selected?.editorFocus}
+          sharedVarmrettTitle={sharedVarmrettTitle}
           categoryVariantLabels={categoryVariantLabels}
           categoryOnly={categoryOnly}
           onFormChange={setForm}
