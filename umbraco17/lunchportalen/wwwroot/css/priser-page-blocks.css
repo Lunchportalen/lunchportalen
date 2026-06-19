@@ -484,7 +484,7 @@
 
 .pr-feature-table__head {
     display: grid;
-    grid-template-columns: 1fr repeat(2, 160px);
+    grid-template-columns: 1fr repeat(3, 150px);
     border-bottom: 1px solid rgba(17, 17, 17, .08);
     background: rgba(17, 17, 17, .03);
 }
@@ -524,7 +524,7 @@
 
 .pr-feature__row {
     display: grid;
-    grid-template-columns: 1fr repeat(2, 160px);
+    grid-template-columns: 1fr repeat(3, 150px);
     border-bottom: 1px solid rgba(17, 17, 17, .05);
     transition: background .15s ease;
 }
@@ -815,7 +815,7 @@
 
     .pr-feature-table__head,
     .pr-feature__row {
-        grid-template-columns: 1fr repeat(2, 100px);
+        grid-template-columns: 1fr repeat(3, 90px);
     }
 
     .pr-feature-table__col--plan,
@@ -852,8 +852,8 @@
 
     .pr-feature-table__head,
     .pr-feature__row {
-        grid-template-columns: 1fr repeat(2, 80px);
-        min-width: 340px;
+        grid-template-columns: 1fr repeat(3, 82px);
+        min-width: 430px;
     }
 
     .pr-cta-band__actions {
