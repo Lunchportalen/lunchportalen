@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import {
@@ -11,6 +12,12 @@ import {
 } from "@/lib/providers/providerMenuPackageSurface";
 import { formatPriceExVatLabel } from "@/lib/providers/providerMenuPriceDisplay";
 import type { EditorContext, EditorFocus } from "@/lib/provider-menu/providerMenuWorkspace";
+import {
+  ENTERPRISE_DEFAULT_SUGGESTION,
+  ENTERPRISE_UPGRADE_QUICK_CHOICES,
+  applyEnterpriseUpgradePreset,
+  enterpriseUpgradeHasContent,
+} from "@/lib/provider-menu/providerMenuWorkspace";
 import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 
 const TIER_SOURCE_LABELS: Record<PlanTier, string> = {
@@ -81,6 +88,16 @@ export default function ProviderMenuEditorPanel({
   editorFocus,
   sharedVarmrettTitle,
 }: Props) {
+  const [showManualEditing, setShowManualEditing] = useState(false);
+
+  useEffect(() => {
+    if (!open || !form || !context) return;
+    const isEnterprise = (editorFocus ?? context.editorFocus) === "enterprise-upgrade";
+    if (isEnterprise) {
+      setShowManualEditing(enterpriseUpgradeHasContent(form));
+    }
+  }, [open, context?.date, context?.editorFocus, editorFocus, form?.upgradeType, form?.upgradeNote]);
+
   if (!open || !form || !context) {
     return (
       <aside className="provider-menu-inspector menu-inspector menu-inspector--idle" aria-label="Redigeringspanel" data-state="closed">
@@ -108,10 +125,33 @@ export default function ProviderMenuEditorPanel({
       : null;
 
   const headerSecondary = isEnterpriseUpgradeMode
-    ? "Enterprise-upgrade på dagens varmrett"
+    ? "Enterprise-upgrade på dagens Varmrett"
     : isVarmrettMode
-      ? "Dagens felles varmrett"
+      ? "Dagens felles Varmrett"
       : context.categoryLabel;
+
+  const applyDefaultSuggestion = () => {
+    onFormChange(
+      applyEnterpriseUpgradePreset(form, {
+        upgradeType: ENTERPRISE_DEFAULT_SUGGESTION.upgradeType,
+        upgradeNote: ENTERPRISE_DEFAULT_SUGGESTION.upgradeNote,
+        sourcePackage: ENTERPRISE_DEFAULT_SUGGESTION.sourcePackage,
+      }),
+    );
+  };
+
+  const applyQuickChoice = (choice: (typeof ENTERPRISE_UPGRADE_QUICK_CHOICES)[number]) => {
+    onFormChange(
+      applyEnterpriseUpgradePreset(form, {
+        upgradeType: choice.upgradeType,
+        upgradeNote: choice.upgradeNote,
+        sourcePackage: "LUXUS",
+      }),
+    );
+  };
+
+  const hasUpgradeContent = enterpriseUpgradeHasContent(form);
+  const showSuggestionCard = isEnterpriseUpgradeMode && !showManualEditing && !hasUpgradeContent;
 
   return (
     <aside className="provider-menu-inspector menu-inspector is-open" aria-label="Redigeringspanel">
@@ -265,20 +305,22 @@ export default function ProviderMenuEditorPanel({
       {isEnterpriseUpgradeMode ? (
         <section className="menu-inspector__section menu-inspector__section--enterprise enterprise-premium">
           <div className="menu-inspector__enterprise-header">
-            <span className="menu-inspector__enterprise-step">Upgrade-builder</span>
             <h4 className="menu-inspector__section-title">Enterprise-upgrade</h4>
             <p className="menu-inspector__enterprise-lead">
-              Bygg ekstra verdi på samme varmrett — ikke opprett ny produksjonsrett.
+              Ekstra verdi – samme Varmrett. Ingen ny produksjonsrett.
             </p>
           </div>
 
-          <div className="menu-inspector__enterprise-base">
-            <span className="menu-inspector__enterprise-base-label">Basert på dagens varmrett</span>
+          <div className="menu-inspector__enterprise-varmrett-card">
+            <span className="menu-inspector__enterprise-base-label">Dagens Varmrett</span>
             {sharedVarmrettTitle ? (
               <p className="menu-inspector__enterprise-base-title">{sharedVarmrettTitle}</p>
             ) : (
-              <p className="menu-inspector__warn">Dagens varmrett mangler — legg inn varmrett først.</p>
+              <p className="menu-inspector__warn">Dagens Varmrett mangler — legg inn Varmrett først.</p>
             )}
+            <p className="menu-inspector__enterprise-varmrett-note">
+              Enterprise bygger på samme Varmrett – uten ny produksjonsrett.
+            </p>
           </div>
 
           <div className="menu-inspector__enterprise-kpis">
@@ -300,62 +342,133 @@ export default function ProviderMenuEditorPanel({
             ) : null}
           </div>
 
-          <div className="menu-inspector__copy-actions">
-            <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromLuxus}>
-              Bygg fra Luxus
-            </button>
-            <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromBasis}>
-              Bygg fra {TIER_SOURCE_LABELS.BASIS}
-            </button>
+          {showSuggestionCard ? (
+            <div className="menu-inspector__enterprise-suggestion">
+              <span className="menu-inspector__enterprise-suggestion-label">Foreslått Enterprise-upgrade</span>
+              <p className="menu-inspector__enterprise-suggestion-title">{ENTERPRISE_DEFAULT_SUGGESTION.title}</p>
+              <p className="menu-inspector__enterprise-suggestion-lead">{ENTERPRISE_DEFAULT_SUGGESTION.explanation}</p>
+              <div className="menu-inspector__enterprise-suggestion-actions">
+                <button
+                  type="button"
+                  className="ds-btn ds-btn--primary"
+                  onClick={applyDefaultSuggestion}
+                >
+                  Bruk forslag
+                </button>
+                <button
+                  type="button"
+                  className="ds-btn ds-btn--ghost"
+                  onClick={() => setShowManualEditing(true)}
+                >
+                  Velg annet
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {hasUpgradeContent && !showManualEditing ? (
+            <div className="menu-inspector__enterprise-applied">
+              <span className="menu-inspector__enterprise-applied-label">Valgt upgrade</span>
+              <p className="menu-inspector__enterprise-applied-value">
+                {form.upgradeNote.trim() ||
+                  (form.upgradeType ? ENTERPRISE_UPGRADE_LABELS[form.upgradeType] : "Upgrade valgt")}
+              </p>
+            </div>
+          ) : null}
+
+          <div className="menu-inspector__enterprise-quick">
+            <h5 className="menu-inspector__enterprise-quick-title">Raskt premiumvalg</h5>
+            <p className="menu-inspector__enterprise-quick-lead">Ekstra verdi – samme Varmrett</p>
+            <div className="menu-inspector__enterprise-chips" role="group" aria-label="Raskt premiumvalg">
+              {ENTERPRISE_UPGRADE_QUICK_CHOICES.map((choice) => (
+                <button
+                  key={choice.id}
+                  type="button"
+                  className={`menu-inspector__enterprise-chip${
+                    form.upgradeType === choice.upgradeType &&
+                    form.upgradeNote.trim() === choice.upgradeNote
+                      ? " is-active"
+                      : ""
+                  }`}
+                  onClick={() => applyQuickChoice(choice)}
+                >
+                  {choice.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="menu-inspector__enterprise-fields">
-          <label className="menu-inspector__field">
-            Basert på
-            <select
-              value={form.sourcePackage ?? ""}
-              onChange={(e) =>
-                onFormChange({
-                  ...form,
-                  sourcePackage: (e.target.value as PlanTier) || null,
-                })
-              }
-            >
-              <option value="">Ingen</option>
-              <option value="BASIS">Basis</option>
-              <option value="LUXUS">Luxus</option>
-            </select>
-          </label>
-          <label className="menu-inspector__field">
-            Upgrade-type
-            <select
-              value={form.upgradeType ?? ""}
-              onChange={(e) =>
-                onFormChange({
-                  ...form,
-                  upgradeType: (e.target.value as EnterpriseUpgradeType) || null,
-                })
-              }
-            >
-              <option value="">Velg type</option>
-              {ENTERPRISE_UPGRADE_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {ENTERPRISE_UPGRADE_LABELS[t]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="menu-inspector__field">
-            Hva får kunden ekstra?
-            <textarea
-              rows={3}
-              value={form.upgradeNote}
-              onChange={(e) => onFormChange({ ...form, upgradeNote: e.target.value })}
-              maxLength={500}
-              placeholder="Premium protein, større porsjon, dessert/frukt…"
-            />
-          </label>
-          </div>
+          <button
+            type="button"
+            className="menu-inspector__enterprise-manual-toggle"
+            aria-expanded={showManualEditing}
+            onClick={() => setShowManualEditing((v) => !v)}
+          >
+            {showManualEditing ? "Skjul manuell redigering" : "Rediger manuelt"}
+          </button>
+
+          {showManualEditing ? (
+            <div className="menu-inspector__enterprise-manual">
+              <p className="menu-inspector__enterprise-manual-lead">Avansert redigering</p>
+              <div className="menu-inspector__copy-actions">
+                <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromLuxus}>
+                  Bygg fra Luxus
+                </button>
+                <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromBasis}>
+                  Bygg fra {TIER_SOURCE_LABELS.BASIS}
+                </button>
+              </div>
+
+              <div className="menu-inspector__enterprise-fields">
+                <label className="menu-inspector__field">
+                  Basert på
+                  <select
+                    value={form.sourcePackage ?? ""}
+                    onChange={(e) =>
+                      onFormChange({
+                        ...form,
+                        sourcePackage: (e.target.value as PlanTier) || null,
+                      })
+                    }
+                  >
+                    <option value="">Ingen</option>
+                    <option value="BASIS">Basis</option>
+                    <option value="LUXUS">Luxus</option>
+                  </select>
+                </label>
+                <label className="menu-inspector__field">
+                  Upgrade-type
+                  <select
+                    value={form.upgradeType ?? ""}
+                    onChange={(e) =>
+                      onFormChange({
+                        ...form,
+                        upgradeType: (e.target.value as EnterpriseUpgradeType) || null,
+                      })
+                    }
+                  >
+                    <option value="">Velg type</option>
+                    {ENTERPRISE_UPGRADE_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {ENTERPRISE_UPGRADE_LABELS[t]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="menu-inspector__field">
+                  Hva får kunden ekstra?
+                  <textarea
+                    rows={3}
+                    value={form.upgradeNote}
+                    onChange={(e) => onFormChange({ ...form, upgradeNote: e.target.value })}
+                    maxLength={500}
+                    placeholder="Premium protein, større porsjon, dessert/frukt…"
+                  />
+                </label>
+              </div>
+            </div>
+          ) : null}
+
           {enterpriseWarnings.map((w) => (
             <p
               key={w.code}

@@ -100,7 +100,10 @@ describe("ProviderMenuBuilder workspace layout", () => {
     const workspace = readFileSync(resolve(process.cwd(), "lib/provider-menu/providerMenuWorkspace.ts"), "utf8");
     expect(workspace).toContain("felles for alle pakker");
     expect(workspace).toContain("Enterprise-upgrade");
-    expect(editor).toContain("ikke opprett ny produksjonsrett");
+    expect(editor).toContain("Foreslått Enterprise-upgrade");
+    expect(editor).toContain("Bruk forslag");
+    expect(editor).toContain("Rediger manuelt");
+    expect(editor).toContain("Enterprise bygger på samme Varmrett");
     expect(editor).toContain("isEnterpriseUpgradeMode");
     expect(editor).not.toMatch(/varmmrett/i);
   });
