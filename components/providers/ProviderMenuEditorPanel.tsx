@@ -10,7 +10,7 @@ import {
   type MarginEstimate,
 } from "@/lib/providers/providerMenuPackageSurface";
 import { formatPriceExVatLabel } from "@/lib/providers/providerMenuPriceDisplay";
-import type { EditorContext } from "@/lib/provider-menu/providerMenuWorkspace";
+import type { EditorContext, EditorFocus } from "@/lib/provider-menu/providerMenuWorkspace";
 import { editorContextLine } from "@/lib/provider-menu/providerMenuWorkspace";
 import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 
@@ -43,6 +43,8 @@ type Props = {
   catalogVariantAllergens?: string[];
   imageUrl?: string | null;
   tier: PlanTier;
+  editorFocus?: EditorFocus;
+  sharedVarmrettTitle?: string | null;
 };
 
 export default function ProviderMenuEditorPanel({
@@ -65,6 +67,8 @@ export default function ProviderMenuEditorPanel({
   catalogVariantAllergens,
   imageUrl,
   tier,
+  editorFocus,
+  sharedVarmrettTitle,
 }: Props) {
   if (!open || !form || !context) {
     return (
@@ -84,9 +88,10 @@ export default function ProviderMenuEditorPanel({
     );
   }
 
-  const isVarmrettMode = isSanityDrivenCategory(form.category);
-  const isCatalogMode = !isVarmrettMode && (context.mode === "catalog" || categoryOnly);
-  const isEnterpriseMode = tier === "ENTERPRISE" && isVarmrettMode;
+  const focus = editorFocus ?? context.editorFocus;
+  const isEnterpriseUpgradeMode = focus === "enterprise-upgrade";
+  const isVarmrettMode = isSanityDrivenCategory(form.category) && !isEnterpriseUpgradeMode;
+  const isCatalogMode = !isVarmrettMode && !isEnterpriseUpgradeMode && (context.mode === "catalog" || categoryOnly);
 
   const slotStatus =
     form.status === "published" ? "Publisert" : form.status === "draft" ? "Utkast" : "Ikke publisert";
@@ -106,11 +111,13 @@ export default function ProviderMenuEditorPanel({
       <header className="menu-inspector__head">
         <div>
           <p className="menu-inspector__mode">
-            {isCatalogMode && categoryOnly
-              ? "Faste valg"
-              : isVarmrettMode
-                ? "Dagens varmmatrett"
-                : "Enterprise upgrade"}
+            {isEnterpriseUpgradeMode
+              ? "Enterprise upgrade"
+              : isCatalogMode && categoryOnly
+                ? "Faste valg"
+                : isVarmrettMode
+                  ? "Dagens varmmatrett"
+                  : "Kategori"}
           </p>
           <h3 className="menu-inspector__context">{editorContextLine(context)}</h3>
         </div>
@@ -141,6 +148,12 @@ export default function ProviderMenuEditorPanel({
 
       {isVarmrettMode ? (
         <>
+          <section className="menu-inspector__section menu-inspector__section--shared">
+            <p className="menu-inspector__shared-lead">
+              Denne retten brukes for Basis, Luxus og Enterprise denne dagen. Enterprise kan få en egen
+              upgrade, men ikke en separat varmmrett.
+            </p>
+          </section>
           <section className="menu-inspector__section">
             <h4 className="menu-inspector__section-title">Rett</h4>
             <label className="menu-inspector__field">
@@ -199,7 +212,7 @@ export default function ProviderMenuEditorPanel({
         </section>
       ) : null}
 
-      {!isVarmrettMode && !isCatalogMode ? (
+      {!isVarmrettMode && !isCatalogMode && !isEnterpriseUpgradeMode ? (
         <section className="menu-inspector__section">
           <h4 className="menu-inspector__section-title">Innhold</h4>
           <label className="menu-inspector__field">
@@ -247,8 +260,17 @@ export default function ProviderMenuEditorPanel({
         </section>
       ) : null}
 
-      {isEnterpriseMode ? (
+      {isEnterpriseUpgradeMode ? (
         <section className="menu-inspector__section menu-inspector__section--enterprise enterprise-premium">
+          <p className="menu-inspector__shared-lead">
+            Enterprise bruker samme varmmrett, men kunden får ekstra verdi gjennom upgrade.
+          </p>
+          {sharedVarmrettTitle ? (
+            <p className="menu-inspector__readonly-value">
+              Dagens varmmrett: <strong>{sharedVarmrettTitle}</strong>
+            </p>
+          ) : null}
+
           <h4 className="menu-inspector__section-title">Enterprise-verdi</h4>
           <p className="menu-inspector__enterprise-lead">
             Kunden betaler <strong>+{enterpriseDelta} kr</strong> mer enn Luxus. Beskriv hva kunden får ekstra.

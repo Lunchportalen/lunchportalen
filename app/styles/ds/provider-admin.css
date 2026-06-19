@@ -2018,6 +2018,77 @@ button.ds-provider-menu-builder__variant {
   color: var(--ds-text);
 }
 
+.menu-command-header__helper {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ds-text-soft);
+  line-height: 1.5;
+}
+
+.menu-day-card__hero-shared {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ds-text-soft);
+}
+
+.menu-day-card__packages {
+  display: grid;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(17, 17, 17, 0.06);
+}
+
+.menu-day-card__package-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 11px;
+  color: var(--ds-text-soft);
+  line-height: 1.5;
+}
+
+.menu-day-card__group--enterprise {
+  padding-top: 4px;
+  border-top: 1px solid rgba(17, 17, 17, 0.06);
+}
+
+.menu-day-card__upgrade-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(17, 17, 17, 0.14);
+  background: rgba(17, 17, 17, 0.02);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  min-height: 44px;
+}
+
+.menu-day-card__upgrade-row.is-selected {
+  border-color: var(--ds-text);
+  background: rgba(17, 17, 17, 0.04);
+}
+
+.menu-day-card__upgrade-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.menu-day-card__upgrade-hint {
+  grid-column: 1;
+  font-size: 11px;
+  color: var(--ds-text-soft);
+}
+
+.menu-inspector__shared-lead {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ds-text-soft);
+  line-height: 1.5;
+}
+
 .menu-command-header__views {
   display: flex;
   flex-wrap: wrap;

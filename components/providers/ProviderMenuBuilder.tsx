@@ -33,6 +33,7 @@ import {
   buildEditorContext,
   summarizeWeekMetrics,
   summarizeCategoryDay,
+  resolveSharedVarmrettSlot,
 } from "@/lib/provider-menu/providerMenuWorkspace";
 import {
   WEEKDAY_KEYS,
@@ -196,7 +197,19 @@ export default function ProviderMenuBuilder() {
 
   function openSelection(sel: WeekSelection) {
     setSelected(sel);
-    const existing = resolveProviderMenuSlot(slots, sel.date, tier, sel.category);
+    let existing = resolveProviderMenuSlot(slots, sel.date, tier, sel.category);
+
+    if (sel.category === "varmrett" && sel.editorFocus === "varmrett") {
+      const shared = resolveSharedVarmrettSlot(slots, sel.date);
+      existing = {
+        ...existing,
+        mealTitle: shared.mealTitle || existing.mealTitle,
+        description: shared.description || existing.description,
+        allergensText: shared.allergensText || existing.allergensText,
+        estimatedCostPerPortion: shared.estimatedCostPerPortion ?? existing.estimatedCostPerPortion,
+      };
+    }
+
     setForm({ ...existing });
     setMessage(null);
     setError(null);
@@ -303,7 +316,13 @@ export default function ProviderMenuBuilder() {
           date: selected.date,
           category: selected.category,
           variantLabel: selected.variantLabel ?? null,
+          editorFocus: selected.editorFocus,
         })
+      : null;
+
+  const sharedVarmrettTitle =
+    selected != null
+      ? resolveSharedVarmrettSlot(slots, selected.date).mealTitle.trim() || null
       : null;
 
   const catalogVariant =
@@ -312,7 +331,7 @@ export default function ProviderMenuBuilder() {
       : null;
 
   const enterpriseWarnings =
-    form && tierPrice
+    form && tierPrice && selected?.editorFocus === "enterprise-upgrade"
       ? validateEnterprisePublish({
           tier: form.tier,
           mealTitle: form.mealTitle,
@@ -409,6 +428,8 @@ export default function ProviderMenuBuilder() {
           context={editorContext}
           form={form}
           tier={tier}
+          editorFocus={selected?.editorFocus}
+          sharedVarmrettTitle={sharedVarmrettTitle}
           categoryVariantLabels={categoryVariantLabels}
           categoryOnly={categoryOnly}
           onFormChange={setForm}

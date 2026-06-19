@@ -2,7 +2,7 @@
 // Workspace helpers: status chips, editor context, category summaries.
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
-import { CATEGORY_LABELS } from "@/lib/cms/menuDayContract";
+import { CATEGORY_LABELS, PLAN_TIERS } from "@/lib/cms/menuDayContract";
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { resolveProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
@@ -86,12 +86,17 @@ export function summarizeCategoryDay(
   };
 }
 
+export type EditorFocus = "varmrett" | "enterprise-upgrade" | "category";
+
+export const ENTERPRISE_UPGRADE_SELECTION_KEY = "enterprise-upgrade";
+
 export type EditorContext = {
   tierLabel: string;
   weekdayLabel: string;
   date: string;
   categoryLabel: string;
   variantLabel: string | null;
+  editorFocus: EditorFocus;
   mode: "catalog" | "varmrett" | "enterprise";
 };
 
@@ -102,12 +107,16 @@ export function buildEditorContext(input: {
   date: string;
   category: Category;
   variantLabel?: string | null;
+  editorFocus?: EditorFocus;
 }): EditorContext {
   const contract = contractForCategory(input.category);
   const isSanity = isSanityDrivenCategory(input.category);
+  const editorFocus: EditorFocus =
+    input.editorFocus ?? (isSanity ? "varmrett" : "category");
+
   let mode: EditorContext["mode"] = "catalog";
-  if (input.tier === "ENTERPRISE") mode = "enterprise";
-  else if (isSanity) mode = "varmrett";
+  if (editorFocus === "enterprise-upgrade") mode = "enterprise";
+  else if (editorFocus === "varmrett" || isSanity) mode = "varmrett";
 
   return {
     tierLabel: input.tierLabel,
@@ -115,17 +124,36 @@ export function buildEditorContext(input: {
     date: input.date,
     categoryLabel: contract?.categoryLabel ?? CATEGORY_LABELS[input.category],
     variantLabel: input.variantLabel ?? null,
+    editorFocus,
     mode,
   };
 }
 
 export function editorContextLine(ctx: EditorContext): string {
+  if (ctx.editorFocus === "varmrett") {
+    return `${ctx.weekdayLabel} · felles for alle pakker`;
+  }
+  if (ctx.editorFocus === "enterprise-upgrade") {
+    return `${ctx.weekdayLabel} · tillegg til dagens varmmrett`;
+  }
   const parts = [ctx.tierLabel];
   if (ctx.weekdayLabel) parts.push(ctx.weekdayLabel);
   parts.push(ctx.categoryLabel);
   if (ctx.variantLabel) parts.push(ctx.variantLabel);
   return parts.join(" · ");
 }
+
+/** One warm dish per delivery day — shared across all packages. */
+export const SHARED_WARM_DISH_HINT = "Samme for alle pakker";
+
+export const PACKAGE_WARM_DISH_HELPER =
+  "Varmretten er felles per dag. Pakken styrer faste valg og eventuelle upgrades.";
+
+export const DAY_PACKAGE_INCLUDES = {
+  basis: "Basis: Påsmurt · Salatboks",
+  luxus: "Luxus: + Sushi · Poké · Thai",
+  enterprise: "Enterprise: + Upgrade",
+} as const;
 
 /** Package card copy for command header — contract-aligned, not invented. */
 export const PACKAGE_CARD_COPY: Record<
@@ -134,20 +162,124 @@ export const PACKAGE_CARD_COPY: Record<
 > = {
   BASIS: {
     title: "Basis",
-    includes: "Påsmurt · Salatboks · Varmrett",
-    priceHint: "90 eks. mva",
+    includes: "Påsmurt · Salatboks · Dagens varmmrett",
+    priceHint: "90 kr eks. mva",
   },
   LUXUS: {
     title: "Luxus",
     includes: "Basis + Sushi · Poké · Thai",
-    priceHint: "130 eks. mva",
+    priceHint: "130 kr eks. mva",
   },
   ENTERPRISE: {
     title: "Enterprise",
-    includes: "Luxus + premium upgrade",
-    priceHint: "170 eks. mva",
+    includes: "Luxus + Enterprise-upgrade",
+    priceHint: "170 kr eks. mva",
   },
 };
+
+const VARMRETT_TIER_PRIORITY: Record<PlanTier, number> = {
+  BASIS: 3,
+  LUXUS: 2,
+  ENTERPRISE: 1,
+};
+
+function varmrettSlotScore(slot: ResolvedProviderMenuSlot): number {
+  if (slot.status === "published") return 30;
+  if (slot.status === "draft" && menuSlotHasContent(slot)) return 20;
+  if (menuSlotHasContent(slot)) return 10;
+  return 0;
+}
+
+/** Display/read-model: one shared warm dish per day (storage may still be per-tier). */
+export function resolveSharedVarmrettSlot(
+  slots: Record<string, ResolvedProviderMenuSlot>,
+  date: string,
+): ResolvedProviderMenuSlot {
+  let best = resolveProviderMenuSlot(slots, date, "BASIS", "varmrett");
+  let bestScore = varmrettSlotScore(best) + VARMRETT_TIER_PRIORITY.BASIS;
+
+  for (const tier of PLAN_TIERS) {
+    const slot = resolveProviderMenuSlot(slots, date, tier, "varmrett");
+    const score = varmrettSlotScore(slot) + VARMRETT_TIER_PRIORITY[tier];
+    if (score > bestScore) {
+      best = slot;
+      bestScore = score;
+    }
+  }
+
+  return best;
+}
+
+export function summarizeSharedVarmrettDay(
+  slots: Record<string, ResolvedProviderMenuSlot>,
+  date: string,
+): CategoryDaySummary {
+  const slot = resolveSharedVarmrettSlot(slots, date);
+  const contract = contractForCategory("varmrett");
+  const hasContent = menuSlotHasContent(slot);
+
+  let statusChip: WorkspaceStatusChip = "missing";
+  if (slot.status === "published") statusChip = "published";
+  else if (slot.status === "draft" && hasContent) statusChip = "draft";
+  else if (hasContent) statusChip = "draft";
+  else statusChip = "missing";
+
+  return {
+    category: "varmrett",
+    categoryLabel: contract?.categoryLabel ?? CATEGORY_LABELS.varmrett,
+    statusChip,
+    statusLabel: statusChipLabel(statusChip),
+    rows: [
+      {
+        category: "varmrett",
+        variant: null,
+        title: hasContent ? slot.mealTitle.trim() : "Varmrett",
+        status:
+          slot.status === "published"
+            ? "Publisert"
+            : hasContent
+              ? "Utkast"
+              : "Mangler varmmat fra Sanity/bank",
+        editable: true,
+        sanityDriven: true,
+      },
+    ],
+    isSanityDriven: true,
+    slot,
+  };
+}
+
+export type EnterpriseUpgradeDaySummary = {
+  statusChip: WorkspaceStatusChip;
+  statusLabel: string;
+  summaryLine: string;
+  slot: ResolvedProviderMenuSlot;
+};
+
+export function summarizeEnterpriseUpgradeDay(
+  slots: Record<string, ResolvedProviderMenuSlot>,
+  date: string,
+): EnterpriseUpgradeDaySummary {
+  const slot = resolveProviderMenuSlot(slots, date, "ENTERPRISE", "varmrett");
+  const hasUpgrade =
+    Boolean(slot.upgradeType) || String(slot.upgradeNote ?? "").trim().length >= 8;
+
+  let statusChip: WorkspaceStatusChip = "missing";
+  if (slot.status === "published" && hasUpgrade) statusChip = "published";
+  else if (slot.status === "draft" && hasUpgrade) statusChip = "draft";
+  else if (hasUpgrade) statusChip = "draft";
+
+  const summaryLine = hasUpgrade
+    ? slot.upgradeNote?.trim() || "Upgrade planlagt"
+    : "Upgrade mangler";
+
+  return {
+    statusChip,
+    statusLabel: statusChipLabel(statusChip),
+    summaryLine,
+    slot,
+  };
+}
 
 const PREMIUM_CATEGORIES: Category[] = ["sushi", "pokebowl", "thai"];
 const FIXED_CATEGORIES: Category[] = ["paasmurt", "salat"];
@@ -174,12 +306,13 @@ export function summarizeWeekMetrics(
   let fixedSlots = 0;
 
   for (const date of dates) {
+    const sharedVarmrett = summarizeSharedVarmrettDay(slots, date);
+    if (sharedVarmrett.statusChip === "missing") varmrettMissing += 1;
+    else varmrettFilled += 1;
+
     for (const category of categories) {
+      if (category === "varmrett") continue;
       const summary = summarizeCategoryDay(slots, date, tier, category);
-      if (summary.isSanityDriven) {
-        if (summary.statusChip === "missing") varmrettMissing += 1;
-        else varmrettFilled += 1;
-      }
       if (summary.statusChip === "published") publishedSlots += 1;
       else if (summary.statusChip === "draft") draftSlots += 1;
       else if (summary.statusChip === "fixed") fixedSlots += 1;
@@ -212,6 +345,7 @@ export type DayCardSummary = {
   dayStatus: WorkspaceStatusChip;
   dayStatusLabel: string;
   varmrett: CategoryDaySummary;
+  enterpriseUpgrade: EnterpriseUpgradeDaySummary | null;
   fixedGroups: CategoryGroupRow[];
   premiumGroups: CategoryGroupRow[];
 };
@@ -231,14 +365,23 @@ export function summarizeDayCard(
   weekdayLabel: string,
   categories: Category[],
 ): DayCardSummary {
-  const summaries = categories.map((c) => summarizeCategoryDay(slots, date, tier, c));
-  const varmrett = summaries.find((s) => s.isSanityDriven)!;
+  const summaries = categories
+    .filter((c) => c !== "varmrett")
+    .map((c) => summarizeCategoryDay(slots, date, tier, c));
+  const varmrett = summarizeSharedVarmrettDay(slots, date);
+  const enterpriseUpgrade = tier === "ENTERPRISE" ? summarizeEnterpriseUpgradeDay(slots, date) : null;
 
   let dayStatus: WorkspaceStatusChip = "fixed";
-  if (summaries.some((s) => s.statusChip === "missing")) dayStatus = "missing";
-  else if (summaries.some((s) => s.statusChip === "draft")) dayStatus = "draft";
-  else if (summaries.every((s) => s.statusChip === "published" || s.statusChip === "fixed")) {
-    dayStatus = summaries.some((s) => s.statusChip === "published") ? "published" : "fixed";
+  const statusSources: WorkspaceStatusChip[] = [
+    varmrett.statusChip,
+    ...summaries.map((s) => s.statusChip),
+  ];
+  if (enterpriseUpgrade) statusSources.push(enterpriseUpgrade.statusChip);
+
+  if (statusSources.some((s) => s === "missing")) dayStatus = "missing";
+  else if (statusSources.some((s) => s === "draft")) dayStatus = "draft";
+  else if (statusSources.every((s) => s === "published" || s === "fixed")) {
+    dayStatus = statusSources.some((s) => s === "published") ? "published" : "fixed";
   }
 
   const toGroup = (s: CategoryDaySummary): CategoryGroupRow => ({
@@ -264,6 +407,7 @@ export function summarizeDayCard(
     dayStatus,
     dayStatusLabel: statusChipLabel(dayStatus),
     varmrett,
+    enterpriseUpgrade,
     fixedGroups,
     premiumGroups,
   };

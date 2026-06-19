@@ -1,7 +1,7 @@
 "use client";
 
 import type { PlanTier } from "@/lib/cms/menuDayContract";
-import { PACKAGE_CARD_COPY } from "@/lib/provider-menu/providerMenuWorkspace";
+import { PACKAGE_CARD_COPY, PACKAGE_WARM_DISH_HELPER } from "@/lib/provider-menu/providerMenuWorkspace";
 import { formatPriceExVatLabel, formatPriceIncVatLabel } from "@/lib/providers/providerMenuPriceDisplay";
 import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
 import { PLAN_TIERS } from "@/lib/cms/menuDayContract";
@@ -84,6 +84,8 @@ export default function ProviderMenuCommandHeader({
           );
         })}
       </div>
+
+      <p className="menu-command-header__helper">{PACKAGE_WARM_DISH_HELPER}</p>
 
       <div className="menu-command-header__views" role="tablist" aria-label="Workspace">
         <button

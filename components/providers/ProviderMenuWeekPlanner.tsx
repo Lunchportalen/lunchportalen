@@ -3,7 +3,14 @@
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
-import { summarizeDayCard, type WorkspaceStatusChip } from "@/lib/provider-menu/providerMenuWorkspace";
+import {
+  summarizeDayCard,
+  SHARED_WARM_DISH_HINT,
+  DAY_PACKAGE_INCLUDES,
+  ENTERPRISE_UPGRADE_SELECTION_KEY,
+  type EditorFocus,
+  type WorkspaceStatusChip,
+} from "@/lib/provider-menu/providerMenuWorkspace";
 import { WEEKDAY_KEYS, WEEKDAY_LABELS } from "@/lib/providers/providerMenuPackageSurface";
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 
@@ -12,6 +19,7 @@ export type WeekSelection = {
   category: Category;
   variantKey?: string;
   variantLabel?: string;
+  editorFocus?: EditorFocus;
 };
 
 type Props = {
@@ -46,12 +54,16 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
           const varmrettRow = varmrett.rows[0];
           const varmrettMissing = varmrett.statusChip === "missing";
           const varmrettSelected =
-            selected?.date === date && selected.category === "varmrett";
+            selected?.date === date &&
+            selected.category === "varmrett" &&
+            selected.editorFocus !== "enterprise-upgrade";
           const varmrettSlot = varmrett.slot;
           const costHint =
             menuSlotHasContent(varmrettSlot) && varmrettSlot.estimatedCostPerPortion != null
               ? `Kost ${varmrettSlot.estimatedCostPerPortion} kr`
               : null;
+          const upgradeSelected =
+            selected?.date === date && selected.editorFocus === "enterprise-upgrade";
 
           return (
             <article key={date} className={`menu-day-card is-${card.dayStatus}`}>
@@ -74,10 +86,12 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                     category: "varmrett",
                     variantKey: "varmrett",
                     variantLabel: varmrettRow?.title,
+                    editorFocus: "varmrett",
                   })
                 }
               >
                 <span className="menu-day-card__hero-label">Dagens varmmatrett</span>
+                <span className="menu-day-card__hero-shared">{SHARED_WARM_DISH_HINT}</span>
                 {varmrettMissing ? (
                   <>
                     <span className="menu-day-card__hero-title">Varmrett mangler</span>
@@ -92,6 +106,15 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                 )}
               </button>
 
+              <section className="menu-day-card__packages" aria-label="Pakkeinnhold">
+                <h4 className="menu-day-card__group-title">Pakkeinnhold</h4>
+                <ul className="menu-day-card__package-list">
+                  <li>{DAY_PACKAGE_INCLUDES.basis} · Dagens varmmrett</li>
+                  <li>{DAY_PACKAGE_INCLUDES.luxus}</li>
+                  <li>{DAY_PACKAGE_INCLUDES.enterprise}</li>
+                </ul>
+              </section>
+
               {card.fixedGroups.length > 0 ? (
                 <section className="menu-day-card__group">
                   <h4 className="menu-day-card__group-title">Faste valg</h4>
@@ -104,7 +127,7 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                           <button
                             type="button"
                             className={`menu-day-card__group-row${groupSelected ? " is-selected" : ""}`}
-                            onClick={() => onSelect({ date, category: group.category })}
+                            onClick={() => onSelect({ date, category: group.category, editorFocus: "category" })}
                           >
                             <span className="menu-day-card__group-name">
                               {group.categoryLabel} · {group.variantCount} valg
@@ -131,7 +154,7 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                           <button
                             type="button"
                             className={`menu-day-card__group-row${groupSelected ? " is-selected" : ""}`}
-                            onClick={() => onSelect({ date, category: group.category })}
+                            onClick={() => onSelect({ date, category: group.category, editorFocus: "category" })}
                           >
                             <span className="menu-day-card__group-name">
                               {group.categoryLabel} · {group.summaryLine}
@@ -142,6 +165,31 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                       );
                     })}
                   </ul>
+                </section>
+              ) : null}
+
+              {tier === "ENTERPRISE" && card.enterpriseUpgrade ? (
+                <section className="menu-day-card__group menu-day-card__group--enterprise">
+                  <h4 className="menu-day-card__group-title">Enterprise upgrade</h4>
+                  <button
+                    type="button"
+                    className={`menu-day-card__upgrade-row${upgradeSelected ? " is-selected" : ""}`}
+                    onClick={() =>
+                      onSelect({
+                        date,
+                        category: "varmrett",
+                        variantKey: ENTERPRISE_UPGRADE_SELECTION_KEY,
+                        variantLabel: card.enterpriseUpgrade?.summaryLine,
+                        editorFocus: "enterprise-upgrade",
+                      })
+                    }
+                  >
+                    <span className="menu-day-card__upgrade-title">
+                      {card.enterpriseUpgrade.summaryLine}
+                    </span>
+                    <span className="menu-day-card__upgrade-hint">Tillegg til dagens varmmrett</span>
+                    <span className="menu-day-card__group-action">Åpne</span>
+                  </button>
                 </section>
               ) : null}
             </article>

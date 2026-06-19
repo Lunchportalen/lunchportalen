@@ -13,7 +13,10 @@ import {
   summarizeCategoryDay,
   summarizeWeekMetrics,
   summarizeDayCard,
+  summarizeSharedVarmrettDay,
+  resolveSharedVarmrettSlot,
   PACKAGE_CARD_COPY,
+  SHARED_WARM_DISH_HINT,
 } from "@/lib/provider-menu/providerMenuWorkspace";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
@@ -57,7 +60,7 @@ describe("providerMenuWorkspace", () => {
     expect(providerWorkspaceCategories("LUXUS")).toHaveLength(6);
   });
 
-  it("editor context shows package/day/category/variant", () => {
+  it("varmrett editor context is tier-agnostic", () => {
     const ctx = buildEditorContext({
       tier: "LUXUS",
       tierLabel: "Luxus",
@@ -65,12 +68,27 @@ describe("providerMenuWorkspace", () => {
       date: "2026-06-16",
       category: "varmrett",
       variantLabel: null,
+      editorFocus: "varmrett",
     });
-    expect(editorContextLine(ctx)).toBe("Luxus · Tirsdag · Varmrett");
+    expect(editorContextLine(ctx)).toBe("Tirsdag · felles for alle pakker");
     expect(ctx.mode).toBe("varmrett");
   });
 
-  it("Enterprise editor context uses enterprise mode", () => {
+  it("enterprise upgrade editor context is add-on framing", () => {
+    const ctx = buildEditorContext({
+      tier: "ENTERPRISE",
+      tierLabel: "Enterprise",
+      weekdayLabel: "Mandag",
+      date: "2026-06-15",
+      category: "varmrett",
+      variantLabel: null,
+      editorFocus: "enterprise-upgrade",
+    });
+    expect(ctx.mode).toBe("enterprise");
+    expect(editorContextLine(ctx)).toBe("Mandag · tillegg til dagens varmmrett");
+  });
+
+  it("category editor context keeps tier label", () => {
     const ctx = buildEditorContext({
       tier: "ENTERPRISE",
       tierLabel: "Enterprise",
@@ -79,7 +97,7 @@ describe("providerMenuWorkspace", () => {
       category: "pokebowl",
       variantLabel: "Laks",
     });
-    expect(ctx.mode).toBe("enterprise");
+    expect(ctx.mode).toBe("catalog");
     expect(editorContextLine(ctx)).toContain("Laks");
   });
 
@@ -111,10 +129,54 @@ describe("providerMenuWorkspace", () => {
     expect(summary.rows[0]?.title).toBe("Kjøttkaker");
   });
 
-  it("package card copy describes tier contents", () => {
-    expect(PACKAGE_CARD_COPY.BASIS.includes).toContain("Påsmurt");
-    expect(PACKAGE_CARD_COPY.LUXUS.includes).toContain("Sushi");
-    expect(PACKAGE_CARD_COPY.ENTERPRISE.includes).toContain("premium");
+  it("package card copy describes shared warm dish model", () => {
+    expect(PACKAGE_CARD_COPY.BASIS.includes).toContain("Dagens varmmrett");
+    expect(PACKAGE_CARD_COPY.LUXUS.includes).toContain("Basis + Sushi");
+    expect(PACKAGE_CARD_COPY.ENTERPRISE.includes).toContain("Enterprise-upgrade");
+  });
+
+  it("resolveSharedVarmrettSlot prefers published content across tiers", () => {
+    const slots: Record<string, ResolvedProviderMenuSlot> = {
+      "2026-06-16:BASIS:varmrett": {
+        date: "2026-06-16",
+        tier: "BASIS",
+        category: "varmrett",
+        mealTitle: "Felles rett",
+        description: "",
+        allergensText: "",
+        estimatedCostPerPortion: null,
+        sourcePackage: null,
+        upgradeType: null,
+        upgradeNote: "",
+        status: "published",
+        contentSource: "published",
+      },
+      "2026-06-16:ENTERPRISE:varmrett": {
+        date: "2026-06-16",
+        tier: "ENTERPRISE",
+        category: "varmrett",
+        mealTitle: "Annen enterprise tittel",
+        description: "",
+        allergensText: "",
+        estimatedCostPerPortion: null,
+        sourcePackage: null,
+        upgradeType: null,
+        upgradeNote: "",
+        status: "draft",
+        contentSource: "draft",
+      },
+    };
+    const shared = resolveSharedVarmrettSlot(slots, "2026-06-16");
+    expect(shared.mealTitle).toBe("Felles rett");
+  });
+
+  it("summarizeSharedVarmrettDay is used in day card", () => {
+    const categories = providerWorkspaceCategories("LUXUS");
+    const card = summarizeDayCard({}, "2026-06-15", "LUXUS", "Mandag", categories);
+    expect(card.varmrett.isSanityDriven).toBe(true);
+    expect(SHARED_WARM_DISH_HINT).toBe("Samme for alle pakker");
+    const shared = summarizeSharedVarmrettDay({}, "2026-06-15");
+    expect(shared.statusChip).toBe("missing");
   });
 
   it("summarizeWeekMetrics counts varmrett missing from read-model", () => {
