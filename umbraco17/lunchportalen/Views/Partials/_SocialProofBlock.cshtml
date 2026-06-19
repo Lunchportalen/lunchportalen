@@ -1,78 +1,150 @@
 ﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<Umbraco.Cms.Core.Models.PublishedContent.IPublishedElement?>
 @using Umbraco.Extensions
 @using Umbraco.Cms.Core.Models.Blocks
+@using Umbraco.Cms.Core.Models.PublishedContent
 
 @{
-    var quote    = Model?.Value<string>("quote")
-        ?? "Plattformen ga oss oversikt uten ekstra administrasjon — og catereren vår fikk forutsigbar produksjon.";
-    var initials = Model?.Value<string>("initials") ?? "HF";
-    var name     = Model?.Value<string>("name") ?? "Hanne Fredriksen";
-    var role     = Model?.Value<string>("role") ?? "HR-leder, kundebedrift";
-    var facts    = Model?.Value<IEnumerable<BlockListItem>>("items");
+    var items = Model?.Value<IEnumerable<BlockListItem>>("items")?.ToList();
 
-    var defaultFacts = new (string Value, string Label)[]
+    var fallbackFacts = new (string Value, string Label)[]
     {
-        ("1 200+", "bedrifter på plattformen"),
-        ("−32%", "mindre matsvinn i snitt"),
-        ("08:00", "deterministisk bestillingsfrist")
+        ("0", "manuelle lister i hverdagen"),
+        ("08:00", "frist for bestilling og avbestilling"),
+        ("1", "samlet lunsjflyt")
     };
+
+    string eyebrow;
+    string heading;
+    string subheading;
+    string quote;
+    string quoteName;
+    string quoteRole;
+    IPublishedContent? image = null;
+    List<(string Value, string Label)> factRows;
+
+    if (items != null && items.Any())
+    {
+        var hero = items[0].Content;
+
+        eyebrow    = hero.Value<string>("eyebrow") ?? "";
+        heading    = hero.Value<string>("heading") ?? "";
+        subheading = hero.Value<string>("subheading") ?? "";
+        quote      = hero.Value<string>("quote") ?? "";
+        quoteName  = hero.Value<string>("quoteName") ?? "";
+        quoteRole  = hero.Value<string>("quoteRole") ?? "";
+        image      = hero.Value<IPublishedContent>("image");
+
+        factRows = new List<(string Value, string Label)>();
+        foreach (var item in items)
+        {
+            var value = item.Content.Value<string>("value");
+            var label = item.Content.Value<string>("label");
+
+            if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(label))
+            {
+                continue;
+            }
+
+            factRows.Add((value ?? "", label ?? ""));
+        }
+    }
+    else
+    {
+        eyebrow    = "Kundehistorie";
+        heading    = "Mindre oppfølging. Mer kontroll.";
+        subheading = "For bedrifter som vil tilby en god lunsjordning uten manuelle lister, kantinedrift eller unødvendig matsvinn.";
+        quote      = "Lunchportalen gjør firmalunsjen mye enklere å håndtere. Ansatte bestiller selv, kjøkkenet får riktige tall, og vi slipper den daglige oppfølgingen.";
+        quoteName  = "Anne Berg";
+        quoteRole  = "HR-ansvarlig i mellomstor bedrift";
+        image      = null;
+        factRows   = fallbackFacts.ToList();
+    }
+
+    var imageUrl = image?.Url();
+    var initials = "";
+    if (!string.IsNullOrWhiteSpace(quoteName))
+    {
+        var nameParts = quoteName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        initials = nameParts.Length >= 2
+            ? $"{nameParts[0][0]}{nameParts[^1][0]}"
+            : quoteName[..1];
+        initials = initials.ToUpperInvariant();
+    }
 }
 
 <section class="lp-social-proof">
     <div class="lp-social-proof__inner">
-        <div class="lp-social-proof__grid">
+        @if (!string.IsNullOrWhiteSpace(eyebrow))
+        {
+            <p class="lp-social-proof__label">@eyebrow</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(heading))
+        {
+            <h2 class="lp-social-proof__heading">@heading</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(subheading))
+        {
+            <p class="lp-social-proof__subheading">@subheading</p>
+        }
 
+        <div class="lp-social-proof__grid">
             <article class="lp-social-proof__quote-card">
                 <div class="lp-social-proof__quote-mark" aria-hidden="true">"</div>
 
-                <blockquote class="lp-social-proof__quote">@quote</blockquote>
-
-                <div class="lp-social-proof__person">
-                    <div class="lp-social-proof__avatar" aria-hidden="true">@initials</div>
-                    <div>
-                        <div class="lp-social-proof__name">@name</div>
-                        <div class="lp-social-proof__role">@role</div>
-                    </div>
-                </div>
-            </article>
-
-            <div class="lp-social-proof__facts">
-                @if (facts != null && facts.Any())
+                @if (!string.IsNullOrWhiteSpace(quote))
                 {
-                    foreach (var item in facts)
-                    {
-                        var value = item.Content.Value<string>("value");
-                        var label = item.Content.Value<string>("label");
+                    <blockquote class="lp-social-proof__quote">@quote</blockquote>
+                }
 
-                        if (string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(label))
+                @if (!string.IsNullOrWhiteSpace(quoteName) || !string.IsNullOrWhiteSpace(quoteRole) || !string.IsNullOrWhiteSpace(imageUrl) || !string.IsNullOrWhiteSpace(initials))
+                {
+                    <div class="lp-social-proof__person">
+                        @if (!string.IsNullOrWhiteSpace(imageUrl))
                         {
-                            continue;
+                            <div class="lp-social-proof__avatar">
+                                <img class="lp-social-proof__avatar-img" src="@imageUrl" alt="@quoteName" loading="lazy" />
+                            </div>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(initials))
+                        {
+                            <div class="lp-social-proof__avatar" aria-hidden="true">@initials</div>
                         }
 
-                        <div class="lp-social-proof__fact">
-                            @if (!string.IsNullOrWhiteSpace(value))
-                            {
-                                <strong>@value</strong>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(label))
-                            {
-                                <span>@label</span>
-                            }
-                        </div>
-                    }
+                        @if (!string.IsNullOrWhiteSpace(quoteName) || !string.IsNullOrWhiteSpace(quoteRole))
+                        {
+                            <div>
+                                @if (!string.IsNullOrWhiteSpace(quoteName))
+                                {
+                                    <div class="lp-social-proof__name">@quoteName</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(quoteRole))
+                                {
+                                    <div class="lp-social-proof__role">@quoteRole</div>
+                                }
+                            </div>
+                        }
+                    </div>
                 }
-                else
-                {
-                    foreach (var fact in defaultFacts)
+            </article>
+
+            @if (factRows.Any())
+            {
+                <div class="lp-social-proof__facts">
+                    @foreach (var fact in factRows)
                     {
                         <div class="lp-social-proof__fact">
-                            <strong>@fact.Value</strong>
-                            <span>@fact.Label</span>
+                            @if (!string.IsNullOrWhiteSpace(fact.Value))
+                            {
+                                <strong>@fact.Value</strong>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(fact.Label))
+                            {
+                                <span>@fact.Label</span>
+                            }
                         </div>
                     }
-                }
-            </div>
-
+                </div>
+            }
         </div>
     </div>
 </section>
