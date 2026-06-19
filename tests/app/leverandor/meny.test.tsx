@@ -39,6 +39,17 @@ describe("ProviderMenuBuilder workspace layout", () => {
     );
   });
 
+  test("renders command header with package cards and status row", async () => {
+    const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
+    const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
+    expect(html).toContain("menu-command-header");
+    expect(html).toContain("menu-package-card");
+    expect(html).toContain("menu-workspace-status");
+    expect(html).toContain("Påsmurt · Salatboks · Varmrett");
+    expect(html).toContain("Basis + Sushi · Poké · Thai");
+    expect(html).toContain("Luxus + premium upgrade");
+  });
+
   test("renders full-width workspace with planner and inspector", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
@@ -49,30 +60,43 @@ describe("ProviderMenuBuilder workspace layout", () => {
     expect(html).toContain("ds-provider-menu-workspace__inspector");
     expect(html).toContain("Mandag");
     expect(html).toContain("Fredag");
-    expect(html).toContain("Velg en dag og kategori");
+    expect(html).toContain("Velg en dag");
     expect(html).not.toContain("Pad Thai nudler");
   });
 
-  test("empty inspector state when nothing selected", async () => {
+  test("week planner uses compact day cards with varmrett hero", async () => {
+    const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
+    const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
+    expect(html).toContain("menu-day-card");
+    expect(html).toContain("menu-day-card__hero");
+    expect(html).toContain("Dagens varmmatrett");
+    expect(html).toContain("Faste valg");
+    expect(html).not.toContain("ds-provider-menu-day__variant-row");
+  });
+
+  test("empty inspector guides next action", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain('data-state="closed"');
-    expect(html).toContain("Klikk en variant eller varmmatrett");
+    expect(html).toContain("Klikk på varmmatrett, faste valg eller Enterprise-upgrade");
   });
 
   test("workspace components separated in source", () => {
     const builder = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"), "utf8");
+    expect(builder).toContain("ProviderMenuCommandHeader");
+    expect(builder).toContain("ProviderMenuStatusRow");
     expect(builder).toContain("ProviderMenuWeekPlanner");
     expect(builder).toContain("ProviderMenuEditorPanel");
     expect(builder).toContain("ds-provider-menu-workspace__inspector");
     expect(builder).not.toContain("lp_order_set");
   });
 
-  test("week planner uses scroll wrapper not inline grid only", () => {
+  test("week planner uses scroll wrapper and grouped categories", () => {
     const planner = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuWeekPlanner.tsx"), "utf8");
     expect(planner).toContain("provider-menu-grid-scroll");
     expect(planner).toContain("provider-menu-days");
-    expect(planner).toContain("ds-provider-menu-day__variant-row");
+    expect(planner).toContain("menu-day-card__group");
+    expect(planner).not.toContain("ds-provider-menu-day__variant-row");
     expect(planner).not.toContain("ds-provider-menu-builder__grid");
   });
 
@@ -82,6 +106,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
     expect(editor).toContain("provider-menu-inspector");
     expect(editor).toContain("enterprise-premium");
     expect(editor).toContain("Bilde er valgfritt");
+    expect(editor).toContain("menu-inspector__section");
   });
 });
 
@@ -94,7 +119,7 @@ describe("LeverandorMenyPage full-width frame", () => {
     expect(source).toContain("ProviderMenuBuilder");
   });
 
-  test("CSS defines full-width page and 5-column days grid", () => {
+  test("CSS defines full-width page and workspace hierarchy", () => {
     const css = readFileSync(resolve(process.cwd(), "app/styles/ds/provider-admin.css"), "utf8");
     expect(css).toContain(".provider-menu-workspace-page");
     expect(css).toContain("max-width: none");
@@ -105,6 +130,9 @@ describe("LeverandorMenyPage full-width frame", () => {
     expect(css).toContain(".provider-menu-grid-scroll");
     expect(css).toContain("overflow-x: auto");
     expect(css).toContain(".provider-menu-inspector");
+    expect(css).toContain(".menu-command-header");
+    expect(css).toContain(".menu-day-card");
+    expect(css).toContain(".menu-workspace-status");
   });
 });
 
@@ -113,6 +141,8 @@ describe("provider menu safety guards", () => {
     "components/providers/ProviderMenuBuilder.tsx",
     "components/providers/ProviderMenuEditorPanel.tsx",
     "components/providers/ProviderMenuWeekPlanner.tsx",
+    "components/providers/ProviderMenuCommandHeader.tsx",
+    "components/providers/ProviderMenuStatusRow.tsx",
     "lib/provider-menu/providerMenuTierContract.ts",
     "app/api/provider/menu-days/route.ts",
   ];
@@ -134,7 +164,7 @@ describe("provider menu safety guards", () => {
 describe("menu contract unchanged", () => {
   test("Basis still three categories", () => {
     const source = readFileSync(resolve(process.cwd(), "lib/provider-menu/providerMenuTierContract.ts"), "utf8");
-    expect(source).toContain('categoriesForTierInOrder(PLAN_CATEGORIES.BASIS)');
+    expect(source).toContain("categoriesForTierInOrder(PLAN_CATEGORIES.BASIS)");
     expect(source).toContain("Ost & Skinke");
   });
 });

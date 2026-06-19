@@ -11,6 +11,9 @@ import {
   buildEditorContext,
   editorContextLine,
   summarizeCategoryDay,
+  summarizeWeekMetrics,
+  summarizeDayCard,
+  PACKAGE_CARD_COPY,
 } from "@/lib/provider-menu/providerMenuWorkspace";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
@@ -106,5 +109,30 @@ describe("providerMenuWorkspace", () => {
     const summary = summarizeCategoryDay(slots, "2026-06-16", "BASIS", "varmrett");
     expect(summary.statusChip).toBe("published");
     expect(summary.rows[0]?.title).toBe("Kjøttkaker");
+  });
+
+  it("package card copy describes tier contents", () => {
+    expect(PACKAGE_CARD_COPY.BASIS.includes).toContain("Påsmurt");
+    expect(PACKAGE_CARD_COPY.LUXUS.includes).toContain("Sushi");
+    expect(PACKAGE_CARD_COPY.ENTERPRISE.includes).toContain("premium");
+  });
+
+  it("summarizeWeekMetrics counts varmrett missing from read-model", () => {
+    const dates = ["2026-06-15", "2026-06-16"];
+    const categories = providerWorkspaceCategories("BASIS");
+    const metrics = summarizeWeekMetrics({}, dates, "BASIS", categories);
+    expect(metrics.daysPlanned).toBe(2);
+    expect(metrics.varmrettMissing).toBe(2);
+    expect(metrics.varmrettFilled).toBe(0);
+  });
+
+  it("summarizeDayCard groups fixed categories compactly", () => {
+    const dates = ["2026-06-15"];
+    const categories = providerWorkspaceCategories("BASIS");
+    const card = summarizeDayCard({}, "2026-06-15", "BASIS", "Mandag", categories);
+    expect(card.varmrett.isSanityDriven).toBe(true);
+    expect(card.fixedGroups.length).toBe(2);
+    expect(card.fixedGroups.every((g) => g.variantCount > 0)).toBe(true);
+    expect(card.premiumGroups.length).toBe(0);
   });
 });
