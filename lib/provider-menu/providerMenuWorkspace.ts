@@ -134,7 +134,7 @@ export function editorContextLine(ctx: EditorContext): string {
     return `${ctx.weekdayLabel} · felles for alle pakker`;
   }
   if (ctx.editorFocus === "enterprise-upgrade") {
-    return `${ctx.weekdayLabel} · tillegg til dagens varmmrett`;
+    return `${ctx.weekdayLabel} · Enterprise-upgrade`;
   }
   const parts = [ctx.tierLabel];
   if (ctx.weekdayLabel) parts.push(ctx.weekdayLabel);
@@ -144,36 +144,44 @@ export function editorContextLine(ctx: EditorContext): string {
 }
 
 /** One warm dish per delivery day — shared across all packages. */
-export const SHARED_WARM_DISH_HINT = "Samme for alle pakker";
+export const SHARED_WARM_DISH_HINT = "Én felles varmrett";
 
-export const PACKAGE_WARM_DISH_HELPER =
-  "Varmretten er felles per dag. Pakken styrer faste valg og eventuelle upgrades.";
+export const PRODUCTION_RULE_TITLE = "Én felles varmrett per dag";
+
+export const PRODUCTION_RULE_TEXT =
+  "Samme varmrett for Basis, Luxus og Enterprise. Enterprise gir ekstra verdi — ikke ny kjøkkenrett.";
+
+export const PACKAGE_WARM_DISH_HELPER = PRODUCTION_RULE_TEXT;
 
 export const DAY_PACKAGE_INCLUDES = {
-  basis: "Basis: Påsmurt · Salatboks",
-  luxus: "Luxus: + Sushi · Poké · Thai",
-  enterprise: "Enterprise: + Upgrade",
+  basis: "Påsmurt · Salatboks",
+  luxus: "Basis + Sushi · Poké · Thai",
+  enterprise: "Samme varmrett + ekstra verdi",
 } as const;
 
 /** Package card copy for command header — contract-aligned, not invented. */
 export const PACKAGE_CARD_COPY: Record<
   PlanTier,
-  { title: string; includes: string; priceHint: string }
+  { title: string; role: string; includes: string; priceHint: string; badge?: string }
 > = {
   BASIS: {
     title: "Basis",
-    includes: "Påsmurt · Salatboks · Dagens varmmrett",
+    role: "Standard lunsjvalg",
+    includes: "Påsmurt · Salatboks · Dagens varmrett",
     priceHint: "90 kr eks. mva",
   },
   LUXUS: {
     title: "Luxus",
+    role: "Flere valg for ansatte",
     includes: "Basis + Sushi · Poké · Thai",
     priceHint: "130 kr eks. mva",
   },
   ENTERPRISE: {
     title: "Enterprise",
-    includes: "Luxus + Enterprise-upgrade",
+    role: "Premium upgrade",
+    includes: "Samme varmrett + ekstra verdi",
     priceHint: "170 kr eks. mva",
+    badge: "Ikke egen produksjonsrett",
   },
 };
 
@@ -327,6 +335,71 @@ export function summarizeWeekMetrics(
     draftSlots,
     fixedSlots,
   };
+}
+
+const WEEKDAY_POSSESSIVE: Record<string, string> = {
+  Mandag: "mandagens",
+  Tirsdag: "tirsdagens",
+  Onsdag: "onsdagens",
+  Torsdag: "torsdagens",
+  Fredag: "fredagens",
+};
+
+export function weekReadinessLabel(metrics: WeekWorkspaceMetrics): string {
+  if (metrics.varmrettMissing > 0) return "Ikke klar for publisering";
+  if (metrics.draftSlots > 0) return "Har utkast";
+  if (metrics.publishedSlots > 0) return "Klar for bestilling";
+  return "Klar for publisering";
+}
+
+export function buildWeekCockpitSummary(
+  weekStart: string,
+  metrics: WeekWorkspaceMetrics,
+): string {
+  const parts = [
+    `Uke fra ${weekStart}`,
+    `${metrics.daysPlanned} dager`,
+    metrics.varmrettMissing > 0
+      ? `${metrics.varmrettMissing} varmretter mangler`
+      : `${metrics.varmrettFilled} varmretter`,
+  ];
+  if (metrics.publishedSlots > 0) parts.push(`${metrics.publishedSlots} publisert`);
+  if (metrics.draftSlots > 0) parts.push(`${metrics.draftSlots} utkast`);
+  parts.push(weekReadinessLabel(metrics));
+  return parts.join(" · ");
+}
+
+export function resolveNextStepAction(
+  slots: Record<string, ResolvedProviderMenuSlot>,
+  dates: string[],
+  tier: PlanTier,
+  metrics: WeekWorkspaceMetrics,
+  weekdayLabels: string[],
+): string {
+  if (metrics.varmrettMissing > 0) {
+    for (let i = 0; i < dates.length; i++) {
+      const shared = summarizeSharedVarmrettDay(slots, dates[i]!);
+      if (shared.statusChip === "missing") {
+        const label = weekdayLabels[i] ?? "dagen";
+        const possessive = WEEKDAY_POSSESSIVE[label] ?? `${label.toLowerCase()}s`;
+        return `Legg inn ${possessive} varmrett`;
+      }
+    }
+    return "Legg inn manglende varmretter";
+  }
+
+  if (tier === "ENTERPRISE") {
+    let upgradeMissing = 0;
+    for (const date of dates) {
+      const upgrade = summarizeEnterpriseUpgradeDay(slots, date);
+      if (upgrade.statusChip === "missing") upgradeMissing += 1;
+    }
+    if (upgradeMissing > 0) return "Kontroller Enterprise-upgrade";
+  }
+
+  if (metrics.draftSlots > 0) return "Publiser uke";
+  if (metrics.publishedSlots > 0) return "Klar for bestilling";
+  return "Forhåndsvis uke";
 }
 
 export type CategoryGroupRow = {

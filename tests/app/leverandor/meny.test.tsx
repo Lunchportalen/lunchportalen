@@ -44,10 +44,11 @@ describe("ProviderMenuBuilder workspace layout", () => {
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("menu-command-header");
     expect(html).toContain("menu-package-card");
-    expect(html).toContain("Påsmurt · Salatboks · Dagens varmmrett");
+    expect(html).toContain("Påsmurt · Salatboks · Dagens varmrett");
     expect(html).toContain("Basis + Sushi · Poké · Thai");
-    expect(html).toContain("Luxus + Enterprise-upgrade");
-    expect(html).toContain("Varmretten er felles per dag");
+    expect(html).toContain("Samme varmrett + ekstra verdi");
+    expect(html).toContain("Én felles varmrett per dag");
+    expect(html).toContain("Ikke egen produksjonsrett");
   });
 
   test("renders full-width workspace with planner and inspector", async () => {
@@ -56,6 +57,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
     expect(html).toContain("provider-menu-layout");
     expect(html).toContain("provider-menu-days");
     expect(html).toContain("provider-menu-inspector");
+    expect(html).toContain("menu-week-cockpit");
     expect(html).toContain("Mandag");
     expect(html).toContain("Velg en dag");
     expect(html).not.toContain("Pad Thai nudler");
@@ -65,19 +67,18 @@ describe("ProviderMenuBuilder workspace layout", () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("menu-day-card__hero");
-    expect(html).toContain("Dagens varmmatrett");
-    expect(html).toContain("Samme for alle pakker");
-    expect(html).toContain("Pakkeinnhold");
-    expect(html).toContain("Basis: Påsmurt · Salatboks");
-    expect(html).toContain("Luxus: + Sushi · Poké · Thai");
-    expect(html).toContain("Enterprise: + Upgrade");
+    expect(html).toContain("Dagens varmrett");
+    expect(html).toContain("Én felles varmrett");
+    expect(html).toContain("Varmrett mangler");
+    expect(html).toContain("Legg inn dagens varmrett før denne dagen kan publiseres.");
   });
 
   test("empty inspector guides shared warm dish vs upgrade", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain('data-state="closed"');
-    expect(html).toContain("Klikk på varmmatrett, faste valg eller Enterprise-upgrade");
+    expect(html).toContain("Klikk varmrett eller valg i ukeplanen");
+    expect(html).toContain("is-inspector-idle");
   });
 
   test("workspace components separated in source", () => {
@@ -89,18 +90,34 @@ describe("ProviderMenuBuilder workspace layout", () => {
   test("week planner uses shared warm dish read-model", () => {
     const planner = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuWeekPlanner.tsx"), "utf8");
     expect(planner).toContain("SHARED_WARM_DISH_HINT");
-    expect(planner).toContain("DAY_PACKAGE_INCLUDES");
     expect(planner).toContain("enterprise-upgrade");
     expect(planner).not.toContain("ds-provider-menu-day__variant-row");
+    expect(planner).not.toMatch(/varmmrett/i);
   });
 
   test("editor panel separates warm dish from enterprise upgrade", () => {
     const editor = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuEditorPanel.tsx"), "utf8");
     const workspace = readFileSync(resolve(process.cwd(), "lib/provider-menu/providerMenuWorkspace.ts"), "utf8");
     expect(workspace).toContain("felles for alle pakker");
-    expect(workspace).toContain("tillegg til dagens varmmrett");
-    expect(editor).toContain("ikke en separat varmmrett");
+    expect(workspace).toContain("Enterprise-upgrade");
+    expect(editor).toContain("ikke opprett ny produksjonsrett");
     expect(editor).toContain("isEnterpriseUpgradeMode");
+    expect(editor).not.toMatch(/varmmrett/i);
+  });
+
+  test("no Varmmrett typo in provider menu UI surfaces", () => {
+    const files = [
+      "components/providers/ProviderMenuBuilder.tsx",
+      "components/providers/ProviderMenuEditorPanel.tsx",
+      "components/providers/ProviderMenuWeekPlanner.tsx",
+      "components/providers/ProviderMenuCommandHeader.tsx",
+      "components/providers/ProviderMenuStatusRow.tsx",
+      "lib/provider-menu/providerMenuWorkspace.ts",
+    ];
+    for (const rel of files) {
+      const source = readFileSync(resolve(process.cwd(), rel), "utf8");
+      expect(source).not.toMatch(/varmmrett/i);
+    }
   });
 });
 

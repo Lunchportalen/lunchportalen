@@ -63,7 +63,7 @@ export function buildMenuCatalogVariants(): MenuCatalogVariant[] {
         id: `${contract.category}:bank`,
         category: contract.category,
         categoryLabel: contract.categoryLabel,
-        label: "Dagens varmmatrett",
+        label: "Dagens varmrett",
         description: "Rullerende rett fra Sanity/bank — ny per dag.",
         allergens: [],
         imageUrl: null,

@@ -15,6 +15,9 @@ import {
   summarizeDayCard,
   summarizeSharedVarmrettDay,
   resolveSharedVarmrettSlot,
+  buildWeekCockpitSummary,
+  resolveNextStepAction,
+  weekReadinessLabel,
   PACKAGE_CARD_COPY,
   SHARED_WARM_DISH_HINT,
 } from "@/lib/provider-menu/providerMenuWorkspace";
@@ -85,7 +88,7 @@ describe("providerMenuWorkspace", () => {
       editorFocus: "enterprise-upgrade",
     });
     expect(ctx.mode).toBe("enterprise");
-    expect(editorContextLine(ctx)).toBe("Mandag · tillegg til dagens varmmrett");
+    expect(editorContextLine(ctx)).toBe("Mandag · Enterprise-upgrade");
   });
 
   it("category editor context keeps tier label", () => {
@@ -130,9 +133,10 @@ describe("providerMenuWorkspace", () => {
   });
 
   it("package card copy describes shared warm dish model", () => {
-    expect(PACKAGE_CARD_COPY.BASIS.includes).toContain("Dagens varmmrett");
+    expect(PACKAGE_CARD_COPY.BASIS.includes).toContain("Dagens varmrett");
     expect(PACKAGE_CARD_COPY.LUXUS.includes).toContain("Basis + Sushi");
-    expect(PACKAGE_CARD_COPY.ENTERPRISE.includes).toContain("Enterprise-upgrade");
+    expect(PACKAGE_CARD_COPY.ENTERPRISE.includes).toContain("Samme varmrett + ekstra verdi");
+    expect(PACKAGE_CARD_COPY.ENTERPRISE.badge).toBe("Ikke egen produksjonsrett");
   });
 
   it("resolveSharedVarmrettSlot prefers published content across tiers", () => {
@@ -174,7 +178,7 @@ describe("providerMenuWorkspace", () => {
     const categories = providerWorkspaceCategories("LUXUS");
     const card = summarizeDayCard({}, "2026-06-15", "LUXUS", "Mandag", categories);
     expect(card.varmrett.isSanityDriven).toBe(true);
-    expect(SHARED_WARM_DISH_HINT).toBe("Samme for alle pakker");
+    expect(SHARED_WARM_DISH_HINT).toBe("Én felles varmrett");
     const shared = summarizeSharedVarmrettDay({}, "2026-06-15");
     expect(shared.statusChip).toBe("missing");
   });
@@ -196,5 +200,24 @@ describe("providerMenuWorkspace", () => {
     expect(card.fixedGroups.length).toBe(2);
     expect(card.fixedGroups.every((g) => g.variantCount > 0)).toBe(true);
     expect(card.premiumGroups.length).toBe(0);
+  });
+
+  it("buildWeekCockpitSummary surfaces readiness", () => {
+    const dates = ["2026-06-15", "2026-06-16"];
+    const categories = providerWorkspaceCategories("BASIS");
+    const metrics = summarizeWeekMetrics({}, dates, "BASIS", categories);
+    const line = buildWeekCockpitSummary("2026-06-15", metrics);
+    expect(line).toContain("Uke fra 2026-06-15");
+    expect(line).toContain("2 dager");
+    expect(line).toContain("2 varmretter mangler");
+    expect(weekReadinessLabel(metrics)).toBe("Ikke klar for publisering");
+  });
+
+  it("resolveNextStepAction names first missing weekday", () => {
+    const dates = ["2026-06-15", "2026-06-16"];
+    const categories = providerWorkspaceCategories("BASIS");
+    const metrics = summarizeWeekMetrics({}, dates, "BASIS", categories);
+    const step = resolveNextStepAction({}, dates, "BASIS", metrics, ["Mandag", "Tirsdag"]);
+    expect(step).toBe("Legg inn mandagens varmrett");
   });
 });

@@ -75,6 +75,9 @@ tmp/
 # Evidence artifacts (generated)
 evidence/
 
+# Local visual QA captures (screenshots + JSON reports — attach to PR manually)
+docs/visual-qa/
+
 # Control-plane CI marker dump (regenerate via npm run verify:control-coverage)
 reports/control-coverage-markers.json
 

@@ -6,7 +6,6 @@ import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCat
 import {
   summarizeDayCard,
   SHARED_WARM_DISH_HINT,
-  DAY_PACKAGE_INCLUDES,
   ENTERPRISE_UPGRADE_SELECTION_KEY,
   type EditorFocus,
   type WorkspaceStatusChip,
@@ -46,7 +45,7 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
 
   return (
     <div className="provider-menu-grid-scroll">
-      <div className="provider-menu-days" role="region" aria-label="Ukeplanlegger">
+      <div className="provider-menu-days" role="region" aria-label="Ukeplan">
         {weekDates.map((date, idx) => {
           const weekdayLabel = WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? date;
           const card = summarizeDayCard(slots, date, tier, weekdayLabel, categories);
@@ -90,12 +89,14 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                   })
                 }
               >
-                <span className="menu-day-card__hero-label">Dagens varmmatrett</span>
+                <span className="menu-day-card__hero-label">Dagens varmrett</span>
                 <span className="menu-day-card__hero-shared">{SHARED_WARM_DISH_HINT}</span>
                 {varmrettMissing ? (
                   <>
                     <span className="menu-day-card__hero-title">Varmrett mangler</span>
-                    <span className="menu-day-card__hero-hint">Velg for å planlegge</span>
+                    <span className="menu-day-card__hero-hint">
+                      Legg inn dagens varmrett før denne dagen kan publiseres.
+                    </span>
                   </>
                 ) : (
                   <>
@@ -104,16 +105,8 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                     <span className="menu-day-card__hero-status">{varmrett.statusLabel}</span>
                   </>
                 )}
+                <span className="menu-day-card__hero-action">{varmrettMissing ? "Legg inn" : "Rediger"}</span>
               </button>
-
-              <section className="menu-day-card__packages" aria-label="Pakkeinnhold">
-                <h4 className="menu-day-card__group-title">Pakkeinnhold</h4>
-                <ul className="menu-day-card__package-list">
-                  <li>{DAY_PACKAGE_INCLUDES.basis} · Dagens varmmrett</li>
-                  <li>{DAY_PACKAGE_INCLUDES.luxus}</li>
-                  <li>{DAY_PACKAGE_INCLUDES.enterprise}</li>
-                </ul>
-              </section>
 
               {card.fixedGroups.length > 0 ? (
                 <section className="menu-day-card__group">
@@ -129,9 +122,7 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                             className={`menu-day-card__group-row${groupSelected ? " is-selected" : ""}`}
                             onClick={() => onSelect({ date, category: group.category, editorFocus: "category" })}
                           >
-                            <span className="menu-day-card__group-name">
-                              {group.categoryLabel} · {group.variantCount} valg
-                            </span>
+                            <span className="menu-day-card__group-name">{group.categoryLabel}</span>
                             <span className="menu-day-card__group-detail">{group.summaryLine}</span>
                             <span className="menu-day-card__group-action">Åpne</span>
                           </button>
@@ -156,9 +147,8 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                             className={`menu-day-card__group-row${groupSelected ? " is-selected" : ""}`}
                             onClick={() => onSelect({ date, category: group.category, editorFocus: "category" })}
                           >
-                            <span className="menu-day-card__group-name">
-                              {group.categoryLabel} · {group.summaryLine}
-                            </span>
+                            <span className="menu-day-card__group-name">{group.categoryLabel}</span>
+                            <span className="menu-day-card__group-detail">{group.summaryLine}</span>
                             <span className="menu-day-card__group-action">Åpne</span>
                           </button>
                         </li>
@@ -170,7 +160,7 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
 
               {tier === "ENTERPRISE" && card.enterpriseUpgrade ? (
                 <section className="menu-day-card__group menu-day-card__group--enterprise">
-                  <h4 className="menu-day-card__group-title">Enterprise upgrade</h4>
+                  <h4 className="menu-day-card__group-title">Enterprise-upgrade</h4>
                   <button
                     type="button"
                     className={`menu-day-card__upgrade-row${upgradeSelected ? " is-selected" : ""}`}
@@ -187,8 +177,8 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
                     <span className="menu-day-card__upgrade-title">
                       {card.enterpriseUpgrade.summaryLine}
                     </span>
-                    <span className="menu-day-card__upgrade-hint">Tillegg til dagens varmmrett</span>
                     <span className="menu-day-card__group-action">Åpne</span>
+                    <span className="menu-day-card__upgrade-hint">Samme rett + ekstra verdi</span>
                   </button>
                 </section>
               ) : null}
