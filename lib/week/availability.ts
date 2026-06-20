@@ -69,7 +69,7 @@ function numPart(v: string) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function osloParts(date: Date): OsloParts {
+export function osloParts(date: Date): OsloParts {
   const parts = dtfParts.formatToParts(date);
   const pick = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
 
@@ -85,7 +85,7 @@ function osloParts(date: Date): OsloParts {
   };
 }
 
-function hhmmToMin(p: { h: number; mi: number }) {
+export function hhmmToMin(p: { h: number; mi: number }) {
   return p.h * 60 + p.mi;
 }
 

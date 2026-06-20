@@ -89,6 +89,14 @@ export async function GET(req: Request) {
       results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });
     }
 
+    if (inWindow(p, "Thursday", 14, 10)) {
+      triggered.push("thursday_14_week_opening_notify");
+      results.push({
+        action: "menu-week-opening-notify",
+        ...(await callInternal(req, "/api/cron/menu-week-opening-notify")),
+      });
+    }
+
     if (inWindow(p, "Friday", 14, 10)) {
       triggered.push("friday_14_hide_week1");
       results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });

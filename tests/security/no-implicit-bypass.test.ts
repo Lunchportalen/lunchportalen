@@ -27,8 +27,8 @@ describe("no-implicit-bypass (DC-011 middleware)", () => {
     }
   });
 
-  test("API_AUTH_ALLOWLIST_SIZE is 85", () => {
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(85);
+  test("API_AUTH_ALLOWLIST_SIZE is 86", () => {
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(86);
   });
 
   test("non-allowlisted /api/* returns JSON 401 path exists", () => {
