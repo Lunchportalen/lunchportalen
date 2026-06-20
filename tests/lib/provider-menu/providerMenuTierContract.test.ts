@@ -13,53 +13,57 @@ import {
   tierIncludesCategory,
   workspaceCategoriesForTier,
 } from "@/lib/provider-menu/providerMenuTierContract";
-import {
-  providerWorkspaceCategories,
-  resolveVariantRowsForDay,
-} from "@/lib/provider-menu/providerMenuCatalogSurface";
+import { providerWorkspaceCategories, resolveVariantRowsForDay } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { validateEnterprisePublish } from "@/lib/providers/providerMenuPackageSurface";
+import { PROD_LUNCH_CATEGORY_FIXTURE } from "./lunchCategoryCatalogFixtures";
+
+const CATALOG = PROD_LUNCH_CATEGORY_FIXTURE;
 
 describe("providerMenuTierContract", () => {
   it("documents authoritative source file", () => {
     expect(MENU_TIER_CONTRACT_SOURCE).toBe("scripts/sanity/seed-lunch-categories-v2.ts");
   });
 
-  it("Basis categories = Påsmurt, Salatboks, Varmrett", () => {
-    expect(providerWorkspaceCategories("BASIS")).toEqual(["paasmurt", "salat", "varmrett"]);
+  it("Basis categories = Påsmurt, Salatboks, Varmrett (Sanity-driven workspace)", () => {
+    expect(providerWorkspaceCategories(CATALOG, "BASIS")).toEqual(["paasmurt", "salat", "varmrett"]);
     expect(BASIS_WORKSPACE_CATEGORIES).toHaveLength(3);
   });
 
-  it("Basis does not include Sushi, Pokébowl, Thai", () => {
-    const basis = providerWorkspaceCategories("BASIS");
+  it("Basis does not include Sushi, Pokébowl, Thai in live catalog", () => {
+    const basis = providerWorkspaceCategories(CATALOG, "BASIS");
     expect(basis).not.toContain("sushi");
     expect(basis).not.toContain("pokebowl");
     expect(basis).not.toContain("thai");
     expect(tierIncludesCategory("BASIS", "sushi")).toBe(false);
   });
 
-  it("Basis Påsmurt variants include Ost & Skinke, Laks & Eggerøre, Kyllingkarri, Vegetar", () => {
-    expect(fixedVariantsForCategory("paasmurt").map((v) => v.title)).toEqual([
+  it("Basis Påsmurt variants from Sanity include laks-eggerore", () => {
+    const rows = resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "paasmurt", CATALOG);
+    expect(rows.map((r) => r.title)).toEqual([
       "Ost & Skinke",
       "Laks & Eggerøre",
-      "Kyllingkarri",
+      "Kylling karri",
       "Vegetar",
     ]);
+    expect(rows[1]?.variant?.key).toBe("laks-eggerore");
   });
 
   it("Basis Salatboks variants include Skinke, Kylling, Vegetar", () => {
-    expect(fixedVariantsForCategory("salat").map((v) => v.title)).toEqual(["Skinke", "Kylling", "Vegetar"]);
+    expect(
+      resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "salat", CATALOG).map((r) => r.title),
+    ).toEqual(["Skinke", "Kylling", "Vegetar"]);
   });
 
   it("Basis Varmrett is Sanity/bank driven", () => {
     expect(isSanityDrivenCategory("varmrett")).toBe(true);
     expect(fixedVariantsForCategory("varmrett")).toHaveLength(0);
-    const rows = resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "varmrett");
+    const rows = resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "varmrett", CATALOG);
     expect(rows[0]?.status).toBe("Mangler varmmat fra Sanity/bank");
   });
 
-  it("Luxus includes all six categories", () => {
-    expect(providerWorkspaceCategories("LUXUS")).toEqual([
+  it("Luxus includes all six categories from Sanity", () => {
+    expect(providerWorkspaceCategories(CATALOG, "LUXUS")).toEqual([
       "paasmurt",
       "salat",
       "sushi",
@@ -70,26 +74,26 @@ describe("providerMenuTierContract", () => {
     expect(LUXUS_WORKSPACE_CATEGORIES).toHaveLength(6);
   });
 
-  it("Luxus Sushi is fixed package", () => {
-    expect(fixedVariantsForCategory("sushi").map((v) => v.title)).toEqual([
-      "Fast pakke: 6 maki + 2 nigiri + 1 tempura",
-    ]);
+  it("Luxus Sushi uses Sanity package title", () => {
+    expect(
+      resolveVariantRowsForDay({}, "2026-06-16", "LUXUS", "sushi", CATALOG).map((r) => r.title),
+    ).toEqual(["Sushi-pakke (6 biter MAKI, 2 biter NIGIRI, 1 Tempura)"]);
   });
 
   it("Luxus Pokébowl includes Laks, Kylling, Vegetar", () => {
-    expect(fixedVariantsForCategory("pokebowl").map((v) => v.title)).toEqual(["Laks", "Kylling", "Vegetar"]);
+    expect(
+      resolveVariantRowsForDay({}, "2026-06-16", "LUXUS", "pokebowl", CATALOG).map((r) => r.title),
+    ).toEqual(["Laks", "Kylling", "Vegetar"]);
   });
 
-  it("Luxus Thai includes Pad Thai nudler, Biff peppersaus wok, Pad med mamuang wok", () => {
-    expect(fixedVariantsForCategory("thai").map((v) => v.title)).toEqual([
-      "Pad Thai nudler",
-      "Biff peppersaus wok",
-      "Pad med mamuang wok",
-    ]);
+  it("Luxus Thai uses Sanity titles without contract wok suffix", () => {
+    expect(
+      resolveVariantRowsForDay({}, "2026-06-16", "LUXUS", "thai", CATALOG).map((r) => r.title),
+    ).toEqual(["Pad Thai nudler", "Biff peppersaus", "Pad med mamuang"]);
   });
 
   it("Enterprise includes all six categories", () => {
-    expect(providerWorkspaceCategories("ENTERPRISE")).toHaveLength(6);
+    expect(providerWorkspaceCategories(CATALOG, "ENTERPRISE")).toHaveLength(6);
     expect(ENTERPRISE_WORKSPACE_CATEGORIES).toEqual(LUXUS_WORKSPACE_CATEGORIES);
   });
 
@@ -152,8 +156,8 @@ describe("providerMenuTierContract", () => {
         contentSource: "draft",
       },
     };
-    const luxusRows = resolveVariantRowsForDay(slots, "2026-06-16", "LUXUS", "pokebowl");
-    const enterpriseRows = resolveVariantRowsForDay(slots, "2026-06-16", "ENTERPRISE", "pokebowl");
+    const luxusRows = resolveVariantRowsForDay(slots, "2026-06-16", "LUXUS", "pokebowl", CATALOG);
+    const enterpriseRows = resolveVariantRowsForDay(slots, "2026-06-16", "ENTERPRISE", "pokebowl", CATALOG);
     expect(luxusRows.every((r) => r.status === "Publisert")).toBe(true);
     expect(enterpriseRows[0]?.enterpriseSourceLabel).toBe("Basert på Luxus");
     expect(enterpriseRows[0]?.enterpriseUpgradeLabel).toBe("Premium protein");
@@ -176,17 +180,17 @@ describe("providerMenuTierContract", () => {
         contentSource: "published",
       },
     };
-    const rows = resolveVariantRowsForDay(slots, "2026-06-16", "BASIS", "paasmurt");
+    const rows = resolveVariantRowsForDay(slots, "2026-06-16", "BASIS", "paasmurt", CATALOG);
     expect(rows.every((r) => r.status === "Publisert")).toBe(true);
   });
 
   it("fixed variants render as Fast valg when no menuDay override", () => {
-    const rows = resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "paasmurt");
+    const rows = resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "paasmurt", CATALOG);
     expect(rows).toHaveLength(4);
     expect(rows.every((r) => r.status === "Fast valg")).toBe(true);
   });
 
-  it("package switch keeps tier-specific categories", () => {
+  it("package switch keeps tier-specific categories (contract fallback)", () => {
     expect(workspaceCategoriesForTier("BASIS")).toHaveLength(3);
     expect(workspaceCategoriesForTier("LUXUS")).toHaveLength(6);
     expect(workspaceCategoriesForTier("ENTERPRISE")).toHaveLength(6);

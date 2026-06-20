@@ -115,15 +115,20 @@ function buildFallbackLunchCategoriesForTier(tier: PlanTier): LunchCatRow[] {
   return rows;
 }
 
-async function fetchLunchCategoriesForTier(tier: PlanTier): Promise<LunchCatRow[]> {
-  const q = `*[_type == "lunchCategory" && $tier in allowedPlanTiers && isActive == true] | order(displayOrder asc) {
-    "key": key.current,
-    title,
-    displayOrder,
-    items
-  }`;
-  const rows = await sanityServer.fetch<LunchCatRow[]>(q, { tier });
-  return Array.isArray(rows) ? rows : [];
+async function fetchLunchCategoriesForTier(tier: PlanTier, providerId: string): Promise<LunchCatRow[]> {
+  const { fetchLunchCategoryRowsForProvider } = await import("@/lib/cms/lunchCategory");
+  const rows = await fetchLunchCategoryRowsForProvider(providerId);
+  const tierUpper = tier.toUpperCase();
+  const filtered = rows.filter((row) => {
+    const tiers = Array.isArray(row.allowedPlanTiers) ? row.allowedPlanTiers : [];
+    return tiers.some((t) => String(t).toUpperCase() === tierUpper);
+  });
+  return filtered.map((row) => ({
+    key: row.key,
+    title: row.title ?? null,
+    displayOrder: row.displayOrder ?? null,
+    items: (Array.isArray(row.items) ? row.items : null) as unknown[] | null,
+  }));
 }
 
 async function fetchVarmrettMenuProjection(
@@ -332,7 +337,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
 
     let cached = tierCache.get(tier);
     if (!cached) {
-      let categories = await fetchLunchCategoriesForTier(tier);
+      let categories = await fetchLunchCategoriesForTier(tier, providerId);
       if (categories.length === 0) {
         categories = buildFallbackLunchCategoriesForTier(tier);
       }

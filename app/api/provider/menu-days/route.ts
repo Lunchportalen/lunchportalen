@@ -23,8 +23,10 @@ import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import { canonicalMenuCategory } from "@/lib/provider-menu/menuCategoryCanonical";
 import { loadProviderMenuDaysForDates, loadProviderMenuDaySlot } from "@/lib/provider-menu/loadProviderMenuDays";
 import { osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
-import { loadProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
+import { fetchLunchCategoryRowsForProvider } from "@/lib/cms/lunchCategory";
+import { buildMenuCatalogSnapshot } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import { weekDatesFromStart } from "@/lib/providers/providerMenuPackageSurface";
+import { loadProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
 import { requireSanityWrite } from "@/lib/sanity/client";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -233,10 +235,13 @@ export async function GET(req: NextRequest) {
   const base = /^\d{4}-\d{2}-\d{2}$/.test(weekStart) ? weekStart : startOfWeekISO(osloTodayISODate());
   const dates = weekDatesFromStart(base);
 
-  const [items, prices] = await Promise.all([
+  const [items, prices, lunchCategoryRows] = await Promise.all([
     loadProviderMenuDaysForDates(provider.id, dates, { providerSlug: provider.slug }),
     loadProviderMenuPrices(provider.id),
+    fetchLunchCategoryRowsForProvider(provider.id),
   ]);
+
+  const catalog = buildMenuCatalogSnapshot(lunchCategoryRows);
 
   return jsonOk(
     rid,
@@ -245,6 +250,7 @@ export async function GET(req: NextRequest) {
       dates,
       items,
       prices,
+      catalog,
       providerId: provider.id,
       providerSlug: provider.slug,
     },

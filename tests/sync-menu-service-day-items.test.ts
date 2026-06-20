@@ -176,7 +176,7 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     }
     const paasmurt = rows.find((r) => r.product_id === "pr1");
     expect(String(paasmurt?.product_name_snapshot)).toContain("Påsmurt");
-    expect(String(paasmurt?.product_name_snapshot)).toContain("Ost & skinke");
+    expect(String(paasmurt?.product_name_snapshot)).toContain("Ost & Skinke");
     const varmrett = rows.find((r) => r.product_id === "pr3");
     expect(String(varmrett?.product_name_snapshot)).toContain("Laks");
     expect(String(varmrett?.product_name_snapshot)).toContain("Allergener:");

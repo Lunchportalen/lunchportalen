@@ -27,7 +27,11 @@ import {
   type MenuItemData,
   type PlanTier,
 } from "@/lib/cms/menuDay";
-import { fetchActiveLunchCategoryRows, staticMenuItemsByCategoryForPlanTier } from "@/lib/cms/lunchCategory";
+import {
+  fetchLunchCategoryRowsForProvider,
+  fetchLunchCategoryTemplateRows,
+  staticMenuItemsByCategoryForPlanTier,
+} from "@/lib/cms/lunchCategory";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { fallbackChoicesForTier } from "@/lib/cms/mealTierFallback";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
@@ -920,21 +924,7 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    let lunchCategoryRows: Awaited<ReturnType<typeof fetchActiveLunchCategoryRows>> = [];
-    try {
-      lunchCategoryRows = await fetchActiveLunchCategoryRows();
-    } catch (e: any) {
-      opsLog("window.lunchCategory.failed", {
-        rid,
-        company_id: sc.company_id,
-        detail: String(e?.message ?? e),
-      });
-      lunchCategoryRows = [];
-    }
-
     // Provider-scope for menuDay (server truth: companies.provider_id → providers.slug).
-    // fail-closed: provider finnes men kan ikke scopes trygt → ingen menuDay-henting
-    // (statisk katalog-fallback beholdes). Aldri en annen providers meny.
     const menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(admin, sc.company_id));
     if (menuScope.mode !== "scoped") {
       opsLog("window.menuScope", {
@@ -945,6 +935,22 @@ export async function GET(req: NextRequest) {
       });
     }
     const menuDayOpts = menuDayQueryOptsFromScope(menuScope);
+
+    let lunchCategoryRows: Awaited<ReturnType<typeof fetchLunchCategoryRowsForProvider>> = [];
+    try {
+      if (menuScope.mode === "scoped") {
+        lunchCategoryRows = await fetchLunchCategoryRowsForProvider(menuScope.providerId);
+      } else if (menuScope.mode !== "fail-closed") {
+        lunchCategoryRows = await fetchLunchCategoryTemplateRows();
+      }
+    } catch (e: any) {
+      opsLog("window.lunchCategory.failed", {
+        rid,
+        company_id: sc.company_id,
+        detail: String(e?.message ?? e),
+      });
+      lunchCategoryRows = [];
+    }
 
     const days = await Promise.all(
       legacyDays.map(async (day) => {

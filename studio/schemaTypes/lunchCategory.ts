@@ -22,6 +22,14 @@ export default defineType({
 
   fields: [
     defineField({
+      name: "provider",
+      title: "Leverandør",
+      description: "Tom = global mal. Satt = leverandør-spesifikk kopi (copy-on-write).",
+      type: "reference",
+      to: [{ type: "provider" }],
+    }),
+
+    defineField({
       name: "key",
       title: "Nøkkel",
       description: "Stabil slug for kategori (ordering / API)",

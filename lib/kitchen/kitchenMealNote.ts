@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { CmsMenuByMealType } from "@/lib/cms/types";
-import { getLunchCategoryStaticItemsByPlanTier } from "@/lib/cms/lunchCategory";
+import {
+  getLunchCategoryStaticItemsByPlanTier,
+  getLunchCategoryStaticItemsByPlanTierForProvider,
+} from "@/lib/cms/lunchCategory";
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
 import { ORDER_CHOICE_KEY_BY_CATEGORY, type Category, type PlanTier } from "@/lib/cms/menuDayContract";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
@@ -21,12 +24,14 @@ function escapeRegExp(s: string) {
  * Build slug→title map from Sanity lunchCategory (all plan tiers).
  * Used by kitchen to resolve day_choices.item_key (CMS variant slug).
  */
-export async function buildVariantTitleLookup(): Promise<VariantTitleLookup> {
+export async function buildVariantTitleLookup(providerId?: string): Promise<VariantTitleLookup> {
   const tiers: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
   const out = new Map<string, string>();
 
   for (const tier of tiers) {
-    const staticByCat = await getLunchCategoryStaticItemsByPlanTier(tier);
+    const staticByCat = providerId
+      ? await getLunchCategoryStaticItemsByPlanTierForProvider(providerId, tier)
+      : await getLunchCategoryStaticItemsByPlanTier(tier);
     for (const cat of Object.keys(ORDER_CHOICE_KEY_BY_CATEGORY) as Category[]) {
       const choiceKey = ORDER_CHOICE_KEY_BY_CATEGORY[cat];
       const nk = normalizeMealTypeKey(choiceKey);

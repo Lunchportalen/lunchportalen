@@ -21,6 +21,8 @@ import {
   catalogVariantByKey,
   type MenuCatalogVariant,
 } from "@/lib/provider-menu/providerMenuCatalogReadModel";
+import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
+import { EMPTY_PROVIDER_MENU_CATALOG } from "@/lib/provider-menu/lunchCategoryCatalog";
 import {
   mergeProviderMenuRowsIntoSlots,
   resolveProviderMenuSlot,
@@ -72,6 +74,7 @@ type MenuWeekResponse = {
       status: "draft" | "published";
     }>;
     prices: Record<PlanTier, ProviderMenuPriceView>;
+    catalog?: ProviderMenuCatalogSnapshot;
   };
 };
 
@@ -120,6 +123,7 @@ export default function ProviderMenuBuilder() {
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
   const [selected, setSelected] = useState<WeekSelection | null>(null);
   const [prices, setPrices] = useState<Record<PlanTier, ProviderMenuPriceView> | null>(null);
+  const [catalog, setCatalog] = useState<ProviderMenuCatalogSnapshot>(EMPTY_PROVIDER_MENU_CATALOG);
   const [slots, setSlots] = useState<Record<string, ResolvedProviderMenuSlot>>({});
   const [form, setForm] = useState<ResolvedProviderMenuSlot | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -130,10 +134,10 @@ export default function ProviderMenuBuilder() {
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
   const tierPrice = prices?.[tier];
-  const workspaceCategories = useMemo(() => providerWorkspaceCategories(tier), [tier]);
+  const workspaceCategories = useMemo(() => providerWorkspaceCategories(catalog, tier), [catalog, tier]);
   const weekMetrics = useMemo(
-    () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories),
-    [slots, weekDates, tier, workspaceCategories],
+    () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories, catalog),
+    [slots, weekDates, tier, workspaceCategories, catalog],
   );
 
   /** Cockpit display-only — varmrett publish state (aligned with day-card badges). */
@@ -141,7 +145,7 @@ export default function ProviderMenuBuilder() {
     let publishedDays = 0;
     let draftDays = 0;
     for (const date of weekDates) {
-      const shared = summarizeSharedVarmrettDay(slots, date);
+      const shared = summarizeSharedVarmrettDay(slots, date, catalog);
       if (shared.statusChip === "published") publishedDays += 1;
       else if (shared.statusChip === "draft") draftDays += 1;
     }
@@ -150,8 +154,8 @@ export default function ProviderMenuBuilder() {
 
   const nextStepHint = useMemo(() => {
     const labels = weekDates.map((_, idx) => WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? "");
-    return resolveNextStepAction(slots, weekDates, tier, weekMetrics, labels);
-  }, [slots, weekDates, tier, weekMetrics]);
+    return resolveNextStepAction(slots, weekDates, tier, weekMetrics, labels, catalog);
+  }, [slots, weekDates, tier, weekMetrics, catalog]);
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -168,6 +172,7 @@ export default function ProviderMenuBuilder() {
         return;
       }
       setPrices(json.data.prices);
+      setCatalog(json.data.catalog ?? EMPTY_PROVIDER_MENU_CATALOG);
       const merged = mergeProviderMenuRowsIntoSlots(
         json.data.items.map((item) => ({
           ...item,
@@ -320,6 +325,7 @@ export default function ProviderMenuBuilder() {
           category: selected.category,
           variantLabel: selected.variantLabel ?? null,
           editorFocus: selected.editorFocus,
+          catalog,
         })
       : null;
 
@@ -330,7 +336,7 @@ export default function ProviderMenuBuilder() {
 
   const catalogVariant =
     selected?.variantKey && selected.category
-      ? catalogVariantByKey(selected.category, selected.variantKey)
+      ? catalogVariantByKey(catalog, selected.category, selected.variantKey)
       : null;
 
   const enterpriseWarnings =
@@ -365,7 +371,7 @@ export default function ProviderMenuBuilder() {
 
   const categoryVariantLabels =
     selected && !selected.variantKey && !isSanityDrivenCategory(selected.category)
-      ? summarizeCategoryDay(slots, selected.date, tier, selected.category).rows.map((r) => r.title)
+      ? summarizeCategoryDay(slots, selected.date, tier, selected.category, catalog).rows.map((r) => r.title)
       : undefined;
 
   const categoryOnly = Boolean(
@@ -426,6 +432,7 @@ export default function ProviderMenuBuilder() {
               ) : null}
               <ProviderMenuWeekPlanner
                 tier={tier}
+                catalog={catalog}
                 weekDates={weekDates}
                 slots={slots}
                 selected={selected}
@@ -439,7 +446,12 @@ export default function ProviderMenuBuilder() {
               ) : null}
             </>
           ) : (
-            <ProviderMenuCatalogView tier={tier} onSelectVariant={openCatalogVariant} />
+            <ProviderMenuCatalogView
+              tier={tier}
+              catalog={catalog}
+              onSelectVariant={openCatalogVariant}
+              onCatalogSaved={setCatalog}
+            />
           )}
         </div>
 

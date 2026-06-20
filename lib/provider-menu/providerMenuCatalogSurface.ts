@@ -1,16 +1,19 @@
 // lib/provider-menu/providerMenuCatalogSurface.ts
-// Provider menu builder display: tier contract + published menuDay overlay.
+// Provider menu builder display: live Sanity lunchCategory + published menuDay overlay.
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { resolveProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import {
-  fixedVariantsForCategory,
-  isSanityDrivenCategory,
-  workspaceCategoriesForTier,
-  type FixedMenuVariant,
-} from "@/lib/provider-menu/providerMenuTierContract";
+  categoryLabelFromCatalog,
+  fixedVariantsFromCatalog,
+  workspaceCategoriesFromCatalog,
+  type CatalogFixedVariant,
+  type ProviderMenuCatalogSnapshot,
+} from "@/lib/provider-menu/lunchCategoryCatalog";
+import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
+import { catalogSupportsPersistentEdit } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import type { EnterpriseUpgradeType } from "@/lib/providers/providerMenuPackageSurface";
 import { ENTERPRISE_UPGRADE_LABELS } from "@/lib/providers/providerMenuPackageSurface";
 
@@ -24,7 +27,7 @@ export type VariantDisplayStatus =
 
 export type ProviderVariantDisplayRow = {
   category: Category;
-  variant: FixedMenuVariant | null;
+  variant: CatalogFixedVariant | null;
   title: string;
   status: VariantDisplayStatus;
   editable: boolean;
@@ -35,8 +38,11 @@ export type ProviderVariantDisplayRow = {
   enterpriseWeakValue?: boolean;
 };
 
-export function providerWorkspaceCategories(tier: PlanTier): Category[] {
-  return workspaceCategoriesForTier(tier);
+export function providerWorkspaceCategories(
+  catalog: ProviderMenuCatalogSnapshot,
+  tier: PlanTier,
+): Category[] {
+  return workspaceCategoriesFromCatalog(catalog, tier);
 }
 
 function enterpriseSourceLabel(sourcePackage: PlanTier | null | undefined): string | null {
@@ -66,6 +72,7 @@ export function resolveVariantRowsForDay(
   date: string,
   tier: PlanTier,
   category: Category,
+  catalog: ProviderMenuCatalogSnapshot,
 ): ProviderVariantDisplayRow[] {
   const menuSlot = resolveProviderMenuSlot(slots, date, tier, category);
   const sanityDriven = isSanityDrivenCategory(category);
@@ -91,7 +98,7 @@ export function resolveVariantRowsForDay(
       {
         category,
         variant: null,
-        title: hasContent ? menuSlot.mealTitle.trim() : "Varmrett",
+        title: hasContent ? menuSlot.mealTitle.trim() : categoryLabelFromCatalog(catalog, category),
         status,
         editable: true,
         sanityDriven: true,
@@ -100,7 +107,7 @@ export function resolveVariantRowsForDay(
     ];
   }
 
-  const variants = fixedVariantsForCategory(category);
+  const variants = fixedVariantsFromCatalog(catalog, tier, category);
   const categoryPublished = menuSlot.status === "published";
   const categoryDraft = menuSlot.status === "draft" && menuSlotHasContent(menuSlot);
 
@@ -115,7 +122,7 @@ export function resolveVariantRowsForDay(
       variant,
       title: variant.title,
       status,
-      editable: false,
+      editable: catalogSupportsPersistentEdit(),
       sanityDriven: false,
       ...enterpriseMeta,
     };
@@ -126,15 +133,16 @@ export function summarizeWorkspaceWeekStatus(
   slots: Record<string, ResolvedProviderMenuSlot>,
   dates: string[],
   tier: PlanTier,
+  catalog: ProviderMenuCatalogSnapshot,
 ): string {
-  const categories = providerWorkspaceCategories(tier);
+  const categories = providerWorkspaceCategories(catalog, tier);
   let filled = 0;
   let total = 0;
   let published = 0;
 
   for (const date of dates) {
     for (const category of categories) {
-      const rows = resolveVariantRowsForDay(slots, date, tier, category);
+      const rows = resolveVariantRowsForDay(slots, date, tier, category, catalog);
       for (const row of rows) {
         total += 1;
         if (row.status !== "Mangler varmmat fra Sanity/bank" && row.status !== "Mangler publisering") {

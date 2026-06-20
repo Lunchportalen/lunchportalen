@@ -7,14 +7,15 @@ import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { resolveProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import {
-  isSanityDrivenCategory,
-  contractForCategory,
-} from "@/lib/provider-menu/providerMenuTierContract";
+  categoryLabelFromCatalog,
+  type ProviderMenuCatalogSnapshot,
+} from "@/lib/provider-menu/lunchCategoryCatalog";
 import {
   resolveVariantRowsForDay,
   type ProviderVariantDisplayRow,
   type VariantDisplayStatus,
 } from "@/lib/provider-menu/providerMenuCatalogSurface";
+import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 import type { EnterpriseUpgradeType } from "@/lib/providers/providerMenuPackageSurface";
 
 export type WorkspaceStatusChip = "published" | "draft" | "fixed" | "missing" | "suggestion";
@@ -57,10 +58,10 @@ export function summarizeCategoryDay(
   date: string,
   tier: PlanTier,
   category: Category,
+  catalog: ProviderMenuCatalogSnapshot,
 ): CategoryDaySummary {
-  const rows = resolveVariantRowsForDay(slots, date, tier, category);
+  const rows = resolveVariantRowsForDay(slots, date, tier, category, catalog);
   const slot = resolveProviderMenuSlot(slots, date, tier, category);
-  const contract = contractForCategory(category);
 
   let statusChip: WorkspaceStatusChip = "fixed";
   if (slot.status === "published" || rows.some((r) => r.status === "Publisert")) {
@@ -78,7 +79,7 @@ export function summarizeCategoryDay(
 
   return {
     category,
-    categoryLabel: contract?.categoryLabel ?? CATEGORY_LABELS[category],
+    categoryLabel: categoryLabelFromCatalog(catalog, category),
     statusChip,
     statusLabel: statusChipLabel(statusChip),
     rows,
@@ -109,8 +110,8 @@ export function buildEditorContext(input: {
   category: Category;
   variantLabel?: string | null;
   editorFocus?: EditorFocus;
+  catalog?: ProviderMenuCatalogSnapshot;
 }): EditorContext {
-  const contract = contractForCategory(input.category);
   const isSanity = isSanityDrivenCategory(input.category);
   const editorFocus: EditorFocus =
     input.editorFocus ?? (isSanity ? "varmrett" : "category");
@@ -123,7 +124,9 @@ export function buildEditorContext(input: {
     tierLabel: input.tierLabel,
     weekdayLabel: input.weekdayLabel,
     date: input.date,
-    categoryLabel: contract?.categoryLabel ?? CATEGORY_LABELS[input.category],
+    categoryLabel: input.catalog
+      ? categoryLabelFromCatalog(input.catalog, input.category)
+      : CATEGORY_LABELS[input.category],
     variantLabel: input.variantLabel ?? null,
     editorFocus,
     mode,
@@ -222,9 +225,9 @@ export function resolveSharedVarmrettSlot(
 export function summarizeSharedVarmrettDay(
   slots: Record<string, ResolvedProviderMenuSlot>,
   date: string,
+  catalog: ProviderMenuCatalogSnapshot,
 ): CategoryDaySummary {
   const slot = resolveSharedVarmrettSlot(slots, date);
-  const contract = contractForCategory("varmrett");
   const hasContent = menuSlotHasContent(slot);
 
   let statusChip: WorkspaceStatusChip = "missing";
@@ -235,7 +238,7 @@ export function summarizeSharedVarmrettDay(
 
   return {
     category: "varmrett",
-    categoryLabel: contract?.categoryLabel ?? CATEGORY_LABELS.varmrett,
+    categoryLabel: categoryLabelFromCatalog(catalog, "varmrett"),
     statusChip,
     statusLabel: statusChipLabel(statusChip),
     rows: [
@@ -307,6 +310,7 @@ export function summarizeWeekMetrics(
   dates: string[],
   tier: PlanTier,
   categories: Category[],
+  catalog: ProviderMenuCatalogSnapshot,
 ): WeekWorkspaceMetrics {
   let varmrettFilled = 0;
   let varmrettMissing = 0;
@@ -315,13 +319,13 @@ export function summarizeWeekMetrics(
   let fixedSlots = 0;
 
   for (const date of dates) {
-    const sharedVarmrett = summarizeSharedVarmrettDay(slots, date);
+    const sharedVarmrett = summarizeSharedVarmrettDay(slots, date, catalog);
     if (sharedVarmrett.statusChip === "missing") varmrettMissing += 1;
     else varmrettFilled += 1;
 
     for (const category of categories) {
       if (category === "varmrett") continue;
-      const summary = summarizeCategoryDay(slots, date, tier, category);
+      const summary = summarizeCategoryDay(slots, date, tier, category, catalog);
       if (summary.statusChip === "published") publishedSlots += 1;
       else if (summary.statusChip === "draft") draftSlots += 1;
       else if (summary.statusChip === "fixed") fixedSlots += 1;
@@ -376,10 +380,11 @@ export function resolveNextStepAction(
   tier: PlanTier,
   metrics: WeekWorkspaceMetrics,
   weekdayLabels: string[],
+  catalog: ProviderMenuCatalogSnapshot,
 ): string {
   if (metrics.varmrettMissing > 0) {
     for (let i = 0; i < dates.length; i++) {
-      const shared = summarizeSharedVarmrettDay(slots, dates[i]!);
+      const shared = summarizeSharedVarmrettDay(slots, dates[i]!, catalog);
       if (shared.statusChip === "missing") {
         const label = weekdayLabels[i] ?? "dagen";
         const possessive = WEEKDAY_POSSESSIVE[label] ?? `${label.toLowerCase()}s`;
@@ -438,11 +443,12 @@ export function summarizeDayCard(
   tier: PlanTier,
   weekdayLabel: string,
   categories: Category[],
+  catalog: ProviderMenuCatalogSnapshot,
 ): DayCardSummary {
   const summaries = categories
     .filter((c) => c !== "varmrett")
-    .map((c) => summarizeCategoryDay(slots, date, tier, c));
-  const varmrett = summarizeSharedVarmrettDay(slots, date);
+    .map((c) => summarizeCategoryDay(slots, date, tier, c, catalog));
+  const varmrett = summarizeSharedVarmrettDay(slots, date, catalog);
   const enterpriseUpgrade = tier === "ENTERPRISE" ? summarizeEnterpriseUpgradeDay(slots, date) : null;
 
   let dayStatus: WorkspaceStatusChip = "fixed";
