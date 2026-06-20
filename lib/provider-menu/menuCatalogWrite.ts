@@ -22,6 +22,10 @@ import { buildMenuCatalogSnapshot } from "@/lib/provider-menu/providerMenuCatalo
 import { sanityServer } from "@/lib/sanity/server";
 
 import { CATALOG_WEEK_PUBLISH_HINT } from "@/lib/provider-menu/lunchCategoryCatalog";
+import {
+  assertCatalogWriteAllowed,
+  loadProviderOrderLockState,
+} from "@/lib/provider-menu/providerMenuOrderLock";
 
 export type MenuCatalogWriteItemInput = {
   /** Immutable slug for existing items. Omit for new items (server generates slug). */
@@ -278,7 +282,19 @@ export async function persistProviderMenuCatalog(
   providerId: string,
   input: MenuCatalogWriteInput,
 ): Promise<{ catalog: ReturnType<typeof buildMenuCatalogSnapshot> }> {
-  const { doc, catalog } = await buildProviderLunchCategoryDoc(providerId, input);
+  const categoryKey = safeTrim(input.categoryKey).toLowerCase();
+  const template = await fetchTemplateDoc(categoryKey);
+  if (!template) {
+    throw new MenuCatalogWriteError("Mal for kategori finnes ikke.", "categoryKey");
+  }
+
+  const providerDoc = await fetchProviderCategoryDoc(providerId, categoryKey);
+  const baselineItems = itemsFromTemplateOrProvider(template, providerDoc);
+
+  const lockState = await loadProviderOrderLockState(providerId);
+  assertCatalogWriteAllowed(lockState, categoryKey, baselineItems, input);
+
+  const { doc } = await buildProviderLunchCategoryDoc(providerId, input);
   await writeClient.createOrReplace(doc);
   const freshRows = await fetchLunchCategoryRowsForProvider(providerId);
   return { catalog: buildMenuCatalogSnapshot(freshRows) };

@@ -36,6 +36,8 @@ export type ProviderLunchCategoryItemRow = {
   allergens?: string[] | null;
   isVegetarian?: boolean | null;
   allowedPlanTiers?: string[] | null;
+  /** WS-4: aktiv bestilling låser endring/fjerning/omdøping */
+  orderLocked?: boolean;
 };
 
 export type ProviderLunchCategoryRow = {

@@ -12,6 +12,12 @@ import {
   type MenuDayStatus,
 } from "@/lib/provider-menu/menuDayPayload";
 import { loadProviderMenuDaysForDates } from "@/lib/provider-menu/loadProviderMenuDays";
+import {
+  assertVarmrettContentChangeAllowed,
+  isVarmrettDateLocked,
+  loadProviderOrderLockState,
+  type ProviderOrderLockState,
+} from "@/lib/provider-menu/providerMenuOrderLock";
 
 export const VARMRETT_SHARED_TIERS = ["BASIS", "LUXUS", "ENTERPRISE"] as const satisfies readonly PlanTier[];
 
@@ -149,8 +155,28 @@ async function writeVarmrettDateAllTiers(
   providerId: string,
   shared: VarmrettSharedInput,
   rowsForDate: ExtendedRow[],
-  opts?: { providerOverride?: boolean; preserveBaseline?: GeneratedBaseline | null },
+  opts?: { providerOverride?: boolean; preserveBaseline?: GeneratedBaseline | null; lockState?: ProviderOrderLockState },
 ): Promise<{ ok: true; warnings: string[] } | { ok: false; error: string; field?: string }> {
+  const lockState = opts?.lockState ?? (await loadProviderOrderLockState(providerId));
+  const canonical = rowsForDate.find((r) => r.tier === "BASIS") ?? rowsForDate[0];
+  const beforeContent = {
+    mealTitle: canonical?.mealTitle ?? "",
+    description: canonical?.description ?? "",
+    allergensText: canonical?.allergens?.join(", ") ?? "",
+    estimatedCostPerPortion: canonical?.estimatedCostPerPortion ?? null,
+  };
+  try {
+    assertVarmrettContentChangeAllowed(lockState, shared.date, beforeContent, {
+      mealTitle: shared.mealTitle,
+      description: shared.description,
+      allergensText: shared.allergensText ?? "",
+      estimatedCostPerPortion: shared.estimatedCostPerPortion ?? null,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Varmrett er låst.";
+    return { ok: false, error: msg, field: "date" };
+  }
+
   const warnings: string[] = [];
   const baseline =
     opts?.preserveBaseline ??
@@ -186,12 +212,14 @@ export async function writeSharedVarmrettForProvider(
   opts?: { providerSlug?: string | null; reconcileVisibleWindow?: boolean },
 ): Promise<VarmrettSharedWriteResult> {
   const date = safeTrimField(input.date, 10);
+  const lockState = await loadProviderOrderLockState(providerId);
   const rows = (await loadProviderMenuDaysForDates(providerId, [date], {
     providerSlug: opts?.providerSlug ?? null,
   })) as ExtendedRow[];
 
   const writeResult = await writeVarmrettDateAllTiers(client, providerId, input, rows, {
     providerOverride: true,
+    lockState,
   });
   if (writeResult.ok === false) {
     return { ok: false, error: writeResult.error, field: writeResult.field };
@@ -207,6 +235,7 @@ export async function writeSharedVarmrettForProvider(
       })) as ExtendedRow[];
 
       for (const visibleDate of otherDates) {
+        if (isVarmrettDateLocked(lockState, visibleDate)) continue;
         if (!isVarmrettDivergentForDate(visibleRows, visibleDate)) continue;
         const dateRows = visibleRows.filter((r) => r.date === visibleDate && r.category === "varmrett");
         const canonical = dateRows.find((r) => r.status === "published") ?? dateRows[0];
@@ -227,7 +256,7 @@ export async function writeSharedVarmrettForProvider(
           providerId,
           reconcileInput,
           dateRows,
-          { providerOverride: false },
+          { providerOverride: false, lockState },
         );
         if (reconcileResult.ok) reconciledDates.push(visibleDate);
       }
@@ -249,6 +278,7 @@ export async function resetSharedVarmrettToBaseline(
   date: string,
   opts?: { providerSlug?: string | null },
 ): Promise<VarmrettSharedWriteResult> {
+  const lockState = await loadProviderOrderLockState(providerId);
   const rows = (await loadProviderMenuDaysForDates(providerId, [date], {
     providerSlug: opts?.providerSlug ?? null,
   })) as ExtendedRow[];
@@ -281,6 +311,7 @@ export async function resetSharedVarmrettToBaseline(
   const writeResult = await writeVarmrettDateAllTiers(client, providerId, resetInput, rows, {
     providerOverride: false,
     preserveBaseline: baseline,
+    lockState,
   });
   if (writeResult.ok === false) {
     return { ok: false, error: writeResult.error, field: writeResult.field };

@@ -19,6 +19,7 @@ import {
   parseVarmrettSharedBody,
   writeSharedVarmrettForProvider,
 } from "@/lib/provider-menu/varmrettSharedWrite";
+import { MENU_ORDER_LOCKED_CODE } from "@/lib/provider-menu/providerMenuOrderLock";
 import type { MenuDayStatus } from "@/lib/provider-menu/menuDayPayload";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireSanityWrite } from "@/lib/sanity/client";
@@ -110,7 +111,16 @@ export async function POST(req: NextRequest) {
   });
 
   if (result.ok === false) {
-    return jsonErr(rid, result.error, 422, "VALIDATION_ERROR");
+    const isLock =
+      result.field === "date" &&
+      (result.error.includes("bestilling") || result.error.includes("låst"));
+    return jsonErr(
+      rid,
+      result.error,
+      422,
+      isLock ? MENU_ORDER_LOCKED_CODE : "VALIDATION_ERROR",
+      isLock ? { lockedDates: [parsed.date] } : undefined,
+    );
   }
 
   const syncStatus = await syncPublishedTiers(provider.id, result.date, result.status);

@@ -31,6 +31,8 @@ export type ProviderMenuDayRow = {
     allergens?: string[];
     estimatedCostPerPortion?: number | null;
   } | null;
+  /** WS-4: leveringsdag har aktiv bestilling — varmrett innhold låst */
+  orderLocked?: boolean;
 };
 
 const PROVIDER_MENU_PROJECTION = `

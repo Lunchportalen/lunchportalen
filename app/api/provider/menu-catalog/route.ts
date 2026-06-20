@@ -12,11 +12,17 @@ import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { fetchLunchCategoryRowsForProvider } from "@/lib/cms/lunchCategory";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import {
+  applyOrderLocksToCatalog,
+  loadProviderOrderLockState,
+  MENU_ORDER_LOCKED_CODE,
+  ProviderMenuOrderLockError,
+} from "@/lib/provider-menu/providerMenuOrderLock";
+import { CATALOG_WEEK_PUBLISH_HINT } from "@/lib/provider-menu/lunchCategoryCatalog";
+import {
   MenuCatalogWriteError,
   persistProviderMenuCatalog,
   type MenuCatalogWriteInput,
 } from "@/lib/provider-menu/menuCatalogWrite";
-import { CATALOG_WEEK_PUBLISH_HINT } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { buildMenuCatalogSnapshot } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import { requireSanityWrite } from "@/lib/sanity/client";
 
@@ -81,7 +87,8 @@ export async function GET(_req: NextRequest) {
   const { provider } = resolved as { userId: string; provider: { id: string; slug: string; name: string } };
 
   const rows = await fetchLunchCategoryRowsForProvider(provider.id);
-  const catalog = buildMenuCatalogSnapshot(rows);
+  const lockState = await loadProviderOrderLockState(provider.id);
+  const catalog = applyOrderLocksToCatalog(buildMenuCatalogSnapshot(rows), lockState);
 
   return jsonOk(rid, {
     catalog,
@@ -120,7 +127,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const writeClient = requireSanityWrite();
-    const { catalog } = await persistProviderMenuCatalog(writeClient, provider.id, parsed);
+    const { catalog: rawCatalog } = await persistProviderMenuCatalog(writeClient, provider.id, parsed);
+    const lockState = await loadProviderOrderLockState(provider.id);
+    const catalog = applyOrderLocksToCatalog(rawCatalog, lockState);
     return jsonOk(rid, {
       catalog,
       providerId: provider.id,
@@ -128,6 +137,11 @@ export async function POST(req: NextRequest) {
       weekPublishHint: CATALOG_WEEK_PUBLISH_HINT,
     });
   } catch (e) {
+    if (e instanceof ProviderMenuOrderLockError) {
+      return jsonErr(rid, e.message, 422, MENU_ORDER_LOCKED_CODE, {
+        lockedKeys: e.lockedKeys ?? [],
+      });
+    }
     if (e instanceof MenuCatalogWriteError) {
       return jsonErr(rid, e.message, 422, "VALIDATION_ERROR", { field: e.field });
     }

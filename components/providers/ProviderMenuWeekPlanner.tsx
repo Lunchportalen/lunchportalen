@@ -66,6 +66,7 @@ export default function ProviderMenuWeekPlanner({
             selected.category === "varmrett" &&
             selected.editorFocus !== "enterprise-upgrade";
           const varmrettSlot = varmrett.slot;
+          const varmrettOrderLocked = varmrettSlot?.orderLocked === true;
           const costHint =
             menuSlotHasContent(varmrettSlot) && varmrettSlot.estimatedCostPerPortion != null
               ? `Kost ${varmrettSlot.estimatedCostPerPortion} kr`
@@ -110,6 +111,12 @@ export default function ProviderMenuWeekPlanner({
                 ) : (
                   <>
                     <span className="menu-day-card__hero-title">{varmrettRow?.title ?? "Varmrett"}</span>
+                    {varmrettOrderLocked ? (
+                      <span className="ds-order-lock-badge menu-day-card__order-lock">
+                        <span className="ds-order-lock-badge__icon" aria-hidden="true">🔒</span>
+                        <span className="ds-order-lock-badge__text">Har bestilling</span>
+                      </span>
+                    ) : null}
                     {costHint ? <span className="menu-day-card__hero-meta">{costHint}</span> : null}
                     <span className="menu-day-card__hero-status">{varmrett.statusLabel}</span>
                   </>
