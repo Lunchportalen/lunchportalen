@@ -840,6 +840,13 @@ html.lp-week-visual-regression .ds-week-surface--slot {
   border: 1px solid var(--ds-line);
 }
 
+.ds-allergen-unverified-notice {
+  white-space: normal;
+  text-align: left;
+  max-width: 100%;
+  line-height: 1.35;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ds-week-item-btn {
     transition: none;

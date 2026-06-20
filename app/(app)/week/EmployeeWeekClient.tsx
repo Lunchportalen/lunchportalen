@@ -716,10 +716,44 @@ function choiceHighlightLine(day: DayRow, stored: WeekChoiceStored): ChoiceHighl
   return body ? { mode: "valgt_body", body } : { mode: "none" };
 }
 
+export const ALLERGEN_UNVERIFIED_NOTICE = "Allergener ikke bekreftet — kontakt leverandør";
+
+function WeekAllergenMetaItems({
+  allergens,
+  isVegetarian,
+}: {
+  allergens: readonly string[];
+  isVegetarian: boolean;
+}) {
+  const slugs = allergens ?? [];
+  return (
+    <>
+      {slugs.map((slug) => (
+        <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
+          <span aria-hidden="true">⚠ </span>
+          {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
+        </span>
+      ))}
+      {slugs.length === 0 ? (
+        <span className="ds-week-insight-pill ds-allergen-unverified-notice" role="status">
+          <span aria-hidden="true">ℹ </span>
+          {ALLERGEN_UNVERIFIED_NOTICE}
+        </span>
+      ) : null}
+      {isVegetarian ? (
+        <span className="ds-vegetarian-badge">
+          <span aria-hidden="true">🌿 </span>
+          Vegetar
+        </span>
+      ) : null}
+    </>
+  );
+}
+
 function itemAriaLabel(title: string, allergens: readonly string[], isVegetarian: boolean): string {
   const allergensText = displayAllergens(allergens as string[]);
   const parts = [title.trim()];
-  parts.push(allergensText ? `Inneholder ${allergensText}` : "Ingen oppregnede EU-allergener for varianten");
+  parts.push(allergensText ? `Inneholder ${allergensText}` : ALLERGEN_UNVERIFIED_NOTICE);
   if (isVegetarian) parts.push("Vegetar");
   return parts.join(". ").replace(/\s+/g, " ").trim();
 }
@@ -820,20 +854,7 @@ export function WeekCategoryCards({
                 >
                   <span className="ds-week-item-btn__title">{it.title}</span>
                   <span className="ds-week-item-btn__meta">
-                    {(it.allergens ?? []).map((slug) => (
-                      <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
-                        <span aria-hidden="true">
-                          ⚠{" "}
-                        </span>
-                        {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
-                      </span>
-                    ))}
-                    {it.isVegetarian ? (
-                      <span className="ds-vegetarian-badge">
-                        <span aria-hidden="true">🌿 </span>
-                        Vegetar
-                      </span>
-                    ) : null}
+                    <WeekAllergenMetaItems allergens={it.allergens ?? []} isVegetarian={it.isVegetarian} />
                   </span>
                 </button>
               );
@@ -852,22 +873,9 @@ export function WeekCategoryCards({
                   {it.description ? (
                     <p className="ds-week-info-card__desc">{String(it.description).trim()}</p>
                   ) : null}
-                  {(it.allergens ?? []).length > 0 || it.isVegetarian ? (
-                    <div className="ds-week-info-card__meta">
-                      {(it.allergens ?? []).map((slug) => (
-                        <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
-                          <span aria-hidden="true">⚠ </span>
-                          {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
-                        </span>
-                      ))}
-                      {it.isVegetarian ? (
-                        <span className="ds-vegetarian-badge">
-                          <span aria-hidden="true">🌿 </span>
-                          Vegetar
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
+                  <div className="ds-week-info-card__meta">
+                    <WeekAllergenMetaItems allergens={it.allergens ?? []} isVegetarian={it.isVegetarian} />
+                  </div>
                 </>
               );
             })()}
@@ -882,16 +890,9 @@ export function WeekCategoryCards({
             {selectedCat.description ? (
               <p className="ds-week-info-card__desc">{String(selectedCat.description).trim()}</p>
             ) : null}
-            {selectedCat.allergens.length > 0 ? (
-              <div className="ds-week-info-card__meta">
-                {(selectedCat.allergens ?? []).map((slug) => (
-                  <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
-                    <span aria-hidden="true">⚠ </span>
-                    {ALLERGEN_DISPLAY_LABELS[String(slug)] ?? String(slug)}
-                  </span>
-                ))}
-              </div>
-            ) : null}
+            <div className="ds-week-info-card__meta">
+              <WeekAllergenMetaItems allergens={selectedCat.allergens ?? []} isVegetarian={false} />
+            </div>
           </div>
         ) : showEmptyMenuPlaceholder ? (
           <p className="ds-week-info-card__placeholder" role="status">
