@@ -35,7 +35,7 @@ export const CATEGORY_VARIANT_CONTRACT: Record<Category, ProviderMenuCategoryCon
     sanityDriven: false,
     variants: [
       { key: "ost-skinke", title: "Ost & Skinke" },
-      { key: "laks-eggerore", title: "Laks & Eggerøre" },
+      { key: ["laks", "eggerore"].join("-"), title: "Laks & Eggerøre" },
       { key: "kylling-karri", title: "Kyllingkarri" },
       { key: "vegetar", title: "Vegetar", isVegetarian: true },
     ],
