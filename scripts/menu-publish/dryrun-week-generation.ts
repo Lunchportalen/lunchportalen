@@ -82,7 +82,7 @@ function printWeekPlan(label: string, result: MenuWeekRolloutResult): void {
     console.log("(ingen delt ukeplan — sjekk feil eller at alt finnes fra før)");
     return;
   }
-  console.log("\nDelt varmrett (Basis == Luxus):");
+  console.log("\nDelt varmrett (Basis == Luxus == Enterprise):");
   const PIN_LABEL = ["hovedrett", "suppe", "hovedrett", "fisk", "fredagskos"] as const;
   for (let i = 0; i < plan.length; i += 1) {
     const row = plan[i]!;
@@ -157,11 +157,7 @@ if (!identical) {
   console.log("Fingerprint 2:", fp2.slice(0, 120), "…");
 }
 
-const isUnfilledPinError = (e: string) => e.includes("Pinnet dag ufyllt");
-const fatalErrors = [
-  ...first.errors.filter((e) => !isUnfilledPinError(e)),
-  ...second.errors.filter((e) => !isUnfilledPinError(e)),
-];
+const fatalErrors = [...first.errors, ...second.errors];
 if (fatalErrors.length > 0) {
   process.exit(1);
 }

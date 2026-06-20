@@ -364,7 +364,7 @@ describe("generateWeekMenu ukedag-pins", () => {
 
 
 
-  it("tom pin-pool: dagen står ufyllt, øvrige dager fylles", () => {
+  it("tom pin-pool: bank-fallback fyller tirsdag deterministisk", () => {
 
     const mainOnly: Meal[] = [];
 
@@ -456,9 +456,9 @@ describe("generateWeekMenu ukedag-pins", () => {
 
 
 
-    expect(unfilledDayIndices).toEqual([1]);
+    expect(unfilledDayIndices).toEqual([]);
 
-    expect(days[1]).toBeNull();
+    expect(days[1]).not.toBeNull();
 
     expect(days[0]).not.toBeNull();
 
@@ -848,7 +848,7 @@ describe("buildPoolForDay pin-reservasjon (A.2)", () => {
 
 
 
-    expect(unfilledDayIndices).not.toContain(3);
+    expect(unfilledDayIndices).toEqual([]);
 
     expect(days[3]).not.toBeNull();
 

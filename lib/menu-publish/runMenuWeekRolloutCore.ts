@@ -25,14 +25,20 @@ import {
 
 const MENU_DAY_CATEGORY = "varmrett" as const;
 
-/** Sanity menuDay schema: BASIS + LUXUS only (Patch 12 / Patch 2.1 fail-closed). */
-const ORDERED_PLAN_TIERS: PlanTier[] = ["BASIS", "LUXUS"];
+/** Tiers som får auto-filled menuDay ved rollout (inkl. ENTERPRISE fra Fase 3a). */
+const ROLLOUT_WRITE_TIERS: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
+
+/**
+ * Tiers brukt til mealIdea-pool-intersection for ukegenerering.
+ * ENTERPRISE utelates her slik at BASIS/LUXUS-output forblir identisk når begge er aktive.
+ */
+const ROLLOUT_GENERATION_TIERS: PlanTier[] = ["BASIS", "LUXUS"];
 
 export type SharedWeekDayPlan = {
   date: string;
   mealTitle: string;
   mealId: string;
-  /** true når pin-pool var tom — dagen står ufyllt for manuell kurering. */
+  /** Legacy flag — generator fyller alle dager deterministisk (Fase 3a). */
   unfilled?: boolean;
 };
 
@@ -119,7 +125,14 @@ export async function loadActivePlanTiers(admin: SupabaseClient, providerId: str
     if (t) seen.add(t);
   }
 
-  return ORDERED_PLAN_TIERS.filter((t) => seen.has(t));
+  return ROLLOUT_WRITE_TIERS.filter((t) => seen.has(t));
+}
+
+/** Pool-intersection for ukegenerering — BASIS/LUXUS når begge finnes; ellers aktiv tier. */
+function rolloutGenerationTiers(activeTiers: PlanTier[]): PlanTier[] {
+  const fromBasisLuxus = ROLLOUT_GENERATION_TIERS.filter((t) => activeTiers.includes(t));
+  if (fromBasisLuxus.length > 0) return fromBasisLuxus;
+  return activeTiers.filter((t) => t === "ENTERPRISE");
 }
 
 async function fetchExistingMenuDaysForWeek(
@@ -407,9 +420,10 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
         if (k) avoidTitles.add(k);
       }
 
+      const generationTiers = rolloutGenerationTiers(tiersProcessed);
       const basePools: Meal[][] = [];
       const fridayPools: Meal[][] = [];
-      for (const tier of tiersProcessed) {
+      for (const tier of generationTiers) {
         const [baseRaw, fridayRaw] = await Promise.all([
           fetchMealIdeaBank(opts.sanityRead, tier, false, instant),
           fetchMealIdeaBank(opts.sanityRead, tier, true, instant),
@@ -424,7 +438,7 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
 
       if (baseMeals.length < 50) {
         throw new Error(
-          `For få retter i snitt-pool (intersection) for ${tiersProcessed.join("+")}: ${baseMeals.length} (minimum 50).`,
+          `For få retter i snitt-pool (intersection) for ${generationTiers.join("+")}: ${baseMeals.length} (minimum 50).`,
         );
       }
 
@@ -437,25 +451,17 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
       });
       sharedWeek = generated.days;
 
-      for (const dayIndex of generated.unfilledDayIndices) {
-        const date = targetDates[dayIndex]!;
-        const pin = getWeekdayCategoryPin(dayIndex) ?? "ukjent";
-        const msg =
-          `Pinnet dag ufyllt: ${date} (dag ${dayIndex + 1}) krever tag «${pin}» — ingen kandidat etter cooldown-relax. ` +
-          "Dagen står ufyllt for manuell kurering; øvrige dager fortsetter.";
-        errors.push(msg);
-        if (!opts.dryRun) {
-          void import("@/lib/sentry/capture").then(({ captureServerMessage }) => {
-            captureServerMessage(msg, "warning", {
-              component: "menu-week-rollout",
-              providerRef,
-              targetWeek: targetWeekMonday,
-              dayIndex,
-              date,
-              pinTag: pin,
-            });
-          });
-        }
+      if (generated.unfilledDayIndices.length > 0) {
+        const detail = generated.unfilledDayIndices
+          .map((dayIndex) => {
+            const date = targetDates[dayIndex]!;
+            const pin = getWeekdayCategoryPin(dayIndex) ?? "ukjent";
+            return `${date} (pin «${pin}»)`;
+          })
+          .join(", ");
+        throw new Error(
+          `Rollout-generator etterlot tomme dager etter bank-fallback (fail-closed): ${detail}.`,
+        );
       }
     } else {
       sharedWeek = targetDates.map((date, i) => prefilledDays.get(i) ?? null);

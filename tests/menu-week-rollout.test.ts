@@ -204,7 +204,7 @@ describe("runMenuWeekRollout", () => {
     } as unknown as SanityClient;
   }
 
-  it("ingen menuDays: 2 tiers × 5 dager = 10 opprettet, alle publisert + autoFilled", async () => {
+  it("ingen menuDays: 3 tiers × 5 dager = 15 opprettet, alle publisert + autoFilled", async () => {
     const res = await runMenuWeekRollout({
       instant: fixedInstant,
       sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
@@ -215,12 +215,12 @@ describe("runMenuWeekRollout", () => {
 
     expect(res.targetWeek).toBe("2026-06-01");
     expect(res.providerRef).toBe(MELHUS_PROVIDER_SANITY_ID);
-    expect(res.tiersProcessed).toEqual(["BASIS", "LUXUS"]);
+    expect(res.tiersProcessed).toEqual(["BASIS", "LUXUS", "ENTERPRISE"]);
     expect(res.menuDaysSkipped).toBe(0);
     expect(res.errors).toEqual([]);
-    expect(res.menuDaysCreated).toBe(10);
+    expect(res.menuDaysCreated).toBe(15);
 
-    expect(createdDocs).toHaveLength(10);
+    expect(createdDocs).toHaveLength(15);
     for (const doc of createdDocs as Array<Record<string, unknown>>) {
       expect(doc.customerVisible).toBe(true);
       expect(doc.approvedForPublish).toBe(true);
@@ -232,14 +232,40 @@ describe("runMenuWeekRollout", () => {
 
     const basisDocs = (createdDocs as Array<Record<string, unknown>>).filter((d) => d.planTier === "BASIS");
     const luxusDocs = (createdDocs as Array<Record<string, unknown>>).filter((d) => d.planTier === "LUXUS");
+    const enterpriseDocs = (createdDocs as Array<Record<string, unknown>>).filter(
+      (d) => d.planTier === "ENTERPRISE",
+    );
     expect(basisDocs).toHaveLength(5);
     expect(luxusDocs).toHaveLength(5);
+    expect(enterpriseDocs).toHaveLength(5);
     for (const date of expectedDates) {
       const b = basisDocs.find((d) => d.date === date);
       const l = luxusDocs.find((d) => d.date === date);
+      const e = enterpriseDocs.find((d) => d.date === date);
       expect(b?.mealTitle).toBe(l?.mealTitle);
+      expect(b?.mealTitle).toBe(e?.mealTitle);
       expect((b?.mealRef as { _ref?: string })?._ref).toBe((l?.mealRef as { _ref?: string })?._ref);
+      expect((b?.mealRef as { _ref?: string })?._ref).toBe((e?.mealRef as { _ref?: string })?._ref);
     }
+  });
+
+  it("ENTERPRISE i avtaler gir identisk delt ukeplan som kun BASIS+LUXUS (regresjon)", async () => {
+    const runForTiers = async (tiers: Array<"BASIS" | "LUXUS" | "ENTERPRISE">) => {
+      const res = await runMenuWeekRollout({
+        instant: fixedInstant,
+        sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
+        supabaseAdmin: () => mockSupabaseForTiers(tiers),
+        sanityRead,
+        getSanityWrite: mockWrite,
+        dryRun: true,
+      });
+      return (res.sharedWeekPlan ?? []).map((d) => d.mealTitle);
+    };
+
+    const basisLuxusOnly = await runForTiers(["BASIS", "LUXUS"]);
+    const allThree = await runForTiers(["BASIS", "LUXUS", "ENTERPRISE"]);
+    expect(basisLuxusOnly).toEqual(allThree);
+    expect(basisLuxusOnly).toHaveLength(5);
   });
 
   it("2× rollout med samme fixtures gir identisk delt ukeplan", async () => {
@@ -289,7 +315,7 @@ describe("runMenuWeekRollout", () => {
     expect(plan[4]?.mealTitle).toMatch(/Fredagskos/i);
   });
 
-  it("alle menuDays finnes allerede: 0 opprettet, 10 hoppet over", async () => {
+  it("alle menuDays finnes allerede: 0 opprettet, 15 hoppet over", async () => {
     fetchImpl = async (q: string) => {
       if (q.includes('_type == "mealIdea"')) return sharedBankFixture();
       if (q.includes("mealRefId")) {
@@ -317,7 +343,7 @@ describe("runMenuWeekRollout", () => {
     });
 
     expect(res.menuDaysCreated).toBe(0);
-    expect(res.menuDaysSkipped).toBe(10);
+    expect(res.menuDaysSkipped).toBe(15);
     expect(createdDocs).toHaveLength(0);
   });
 
@@ -362,13 +388,17 @@ describe("runMenuWeekRollout", () => {
     });
 
     expect(res.menuDaysSkipped).toBe(2);
-    expect(res.menuDaysCreated).toBe(8);
+    expect(res.menuDaysCreated).toBe(13);
     expect(res.errors).toEqual([]);
 
     const luxusMonday = (createdDocs as Array<Record<string, unknown>>).find(
       (d) => d.planTier === "LUXUS" && d.date === "2026-06-01",
     );
+    const enterpriseMonday = (createdDocs as Array<Record<string, unknown>>).find(
+      (d) => d.planTier === "ENTERPRISE" && d.date === "2026-06-01",
+    );
     expect(luxusMonday?.mealTitle).toBe(canonicalTitle);
+    expect(enterpriseMonday?.mealTitle).toBe(canonicalTitle);
     expect((luxusMonday?.mealRef as { _ref?: string })?._ref).toBe("meal-canonical-mon");
   });
 
@@ -530,8 +560,8 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
 
     expect(res.targetWeek).toBe(overrideMonday);
     expect(res.targetWeek).not.toBe(n3Monday);
-    expect(res.menuDaysCreated).toBe(10);
-    expect(createdDocs).toHaveLength(10);
+    expect(res.menuDaysCreated).toBe(15);
+    expect(createdDocs).toHaveLength(15);
     for (const doc of createdDocs as Array<Record<string, unknown>>) {
       expect(overrideWeekDates).toContain(doc.date);
     }
@@ -548,7 +578,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     });
 
     expect(res.targetWeek).toBe(n3Monday);
-    expect(res.menuDaysCreated).toBe(10);
+    expect(res.menuDaysCreated).toBe(15);
   });
 
   it("override som ikke er mandag: kaster", async () => {
@@ -606,7 +636,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     });
 
     expect(res.menuDaysCreated).toBe(0);
-    expect(res.menuDaysSkipped).toBe(10);
+    expect(res.menuDaysSkipped).toBe(15);
     expect(createdDocs).toHaveLength(0);
   });
 

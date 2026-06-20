@@ -568,6 +568,69 @@ function pickPinEmergency(
   return null;
 }
 
+/** Første rett i sortert liste som holder uke-hard constraints (unik tittel, max-1 fisk/suppe/veg). */
+function pickFromSortedWithWeekHardConstraints(sorted: Meal[], state: GeneratorState): Meal | null {
+  for (const meal of sorted) {
+    const bound = bindMealCategoryBooleans(meal);
+    if (!isValidMeal(bound)) continue;
+    const titleKey = normalizeTitle(bound.title);
+    if (state.usedTitles.has(titleKey)) continue;
+    if (bound.isFishDish && state.fishUsed) continue;
+    if (bound.isSoup && state.soupUsed) continue;
+    if (isVeg(bound) && state.vegUsed) continue;
+    return bound;
+  }
+  return null;
+}
+
+/**
+ * Deterministisk bank-fallback når pin-pool er tom eller uttømt.
+ * Pin-prioritet: prøv pin-match først, deretter bred bank — aldri random.
+ */
+function pickDeterministicBankFallback(
+  bankMeals: Meal[],
+  state: GeneratorState,
+  dayIndex: number,
+  selectionSeed: string,
+  debugLabel: string,
+): Meal | null {
+  const pin = getWeekdayCategoryPin(dayIndex);
+  const valid = bankMeals.filter(isValidMeal).map(bindMealCategoryBooleans);
+  const ctx = { dayIndex, usedStyles: state.usedStyles, usedTags: state.usedTags };
+  const sorted = sortCandidatesSeeded(valid, ctx, `${selectionSeed}:bank-fallback:${dayIndex}`);
+  const relaxLogged: PickRelax = {
+    allowOverlap: true,
+    allowSameStyle: true,
+    allowReuseMethod: true,
+    allowTitleCooldown: true,
+  };
+
+  if (pin) {
+    const pinMatches = sorted.filter((m) => matchesDayPin(m, pin));
+    const fromPin = pickFromSortedWithWeekHardConstraints(pinMatches, state);
+    if (fromPin) {
+      logRelaxation(`${debugLabel}:pin-priority`, relaxLogged);
+      return fromPin;
+    }
+  }
+
+  const withoutOtherPinReserve = sorted.filter((m) => !isReservedForOtherPinDay(m, dayIndex));
+  const bankPool = withoutOtherPinReserve.length > 0 ? withoutOtherPinReserve : sorted;
+  const fromBank = pickFromSortedWithWeekHardConstraints(bankPool, state);
+  if (fromBank) {
+    logRelaxation(`${debugLabel}:bank-wide`, relaxLogged);
+    return fromBank;
+  }
+
+  const absolute = pickFromSortedWithWeekHardConstraints(sorted, state);
+  if (absolute) {
+    logRelaxation(`${debugLabel}:bank-absolute`, relaxLogged);
+    return absolute;
+  }
+
+  return null;
+}
+
 function pickForGeneratedDay(
   bankMeals: Meal[],
   state: GeneratorState,
@@ -577,32 +640,37 @@ function pickForGeneratedDay(
   const pool = buildPoolForDay(bankMeals, dayIndex);
   const pin = getWeekdayCategoryPin(dayIndex);
 
-  if (pin && pool.length === 0) {
-    return null;
+  let meal: Meal | null = null;
+
+  if (pool.length > 0) {
+    meal =
+      pickBestWithFallback(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}`) ??
+      (pin
+        ? pickWithPinCooldownRelax(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}-pin-cooldown`)
+        : null);
+
+    if (!meal && pin) {
+      meal = pickPinEmergency(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}`);
+    }
   }
 
-  let meal =
-    pickBestWithFallback(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}`) ??
-    (pin
-      ? pickWithPinCooldownRelax(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}-pin-cooldown`)
-      : null);
-
-  if (!meal && pin) {
-    meal = pickPinEmergency(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}`);
+  if (!meal) {
+    meal = pickDeterministicBankFallback(
+      bankMeals,
+      state,
+      dayIndex,
+      selectionSeed,
+      `dag-${dayIndex + 1}`,
+    );
   }
 
   if (meal) {
     return bindMealCategoryBooleans(meal);
   }
 
-  if (pin) {
-    return null;
-  }
-
   const diag = formatPickFailureDiag(state, pool.length);
   throw new Error(
-    `Kunne ikke fylle dag ${dayIndex + 1} (hovedrett) med gjeldende regler (alle fallback-nivåer uttømt). ` +
-      `Diagnose: ${diag}`,
+    `Kunne ikke fylle dag ${dayIndex + 1} (pin=${pin ?? "ingen"}) — bank-fallback uttømt. Diagnose: ${diag}`,
   );
 }
 
@@ -735,7 +803,6 @@ export function generateWeekMenu({
   }
 
   const week: (Meal | null)[] = new Array(WEEK_DAYS).fill(null);
-  const unfilledDayIndices: number[] = [];
 
   for (let i = 0; i < WEEK_DAYS; i += 1) {
     const prefilled = prefilledDays?.get(i);
@@ -749,23 +816,10 @@ export function generateWeekMenu({
     if (week[i]) continue;
 
     const meal = pickForGeneratedDay(bankMeals, state, i, seed);
-    if (!meal) {
-      unfilledDayIndices.push(i);
-      // eslint-disable-next-line no-console -- strukturert varsel (Sentry i rollout-core)
-      console.error(
-        JSON.stringify({
-          tag: "[LP_MENU_GENERATOR_UNFILLED_PIN]",
-          dayIndex: i,
-          pinTag: getWeekdayCategoryPin(i),
-        }),
-      );
-      continue;
-    }
-
     week[i] = snapshotMeal(meal);
     registerMeal(meal, state);
   }
 
   assertWeekInvariants(week);
-  return { days: week, unfilledDayIndices };
+  return { days: week, unfilledDayIndices: [] };
 }
