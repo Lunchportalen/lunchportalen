@@ -16,6 +16,8 @@ export type SlotContentSource = "published" | "draft" | "legacy" | "empty";
 
 export type ResolvedProviderMenuSlot = ProviderMenuSlotState & {
   contentSource: SlotContentSource;
+  providerOverride?: boolean;
+  hasGeneratedBaseline?: boolean;
 };
 
 function slotPriority(status: ProviderMenuSlotState["status"]): number {
@@ -39,6 +41,10 @@ function rowToSlot(row: ProviderMenuDayRow, source: SlotContentSource): Resolved
     status: row.status,
     docId: row.id,
     contentSource: source,
+    providerOverride: Boolean(row.providerOverride),
+    hasGeneratedBaseline: Boolean(
+      row.generatedBaseline?.mealTitle?.trim() || row.generatedBaseline?.description?.trim(),
+    ),
   };
 }
 
