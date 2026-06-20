@@ -121,7 +121,7 @@
     "lucide-react": "^0.460.0",
     "ml-matrix": "^6.12.1",
     "next": "15.5.18",
-    "nodemailer": "^8.0.10",
+    "nodemailer": "9.0.1",
     "onnxruntime-node": "^1.24.3",
     "openai": "^4.104.0",
     "pdf-lib": "^1.17.1",

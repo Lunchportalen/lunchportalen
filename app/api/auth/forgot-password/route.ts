@@ -6,6 +6,7 @@ export const revalidate = 0;
 import type { NextRequest } from "next/server";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { readJson } from "@/lib/http/routeGuard";
+import { buildPasswordResetEmail } from "@/lib/email/passwordResetMail";
 import { sendMail } from "@/lib/orderBackup/smtp";
 import { opsLog } from "@/lib/ops/log";
 import { RESEND_DEFAULT_FROM_ORDER } from "@/lib/system/emails";
@@ -37,15 +38,7 @@ function resetMailFrom(): string {
 }
 
 async function sendResetEmail(opts: { to: string; link: string; rid: string }) {
-  const subject = "Tilbakestill passordet ditt i Lunchportalen";
-  const text =
-    "Hei,\n" +
-    "Du ba om å tilbakestille passordet ditt i Lunchportalen.\n\n" +
-    "Bruk lenken under for å velge nytt passord:\n" +
-    `${opts.link}\n\n` +
-    "Lenken er gyldig i 30 minutter. Hvis du ikke ba om dette, kan du se bort fra e-posten.\n\n" +
-    "Vennlig hilsen\n" +
-    "Lunchportalen";
+  const { subject, text } = buildPasswordResetEmail(opts.link);
 
   try {
     await sendMail({ from: resetMailFrom(), to: opts.to, subject, text });
