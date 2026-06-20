@@ -176,7 +176,7 @@ export async function GET(req: Request) {
   const week2To = addDaysISO(weekStart, 14);
 
   const isThu0800 = oslo.weekday === "Thu" && oslo.hh === 8 && oslo.mi === 0;
-  const isFri1500 = oslo.weekday === "Fri" && oslo.hh === 15 && oslo.mi === 0;
+  const isFri1400 = oslo.weekday === "Fri" && oslo.hh === 14 && oslo.mi === 0;
 
   const actions: any[] = [];
 
@@ -219,7 +219,7 @@ export async function GET(req: Request) {
       } catch {}
     }
 
-    if (isFri1500) {
+    if (isFri1400) {
       const res = await patchVisibilityForRange({
         fromISO: week1From,
         toISO: week1To,
@@ -252,7 +252,7 @@ export async function GET(req: Request) {
           target_label: `week1 ${week1From}..${week1To}`,
           before: null,
           after: { visible: false, onlyApproved: false, changed: res.changed },
-          meta: { schedule: "Fri 15:00", mirror },
+          meta: { schedule: "Fri 14:00", mirror },
         });
       } catch {}
     }
