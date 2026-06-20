@@ -47,7 +47,7 @@ async function loadEligibleEmployees(
   const { data: companies, error: cErr } = await admin
     .from("companies")
     .select("id")
-    .eq("status", "active");
+    .eq("status", "ACTIVE");
 
   if (cErr) throw new Error(`companies: ${cErr.message}`);
   const activeCompanyIds = new Set((companies ?? []).map((c) => safeStr((c as { id?: string }).id)).filter(Boolean));
