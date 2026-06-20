@@ -9,7 +9,14 @@ import {
   startOfWeekMondayNPlus3,
   utcInstantToOsloDateISO,
 } from "./calendar";
-import { generateWeekMenu, type PlanTier } from "./generateWeekMenu";
+import {
+  buildRolloutSelectionSeed,
+  generateWeekMenu,
+  mergeMealPoolsById,
+  getWeekdayCategoryPin,
+  type Meal,
+  type PlanTier,
+} from "./generateWeekMenu";
 import {
   fetchMealIdeaBank,
   hasCompleteNutrition,
@@ -21,6 +28,14 @@ const MENU_DAY_CATEGORY = "varmrett" as const;
 /** Sanity menuDay schema: BASIS + LUXUS only (Patch 12 / Patch 2.1 fail-closed). */
 const ORDERED_PLAN_TIERS: PlanTier[] = ["BASIS", "LUXUS"];
 
+export type SharedWeekDayPlan = {
+  date: string;
+  mealTitle: string;
+  mealId: string;
+  /** true når pin-pool var tom — dagen står ufyllt for manuell kurering. */
+  unfilled?: boolean;
+};
+
 export type MenuWeekRolloutResult = {
   targetWeek: string;
   /** Eksplisitt provider-scope brukt for hele rollouten (Sanity provider._ref == Supabase providers.id). */
@@ -30,6 +45,25 @@ export type MenuWeekRolloutResult = {
   menuDaysCreated: number;
   menuDaysSkipped: number;
   errors: string[];
+  /** Kanonisk delt ukeplan (mandag–fredag) — for dry-run/preview. */
+  sharedWeekPlan?: SharedWeekDayPlan[];
+};
+
+type ExistingMenuDayRow = {
+  date?: string | null;
+  planTier?: string | null;
+  mealTitle?: string | null;
+  description?: string | null;
+  allergens?: string[] | null;
+  mayContain?: string[] | null;
+  nutritionPer100g?: Meal["nutritionPer100g"];
+  kitchenStyle?: string | null;
+  costTier?: Meal["costTier"];
+  estimatedCostPerPortion?: number | null;
+  isFishDish?: boolean | null;
+  isSoup?: boolean | null;
+  isVegetarian?: boolean | null;
+  mealRefId?: string | null;
 };
 
 /**
@@ -93,8 +127,8 @@ async function fetchExistingMenuDaysForWeek(
   providerRef: string,
   dates: string[],
   tier: PlanTier,
-): Promise<Array<{ date?: string | null; mealTitle?: string | null }>> {
-  const rows = await sanity.fetch<Array<{ date?: string | null; mealTitle?: string | null }>>(
+): Promise<ExistingMenuDayRow[]> {
+  const rows = await sanity.fetch<ExistingMenuDayRow[]>(
     `*[
       _type == "menuDay" &&
       provider._ref == $providerRef &&
@@ -102,7 +136,22 @@ async function fetchExistingMenuDaysForWeek(
       planTier == $tier &&
       category == $category &&
       !(_id in path("drafts.**"))
-    ]{ date, mealTitle }`,
+    ]{
+      date,
+      planTier,
+      mealTitle,
+      description,
+      allergens,
+      mayContain,
+      nutritionPer100g,
+      kitchenStyle,
+      costTier,
+      estimatedCostPerPortion,
+      isFishDish,
+      isSoup,
+      isVegetarian,
+      "mealRefId": mealRef._ref
+    }`,
     { providerRef, dates, tier, category: MENU_DAY_CATEGORY },
   );
 
@@ -134,6 +183,71 @@ async function fetchCooldownTitleKeys(
     if (k) keys.add(k);
   }
   return keys;
+}
+
+/** Snitt av mealIdea-pooler — rett må finnes i ALLE pools (intersection på _id). */
+export function intersectMealPools(...pools: Meal[][]): Meal[] {
+  if (pools.length === 0) return [];
+  const idSets = pools.map((pool) => new Set(pool.map((m) => m._id)));
+  const firstById = new Map(pools[0]!.map((m) => [m._id, m]));
+  const ids = [...firstById.keys()].filter((id) => idSets.every((set) => set.has(id)));
+  return ids.map((id) => firstById.get(id)!);
+}
+
+function mealFromExistingRow(row: ExistingMenuDayRow, date: string): Meal {
+  const title = String(row.mealTitle ?? "").trim() || String(row.description ?? "").trim();
+  const mealRefId = String(row.mealRefId ?? "").trim();
+  return {
+    _id: mealRefId || `existing-${date}-${normalizeMenuTitleKey(title)}`,
+    title,
+    description: String(row.description ?? "").trim() || title,
+    tags: [],
+    costTier: row.costTier ?? "STANDARD",
+    allergens: Array.isArray(row.allergens) ? [...row.allergens] : [],
+    mayContain: Array.isArray(row.mayContain) ? [...row.mayContain] : [],
+    nutritionPer100g: row.nutritionPer100g ?? null,
+    kitchenStyle: row.kitchenStyle ?? "international",
+    estimatedCostPerPortion:
+      typeof row.estimatedCostPerPortion === "number" ? row.estimatedCostPerPortion : undefined,
+    isFishDish: row.isFishDish === true,
+    isSoup: row.isSoup === true,
+    isVegetarian: row.isVegetarian === true,
+    isActive: true,
+  };
+}
+
+function buildMenuDayCreatePayload(
+  providerRef: string,
+  date: string,
+  tier: PlanTier,
+  meal: Meal,
+  stamp: string,
+) {
+  return {
+    _id: docIdMenuDay(providerRef, date, tier),
+    _type: "menuDay" as const,
+    provider: { _type: "reference" as const, _ref: providerRef },
+    date,
+    planTier: tier,
+    category: MENU_DAY_CATEGORY,
+    mealRef: { _type: "reference" as const, _ref: meal._id },
+    mealTitle: meal.title,
+    description: (meal.description ?? "").trim() || meal.title,
+    allergens: meal.allergens ?? [],
+    mayContain: meal.mayContain ?? [],
+    nutritionPer100g: meal.nutritionPer100g ?? undefined,
+    kitchenStyle: meal.kitchenStyle,
+    costTier: meal.costTier,
+    estimatedCostPerPortion: meal.estimatedCostPerPortion,
+    isFishDish: meal.isFishDish === true,
+    isSoup: meal.isSoup === true,
+    isVegetarian: meal.isVegetarian === true,
+    customerVisible: true,
+    approvedForPublish: true,
+    customerVisibleSetAt: stamp,
+    approvedAt: stamp,
+    autoFilled: true,
+  };
 }
 
 const OSLO_TZ = "Europe/Oslo";
@@ -188,6 +302,7 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
       ? validateRolloutWeekMondayIso(opts.overrideTargetWeekMonday)
       : startOfWeekMondayNPlus3(utcInstantToOsloDateISO(instant));
   const targetDates = mondayToFridayIso(targetWeekMonday);
+  const selectionSeed = buildRolloutSelectionSeed(providerRef, targetWeekMonday);
 
   const errors: string[] = [];
   let menuDaysCreated = 0;
@@ -226,111 +341,233 @@ export async function runMenuWeekRollout(opts: RunMenuWeekRolloutOptions): Promi
   const write = !opts.dryRun ? opts.getSanityWrite() : null;
   const stamp = nowISO();
 
-  for (const tier of tiersProcessed) {
-    try {
+  try {
+    const existingByTier = new Map<PlanTier, ExistingMenuDayRow[]>();
+    const existingDatesByTier = new Map<PlanTier, Set<string>>();
+
+    for (const tier of tiersProcessed) {
       const existing = await fetchExistingMenuDaysForWeek(opts.sanityRead, providerRef, targetDates, tier);
-      const existingDates = new Set(
+      existingByTier.set(tier, existing);
+      const dates = new Set(
         existing.map((r) => String(r.date ?? "").trim()).filter((d) => targetDates.includes(d)),
       );
+      existingDatesByTier.set(tier, dates);
+      menuDaysSkipped += dates.size;
+    }
 
-      menuDaysSkipped += existingDates.size;
+    const prefilledDays = new Map<number, Meal>();
+    for (let i = 0; i < targetDates.length; i += 1) {
+      const date = targetDates[i]!;
+      const rowsForDate: Array<{ tier: PlanTier; row: ExistingMenuDayRow }> = [];
 
-      const missingIdx: number[] = [];
-      for (let i = 0; i < targetDates.length; i += 1) {
-        if (!existingDates.has(targetDates[i])) missingIdx.push(i);
+      for (const tier of tiersProcessed) {
+        const row = (existingByTier.get(tier) ?? []).find((r) => String(r.date ?? "").trim() === date);
+        if (row) rowsForDate.push({ tier, row });
       }
 
-      if (missingIdx.length === 0) {
+      if (rowsForDate.length === 0) continue;
+
+      const titleKeys = rowsForDate.map(({ row }) =>
+        normalizeMenuTitleKey(row.mealTitle || row.description || ""),
+      );
+      const uniqueKeys = new Set(titleKeys.filter(Boolean));
+      if (uniqueKeys.size > 1) {
+        const detail = rowsForDate
+          .map(({ tier, row }) => `${tier}="${String(row.mealTitle ?? "").trim()}"`)
+          .join(", ");
+        errors.push(
+          `Legacy tier-divergens på ${date}: ${detail}. Auto-overskriv er blokkert — manuell avstemming kreves.`,
+        );
         continue;
       }
 
+      prefilledDays.set(i, mealFromExistingRow(rowsForDate[0]!.row, date));
+    }
+
+    if (errors.length > 0) {
+      return {
+        targetWeek: targetWeekMonday,
+        providerRef,
+        providerSlug,
+        tiersProcessed,
+        menuDaysCreated: 0,
+        menuDaysSkipped,
+        errors,
+      };
+    }
+
+    const needsGeneration = targetDates.some((_, i) => !prefilledDays.has(i));
+
+    let sharedWeek: (Meal | null)[];
+
+    if (needsGeneration) {
       const avoidTitles = await fetchCooldownTitleKeys(opts.sanityRead, providerRef, targetWeekMonday);
-      for (const row of existing) {
-        const k = normalizeMenuTitleKey(row.mealTitle ?? "");
+      for (const meal of prefilledDays.values()) {
+        const k = normalizeMenuTitleKey(meal.title);
         if (k) avoidTitles.add(k);
       }
 
-      const [baseMealsRaw, fridayMealsRaw] = await Promise.all([
-        fetchMealIdeaBank(opts.sanityRead, tier, false, instant),
-        fetchMealIdeaBank(opts.sanityRead, tier, true, instant),
-      ]);
+      const basePools: Meal[][] = [];
+      const fridayPools: Meal[][] = [];
+      for (const tier of tiersProcessed) {
+        const [baseRaw, fridayRaw] = await Promise.all([
+          fetchMealIdeaBank(opts.sanityRead, tier, false, instant),
+          fetchMealIdeaBank(opts.sanityRead, tier, true, instant),
+        ]);
+        basePools.push(baseRaw.filter(hasCompleteNutrition));
+        fridayPools.push(fridayRaw.filter(hasCompleteNutrition));
+      }
 
-      const baseMeals = baseMealsRaw.filter(hasCompleteNutrition);
-      const fridayMeals = fridayMealsRaw.filter(hasCompleteNutrition);
+      const baseMeals = intersectMealPools(...basePools);
+      const fridayMealsIntersect = intersectMealPools(...fridayPools);
+      const bankMeals = mergeMealPoolsById(baseMeals, fridayMealsIntersect);
 
       if (baseMeals.length < 50) {
         throw new Error(
-          `For få retter med komplett næringsinnhold for ${tier}: ${baseMeals.length} (minimum 50).`,
+          `For få retter i snitt-pool (intersection) for ${tiersProcessed.join("+")}: ${baseMeals.length} (minimum 50).`,
         );
       }
 
-      const week = generateWeekMenu({ baseMeals, fridayMeals, avoidTitles, planTier: tier });
-      if (week.length !== 5) {
-        throw new Error(`generateWeekMenu returnerte ${week.length} dager for ${tier}, forventet 5.`);
+      const generated = generateWeekMenu({
+        baseMeals: bankMeals,
+        fridayMeals: bankMeals,
+        avoidTitles,
+        selectionSeed,
+        prefilledDays,
+      });
+      sharedWeek = generated.days;
+
+      for (const dayIndex of generated.unfilledDayIndices) {
+        const date = targetDates[dayIndex]!;
+        const pin = getWeekdayCategoryPin(dayIndex) ?? "ukjent";
+        const msg =
+          `Pinnet dag ufyllt: ${date} (dag ${dayIndex + 1}) krever tag «${pin}» — ingen kandidat etter cooldown-relax. ` +
+          "Dagen står ufyllt for manuell kurering; øvrige dager fortsetter.";
+        errors.push(msg);
+        if (!opts.dryRun) {
+          void import("@/lib/sentry/capture").then(({ captureServerMessage }) => {
+            captureServerMessage(msg, "warning", {
+              component: "menu-week-rollout",
+              providerRef,
+              targetWeek: targetWeekMonday,
+              dayIndex,
+              date,
+              pinTag: pin,
+            });
+          });
+        }
       }
+    } else {
+      sharedWeek = targetDates.map((date, i) => prefilledDays.get(i) ?? null);
+    }
 
-      const bad = week.find((m) => !hasCompleteNutrition(m));
-      if (bad) {
-        throw new Error(`Retten «${bad.title}» mangler komplett næring for ${tier}.`);
+    for (let i = 0; i < sharedWeek.length; i += 1) {
+      if (prefilledDays.has(i)) continue;
+      const meal = sharedWeek[i];
+      if (meal && !hasCompleteNutrition(meal)) {
+        throw new Error(`Retten «${meal.title}» mangler komplett næring i delt ukeplan (dag ${i + 1}).`);
       }
+    }
 
-      if (opts.dryRun) {
-        menuDaysCreated += missingIdx.length;
-        continue;
-      }
-
-      let tx = write!.transaction();
-      for (const i of missingIdx) {
-        const date = targetDates[i];
-        const meal = week[i];
-        const _id = docIdMenuDay(providerRef, date, tier);
-
-        tx = tx.createOrReplace({
-          _id,
-          _type: "menuDay",
-          provider: { _type: "reference" as const, _ref: providerRef },
+    const sharedWeekPlan: SharedWeekDayPlan[] = targetDates.map((date, i) => {
+      const meal = sharedWeek[i];
+      if (!meal) {
+        return {
           date,
-          planTier: tier,
-          category: MENU_DAY_CATEGORY,
-          mealRef: { _type: "reference", _ref: meal._id },
-          mealTitle: meal.title,
-          description: (meal.description ?? "").trim() || meal.title,
-          allergens: meal.allergens ?? [],
-          mayContain: meal.mayContain ?? [],
-          nutritionPer100g: meal.nutritionPer100g ?? undefined,
-          kitchenStyle: meal.kitchenStyle,
-          costTier: meal.costTier,
-          estimatedCostPerPortion: meal.estimatedCostPerPortion,
-          isFishDish: meal.isFishDish === true,
-          isSoup: meal.isSoup === true,
-          isVegetarian: meal.isVegetarian === true,
-          customerVisible: true,
-          approvedForPublish: true,
-          customerVisibleSetAt: stamp,
-          approvedAt: stamp,
-          autoFilled: true,
-        });
+          mealTitle: "(ufyllt — pin-pool tom)",
+          mealId: "",
+          unfilled: true,
+        };
+      }
+      return {
+        date,
+        mealTitle: meal.title,
+        mealId: meal._id,
+      };
+    });
 
+    const usagePatchKeys = new Set<string>();
+    const writes: Array<{ tier: PlanTier; dayIndex: number }> = [];
+
+    for (const tier of tiersProcessed) {
+      const existingDates = existingDatesByTier.get(tier) ?? new Set<string>();
+      for (let i = 0; i < targetDates.length; i += 1) {
+        if (!sharedWeek[i]) continue;
+        if (!existingDates.has(targetDates[i]!)) {
+          writes.push({ tier, dayIndex: i });
+        }
+      }
+    }
+
+    if (opts.dryRun) {
+      menuDaysCreated = writes.length;
+      return {
+        targetWeek: targetWeekMonday,
+        providerRef,
+        providerSlug,
+        tiersProcessed,
+        menuDaysCreated,
+        menuDaysSkipped,
+        errors,
+        sharedWeekPlan,
+      };
+    }
+
+    if (writes.length === 0) {
+      return {
+        targetWeek: targetWeekMonday,
+        providerRef,
+        providerSlug,
+        tiersProcessed,
+        menuDaysCreated: 0,
+        menuDaysSkipped,
+        errors,
+        sharedWeekPlan,
+      };
+    }
+
+    let tx = write!.transaction();
+
+    for (const { tier, dayIndex } of writes) {
+      const date = targetDates[dayIndex]!;
+      const meal = sharedWeek[dayIndex];
+      if (!meal) continue;
+
+      tx = tx.createOrReplace(buildMenuDayCreatePayload(providerRef, date, tier, meal, stamp));
+
+      const usageKey = `${meal._id}:${date}`;
+      if (!usagePatchKeys.has(usageKey)) {
+        usagePatchKeys.add(usageKey);
         tx = tx.patch(meal._id, {
           set: { lastUsedDate: date },
           inc: { usageCount: 1 },
         });
       }
-
-      await tx.commit({ autoGenerateArrayKeys: true });
-      menuDaysCreated += missingIdx.length;
-    } catch (e: unknown) {
-      errors.push(`[${tier}] ${String((e as Error)?.message ?? e)}`);
     }
-  }
 
-  return {
-    targetWeek: targetWeekMonday,
-    providerRef,
-    providerSlug,
-    tiersProcessed,
-    menuDaysCreated,
-    menuDaysSkipped,
-    errors,
-  };
+    await tx.commit({ autoGenerateArrayKeys: true });
+    menuDaysCreated = writes.length;
+
+    return {
+      targetWeek: targetWeekMonday,
+      providerRef,
+      providerSlug,
+      tiersProcessed,
+      menuDaysCreated,
+      menuDaysSkipped,
+      errors,
+      sharedWeekPlan,
+    };
+  } catch (e: unknown) {
+    errors.push(String((e as Error)?.message ?? e));
+    return {
+      targetWeek: targetWeekMonday,
+      providerRef,
+      providerSlug,
+      tiersProcessed,
+      menuDaysCreated,
+      menuDaysSkipped,
+      errors,
+    };
+  }
 }

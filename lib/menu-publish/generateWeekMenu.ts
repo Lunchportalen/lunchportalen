@@ -46,19 +46,33 @@ type GenerateWeekMenuArgs = {
   baseMeals: Meal[];
   fridayMeals: Meal[];
   avoidTitles: Set<string>;
+  /** Deterministisk seed (f.eks. providerRef + ISO-uke). Rollout sender alltid eksplisitt seed. */
+  selectionSeed?: string;
   /** Reserved for future tier-specific scoring; optional and ignored in v1. */
   planTier?: PlanTier;
+  /** Eksisterende kanoniske dager (0=man … 4=fre) — registreres i generator-state før nye plukk. */
+  prefilledDays?: ReadonlyMap<number, Meal>;
+};
+
+/** Ukedag-pin (Mon=0 … Fri=4) — klasse-tags fra kurert bank. */
+export const WEEKDAY_CATEGORY_PINS: Readonly<Record<number, string>> = {
+  1: "suppe",
+  3: "fisk",
+  4: "fredagskos",
 };
 
 const TARGET_PRICE = 90;
 const WEEK_DAYS = 5;
 const MIN_POOL_SIZE = 50;
 const DEFAULT_COST_PER_PORTION = 65;
+const FREDAGSKOS_DEPRIORITIZE_SCORE = 18;
 
 export type PickRelax = {
   allowOverlap: boolean;
   allowSameStyle: boolean;
   allowReuseMethod: boolean;
+  /** Kun for pinnet dag etter normal fallback — aldri bytt kategori. */
+  allowTitleCooldown?: boolean;
 };
 
 const STRICT_RELAX: PickRelax = {
@@ -66,6 +80,106 @@ const STRICT_RELAX: PickRelax = {
   allowSameStyle: false,
   allowReuseMethod: false,
 };
+
+export type GenerateWeekMenuResult = {
+  days: (Meal | null)[];
+  /** Dag-indekser (0=man) der pinnet pool var tom etter cooldown-relax. */
+  unfilledDayIndices: number[];
+};
+
+/** Stabil seed-streng for rollout-plukk (provider + ukestart mandag ISO). */
+export function buildRolloutSelectionSeed(providerRef: string, weekMondayIso: string): string {
+  return `${String(providerRef ?? "").trim()}\0${String(weekMondayIso ?? "").trim()}`;
+}
+
+/**
+ * Synk klasse-tag → variasjons-boolean (seed skal sette begge; dette er defensiv binding).
+ * Meal bruker isFishDish / isSoup / isVegetarian — ikke isVeg.
+ */
+export function bindMealCategoryBooleans(meal: Meal): Meal {
+  const tags = meal.tags ?? [];
+  return {
+    ...meal,
+    isFishDish: meal.isFishDish === true || tags.includes("fisk"),
+    isSoup: meal.isSoup === true || tags.includes("suppe"),
+    isVegetarian:
+      meal.isVegetarian === true || tags.includes("veg") || tags.includes("vegan"),
+  };
+}
+
+export function getWeekdayCategoryPin(dayIndex: number): string | undefined {
+  return WEEKDAY_CATEGORY_PINS[dayIndex];
+}
+
+export function mealHasTag(meal: Meal, tag: string): boolean {
+  return Array.isArray(meal.tags) && meal.tags.includes(tag);
+}
+
+/** Slå sammen meal-pooler på _id (base ∪ friday etter tier-intersection). */
+export function mergeMealPoolsById(...pools: Meal[][]): Meal[] {
+  const byId = new Map<string, Meal>();
+  for (const pool of pools) {
+    for (const meal of pool) {
+      const id = String(meal._id ?? "").trim();
+      if (id) byId.set(id, meal);
+    }
+  }
+  return [...byId.values()];
+}
+
+/** Retter reservert for en annen dags pin — gjelder alle dager (boolean + fredagskos-tag). */
+export function isReservedForOtherPinDay(meal: Meal, dayIndex: number): boolean {
+  const bound = bindMealCategoryBooleans(meal);
+  const pin = getWeekdayCategoryPin(dayIndex);
+  if (bound.isFishDish && pin !== "fisk") return true;
+  if (bound.isSoup && pin !== "suppe") return true;
+  if (mealHasTag(bound, "fredagskos") && pin !== "fredagskos") return true;
+  return false;
+}
+
+/** Pinnet dag: tag + bool (fisk/suppe) for å fange protein uten klasse-tag. */
+function matchesDayPin(meal: Meal, pin: string): boolean {
+  if (pin === "fisk") return mealHasTag(meal, "fisk") || meal.isFishDish === true;
+  if (pin === "suppe") return mealHasTag(meal, "suppe") || meal.isSoup === true;
+  return mealHasTag(meal, pin);
+}
+
+export function buildPoolForDay(bankMeals: Meal[], dayIndex: number): Meal[] {
+  const valid = bankMeals.filter(isValidMeal).map(bindMealCategoryBooleans);
+  const pin = getWeekdayCategoryPin(dayIndex);
+  let pool = valid.filter((m) => !isReservedForOtherPinDay(m, dayIndex));
+  if (pin) {
+    pool = pool.filter((m) => matchesDayPin(m, pin));
+  }
+  return pool;
+}
+
+function hashStringToUint32(value: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** mulberry32 — deterministisk PRNG fra 32-bit seed. */
+export function mulberry32(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Per-rett jitter i [-4, 4] — erstatter Math.random i sort, reproduserbart gitt selectionSeed. */
+export function seededSortJitter(mealId: string, selectionSeed: string): number {
+  const prng = mulberry32(hashStringToUint32(`${selectionSeed}:${mealId}`));
+  return (prng() - 0.5) * 8;
+}
 
 function normalizeTitle(title?: string) {
   return (title ?? "")
@@ -89,12 +203,8 @@ function margin(meal: Meal) {
   return TARGET_PRICE - normalizeCost(meal);
 }
 
-function hasTag(meal: Meal, tag: string) {
-  return Array.isArray(meal.tags) && meal.tags.includes(tag);
-}
-
 function isVeg(meal: Meal) {
-  return meal.isVegetarian === true || hasTag(meal, "veg") || hasTag(meal, "vegan");
+  return meal.isVegetarian === true || mealHasTag(meal, "veg") || mealHasTag(meal, "vegan");
 }
 
 function hasNutrition(meal: Meal): boolean {
@@ -117,7 +227,7 @@ function isValidMeal(meal: Meal): boolean {
 
 function scoreMeal(
   meal: Meal,
-  context: { friday: boolean; usedStyles: Set<string>; usedTags: Set<string> }
+  context: { dayIndex: number; usedStyles: Set<string>; usedTags: Set<string> },
 ): number {
   let score = 0;
 
@@ -126,14 +236,14 @@ function scoreMeal(
 
   if (meal.costTier === "BUDGET") score += 8;
   if (meal.costTier === "STANDARD" || !meal.costTier) score += 6;
-  if (meal.costTier === "PREMIUM") score += context.friday ? 24 : -10;
+  if (meal.costTier === "PREMIUM") score -= 10;
 
-  if (hasTag(meal, "chicken")) score += 7;
-  if (hasTag(meal, "beef")) score += 7;
-  if (hasTag(meal, "pork")) score += 6;
-  if (hasTag(meal, "lamb")) score += 5;
-  if (hasTag(meal, "stew")) score += 4;
-  if (hasTag(meal, "pasta")) score += 3;
+  if (mealHasTag(meal, "chicken")) score += 7;
+  if (mealHasTag(meal, "beef")) score += 7;
+  if (mealHasTag(meal, "pork")) score += 6;
+  if (mealHasTag(meal, "lamb")) score += 5;
+  if (mealHasTag(meal, "stew")) score += 4;
+  if (mealHasTag(meal, "pasta")) score += 3;
 
   if (isVeg(meal)) score -= 12;
   if (meal.isFishDish) score -= 2;
@@ -142,24 +252,11 @@ function scoreMeal(
   if (meal.allergens?.length) score += 1;
   if (meal.nutritionPer100g) score += 2;
 
-  if (context.friday) {
-    if (meal.kitchenStyle === "asian") score += 12;
-    if (meal.kitchenStyle === "mexican") score += 12;
-    if (meal.kitchenStyle === "indian") score += 10;
-    if (meal.kitchenStyle === "italian") score += 8;
-    if (meal.kitchenStyle === "mediterranean") score += 6;
-
-    if (hasTag(meal, "pasta")) score += 8;
-    if (hasTag(meal, "stew")) score += 8;
-    if (hasTag(meal, "chicken")) score += 5;
-    if (hasTag(meal, "beef")) score += 5;
-
-    if (isVeg(meal)) score -= 20;
-    if (meal.isSoup) score -= 25;
-    if (meal.isFishDish) score -= 8;
-
-    if (meal.productionComplexity === "HIGH") score += 14;
-    if (meal.productionComplexity === "MEDIUM") score += 6;
+  if (
+    (context.dayIndex === 0 || context.dayIndex === 2) &&
+    mealHasTag(meal, "fredagskos")
+  ) {
+    score -= FREDAGSKOS_DEPRIORITIZE_SCORE;
   }
 
   if (meal.kitchenStyle && !context.usedStyles.has(meal.kitchenStyle)) {
@@ -188,34 +285,28 @@ function scoreMeal(
   return score;
 }
 
-function sortCandidates(
+function sortCandidatesSeeded(
   meals: Meal[],
-  context: { friday: boolean; usedStyles: Set<string>; usedTags: Set<string> }
+  context: { dayIndex: number; usedStyles: Set<string>; usedTags: Set<string> },
+  selectionSeed: string,
 ): Meal[] {
   return [...meals]
     .filter(isValidMeal)
+    .map(bindMealCategoryBooleans)
     .sort((a, b) => {
-      const diff = scoreMeal(b, context) - scoreMeal(a, context);
-      return diff + (Math.random() - 0.5) * 8;
-    });
-}
-
-/** Deterministisk tie-break på `_id` — for diagnose/reproduserbare rapporter (ikke prod-ukeweek). */
-function sortCandidatesDeterministic(
-  meals: Meal[],
-  context: { friday: boolean; usedStyles: Set<string>; usedTags: Set<string> },
-): Meal[] {
-  return [...meals]
-    .filter(isValidMeal)
-    .sort((a, b) => {
-      const diff = scoreMeal(b, context) - scoreMeal(a, context);
+      const scoreA = scoreMeal(a, context) + seededSortJitter(a._id, selectionSeed);
+      const scoreB = scoreMeal(b, context) + seededSortJitter(b._id, selectionSeed);
+      const diff = scoreB - scoreA;
       if (diff !== 0) return diff;
       return a._id.localeCompare(b._id);
     });
 }
 
 type GeneratorState = {
+  /** Titler allerede valgt i denne ukegenereringen — aldri relakseres. */
   usedTitles: Set<string>;
+  /** Ekstern tittel-cooldown (historiske menuDays) — kan relakseres på pin-dag. */
+  avoidTitles: Set<string>;
   usedStyles: Set<string>;
   usedStylesInOrder: string[];
   usedTags: Set<string>;
@@ -267,9 +358,11 @@ type RejectReason =
   | "rejectMeaningfulTagOverlap2Plus"
   | "rejectMethodReuse";
 
-/** Avvisningsregel — harde garantier (tittel, fisk, suppe, veg) relakseres aldri. */
+/** Avvisningsregel — fisk/suppe/veg max-1 relakseres aldri; ekstern tittel-cooldown kan relakseres på pin-dag. */
 function classifyPickRejection(meal: Meal, state: MealPickState, relax: PickRelax): RejectReason | null {
-  if (state.usedTitles.has(normalizeTitle(meal.title))) return "rejectTitleCooldown";
+  const titleKey = normalizeTitle(meal.title);
+  if (state.usedTitles.has(titleKey)) return "rejectTitleCooldown";
+  if (!relax.allowTitleCooldown && state.avoidTitles.has(titleKey)) return "rejectTitleCooldown";
   if (meal.isFishDish && state.fishUsed) return "rejectFish";
   if (meal.isSoup && state.soupUsed) return "rejectSoup";
   if (isVeg(meal) && state.vegUsed) return "rejectVeg";
@@ -300,7 +393,7 @@ function diagnosePickBestFailure(
   label: string,
   sorted: Meal[],
   state: MealPickState,
-  friday: boolean,
+  dayIndex: number,
 ): void {
   const stats: PickRejectionStats = {
     poolSortedLen: sorted.length,
@@ -329,7 +422,7 @@ function diagnosePickBestFailure(
   const payload = {
     tag: "[LP_MENU_GENERATOR_DEBUG]",
     label,
-    friday,
+    dayIndex,
     usedStylesInOrder: [...state.usedStylesInOrder],
     usedTagsSample: [...state.usedTags].slice(0, 24),
     usedTagsCount: state.usedTags.size,
@@ -344,45 +437,47 @@ function diagnosePickBestFailure(
 }
 
 function registerMeal(meal: Meal, state: GeneratorState): void {
-  state.usedTitles.add(normalizeTitle(meal.title));
+  const bound = bindMealCategoryBooleans(meal);
+  state.usedTitles.add(normalizeTitle(bound.title));
 
-  if (meal.kitchenStyle) {
-    state.usedStyles.add(meal.kitchenStyle);
-    state.usedStylesInOrder.push(meal.kitchenStyle);
+  if (bound.kitchenStyle) {
+    state.usedStyles.add(bound.kitchenStyle);
+    state.usedStylesInOrder.push(bound.kitchenStyle);
   }
 
-  for (const tag of meal.tags ?? []) {
+  for (const tag of bound.tags ?? []) {
     state.usedTags.add(tag);
   }
 
-  for (const m of normalizeMeaningfulTags(meal.tags ?? [])) {
+  for (const m of normalizeMeaningfulTags(bound.tags ?? [])) {
     state.usedMeaningfulTags.add(m);
   }
 
-  if (meal.method) {
-    state.usedMethods.add(meal.method);
-    state.usedTags.add(`method:${meal.method}`);
+  if (bound.method) {
+    state.usedMethods.add(bound.method);
+    state.usedTags.add(`method:${bound.method}`);
   }
 
-  if (meal.isFishDish) state.fishUsed = true;
-  if (meal.isSoup) state.soupUsed = true;
-  if (isVeg(meal)) state.vegUsed = true;
+  if (bound.isFishDish) state.fishUsed = true;
+  if (bound.isSoup) state.soupUsed = true;
+  if (isVeg(bound)) state.vegUsed = true;
 }
 
 function pickBest(
   pool: Meal[],
   state: GeneratorState,
-  friday: boolean,
+  dayIndex: number,
   debugLabel: string | undefined,
   relax: PickRelax,
-  options?: { skipDiagnose?: boolean; deterministicSort?: boolean },
+  selectionSeed: string,
+  options?: { skipDiagnose?: boolean },
 ): Meal | null {
-  const ctx = { friday, usedStyles: state.usedStyles, usedTags: state.usedTags };
-  const sorted = options?.deterministicSort ? sortCandidatesDeterministic(pool, ctx) : sortCandidates(pool, ctx);
+  const ctx = { dayIndex, usedStyles: state.usedStyles, usedTags: state.usedTags };
+  const sorted = sortCandidatesSeeded(pool, ctx, selectionSeed);
 
   const found = sorted.find((meal) => canUseMeal(meal, state, relax)) ?? null;
   if (!found && !options?.skipDiagnose && isMenuGeneratorDebug()) {
-    diagnosePickBestFailure(debugLabel ?? "pickBest", sorted, state, friday);
+    diagnosePickBestFailure(debugLabel ?? "pickBest", sorted, state, dayIndex);
   }
   return found;
 }
@@ -390,9 +485,9 @@ function pickBest(
 function pickBestWithFallback(
   pool: Meal[],
   state: GeneratorState,
-  friday: boolean,
+  dayIndex: number,
+  selectionSeed: string,
   debugLabel?: string,
-  options?: { deterministicSort?: boolean },
 ): Meal | null {
   const tries: PickRelax[] = [
     { allowOverlap: false, allowSameStyle: false, allowReuseMethod: false },
@@ -402,11 +497,10 @@ function pickBestWithFallback(
   ];
 
   for (let i = 0; i < tries.length; i += 1) {
-    const relax = tries[i];
+    const relax = tries[i]!;
     const isLast = i === tries.length - 1;
-    const meal = pickBest(pool, state, friday, debugLabel, relax, {
+    const meal = pickBest(pool, state, dayIndex, debugLabel, relax, selectionSeed, {
       skipDiagnose: !(isLast && isMenuGeneratorDebug()),
-      deterministicSort: options?.deterministicSort,
     });
     if (meal) {
       if (relax.allowOverlap || relax.allowSameStyle || relax.allowReuseMethod) {
@@ -417,25 +511,114 @@ function pickBestWithFallback(
   }
 
   if (isMenuGeneratorDebug()) {
-    const ctx = { friday, usedStyles: state.usedStyles, usedTags: state.usedTags };
-    const sorted = options?.deterministicSort ? sortCandidatesDeterministic(pool, ctx) : sortCandidates(pool, ctx);
-    diagnosePickBestFailure(`${debugLabel ?? "pick"}:fallback-exhausted`, sorted, state, friday);
+    const ctx = { dayIndex, usedStyles: state.usedStyles, usedTags: state.usedTags };
+    const sorted = sortCandidatesSeeded(pool, ctx, selectionSeed);
+    diagnosePickBestFailure(`${debugLabel ?? "pick"}:fallback-exhausted`, sorted, state, dayIndex);
   }
   return null;
 }
 
+/** Pinnet dag: etter normal fallback, slipp tittel-cooldown innen samme pin-pool. */
+function pickWithPinCooldownRelax(
+  pool: Meal[],
+  state: GeneratorState,
+  dayIndex: number,
+  selectionSeed: string,
+  debugLabel: string,
+): Meal | null {
+  const relax: PickRelax = {
+    allowOverlap: true,
+    allowSameStyle: true,
+    allowReuseMethod: true,
+    allowTitleCooldown: true,
+  };
+  const meal = pickBest(pool, state, dayIndex, debugLabel, relax, selectionSeed);
+  if (meal) {
+    logRelaxation(debugLabel, relax);
+  }
+  return meal;
+}
+
+/** Siste utvei innen pin-pool: behold kategori + uke-tittel + max-1 fisk/suppe/veg, slipp variasjon. */
+function pickPinEmergency(
+  pool: Meal[],
+  state: GeneratorState,
+  dayIndex: number,
+  selectionSeed: string,
+  debugLabel: string,
+): Meal | null {
+  const ctx = { dayIndex, usedStyles: state.usedStyles, usedTags: state.usedTags };
+  const sorted = sortCandidatesSeeded(pool, ctx, selectionSeed);
+  for (const meal of sorted) {
+    const bound = bindMealCategoryBooleans(meal);
+    if (!isValidMeal(bound)) continue;
+    const titleKey = normalizeTitle(bound.title);
+    if (state.usedTitles.has(titleKey)) continue;
+    if (bound.isFishDish && state.fishUsed) continue;
+    if (bound.isSoup && state.soupUsed) continue;
+    if (isVeg(bound) && state.vegUsed) continue;
+    logRelaxation(`${debugLabel}:pin-emergency`, {
+      allowOverlap: true,
+      allowSameStyle: true,
+      allowReuseMethod: true,
+      allowTitleCooldown: true,
+    });
+    return bound;
+  }
+  return null;
+}
+
+function pickForGeneratedDay(
+  bankMeals: Meal[],
+  state: GeneratorState,
+  dayIndex: number,
+  selectionSeed: string,
+): Meal | null {
+  const pool = buildPoolForDay(bankMeals, dayIndex);
+  const pin = getWeekdayCategoryPin(dayIndex);
+
+  if (pin && pool.length === 0) {
+    return null;
+  }
+
+  let meal =
+    pickBestWithFallback(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}`) ??
+    (pin
+      ? pickWithPinCooldownRelax(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}-pin-cooldown`)
+      : null);
+
+  if (!meal && pin) {
+    meal = pickPinEmergency(pool, state, dayIndex, selectionSeed, `dag-${dayIndex + 1}`);
+  }
+
+  if (meal) {
+    return bindMealCategoryBooleans(meal);
+  }
+
+  if (pin) {
+    return null;
+  }
+
+  const diag = formatPickFailureDiag(state, pool.length);
+  throw new Error(
+    `Kunne ikke fylle dag ${dayIndex + 1} (hovedrett) med gjeldende regler (alle fallback-nivåer uttømt). ` +
+      `Diagnose: ${diag}`,
+  );
+}
+
 /**
  * Første ukedags-rett som `generateWeekMenu` ville valgt (dag 1), uten å mutere ekstern state.
- * Bruker samme fallback som prod; deterministisk sortering for stabile diagnoser.
  */
 export function pickFirstWeekdayMealForDiagnostics(
   baseMeals: Meal[],
   avoidTitles: Set<string>,
-  options?: { deterministicSort?: boolean },
+  options?: { selectionSeed?: string; /** @deprecated legacy scripts */ deterministicSort?: boolean },
 ): Meal | null {
-  const deterministicSort = options?.deterministicSort !== false;
+  void options?.deterministicSort;
+  const selectionSeed = options?.selectionSeed ?? "diag-default-seed";
   const state: GeneratorState = {
-    usedTitles: new Set([...avoidTitles].map(normalizeTitle)),
+    usedTitles: new Set<string>(),
+    avoidTitles: new Set([...avoidTitles].map(normalizeTitle)),
     usedStyles: new Set<string>(),
     usedStylesInOrder: [] as string[],
     usedTags: new Set<string>(),
@@ -446,36 +629,37 @@ export function pickFirstWeekdayMealForDiagnostics(
     vegUsed: false,
   };
 
-  const normalPool = baseMeals.filter(isValidMeal);
-  if (normalPool.length < MIN_POOL_SIZE) return null;
+  const bankMeals = mergeMealPoolsById(baseMeals);
+  if (buildPoolForDay(bankMeals, 0).length < MIN_POOL_SIZE) return null;
 
-  return pickBestWithFallback(normalPool, state, false, "diag-dag-1", { deterministicSort });
+  return pickBestWithFallback(buildPoolForDay(bankMeals, 0), state, 0, selectionSeed, "diag-dag-1");
 }
 
 function snapshotMeal(meal: Meal): Meal {
+  const bound = bindMealCategoryBooleans(meal);
   return {
-    _id: meal._id,
-    title: meal.title,
-    description: meal.description?.trim() || meal.title,
-    tags: Array.isArray(meal.tags) ? [...meal.tags] : [],
-    costTier: meal.costTier ?? "STANDARD",
-    productionComplexity: meal.productionComplexity ?? "MEDIUM",
-    nutritionScore: meal.nutritionScore ?? 7,
-    allergens: Array.isArray(meal.allergens) ? [...meal.allergens] : [],
-    mayContain: Array.isArray(meal.mayContain) ? [...meal.mayContain] : [],
-    nutritionPer100g: meal.nutritionPer100g ?? null,
-    nutritionNote: meal.nutritionNote,
-    isActive: meal.isActive,
-    season: Array.isArray(meal.season) ? [...meal.season] : [],
-    kitchenStyle: meal.kitchenStyle ?? "international",
-    method: meal.method,
-    estimatedCostPerPortion: normalizeCost(meal),
-    targetPricePerPortion: meal.targetPricePerPortion ?? TARGET_PRICE,
-    isFishDish: meal.isFishDish === true,
-    isSoup: meal.isSoup === true,
-    isVegetarian: meal.isVegetarian === true || isVeg(meal),
-    lastUsedDate: meal.lastUsedDate,
-    usageCount: meal.usageCount,
+    _id: bound._id,
+    title: bound.title,
+    description: bound.description?.trim() || bound.title,
+    tags: Array.isArray(bound.tags) ? [...bound.tags] : [],
+    costTier: bound.costTier ?? "STANDARD",
+    productionComplexity: bound.productionComplexity ?? "MEDIUM",
+    nutritionScore: bound.nutritionScore ?? 7,
+    allergens: Array.isArray(bound.allergens) ? [...bound.allergens] : [],
+    mayContain: Array.isArray(bound.mayContain) ? [...bound.mayContain] : [],
+    nutritionPer100g: bound.nutritionPer100g ?? null,
+    nutritionNote: bound.nutritionNote,
+    isActive: bound.isActive,
+    season: Array.isArray(bound.season) ? [...bound.season] : [],
+    kitchenStyle: bound.kitchenStyle ?? "international",
+    method: bound.method,
+    estimatedCostPerPortion: normalizeCost(bound),
+    targetPricePerPortion: bound.targetPricePerPortion ?? TARGET_PRICE,
+    isFishDish: bound.isFishDish === true,
+    isSoup: bound.isSoup === true,
+    isVegetarian: bound.isVegetarian === true || isVeg(bound),
+    lastUsedDate: bound.lastUsedDate,
+    usageCount: bound.usageCount,
   };
 }
 
@@ -491,15 +675,45 @@ function formatPickFailureDiag(state: MealPickState, poolLen: number): string {
   });
 }
 
+function assertWeekInvariants(week: (Meal | null)[]): void {
+  const filled = week.filter((m): m is Meal => m != null);
+
+  if (week.length !== WEEK_DAYS) {
+    throw new Error(`Generatorfeil: uke fikk ${week.length} dager, forventet ${WEEK_DAYS}.`);
+  }
+
+  if (filled.filter((m) => m.isFishDish).length > 1) {
+    throw new Error("Generatorfeil: mer enn én fiskerett i samme uke.");
+  }
+
+  if (filled.filter((m) => m.isSoup).length > 1) {
+    throw new Error("Generatorfeil: mer enn én suppe i samme uke.");
+  }
+
+  if (filled.filter(isVeg).length > 1) {
+    throw new Error("Generatorfeil: mer enn én vegetarrett i samme uke.");
+  }
+
+  const uniqueTitles = new Set(filled.map((meal) => normalizeTitle(meal.title)));
+  if (uniqueTitles.size !== filled.length) {
+    throw new Error("Generatorfeil: samme rett ble valgt flere ganger i samme uke.");
+  }
+}
+
 export function generateWeekMenu({
   baseMeals,
   fridayMeals,
   avoidTitles,
+  selectionSeed,
   planTier: _planTier,
-}: GenerateWeekMenuArgs): Meal[] {
+  prefilledDays,
+}: GenerateWeekMenuArgs): GenerateWeekMenuResult {
   void _planTier;
+  const seed = String(selectionSeed ?? "legacy-non-rollout").trim();
+
   const state: GeneratorState = {
-    usedTitles: new Set([...avoidTitles].map(normalizeTitle)),
+    usedTitles: new Set<string>(),
+    avoidTitles: new Set([...avoidTitles].map(normalizeTitle)),
     usedStyles: new Set<string>(),
     usedStylesInOrder: [] as string[],
     usedTags: new Set<string>(),
@@ -510,63 +724,48 @@ export function generateWeekMenu({
     vegUsed: false,
   };
 
-  const normalPool = baseMeals.filter(isValidMeal);
-  const fridayPool = fridayMeals.filter(isValidMeal);
+  const bankMeals = mergeMealPoolsById(baseMeals, fridayMeals);
+  const mainPoolSize = buildPoolForDay(bankMeals, 0).length;
 
-  if (normalPool.length < MIN_POOL_SIZE) {
+  if (mainPoolSize < MIN_POOL_SIZE) {
     throw new Error(
-      `Varmmatbank for liten etter filter: ${normalPool.length} retter tilgjengelig, minimum ${MIN_POOL_SIZE} kreves. ` +
+      `Varmmatbank for liten etter filter: ${mainPoolSize} hovedrett-kandidater (mandag-pool), minimum ${MIN_POOL_SIZE} kreves. ` +
         "Sjekk at retter er aktive og har nutritionPer100g.energyKcal.",
     );
   }
 
-  const week: Meal[] = [];
+  const week: (Meal | null)[] = new Array(WEEK_DAYS).fill(null);
+  const unfilledDayIndices: number[] = [];
 
-  for (let i = 0; i < WEEK_DAYS - 1; i += 1) {
-    const meal = pickBestWithFallback(normalPool, state, false, `weekday-dag-${i + 1}`);
+  for (let i = 0; i < WEEK_DAYS; i += 1) {
+    const prefilled = prefilledDays?.get(i);
+    if (prefilled) {
+      week[i] = snapshotMeal(prefilled);
+      registerMeal(prefilled, state);
+    }
+  }
 
+  for (let i = 0; i < WEEK_DAYS; i += 1) {
+    if (week[i]) continue;
+
+    const meal = pickForGeneratedDay(bankMeals, state, i, seed);
     if (!meal) {
-      const diag = formatPickFailureDiag(state, normalPool.length);
-      throw new Error(
-        `Kunne ikke fylle dag ${i + 1} med gjeldende regler (alle fallback-nivåer uttømt). ` +
-          `Sjekk variasjonsregler og tilgjengelig pool. Diagnose: ${diag}`,
+      unfilledDayIndices.push(i);
+      // eslint-disable-next-line no-console -- strukturert varsel (Sentry i rollout-core)
+      console.error(
+        JSON.stringify({
+          tag: "[LP_MENU_GENERATOR_UNFILLED_PIN]",
+          dayIndex: i,
+          pinTag: getWeekdayCategoryPin(i),
+        }),
       );
+      continue;
     }
 
-    week.push(snapshotMeal(meal));
+    week[i] = snapshotMeal(meal);
     registerMeal(meal, state);
   }
 
-  const fridayMeal = pickBestWithFallback(fridayPool.length ? fridayPool : normalPool, state, true, "fredag");
-
-  if (!fridayMeal) {
-    const diag = formatPickFailureDiag(state, fridayPool.length ? fridayPool.length : normalPool.length);
-    throw new Error(`Kunne ikke velge fredagsrett med gjeldende regler (alle fallback-nivåer uttømt). Diagnose: ${diag}`);
-  }
-
-  week.push(snapshotMeal(fridayMeal));
-  registerMeal(fridayMeal, state);
-
-  if (week.length !== WEEK_DAYS) {
-    throw new Error(`Generatorfeil: uke fikk ${week.length} dager, forventet ${WEEK_DAYS}.`);
-  }
-
-  if (week.filter((m) => m.isFishDish).length > 1) {
-    throw new Error("Generatorfeil: mer enn én fiskerett i samme uke.");
-  }
-
-  if (week.filter((m) => m.isSoup).length > 1) {
-    throw new Error("Generatorfeil: mer enn én suppe i samme uke.");
-  }
-
-  if (week.filter(isVeg).length > 1) {
-    throw new Error("Generatorfeil: mer enn én vegetarrett i samme uke.");
-  }
-
-  const uniqueTitles = new Set(week.map((meal) => normalizeTitle(meal.title)));
-  if (uniqueTitles.size !== week.length) {
-    throw new Error("Generatorfeil: samme rett ble valgt flere ganger i samme uke.");
-  }
-
-  return week;
+  assertWeekInvariants(week);
+  return { days: week, unfilledDayIndices };
 }
