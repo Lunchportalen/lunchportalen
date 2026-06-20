@@ -3,6 +3,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { syncMenuServiceDayItemsAfterMenuDayPublish } from "@/lib/menu-publish/syncMenuServiceDayItems";
 
+const mockFetchLunchCategoryRowsForProvider = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/cms/lunchCategory", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/cms/lunchCategory")>();
+  return {
+    ...actual,
+    fetchLunchCategoryRowsForProvider: (...args: unknown[]) => mockFetchLunchCategoryRowsForProvider(...args),
+  };
+});
+
 vi.mock("@/lib/sanity/server", () => ({
   sanityServer: {
     fetch: vi.fn(),
@@ -12,6 +22,34 @@ vi.mock("@/lib/sanity/server", () => ({
 import { sanityServer } from "@/lib/sanity/server";
 
 const PROVIDER_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+const BASIS_TIERS = ["BASIS", "LUXUS", "ENTERPRISE"];
+
+function basisLunchRows(items: unknown[] = []) {
+  return [
+    {
+      key: "paasmurt",
+      title: "Påsmurt",
+      displayOrder: 1,
+      allowedPlanTiers: BASIS_TIERS,
+      items,
+    },
+    {
+      key: "salatboks",
+      title: "Salatboks",
+      displayOrder: 2,
+      allowedPlanTiers: BASIS_TIERS,
+      items: [],
+    },
+    {
+      key: "varmrett",
+      title: "Varmrett",
+      displayOrder: 6,
+      allowedPlanTiers: BASIS_TIERS,
+      items: [],
+    },
+  ];
+}
 
 type Seed = {
   locations: Array<{ id: string; company_id: string }>;
@@ -103,6 +141,7 @@ function createChain(table: string, seed: Seed, upserts: unknown[]) {
 
 describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
   beforeEach(() => {
+    mockFetchLunchCategoryRowsForProvider.mockReset();
     (sanityServer.fetch as unknown as { mockReset: () => void }).mockReset();
   });
 
@@ -125,29 +164,21 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
 
   it("UPSERTer MSDI med tier-pris, VAT 0.15 og snapshots fra Sanity", async () => {
     const varmrettCalls: Array<Record<string, unknown>> = [];
+    mockFetchLunchCategoryRowsForProvider.mockResolvedValue(
+      basisLunchRows([{ title: "Ost & Skinke", description: "Klassiker", allergens: ["melk"] }]),
+    );
     (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
       async (q: string, params?: Record<string, unknown>) => {
-      if (q.includes("lunchCategory")) {
-        return [
-          {
-            key: "paasmurt",
-            title: "Påsmurt",
-            displayOrder: 1,
-            items: [{ title: "Ost & skinke", description: "Klassiker", allergens: ["melk"] }],
-          },
-          { key: "salatboks", title: "Salatboks", displayOrder: 2, items: [] },
-          { key: "varmrett", title: "Varmrett", displayOrder: 6, items: [] },
-        ];
-      }
-      if (q.includes("menuDay")) {
-        varmrettCalls.push({ query: q, params: params ?? {} });
-        return {
-          mealTitle: "Dagens varmrett",
-          meal: { title: "Laks", description: "Med ris", allergens: ["fisk"] },
-        };
-      }
-      return null;
-    });
+        if (q.includes("menuDay")) {
+          varmrettCalls.push({ query: q, params: params ?? {} });
+          return {
+            mealTitle: "Dagens varmrett",
+            meal: { title: "Laks", description: "Med ris", allergens: ["fisk"] },
+          };
+        }
+        return null;
+      },
+    );
 
     const admin = makeAdmin(seed);
     const stats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
@@ -156,10 +187,10 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
       providerId: PROVIDER_A,
     });
 
+    expect(mockFetchLunchCategoryRowsForProvider).toHaveBeenCalledWith(PROVIDER_A);
     expect(stats.msdiRowsUpserted).toBe(3);
     expect(stats.msdiLocationsSkippedNoTier).toBe(0);
 
-    // Varmrett-snapshot må være provider-scoped i GROQ (aldri annen providers innhold)
     expect(varmrettCalls).toHaveLength(1);
     expect(String(varmrettCalls[0].query)).toContain("provider._ref == $providerRef");
     expect((varmrettCalls[0].params as Record<string, unknown>).providerRef).toBe(PROVIDER_A);
@@ -183,20 +214,15 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
   });
 
   it("er idempotent ved gjentatt kjøring (samme antall rader i upsert)", async () => {
+    mockFetchLunchCategoryRowsForProvider.mockResolvedValue(basisLunchRows());
     (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
       async (q: string) => {
-      if (q.includes("lunchCategory")) {
-        return [
-          { key: "paasmurt", title: "Påsmurt", displayOrder: 1, items: [] },
-          { key: "salatboks", title: "Salatboks", displayOrder: 2, items: [] },
-          { key: "varmrett", title: "Varmrett", displayOrder: 6, items: [] },
-        ];
-      }
-      if (q.includes("menuDay")) {
-        return { mealTitle: null, meal: null };
-      }
-      return null;
-    });
+        if (q.includes("menuDay")) {
+          return { mealTitle: null, meal: null };
+        }
+        return null;
+      },
+    );
 
     const admin = makeAdmin(seed);
     await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
@@ -216,14 +242,15 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
   });
 
   it("hopper lokasjon uten agreement_delivery_days-tier (fail-closed)", async () => {
+    mockFetchLunchCategoryRowsForProvider.mockResolvedValue(
+      basisLunchRows().filter((r) => r.key === "paasmurt"),
+    );
     (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
       async (q: string) => {
-      if (q.includes("lunchCategory")) {
-        return [{ key: "paasmurt", title: "Påsmurt", displayOrder: 1, items: [] }];
-      }
-      if (q.includes("menuDay")) return {};
-      return null;
-    });
+        if (q.includes("menuDay")) return {};
+        return null;
+      },
+    );
 
     const upserts: unknown[] = [];
     const slimSeed: Seed = {
@@ -281,13 +308,14 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     expect(stats.msdiRowsUpserted).toBe(0);
     expect(stats.msdiLocationsSkippedNoTier).toBe(0);
     expect(admin.getUpserts()).toHaveLength(0);
+    expect(mockFetchLunchCategoryRowsForProvider).not.toHaveBeenCalled();
     expect(sanityServer.fetch).not.toHaveBeenCalled();
   });
 
   it("bruker PLAN_CATEGORIES-fallback når Sanity lunchCategory er tom", async () => {
+    mockFetchLunchCategoryRowsForProvider.mockResolvedValue([]);
     (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
       async (q: string) => {
-        if (q.includes("lunchCategory")) return [];
         if (q.includes("menuDay")) return { mealTitle: "Testrett første ordre", meal: null };
         return null;
       },
@@ -307,11 +335,11 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
   });
 
   it("hopper lokasjon når companies.provider_id ikke matcher menuDay-provider", async () => {
+    mockFetchLunchCategoryRowsForProvider.mockResolvedValue(
+      basisLunchRows().filter((r) => r.key === "varmrett"),
+    );
     (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
       async (q: string) => {
-        if (q.includes("lunchCategory")) {
-          return [{ key: "varmrett", title: "Varmrett", displayOrder: 1, items: [] }];
-        }
         if (q.includes("menuDay")) return { mealTitle: "X", meal: null };
         return null;
       },

@@ -1,8 +1,6 @@
 // lib/provider-menu/providerMenuTierContract.ts
-// Authoritative Basis/Luxus/Enterprise menu tier contract for provider menu builder.
-//
-// Source: scripts/sanity/seed-lunch-categories-v2.ts (commits c7450d01, da12237d)
-// Tier category sets mirror lib/cms/menuDayContract.ts PLAN_CATEGORIES.
+// Tier/category metadata for provider menu builder.
+// Variant catalog lives in Sanity lunchCategory (see lunchCategoryCatalog.ts) — not hardcoded here.
 
 import { PLAN_CATEGORIES, type Category, type PlanTier } from "@/lib/cms/menuDayContract";
 import { categoriesForTierInOrder } from "@/lib/provider-menu/menuCategoryCanonical";
@@ -33,57 +31,35 @@ export const CATEGORY_VARIANT_CONTRACT: Record<Category, ProviderMenuCategoryCon
     categoryLabel: "Påsmurt",
     lunchCategoryKey: "paasmurt",
     sanityDriven: false,
-    variants: [
-      { key: "ost-skinke", title: "Ost & Skinke" },
-      { key: ["laks", "eggerore"].join("-"), title: "Laks & Eggerøre" },
-      { key: "kylling-karri", title: "Kyllingkarri" },
-      { key: "vegetar", title: "Vegetar", isVegetarian: true },
-    ],
+    variants: [],
   },
   salat: {
     category: "salat",
     categoryLabel: "Salatboks",
     lunchCategoryKey: "salatboks",
     sanityDriven: false,
-    variants: [
-      { key: "skinke", title: "Skinke" },
-      { key: "kylling", title: "Kylling" },
-      { key: "vegetar", title: "Vegetar", isVegetarian: true },
-    ],
+    variants: [],
   },
   sushi: {
     category: "sushi",
     categoryLabel: "Sushi",
     lunchCategoryKey: "sushi",
     sanityDriven: false,
-    variants: [
-      {
-        key: "sushi-pakke",
-        title: "Fast pakke: 6 maki + 2 nigiri + 1 tempura",
-      },
-    ],
+    variants: [],
   },
   pokebowl: {
     category: "pokebowl",
     categoryLabel: "Pokébowl",
     lunchCategoryKey: "pokebowl",
     sanityDriven: false,
-    variants: [
-      { key: "laks", title: "Laks" },
-      { key: "kylling", title: "Kylling" },
-      { key: "vegetar", title: "Vegetar", isVegetarian: true },
-    ],
+    variants: [],
   },
   thai: {
     category: "thai",
     categoryLabel: "Thaimat",
     lunchCategoryKey: "thaimat",
     sanityDriven: false,
-    variants: [
-      { key: "pad-thai-nudler", title: "Pad Thai nudler" },
-      { key: "biff-peppersaus", title: "Biff peppersaus wok" },
-      { key: "pad-med-mamuang", title: "Pad med mamuang wok" },
-    ],
+    variants: [],
   },
   varmrett: {
     category: "varmrett",
