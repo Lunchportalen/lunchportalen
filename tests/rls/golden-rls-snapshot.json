@@ -1,9 +1,21 @@
 {
   "version": 2,
-  "generated_at": "2026-06-08T10:13:31.518Z",
+  "generated_at": "2026-06-20T09:32:09.433Z",
   "project_ref": "hkpokyapzarefrgqzkos",
   "postgres_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
   "policies": [
+    {
+      "schema": "public",
+      "table": "agreement_change_requests",
+      "name": "agreement_change_requests_tenant_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(is_platform_admin() OR can_access_company(company_id))",
+      "check_expr": null,
+      "permissive": true
+    },
     {
       "schema": "public",
       "table": "agreement_cleanup_audit",
@@ -3327,6 +3339,11 @@
       "schema": "public",
       "name": "_migration_orders_location_id_backup",
       "policy_count": 0
+    },
+    {
+      "schema": "public",
+      "name": "agreement_change_requests",
+      "policy_count": 1
     },
     {
       "schema": "public",
