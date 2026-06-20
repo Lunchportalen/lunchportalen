@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import { canSeeNextWeek, canSeeThisWeek, getVisibleWindow } from "@/lib/week/availability";
 
-describe("week visibility (Oslo) — torsdag 14:00 / fredag 15:00", () => {
+describe("week visibility (Oslo) — torsdag 14:00 / fredag 14:00", () => {
   test("torsdag 13:59: neste uke ikke åpnet", () => {
     const d = new Date("2026-03-26T13:59:00+01:00"); // tor CET
     expect(canSeeNextWeek(d)).toBe(false);
@@ -13,13 +13,13 @@ describe("week visibility (Oslo) — torsdag 14:00 / fredag 15:00", () => {
     expect(canSeeNextWeek(d)).toBe(true);
   });
 
-  test("fredag 14:59: denne uke fortsatt synlig", () => {
-    const d = new Date("2026-03-27T14:59:00+01:00");
+  test("fredag 13:59: denne uke fortsatt synlig", () => {
+    const d = new Date("2026-03-27T13:59:00+01:00");
     expect(canSeeThisWeek(d)).toBe(true);
   });
 
-  test("fredag 15:00: denne uke skjult", () => {
-    const d = new Date("2026-03-27T15:00:00+01:00");
+  test("fredag 14:00: denne uke skjult (inclusive >=)", () => {
+    const d = new Date("2026-03-27T14:00:00+01:00");
     expect(canSeeThisWeek(d)).toBe(false);
   });
 
@@ -43,13 +43,13 @@ describe("week visibility (Oslo) — torsdag 14:00 / fredag 15:00", () => {
     expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: true });
   });
 
-  test("fredag 14:59: current + next + third", () => {
-    const d = new Date("2026-03-27T14:59:00+01:00");
+  test("fredag 13:59: current + next + third", () => {
+    const d = new Date("2026-03-27T13:59:00+01:00");
     expect(getVisibleWindow(d)).toEqual({ showCurrent: true, showNext: true, showThird: true });
   });
 
-  test("fredag 15:00: next + third, current skjult", () => {
-    const d = new Date("2026-03-27T15:00:00+01:00");
+  test("fredag 14:00: next + third, current skjult (inclusive >=)", () => {
+    const d = new Date("2026-03-27T14:00:00+01:00");
     expect(getVisibleWindow(d)).toEqual({ showCurrent: false, showNext: true, showThird: true });
   });
 
