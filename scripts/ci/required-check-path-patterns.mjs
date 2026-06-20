@@ -2,9 +2,33 @@
 /**
  * Passthrough path filters per required check — must stay identical to each
  * workflow's on.pull_request.paths (enforced by verify-required-check-path-drift.mjs).
+ *
+ * SUPABASE_MIGRATE_CI_PATHS is the canonical migration/schema scope for staging
+ * (supabase-migrate workflow triggers + passthrough detect — keep in lockstep).
  */
 
 /** @typedef {{ workflow: string, paths: string[] }} RequiredCheckPathConfig */
+
+/**
+ * Canonical path set for supabase-migrate.yml (PR + push path filters) and staging passthrough.
+ * Only migration/schema scope + CI scripts the migrate workflow actually invokes.
+ */
+export const SUPABASE_MIGRATE_CI_PATHS = [
+  "supabase/migrations/**",
+  "supabase/config.toml",
+  ".github/workflows/supabase-migrate.yml",
+  "scripts/ci/detect-pr-migration-changes.mjs",
+  "scripts/ci/migration-gate.mjs",
+  "scripts/ci/db-contracts.mjs",
+  "scripts/ci/assert-db-target.mjs",
+  "scripts/ci/db-push-preflight-guard.mjs",
+  "scripts/ci/repair-staging-mcp-batch-ledger.mjs",
+  "scripts/ci/repair-staging-provider-cutoff-ledger.mjs",
+  "scripts/ci/verify-batch-order-status-sync-staging.mjs",
+  "scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs",
+  "scripts/smoke/run-cron-smoke-ci.sh",
+  "scripts/smoke/cron-smoke.sh",
+];
 
 /** @type {Record<string, RequiredCheckPathConfig>} */
 export const REQUIRED_CHECK_PATH_CONFIG = {
@@ -97,36 +121,7 @@ export const REQUIRED_CHECK_PATH_CONFIG = {
   },
   staging: {
     workflow: ".github/workflows/supabase-migrate.yml",
-    paths: [
-      "app/**",
-      "components/**",
-      "lib/**",
-      "public/**",
-      "studio/**",
-      "supabase/**",
-      "scripts/**",
-      "tests/**",
-      "e2e/**",
-      "middleware.ts",
-      "next.config.ts",
-      "instrumentation.ts",
-      "vercel.json",
-      "package.json",
-      "package-lock.json",
-      "tsconfig.json",
-      "vitest.config.ts",
-      "playwright.config.ts",
-      "tailwind.config.cjs",
-      "postcss.config.cjs",
-      ".eslintrc.cjs",
-      "eslint.config.*",
-      "AGENTS.md",
-      ".github/workflows/supabase-migrate.yml",
-      "scripts/ci/migration-gate.mjs",
-      "scripts/ci/db-contracts.mjs",
-      "scripts/ci/assert-db-target.mjs",
-      "scripts/smoke/cron-smoke.sh",
-    ],
+    paths: SUPABASE_MIGRATE_CI_PATHS,
   },
   week_visual: {
     workflow: ".github/workflows/ci-week-visual.yml",
