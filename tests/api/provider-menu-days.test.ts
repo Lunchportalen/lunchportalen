@@ -50,6 +50,13 @@ vi.mock("@/lib/provider-menu/loadProviderMenuDays", () => ({
 }));
 
 const mockLoadMenuDaySlot = vi.hoisted(() => vi.fn());
+const mockFetchLunchCategories = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/cms/lunchCategory", () => ({
+  fetchLunchCategoryRowsForProvider: (...args: unknown[]) => mockFetchLunchCategories(...args),
+  fetchLunchCategoryTemplateRows: (...args: unknown[]) => mockFetchLunchCategories(...args),
+  fetchActiveLunchCategoryRows: (...args: unknown[]) => mockFetchLunchCategories(...args),
+}));
 
 vi.mock("@/lib/providers/providerMenuPriceConfig", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/providers/providerMenuPriceConfig")>();
@@ -237,6 +244,14 @@ function authedViewer() {
       source: "fallback",
     },
   });
+  mockFetchLunchCategories.mockResolvedValue([
+    {
+      key: "paasmurt",
+      title: "Påsmurt",
+      allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+      items: [{ slug: { current: "ost-skinke" }, title: "Ost & Skinke", allergens: ["hvete", "melk"] }],
+    },
+  ]);
 }
 
 describe("GET /api/provider/menu-days", () => {
@@ -286,5 +301,7 @@ describe("GET /api/provider/menu-days", () => {
       providerSlug: "provider-b",
     });
     expect(mockLoadPrices).toHaveBeenCalledWith(PROVIDER_ID);
+    expect(mockFetchLunchCategories).toHaveBeenCalled();
+    expect(json.data.catalog).toMatchObject({ rows: expect.any(Array) });
   });
 });

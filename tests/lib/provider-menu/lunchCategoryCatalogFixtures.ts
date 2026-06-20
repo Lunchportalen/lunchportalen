@@ -1,0 +1,114 @@
+// Prod-shaped lunchCategory fixture (Sanity production dataset, STEG 0 recon 2026-06-20).
+import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
+
+export const PROD_LUNCH_CATEGORY_FIXTURE: ProviderMenuCatalogSnapshot = {
+  rows: [
+    {
+      key: "paasmurt",
+      title: "Påsmurt",
+      allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+      items: [
+        {
+          key: "ost-skinke",
+          title: "Ost & Skinke",
+          allergens: ["hvete", "melk"],
+          allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        },
+        {
+          key: "laks-eggerore",
+          title: "Laks & Eggerøre",
+          allergens: ["hvete", "egg", "fisk"],
+          allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        },
+        {
+          key: "kylling-karri",
+          title: "Kylling karri",
+          allergens: ["hvete", "melk", "sennep"],
+          allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        },
+        {
+          key: "vegetar",
+          title: "Vegetar",
+          allergens: ["hvete", "melk", "egg", "sennep"],
+          isVegetarian: true,
+          allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        },
+      ],
+    },
+    {
+      key: "salatboks",
+      title: "Salatboks",
+      allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+      items: [
+        { key: "skinke", title: "Skinke", allergens: ["melk", "egg", "sennep"], allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"] },
+        { key: "kylling", title: "Kylling", allergens: ["egg", "melk", "sennep"], allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"] },
+        {
+          key: "vegetar",
+          title: "Vegetar",
+          allergens: ["melk", "egg"],
+          isVegetarian: true,
+          allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        },
+      ],
+    },
+    {
+      key: "sushi",
+      title: "Sushi",
+      allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+      items: [
+        {
+          key: "sushi-pakke",
+          title: "Sushi-pakke (6 biter MAKI, 2 biter NIGIRI, 1 Tempura)",
+          allergens: ["fisk", "soya", "hvete", "sesam", "krepsdyr"],
+          allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        },
+      ],
+    },
+    {
+      key: "pokebowl",
+      title: "Pokebowl",
+      allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+      items: [
+        { key: "laks", title: "Laks", allergens: ["fisk", "soya", "sesam"], allowedPlanTiers: ["LUXUS", "ENTERPRISE"] },
+        { key: "kylling", title: "Kylling", allergens: ["soya", "sesam"], allowedPlanTiers: ["LUXUS", "ENTERPRISE"] },
+        {
+          key: "vegetar",
+          title: "Vegetar",
+          isVegetarian: true,
+          allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        },
+      ],
+    },
+    {
+      key: "thaimat",
+      title: "Thaimat",
+      allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+      items: [
+        {
+          key: "pad-thai-nudler",
+          title: "Pad Thai nudler",
+          allergens: ["peanotter", "soya", "egg", "fisk"],
+          allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        },
+        {
+          key: "biff-peppersaus",
+          title: "Biff peppersaus",
+          allergens: ["soya", "sesam", "hvete"],
+          allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        },
+        {
+          key: "pad-med-mamuang",
+          title: "Pad med mamuang",
+          allergens: ["kasjunott", "soya", "sesam"],
+          allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        },
+      ],
+    },
+    {
+      key: "varmrett",
+      title: "Varmrett",
+      allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+      items: [],
+    },
+  ],
+};

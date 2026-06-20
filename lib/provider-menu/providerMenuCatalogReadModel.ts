@@ -1,23 +1,26 @@
 // lib/provider-menu/providerMenuCatalogReadModel.ts
-// Fixed-variant catalog read-model for provider menu workspace.
-// Source: scripts/sanity/seed-lunch-categories-v2.ts — no provider-persistent storage yet.
+// Provider menu catalog read-model — source: live Sanity lunchCategory (same as employee/order).
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
+import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 import {
-  CATEGORY_VARIANT_CONTRACT,
-  fixedVariantsForCategory,
-  isSanityDrivenCategory,
-  tierIncludesCategory,
-  workspaceCategoriesForTier,
-} from "@/lib/provider-menu/providerMenuTierContract";
+  categoryFromLunchCategoryKey,
+  categoryLabelFromCatalog,
+  fixedVariantsFromCatalog,
+  tierAccessForCategoryRow,
+  tierAccessForItem,
+  type ProviderLunchCategoryRow,
+  type ProviderMenuCatalogSnapshot,
+} from "@/lib/provider-menu/lunchCategoryCatalog";
 
-export const CATALOG_PERSISTENCE_GAP =
-  "Varig katalogredigering krever egen lagringsmodell — metadata vises som masterdata, men lagres ikke varig i denne versjonen.";
+import { CATALOG_WEEK_PUBLISH_HINT } from "@/lib/provider-menu/lunchCategoryCatalog";
+
+export const CATALOG_PERSISTENCE_GAP = CATALOG_WEEK_PUBLISH_HINT;
 
 export const EMPLOYEE_WEEK_IMAGE_GAP =
   "Employee /week image rendering bør tas i egen PR — bilder er valgfritt i menybyggeren.";
 
-export type MenuCatalogSource = "FIXED_CONTRACT" | "SANITY" | "PROVIDER_OVERRIDE";
+export type MenuCatalogSource = "SANITY_LUNCH_CATEGORY" | "SANITY" | "PROVIDER_OVERRIDE";
 
 export type MenuCatalogVariant = {
   id: string;
@@ -33,60 +36,91 @@ export type MenuCatalogVariant = {
   isVegetarian?: boolean;
 };
 
-/** Allergen slugs from seed-lunch-categories-v2.ts (read-only mirror). */
-const SEED_ALLERGENS: Record<string, string[]> = {
-  "ost-skinke": ["hvete", "melk"],
-  "laks-egger": ["hvete", "egg", "fisk"],
-  "kylling-karri": ["hvete", "melk", "sennep"],
-  vegetar: ["hvete", "melk", "egg", "sennep"],
-  skinke: ["melk", "egg", "sennep"],
-  kylling: ["egg", "melk", "sennep"],
-  "sushi-pakke": ["fisk", "soya", "hvete", "sesam", "krepsdyr"],
-  laks: ["fisk", "soya", "sesam"],
-  "pad-thai-nudler": ["peanotter", "soya", "egg", "fisk"],
-  "biff-peppersaus": ["soya", "sesam", "hvete"],
-  "pad-med-mamuang": ["kasjunott", "soya", "sesam"],
-};
-
-const TIER_ORDER: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
-
-function tiersForCategory(category: Category): PlanTier[] {
-  return TIER_ORDER.filter((tier) => tierIncludesCategory(tier, category));
+export function normalizeProviderLunchCategoryRows(raw: unknown): ProviderLunchCategoryRow[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ProviderLunchCategoryRow[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    const itemsRaw = o.items;
+    const items: ProviderLunchCategoryRow["items"] = [];
+    if (Array.isArray(itemsRaw)) {
+      for (const item of itemsRaw) {
+        if (!item || typeof item !== "object") continue;
+        const it = item as Record<string, unknown>;
+        const key = String(it.key ?? "").trim();
+        if (!key) continue;
+        items.push({
+          key,
+          title: String(it.title ?? "").trim() || key,
+          description: typeof it.description === "string" ? it.description : null,
+          allergens: Array.isArray(it.allergens) ? it.allergens.map((a) => String(a)) : [],
+          isVegetarian: it.isVegetarian === true,
+          allowedPlanTiers: Array.isArray(it.allowedPlanTiers)
+            ? it.allowedPlanTiers.map((t) => String(t))
+            : null,
+        });
+      }
+    }
+    out.push({
+      key: o.key != null ? String(o.key) : null,
+      title: o.title != null ? String(o.title) : null,
+      allowedPlanTiers: Array.isArray(o.allowedPlanTiers) ? o.allowedPlanTiers.map((t) => String(t)) : null,
+      items,
+    });
+  }
+  return out;
 }
 
-export function buildMenuCatalogVariants(): MenuCatalogVariant[] {
+export function buildMenuCatalogSnapshot(rows: unknown): ProviderMenuCatalogSnapshot {
+  return { rows: normalizeProviderLunchCategoryRows(rows) };
+}
+
+export function buildMenuCatalogVariants(catalog: ProviderMenuCatalogSnapshot): MenuCatalogVariant[] {
   const out: MenuCatalogVariant[] = [];
 
-  for (const contract of Object.values(CATEGORY_VARIANT_CONTRACT)) {
-    if (isSanityDrivenCategory(contract.category)) {
+  for (const row of catalog.rows) {
+    const category = categoryFromLunchCategoryKey(row.key);
+    if (!category) continue;
+
+    const categoryLabel = categoryLabelFromCatalog(catalog, category);
+
+    if (isSanityDrivenCategory(category)) {
       out.push({
-        id: `${contract.category}:bank`,
-        category: contract.category,
-        categoryLabel: contract.categoryLabel,
+        id: `${category}:bank`,
+        category,
+        categoryLabel,
         label: "Dagens varmrett",
         description: "Rullerende rett fra Sanity/bank — ny per dag.",
         allergens: [],
         imageUrl: null,
         active: true,
-        tierAccess: tiersForCategory(contract.category),
+        tierAccess: tierAccessForCategoryRow(row),
         source: "SANITY",
       });
       continue;
     }
 
-    for (const variant of contract.variants) {
+    const rawItems = Array.isArray(row.items) ? row.items : [];
+    for (const item of rawItems) {
+      if (!item) continue;
+      const key = String(item.key ?? "").trim();
+      if (!key) continue;
+      const tierAccess = tierAccessForItem(item, row);
+      if (tierAccess.length === 0) continue;
+
       out.push({
-        id: `${contract.category}:${variant.key}`,
-        category: contract.category,
-        categoryLabel: contract.categoryLabel,
-        label: variant.title,
-        description: null,
-        allergens: SEED_ALLERGENS[variant.key] ?? [],
+        id: `${category}:${key}`,
+        category,
+        categoryLabel,
+        label: String(item.title ?? "").trim() || key,
+        description: item.description ?? null,
+        allergens: Array.isArray(item.allergens) ? item.allergens.map((a) => String(a)) : [],
         imageUrl: null,
         active: true,
-        tierAccess: tiersForCategory(contract.category),
-        source: "FIXED_CONTRACT",
-        isVegetarian: variant.isVegetarian,
+        tierAccess,
+        source: "SANITY_LUNCH_CATEGORY",
+        isVegetarian: item.isVegetarian === true,
       });
     }
   }
@@ -94,15 +128,23 @@ export function buildMenuCatalogVariants(): MenuCatalogVariant[] {
   return out;
 }
 
-export function catalogVariantsForTier(tier: PlanTier): MenuCatalogVariant[] {
-  const allowed = new Set(workspaceCategoriesForTier(tier));
-  return buildMenuCatalogVariants().filter((v) => allowed.has(v.category));
+export function catalogVariantsForTier(
+  catalog: ProviderMenuCatalogSnapshot,
+  tier: PlanTier,
+): MenuCatalogVariant[] {
+  return buildMenuCatalogVariants(catalog).filter((v) => v.tierAccess.includes(tier));
 }
 
-export function catalogVariantByKey(category: Category, variantKey: string): MenuCatalogVariant | null {
-  return buildMenuCatalogVariants().find((v) => v.category === category && v.id === `${category}:${variantKey}`) ?? null;
+export function catalogVariantByKey(
+  catalog: ProviderMenuCatalogSnapshot,
+  category: Category,
+  variantKey: string,
+): MenuCatalogVariant | null {
+  return buildMenuCatalogVariants(catalog).find(
+    (v) => v.category === category && v.id === `${category}:${variantKey}`,
+  ) ?? null;
 }
 
 export function catalogSupportsPersistentEdit(): boolean {
-  return false;
+  return true;
 }

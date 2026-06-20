@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const getMenuForDateAndPlanMock = vi.hoisted(() => vi.fn());
 const getLunchCategoryStaticItemsByPlanTierMock = vi.hoisted(() => vi.fn());
+const getLunchCategoryStaticItemsByPlanTierForProviderMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/cms/menuDay", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/cms/menuDay")>();
@@ -14,6 +15,7 @@ vi.mock("@/lib/cms/menuDay", async (importOriginal) => {
 
 vi.mock("@/lib/cms/lunchCategory", () => ({
   getLunchCategoryStaticItemsByPlanTier: getLunchCategoryStaticItemsByPlanTierMock,
+  getLunchCategoryStaticItemsByPlanTierForProvider: getLunchCategoryStaticItemsByPlanTierForProviderMock,
 }));
 
 import { resolveOrderDayItemPersist } from "@/lib/orders/resolveOrderDayItemPersist";
@@ -22,7 +24,9 @@ describe("resolveOrderDayItemPersist", () => {
   beforeEach(() => {
     getMenuForDateAndPlanMock.mockReset();
     getLunchCategoryStaticItemsByPlanTierMock.mockReset();
+    getLunchCategoryStaticItemsByPlanTierForProviderMock.mockReset();
     getLunchCategoryStaticItemsByPlanTierMock.mockResolvedValue({});
+    getLunchCategoryStaticItemsByPlanTierForProviderMock.mockResolvedValue({});
   });
 
   test("ITEM_CHOICE_REQUIRED når minst to items og ingen itemKey", async () => {
@@ -157,6 +161,7 @@ describe("resolveOrderDayItemPersist", () => {
       providerSlug: "provider-a",
       providerRef: "prov-a-id",
     });
+    expect(getLunchCategoryStaticItemsByPlanTierForProviderMock).toHaveBeenCalledWith("prov-a-id", "BASIS");
   });
 
   test("A/B-isolasjon: Provider B-scope spør aldri med Provider A-slug", async () => {

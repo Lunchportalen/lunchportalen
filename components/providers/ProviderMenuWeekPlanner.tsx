@@ -2,6 +2,7 @@
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
+import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import {
   summarizeDayCard,
@@ -23,6 +24,7 @@ export type WeekSelection = {
 
 type Props = {
   tier: PlanTier;
+  catalog: ProviderMenuCatalogSnapshot;
   weekDates: string[];
   slots: Record<string, ResolvedProviderMenuSlot>;
   selected: WeekSelection | null;
@@ -39,8 +41,15 @@ function formatDisplayDate(iso: string): string {
   return `${d}.${m}`;
 }
 
-export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, selected, onSelect }: Props) {
-  const categories = providerWorkspaceCategories(tier);
+export default function ProviderMenuWeekPlanner({
+  tier,
+  catalog,
+  weekDates,
+  slots,
+  selected,
+  onSelect,
+}: Props) {
+  const categories = providerWorkspaceCategories(catalog, tier);
   const hasPremium = categories.some((c) => c === "sushi" || c === "pokebowl" || c === "thai");
 
   return (
@@ -48,7 +57,7 @@ export default function ProviderMenuWeekPlanner({ tier, weekDates, slots, select
       <div className="provider-menu-days" role="region" aria-label="Ukeplan">
         {weekDates.map((date, idx) => {
           const weekdayLabel = WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? date;
-          const card = summarizeDayCard(slots, date, tier, weekdayLabel, categories);
+          const card = summarizeDayCard(slots, date, tier, weekdayLabel, categories, catalog);
           const varmrett = card.varmrett;
           const varmrettRow = varmrett.rows[0];
           const varmrettMissing = varmrett.statusChip === "missing";

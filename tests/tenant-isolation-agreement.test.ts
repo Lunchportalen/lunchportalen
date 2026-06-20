@@ -73,6 +73,8 @@ vi.mock("@/lib/cms/menuDay", async (importOriginal) => {
 
 vi.mock("@/lib/cms/lunchCategory", () => ({
   fetchActiveLunchCategoryRows: vi.fn(async () => []),
+  fetchLunchCategoryRowsForProvider: vi.fn(async () => []),
+  fetchLunchCategoryTemplateRows: vi.fn(async () => []),
   staticMenuItemsByCategoryForPlanTier: vi.fn(() => ({})),
 }));
 
