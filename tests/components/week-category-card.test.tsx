@@ -4,7 +4,7 @@ import React, { act } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-import { WeekCategoryCards, type DayRow } from "@/app/(app)/week/EmployeeWeekClient";
+import { WeekCategoryCards, ALLERGEN_UNVERIFIED_NOTICE, type DayRow } from "@/app/(app)/week/EmployeeWeekClient";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -309,5 +309,44 @@ describe("WeekCategoryCards — kort og expand-panel", () => {
 
     expect(onSelectCategory).toHaveBeenCalledTimes(1);
     expect(onSelectCategory).toHaveBeenCalledWith("salatboks");
+  });
+
+  test("tom allergenliste: viser ikke-bekreftet-notis, ikke allergenfri-tekst", async () => {
+    const day = makeDay({
+      categories: [
+        makeCategory({
+          key: "varmrett",
+          label: "Varmrett",
+          category: "varmrett",
+          items: [{ key: "dagens", title: "Dagens rett", description: "Med potet", allergens: [], isVegetarian: false }],
+        }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: "varmrett" });
+
+    const notice = container.querySelector(".ds-allergen-unverified-notice");
+    expect(notice?.textContent).toContain(ALLERGEN_UNVERIFIED_NOTICE);
+    expect(container.textContent).not.toMatch(/Ingen oppregnede EU-allergener/i);
+  });
+
+  test("ikke-tom allergenliste: viser badges som før", async () => {
+    const day = makeDay({
+      categories: [
+        makeCategory({
+          key: "varmrett",
+          label: "Varmrett",
+          category: "varmrett",
+          items: [{ key: "dagens", title: "Dagens rett", allergens: ["gluten", "melk"], isVegetarian: false }],
+        }),
+      ],
+    });
+
+    const { container } = await renderWeekCategoryCards({ day, storedChoice: "varmrett" });
+
+    const badges = container.querySelectorAll(".ds-allergen-badge");
+    expect(badges.length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelector(".ds-allergen-unverified-notice")).toBeNull();
+    expect(container.textContent).not.toMatch(/Ingen oppregnede EU-allergener/i);
   });
 });
