@@ -264,36 +264,52 @@ export default function ProviderMenuBuilder() {
   }
 
   async function save(status: "draft" | "published") {
-    if (!form) return;
+    if (!form || !selected) return;
     setError(null);
     setMessage(null);
+
+    const isVarmrettSharedSave =
+      selected.category === "varmrett" && selected.editorFocus === "varmrett";
 
     const luxusSlot =
       form.tier === "ENTERPRISE" && selected
         ? slots[slotKey(selected.date, "LUXUS", selected.category)]
         : null;
 
-    const payload = {
-      date: form.date,
-      tier: form.tier,
-      category: form.category,
-      mealTitle: form.mealTitle,
-      description: form.description,
-      allergensText: form.allergensText || null,
-      estimatedCostPerPortion: form.estimatedCostPerPortion,
-      sourcePackage: form.sourcePackage,
-      upgradeType: form.upgradeType,
-      upgradeNote: form.upgradeNote || null,
-      luxusEstimatedCost: luxusSlot?.estimatedCostPerPortion ?? null,
-      confirmWarnings: status === "published" ? confirmWarnings : false,
-      status,
-    };
+    const payload = isVarmrettSharedSave
+      ? {
+          date: form.date,
+          mealTitle: form.mealTitle,
+          description: form.description,
+          allergensText: form.allergensText || null,
+          estimatedCostPerPortion: form.estimatedCostPerPortion,
+          confirmWarnings: status === "published" ? confirmWarnings : false,
+          status,
+        }
+      : {
+          date: form.date,
+          tier: form.tier,
+          category: form.category,
+          mealTitle: form.mealTitle,
+          description: form.description,
+          allergensText: form.allergensText || null,
+          estimatedCostPerPortion: form.estimatedCostPerPortion,
+          sourcePackage: form.sourcePackage,
+          upgradeType: form.upgradeType,
+          upgradeNote: form.upgradeNote || null,
+          luxusEstimatedCost: luxusSlot?.estimatedCostPerPortion ?? null,
+          confirmWarnings: status === "published" ? confirmWarnings : false,
+          status,
+        };
 
-    const res = await fetch("/api/provider/menu-days", {
-      method: "POST",
-      headers: { "content-type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      isVarmrettSharedSave ? "/api/provider/menu-days/varmrett" : "/api/provider/menu-days",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
     const json = (await res.json()) as MenuWeekResponse & {
       data?: { warnings?: string[]; rid?: string; message?: string };
     };
@@ -314,6 +330,44 @@ export default function ProviderMenuBuilder() {
     setConfirmWarnings(false);
     await loadWeek();
   }
+
+  async function resetVarmrettToGenerated() {
+    if (!selected?.date || selected.category !== "varmrett") return;
+    setError(null);
+    setMessage(null);
+
+    const res = await fetch("/api/provider/menu-days/varmrett/reset", {
+      method: "POST",
+      headers: { "content-type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ date: selected.date }),
+    });
+    const json = (await res.json()) as MenuWeekResponse & {
+      data?: { warnings?: string[]; rid?: string; message?: string };
+    };
+
+    if (!res.ok || !json.ok) {
+      const rid = json.rid ? ` (RID: ${json.rid})` : "";
+      setError((json.message ?? "Kunne ikke tilbakestille varmrett.") + rid);
+      return;
+    }
+
+    setMessage("Varmrett tilbakestilt til generert.");
+    await loadWeek();
+  }
+
+  const varmrettEditorState = useMemo(() => {
+    if (!selected?.date || selected.category !== "varmrett") {
+      return { providerOverride: false, hasGeneratedBaseline: false };
+    }
+    let providerOverride = false;
+    let hasGeneratedBaseline = false;
+    for (const t of PLAN_TIERS) {
+      const slot = slots[slotKey(selected.date, t, "varmrett")];
+      if (slot?.providerOverride) providerOverride = true;
+      if (slot?.hasGeneratedBaseline) hasGeneratedBaseline = true;
+    }
+    return { providerOverride, hasGeneratedBaseline };
+  }, [selected, slots]);
 
   const editorContext =
     selected && form
@@ -469,6 +523,9 @@ export default function ProviderMenuBuilder() {
           onClose={closeEditor}
           onSaveDraft={() => startTransition(() => save("draft"))}
           onPublish={() => startTransition(() => save("published"))}
+          onResetToGenerated={() => startTransition(() => resetVarmrettToGenerated())}
+          varmrettProviderOverride={varmrettEditorState.providerOverride}
+          varmrettHasGeneratedBaseline={varmrettEditorState.hasGeneratedBaseline}
           onCopyFromBasis={() => copyFromPackage("BASIS")}
           onCopyFromLuxus={() => copyFromPackage("LUXUS")}
           pending={pending}

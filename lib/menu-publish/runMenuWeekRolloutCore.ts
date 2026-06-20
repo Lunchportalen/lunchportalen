@@ -260,6 +260,13 @@ function buildMenuDayCreatePayload(
     customerVisibleSetAt: stamp,
     approvedAt: stamp,
     autoFilled: true,
+    providerOverride: false,
+    generatedBaseline: {
+      mealTitle: meal.title,
+      description: (meal.description ?? "").trim() || meal.title,
+      allergens: meal.allergens ?? [],
+      estimatedCostPerPortion: meal.estimatedCostPerPortion,
+    },
   };
 }
 

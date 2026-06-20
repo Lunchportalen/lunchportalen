@@ -23,6 +23,14 @@ export type ProviderMenuDayRow = {
   approvedForPublish: boolean;
   customerVisible: boolean;
   status: "draft" | "published";
+  providerOverride?: boolean;
+  autoFilled?: boolean;
+  generatedBaseline?: {
+    mealTitle?: string;
+    description?: string;
+    allergens?: string[];
+    estimatedCostPerPortion?: number | null;
+  } | null;
 };
 
 const PROVIDER_MENU_PROJECTION = `
@@ -38,7 +46,10 @@ const PROVIDER_MENU_PROJECTION = `
   enterpriseUpgradeType,
   enterpriseUpgradeNote,
   approvedForPublish,
-  customerVisible
+  customerVisible,
+  providerOverride,
+  autoFilled,
+  generatedBaseline
 `;
 
 export async function loadProviderMenuDaysForDates(
@@ -74,6 +85,14 @@ export async function loadProviderMenuDaysForDates(
       enterpriseUpgradeNote?: string | null;
       approvedForPublish?: boolean | null;
       customerVisible?: boolean | null;
+      providerOverride?: boolean | null;
+      autoFilled?: boolean | null;
+      generatedBaseline?: {
+        mealTitle?: string | null;
+        description?: string | null;
+        allergens?: string[] | null;
+        estimatedCostPerPortion?: number | null;
+      } | null;
     }>
   >(
     `*[
@@ -133,6 +152,9 @@ export async function loadProviderMenuDaysForDates(
       approvedForPublish: Boolean(row.approvedForPublish),
       customerVisible: Boolean(row.customerVisible),
       status: published ? "published" : "draft",
+      providerOverride: Boolean(row.providerOverride),
+      autoFilled: Boolean(row.autoFilled),
+      generatedBaseline: row.generatedBaseline ?? null,
     });
   }
 

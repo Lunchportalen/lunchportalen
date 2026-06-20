@@ -51,6 +51,9 @@ type Props = {
   tier: PlanTier;
   editorFocus?: EditorFocus;
   sharedVarmrettTitle?: string | null;
+  varmrettProviderOverride?: boolean;
+  varmrettHasGeneratedBaseline?: boolean;
+  onResetToGenerated?: () => void;
 };
 
 function slotStatusBadge(status: ResolvedProviderMenuSlot["status"]): string {
@@ -87,6 +90,9 @@ export default function ProviderMenuEditorPanel({
   tier,
   editorFocus,
   sharedVarmrettTitle,
+  varmrettProviderOverride,
+  varmrettHasGeneratedBaseline,
+  onResetToGenerated,
 }: Props) {
   const [showManualEditing, setShowManualEditing] = useState(false);
 
@@ -162,6 +168,9 @@ export default function ProviderMenuEditorPanel({
           <span className={`menu-inspector__status-badge ${slotStatusClass(form.status)}`}>
             {slotStatusBadge(form.status)}
           </span>
+          {varmrettProviderOverride ? (
+            <span className="menu-inspector__status-badge is-draft">Overstyrt</span>
+          ) : null}
         </div>
         <button type="button" className="ds-btn ds-btn--ghost menu-inspector__close" onClick={onClose}>
           Lukk
@@ -235,6 +244,16 @@ export default function ProviderMenuEditorPanel({
               }
             />
           </label>
+          {varmrettHasGeneratedBaseline && onResetToGenerated ? (
+            <button
+              type="button"
+              className="ds-btn ds-btn--ghost menu-inspector__reset-baseline"
+              disabled={pending}
+              onClick={onResetToGenerated}
+            >
+              Tilbakestill til generert
+            </button>
+          ) : null}
         </section>
       ) : null}
 

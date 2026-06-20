@@ -466,6 +466,38 @@ export default defineType({
     }),
 
     defineField({
+      name: "generatedBaseline",
+      title: "Generert baseline (varmrett)",
+      description:
+        "Snapshot fra auto-generering. Brukes ved «Tilbakestill til generert» — overskrives ikke ved leverandør-redigering.",
+      type: "object",
+      readOnly: true,
+      fields: [
+        defineField({ name: "mealTitle", title: "Rettens navn", type: "string" }),
+        defineField({ name: "description", title: "Beskrivelse", type: "text", rows: 2 }),
+        defineField({
+          name: "allergens",
+          title: "Allergener",
+          type: "array",
+          of: [{ type: "string" }],
+        }),
+        defineField({
+          name: "estimatedCostPerPortion",
+          title: "Estimert råvarekost",
+          type: "number",
+        }),
+      ],
+    }),
+
+    defineField({
+      name: "providerOverride",
+      title: "Leverandør har overstyrt",
+      description: "Satt når leverandør har redigert auto-generert varmrett manuelt.",
+      type: "boolean",
+      initialValue: false,
+    }),
+
+    defineField({
       name: "approvedForPublish",
       title: "Godkjent for publisering",
       type: "boolean",
