@@ -25,6 +25,11 @@ import { loadProviderMenuDaysForDates, loadProviderMenuDaySlot } from "@/lib/pro
 import { osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { fetchLunchCategoryRowsForProvider } from "@/lib/cms/lunchCategory";
 import { buildMenuCatalogSnapshot } from "@/lib/provider-menu/providerMenuCatalogReadModel";
+import {
+  applyOrderLocksToCatalog,
+  applyOrderLocksToMenuDayRows,
+  loadProviderOrderLockState,
+} from "@/lib/provider-menu/providerMenuOrderLock";
 import { weekDatesFromStart } from "@/lib/providers/providerMenuPackageSurface";
 import { loadProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
 import { requireSanityWrite } from "@/lib/sanity/client";
@@ -235,22 +240,26 @@ export async function GET(req: NextRequest) {
   const base = /^\d{4}-\d{2}-\d{2}$/.test(weekStart) ? weekStart : startOfWeekISO(osloTodayISODate());
   const dates = weekDatesFromStart(base);
 
-  const [items, prices, lunchCategoryRows] = await Promise.all([
+  const [items, prices, lunchCategoryRows, lockState] = await Promise.all([
     loadProviderMenuDaysForDates(provider.id, dates, { providerSlug: provider.slug }),
     loadProviderMenuPrices(provider.id),
     fetchLunchCategoryRowsForProvider(provider.id),
+    loadProviderOrderLockState(provider.id),
   ]);
 
-  const catalog = buildMenuCatalogSnapshot(lunchCategoryRows);
+  const catalog = applyOrderLocksToCatalog(buildMenuCatalogSnapshot(lunchCategoryRows), lockState);
+  const lockedItems = applyOrderLocksToMenuDayRows(items, lockState);
+  const varmrettLockedDates = [...lockState.datesWithOrders].filter((d) => dates.includes(d));
 
   return jsonOk(
     rid,
     {
       weekStart: base,
       dates,
-      items,
+      items: lockedItems,
       prices,
       catalog,
+      varmrettLockedDates,
       providerId: provider.id,
       providerSlug: provider.slug,
     },

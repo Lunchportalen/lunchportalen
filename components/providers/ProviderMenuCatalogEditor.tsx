@@ -17,7 +17,17 @@ type CatalogItemDraft = {
   title: string;
   allergens: string[];
   isVegetarian: boolean;
+  orderLocked?: boolean;
 };
+
+function OrderLockBadge() {
+  return (
+    <span className="ds-order-lock-badge" title="Har bestilling">
+      <span className="ds-order-lock-badge__icon" aria-hidden="true">🔒</span>
+      <span className="ds-order-lock-badge__text">Har bestilling</span>
+    </span>
+  );
+}
 
 type Props = {
   tier: PlanTier;
@@ -33,6 +43,7 @@ function itemsForCategory(catalog: ProviderMenuCatalogSnapshot, categoryKey: str
     title: item.title,
     allergens: Array.isArray(item.allergens) ? [...item.allergens] : [],
     isVegetarian: item.isVegetarian === true,
+    orderLocked: item.orderLocked === true,
   }));
 }
 
@@ -159,13 +170,18 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
 
       <ul className="ds-provider-menu-catalog-editor__list">
         {items.map((item, index) => (
-          <li key={item.key ?? `new-${index}`} className="ds-provider-menu-catalog-editor__row">
+          <li
+            key={item.key ?? `new-${index}`}
+            className={`ds-provider-menu-catalog-editor__row${item.orderLocked ? " is-order-locked" : ""}`}
+          >
+            {item.orderLocked ? <OrderLockBadge /> : null}
             <label className="ds-provider-menu-catalog-editor__label">
               Tittel
               <input
                 type="text"
                 className="ds-provider-menu-catalog-editor__input"
                 value={item.title}
+                disabled={item.orderLocked}
                 onChange={(e) =>
                   setItems((prev) =>
                     prev.map((row, i) => (i === index ? { ...row, title: e.target.value } : row)),
@@ -185,6 +201,7 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
               <input
                 type="checkbox"
                 checked={item.isVegetarian}
+                disabled={item.orderLocked}
                 onChange={(e) =>
                   setItems((prev) =>
                     prev.map((row, i) => (i === index ? { ...row, isVegetarian: e.target.checked } : row)),
@@ -193,7 +210,7 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
               />
               Vegetar
             </label>
-            <fieldset className="ds-provider-menu-catalog-editor__allergens">
+            <fieldset className="ds-provider-menu-catalog-editor__allergens" disabled={item.orderLocked}>
               <legend className="ds-provider-menu-catalog-editor__legend">Allergener</legend>
               {LUNCH_CATEGORY_ALLERGENS.map((a) => (
                 <label key={a} className="ds-provider-menu-catalog-editor__checkbox">
@@ -209,6 +226,7 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
             <button
               type="button"
               className="ds-provider-menu-catalog-editor__remove"
+              disabled={item.orderLocked}
               onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
             >
               Fjern

@@ -53,6 +53,7 @@ type Props = {
   sharedVarmrettTitle?: string | null;
   varmrettProviderOverride?: boolean;
   varmrettHasGeneratedBaseline?: boolean;
+  varmrettOrderLocked?: boolean;
   onResetToGenerated?: () => void;
 };
 
@@ -92,6 +93,7 @@ export default function ProviderMenuEditorPanel({
   sharedVarmrettTitle,
   varmrettProviderOverride,
   varmrettHasGeneratedBaseline,
+  varmrettOrderLocked,
   onResetToGenerated,
 }: Props) {
   const [showManualEditing, setShowManualEditing] = useState(false);
@@ -158,6 +160,7 @@ export default function ProviderMenuEditorPanel({
 
   const hasUpgradeContent = enterpriseUpgradeHasContent(form);
   const showSuggestionCard = isEnterpriseUpgradeMode && !showManualEditing && !hasUpgradeContent;
+  const varmrettSaveBlocked = isVarmrettMode && varmrettOrderLocked;
 
   return (
     <aside className="provider-menu-inspector menu-inspector is-open" aria-label="Redigeringspanel">
@@ -194,6 +197,12 @@ export default function ProviderMenuEditorPanel({
 
       {isVarmrettMode ? (
         <section className="menu-inspector__section menu-inspector__section--varmrett">
+          {varmrettOrderLocked ? (
+            <p className="ds-order-lock-badge menu-inspector__order-lock" role="status">
+              <span className="ds-order-lock-badge__icon" aria-hidden="true">🔒</span>
+              <span className="ds-order-lock-badge__text">Har bestilling — innhold kan ikke endres</span>
+            </p>
+          ) : null}
           <div className="menu-inspector__varmrett-hero">
             <span className="menu-inspector__varmrett-hero-label">Dagens varmrett</span>
             <p className="menu-inspector__varmrett-hero-title">
@@ -207,6 +216,7 @@ export default function ProviderMenuEditorPanel({
             Rettens navn
             <input
               value={form.mealTitle}
+              disabled={varmrettOrderLocked}
               onChange={(e) => onFormChange({ ...form, mealTitle: e.target.value })}
               maxLength={120}
             />
@@ -216,6 +226,7 @@ export default function ProviderMenuEditorPanel({
             <textarea
               rows={3}
               value={form.description}
+              disabled={varmrettOrderLocked}
               onChange={(e) => onFormChange({ ...form, description: e.target.value })}
               maxLength={4000}
             />
@@ -224,6 +235,7 @@ export default function ProviderMenuEditorPanel({
             Allergener
             <input
               value={form.allergensText}
+              disabled={varmrettOrderLocked}
               onChange={(e) => onFormChange({ ...form, allergensText: e.target.value })}
               placeholder="F.eks. melk, hvete"
             />
@@ -235,6 +247,7 @@ export default function ProviderMenuEditorPanel({
               min={0}
               max={200}
               step={0.5}
+              disabled={varmrettOrderLocked}
               value={form.estimatedCostPerPortion ?? ""}
               onChange={(e) =>
                 onFormChange({
@@ -244,7 +257,7 @@ export default function ProviderMenuEditorPanel({
               }
             />
           </label>
-          {varmrettHasGeneratedBaseline && onResetToGenerated ? (
+          {varmrettHasGeneratedBaseline && onResetToGenerated && !varmrettOrderLocked ? (
             <button
               type="button"
               className="ds-btn ds-btn--ghost menu-inspector__reset-baseline"
@@ -512,10 +525,15 @@ export default function ProviderMenuEditorPanel({
       ) : null}
 
       <footer className="menu-inspector__actions">
-        <button type="button" className="ds-btn" disabled={pending} onClick={onSaveDraft}>
+        <button type="button" className="ds-btn" disabled={pending || varmrettSaveBlocked} onClick={onSaveDraft}>
           {pending ? "Lagrer…" : "Lagre utkast"}
         </button>
-        <button type="button" className="ds-btn ds-btn--primary" disabled={pending} onClick={onPublish}>
+        <button
+          type="button"
+          className="ds-btn ds-btn--primary"
+          disabled={pending || varmrettSaveBlocked}
+          onClick={onPublish}
+        >
           {pending ? "Publiserer…" : "Publiser dag"}
         </button>
       </footer>

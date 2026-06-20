@@ -72,6 +72,7 @@ type MenuWeekResponse = {
       upgradeType: string | null;
       upgradeNote: string | null;
       status: "draft" | "published";
+      orderLocked?: boolean;
     }>;
     prices: Record<PlanTier, ProviderMenuPriceView>;
     catalog?: ProviderMenuCatalogSnapshot;
@@ -357,16 +358,18 @@ export default function ProviderMenuBuilder() {
 
   const varmrettEditorState = useMemo(() => {
     if (!selected?.date || selected.category !== "varmrett") {
-      return { providerOverride: false, hasGeneratedBaseline: false };
+      return { providerOverride: false, hasGeneratedBaseline: false, orderLocked: false };
     }
     let providerOverride = false;
     let hasGeneratedBaseline = false;
+    let orderLocked = false;
     for (const t of PLAN_TIERS) {
       const slot = slots[slotKey(selected.date, t, "varmrett")];
       if (slot?.providerOverride) providerOverride = true;
       if (slot?.hasGeneratedBaseline) hasGeneratedBaseline = true;
+      if (slot?.orderLocked) orderLocked = true;
     }
-    return { providerOverride, hasGeneratedBaseline };
+    return { providerOverride, hasGeneratedBaseline, orderLocked };
   }, [selected, slots]);
 
   const editorContext =
@@ -526,6 +529,7 @@ export default function ProviderMenuBuilder() {
           onResetToGenerated={() => startTransition(() => resetVarmrettToGenerated())}
           varmrettProviderOverride={varmrettEditorState.providerOverride}
           varmrettHasGeneratedBaseline={varmrettEditorState.hasGeneratedBaseline}
+          varmrettOrderLocked={varmrettEditorState.orderLocked}
           onCopyFromBasis={() => copyFromPackage("BASIS")}
           onCopyFromLuxus={() => copyFromPackage("LUXUS")}
           pending={pending}

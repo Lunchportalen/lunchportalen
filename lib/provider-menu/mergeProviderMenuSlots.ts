@@ -18,6 +18,7 @@ export type ResolvedProviderMenuSlot = ProviderMenuSlotState & {
   contentSource: SlotContentSource;
   providerOverride?: boolean;
   hasGeneratedBaseline?: boolean;
+  orderLocked?: boolean;
 };
 
 function slotPriority(status: ProviderMenuSlotState["status"]): number {
@@ -45,6 +46,7 @@ function rowToSlot(row: ProviderMenuDayRow, source: SlotContentSource): Resolved
     hasGeneratedBaseline: Boolean(
       row.generatedBaseline?.mealTitle?.trim() || row.generatedBaseline?.description?.trim(),
     ),
+    orderLocked: row.orderLocked === true,
   };
 }
 

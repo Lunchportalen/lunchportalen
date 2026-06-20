@@ -59,6 +59,7 @@ export function normalizeProviderLunchCategoryRows(raw: unknown): ProviderLunchC
           allowedPlanTiers: Array.isArray(it.allowedPlanTiers)
             ? it.allowedPlanTiers.map((t) => String(t))
             : null,
+          orderLocked: it.orderLocked === true,
         });
       }
     }
