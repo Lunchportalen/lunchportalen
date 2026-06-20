@@ -89,6 +89,11 @@ export async function GET(req: Request) {
       results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });
     }
 
+    if (inWindow(p, "Friday", 14, 10)) {
+      triggered.push("friday_14_hide_week1");
+      results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });
+    }
+
     return jsonOk(
       rid,
       {

@@ -21,6 +21,7 @@ import {
 import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCard";
 import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
 import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
+import { isWeekMenuComingSoon } from "@/lib/week/weekMenuReadiness";
 
 const API_ORDER = "/api/order";
 
@@ -1109,6 +1110,8 @@ type RowBase = {
   insightRecommended?: boolean;
   insightPreferredMotion?: boolean;
   readOnlyPreview?: boolean;
+  /** Fail-closed tom uke i synlig vindu — vis «Kommer snart». */
+  weekMenuComingSoon?: boolean;
 };
 
 type MobileCardProps = RowBase & {
@@ -1137,6 +1140,7 @@ const WeekDayCardMobile = memo(
     readOnlyPreview,
     orderedPickerExpanded,
     onToggleOrderedPicker,
+    weekMenuComingSoon,
   }: MobileCardProps) {
     const ordered = day.orderStatus === "ACTIVE";
     const lifecycle = weekDayLifecycleState(day);
@@ -1293,6 +1297,11 @@ const WeekDayCardMobile = memo(
                   </div>
                 ))}
               </div>
+            ) : weekMenuComingSoon ? (
+              <div className="ds-week-surface ds-week-surface--inset text-left">
+                <p className="text-sm font-semibold text-neutral-900">Kommer snart</p>
+                <p className="mt-1 text-sm text-neutral-600">Menyen for denne uken publiseres snart.</p>
+              </div>
             ) : (
               <div className="ds-week-surface ds-week-surface--inset text-left">
                 <p className="text-sm font-semibold text-neutral-900">Menyen er ikke publisert ennå.</p>
@@ -1386,7 +1395,8 @@ const WeekDayCardMobile = memo(
     prev.insightRecommended === next.insightRecommended &&
     prev.insightPreferredMotion === next.insightPreferredMotion &&
     prev.readOnlyPreview === next.readOnlyPreview &&
-    prev.orderedPickerExpanded === next.orderedPickerExpanded,
+    prev.orderedPickerExpanded === next.orderedPickerExpanded &&
+    prev.weekMenuComingSoon === next.weekMenuComingSoon,
 );
 
 export default function EmployeeWeekClient({
@@ -2173,6 +2183,9 @@ export default function EmployeeWeekClient({
         (d) => isCalendarUpcoming(d, serverOsloDate) && d.date !== activeDay.date,
       )
     : sortedDays.filter((d) => isCalendarUpcoming(d, serverOsloDate));
+  const activeWeekMenuComingSoon = activeDay
+    ? isWeekMenuComingSoon(sortedDays, startOfWeekISO(activeDay.date))
+    : false;
 
   return (
     <div
@@ -2361,6 +2374,7 @@ export default function EmployeeWeekClient({
             readOnlyPreview={readOnlyPreview}
             orderedPickerExpanded={Boolean(orderedPickerExpanded[activeDay.date])}
             onToggleOrderedPicker={() => toggleOrderedPicker(activeDay.date)}
+            weekMenuComingSoon={activeWeekMenuComingSoon}
           />
         </section>
       ) : null}
