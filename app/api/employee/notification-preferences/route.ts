@@ -31,6 +31,10 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (error) {
+    const code = String((error as { code?: string }).code ?? "");
+    if (code === "42P01" || code === "PGRST205") {
+      return jsonOk(gate.ctx.rid, { menuWeekOpeningEnabled: true, prefsUnavailable: true });
+    }
     return jsonErr(gate.ctx.rid, "Kunne ikke hente varselinnstillinger.", 500, "DB_ERROR");
   }
 
@@ -70,6 +74,15 @@ export async function PATCH(req: NextRequest) {
   );
 
   if (error) {
+    const code = String((error as { code?: string }).code ?? "");
+    if (code === "42P01" || code === "PGRST205") {
+      return jsonErr(
+        gate.ctx.rid,
+        "Varselinnstillinger er ikke tilgjengelig ennå.",
+        503,
+        "PREFS_NOT_DEPLOYED",
+      );
+    }
     return jsonErr(gate.ctx.rid, "Kunne ikke lagre varselinnstillinger.", 500, "DB_ERROR");
   }
 

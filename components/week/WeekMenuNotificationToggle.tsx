@@ -6,6 +6,7 @@ export default function WeekMenuNotificationToggle() {
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [prefsHidden, setPrefsHidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,6 +19,10 @@ export default function WeekMenuNotificationToggle() {
         });
         const json = await res.json();
         if (!cancelled && res.ok && json.ok && json.data) {
+          if (json.data.prefsUnavailable) {
+            setPrefsHidden(true);
+            return;
+          }
           setEnabled(json.data.menuWeekOpeningEnabled !== false);
         }
       } catch {
@@ -55,6 +60,8 @@ export default function WeekMenuNotificationToggle() {
       setSaving(false);
     }
   }, [enabled, loading, saving]);
+
+  if (prefsHidden) return null;
 
   return (
     <section
