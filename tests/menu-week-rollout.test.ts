@@ -15,9 +15,9 @@ function diverseMealsFixture(prefix: string): Meal[] {
   for (let i = 0; i < 80; i += 1) {
     out.push({
       _id: `${prefix}-std-${i}`,
-      title: `Rett ${prefix} std ${i}`,
+      title: `Hovedrett ${prefix}-std-${i}`,
       description: `Besk ${i}`,
-      tags: [tagsRot[i % tagsRot.length]],
+      tags: [tagsRot[i % tagsRot.length]!],
       costTier: "STANDARD",
       nutritionPer100g: { ...n },
       nutritionScore: 7,
@@ -25,55 +25,71 @@ function diverseMealsFixture(prefix: string): Meal[] {
       allergens: [],
       isActive: true,
       kitchenStyle: styles[i % styles.length],
+      method: `method-${i % 11}`,
     });
   }
-  for (let i = 0; i < 4; i += 1) {
+  for (let i = 0; i < 20; i += 1) {
     out.push({
-      _id: `${prefix}-fish-${i}`,
-      title: `Fisk ${prefix} ${i}`,
-      tags: ["fish"],
+      _id: `${prefix}-suppe-${i}`,
+      title: `Suppe ${prefix}-${i}`,
+      tags: ["suppe", "chicken"],
+      costTier: "STANDARD",
+      nutritionPer100g: { ...n },
+      isSoup: true,
+      isActive: true,
+      kitchenStyle: styles[(i + 1) % styles.length],
+      method: `suppe-${i % 7}`,
+    });
+  }
+  for (let i = 0; i < 20; i += 1) {
+    out.push({
+      _id: `${prefix}-fisk-${i}`,
+      title: `Fisk ${prefix}-${i}`,
+      tags: ["fisk"],
       costTier: "STANDARD",
       nutritionPer100g: { ...n },
       estimatedCostPerPortion: 72,
       isFishDish: true,
       isActive: true,
-      kitchenStyle: styles[(i + 1) % styles.length],
+      kitchenStyle: styles[(i + 2) % styles.length],
+      method: `fisk-${i % 7}`,
     });
   }
-  for (let i = 0; i < 4; i += 1) {
+  for (let i = 0; i < 20; i += 1) {
     out.push({
-      _id: `${prefix}-soup-${i}`,
-      title: `Suppe ${prefix} ${i}`,
-      tags: ["chicken"],
+      _id: `${prefix}-fre-${i}`,
+      title: `Fredagskos ${prefix} pizza-${i}`,
+      tags: ["fredagskos", "pork"],
       costTier: "STANDARD",
       nutritionPer100g: { ...n },
-      isSoup: true,
+      estimatedCostPerPortion: 55,
       isActive: true,
-      kitchenStyle: styles[(i + 2) % styles.length],
+      kitchenStyle: styles[(i + 3) % styles.length],
+      method: `fre-${i % 9}`,
     });
   }
   for (let i = 0; i < 6; i += 1) {
     out.push({
       _id: `${prefix}-veg-${i}`,
-      title: `Veg ${prefix} ${i}`,
+      title: `Veg ${prefix}-${i}`,
       tags: ["veg"],
       costTier: "STANDARD",
       isVegetarian: true,
       nutritionPer100g: { ...n },
       isActive: true,
-      kitchenStyle: styles[(i + 3) % styles.length],
+      kitchenStyle: styles[(i + 4) % styles.length],
     });
   }
   for (let i = 0; i < 12; i += 1) {
     out.push({
       _id: `${prefix}-prem-${i}`,
-      title: `Premium ${prefix} ${i}`,
+      title: `Premium ${prefix}-${i}`,
       tags: ["beef"],
       costTier: "PREMIUM",
       nutritionPer100g: { ...n },
       estimatedCostPerPortion: 88,
       isActive: true,
-      kitchenStyle: styles[(i + 4) % styles.length],
+      kitchenStyle: styles[(i + 5) % styles.length],
     });
   }
   return out;
@@ -151,15 +167,19 @@ describe("runMenuWeekRollout", () => {
   let sanityRead: SanityClient;
   let createdDocs: unknown[];
 
+  function sharedBankFixture() {
+    return diverseMealsFixture("shared-bank");
+  }
+
   beforeEach(() => {
     createdDocs = [];
-    let bankCall = 0;
-    fetchImpl = async (q: string) => {
+    fetchImpl = async (q: string, params?: Record<string, unknown>) => {
       if (q.includes('_type == "mealIdea"')) {
-        bankCall += 1;
-        return diverseMealsFixture(`b${bankCall}`);
+        return sharedBankFixture();
       }
-      if (q.includes("{ date, mealTitle }")) return [];
+      if (q.includes("mealRefId")) {
+        return [];
+      }
       if (q.includes("{ mealTitle, description }")) return [];
       return [];
     };
@@ -209,13 +229,77 @@ describe("runMenuWeekRollout", () => {
       expect((doc.provider as { _ref?: string })?._ref).toBe("11111111-1111-1111-1111-111111111111");
       expect(expectedDates).toContain(doc.date);
     }
+
+    const basisDocs = (createdDocs as Array<Record<string, unknown>>).filter((d) => d.planTier === "BASIS");
+    const luxusDocs = (createdDocs as Array<Record<string, unknown>>).filter((d) => d.planTier === "LUXUS");
+    expect(basisDocs).toHaveLength(5);
+    expect(luxusDocs).toHaveLength(5);
+    for (const date of expectedDates) {
+      const b = basisDocs.find((d) => d.date === date);
+      const l = luxusDocs.find((d) => d.date === date);
+      expect(b?.mealTitle).toBe(l?.mealTitle);
+      expect((b?.mealRef as { _ref?: string })?._ref).toBe((l?.mealRef as { _ref?: string })?._ref);
+    }
+  });
+
+  it("2× rollout med samme fixtures gir identisk delt ukeplan", async () => {
+    const run = async () => {
+      const docs: unknown[] = [];
+      const res = await runMenuWeekRollout({
+        instant: fixedInstant,
+        sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
+        supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS"]),
+        sanityRead,
+        getSanityWrite: () => ({
+          transaction: () => {
+            const chain = {
+              createOrReplace: vi.fn((doc: unknown) => {
+                docs.push(doc);
+                return chain;
+              }),
+              patch: vi.fn(() => chain),
+              commit: vi.fn(async () => {}),
+            };
+            return chain;
+          },
+        }) as unknown as SanityClient,
+      });
+      return { res, titles: (res.sharedWeekPlan ?? []).map((d) => d.mealTitle) };
+    };
+
+    const first = await run();
+    createdDocs = [];
+    const second = await run();
+    expect(first.titles).toEqual(second.titles);
+    expect(first.titles).toHaveLength(5);
+  });
+
+  it("generert uke følger ukedag-pins (suppe/fisk/fredagskos)", async () => {
+    const res = await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS"]),
+      sanityRead,
+      getSanityWrite: mockWrite,
+    });
+
+    const plan = res.sharedWeekPlan ?? [];
+    expect(plan[1]?.mealTitle).toMatch(/Suppe/i);
+    expect(plan[3]?.mealTitle).toMatch(/Fisk/i);
+    expect(plan[4]?.mealTitle).toMatch(/Fredagskos/i);
   });
 
   it("alle menuDays finnes allerede: 0 opprettet, 10 hoppet over", async () => {
     fetchImpl = async (q: string) => {
-      if (q.includes('_type == "mealIdea"')) return diverseMealsFixture("x");
-      if (q.includes("{ date, mealTitle }")) {
-        return expectedDates.map((date) => ({ date, mealTitle: "Existing" }));
+      if (q.includes('_type == "mealIdea"')) return sharedBankFixture();
+      if (q.includes("mealRefId")) {
+        return expectedDates.map((date) => ({
+          date,
+          mealTitle: "Existing",
+          description: "Existing desc",
+          nutritionPer100g: { energyKcal: 100, proteinG: 10, carbohydratesG: 12, fatG: 6, saltG: 0.8 },
+          mealRefId: "meal-existing",
+        }));
       }
       if (q.includes("{ mealTitle, description }")) return [];
       return [];
@@ -237,14 +321,27 @@ describe("runMenuWeekRollout", () => {
     expect(createdDocs).toHaveLength(0);
   });
 
-  it("delvis BASIS: 2 eksisterende → 3 nye for BASIS, andre tiers fullt", async () => {
+  it("delvis BASIS: eksisterende mandag gjenbrukes for Luxus (felles varmrett)", async () => {
+    const canonicalTitle = "Kanonisk mandag fra Basis";
     fetchImpl = async (q: string, params?: Record<string, unknown>) => {
-      if (q.includes('_type == "mealIdea"')) return diverseMealsFixture("p");
-      if (q.includes("{ date, mealTitle }")) {
+      if (q.includes('_type == "mealIdea"')) return sharedBankFixture();
+      if (q.includes("mealRefId")) {
         if (params?.tier === "BASIS") {
           return [
-            { date: "2026-06-01", mealTitle: "A" },
-            { date: "2026-06-02", mealTitle: "B" },
+            {
+              date: "2026-06-01",
+              mealTitle: canonicalTitle,
+              description: canonicalTitle,
+              nutritionPer100g: { energyKcal: 100, proteinG: 10, carbohydratesG: 12, fatG: 6, saltG: 0.8 },
+              mealRefId: "meal-canonical-mon",
+            },
+            {
+              date: "2026-06-02",
+              mealTitle: "Basis tirsdag",
+              description: "Basis tirsdag",
+              nutritionPer100g: { energyKcal: 100, proteinG: 10, carbohydratesG: 12, fatG: 6, saltG: 0.8 },
+              mealRefId: "meal-canonical-tue",
+            },
           ];
         }
         return [];
@@ -266,7 +363,97 @@ describe("runMenuWeekRollout", () => {
 
     expect(res.menuDaysSkipped).toBe(2);
     expect(res.menuDaysCreated).toBe(8);
-    expect(createdDocs).toHaveLength(8);
+    expect(res.errors).toEqual([]);
+
+    const luxusMonday = (createdDocs as Array<Record<string, unknown>>).find(
+      (d) => d.planTier === "LUXUS" && d.date === "2026-06-01",
+    );
+    expect(luxusMonday?.mealTitle).toBe(canonicalTitle);
+    expect((luxusMonday?.mealRef as { _ref?: string })?._ref).toBe("meal-canonical-mon");
+  });
+
+  it("usageCount dedup: én patch per mealId selv om retten skrives til BASIS og LUXUS", async () => {
+    const patches: Array<{ id: string; ops: unknown }> = [];
+    const writeWithPatchSpy = {
+      transaction: () => {
+        const chain = {
+          createOrReplace: vi.fn((doc: unknown) => {
+            createdDocs.push(doc);
+            return chain;
+          }),
+          patch: vi.fn((id: string, ops: unknown) => {
+            patches.push({ id, ops });
+            return chain;
+          }),
+          commit: vi.fn(async () => {}),
+        };
+        return chain;
+      },
+    } as unknown as SanityClient;
+
+    createdDocs = [];
+    await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS"]),
+      sanityRead,
+      getSanityWrite: () => writeWithPatchSpy,
+    });
+
+    const usagePatches = patches.filter(
+      (p) => (p.ops as { inc?: { usageCount?: number } })?.inc?.usageCount === 1,
+    );
+    expect(usagePatches.length).toBe(5);
+    const ids = usagePatches.map((p) => p.id);
+    expect(new Set(ids).size).toBe(5);
+  });
+
+  it("legacy tier-divergens blokkerer rollout (fail-closed)", async () => {
+    fetchImpl = async (q: string, params?: Record<string, unknown>) => {
+      if (q.includes('_type == "mealIdea"')) return sharedBankFixture();
+      if (q.includes("mealRefId")) {
+        if (params?.tier === "BASIS") {
+          return [
+            {
+              date: "2026-06-01",
+              mealTitle: "Basis rett A",
+              description: "Basis rett A",
+              nutritionPer100g: { energyKcal: 100, proteinG: 10, carbohydratesG: 12, fatG: 6, saltG: 0.8 },
+              mealRefId: "meal-a",
+            },
+          ];
+        }
+        if (params?.tier === "LUXUS") {
+          return [
+            {
+              date: "2026-06-01",
+              mealTitle: "Luxus rett B",
+              description: "Luxus rett B",
+              nutritionPer100g: { energyKcal: 100, proteinG: 10, carbohydratesG: 12, fatG: 6, saltG: 0.8 },
+              mealRefId: "meal-b",
+            },
+          ];
+        }
+        return [];
+      }
+      if (q.includes("{ mealTitle, description }")) return [];
+      return [];
+    };
+    sanityRead = {
+      fetch: vi.fn((q: string, p?: Record<string, unknown>) => fetchImpl(q, p)),
+    } as unknown as SanityClient;
+
+    const res = await runMenuWeekRollout({
+      instant: fixedInstant,
+      sanityProviderRef: MELHUS_PROVIDER_SANITY_ID,
+      supabaseAdmin: () => mockSupabaseForTiers(["BASIS", "LUXUS"]),
+      sanityRead,
+      getSanityWrite: mockWrite,
+    });
+
+    expect(res.menuDaysCreated).toBe(0);
+    expect(res.errors.some((e) => e.includes("Legacy tier-divergens"))).toBe(true);
+    expect(createdDocs).toHaveLength(0);
   });
 });
 
@@ -303,13 +490,11 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
 
   beforeEach(() => {
     createdDocs = [];
-    let bankCall = 0;
     fetchImpl = async (q: string) => {
       if (q.includes('_type == "mealIdea"')) {
-        bankCall += 1;
-        return diverseMealsFixture(`b${bankCall}`);
+        return diverseMealsFixture("shared-bank");
       }
-      if (q.includes("{ date, mealTitle }")) return [];
+      if (q.includes("mealRefId")) return [];
       if (q.includes("{ mealTitle, description }")) return [];
       return [];
     };
@@ -395,8 +580,14 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
   it("idempotent med override: alle finnes → 0 opprettet", async () => {
     const fetchWithExisting = async (q: string, _p?: Record<string, unknown>) => {
       if (q.includes('_type == "mealIdea"')) return diverseMealsFixture("idem");
-      if (q.includes("{ date, mealTitle }")) {
-        return overrideWeekDates.map((date) => ({ date, mealTitle: "Existing" }));
+      if (q.includes("mealRefId")) {
+        return overrideWeekDates.map((date) => ({
+          date,
+          mealTitle: "Existing",
+          description: "Existing",
+          nutritionPer100g: { energyKcal: 100, proteinG: 10, carbohydratesG: 12, fatG: 6, saltG: 0.8 },
+          mealRefId: "meal-existing",
+        }));
       }
       if (q.includes("{ mealTitle, description }")) return [];
       return [];
@@ -427,7 +618,7 @@ describe("runMenuWeekRollout overrideTargetWeekMonday", () => {
     const reproClock = new Date("2026-05-15T12:00:00.000Z");
     fetchImpl = async (q: string) => {
       if (q.includes('_type == "mealIdea"')) return diverseMealsWithNoise(`week-${monday}`);
-      if (q.includes("{ date, mealTitle }")) return [];
+      if (q.includes("mealRefId")) return [];
       if (q.includes("{ mealTitle, description }")) return [];
       return [];
     };
@@ -485,19 +676,21 @@ describe("runMenuWeekRollout provider-scope (P0 multi-provider data-correctness)
 
   /** Sanity-read der eksisterende menuDays KUN returneres for matching providerRef (provider-scoped GROQ). */
   function mkSanityRead(existingByProvider: Record<string, Array<{ date: string; mealTitle: string }>>) {
-    let bankCall = 0;
     const fetch = vi.fn(async (q: string, p?: Record<string, unknown>) => {
       if (q.includes('_type == "mealIdea"')) {
-        bankCall += 1;
-        return diverseMealsFixture(`ps${bankCall}`);
+        return diverseMealsFixture("shared-bank");
       }
-      if (q.includes("{ date, mealTitle }")) {
-        // Existence-query MÅ være provider-scoped — aldri global date/tier/category-matching.
+      if (q.includes("mealRefId")) {
         expect(q).toContain("provider._ref == $providerRef");
-        return existingByProvider[String(p?.providerRef ?? "")] ?? [];
+        const rows = existingByProvider[String(p?.providerRef ?? "")] ?? [];
+        return rows.map((r) => ({
+          ...r,
+          description: r.mealTitle,
+          nutritionPer100g: { energyKcal: 100, proteinG: 10, carbohydratesG: 12, fatG: 6, saltG: 0.8 },
+          mealRefId: `meal-${r.date}`,
+        }));
       }
       if (q.includes("{ mealTitle, description }")) {
-        // Cooldown-query MÅ være provider-scoped.
         expect(q).toContain("provider._ref == $providerRef");
         return [];
       }
