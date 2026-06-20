@@ -19,6 +19,7 @@ import {
   weekdayKeyFromDateISO,
 } from "@/lib/week/orderPatternsClient";
 import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCard";
+import WeekMenuNotificationToggle from "@/components/week/WeekMenuNotificationToggle";
 import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
 import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
 import { isWeekMenuComingSoon } from "@/lib/week/weekMenuReadiness";
@@ -2239,6 +2240,7 @@ export default function EmployeeWeekClient({
       </header>
 
       {!readOnlyPreview ? <WeekAllergenProfileCard /> : null}
+      {!readOnlyPreview ? <WeekMenuNotificationToggle /> : null}
 
       <div className="mb-5 space-y-2" aria-live="polite">
         {menuSanityFetchFailed ? (
