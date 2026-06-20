@@ -155,9 +155,16 @@ describe("provider menu safety guards", () => {
 });
 
 describe("menu contract unchanged", () => {
-  test("Basis still three categories", () => {
-    const source = readFileSync(resolve(process.cwd(), "lib/provider-menu/providerMenuTierContract.ts"), "utf8");
-    expect(source).toContain("categoriesForTierInOrder(PLAN_CATEGORIES.BASIS)");
-    expect(source).toContain("Ost & Skinke");
+  test("Basis still three categories; variants from Sanity catalog not tier contract", () => {
+    const tierSource = readFileSync(resolve(process.cwd(), "lib/provider-menu/providerMenuTierContract.ts"), "utf8");
+    expect(tierSource).toContain("categoriesForTierInOrder(PLAN_CATEGORIES.BASIS)");
+    expect(tierSource).toContain("variants: []");
+    expect(tierSource).toContain("lunchCategoryCatalog.ts");
+
+    const catalogSource = readFileSync(
+      resolve(process.cwd(), "tests/lib/provider-menu/lunchCategoryCatalogFixtures.ts"),
+      "utf8",
+    );
+    expect(catalogSource).toContain("Ost & Skinke");
   });
 });
