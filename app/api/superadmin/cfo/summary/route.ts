@@ -309,11 +309,11 @@ export async function GET(req: NextRequest): Promise<Response> {
   const volumeByWeek = Array.from(byWeek.values()).sort((a, b) => a.week_start.localeCompare(b.week_start));
 
   const [activeCompanies, archivedCompanies] = await Promise.all([
-    admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "active"),
+    admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "ACTIVE"),
     admin
       .from("companies")
       .select("id", { count: "exact", head: true })
-      .or("status.eq.closed,deleted_at.not.is.null"),
+      .or("status.eq.CLOSED,deleted_at.not.is.null"),
   ]);
 
   const activeCount = Number(activeCompanies.count ?? 0);
