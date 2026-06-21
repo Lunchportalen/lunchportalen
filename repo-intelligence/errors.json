@@ -1,6 +1,14 @@
 {
   "gaps": [
     {
+      "description": "Table \"employee_notification_preferences\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/employee/notification-preferences/route.ts",
+        "lib/notifications/menuWeekOpeningNotify.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
       "description": "Table \"v_receipt_rows\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
         "app/api/system/receipts/route.ts"
@@ -27,10 +35,21 @@
       "description": "Table \"agreement_delivery_days\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
         "lib/agreement/currentAgreement.ts",
+        "lib/agreements/resolveAgreementForDate.ts",
         "lib/auth/agreementStatus.ts",
         "lib/menu-publish/runMenuWeekRolloutCore.ts",
         "lib/menu-publish/syncMenuServiceDayItems.ts",
-        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts"
+        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/providers/loadProviderCustomerDetail.ts",
+        "lib/server/provider/providerCustomerAgreementService.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"agreement_change_requests\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/agreements/changeRequestService.ts",
+        "lib/agreements/resolveAgreementForDate.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -104,6 +123,7 @@
       "files": [
         "lib/menu-publish/syncMenuServiceDayItems.ts",
         "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "lib/week/loadEmployeeWeekMenusFromMsdi.ts",
         "scripts/smoke/_first-menu-order-smoke.mjs"
       ],
@@ -124,10 +144,9 @@
       "type": "table_not_in_database_ts"
     },
     {
-      "description": "Table \"order_items\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "description": "Table \"menu_week_opening_send_log\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/providers/loadKitchenOrders.ts",
-        "scripts/smoke/_first-menu-order-smoke.mjs"
+        "lib/notifications/menuWeekOpeningNotify.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -137,6 +156,36 @@
         "lib/providers/loadProviderOperationalSettings.ts",
         "lib/providers/providerNotificationRecipients.ts",
         "lib/providers/saveProviderOperationalSettings.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"provider_price_rules\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/providers/providerMenuPriceConfig.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"order_items\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/providers/providerOrderEnrichment.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"memberships\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/server/superadmin/executeCompanyRemoval.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"organizations\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/server/superadmin/executeCompanyRemoval.ts"
       ],
       "type": "table_not_in_database_ts"
     },

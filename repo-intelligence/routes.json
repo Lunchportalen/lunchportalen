@@ -1404,6 +1404,13 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/superadmin/pilot-control/page.tsx",
+      "url_path": "/superadmin/pilot-control",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/pipeline/page.tsx",
       "url_path": "/superadmin/pipeline",
       "uses_tables": []
