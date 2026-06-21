@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
-import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 import ProviderMenuCatalogView from "@/components/providers/ProviderMenuCatalogView";
 import ProviderMenuCommandHeader from "@/components/providers/ProviderMenuCommandHeader";
 import ProviderMenuEditorPanel from "@/components/providers/ProviderMenuEditorPanel";
@@ -30,10 +29,7 @@ import {
   type ResolvedProviderMenuSlot,
 } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
-import {
-  CATEGORY_VARIANT_CONTRACT,
-  isSanityDrivenCategory,
-} from "@/lib/provider-menu/providerMenuTierContract";
+import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 import {
   buildEditorContext,
   summarizeWeekMetrics,
@@ -217,34 +213,12 @@ export default function ProviderMenuBuilder() {
     void loadWeek();
   }, [loadWeek]);
 
-  useEffect(() => {
-    if (loading || selected || weekDates.length === 0) return;
-    const first = weekDates[0];
-    if (!first) return;
-    openSelection({
-      date: first,
-      category: "varmrett",
-      variantKey: "varmrett",
-      editorFocus: "varmrett",
-    });
-  }, [loading, selected, weekDates]);
-
-  const catalogPanelCategoryKey = useMemo(() => {
-    if (!selected) return "paasmurt";
-    if (selected.category === "varmrett" || selected.editorFocus === "enterprise-upgrade") {
-      return "paasmurt";
-    }
-    const contract = CATEGORY_VARIANT_CONTRACT[selected.category];
-    return contract?.lunchCategoryKey ?? "paasmurt";
-  }, [selected]);
-
   function openSelection(sel: WeekSelection) {
     setSelected(sel);
     let existing = resolveProviderMenuSlot(slots, sel.date, tier, sel.category);
 
     if (sel.editorFocus === "enterprise-upgrade") {
       existing = resolveProviderMenuSlot(slots, sel.date, "ENTERPRISE", "varmrett");
-      setForm({ ...existing });
     } else if (sel.category === "varmrett" && sel.editorFocus === "varmrett") {
       const shared = resolveSharedVarmrettSlot(slots, sel.date);
       existing = {
@@ -254,22 +228,9 @@ export default function ProviderMenuBuilder() {
         allergensText: shared.allergensText || existing.allergensText,
         estimatedCostPerPortion: shared.estimatedCostPerPortion ?? existing.estimatedCostPerPortion,
       };
-      setForm({ ...existing, category: "varmrett", tier });
-    } else {
-      const shared = resolveSharedVarmrettSlot(slots, sel.date);
-      const varmrettSlot = resolveProviderMenuSlot(slots, sel.date, tier, "varmrett");
-      setForm({
-        ...varmrettSlot,
-        category: "varmrett",
-        tier,
-        mealTitle: shared.mealTitle || varmrettSlot.mealTitle,
-        description: shared.description || varmrettSlot.description,
-        allergensText: shared.allergensText || varmrettSlot.allergensText,
-        estimatedCostPerPortion:
-          shared.estimatedCostPerPortion ?? varmrettSlot.estimatedCostPerPortion,
-      });
     }
 
+    setForm({ ...existing });
     setMessage(null);
     setError(null);
     setConfirmWarnings(false);
@@ -320,7 +281,7 @@ export default function ProviderMenuBuilder() {
     setMessage(null);
 
     const isVarmrettSharedSave =
-      selected.editorFocus !== "enterprise-upgrade" && form.category === "varmrett";
+      selected.category === "varmrett" && selected.editorFocus === "varmrett";
 
     const luxusSlot =
       form.tier === "ENTERPRISE" && selected
@@ -366,8 +327,7 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      const rid = json.rid ? ` (RID: ${json.rid})` : "";
-      setError((json.message ?? "Kunne ikke lagre meny.") + rid);
+      setError(json.message ?? "Kunne ikke lagre meny.");
       return;
     }
 
@@ -397,8 +357,7 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      const rid = json.rid ? ` (RID: ${json.rid})` : "";
-      setError((json.message ?? "Kunne ikke tilbakestille varmrett.") + rid);
+      setError(json.message ?? "Kunne ikke tilbakestille varmrett.");
       return;
     }
 
@@ -490,8 +449,7 @@ export default function ProviderMenuBuilder() {
   const inspectorOpen = Boolean(form && selected);
 
   return (
-    <div className="lp-editor-root lp-editor-workspace" data-tier={tier}>
-      <div className="lp-editor-wrap">
+    <div className="lp-editor-root lp-editor-workspace">
       <ProviderMenuCommandHeader
         tier={tier}
         weekStart={weekStart}
@@ -528,7 +486,7 @@ export default function ProviderMenuBuilder() {
       ) : null}
 
       <div
-        className={`lp-editor-layout lp-editor-workspace__body lp-editor-workspace__body--panels${loading ? " is-week-loading" : ""}`}
+        className={`lp-editor-layout lp-editor-workspace__body${inspectorOpen ? " is-inspector-open" : " is-inspector-idle"}${loading ? " is-week-loading" : ""}`}
       >
         <div className={`lp-editor-workspace__planner${loading && !prices ? " is-initial-loading" : ""}`}>
           {workspaceView === "week" ? (
@@ -549,6 +507,12 @@ export default function ProviderMenuBuilder() {
                 orderCountsByDate={orderCountsByDate}
                 onSelect={openSelection}
               />
+              {!inspectorOpen ? (
+                <p className="lp-editor-planner-hint">
+                  <span className="lp-editor-planner-hint__mark" aria-hidden="true" />
+                  Velg en dag i ukeplanen for å redigere varmrett, valg eller Enterprise-upgrade.
+                </p>
+              ) : null}
             </>
           ) : (
             <ProviderMenuCatalogView
@@ -560,60 +524,39 @@ export default function ProviderMenuBuilder() {
           )}
         </div>
 
-        {workspaceView === "week" ? (
-          <div className="lp-editor-panels">
-            <div className="lp-editor-panel lp-editor-panel--varmrett">
-              <ProviderMenuEditorPanel
-                layoutMode="panel"
-                open={inspectorOpen}
-                context={editorContext}
-                form={form}
-                tier={tier}
-                editorFocus={selected?.editorFocus}
-                sharedVarmrettTitle={sharedVarmrettTitle}
-                categoryVariantLabels={categoryVariantLabels}
-                categoryOnly={categoryOnly}
-                onFormChange={setForm}
-                onClose={closeEditor}
-                onSaveDraft={() => startTransition(() => save("draft"))}
-                onPublish={() => startTransition(() => save("published"))}
-                onResetToGenerated={() => startTransition(() => resetVarmrettToGenerated())}
-                varmrettProviderOverride={varmrettEditorState.providerOverride}
-                varmrettAutoFilled={varmrettEditorState.autoFilled}
-                varmrettHasGeneratedBaseline={varmrettEditorState.hasGeneratedBaseline}
-                varmrettOrderLocked={varmrettEditorState.orderLocked}
-                varmrettOrderCount={
-                  selected?.date ? orderCountsByDate[selected.date] ?? 0 : 0
-                }
-                onCopyFromBasis={() => copyFromPackage("BASIS")}
-                onCopyFromLuxus={() => copyFromPackage("LUXUS")}
-                pending={pending}
-                margin={margin}
-                enterpriseWarnings={enterpriseWarnings}
-                confirmWarnings={confirmWarnings}
-                onConfirmWarningsChange={setConfirmWarnings}
-                catalogVariantAllergens={catalogVariant?.allergens}
-                imageUrl={catalogVariant?.imageUrl ?? null}
-              />
-            </div>
-            <div className="lp-editor-panel lp-editor-panel--catalog">
-              {selected ? (
-                <ProviderMenuCatalogEditor
-                  tier={tier}
-                  catalog={catalog}
-                  onCatalogSaved={setCatalog}
-                  fixedCategoryKey={catalogPanelCategoryKey}
-                  panelMode
-                />
-              ) : (
-                <div className="lp-editor-panel__empty">
-                  <p>Velg en dag i ukeplanen for å redigere katalogvalg.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-      </div>
+        <div className="lp-editor-workspace__inspector">
+          <ProviderMenuEditorPanel
+          open={inspectorOpen}
+          context={editorContext}
+          form={form}
+          tier={tier}
+          editorFocus={selected?.editorFocus}
+          sharedVarmrettTitle={sharedVarmrettTitle}
+          categoryVariantLabels={categoryVariantLabels}
+          categoryOnly={categoryOnly}
+          onFormChange={setForm}
+          onClose={closeEditor}
+          onSaveDraft={() => startTransition(() => save("draft"))}
+          onPublish={() => startTransition(() => save("published"))}
+          onResetToGenerated={() => startTransition(() => resetVarmrettToGenerated())}
+          varmrettProviderOverride={varmrettEditorState.providerOverride}
+          varmrettAutoFilled={varmrettEditorState.autoFilled}
+          varmrettHasGeneratedBaseline={varmrettEditorState.hasGeneratedBaseline}
+          varmrettOrderLocked={varmrettEditorState.orderLocked}
+          varmrettOrderCount={
+            selected?.date ? orderCountsByDate[selected.date] ?? 0 : 0
+          }
+          onCopyFromBasis={() => copyFromPackage("BASIS")}
+          onCopyFromLuxus={() => copyFromPackage("LUXUS")}
+          pending={pending}
+          margin={margin}
+          enterpriseWarnings={enterpriseWarnings}
+          confirmWarnings={confirmWarnings}
+          onConfirmWarningsChange={setConfirmWarnings}
+          catalogVariantAllergens={catalogVariant?.allergens}
+          imageUrl={catalogVariant?.imageUrl ?? null}
+        />
+        </div>
       </div>
     </div>
   );

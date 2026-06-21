@@ -26,6 +26,14 @@ export default async function LeverandorMenyPage() {
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
+      <header className="ds-provider-topbar ds-provider-menu-page__header">
+        <div>
+          <p className="ds-eyebrow">Leverandør</p>
+          <h1 className="ds-h2">Meny</h1>
+          <p className="ds-lead">Planlegg uke, sett dagens felles varmrett og publiser for bestilling.</p>
+        </div>
+      </header>
+
       {canEdit ? (
         <ProviderMenuBuilder />
       ) : (

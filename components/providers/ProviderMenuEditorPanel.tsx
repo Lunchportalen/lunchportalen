@@ -35,7 +35,6 @@ type Props = {
   form: ResolvedProviderMenuSlot | null;
   categoryVariantLabels?: string[];
   categoryOnly?: boolean;
-  layoutMode?: "inspector" | "panel";
   onFormChange: (next: ResolvedProviderMenuSlot) => void;
   onClose: () => void;
   onSaveDraft: () => void;
@@ -78,7 +77,6 @@ export default function ProviderMenuEditorPanel({
   form,
   categoryVariantLabels,
   categoryOnly,
-  layoutMode = "inspector",
   onFormChange,
   onClose,
   onSaveDraft,
@@ -113,14 +111,6 @@ export default function ProviderMenuEditorPanel({
   }, [open, context?.date, context?.editorFocus, editorFocus, form?.upgradeType, form?.upgradeNote]);
 
   if (!open || !form || !context) {
-    if (layoutMode === "panel") {
-      return (
-        <div className="lp-editor-panel__idle" role="status">
-          <p className="lp-editor-panel__idle-title">Velg en dag</p>
-          <p className="lp-editor-panel__idle-lead">Klikk en dag i ukeplanen for å redigere varmrett og katalog.</p>
-        </div>
-      );
-    }
     return (
       <aside className="lp-editor-inspector lp-editor-inspector--idle" aria-label="Redigeringspanel" data-state="closed">
         <div className="lp-editor-inspector__empty">
@@ -177,168 +167,6 @@ export default function ProviderMenuEditorPanel({
   const hasUpgradeContent = enterpriseUpgradeHasContent(form);
   const showSuggestionCard = isEnterpriseUpgradeMode && !showManualEditing && !hasUpgradeContent;
   const varmrettSaveBlocked = isVarmrettMode && varmrettOrderLocked;
-
-  const commissionNok =
-    margin?.priceExVatNok != null ? Math.round(margin.priceExVatNok * 0.05 * 100) / 100 : null;
-  const marginAfterCommission =
-    margin?.estimatedCostNok != null && commissionNok != null
-      ? Math.round((margin.priceExVatNok - margin.estimatedCostNok - commissionNok) * 100) / 100
-      : null;
-
-  if (layoutMode === "panel" && isVarmrettMode) {
-    return (
-      <section className="lp-editor-panel-varmrett" aria-label="Rediger varmrett">
-        <header className="lp-editor-panel__head">
-          <span className="lp-editor-panel__icon" aria-hidden="true">🍽</span>
-          <div>
-            <h3 className="lp-editor-panel__title">Rediger varmrett</h3>
-            <p className="lp-editor-panel__scope">
-              <b>{TIER_SOURCE_LABELS[tier]}</b> · <b>{context.weekdayLabel}</b> · felles for alle nivåer
-            </p>
-          </div>
-        </header>
-
-        {varmrettAutoFilled && !varmrettProviderOverride && !varmrettOrderLocked ? (
-          <p className="lp-editor-genstamp" role="status">
-            <span aria-hidden="true">✨</span>
-            Generert standard fra retten-banken. Du kan redigere, lage din egen, eller tilbakestille.
-          </p>
-        ) : null}
-
-        {varmrettOrderLocked ? (
-          <div className="lp-editor-day__lockbar lp-editor-panel__lockbar" role="status">
-            <span aria-hidden="true">🔒</span>
-            Har bestilling
-            {varmrettOrderCount > 0 ? ` · ${varmrettOrderCount} porsjoner` : ""}
-          </div>
-        ) : null}
-
-        <label className="lp-editor-panel__field">
-          <span className="lp-editor-panel__label">Rettens navn</span>
-          <input
-            className="lp-editor-panel__input"
-            value={form.mealTitle}
-            disabled={varmrettOrderLocked}
-            onChange={(e) => onFormChange({ ...form, mealTitle: e.target.value })}
-            maxLength={120}
-          />
-        </label>
-
-        <div className="lp-editor-panel__twocol">
-          <label className="lp-editor-panel__field">
-            <span className="lp-editor-panel__label">Tilbehør / beskrivelse</span>
-            <input
-              className="lp-editor-panel__input"
-              value={form.description}
-              disabled={varmrettOrderLocked}
-              onChange={(e) => onFormChange({ ...form, description: e.target.value })}
-              maxLength={4000}
-            />
-          </label>
-          <label className="lp-editor-panel__field">
-            <span className="lp-editor-panel__label">Råvarekost</span>
-            <input
-              className="lp-editor-panel__input"
-              type="number"
-              min={0}
-              max={200}
-              step={0.5}
-              disabled={varmrettOrderLocked}
-              value={form.estimatedCostPerPortion ?? ""}
-              onChange={(e) =>
-                onFormChange({
-                  ...form,
-                  estimatedCostPerPortion: e.target.value === "" ? null : Number(e.target.value),
-                })
-              }
-            />
-          </label>
-        </div>
-
-        <label className="lp-editor-panel__field">
-          <span className="lp-editor-panel__label">Allergener</span>
-          <input
-            className="lp-editor-panel__input"
-            value={form.allergensText}
-            disabled={varmrettOrderLocked}
-            onChange={(e) => onFormChange({ ...form, allergensText: e.target.value })}
-            placeholder="F.eks. melk, hvete"
-          />
-        </label>
-
-        <div className="lp-editor-panel__actions">
-          <button
-            type="button"
-            className="ds-btn ds-btn--primary"
-            disabled={pending || varmrettSaveBlocked}
-            onClick={onSaveDraft}
-          >
-            {pending ? "Lagrer…" : "Lagre"}
-          </button>
-          <button
-            type="button"
-            className="ds-btn"
-            disabled={varmrettOrderLocked}
-            onClick={() =>
-              onFormChange({
-                ...form,
-                mealTitle: "",
-                description: "",
-                estimatedCostPerPortion: form.estimatedCostPerPortion,
-              })
-            }
-          >
-            Lag egen rett
-          </button>
-          {varmrettHasGeneratedBaseline && onResetToGenerated && !varmrettOrderLocked ? (
-            <button
-              type="button"
-              className="ds-btn ds-btn--ghost"
-              disabled={pending}
-              onClick={onResetToGenerated}
-            >
-              Tilbakestill til generert
-            </button>
-          ) : null}
-        </div>
-
-        {margin ? (
-          <div className="lp-editor-econ" aria-label="Økonomi">
-            <div className="lp-editor-econ__row">
-              <span className="lp-editor-econ__lbl">
-                Tier-pris ({TIER_SOURCE_LABELS[tier]}, eks. mva)
-              </span>
-              <span>{formatPriceExVatLabel(margin.priceExVatNok)}</span>
-            </div>
-            {margin.estimatedCostNok != null ? (
-              <>
-                <div className="lp-editor-econ__row">
-                  <span className="lp-editor-econ__lbl">− Råvarekost</span>
-                  <span>{margin.estimatedCostNok.toLocaleString("nb-NO")} kr</span>
-                </div>
-                {commissionNok != null ? (
-                  <div className="lp-editor-econ__row">
-                    <span className="lp-editor-econ__lbl">− Lunchportalen 5 %</span>
-                    <span>{commissionNok.toLocaleString("nb-NO")} kr</span>
-                  </div>
-                ) : null}
-                <div className="lp-editor-econ__row lp-editor-econ__row--tot">
-                  <span>Margin per porsjon</span>
-                  <span className="lp-editor-econ__margin">
-                    {marginAfterCommission != null
-                      ? `${marginAfterCommission.toLocaleString("nb-NO")} kr`
-                      : "—"}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <p className="lp-editor-panel__note">Legg inn råvarekost for marginberegning.</p>
-            )}
-          </div>
-        ) : null}
-      </section>
-    );
-  }
 
   return (
     <aside className="lp-editor-inspector is-open" aria-label="Redigeringspanel">
