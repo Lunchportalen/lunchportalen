@@ -43,6 +43,7 @@ jobs:
       agents_gate_touched: ${{ steps.scope.outputs.agents_gate_touched }}
       staging_touched: ${{ steps.scope.outputs.staging_touched }}
       week_visual_touched: ${{ steps.scope.outputs.week_visual_touched }}
+      provider_meny_visual_touched: ${{ steps.scope.outputs.provider_meny_visual_touched }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -102,3 +103,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "passthrough — week-visual paths ikke rørt; ekte ci-week-visual er eneste meningsfulle kontekst når rørt."
+
+  provider-meny-visual:
+    name: provider-meny-visual
+    needs: detect
+    if: needs.detect.outputs.provider_meny_visual_touched != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "passthrough — provider-meny-visual paths ikke rørt; ekte ci-provider-meny-visual er eneste meningsfulle kontekst når rørt."

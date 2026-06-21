@@ -31,6 +31,9 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
 
     await expect(page.getByRole("heading", { name: "Premiumvalg" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Enterprise-upgrade" }).first()).toBeVisible();
+    // Fixture stub (not live Sanity): Tue override+locked day from buildProviderMenyVisualMenuDaysResponse()
+    await expect(page.getByText("Kyllinggryte")).toBeVisible();
+    await expect(page.getByText("14 ansatte har bestilt")).toBeVisible();
 
     await expect(providerMenyEditorRootLocator(page)).toHaveScreenshot(
       `provider-meny-enterprise-${testInfo.project.name}.png`,

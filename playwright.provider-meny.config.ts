@@ -5,6 +5,15 @@ import {
   PROVIDER_MENY_VISUAL_AUTH_STATE_PATH,
 } from "./e2e/helpers/provider-meny-visual-auth";
 
+if (
+  process.argv.includes("--update-snapshots") &&
+  process.platform !== "linux"
+) {
+  throw new Error(
+    "Provider meny visual baselines are Linux-only. Use scripts/e2e/provider-meny-visual-docker.sh or CI workflow_dispatch on noble.",
+  );
+}
+
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 const useKitchenSession = hasProviderMenyVisualKitchenCreds();
 

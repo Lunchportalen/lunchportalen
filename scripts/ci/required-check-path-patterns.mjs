@@ -154,6 +154,32 @@ export const REQUIRED_CHECK_PATH_CONFIG = {
       "vercel.json",
     ],
   },
+  provider_meny_visual: {
+    workflow: ".github/workflows/ci-provider-meny-visual.yml",
+    paths: [
+      "app/leverandor/meny/**",
+      "components/providers/ProviderMenu*.tsx",
+      "app/styles/ds/provider-menu-editor.css",
+      "app/styles/ds/provider-admin.css",
+      "app/api/provider/menu-days/**",
+      "lib/provider-menu/**",
+      "e2e/provider-meny-visual-regression.e2e.ts",
+      "e2e/helpers/provider-meny-visual.ts",
+      "e2e/helpers/provider-meny-visual-auth.ts",
+      "e2e/helpers/visual-e2e-sanity-guard.ts",
+      "e2e/global-setup/provider-meny-visual-auth.setup.ts",
+      "e2e/fixtures/provider-meny-catalog.json",
+      "tests/e2e/visual-e2e-sanity-guard.test.ts",
+      "playwright.provider-meny.config.ts",
+      "e2e/provider-meny-visual-regression.e2e.ts-snapshots/**",
+      "scripts/e2e/retry-seed-with-backoff.sh",
+      "scripts/e2e/seed-e2e-provider-kitchen-access.mjs",
+      "scripts/ci/retry-npm-ci.sh",
+      "scripts/ci/retry-transient-network.sh",
+      ".github/workflows/ci-provider-meny-visual.yml",
+      "vercel.json",
+    ],
+  },
 };
 
 /** Branch-protection context name per internal check key. */
@@ -163,4 +189,5 @@ export const REQUIRED_CHECK_CONTEXT_NAMES = {
   agents_gate: "agents_gate",
   staging: "staging",
   week_visual: "week-visual",
+  provider_meny_visual: "provider-meny-visual",
 };
