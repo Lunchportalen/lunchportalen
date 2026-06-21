@@ -2,13 +2,15 @@
  * WS-3 — week-opening notification timing + event keys (Oslo, pure).
  */
 
-import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
+import { addDaysISO, startOfWeekISO } from "@/lib/date/oslo";
 import { getVisibleWindow, osloParts, hhmmToMin } from "@/lib/week/availability";
 
 export const MENU_WEEK_OPENING_CHANNEL_EMAIL = "email" as const;
 
 export function weekOpeningThirdWeekMonday(now: Date): string {
-  const todayIso = osloTodayISODate();
+  const p = osloParts(now);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const todayIso = `${p.y}-${pad(p.mo)}-${pad(p.d)}`;
   const thisWeekMonday = startOfWeekISO(todayIso);
   return addDaysISO(thisWeekMonday, 14);
 }
