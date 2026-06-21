@@ -1,0 +1,15 @@
+{
+  "common": {
+    "loading": "Loading …",
+    "save": "Save",
+    "language": "Language"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English"
+  },
+  "localeSwitcher": {
+    "label": "Choose language",
+    "current": "Current language: {language}"
+  }
+}

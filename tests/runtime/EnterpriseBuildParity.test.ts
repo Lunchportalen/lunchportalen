@@ -5,7 +5,7 @@ import { globSync } from "glob";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { describe, expect, it } from "vitest";
 
-import nextConfig from "@/next.config";
+import { buildNextConfig } from "@/next.config";
 import { NEXT_BUILD_DIST_DIR } from "@/lib/runtime/nextOutput";
 
 const repoRoot = process.cwd();
@@ -45,6 +45,6 @@ describe("Enterprise build parity", () => {
   });
 
   it("keeps production build output routed through the configured enterprise distDir", () => {
-    expect(nextConfig(PHASE_PRODUCTION_BUILD).distDir).toBe(NEXT_BUILD_DIST_DIR);
+    expect(buildNextConfig(PHASE_PRODUCTION_BUILD).distDir).toBe(NEXT_BUILD_DIST_DIR);
   });
 });

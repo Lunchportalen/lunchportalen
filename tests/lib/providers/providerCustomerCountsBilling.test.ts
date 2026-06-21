@@ -81,10 +81,12 @@ describe("billing basis VAT labels", () => {
 });
 
 describe("provider locale readiness audit", () => {
-  it("dokumenterer provider_settings.locale som eneste storable scope", () => {
+  it("dokumenterer provider_settings.locale og profiles.preferred_locale som storable scopes", () => {
     const storable = providerLocaleStorableScopes();
-    expect(storable).toHaveLength(1);
-    expect(storable[0]?.proposedField).toBe("provider_settings.locale");
+    expect(storable).toHaveLength(2);
+    expect(storable.map((row) => row.proposedField)).toEqual(
+      expect.arrayContaining(["provider_settings.locale", "profiles.preferred_locale"]),
+    );
     expect(providerLocaleHasCompanyStorage()).toBe(false);
     expect(PROVIDER_LOCALE_READINESS.some((r) => r.scope === "Customer/company")).toBe(true);
   });

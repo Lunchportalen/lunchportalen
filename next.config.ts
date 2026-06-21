@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from "next-intl/plugin";
 import { resolveNextDistDir } from "./lib/runtime/nextOutput";
+
+const withNextIntl = createNextIntlPlugin();
 
 const sharedConfig: NextConfig = {
   typescript: {
@@ -176,7 +179,9 @@ function buildNextConfig(phase: string): NextConfig {
   };
 }
 
-export default withSentryConfig(buildNextConfig, {
+export { buildNextConfig };
+
+export default withSentryConfig(withNextIntl(buildNextConfig), {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import LocaleSwitcher from "@/components/nav/LocaleSwitcher";
 import AdminTopbarUserMenu, { type AdminTopbarUserMenuProps } from "./AdminTopbarUserMenu.client";
 
 function osloNowParts(date = new Date()) {
@@ -90,6 +91,7 @@ export default function AdminTopbar({ pageTitle = "Oversikt", userMenu }: AdminT
           <PlusIcon />
           <span>Inviter ansatte</span>
         </Link>
+        <LocaleSwitcher persistProfile={Boolean(userMenu)} />
         {userMenu ? <AdminTopbarUserMenu {...userMenu} /> : null}
       </div>
     </header>

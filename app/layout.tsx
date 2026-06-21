@@ -9,10 +9,13 @@ import "../lib/ui/design.css";
 
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 import DevOverflowGuard from "@/components/DevOverflowGuard";
 import AttributionCapture from "@/components/revenue/AttributionCapture";
 import { fontBody, fontDisplay, fontHeading } from "@/app/fonts/fonts";
+import { htmlLangForAppLocale, parseAppLocale } from "@/lib/i18n/middlewareLocale";
 
 /* =========================================================
    Metadata
@@ -58,13 +61,19 @@ export const viewport: Viewport = {
 /* =========================================================
    Root Layout
 ========================================================= */
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const appLocale = parseAppLocale(locale) ?? "nb";
+
   return (
-    <html lang="no" className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeading.variable} h-full`}>
+    <html lang={htmlLangForAppLocale(appLocale)} className={`${fontBody.variable} ${fontDisplay.variable} ${fontHeading.variable} h-full`}>
       <body className="min-h-full antialiased">
         {process.env.NODE_ENV !== "production" ? <DevOverflowGuard /> : null}
         <AttributionCapture />
-        {children}
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

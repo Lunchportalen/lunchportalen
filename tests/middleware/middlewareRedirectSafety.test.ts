@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextResponse } from "next/server";
 import { LOCAL_DEV_AUTH_COOKIE } from "@/lib/auth/localDevBypassCookie";
+import { LP_LOCALE_COOKIE } from "@/lib/i18n/middlewareLocale";
 import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
 
 vi.mock("@/lib/supabase/proxy", () => ({
@@ -18,11 +19,12 @@ const SSR_SESSION_COOKIE = "sb-exampleproject-auth-token.0";
 
 function makeRequest(
   path: string,
-  opts?: { withSsrSession?: boolean; devBypassPayload?: string }
+  opts?: { withSsrSession?: boolean; devBypassPayload?: string; localeCookie?: string }
 ): any {
   const url = new URL(`https://example.com${path}`);
   const withSsrSession = opts?.withSsrSession;
   const devBypassPayload = opts?.devBypassPayload;
+  const localeCookie = opts?.localeCookie;
   return {
     nextUrl: {
       pathname: url.pathname,
@@ -37,15 +39,28 @@ function makeRequest(
       get(name: string) {
         if (name === SSR_SESSION_COOKIE && withSsrSession) return { value: "x" };
         if (name === LOCAL_DEV_AUTH_COOKIE && devBypassPayload) return { value: devBypassPayload };
+        if (name === LP_LOCALE_COOKIE && localeCookie) return { value: localeCookie };
         return undefined;
       },
       getAll() {
         const all: Array<{ name: string; value: string }> = [];
         if (withSsrSession) all.push({ name: SSR_SESSION_COOKIE, value: "x" });
         if (devBypassPayload) all.push({ name: LOCAL_DEV_AUTH_COOKIE, value: devBypassPayload });
+        if (localeCookie) all.push({ name: LP_LOCALE_COOKIE, value: localeCookie });
         return all;
       },
     },
+  };
+}
+
+function authOutcome(res: NextResponse) {
+  return {
+    status: res.status,
+    location: res.headers.get("location"),
+    mwUser: res.headers.get("x-lp-mw-user"),
+    mwRedirect: res.headers.get("x-lp-mw-redirect"),
+    mwApiAuth: res.headers.get("x-lp-mw-api-auth"),
+    mwBypass: res.headers.get("x-lp-mw-bypass"),
   };
 }
 
@@ -181,5 +196,56 @@ describe("middleware ↔ getAuthContext local dev bypass", () => {
     const res = await middleware(req);
 
     expect(res.status).toBe(303);
+  });
+});
+
+describe("middleware locale header does not alter auth/login redirect", () => {
+  const unauthenticatedProtectedPaths = [
+    "/admin?tab=users",
+    "/week",
+    "/backoffice/content",
+    "/leverandor/dashboard",
+    "/orders",
+  ];
+
+  it.each(unauthenticatedProtectedPaths)("login redirect identical with and without lp_locale for %s", async (path) => {
+    const baseline = authOutcome(await middleware(makeRequest(path)));
+    const withEn = authOutcome(await middleware(makeRequest(path, { localeCookie: "en" })));
+    const withNb = authOutcome(await middleware(makeRequest(path, { localeCookie: "nb" })));
+    const withInvalid = authOutcome(await middleware(makeRequest(path, { localeCookie: "xx" })));
+
+    expect(withEn).toEqual(baseline);
+    expect(withNb).toEqual(baseline);
+    expect(withInvalid).toEqual(baseline);
+    expect(baseline.status).toBe(303);
+    expect(baseline.location).toMatch(/^https:\/\/example\.com\/login\?/);
+    expect(baseline.mwRedirect).toBe("login");
+  });
+
+  it("API 401 gate identical with and without lp_locale cookie", async () => {
+    const baseline = authOutcome(await middleware(makeRequest("/api/orders")));
+    const withEn = authOutcome(await middleware(makeRequest("/api/orders", { localeCookie: "en" })));
+
+    expect(withEn).toEqual(baseline);
+    expect(baseline.status).toBe(401);
+    expect(baseline.mwApiAuth).toBe("401");
+  });
+
+  it("allowlisted API bypass identical with lp_locale cookie", async () => {
+    const baseline = authOutcome(await middleware(makeRequest("/api/onboarding/complete")));
+    const withEn = authOutcome(await middleware(makeRequest("/api/onboarding/complete", { localeCookie: "en" })));
+
+    expect(withEn).toEqual(baseline);
+    expect(baseline.status).toBe(200);
+    expect(baseline.mwBypass).toBe("allowlist");
+  });
+
+  it("authenticated protected route gate identical with lp_locale cookie", async () => {
+    const baseline = authOutcome(await middleware(makeRequest("/admin", { withSsrSession: true })));
+    const withEn = authOutcome(await middleware(makeRequest("/admin", { withSsrSession: true, localeCookie: "en" })));
+
+    expect(withEn).toEqual(baseline);
+    expect(baseline.status).toBe(200);
+    expect(baseline.mwUser).toBe("1");
   });
 });

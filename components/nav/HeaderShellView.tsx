@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ProfileMenu } from "@/components/nav/ProfileMenu";
+import LocaleSwitcher from "@/components/nav/LocaleSwitcher";
 import type { HeaderShellViewModel } from "@/lib/layout/globalHeaderFromCms";
 
 /** Production logo in public/ root (logo-pack SVG is a design template, not final artwork). */
@@ -92,6 +93,7 @@ export default function HeaderShellView({
               {email}
             </span>
           ) : null}
+          <LocaleSwitcher persistProfile={Boolean(email)} />
           <ProfileMenu email={email} />
         </div>
       </div>
