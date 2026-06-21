@@ -29,11 +29,14 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
     await selectProviderMenyTier(page, "Enterprise");
     await waitForProviderMenyVisualReady(page);
 
-    await expect(page.getByRole("heading", { name: "Premiumvalg" }).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Enterprise-upgrade" }).first()).toBeVisible();
+    await expect(page.locator(".lp-editor-topbar")).toBeVisible();
+    await expect(page.locator(".lp-editor-priceline")).toBeVisible();
+    await expect(page.locator(".lp-editor-status-strip")).toBeVisible();
+    await expect(page.locator(".lp-editor-prem").first()).toBeVisible();
+    await expect(page.getByText("Enterprise-upgrade").first()).toBeVisible();
     // Fixture stub (not live Sanity): Tue override+locked day from buildProviderMenyVisualMenuDaysResponse()
     await expect(page.getByText("Kyllinggryte")).toBeVisible();
-    await expect(page.getByText("14 ansatte har bestilt")).toBeVisible();
+    await expect(page.getByText(/14 porsjoner/)).toBeVisible();
 
     await expect(providerMenyEditorRootLocator(page)).toHaveScreenshot(
       `provider-meny-enterprise-${testInfo.project.name}.png`,
@@ -46,8 +49,8 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
     await selectProviderMenyTier(page, "Basis");
     await waitForProviderMenyVisualReady(page);
 
-    await expect(page.getByRole("heading", { name: "Premiumvalg" })).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Enterprise-upgrade" })).toHaveCount(0);
+    await expect(page.locator(".lp-editor-prem")).toHaveCount(0);
+    await expect(page.getByText("Enterprise-upgrade")).toHaveCount(0);
 
     await expect(providerMenyEditorRootLocator(page)).toHaveScreenshot(
       `provider-meny-basis-${testInfo.project.name}.png`,

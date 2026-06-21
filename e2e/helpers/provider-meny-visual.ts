@@ -220,6 +220,7 @@ export async function waitForProviderMenyVisualReady(page: Page): Promise<void> 
     timeout: 20_000,
   });
   await expect(page.locator(".lp-editor-layout")).not.toHaveClass(/is-week-loading/);
+  await page.locator(".lp-editor-priceline").waitFor({ state: "visible", timeout: 20_000 });
   await waitForFontsReady(page);
   await page.evaluate(() => {
     document.documentElement.classList.add("lp-provider-meny-visual-regression");
