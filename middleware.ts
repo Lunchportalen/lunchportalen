@@ -5,6 +5,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isLocalDevAuthenticatedRequest } from "@/lib/auth/localDevBypassCookie";
+import { LP_LOCALE_COOKIE, resolveLocaleFromCookie } from "@/lib/i18n/middlewareLocale";
 import { isApiAuthAllowlisted } from "@/lib/server/auth/apiAllowlist";
 import { updateSession } from "@/lib/supabase/proxy";
 
@@ -95,6 +96,7 @@ export async function middleware(req: NextRequest) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-pathname", pathname);
     requestHeaders.set("x-url", req.nextUrl.href);
+    requestHeaders.set("x-lp-locale", resolveLocaleFromCookie(req.cookies.get(LP_LOCALE_COOKIE)?.value));
     const res = NextResponse.next({ request: { headers: requestHeaders } });
     res.headers.set("x-lp-mw", "1");
     res.headers.set("x-lp-mw-bypass", "1");
@@ -104,6 +106,7 @@ export async function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", pathname);
   requestHeaders.set("x-url", req.nextUrl.href);
+  requestHeaders.set("x-lp-locale", resolveLocaleFromCookie(req.cookies.get(LP_LOCALE_COOKIE)?.value));
 
   /**
    * API auth: explicit allowlist only — all other /api/* require session (fail-closed 401 JSON).

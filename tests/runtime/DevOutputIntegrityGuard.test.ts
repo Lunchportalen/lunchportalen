@@ -4,7 +4,7 @@ import {
   PHASE_PRODUCTION_BUILD,
   PHASE_PRODUCTION_SERVER,
 } from "next/constants";
-import nextConfig from "@/next.config";
+import { buildNextConfig } from "@/next.config";
 import {
   NEXT_BUILD_DIST_DIR,
   NEXT_DEV_DIST_DIR,
@@ -20,8 +20,8 @@ describe("Dev output integrity guard", () => {
   });
 
   it("wires the same distDir strategy through next.config", () => {
-    expect(nextConfig(PHASE_DEVELOPMENT_SERVER).distDir).toBe(NEXT_DEV_DIST_DIR);
-    expect(nextConfig(PHASE_PRODUCTION_BUILD).distDir).toBe(NEXT_BUILD_DIST_DIR);
-    expect(nextConfig(PHASE_PRODUCTION_SERVER).distDir).toBe(NEXT_BUILD_DIST_DIR);
+    expect(buildNextConfig(PHASE_DEVELOPMENT_SERVER).distDir).toBe(NEXT_DEV_DIST_DIR);
+    expect(buildNextConfig(PHASE_PRODUCTION_BUILD).distDir).toBe(NEXT_BUILD_DIST_DIR);
+    expect(buildNextConfig(PHASE_PRODUCTION_SERVER).distDir).toBe(NEXT_BUILD_DIST_DIR);
   });
 });

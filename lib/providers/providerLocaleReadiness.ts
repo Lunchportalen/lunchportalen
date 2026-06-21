@@ -32,10 +32,10 @@ export const PROVIDER_LOCALE_READINESS: readonly LocaleReadinessRow[] = [
   },
   {
     scope: "User/profile",
-    fieldExists: false,
+    fieldExists: true,
     proposedField: "profiles.preferred_locale",
     usage: "Personlig UI-språk (overstyrer company default)",
-    storableNow: false,
+    storableNow: true,
   },
   {
     scope: "Invoice",

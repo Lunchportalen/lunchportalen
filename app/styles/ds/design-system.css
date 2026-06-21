@@ -2305,3 +2305,27 @@ main{
     transform: rotate(180deg);
   }
 }
+
+/* Global locale switcher (Fase 2 i18n foundation) */
+.ds-locale-switcher {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ds-locale-switcher__select {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  background: #fff;
+  color: var(--ds-text, #111);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ds-locale-switcher__select:focus-visible {
+  outline: 3px solid var(--ds-accent);
+  outline-offset: 3px;
+}

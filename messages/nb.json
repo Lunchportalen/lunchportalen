@@ -1,0 +1,15 @@
+{
+  "common": {
+    "loading": "Laster …",
+    "save": "Lagre",
+    "language": "Språk"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English"
+  },
+  "localeSwitcher": {
+    "label": "Velg språk",
+    "current": "Gjeldende språk: {language}"
+  }
+}
