@@ -215,18 +215,19 @@ export async function navigateToProviderMeny(page: Page): Promise<void> {
 export async function waitForProviderMenyVisualReady(page: Page): Promise<void> {
   await page.locator(".lp-editor-root").waitFor({ state: "visible", timeout: 20_000 });
   await page.locator(".lp-editor-days").waitFor({ state: "visible", timeout: 20_000 });
-  await page.locator(".lp-editor-package-card.is-active").waitFor({
+  await page.locator(".lp-editor-tier-lens__btn.is-active").waitFor({
     state: "visible",
     timeout: 20_000,
   });
   await expect(page.locator(".lp-editor-layout")).not.toHaveClass(/is-week-loading/);
+  await page.locator(".lp-editor-priceline-compact").waitFor({ state: "visible", timeout: 20_000 });
   await waitForFontsReady(page);
   await page.evaluate(() => {
     document.documentElement.classList.add("lp-provider-meny-visual-regression");
   });
   if (process.env.LP_PROVIDER_MENY_VISUAL_GATE_PROBE === "1") {
     await page.addStyleTag({
-      content: ".lp-editor-command-header__title { color: #ff0055 !important; }",
+      content: ".lp-editor-page-head__title { color: #ff0055 !important; }",
     });
   }
   await page.waitForTimeout(150);
@@ -234,7 +235,7 @@ export async function waitForProviderMenyVisualReady(page: Page): Promise<void> 
 
 export async function selectProviderMenyTier(page: Page, tierLabel: string): Promise<void> {
   const tab = page
-    .locator(".lp-editor-command-header__packages")
+    .locator(".lp-editor-tier-lens")
     .getByRole("tab", { name: new RegExp(tierLabel, "i") });
   await tab.first().waitFor({ state: "visible", timeout: 10_000 });
   await tab.first().click();
