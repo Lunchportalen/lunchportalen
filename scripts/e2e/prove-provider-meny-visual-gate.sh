@@ -18,8 +18,8 @@ fi
 
 cp "$CSS_FILE" "${CSS_FILE}.gate-prove.bak"
 
-# Deliberate visible delta (not byte-identical) on lp-editor namespace
-printf '\n%s\n.lp-editor-root { outline: 1px solid #ff0055; }\n' "$MARKER" >> "$CSS_FILE"
+# Deliberate visible delta on lp-editor namespace (must exceed screenshot diff threshold)
+printf '\n%s\n.lp-editor-command-header__title { color: #ff0055 !important; }\n' "$MARKER" >> "$CSS_FILE"
 
 echo "::group::Visual e2e with deliberate CSS delta (expect FAIL)"
 set +e
