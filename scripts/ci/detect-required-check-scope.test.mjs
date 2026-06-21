@@ -35,6 +35,13 @@ assert.equal(
   ),
   true,
 );
+assert.equal(
+  isCheckPathTouched(
+    ["components/providers/ProviderMenyEditorShell.tsx"],
+    REQUIRED_CHECK_PATH_CONFIG.provider_meny_visual.paths,
+  ),
+  true,
+);
 assert.equal(isCheckPathTouched(["docs/foo.md"], REQUIRED_CHECK_PATH_CONFIG.build.paths), false);
 assert.equal(
   isCheckPathTouched(["umbraco17/foo.cs"], REQUIRED_CHECK_PATH_CONFIG.build.paths),
