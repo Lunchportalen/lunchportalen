@@ -5,6 +5,12 @@ import { resolveNextDistDir } from "./lib/runtime/nextOutput";
 
 const withNextIntl = createNextIntlPlugin();
 
+/** Keep ORT native binaries out of Vercel serverless traces (250 MB cap). */
+const ONNX_TRACE_EXCLUDES = [
+  "node_modules/onnxruntime-node/**",
+  "node_modules/onnxruntime-common/**",
+] as const;
+
 const sharedConfig: NextConfig = {
   typescript: {
     // Typecheck kjøres som egen enterprise gate før build.
@@ -17,10 +23,7 @@ const sharedConfig: NextConfig = {
   /** Native ORT binaries are huge; keep them out of Vercel serverless traces (250 MB cap). */
   serverExternalPackages: ["onnxruntime-node"],
   outputFileTracingExcludes: {
-    "/*": [
-      "node_modules/onnxruntime-node/**",
-      "node_modules/onnxruntime-common/**",
-    ],
+    "/*": [...ONNX_TRACE_EXCLUDES],
   },
   async headers() {
     return [
@@ -181,7 +184,24 @@ function buildNextConfig(phase: string): NextConfig {
 
 export { buildNextConfig };
 
-export default withSentryConfig(withNextIntl(buildNextConfig), {
+type NextConfigExport = NextConfig | ((phase: string, defaultConfig: NextConfig) => NextConfig);
+
+/** Re-apply ONNX trace excludes after next-intl/Sentry wrappers (last writer wins). */
+function withTracingExcludes(cfg: NextConfigExport): NextConfigExport {
+  const inject = (c: NextConfig): NextConfig => ({
+    ...c,
+    outputFileTracingExcludes: {
+      ...(c.outputFileTracingExcludes ?? {}),
+      "/*": [...ONNX_TRACE_EXCLUDES],
+    },
+  });
+  if (typeof cfg === "function") {
+    return (phase: string, defaultConfig: NextConfig) => inject(cfg(phase, defaultConfig));
+  }
+  return inject(cfg);
+}
+
+const sentryWrapped = withSentryConfig(withNextIntl(buildNextConfig), {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -191,3 +211,5 @@ export default withSentryConfig(withNextIntl(buildNextConfig), {
     deleteSourcemapsAfterUpload: true,
   },
 });
+
+export default withTracingExcludes(sentryWrapped);
