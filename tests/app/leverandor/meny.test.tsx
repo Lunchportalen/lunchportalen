@@ -39,46 +39,42 @@ describe("ProviderMenuBuilder workspace layout", () => {
     );
   });
 
-  test("renders command header with shared warm dish package copy", async () => {
+  test("renders command header with tier lens and priceline", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("lp-editor-command-header");
-    expect(html).toContain("lp-editor-package-card");
-    expect(html).toContain("Påsmurt · Salatboks · Dagens varmrett");
-    expect(html).toContain("Basis + Sushi · Poké · Thai");
-    expect(html).toContain("Samme varmrett + ekstra verdi");
-    expect(html).toContain("Én felles varmrett per dag");
-    expect(html).toContain("Ikke egen produksjonsrett");
+    expect(html).toContain("lp-editor-tier-lens");
+    expect(html).toContain("lp-editor-status-strip");
+    expect(html).toContain("Meny · ukeplanlegger");
+    expect(html).toContain("Felles varmrett genereres automatisk");
   });
 
-  test("renders full-width workspace with planner and inspector", async () => {
+  test("renders dual-panel workspace with week grid", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("lp-editor-layout");
     expect(html).toContain("lp-editor-days");
-    expect(html).toContain("lp-editor-inspector");
-    expect(html).toContain("lp-editor-cockpit");
+    expect(html).toContain("lp-editor-panels");
+    expect(html).toContain("lp-editor-panel--varmrett");
     expect(html).toContain("Mandag");
-    expect(html).toContain("Velg en dag");
     expect(html).not.toContain("Pad Thai nudler");
   });
 
-  test("day card renders one shared warm dish per day", async () => {
+  test("day card renders mockup-aligned structure", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain("lp-editor-day__hero");
-    expect(html).toContain("Dagens varmrett");
-    expect(html).toContain("Én felles varmrett");
+    expect(html).toContain("lp-editor-day__name");
+    expect(html).toContain("lp-editor-day__catline");
+    expect(html).toContain("lp-editor-day__editbtn");
     expect(html).toContain("Varmrett mangler");
     expect(html).toContain("Legg inn dagens varmrett før denne dagen kan publiseres.");
   });
 
-  test("empty inspector guides shared warm dish vs upgrade", async () => {
+  test("panel idle guides day selection", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain('data-state="closed"');
-    expect(html).toContain("Klikk varmrett eller valg i ukeplanen");
-    expect(html).toContain("is-inspector-idle");
+    expect(html).toContain("lp-editor-panel__idle");
+    expect(html).toContain("Klikk en dag i ukeplanen");
   });
 
   test("workspace components separated in source", () => {
@@ -89,8 +85,9 @@ describe("ProviderMenuBuilder workspace layout", () => {
 
   test("week planner uses shared warm dish read-model", () => {
     const planner = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuWeekPlanner.tsx"), "utf8");
-    expect(planner).toContain("SHARED_WARM_DISH_HINT");
+    expect(planner).toContain("getWeekdayCategoryPin");
     expect(planner).toContain("enterprise-upgrade");
+    expect(planner).toContain("lp-editor-day__lockbar");
     expect(planner).not.toContain("ds-provider-menu-day__variant-row");
     expect(planner).not.toMatch(/varmmrett/i);
   });
@@ -105,6 +102,8 @@ describe("ProviderMenuBuilder workspace layout", () => {
     expect(editor).toContain("Rediger manuelt");
     expect(editor).toContain("Enterprise bygger på samme Varmrett");
     expect(editor).toContain("isEnterpriseUpgradeMode");
+    expect(editor).toContain("lp-editor-panel-varmrett");
+    expect(editor).toContain("Lunchportalen 5 %");
     expect(editor).not.toMatch(/varmmrett/i);
   });
 
@@ -125,9 +124,10 @@ describe("ProviderMenuBuilder workspace layout", () => {
 });
 
 describe("LeverandorMenyPage full-width frame", () => {
-  test("page uses full-width workspace wrapper not narrow ds-container", () => {
+  test("page uses editor shell and full-width wrapper", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/meny/page.tsx"), "utf8");
     expect(source).toContain("lp-editor-page");
+    expect(source).toContain("ProviderMenyEditorShell");
     expect(source).not.toContain("ds-container");
   });
 });

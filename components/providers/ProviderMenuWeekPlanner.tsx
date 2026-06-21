@@ -3,10 +3,10 @@
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
+import { getWeekdayCategoryPin } from "@/lib/menu-publish/generateWeekMenu";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import {
   summarizeDayCard,
-  SHARED_WARM_DISH_HINT,
   ENTERPRISE_UPGRADE_SELECTION_KEY,
   type EditorFocus,
   type WorkspaceStatusChip,
@@ -32,14 +32,26 @@ type Props = {
   onSelect: (sel: WeekSelection) => void;
 };
 
-function dayStatusClass(chip: WorkspaceStatusChip): string {
-  return `lp-editor-day__status is-${chip}`;
-}
+const ENTERPRISE_UPGRADE_DELTA = 40;
+
+const CATEGORY_PIN_META: Record<
+  string,
+  { label: string; classSuffix: string; icon: string }
+> = {
+  suppe: { label: "Suppe", classSuffix: "suppe", icon: "🍲" },
+  fisk: { label: "Fisk", classSuffix: "fish", icon: "🐟" },
+  fredagskos: { label: "Fredagskos", classSuffix: "fri", icon: "🎉" },
+};
 
 function formatDisplayDate(iso: string): string {
   const [y, m, d] = iso.split("-");
   if (!y || !m || !d) return iso;
   return `${d}.${m}`;
+}
+
+function catRowState(chip: WorkspaceStatusChip): "done" | "todo" {
+  if (chip === "published" || chip === "fixed") return "done";
+  return "todo";
 }
 
 export default function ProviderMenuWeekPlanner({
@@ -63,15 +75,14 @@ export default function ProviderMenuWeekPlanner({
           const varmrett = card.varmrett;
           const varmrettRow = varmrett.rows[0];
           const varmrettMissing = varmrett.statusChip === "missing";
-          const varmrettSelected =
-            selected?.date === date &&
-            selected.category === "varmrett" &&
-            selected.editorFocus !== "enterprise-upgrade";
           const varmrettSlot = varmrett.slot;
           const varmrettOrderLocked = varmrettSlot?.orderLocked === true;
           const varmrettOrderCount = orderCountsByDate[date] ?? 0;
           const isFriday = WEEKDAY_KEYS[idx] === "fri";
-          // Badge precedence: orderLocked > providerOverride > autoFilled
+          const isDaySelected = selected?.date === date;
+          const pinTag = getWeekdayCategoryPin(idx);
+          const pinMeta = pinTag ? CATEGORY_PIN_META[pinTag] : null;
+
           const showGeneratedBadge =
             !varmrettMissing &&
             !varmrettOrderLocked &&
@@ -83,151 +94,182 @@ export default function ProviderMenuWeekPlanner({
             menuSlotHasContent(varmrettSlot) && varmrettSlot.estimatedCostPerPortion != null
               ? `Kost ${varmrettSlot.estimatedCostPerPortion} kr`
               : null;
-          const upgradeSelected =
-            selected?.date === date && selected.editorFocus === "enterprise-upgrade";
+
+          const allergensText = varmrettSlot?.allergensText?.trim() ?? "";
+          const allergenNote = varmrettOrderLocked
+            ? "Åpnes for endring når levert"
+            : allergensText
+              ? `Allergener: ${allergensText}`
+              : "Allergener ikke bekreftet — kontakt leverandør";
+
+          const premiumLabels = card.premiumGroups.map((g) => g.categoryLabel);
+          const premiumCount = card.premiumGroups.reduce((sum, g) => sum + g.variantCount, 0);
+          const premiumDone =
+            card.premiumGroups.length > 0 &&
+            card.premiumGroups.every((g) => catRowState(g.statusChip) === "done");
+
+          const upgradeDone =
+            card.enterpriseUpgrade != null && catRowState(card.enterpriseUpgrade.statusChip) === "done";
+
+          function selectDay(focus: EditorFocus = "varmrett") {
+            onSelect({
+              date,
+              category: focus === "enterprise-upgrade" ? "varmrett" : "varmrett",
+              variantKey: focus === "enterprise-upgrade" ? ENTERPRISE_UPGRADE_SELECTION_KEY : "varmrett",
+              variantLabel: varmrettRow?.title,
+              editorFocus: focus,
+            });
+          }
+
+          function selectCategory(category: Category) {
+            onSelect({ date, category, editorFocus: "category" });
+          }
 
           return (
-            <article key={date} className={`lp-editor-day is-${card.dayStatus}`}>
-              <header className="lp-editor-day__head">
-                <div>
-                  <h3 className="lp-editor-day__weekday">{weekdayLabel}</h3>
-                  <time className="lp-editor-day__date" dateTime={date}>
-                    {formatDisplayDate(date)}
-                  </time>
-                </div>
-                <span className={dayStatusClass(card.dayStatus)}>{card.dayStatusLabel}</span>
-              </header>
-
-              <button
-                type="button"
-                className={`lp-editor-day__hero${varmrettSelected ? " is-selected" : ""}${varmrettMissing ? " is-missing" : ""}`}
-                onClick={() =>
-                  onSelect({
-                    date,
-                    category: "varmrett",
-                    variantKey: "varmrett",
-                    variantLabel: varmrettRow?.title,
-                    editorFocus: "varmrett",
-                  })
+            <article
+              key={date}
+              className={`lp-editor-day${isDaySelected ? " is-selected" : ""}${varmrettMissing ? " is-missing" : ""}${varmrettOrderLocked ? " is-locked" : ""}`}
+              onClick={() => selectDay("varmrett")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  selectDay("varmrett");
                 }
-              >
-                <span className="lp-editor-day__hero-label">Dagens varmrett</span>
-                <span className="lp-editor-day__hero-shared">{SHARED_WARM_DISH_HINT}</span>
+              }}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isDaySelected}
+              aria-label={`${weekdayLabel} ${formatDisplayDate(date)}`}
+            >
+              <div className="lp-editor-day__top">
+                <span className="lp-editor-day__weekday">{weekdayLabel}</span>
+                <time className="lp-editor-day__date" dateTime={date}>
+                  {formatDisplayDate(date)}
+                </time>
+              </div>
+
+              {pinMeta ? (
+                <span className={`lp-editor-day__pin lp-editor-day__pin--${pinMeta.classSuffix}`}>
+                  <span aria-hidden="true">{pinMeta.icon}</span>
+                  {pinMeta.label}
+                </span>
+              ) : (
+                <div className="lp-editor-day__eyebrow">Dagens varmrett</div>
+              )}
+
+              <div className="lp-editor-day__hero">
                 {varmrettMissing ? (
                   <>
-                    <span className="lp-editor-day__hero-title">Varmrett mangler</span>
-                    <span className="lp-editor-day__hero-hint">
+                    <div className="lp-editor-day__name">Varmrett mangler</div>
+                    <p className="lp-editor-day__hint">
                       Legg inn dagens varmrett før denne dagen kan publiseres.
-                    </span>
+                    </p>
                   </>
                 ) : (
                   <>
-                    <span className="lp-editor-day__hero-title">{varmrettRow?.title ?? "Varmrett"}</span>
-                    {showGeneratedBadge ? (
-                      <span
-                        className={`lp-editor-badge${isFriday ? " is-friday" : " is-generated"}`}
-                      >
-                        {isFriday ? "Fredagskos" : "Generert"}
-                      </span>
-                    ) : null}
-                    {showOverrideBadge ? (
-                      <span className="lp-editor-badge is-overridden">Overstyrt</span>
-                    ) : null}
-                    {varmrettOrderLocked ? (
-                      <span className="lp-editor-order-lock lp-editor-day__order-lock">
-                        <span className="lp-editor-order-lock__icon" aria-hidden="true">🔒</span>
-                        <span className="lp-editor-order-lock__text">Har bestilling</span>
-                      </span>
-                    ) : null}
-                    {varmrettOrderLocked && varmrettOrderCount > 0 ? (
-                      <span className="lp-editor-day__order-count">
-                        {varmrettOrderCount} ansatte har bestilt
-                      </span>
-                    ) : null}
-                    {varmrettOrderLocked ? (
-                      <span className="lp-editor-day__lock-hint">Åpnes etter serveringsdagen</span>
-                    ) : null}
-                    {costHint ? <span className="lp-editor-day__hero-meta">{costHint}</span> : null}
-                    <span className="lp-editor-day__hero-status">{varmrett.statusLabel}</span>
+                    <div className="lp-editor-day__name">{varmrettRow?.title ?? "Varmrett"}</div>
+                    <div className="lp-editor-day__sub">
+                      {showGeneratedBadge ? (
+                        <span
+                          className={`lp-editor-badge lp-editor-day__badge${isFriday ? " is-friday" : " is-generated"}`}
+                        >
+                          {isFriday ? "Fredagskos" : "Generert"}
+                        </span>
+                      ) : null}
+                      {showOverrideBadge ? (
+                        <span className="lp-editor-badge lp-editor-day__badge is-overridden">Overstyrt</span>
+                      ) : null}
+                      {costHint ? <span className="lp-editor-day__kost">{costHint}</span> : null}
+                    </div>
                   </>
                 )}
-                <span className="lp-editor-day__hero-action">{varmrettMissing ? "Legg inn" : "Rediger"}</span>
-              </button>
+              </div>
 
-              {card.fixedGroups.length > 0 ? (
-                <section className="lp-editor-day__group">
-                  <h4 className="lp-editor-day__group-title">Faste valg</h4>
-                  <ul className="lp-editor-day__group-list">
-                    {card.fixedGroups.map((group) => {
-                      const groupSelected =
-                        selected?.date === date && selected.category === group.category && !selected.variantKey;
-                      return (
-                        <li key={`${date}-${group.category}`}>
-                          <button
-                            type="button"
-                            className={`lp-editor-day__group-row${groupSelected ? " is-selected" : ""}`}
-                            onClick={() => onSelect({ date, category: group.category, editorFocus: "category" })}
-                          >
-                            <span className="lp-editor-day__group-name">{group.categoryLabel}</span>
-                            <span className="lp-editor-day__group-detail">{group.summaryLine}</span>
-                            <span className="lp-editor-day__group-action">Åpne</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
+              {varmrettOrderLocked ? (
+                <div className="lp-editor-day__lockbar" role="status">
+                  <span aria-hidden="true">🔒</span>
+                  Har bestilling · {varmrettOrderCount > 0 ? `${varmrettOrderCount} porsjoner` : "låst"}
+                </div>
               ) : null}
 
-              {hasPremium && card.premiumGroups.length > 0 ? (
-                <section className="lp-editor-day__group lp-editor-day__group--premium">
-                  <h4 className="lp-editor-day__group-title">Premiumvalg</h4>
-                  <ul className="lp-editor-day__group-list">
-                    {card.premiumGroups.map((group) => {
-                      const groupSelected =
-                        selected?.date === date && selected.category === group.category && !selected.variantKey;
-                      return (
-                        <li key={`${date}-${group.category}`}>
-                          <button
-                            type="button"
-                            className={`lp-editor-day__group-row${groupSelected ? " is-selected" : ""}`}
-                            onClick={() => onSelect({ date, category: group.category, editorFocus: "category" })}
-                          >
-                            <span className="lp-editor-day__group-name">{group.categoryLabel}</span>
-                            <span className="lp-editor-day__group-detail">{group.summaryLine}</span>
-                            <span className="lp-editor-day__group-action">Åpne</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ) : null}
+              <div className="lp-editor-day__catline">
+                {card.fixedGroups.map((group) => {
+                  const done = catRowState(group.statusChip) === "done";
+                  return (
+                    <button
+                      key={`${date}-${group.category}`}
+                      type="button"
+                      className={`lp-editor-day__catrow${done ? " is-done" : " is-todo"}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectCategory(group.category);
+                      }}
+                    >
+                      <span className="lp-editor-day__catrow-icon" aria-hidden="true">
+                        {done ? "✓" : "+"}
+                      </span>
+                      <span className="lp-editor-day__catrow-label">{group.categoryLabel}</span>
+                      <span className="lp-editor-day__catrow-n">{group.variantCount}</span>
+                    </button>
+                  );
+                })}
 
-              {tier === "ENTERPRISE" && card.enterpriseUpgrade ? (
-                <section className="lp-editor-day__group lp-editor-day__group--enterprise">
-                  <h4 className="lp-editor-day__group-title">Enterprise-upgrade</h4>
+                {hasPremium && card.premiumGroups.length > 0 ? (
                   <button
                     type="button"
-                    className={`lp-editor-day__upgrade-row${upgradeSelected ? " is-selected" : ""}`}
-                    onClick={() =>
-                      onSelect({
-                        date,
-                        category: "varmrett",
-                        variantKey: ENTERPRISE_UPGRADE_SELECTION_KEY,
-                        variantLabel: card.enterpriseUpgrade?.summaryLine,
-                        editorFocus: "enterprise-upgrade",
-                      })
-                    }
+                    className={`lp-editor-day__catrow lp-editor-prem${premiumDone ? " is-done" : " is-todo"}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const first = card.premiumGroups[0];
+                      if (first) selectCategory(first.category);
+                    }}
                   >
-                    <span className="lp-editor-day__upgrade-title">
-                      {card.enterpriseUpgrade.summaryLine}
+                    <span className="lp-editor-day__catrow-icon" aria-hidden="true">
+                      {premiumDone ? "✓" : "+"}
                     </span>
-                    <span className="lp-editor-day__group-action">Åpne</span>
-                    <span className="lp-editor-day__upgrade-hint">Samme rett + ekstra verdi</span>
+                    <span className="lp-editor-day__catrow-label">
+                      {premiumLabels.join(" · ")}
+                    </span>
+                    <span className="lp-editor-day__catrow-n">{premiumCount}</span>
                   </button>
-                </section>
-              ) : null}
+                ) : null}
+
+                {tier === "ENTERPRISE" && card.enterpriseUpgrade ? (
+                  <button
+                    type="button"
+                    className={`lp-editor-day__catrow lp-editor-prem lp-editor-day__catrow--upgrade${upgradeDone ? " is-done" : " is-todo"}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectDay("enterprise-upgrade");
+                    }}
+                  >
+                    <span className="lp-editor-day__catrow-icon" aria-hidden="true">
+                      {upgradeDone ? "✓" : "+"}
+                    </span>
+                    <span className="lp-editor-day__catrow-label">Enterprise-upgrade</span>
+                    <span className="lp-editor-day__catrow-n">+{ENTERPRISE_UPGRADE_DELTA}</span>
+                  </button>
+                ) : null}
+              </div>
+
+              <p className="lp-editor-day__allerg">
+                <span aria-hidden="true">ℹ</span>
+                {allergenNote}
+              </p>
+
+              <button
+                type="button"
+                className={`lp-editor-day__editbtn${varmrettOrderLocked ? " is-locked" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectDay(
+                    varmrettOrderLocked ? "varmrett" : selected?.date === date ? "varmrett" : "varmrett",
+                  );
+                }}
+              >
+                <span aria-hidden="true">{varmrettOrderLocked ? "👁" : "✎"}</span>
+                {varmrettMissing ? "Legg inn" : varmrettOrderLocked ? "Se dag" : "Rediger dag"}
+              </button>
             </article>
           );
         })}
