@@ -56,6 +56,11 @@ on:
         required: false
         type: boolean
         default: false
+      prove_gate_bite:
+        description: "Prove gate bites: deliberate lp-editor CSS delta → RED → revert → GREEN."
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-provider-meny-visual-${{ github.ref }}
@@ -216,6 +221,11 @@ jobs:
             echo "::endgroup::"
           fi
           exit $EXIT
+
+      - name: Prove visual gate bites (optional)
+        if: github.event_name == 'workflow_dispatch' && inputs.prove_gate_bite == true
+        shell: bash
+        run: bash scripts/e2e/prove-provider-meny-visual-gate.sh
 
       - name: Dump full server log on failure
         if: failure()
