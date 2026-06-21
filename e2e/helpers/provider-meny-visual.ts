@@ -228,10 +228,12 @@ export async function waitForProviderMenyVisualReady(page: Page): Promise<void> 
 }
 
 export async function selectProviderMenyTier(page: Page, tierLabel: string): Promise<void> {
-  const tab = page.getByRole("tab", { name: new RegExp(tierLabel, "i") });
-  await tab.waitFor({ state: "visible", timeout: 10_000 });
-  await tab.click();
-  await expect(tab).toHaveAttribute("aria-selected", "true");
+  const tab = page
+    .locator(".lp-editor-command-header__packages")
+    .getByRole("tab", { name: new RegExp(tierLabel, "i") });
+  await tab.first().waitFor({ state: "visible", timeout: 10_000 });
+  await tab.first().click();
+  await expect(tab.first()).toHaveAttribute("aria-selected", "true");
   await page.waitForTimeout(100);
 }
 

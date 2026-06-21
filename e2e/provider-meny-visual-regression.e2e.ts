@@ -29,8 +29,8 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
     await selectProviderMenyTier(page, "Enterprise");
     await waitForProviderMenyVisualReady(page);
 
-    await expect(page.getByText("Premiumvalg")).toBeVisible();
-    await expect(page.getByText("Enterprise-upgrade")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Premiumvalg" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Enterprise-upgrade" }).first()).toBeVisible();
 
     await expect(providerMenyEditorRootLocator(page)).toHaveScreenshot(
       `provider-meny-enterprise-${testInfo.project.name}.png`,
@@ -43,8 +43,8 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
     await selectProviderMenyTier(page, "Basis");
     await waitForProviderMenyVisualReady(page);
 
-    await expect(page.getByText("Premiumvalg")).toHaveCount(0);
-    await expect(page.getByText("Enterprise-upgrade")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Premiumvalg" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Enterprise-upgrade" })).toHaveCount(0);
 
     await expect(providerMenyEditorRootLocator(page)).toHaveScreenshot(
       `provider-meny-basis-${testInfo.project.name}.png`,
