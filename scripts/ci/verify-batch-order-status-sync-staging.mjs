@@ -8,6 +8,7 @@ import pg from "pg";
 import {
   SMOKE_COMPANY_ID,
   SMOKE_LOCATION_ID,
+  SMOKE_ORDER_DATE,
   SMOKE_EMPLOYEE_A1,
   SMOKE_KITCHEN_USER_A,
   SMOKE_DRIVER_USER_A,
@@ -80,10 +81,9 @@ try {
     process.exit(1);
   }
 
-  const oslo = (
-    await client.query(`select public.oslo_today()::text as d, public.oslo_time()::text as t`)
-  ).rows[0];
-  const orderDate = oslo.d;
+  const oslo = (await client.query(`select public.oslo_time()::text as t`)).rows[0];
+  // Deterministic fixture date (seeded menu on staging) — not oslo_today() (weekends/holidays have no menu).
+  const orderDate = SMOKE_ORDER_DATE;
 
   await ensureProviderMemberships(SMOKE_LOCATION_ID);
 
