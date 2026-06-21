@@ -39,55 +39,70 @@ describe("ProviderMenuBuilder workspace layout", () => {
     );
   });
 
-  test("renders command header with tier lens and priceline", async () => {
+  test("renders command header with shared warm dish package copy", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("lp-editor-command-header");
-    expect(html).toContain("lp-editor-tier-lens");
-    expect(html).toContain("lp-editor-status-strip");
-    expect(html).toContain("Meny · ukeplanlegger");
-    expect(html).toContain("Felles varmrett genereres automatisk");
+    expect(html).toContain("lp-editor-package-card");
+    expect(html).toContain("Påsmurt · Salatboks · Dagens varmrett");
+    expect(html).toContain("Basis + Sushi · Poké · Thai");
+    expect(html).toContain("Samme varmrett + ekstra verdi");
+    expect(html).toContain("Én felles varmrett per dag");
+    expect(html).toContain("Ikke egen produksjonsrett");
   });
 
-  test("renders dual-panel workspace with week grid", async () => {
+  test("renders full-width workspace with planner and inspector", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("lp-editor-layout");
     expect(html).toContain("lp-editor-days");
-    expect(html).toContain("lp-editor-panels");
-    expect(html).toContain("lp-editor-panel--varmrett");
+    expect(html).toContain("lp-editor-inspector");
+    expect(html).toContain("lp-editor-cockpit");
+    expect(html).toContain("lp-editor-package-card");
     expect(html).toContain("Mandag");
+    expect(html).toContain("Velg en dag");
+    expect(html).not.toContain("lp-editor-priceline");
+    expect(html).not.toContain("lp-editor-panels");
+    expect(html).not.toContain("lp-editor-tier-lens");
     expect(html).not.toContain("Pad Thai nudler");
   });
 
-  test("day card renders mockup-aligned structure", async () => {
+  test("day card renders one shared warm dish per day", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain("lp-editor-day__name");
-    expect(html).toContain("lp-editor-day__catline");
-    expect(html).toContain("lp-editor-day__editbtn");
+    expect(html).toContain("lp-editor-day__hero");
+    expect(html).toContain("Dagens varmrett");
+    expect(html).toContain("Én felles varmrett");
     expect(html).toContain("Varmrett mangler");
     expect(html).toContain("Legg inn dagens varmrett før denne dagen kan publiseres.");
   });
 
-  test("panel idle guides day selection", async () => {
+  test("empty inspector guides shared warm dish vs upgrade", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain("lp-editor-panel__idle");
-    expect(html).toContain("Klikk en dag i ukeplanen");
+    expect(html).toContain('data-state="closed"');
+    expect(html).toContain("Klikk varmrett eller valg i ukeplanen");
+    expect(html).toContain("is-inspector-idle");
   });
 
-  test("workspace components separated in source", () => {
+  test("builder has no #285 panel layout or auto-select", () => {
     const builder = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"), "utf8");
     expect(builder).toContain("resolveSharedVarmrettSlot");
     expect(builder).not.toContain("lp_order_set");
+    expect(builder).not.toContain("lp-editor-panels");
+    expect(builder).not.toContain("ProviderMenuCatalogEditor");
+    expect(builder).not.toContain("catalogPanelCategoryKey");
+    expect(builder).not.toContain("layoutMode=\"panel\"");
+    expect(builder).not.toMatch(/RID:/);
   });
 
   test("week planner uses shared warm dish read-model", () => {
     const planner = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuWeekPlanner.tsx"), "utf8");
-    expect(planner).toContain("getWeekdayCategoryPin");
+    expect(planner).toContain("SHARED_WARM_DISH_HINT");
     expect(planner).toContain("enterprise-upgrade");
-    expect(planner).toContain("lp-editor-day__lockbar");
+    expect(planner).toContain("Allergener ikke bekreftet — kontakt leverandør");
+    expect(planner).not.toContain("getWeekdayCategoryPin");
+    expect(planner).not.toContain("lp-editor-day__pin");
     expect(planner).not.toContain("ds-provider-menu-day__variant-row");
     expect(planner).not.toMatch(/varmmrett/i);
   });
@@ -102,8 +117,9 @@ describe("ProviderMenuBuilder workspace layout", () => {
     expect(editor).toContain("Rediger manuelt");
     expect(editor).toContain("Enterprise bygger på samme Varmrett");
     expect(editor).toContain("isEnterpriseUpgradeMode");
-    expect(editor).toContain("lp-editor-panel-varmrett");
-    expect(editor).toContain("Lunchportalen 5 %");
+    expect(editor).not.toContain("lp-editor-econ");
+    expect(editor).not.toContain("Lunchportalen 5 %");
+    expect(editor).not.toContain("layoutMode");
     expect(editor).not.toMatch(/varmmrett/i);
   });
 
@@ -124,10 +140,12 @@ describe("ProviderMenuBuilder workspace layout", () => {
 });
 
 describe("LeverandorMenyPage full-width frame", () => {
-  test("page uses provider shell wrapper inside sidebar layout", () => {
+  test("page uses provider shell with visible nav context", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/meny/page.tsx"), "utf8");
     expect(source).toContain("lp-editor-page");
     expect(source).toContain("ds-provider-meny-page");
+    expect(source).toContain("ds-provider-topbar");
+    expect(source).toContain('className="ds-h2">Meny</h1>');
     expect(source).not.toContain("ProviderMenyEditorShell");
     expect(source).not.toContain("ds-container");
   });
