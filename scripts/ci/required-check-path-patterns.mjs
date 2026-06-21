@@ -159,7 +159,6 @@ export const REQUIRED_CHECK_PATH_CONFIG = {
     paths: [
       "app/leverandor/meny/**",
       "components/providers/ProviderMenu*.tsx",
-      "components/providers/ProviderMeny*.tsx",
       "app/styles/ds/provider-menu-editor.css",
       "app/styles/ds/provider-admin.css",
       "app/api/provider/menu-days/**",

@@ -7,7 +7,6 @@ import "server-only";
 import { redirect } from "next/navigation";
 
 import ProviderMenuBuilder from "@/components/providers/ProviderMenuBuilder";
-import ProviderMenyEditorShell from "@/components/providers/ProviderMenyEditorShell";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
@@ -24,16 +23,9 @@ export default async function LeverandorMenyPage() {
   if (!canView) redirect("/leverandor");
 
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_kitchen");
-  const providerAdmin = ctx.role === "provider_admin";
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
-      <ProviderMenyEditorShell
-        providerName={provider.name}
-        userRole={ctx.role}
-        providerAdmin={providerAdmin}
-      />
-
       {canEdit ? (
         <ProviderMenuBuilder />
       ) : (

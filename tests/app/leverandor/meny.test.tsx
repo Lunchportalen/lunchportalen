@@ -124,10 +124,11 @@ describe("ProviderMenuBuilder workspace layout", () => {
 });
 
 describe("LeverandorMenyPage full-width frame", () => {
-  test("page uses editor shell and full-width wrapper", () => {
+  test("page uses provider shell wrapper inside sidebar layout", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/meny/page.tsx"), "utf8");
     expect(source).toContain("lp-editor-page");
-    expect(source).toContain("ProviderMenyEditorShell");
+    expect(source).toContain("ds-provider-meny-page");
+    expect(source).not.toContain("ProviderMenyEditorShell");
     expect(source).not.toContain("ds-container");
   });
 });
