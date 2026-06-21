@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   filterRecipientsForSend,
@@ -26,8 +26,32 @@ describe("menuWeekOpeningCore", () => {
   test("weekOpeningEventKey er mandag uke 3", () => {
     const now = new Date("2026-03-26T14:05:00+01:00");
     const mon = weekOpeningThirdWeekMonday(now);
-    expect(mon).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(mon).toBe("2026-04-06");
     expect(weekOpeningEventKey(now)).toBe(mon);
+  });
+
+  test("weekOpeningThirdWeekMonday honorerer injisert now (ulike mandager)", () => {
+    const marchThu = new Date("2026-03-26T14:05:00+01:00");
+    const aprilThu = new Date("2026-04-23T14:05:00+02:00");
+    expect(weekOpeningThirdWeekMonday(marchThu)).toBe("2026-04-06");
+    expect(weekOpeningThirdWeekMonday(aprilThu)).toBe("2026-05-04");
+    expect(weekOpeningThirdWeekMonday(marchThu)).not.toBe(weekOpeningThirdWeekMonday(aprilThu));
+  });
+
+  describe("weekOpeningThirdWeekMonday — now uavhengig av systemtid", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-01-01T12:00:00.000Z"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test("bruker now selv når wall clock avviker", () => {
+      const injected = new Date("2026-03-26T14:05:00+01:00");
+      expect(weekOpeningThirdWeekMonday(injected)).toBe("2026-04-06");
+    });
   });
 
   test("formatWeekRangeNo", () => {
