@@ -40,7 +40,7 @@ async function runDiagnosticsState(): Promise<{ systemState: SystemState; degrad
   try {
     const [total, active] = await Promise.all([
       admin.from("companies").select("id", { count: "exact", head: true }),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "active"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "ACTIVE"),
     ]);
     if (total.error || active.error) reasons.push("stats_unavailable");
   } catch {
@@ -56,10 +56,10 @@ async function refreshStatsSafe(): Promise<RepairResult> {
   try {
     const [total, active, pending, paused, closed] = await Promise.all([
       admin.from("companies").select("id", { count: "exact", head: true }),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "active"),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "paused"),
-      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "closed"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "ACTIVE"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "PENDING"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "PAUSED"),
+      admin.from("companies").select("id", { count: "exact", head: true }).eq("status", "CLOSED"),
     ]);
 
     if (total.error || active.error || pending.error || paused.error || closed.error) {
