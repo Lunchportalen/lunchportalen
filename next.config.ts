@@ -5,6 +5,12 @@ import { resolveNextDistDir } from "./lib/runtime/nextOutput";
 
 const withNextIntl = createNextIntlPlugin();
 
+/** Keep ORT native binaries out of Vercel serverless traces (250 MB cap). */
+const ONNX_TRACE_EXCLUDES = [
+  "node_modules/onnxruntime-node/**",
+  "node_modules/onnxruntime-common/**",
+] as const;
+
 const sharedConfig: NextConfig = {
   typescript: {
     // Typecheck kjøres som egen enterprise gate før build.
@@ -17,10 +23,10 @@ const sharedConfig: NextConfig = {
   /** Native ORT binaries are huge; keep them out of Vercel serverless traces (250 MB cap). */
   serverExternalPackages: ["onnxruntime-node"],
   outputFileTracingExcludes: {
-    "/*": [
-      "node_modules/onnxruntime-node/**",
-      "node_modules/onnxruntime-common/**",
-    ],
+    "/api/cron/autopilot": [...ONNX_TRACE_EXCLUDES],
+    "/api/superadmin/control-tower/autopilot": [...ONNX_TRACE_EXCLUDES],
+    "/api/revenue/autopilot": [...ONNX_TRACE_EXCLUDES],
+    "/api/autonomy/revenue": [...ONNX_TRACE_EXCLUDES],
   },
   async headers() {
     return [
