@@ -9,6 +9,10 @@ import type { NextRequest } from "next/server";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import {
+  detectMenuWeekOpeningNotifyAnomalies,
+  reportMenuWeekOpeningNotifyAnomalies,
+} from "@/lib/http/weekCronObservability";
 import { shouldRunMenuWeekOpeningNotify } from "@/lib/notifications/menuWeekOpeningCore";
 import { runMenuWeekOpeningEmailNotify } from "@/lib/notifications/menuWeekOpeningNotify";
 
@@ -41,7 +45,15 @@ export async function GET(req: Request) {
 
   try {
     const result = await runMenuWeekOpeningEmailNotify(now);
-    return jsonOk(rid, { ok: true, rid, ...result });
+    const anomalies = detectMenuWeekOpeningNotifyAnomalies(result, { onOpeningDay: true });
+    if (anomalies.length > 0) {
+      reportMenuWeekOpeningNotifyAnomalies("/api/cron/menu-week-opening-notify", rid, result, anomalies);
+    }
+    return jsonOk(rid, {
+      rid,
+      ...result,
+      observabilityAlerts: anomalies.map((a) => a.kind),
+    });
   } catch (e: unknown) {
     captureCronHandlerError("/api/cron/menu-week-opening-notify", rid, e);
     return jsonErr(rid, "Uke-åpning-varsel feilet.", 500, {

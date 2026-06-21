@@ -146,6 +146,10 @@ export type MenuWeekOpeningNotifyResult = {
   skippedOptOut: number;
   skippedAlready: number;
   failed: number;
+  /** Employees eligible after ACTIVE company + agreement filter. */
+  eligible: number;
+  /** Recipients selected for send after prefs + idempotency. */
+  attempted: number;
   skippedNoWindow: boolean;
 };
 
@@ -209,6 +213,8 @@ export async function runMenuWeekOpeningEmailNotify(now: Date = new Date()): Pro
     skippedOptOut,
     skippedAlready,
     failed,
+    eligible: recipients.length,
+    attempted: toSend.length,
     skippedNoWindow: false,
   };
 }

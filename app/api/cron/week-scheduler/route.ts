@@ -6,6 +6,11 @@ export const revalidate = 0;
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { captureCronHandlerError } from "@/lib/http/cronObservability";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import {
+  evaluateWeekSchedulerSubCalls,
+  reportWeekSchedulerSubCallFailures,
+  type WeekSchedulerSubCallResult,
+} from "@/lib/http/weekCronObservability";
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -82,7 +87,7 @@ export async function GET(req: Request) {
   try {
     const p = osloNowParts();
     const triggered: string[] = [];
-    const results: any[] = [];
+    const results: WeekSchedulerSubCallResult[] = [];
 
     if (inWindow(p, "Thursday", 8, 10)) {
       triggered.push("thursday_08_open_next");
@@ -102,17 +107,43 @@ export async function GET(req: Request) {
       results.push({ action: "week-visibility", ...(await callInternal(req, "/api/cron/week-visibility")) });
     }
 
-    return jsonOk(
-      rid,
-      {
-        ok: true,
+    if (triggered.length === 0) {
+      return jsonOk(
+        rid,
+        {
+          rid,
+          oslo: p,
+          triggered,
+          results,
+          note: "No-op (outside time windows).",
+        },
+        200,
+      );
+    }
+
+    const evaluation = evaluateWeekSchedulerSubCalls(triggered, results);
+    if (!evaluation.allOk) {
+      reportWeekSchedulerSubCallFailures("/api/cron/week-scheduler", rid, p, evaluation.failures);
+      return jsonErr(rid, "Week-scheduler delvis feil.", 500, "WEEK_SCHEDULER_PARTIAL_FAILURE", {
         rid,
         oslo: p,
         triggered,
         results,
-        note: triggered.length ? "Triggered scheduled actions." : "No-op (outside time windows).",
+        failures: evaluation.failures,
+        partialFailure: true,
+      });
+    }
+
+    return jsonOk(
+      rid,
+      {
+        rid,
+        oslo: p,
+        triggered,
+        results,
+        note: "Triggered scheduled actions.",
       },
-      200
+      200,
     );
   } catch (e: any) {
     captureCronHandlerError("/api/cron/week-scheduler", rid, e);
