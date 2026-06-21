@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { expect, type Page } from "@playwright/test";
 
-import { getProviderMenyVisualCredentials, loginViaForm, waitForPostLoginNavigation } from "./provider-meny-visual-auth";
+import { loginViaForm, waitForPostLoginNavigation } from "./auth";
+import { getProviderMenyVisualCredentials } from "./provider-meny-visual-auth";
 import { waitForFontsReady } from "./ready";
 
 export const PROVIDER_MENU_VISUAL_WEEK_START = "2026-06-15";
