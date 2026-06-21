@@ -1,6 +1,6 @@
 # Lunchportalen
 
-Firmalunsj med kontroll, forutsigbarhet og bærekraft.
+Firmalunsj med kontroll, forutsigbarhet og bærekraft. RC-gates enforced in CI.
 
 ## Architecture
 

@@ -100,3 +100,25 @@ export function weekRangeISOFrom(anchorISO: string, weekOffset: number = 0): str
     return formatOsloISO(d);
   });
 }
+
+/** ISO week number (Monday-based week containing weekStart). */
+export function isoWeekNumberFromMondayStart(weekStartISO: string): number {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStartISO)) {
+    throw new Error(`[isoWeekNumberFromMondayStart] Invalid date: ${weekStartISO}`);
+  }
+  const date = new Date(`${weekStartISO}T12:00:00`);
+  const day = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - day + 3);
+  const firstThursday = date.valueOf();
+  date.setUTCMonth(0, 1);
+  if (date.getUTCDay() !== 4) {
+    date.setUTCMonth(0, 1 + ((4 - date.getUTCDay() + 7) % 7));
+  }
+  return 1 + Math.ceil((firstThursday - date.valueOf()) / 604800000);
+}
+
+export function weekHeadingFromMondayStart(weekStartISO: string): string {
+  const year = weekStartISO.slice(0, 4);
+  const week = isoWeekNumberFromMondayStart(weekStartISO);
+  return `Uke ${week} · ${year}`;
+}

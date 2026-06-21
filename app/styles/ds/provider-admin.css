@@ -1055,6 +1055,29 @@
   max-width: none;
 }
 
+.ds-provider-root:has(.lp-editor-page) {
+  background:
+    radial-gradient(1200px 560px at 88% -10%, rgba(245, 197, 24, 0.1), transparent 60%),
+    radial-gradient(900px 520px at -4% 110%, rgba(47, 122, 101, 0.06), transparent 60%),
+    var(--ds-bg, #f7f5f1);
+}
+
+.ds-provider-root:has(.lp-editor-page) .ds-admin-sidebar,
+.ds-provider-root:has(.lp-editor-page) .ds-provider-topbar--mobile-only,
+.ds-provider-root:has(.lp-editor-page) .ds-admin-mobile-nav {
+  display: none;
+}
+
+.ds-provider-root:has(.lp-editor-page) .ds-admin-main {
+  width: 100%;
+  max-width: none;
+}
+
+.ds-provider-root:has(.lp-editor-page) .ds-admin-content {
+  padding-top: 0;
+  max-width: none;
+}
+
 .ds-provider-menu-page__header {
   margin-bottom: 16px;
 }

@@ -33,6 +33,10 @@ type Props = {
   tier: PlanTier;
   catalog: ProviderMenuCatalogSnapshot;
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
+  /** Lock to one category (side panel contextual edit). */
+  fixedCategoryKey?: string;
+  /** Compact mockup-aligned panel chrome. */
+  panelMode?: boolean;
 };
 
 function itemsForCategory(catalog: ProviderMenuCatalogSnapshot, categoryKey: string): CatalogItemDraft[] {
@@ -47,7 +51,13 @@ function itemsForCategory(catalog: ProviderMenuCatalogSnapshot, categoryKey: str
   }));
 }
 
-export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSaved }: Props) {
+export default function ProviderMenuCatalogEditor({
+  tier,
+  catalog,
+  onCatalogSaved,
+  fixedCategoryKey,
+  panelMode = false,
+}: Props) {
   const editableKeys = useMemo(
     () =>
       EDITABLE_LUNCH_CATEGORY_KEYS.filter((key) => {
@@ -60,11 +70,17 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
     [catalog, tier],
   );
 
-  const [categoryKey, setCategoryKey] = useState<string>(editableKeys[0] ?? "paasmurt");
+  const [categoryKey, setCategoryKey] = useState<string>(fixedCategoryKey ?? editableKeys[0] ?? "paasmurt");
   const [items, setItems] = useState<CatalogItemDraft[]>(() => itemsForCategory(catalog, categoryKey));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (fixedCategoryKey) {
+      setCategoryKey(fixedCategoryKey);
+    }
+  }, [fixedCategoryKey]);
 
   useEffect(() => {
     setItems(itemsForCategory(catalog, categoryKey));
@@ -133,42 +149,66 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
   }
 
   return (
-    <section className="lp-editor-catalog-editor" aria-label="Rediger menykatalog">
-      <header className="lp-editor-catalog-editor__head">
-        <h2 className="ds-h4">Din menykatalog</h2>
-        <p className="ds-body">
-          Dette endrer kun din leverandørs faste valg — ikke andre cateringfirmaer.
-        </p>
-        <p className="lp-editor-catalog__gap" role="status">
-          {CATALOG_WEEK_PUBLISH_HINT}
-        </p>
-      </header>
+    <section
+      className={`lp-editor-catalog-editor${panelMode ? " lp-editor-catalog-editor--panel" : ""}`}
+      aria-label="Rediger menykatalog"
+    >
+      {panelMode ? (
+        <header className="lp-editor-panel__head">
+          <span className="lp-editor-panel__icon" aria-hidden="true">⚙</span>
+          <div>
+            <h3 className="lp-editor-panel__title">{categoryLabel} — valg</h3>
+            <p className="lp-editor-panel__scope">
+              Katalogstyrt · <b>din egen katalog</b>
+            </p>
+          </div>
+        </header>
+      ) : (
+        <header className="lp-editor-catalog-editor__head">
+          <h2 className="ds-h4">Din menykatalog</h2>
+          <p className="ds-body">
+            Dette endrer kun din leverandørs faste valg — ikke andre cateringfirmaer.
+          </p>
+          <p className="lp-editor-catalog__gap" role="status">
+            {CATALOG_WEEK_PUBLISH_HINT}
+          </p>
+        </header>
+      )}
 
-      <div className="lp-editor-catalog-editor__toolbar">
-        <label className="lp-editor-catalog-editor__label" htmlFor="catalog-category">
-          Kategori
-        </label>
-        <select
-          id="catalog-category"
-          className="lp-editor-catalog-editor__select"
-          value={categoryKey}
-          onChange={(e) => setCategoryKey(e.target.value)}
-        >
-          {editableKeys.map((key) => {
-            const cat = categoryFromLunchCategoryKey(key);
-            const label = cat ? categoryLabelFromCatalog(catalog, cat) : key;
-            return (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            );
-          })}
-        </select>
-      </div>
+      {panelMode ? (
+        <div className="lp-editor-ownbanner">
+          <span aria-hidden="true">🛡</span>
+          Dette er din katalog. Endringer påvirker kun din meny — aldri andre leverandører.
+        </div>
+      ) : null}
 
-      <h3 className="lp-editor-catalog-editor__category-title">{categoryLabel}</h3>
+      {!fixedCategoryKey ? (
+        <div className="lp-editor-catalog-editor__toolbar">
+          <label className="lp-editor-catalog-editor__label" htmlFor="catalog-category">
+            Kategori
+          </label>
+          <select
+            id="catalog-category"
+            className="lp-editor-catalog-editor__select"
+            value={categoryKey}
+            onChange={(e) => setCategoryKey(e.target.value)}
+          >
+            {editableKeys.map((key) => {
+              const cat = categoryFromLunchCategoryKey(key);
+              const label = cat ? categoryLabelFromCatalog(catalog, cat) : key;
+              return (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      ) : null}
 
-      <ul className="lp-editor-catalog-editor__list">
+      {!panelMode ? <h3 className="lp-editor-catalog-editor__category-title">{categoryLabel}</h3> : null}
+
+      <ul className={`lp-editor-catalog-editor__list${panelMode ? " lp-editor-catalog-editor__list--choices" : ""}`}>
         {items.map((item, index) => (
           <li
             key={item.key ?? `new-${index}`}
@@ -238,22 +278,30 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
       <div className="lp-editor-catalog-editor__actions">
         <button
           type="button"
-          className="lp-editor-catalog-editor__add"
+          className={`lp-editor-catalog-editor__add${panelMode ? " lp-editor-catalog-editor__add--panel" : ""}`}
           onClick={() =>
             setItems((prev) => [...prev, { title: "", allergens: [], isVegetarian: false }])
           }
         >
-          Legg til valg
+          {panelMode ? "+ Legg til valg" : "Legg til valg"}
         </button>
         <button
           type="button"
-          className="lp-editor-catalog-editor__save"
+          className="ds-btn ds-btn--primary lp-editor-catalog-editor__save"
           disabled={saving || items.length === 0}
           onClick={() => void save()}
         >
           {saving ? "Lagrer…" : "Lagre katalog"}
         </button>
       </div>
+
+      {panelMode ? (
+        <p className="lp-editor-savenote" role="note">
+          <span aria-hidden="true">🕐</span>
+          Navn redigerbart · nivå arves fra kategorien · live i bestilling straks, uke/kjøkken ved neste
+          publisering.
+        </p>
+      ) : null}
 
       {error ? (
         <p className="lp-editor-catalog-editor__error" role="alert">
