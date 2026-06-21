@@ -17,8 +17,10 @@ on:
       - "e2e/provider-meny-visual-regression.e2e.ts"
       - "e2e/helpers/provider-meny-visual.ts"
       - "e2e/helpers/provider-meny-visual-auth.ts"
+      - "e2e/helpers/visual-e2e-sanity-guard.ts"
       - "e2e/global-setup/provider-meny-visual-auth.setup.ts"
       - "e2e/fixtures/provider-meny-catalog.json"
+      - "tests/e2e/visual-e2e-sanity-guard.test.ts"
       - "playwright.provider-meny.config.ts"
       - "e2e/provider-meny-visual-regression.e2e.ts-snapshots/**"
       - "scripts/e2e/retry-seed-with-backoff.sh"
@@ -39,8 +41,10 @@ on:
       - "e2e/provider-meny-visual-regression.e2e.ts"
       - "e2e/helpers/provider-meny-visual.ts"
       - "e2e/helpers/provider-meny-visual-auth.ts"
+      - "e2e/helpers/visual-e2e-sanity-guard.ts"
       - "e2e/global-setup/provider-meny-visual-auth.setup.ts"
       - "e2e/fixtures/provider-meny-catalog.json"
+      - "tests/e2e/visual-e2e-sanity-guard.test.ts"
       - "playwright.provider-meny.config.ts"
       - "e2e/provider-meny-visual-regression.e2e.ts-snapshots/**"
       - "scripts/e2e/retry-seed-with-backoff.sh"
@@ -106,6 +110,7 @@ jobs:
           tests/app/leverandor/meny.test.tsx
           tests/components/providerMenuWeekPlanner-badges.test.tsx
           tests/lib/provider-menu/providerMenuOrderLock.test.ts
+          tests/e2e/visual-e2e-sanity-guard.test.ts
           --config vitest.config.ts
 
       - name: Verify E2E Supabase target is uigx (not prod)
@@ -123,6 +128,24 @@ jobs:
             echo "::error::Provider meny visual E2E Supabase URL must target uigx"
             exit 1
           fi
+
+      - name: Verify visual E2E Sanity dataset is not production
+        shell: bash
+        env:
+          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+        run: |
+          set -euo pipefail
+          dataset="${NEXT_PUBLIC_SANITY_DATASET:-}"
+          if [[ -z "$dataset" ]]; then
+            echo "::error::Provider meny visual E2E requires NEXT_PUBLIC_SANITY_DATASET"
+            exit 1
+          fi
+          lower="$(printf '%s' "$dataset" | tr '[:upper:]' '[:lower:]')"
+          if [[ "$lower" == "production" || "$lower" == "prod" ]]; then
+            echo "::error::Provider meny visual E2E must not target Sanity production dataset (4udoq5d8/production)"
+            exit 1
+          fi
+          echo "Sanity dataset OK for visual E2E: $dataset"
 
       - name: Build (production)
         run: npx next build
@@ -210,6 +233,10 @@ jobs:
         run: |
           FLAGS=""
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.update_snapshots }}" = "true" ]; then
+            if [ "$(uname -s)" != "Linux" ]; then
+              echo "::error::--update-snapshots only allowed on Linux (Playwright noble CI container)"
+              exit 1
+            fi
             FLAGS="--update-snapshots"
           fi
           set +e
