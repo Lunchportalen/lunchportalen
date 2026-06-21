@@ -18,6 +18,17 @@ assert.equal(
   false,
 );
 assert.equal(
+  isCheckPathTouched(["lib/demo/leads.ts"], REQUIRED_CHECK_PATH_CONFIG.provider_meny_visual.paths),
+  false,
+);
+assert.equal(
+  isCheckPathTouched(
+    ["app/leverandor/meny/page.tsx"],
+    REQUIRED_CHECK_PATH_CONFIG.provider_meny_visual.paths,
+  ),
+  true,
+);
+assert.equal(
   isCheckPathTouched(
     ["app/(app)/week/page.tsx"],
     REQUIRED_CHECK_PATH_CONFIG.week_visual.paths,
@@ -59,6 +70,7 @@ assert.deepEqual(REQUIRED_CHECK_PATH_CONFIG.staging.paths, SUPABASE_MIGRATE_CI_P
 const synthetic = detectRequiredCheckScopeFromChanged(["lib/demo/leads.ts", "docs/foo.md"]);
 assert.equal(synthetic.build.touched, true);
 assert.equal(synthetic.week_visual.touched, false);
+assert.equal(synthetic.provider_meny_visual.touched, false);
 assert.equal(synthetic.staging.touched, false);
 
 const migrationPr = detectRequiredCheckScopeFromChanged([
