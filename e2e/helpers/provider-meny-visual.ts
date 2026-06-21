@@ -224,6 +224,11 @@ export async function waitForProviderMenyVisualReady(page: Page): Promise<void> 
   await page.evaluate(() => {
     document.documentElement.classList.add("lp-provider-meny-visual-regression");
   });
+  if (process.env.LP_PROVIDER_MENY_VISUAL_GATE_PROBE === "1") {
+    await page.addStyleTag({
+      content: ".lp-editor-command-header__title { color: #ff0055 !important; }",
+    });
+  }
   await page.waitForTimeout(150);
 }
 
