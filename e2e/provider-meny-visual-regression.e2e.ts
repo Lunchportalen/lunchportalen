@@ -29,8 +29,8 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
     await selectProviderMenyTier(page, "Enterprise");
     await waitForProviderMenyVisualReady(page);
 
-    await expect(page.locator(".ds-admin-sidebar")).toBeVisible();
-    await expect(page.locator(".ds-admin-sidebar__item.is-active", { hasText: "Meny" })).toBeVisible();
+    await expect(page.locator("aside.ds-admin-sidebar")).toBeVisible();
+    await expect(page.locator(".lp-editor-root")).toBeVisible();
     await expect(page.locator(".lp-editor-priceline")).toBeVisible();
     await expect(page.locator(".lp-editor-status-strip")).toBeVisible();
     await expect(page.locator(".lp-editor-prem").first()).toBeVisible();
