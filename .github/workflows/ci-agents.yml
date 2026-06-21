@@ -58,7 +58,7 @@ jobs:
         shell: bash
         env:
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+          NEXT_PUBLIC_SANITY_DATASET: staging
         run: |
           set -euo pipefail
           if [[ -z "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}" ]]; then
@@ -69,6 +69,11 @@ jobs:
             echo "::error::Missing NEXT_PUBLIC_SANITY_DATASET (GitHub Actions secret)."
             exit 1
           fi
+
+      - name: Verify CI Sanity env (no production writes)
+        env:
+          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+        run: node scripts/ci/assert-ci-sanity-env.mjs no-production-write --label ci-agents
 
       - name: AGENTS gate
         run: npm run agents:check
@@ -98,7 +103,7 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+          NEXT_PUBLIC_SANITY_DATASET: staging
         run: |
           set -euo pipefail
           export NEXT_PUBLIC_SANITY_PROJECT_ID

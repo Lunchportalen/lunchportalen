@@ -34,6 +34,7 @@ jobs:
           node scripts/ci/parse-workflow-pr-paths.test.mjs
           node scripts/ci/detect-required-check-scope.test.mjs
           node scripts/ci/verify-required-check-path-drift.test.mjs
+          node scripts/ci/assert-ci-sanity-env.test.mjs
 
   detect:
     runs-on: ubuntu-latest

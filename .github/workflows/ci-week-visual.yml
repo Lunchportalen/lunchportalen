@@ -92,9 +92,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-      NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+      NEXT_PUBLIC_SANITY_DATASET: staging
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
-      SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
 
     steps:
       - name: Checkout
@@ -122,6 +121,9 @@ jobs:
             echo "::error::Week visual E2E Supabase URL must target uigx"
             exit 1
           fi
+
+      - name: Verify CI Sanity env (read-only visual)
+        run: node scripts/ci/assert-ci-sanity-env.mjs read-only --label week-visual
 
       - name: Build (production)
         run: npx next build
