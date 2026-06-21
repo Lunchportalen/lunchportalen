@@ -22,9 +22,9 @@ type CatalogItemDraft = {
 
 function OrderLockBadge() {
   return (
-    <span className="ds-order-lock-badge" title="Har bestilling">
-      <span className="ds-order-lock-badge__icon" aria-hidden="true">🔒</span>
-      <span className="ds-order-lock-badge__text">Har bestilling</span>
+    <span className="lp-editor-order-lock" title="Har bestilling">
+      <span className="lp-editor-order-lock__icon" aria-hidden="true">🔒</span>
+      <span className="lp-editor-order-lock__text">Har bestilling</span>
     </span>
   );
 }
@@ -133,24 +133,24 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
   }
 
   return (
-    <section className="ds-provider-menu-catalog-editor" aria-label="Rediger menykatalog">
-      <header className="ds-provider-menu-catalog-editor__head">
+    <section className="lp-editor-catalog-editor" aria-label="Rediger menykatalog">
+      <header className="lp-editor-catalog-editor__head">
         <h2 className="ds-h4">Din menykatalog</h2>
         <p className="ds-body">
           Dette endrer kun din leverandørs faste valg — ikke andre cateringfirmaer.
         </p>
-        <p className="ds-provider-menu-catalog__gap" role="status">
+        <p className="lp-editor-catalog__gap" role="status">
           {CATALOG_WEEK_PUBLISH_HINT}
         </p>
       </header>
 
-      <div className="ds-provider-menu-catalog-editor__toolbar">
-        <label className="ds-provider-menu-catalog-editor__label" htmlFor="catalog-category">
+      <div className="lp-editor-catalog-editor__toolbar">
+        <label className="lp-editor-catalog-editor__label" htmlFor="catalog-category">
           Kategori
         </label>
         <select
           id="catalog-category"
-          className="ds-provider-menu-catalog-editor__select"
+          className="lp-editor-catalog-editor__select"
           value={categoryKey}
           onChange={(e) => setCategoryKey(e.target.value)}
         >
@@ -166,20 +166,20 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
         </select>
       </div>
 
-      <h3 className="ds-provider-menu-catalog-editor__category-title">{categoryLabel}</h3>
+      <h3 className="lp-editor-catalog-editor__category-title">{categoryLabel}</h3>
 
-      <ul className="ds-provider-menu-catalog-editor__list">
+      <ul className="lp-editor-catalog-editor__list">
         {items.map((item, index) => (
           <li
             key={item.key ?? `new-${index}`}
-            className={`ds-provider-menu-catalog-editor__row${item.orderLocked ? " is-order-locked" : ""}`}
+            className={`lp-editor-catalog-editor__row${item.orderLocked ? " is-order-locked" : ""}`}
           >
             {item.orderLocked ? <OrderLockBadge /> : null}
-            <label className="ds-provider-menu-catalog-editor__label">
+            <label className="lp-editor-catalog-editor__label">
               Tittel
               <input
                 type="text"
-                className="ds-provider-menu-catalog-editor__input"
+                className="lp-editor-catalog-editor__input"
                 value={item.title}
                 disabled={item.orderLocked}
                 onChange={(e) =>
@@ -191,13 +191,13 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
               />
             </label>
             {item.key ? (
-              <span className="ds-provider-menu-catalog-editor__slug" aria-label="Fast slug">
+              <span className="lp-editor-catalog-editor__slug" aria-label="Fast slug">
                 {item.key}
               </span>
             ) : (
-              <span className="ds-provider-menu-catalog-editor__slug">Ny — slug genereres ved lagring</span>
+              <span className="lp-editor-catalog-editor__slug">Ny — slug genereres ved lagring</span>
             )}
-            <label className="ds-provider-menu-catalog-editor__checkbox">
+            <label className="lp-editor-catalog-editor__checkbox">
               <input
                 type="checkbox"
                 checked={item.isVegetarian}
@@ -210,10 +210,10 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
               />
               Vegetar
             </label>
-            <fieldset className="ds-provider-menu-catalog-editor__allergens" disabled={item.orderLocked}>
-              <legend className="ds-provider-menu-catalog-editor__legend">Allergener</legend>
+            <fieldset className="lp-editor-catalog-editor__allergens" disabled={item.orderLocked}>
+              <legend className="lp-editor-catalog-editor__legend">Allergener</legend>
               {LUNCH_CATEGORY_ALLERGENS.map((a) => (
-                <label key={a} className="ds-provider-menu-catalog-editor__checkbox">
+                <label key={a} className="lp-editor-catalog-editor__checkbox">
                   <input
                     type="checkbox"
                     checked={item.allergens.includes(a)}
@@ -225,7 +225,7 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
             </fieldset>
             <button
               type="button"
-              className="ds-provider-menu-catalog-editor__remove"
+              className="lp-editor-catalog-editor__remove"
               disabled={item.orderLocked}
               onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
             >
@@ -235,10 +235,10 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
         ))}
       </ul>
 
-      <div className="ds-provider-menu-catalog-editor__actions">
+      <div className="lp-editor-catalog-editor__actions">
         <button
           type="button"
-          className="ds-provider-menu-catalog-editor__add"
+          className="lp-editor-catalog-editor__add"
           onClick={() =>
             setItems((prev) => [...prev, { title: "", allergens: [], isVegetarian: false }])
           }
@@ -247,7 +247,7 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
         </button>
         <button
           type="button"
-          className="ds-provider-menu-catalog-editor__save"
+          className="lp-editor-catalog-editor__save"
           disabled={saving || items.length === 0}
           onClick={() => void save()}
         >
@@ -256,12 +256,12 @@ export default function ProviderMenuCatalogEditor({ tier, catalog, onCatalogSave
       </div>
 
       {error ? (
-        <p className="ds-provider-menu-catalog-editor__error" role="alert">
+        <p className="lp-editor-catalog-editor__error" role="alert">
           {error}
         </p>
       ) : null}
       {message ? (
-        <p className="ds-provider-menu-catalog-editor__message" role="status">
+        <p className="lp-editor-catalog-editor__message" role="status">
           {message}
         </p>
       ) : null}

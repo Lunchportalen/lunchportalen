@@ -42,8 +42,8 @@ describe("ProviderMenuBuilder workspace layout", () => {
   test("renders command header with shared warm dish package copy", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain("menu-command-header");
-    expect(html).toContain("menu-package-card");
+    expect(html).toContain("lp-editor-command-header");
+    expect(html).toContain("lp-editor-package-card");
     expect(html).toContain("Påsmurt · Salatboks · Dagens varmrett");
     expect(html).toContain("Basis + Sushi · Poké · Thai");
     expect(html).toContain("Samme varmrett + ekstra verdi");
@@ -54,10 +54,10 @@ describe("ProviderMenuBuilder workspace layout", () => {
   test("renders full-width workspace with planner and inspector", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain("provider-menu-layout");
-    expect(html).toContain("provider-menu-days");
-    expect(html).toContain("provider-menu-inspector");
-    expect(html).toContain("menu-week-cockpit");
+    expect(html).toContain("lp-editor-layout");
+    expect(html).toContain("lp-editor-days");
+    expect(html).toContain("lp-editor-inspector");
+    expect(html).toContain("lp-editor-cockpit");
     expect(html).toContain("Mandag");
     expect(html).toContain("Velg en dag");
     expect(html).not.toContain("Pad Thai nudler");
@@ -66,7 +66,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
   test("day card renders one shared warm dish per day", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain("menu-day-card__hero");
+    expect(html).toContain("lp-editor-day__hero");
     expect(html).toContain("Dagens varmrett");
     expect(html).toContain("Én felles varmrett");
     expect(html).toContain("Varmrett mangler");
@@ -127,7 +127,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
 describe("LeverandorMenyPage full-width frame", () => {
   test("page uses full-width workspace wrapper not narrow ds-container", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/meny/page.tsx"), "utf8");
-    expect(source).toContain("provider-menu-workspace-page");
+    expect(source).toContain("lp-editor-page");
     expect(source).not.toContain("ds-container");
   });
 });

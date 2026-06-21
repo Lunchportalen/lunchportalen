@@ -52,8 +52,10 @@ type Props = {
   editorFocus?: EditorFocus;
   sharedVarmrettTitle?: string | null;
   varmrettProviderOverride?: boolean;
+  varmrettAutoFilled?: boolean;
   varmrettHasGeneratedBaseline?: boolean;
   varmrettOrderLocked?: boolean;
+  varmrettOrderCount?: number;
   onResetToGenerated?: () => void;
 };
 
@@ -92,8 +94,10 @@ export default function ProviderMenuEditorPanel({
   editorFocus,
   sharedVarmrettTitle,
   varmrettProviderOverride,
+  varmrettAutoFilled,
   varmrettHasGeneratedBaseline,
   varmrettOrderLocked,
+  varmrettOrderCount = 0,
   onResetToGenerated,
 }: Props) {
   const [showManualEditing, setShowManualEditing] = useState(false);
@@ -108,10 +112,10 @@ export default function ProviderMenuEditorPanel({
 
   if (!open || !form || !context) {
     return (
-      <aside className="provider-menu-inspector menu-inspector menu-inspector--idle" aria-label="Redigeringspanel" data-state="closed">
-        <div className="menu-inspector__empty">
-          <p className="menu-inspector__empty-title">Velg en dag</p>
-          <p className="menu-inspector__empty-lead">Klikk varmrett eller valg i ukeplanen.</p>
+      <aside className="lp-editor-inspector lp-editor-inspector--idle" aria-label="Redigeringspanel" data-state="closed">
+        <div className="lp-editor-inspector__empty">
+          <p className="lp-editor-inspector__empty-title">Velg en dag</p>
+          <p className="lp-editor-inspector__empty-lead">Klikk varmrett eller valg i ukeplanen.</p>
         </div>
       </aside>
     );
@@ -121,6 +125,8 @@ export default function ProviderMenuEditorPanel({
   const isEnterpriseUpgradeMode = focus === "enterprise-upgrade";
   const isVarmrettMode = isSanityDrivenCategory(form.category) && !isEnterpriseUpgradeMode;
   const isCatalogMode = !isVarmrettMode && !isEnterpriseUpgradeMode && (context.mode === "catalog" || categoryOnly);
+
+  const isFriday = context.weekdayLabel.toLowerCase().startsWith("fredag");
 
   const enterpriseDelta = ENTERPRISE_PRICE_EX_VAT - LUXUS_PRICE_EX_VAT;
   const luxusMargin =
@@ -163,56 +169,69 @@ export default function ProviderMenuEditorPanel({
   const varmrettSaveBlocked = isVarmrettMode && varmrettOrderLocked;
 
   return (
-    <aside className="provider-menu-inspector menu-inspector is-open" aria-label="Redigeringspanel">
-      <header className="menu-inspector__head">
+    <aside className="lp-editor-inspector is-open" aria-label="Redigeringspanel">
+      <header className="lp-editor-inspector__head">
         <div>
-          <h3 className="menu-inspector__context">Rediger {context.weekdayLabel}</h3>
-          <p className="menu-inspector__subtitle">{headerSecondary}</p>
-          <span className={`menu-inspector__status-badge ${slotStatusClass(form.status)}`}>
+          <h3 className="lp-editor-inspector__context">Rediger {context.weekdayLabel}</h3>
+          <p className="lp-editor-inspector__subtitle">{headerSecondary}</p>
+          <span className={`lp-editor-inspector__status-badge ${slotStatusClass(form.status)}`}>
             {slotStatusBadge(form.status)}
           </span>
-          {varmrettProviderOverride ? (
-            <span className="menu-inspector__status-badge is-draft">Overstyrt</span>
+          {varmrettAutoFilled && !varmrettProviderOverride && !varmrettOrderLocked ? (
+            <span className={`lp-editor-badge${isFriday ? " is-friday" : " is-generated"}`}>
+              {isFriday ? "Fredagskos" : "Generert"}
+            </span>
+          ) : null}
+          {varmrettProviderOverride && !varmrettOrderLocked ? (
+            <span className="lp-editor-badge is-overridden">Overstyrt</span>
           ) : null}
         </div>
-        <button type="button" className="ds-btn ds-btn--ghost menu-inspector__close" onClick={onClose}>
+        <button type="button" className="ds-btn ds-btn--ghost lp-editor-inspector__close" onClick={onClose}>
           Lukk
         </button>
       </header>
 
       {isCatalogMode && categoryOnly && categoryVariantLabels && categoryVariantLabels.length > 0 ? (
-        <section className="menu-inspector__section">
-          <h4 className="menu-inspector__section-title">Faste valg</h4>
-          <p className="menu-inspector__note">Katalogstyrte valg — publiser kategorien for denne dagen.</p>
-          <ul className="menu-inspector__variant-list">
+        <section className="lp-editor-inspector__section">
+          <h4 className="lp-editor-inspector__section-title">Faste valg</h4>
+          <p className="lp-editor-inspector__note">Katalogstyrte valg — publiser kategorien for denne dagen.</p>
+          <ul className="lp-editor-inspector__variant-list">
             {categoryVariantLabels.map((label) => (
               <li key={label}>{label}</li>
             ))}
           </ul>
           {catalogVariantAllergens && catalogVariantAllergens.length > 0 ? (
-            <p className="menu-inspector__meta">Allergener: {catalogVariantAllergens.join(", ")}</p>
+            <p className="lp-editor-inspector__meta">Allergener: {catalogVariantAllergens.join(", ")}</p>
           ) : null}
         </section>
       ) : null}
 
       {isVarmrettMode ? (
-        <section className="menu-inspector__section menu-inspector__section--varmrett">
+        <section className="lp-editor-inspector__section lp-editor-inspector__section--varmrett">
           {varmrettOrderLocked ? (
-            <p className="ds-order-lock-badge menu-inspector__order-lock" role="status">
-              <span className="ds-order-lock-badge__icon" aria-hidden="true">🔒</span>
-              <span className="ds-order-lock-badge__text">Har bestilling — innhold kan ikke endres</span>
-            </p>
+            <div className="lp-editor-inspector__order-lock-wrap" role="status">
+              <p className="lp-editor-order-lock lp-editor-inspector__order-lock">
+                <span className="lp-editor-order-lock__icon" aria-hidden="true">🔒</span>
+                <span className="lp-editor-order-lock__text">Har bestilling</span>
+              </p>
+              {varmrettOrderCount > 0 ? (
+                <p className="lp-editor-inspector__order-count">
+                  {varmrettOrderCount} ansatte har bestilt
+                </p>
+              ) : null}
+              <p className="lp-editor-inspector__lock-hint">Åpnes etter serveringsdagen</p>
+            </div>
           ) : null}
-          <div className="menu-inspector__varmrett-hero">
-            <span className="menu-inspector__varmrett-hero-label">Dagens varmrett</span>
-            <p className="menu-inspector__varmrett-hero-title">
+          <div className="lp-editor-inspector__varmrett-hero">
+            <span className="lp-editor-inspector__varmrett-hero-label">Dagens varmrett</span>
+            <p className="lp-editor-inspector__varmrett-hero-title">
               {form.mealTitle.trim() || "Legg inn rettens navn"}
             </p>
-            <p className="menu-inspector__shared-lead">
+            <p className="lp-editor-inspector__shared-lead">
               Felles kjøkkenrett for Basis, Luxus og Enterprise denne dagen.
             </p>
           </div>
-          <label className="menu-inspector__field">
+          <label className="lp-editor-inspector__field">
             Rettens navn
             <input
               value={form.mealTitle}
@@ -221,7 +240,7 @@ export default function ProviderMenuEditorPanel({
               maxLength={120}
             />
           </label>
-          <label className="menu-inspector__field">
+          <label className="lp-editor-inspector__field">
             Beskrivelse
             <textarea
               rows={3}
@@ -231,7 +250,7 @@ export default function ProviderMenuEditorPanel({
               maxLength={4000}
             />
           </label>
-          <label className="menu-inspector__field">
+          <label className="lp-editor-inspector__field">
             Allergener
             <input
               value={form.allergensText}
@@ -240,7 +259,7 @@ export default function ProviderMenuEditorPanel({
               placeholder="F.eks. melk, hvete"
             />
           </label>
-          <label className="menu-inspector__field">
+          <label className="lp-editor-inspector__field">
             Estimert råvarekost (kr)
             <input
               type="number"
@@ -260,7 +279,7 @@ export default function ProviderMenuEditorPanel({
           {varmrettHasGeneratedBaseline && onResetToGenerated && !varmrettOrderLocked ? (
             <button
               type="button"
-              className="ds-btn ds-btn--ghost menu-inspector__reset-baseline"
+              className="ds-btn ds-btn--ghost lp-editor-inspector__reset-baseline"
               disabled={pending}
               onClick={onResetToGenerated}
             >
@@ -271,17 +290,17 @@ export default function ProviderMenuEditorPanel({
       ) : null}
 
       {isCatalogMode && !categoryOnly && context.variantLabel ? (
-        <section className="menu-inspector__section">
-          <h4 className="menu-inspector__section-title">Fast valg</h4>
-          <p className="menu-inspector__readonly-value">{context.variantLabel}</p>
-          <p className="menu-inspector__note">Katalogstyrt — publiser kategorien for å aktivere.</p>
+        <section className="lp-editor-inspector__section">
+          <h4 className="lp-editor-inspector__section-title">Fast valg</h4>
+          <p className="lp-editor-inspector__readonly-value">{context.variantLabel}</p>
+          <p className="lp-editor-inspector__note">Katalogstyrt — publiser kategorien for å aktivere.</p>
         </section>
       ) : null}
 
       {!isVarmrettMode && !isCatalogMode && !isEnterpriseUpgradeMode ? (
-        <section className="menu-inspector__section">
-          <h4 className="menu-inspector__section-title">Innhold</h4>
-          <label className="menu-inspector__field">
+        <section className="lp-editor-inspector__section">
+          <h4 className="lp-editor-inspector__section-title">Innhold</h4>
+          <label className="lp-editor-inspector__field">
             Rettens navn
             <input
               value={form.mealTitle}
@@ -289,7 +308,7 @@ export default function ProviderMenuEditorPanel({
               maxLength={120}
             />
           </label>
-          <label className="menu-inspector__field">
+          <label className="lp-editor-inspector__field">
             Beskrivelse
             <textarea
               rows={3}
@@ -301,85 +320,85 @@ export default function ProviderMenuEditorPanel({
         </section>
       ) : null}
 
-      {imageUrl ? <img src={imageUrl} alt="" className="menu-inspector__thumb" /> : null}
+      {imageUrl ? <img src={imageUrl} alt="" className="lp-editor-inspector__thumb" /> : null}
 
       {margin && !isEnterpriseUpgradeMode ? (
-        <section className="menu-inspector__section menu-inspector__section--economy">
-          <h4 className="menu-inspector__section-title">Økonomi</h4>
-          <div className="menu-inspector__economy-grid">
-            <div className="menu-inspector__kpi">
-              <span className="menu-inspector__kpi-label">Pris eks. mva</span>
-              <span className="menu-inspector__kpi-value">{formatPriceExVatLabel(margin.priceExVatNok)}</span>
+        <section className="lp-editor-inspector__section lp-editor-inspector__section--economy">
+          <h4 className="lp-editor-inspector__section-title">Økonomi</h4>
+          <div className="lp-editor-inspector__economy-grid">
+            <div className="lp-editor-inspector__kpi">
+              <span className="lp-editor-inspector__kpi-label">Pris eks. mva</span>
+              <span className="lp-editor-inspector__kpi-value">{formatPriceExVatLabel(margin.priceExVatNok)}</span>
             </div>
             {margin.estimatedCostNok != null ? (
               <>
-                <div className="menu-inspector__kpi">
-                  <span className="menu-inspector__kpi-label">Estimert kost</span>
-                  <span className="menu-inspector__kpi-value">
+                <div className="lp-editor-inspector__kpi">
+                  <span className="lp-editor-inspector__kpi-label">Estimert kost</span>
+                  <span className="lp-editor-inspector__kpi-value">
                     {margin.estimatedCostNok.toLocaleString("nb-NO")} kr
                   </span>
                 </div>
-                <div className="menu-inspector__kpi">
-                  <span className="menu-inspector__kpi-label">Dekningsbidrag</span>
-                  <span className="menu-inspector__kpi-value">
+                <div className="lp-editor-inspector__kpi">
+                  <span className="lp-editor-inspector__kpi-label">Dekningsbidrag</span>
+                  <span className="lp-editor-inspector__kpi-value">
                     {margin.grossMarginNok?.toLocaleString("nb-NO") ?? "—"} kr
                     {margin.marginPercent != null ? ` (${margin.marginPercent} %)` : ""}
                   </span>
                 </div>
               </>
             ) : (
-              <p className="menu-inspector__note">Legg inn råvarekost for marginberegning.</p>
+              <p className="lp-editor-inspector__note">Legg inn råvarekost for marginberegning.</p>
             )}
           </div>
         </section>
       ) : null}
 
       {isEnterpriseUpgradeMode ? (
-        <section className="menu-inspector__section menu-inspector__section--enterprise enterprise-premium">
-          <div className="menu-inspector__enterprise-header">
-            <h4 className="menu-inspector__section-title">Enterprise-upgrade</h4>
-            <p className="menu-inspector__enterprise-lead">
+        <section className="lp-editor-inspector__section lp-editor-inspector__section--enterprise lp-editor-enterprise">
+          <div className="lp-editor-inspector__enterprise-header">
+            <h4 className="lp-editor-inspector__section-title">Enterprise-upgrade</h4>
+            <p className="lp-editor-inspector__enterprise-lead">
               Ekstra verdi – samme Varmrett. Ingen ny produksjonsrett.
             </p>
           </div>
 
-          <div className="menu-inspector__enterprise-varmrett-card">
-            <span className="menu-inspector__enterprise-base-label">Dagens Varmrett</span>
+          <div className="lp-editor-inspector__enterprise-varmrett-card">
+            <span className="lp-editor-inspector__enterprise-base-label">Dagens Varmrett</span>
             {sharedVarmrettTitle ? (
-              <p className="menu-inspector__enterprise-base-title">{sharedVarmrettTitle}</p>
+              <p className="lp-editor-inspector__enterprise-base-title">{sharedVarmrettTitle}</p>
             ) : (
-              <p className="menu-inspector__warn">Dagens Varmrett mangler — legg inn Varmrett først.</p>
+              <p className="lp-editor-inspector__warn">Dagens Varmrett mangler — legg inn Varmrett først.</p>
             )}
-            <p className="menu-inspector__enterprise-varmrett-note">
+            <p className="lp-editor-inspector__enterprise-varmrett-note">
               Enterprise bygger på samme Varmrett – uten ny produksjonsrett.
             </p>
           </div>
 
-          <div className="menu-inspector__enterprise-kpis">
-            <div className="menu-inspector__kpi">
-              <span className="menu-inspector__kpi-label">Merpris</span>
-              <span className="menu-inspector__kpi-value">+{enterpriseDelta} kr</span>
+          <div className="lp-editor-inspector__enterprise-kpis">
+            <div className="lp-editor-inspector__kpi">
+              <span className="lp-editor-inspector__kpi-label">Merpris</span>
+              <span className="lp-editor-inspector__kpi-value">+{enterpriseDelta} kr</span>
             </div>
             {margin?.estimatedCostNok != null ? (
-              <div className="menu-inspector__kpi">
-                <span className="menu-inspector__kpi-label">Est. råvarekost</span>
-                <span className="menu-inspector__kpi-value">{margin.estimatedCostNok} kr</span>
+              <div className="lp-editor-inspector__kpi">
+                <span className="lp-editor-inspector__kpi-label">Est. råvarekost</span>
+                <span className="lp-editor-inspector__kpi-value">{margin.estimatedCostNok} kr</span>
               </div>
             ) : null}
             {extraMargin != null ? (
-              <div className="menu-inspector__kpi">
-                <span className="menu-inspector__kpi-label">Ekstra dekningsbidrag</span>
-                <span className="menu-inspector__kpi-value">{extraMargin} kr</span>
+              <div className="lp-editor-inspector__kpi">
+                <span className="lp-editor-inspector__kpi-label">Ekstra dekningsbidrag</span>
+                <span className="lp-editor-inspector__kpi-value">{extraMargin} kr</span>
               </div>
             ) : null}
           </div>
 
           {showSuggestionCard ? (
-            <div className="menu-inspector__enterprise-suggestion">
-              <span className="menu-inspector__enterprise-suggestion-label">Foreslått Enterprise-upgrade</span>
-              <p className="menu-inspector__enterprise-suggestion-title">{ENTERPRISE_DEFAULT_SUGGESTION.title}</p>
-              <p className="menu-inspector__enterprise-suggestion-lead">{ENTERPRISE_DEFAULT_SUGGESTION.explanation}</p>
-              <div className="menu-inspector__enterprise-suggestion-actions">
+            <div className="lp-editor-inspector__enterprise-suggestion">
+              <span className="lp-editor-inspector__enterprise-suggestion-label">Foreslått Enterprise-upgrade</span>
+              <p className="lp-editor-inspector__enterprise-suggestion-title">{ENTERPRISE_DEFAULT_SUGGESTION.title}</p>
+              <p className="lp-editor-inspector__enterprise-suggestion-lead">{ENTERPRISE_DEFAULT_SUGGESTION.explanation}</p>
+              <div className="lp-editor-inspector__enterprise-suggestion-actions">
                 <button
                   type="button"
                   className="ds-btn ds-btn--primary"
@@ -399,24 +418,24 @@ export default function ProviderMenuEditorPanel({
           ) : null}
 
           {hasUpgradeContent && !showManualEditing ? (
-            <div className="menu-inspector__enterprise-applied">
-              <span className="menu-inspector__enterprise-applied-label">Valgt upgrade</span>
-              <p className="menu-inspector__enterprise-applied-value">
+            <div className="lp-editor-inspector__enterprise-applied">
+              <span className="lp-editor-inspector__enterprise-applied-label">Valgt upgrade</span>
+              <p className="lp-editor-inspector__enterprise-applied-value">
                 {form.upgradeNote.trim() ||
                   (form.upgradeType ? ENTERPRISE_UPGRADE_LABELS[form.upgradeType] : "Upgrade valgt")}
               </p>
             </div>
           ) : null}
 
-          <div className="menu-inspector__enterprise-quick">
-            <h5 className="menu-inspector__enterprise-quick-title">Raskt premiumvalg</h5>
-            <p className="menu-inspector__enterprise-quick-lead">Ekstra verdi – samme Varmrett</p>
-            <div className="menu-inspector__enterprise-chips" role="group" aria-label="Raskt premiumvalg">
+          <div className="lp-editor-inspector__enterprise-quick">
+            <h5 className="lp-editor-inspector__enterprise-quick-title">Raskt premiumvalg</h5>
+            <p className="lp-editor-inspector__enterprise-quick-lead">Ekstra verdi – samme Varmrett</p>
+            <div className="lp-editor-inspector__enterprise-chips" role="group" aria-label="Raskt premiumvalg">
               {ENTERPRISE_UPGRADE_QUICK_CHOICES.map((choice) => (
                 <button
                   key={choice.id}
                   type="button"
-                  className={`menu-inspector__enterprise-chip${
+                  className={`lp-editor-inspector__enterprise-chip${
                     form.upgradeType === choice.upgradeType &&
                     form.upgradeNote.trim() === choice.upgradeNote
                       ? " is-active"
@@ -432,7 +451,7 @@ export default function ProviderMenuEditorPanel({
 
           <button
             type="button"
-            className="menu-inspector__enterprise-manual-toggle"
+            className="lp-editor-inspector__enterprise-manual-toggle"
             aria-expanded={showManualEditing}
             onClick={() => setShowManualEditing((v) => !v)}
           >
@@ -440,9 +459,9 @@ export default function ProviderMenuEditorPanel({
           </button>
 
           {showManualEditing ? (
-            <div className="menu-inspector__enterprise-manual">
-              <p className="menu-inspector__enterprise-manual-lead">Avansert redigering</p>
-              <div className="menu-inspector__copy-actions">
+            <div className="lp-editor-inspector__enterprise-manual">
+              <p className="lp-editor-inspector__enterprise-manual-lead">Avansert redigering</p>
+              <div className="lp-editor-inspector__copy-actions">
                 <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromLuxus}>
                   Bygg fra Luxus
                 </button>
@@ -451,8 +470,8 @@ export default function ProviderMenuEditorPanel({
                 </button>
               </div>
 
-              <div className="menu-inspector__enterprise-fields">
-                <label className="menu-inspector__field">
+              <div className="lp-editor-inspector__enterprise-fields">
+                <label className="lp-editor-inspector__field">
                   Basert på
                   <select
                     value={form.sourcePackage ?? ""}
@@ -468,7 +487,7 @@ export default function ProviderMenuEditorPanel({
                     <option value="LUXUS">Luxus</option>
                   </select>
                 </label>
-                <label className="menu-inspector__field">
+                <label className="lp-editor-inspector__field">
                   Upgrade-type
                   <select
                     value={form.upgradeType ?? ""}
@@ -487,7 +506,7 @@ export default function ProviderMenuEditorPanel({
                     ))}
                   </select>
                 </label>
-                <label className="menu-inspector__field">
+                <label className="lp-editor-inspector__field">
                   Hva får kunden ekstra?
                   <textarea
                     rows={3}
@@ -504,7 +523,7 @@ export default function ProviderMenuEditorPanel({
           {enterpriseWarnings.map((w) => (
             <p
               key={w.code}
-              className={w.blocking ? "menu-inspector__error" : "menu-inspector__warn"}
+              className={w.blocking ? "lp-editor-inspector__error" : "lp-editor-inspector__warn"}
               role="status"
             >
               {w.message}
@@ -514,7 +533,7 @@ export default function ProviderMenuEditorPanel({
       ) : null}
 
       {enterpriseWarnings.some((w) => !w.blocking) ? (
-        <label className="menu-inspector__confirm">
+        <label className="lp-editor-inspector__confirm">
           <input
             type="checkbox"
             checked={confirmWarnings}
@@ -524,7 +543,7 @@ export default function ProviderMenuEditorPanel({
         </label>
       ) : null}
 
-      <footer className="menu-inspector__actions">
+      <footer className="lp-editor-inspector__actions">
         <button type="button" className="ds-btn" disabled={pending || varmrettSaveBlocked} onClick={onSaveDraft}>
           {pending ? "Lagrer…" : "Lagre utkast"}
         </button>

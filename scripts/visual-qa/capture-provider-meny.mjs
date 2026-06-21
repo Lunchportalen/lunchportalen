@@ -40,21 +40,21 @@ const LOGIN_CANDIDATES = [
   }));
 
 function missingVarmrettHeroLocator(page) {
-  return page.locator(".menu-day-card__hero.is-missing").filter({
+  return page.locator(".lp-editor-day__hero.is-missing").filter({
     has: page.getByText(COPY.missingVarmrettTitle, { exact: true }),
   });
 }
 
 function missingEnterpriseUpgradeRowLocator(page) {
-  return page.locator(".menu-day-card__upgrade-row").filter({
+  return page.locator(".lp-editor-day__upgrade-row").filter({
     has: page.getByText(COPY.missingEnterpriseUpgradeTitle, { exact: true }),
   });
 }
 
 function filledVarmrettMissingUpgradeDayLocator(page) {
-  return page.locator(".menu-day-card").filter({
-    has: page.locator(".menu-day-card__hero:not(.is-missing)"),
-    hasNot: page.locator(".menu-day-card__hero.is-missing"),
+  return page.locator(".lp-editor-day").filter({
+    has: page.locator(".lp-editor-day__hero:not(.is-missing)"),
+    hasNot: page.locator(".lp-editor-day__hero.is-missing"),
     has: page.getByText(COPY.missingEnterpriseUpgradeTitle, { exact: true }),
   });
 }
@@ -96,18 +96,18 @@ async function loginViaForm(page, email, password) {
 
 async function openMenu(page) {
   await page.goto(`${BASE_URL}/leverandor/meny`, { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await page.waitForSelector(".menu-week-cockpit", { timeout: 30_000 });
-  await page.waitForSelector(".menu-production-rule", { timeout: 30_000 });
-  await page.waitForSelector(".menu-day-card__hero", { timeout: 30_000 });
+  await page.waitForSelector(".lp-editor-cockpit", { timeout: 30_000 });
+  await page.waitForSelector(".lp-editor-production-rule", { timeout: 30_000 });
+  await page.waitForSelector(".lp-editor-day__hero", { timeout: 30_000 });
   await page.waitForTimeout(800);
 }
 
 async function weekLabel(page) {
-  return page.locator(".menu-command-header__week-label").innerText().catch(() => "");
+  return page.locator(".lp-editor-command-header__week-label").innerText().catch(() => "");
 }
 
 async function selectTier(page, label) {
-  await page.locator(".menu-package-card").filter({ hasText: label }).click();
+  await page.locator(".lp-editor-package-card").filter({ hasText: label }).click();
   await page.waitForTimeout(600);
 }
 
@@ -137,13 +137,13 @@ async function verifyWorkspace(page) {
   const bodyText = await page.locator("body").innerText();
   const missingStates = await measureMissingStates(page);
 
-  const cockpit = page.locator(".menu-week-cockpit");
+  const cockpit = page.locator(".lp-editor-cockpit");
   const cockpitVisible = (await cockpit.count()) > 0 && (await cockpit.first().isVisible());
-  const cockpitNextStep = page.locator(".menu-week-cockpit__next-step");
+  const cockpitNextStep = page.locator(".lp-editor-cockpit__next-step");
   const cockpitNextStepVisible =
     (await cockpitNextStep.count()) > 0 && (await cockpitNextStep.first().isVisible());
 
-  const productionRule = page.locator(".menu-production-rule");
+  const productionRule = page.locator(".lp-editor-production-rule");
   const productionRuleVisible =
     (await productionRule.count()) > 0 && (await productionRule.first().isVisible());
 
@@ -159,20 +159,20 @@ async function verifyWorkspace(page) {
     noVarmmrettTypo: !/varmmrett/i.test(bodyText),
     noLoadingTextWithContent: !bodyText.includes("Laster meny"),
     idleLayoutWhenNoSelection:
-      (await page.locator(".provider-menu-layout.is-inspector-idle").count()) > 0,
+      (await page.locator(".lp-editor-layout.is-inspector-idle").count()) > 0,
     enterpriseUpgradeFraming: bodyText.includes("Enterprise-upgrade"),
   };
 }
 
 async function verifyCockpitVarmrettAlignment(page) {
   const publishedValue = page
-    .locator(".menu-week-cockpit__metric")
-    .filter({ has: page.locator(".menu-week-cockpit__metric-label", { hasText: "Varmrett publisert" }) })
-    .locator(".menu-week-cockpit__metric-value")
+    .locator(".lp-editor-cockpit__metric")
+    .filter({ has: page.locator(".lp-editor-cockpit__metric-label", { hasText: "Varmrett publisert" }) })
+    .locator(".lp-editor-cockpit__metric-value")
     .first();
   const cockpitPublished =
     (await publishedValue.count()) > 0 ? Number.parseInt(await publishedValue.innerText(), 10) || 0 : 0;
-  const dayPublishedBadges = await page.locator(".menu-day-card__status.is-published").count();
+  const dayPublishedBadges = await page.locator(".lp-editor-day__status.is-published").count();
   return {
     cockpitVarmrettPublishedCount: cockpitPublished,
     dayCardPublishedBadgeCount: dayPublishedBadges,
@@ -180,10 +180,10 @@ async function verifyCockpitVarmrettAlignment(page) {
   };
 }
 async function verifyEnterprisePackageBadge(page) {
-  const activeEnterpriseCard = page.locator(".menu-package-card.is-active").filter({
+  const activeEnterpriseCard = page.locator(".lp-editor-package-card.is-active").filter({
     hasText: "Premium upgrade",
   });
-  const badge = activeEnterpriseCard.locator(".menu-package-card__badge--rule");
+  const badge = activeEnterpriseCard.locator(".lp-editor-package-card__badge--rule");
   const badgeVisible =
     (await activeEnterpriseCard.count()) > 0 &&
     (await badge.count()) > 0 &&
@@ -198,7 +198,7 @@ async function verifyEnterprisePackageBadge(page) {
 }
 
 async function verifyInspector(page, mode) {
-  const inspector = page.locator(".menu-inspector.is-open");
+  const inspector = page.locator(".lp-editor-inspector.is-open");
   const open = (await inspector.count()) > 0 && (await inspector.first().isVisible());
   const bodyText = (await inspector.innerText().catch(() => "")).toLowerCase();
 
@@ -207,10 +207,10 @@ async function verifyInspector(page, mode) {
       inspectorOpen: open,
       sectionDagensVarmrett:
         bodyText.includes("dagens varmrett") ||
-        (await inspector.locator(".menu-inspector__section--varmrett").count()) > 0,
+        (await inspector.locator(".lp-editor-inspector__section--varmrett").count()) > 0,
       sectionOkonomi:
         bodyText.includes("økonomi") ||
-        (await inspector.locator(".menu-inspector__section--economy").count()) > 0,
+        (await inspector.locator(".lp-editor-inspector__section--economy").count()) > 0,
     };
   }
 
@@ -218,7 +218,7 @@ async function verifyInspector(page, mode) {
     inspectorOpen: open,
     sectionEnterpriseUpgrade:
       bodyText.includes("enterprise-upgrade") ||
-      (await inspector.locator(".menu-inspector__section--enterprise").count()) > 0,
+      (await inspector.locator(".lp-editor-inspector__section--enterprise").count()) > 0,
     notSeparateProduction:
       bodyText.includes("ikke opprett ny produksjonsrett") ||
       bodyText.includes("ikke opprett en ny produksjonsrett"),
@@ -229,17 +229,17 @@ async function captureMissingVarmrettState(page, captures) {
   await selectTier(page, "Standard lunsjvalg");
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
-    const dayCards = page.locator(".menu-day-card");
+    const dayCards = page.locator(".lp-editor-day");
     const cardCount = await dayCards.count();
 
     for (let i = 0; i < cardCount; i += 1) {
       const card = dayCards.nth(i);
       if (!(await card.isVisible())) continue;
 
-      const hero = card.locator(".menu-day-card__hero.is-missing");
+      const hero = card.locator(".lp-editor-day__hero.is-missing");
       if ((await hero.count()) === 0) continue;
 
-      const title = (await card.locator(".menu-day-card__hero-title").innerText()).trim();
+      const title = (await card.locator(".lp-editor-day__hero-title").innerText()).trim();
       if (title !== COPY.missingVarmrettTitle) continue;
 
       await card.scrollIntoViewIfNeeded();
@@ -281,17 +281,17 @@ async function captureMissingVarmrettState(page, captures) {
 async function captureMissingEnterpriseUpgradeState(page, captures) {
   await selectTier(page, "Premium upgrade");
 
-  const dayCards = page.locator(".menu-day-card");
+  const dayCards = page.locator(".lp-editor-day");
   const cardCount = await dayCards.count();
 
   for (let i = 0; i < cardCount; i += 1) {
     const dayCard = dayCards.nth(i);
     if (!(await dayCard.isVisible())) continue;
 
-    const heroMissing = dayCard.locator(".menu-day-card__hero.is-missing");
+    const heroMissing = dayCard.locator(".lp-editor-day__hero.is-missing");
     if ((await heroMissing.count()) > 0) continue;
 
-    const upgradeTitle = dayCard.locator(".menu-day-card__upgrade-title");
+    const upgradeTitle = dayCard.locator(".lp-editor-day__upgrade-title");
     if ((await upgradeTitle.count()) === 0) continue;
     if ((await upgradeTitle.innerText()).trim() !== COPY.missingEnterpriseUpgradeTitle) continue;
 
@@ -300,7 +300,7 @@ async function captureMissingEnterpriseUpgradeState(page, captures) {
     await dayCard.screenshot({ path: cardPath });
     captures.push(cardPath);
 
-    const upgradeRow = dayCard.locator(".menu-day-card__upgrade-row").first();
+    const upgradeRow = dayCard.locator(".lp-editor-day__upgrade-row").first();
     const rowPath = resolve(OUT_DIR, "04b-missing-enterprise-upgrade-row.png");
     await upgradeRow.screenshot({ path: rowPath });
     captures.push(rowPath);
@@ -372,13 +372,13 @@ async function main() {
   };
   captures.push(await capture(page, "01-basis-full"));
 
-  const cockpit = page.locator(".menu-week-cockpit");
+  const cockpit = page.locator(".lp-editor-cockpit");
   if (await cockpit.count()) {
     await cockpit.first().screenshot({ path: resolve(OUT_DIR, "01b-cockpit-basis.png") });
     captures.push(resolve(OUT_DIR, "01b-cockpit-basis.png"));
   }
 
-  const productionRule = page.locator(".menu-production-rule");
+  const productionRule = page.locator(".lp-editor-production-rule");
   if (await productionRule.count()) {
     await productionRule.first().screenshot({ path: resolve(OUT_DIR, "01c-production-rule.png") });
     captures.push(resolve(OUT_DIR, "01c-production-rule.png"));
@@ -398,14 +398,14 @@ async function main() {
   };
   captures.push(await capture(page, "03-enterprise-full"));
 
-  const enterpriseUpgradeRow = page.locator(".menu-day-card__upgrade-row").first();
+  const enterpriseUpgradeRow = page.locator(".lp-editor-day__upgrade-row").first();
   if (await enterpriseUpgradeRow.count()) {
     await enterpriseUpgradeRow.scrollIntoViewIfNeeded();
     await enterpriseUpgradeRow.screenshot({ path: resolve(OUT_DIR, "03c-enterprise-upgrade-row.png") });
     captures.push(resolve(OUT_DIR, "03c-enterprise-upgrade-row.png"));
   }
 
-  const enterpriseCard = page.locator(".menu-package-card.is-active");
+  const enterpriseCard = page.locator(".lp-editor-package-card.is-active");
   if (await enterpriseCard.count()) {
     await enterpriseCard.first().screenshot({ path: resolve(OUT_DIR, "03b-enterprise-card.png") });
     captures.push(resolve(OUT_DIR, "03b-enterprise-card.png"));
@@ -413,7 +413,7 @@ async function main() {
 
   stateCaptures.missingEnterpriseUpgrade = await captureMissingEnterpriseUpgradeState(page, captures);
 
-  const filledHero = page.locator(".menu-day-card__hero:not(.is-missing)").first();
+  const filledHero = page.locator(".lp-editor-day__hero:not(.is-missing)").first();
   if (await filledHero.count()) {
     await filledHero.scrollIntoViewIfNeeded();
     await filledHero.click();
@@ -421,7 +421,7 @@ async function main() {
     phaseChecks.inspectorVarmrett = await verifyInspector(page, "varmrett");
   }
 
-  const inspector = page.locator(".menu-inspector.is-open");
+  const inspector = page.locator(".lp-editor-inspector.is-open");
   if (await inspector.count()) {
     await inspector.first().screenshot({ path: resolve(OUT_DIR, "05b-inspector-varmrett-panel.png") });
     captures.push(resolve(OUT_DIR, "05b-inspector-varmrett-panel.png"));
@@ -429,7 +429,7 @@ async function main() {
 
   captures.push(await capture(page, "05c-inspector-open-scroll"));
 
-  const upgradeRow = page.locator(".menu-day-card__upgrade-row").first();
+  const upgradeRow = page.locator(".lp-editor-day__upgrade-row").first();
   if (await upgradeRow.count()) {
     await upgradeRow.click();
     await page.waitForTimeout(600);

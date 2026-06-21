@@ -17,6 +17,7 @@ export type SlotContentSource = "published" | "draft" | "legacy" | "empty";
 export type ResolvedProviderMenuSlot = ProviderMenuSlotState & {
   contentSource: SlotContentSource;
   providerOverride?: boolean;
+  autoFilled?: boolean;
   hasGeneratedBaseline?: boolean;
   orderLocked?: boolean;
 };
@@ -43,6 +44,7 @@ function rowToSlot(row: ProviderMenuDayRow, source: SlotContentSource): Resolved
     docId: row.id,
     contentSource: source,
     providerOverride: Boolean(row.providerOverride),
+    autoFilled: Boolean(row.autoFilled),
     hasGeneratedBaseline: Boolean(
       row.generatedBaseline?.mealTitle?.trim() || row.generatedBaseline?.description?.trim(),
     ),

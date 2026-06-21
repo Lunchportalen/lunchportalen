@@ -17,4 +17,7 @@ ci_retry_step "seed-smoke-menu-fixture.mjs" \
 ci_retry_step "seed-e2e-users.mjs" \
   node scripts/smoke/seed-e2e-users.mjs
 
+ci_retry_step "seed-e2e-provider-kitchen-access.mjs" \
+  node scripts/e2e/seed-e2e-provider-kitchen-access.mjs
+
 echo "[ci-retry] seed chain complete"

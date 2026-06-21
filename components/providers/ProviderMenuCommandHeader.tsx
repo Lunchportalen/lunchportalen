@@ -34,25 +34,25 @@ export default function ProviderMenuCommandHeader({
   onWorkspaceViewChange,
 }: Props) {
   return (
-    <header className="menu-command-header">
-      <div className="menu-command-header__top">
-        <div className="menu-command-header__identity">
-          <h2 className="menu-command-header__title">Ukeplanlegger</h2>
-          <p className="menu-command-header__subtitle">Planlegg · kontroller · publiser</p>
+    <header className="lp-editor-command-header">
+      <div className="lp-editor-command-header__top">
+        <div className="lp-editor-command-header__identity">
+          <h2 className="lp-editor-command-header__title">Ukeplanlegger</h2>
+          <p className="lp-editor-command-header__subtitle">Planlegg · kontroller · publiser</p>
         </div>
-        <div className="menu-command-header__week-nav">
+        <div className="lp-editor-command-header__week-nav">
           <button type="button" className="ds-btn ds-btn--ghost" onClick={onPrevWeek}>
             ← Forrige
           </button>
-          <span className="menu-command-header__week-label">Uke fra {weekStart}</span>
+          <span className="lp-editor-command-header__week-label">Uke fra {weekStart}</span>
           <button type="button" className="ds-btn ds-btn--ghost" onClick={onNextWeek}>
             Neste →
           </button>
         </div>
       </div>
 
-      <aside className="menu-production-rule" aria-label="Produksjonsregel">
-        <span className="menu-production-rule__mark" aria-hidden="true">
+      <aside className="lp-editor-production-rule" aria-label="Produksjonsregel">
+        <span className="lp-editor-production-rule__mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path
               fill="currentColor"
@@ -60,13 +60,13 @@ export default function ProviderMenuCommandHeader({
             />
           </svg>
         </span>
-        <div className="menu-production-rule__body">
-          <h3 className="menu-production-rule__title">{PRODUCTION_RULE_TITLE}</h3>
-          <p className="menu-production-rule__text">{PRODUCTION_RULE_TEXT}</p>
+        <div className="lp-editor-production-rule__body">
+          <h3 className="lp-editor-production-rule__title">{PRODUCTION_RULE_TITLE}</h3>
+          <p className="lp-editor-production-rule__text">{PRODUCTION_RULE_TEXT}</p>
         </div>
       </aside>
 
-      <div className="menu-command-header__packages" role="tablist" aria-label="Menypakker">
+      <div className="lp-editor-command-header__packages" role="tablist" aria-label="Menypakker">
         {TIER_ORDER.map((t) => {
           const copy = PACKAGE_CARD_COPY[t];
           const price = prices?.[t];
@@ -77,16 +77,16 @@ export default function ProviderMenuCommandHeader({
               type="button"
               role="tab"
               aria-selected={active}
-              className={`menu-package-card${active ? " is-active" : ""}`}
+              className={`lp-editor-package-card${active ? " is-active" : ""}`}
               onClick={() => onTierChange(t)}
             >
-              <span className="menu-package-card__label">{copy.title}</span>
-              <span className="menu-package-card__role">{copy.role}</span>
-              <span className="menu-package-card__includes">{copy.includes}</span>
+              <span className="lp-editor-package-card__label">{copy.title}</span>
+              <span className="lp-editor-package-card__role">{copy.role}</span>
+              <span className="lp-editor-package-card__includes">{copy.includes}</span>
               {copy.badge ? (
-                <span className="menu-package-card__badge menu-package-card__badge--rule">{copy.badge}</span>
+                <span className="lp-editor-package-card__badge lp-editor-package-card__badge--rule">{copy.badge}</span>
               ) : null}
-              <span className="menu-package-card__price">
+              <span className="lp-editor-package-card__price">
                 {price
                   ? `${formatPriceExVatLabel(price.priceExVatNok)} · ${formatPriceIncVatLabel(price.priceIncVatNok)}`
                   : copy.priceHint}
@@ -96,12 +96,12 @@ export default function ProviderMenuCommandHeader({
         })}
       </div>
 
-      <div className="menu-command-header__views" role="tablist" aria-label="Workspace">
+      <div className="lp-editor-command-header__views" role="tablist" aria-label="Workspace">
         <button
           type="button"
           role="tab"
           aria-selected={workspaceView === "week"}
-          className={`menu-command-header__view-tab${workspaceView === "week" ? " is-active" : ""}`}
+          className={`lp-editor-command-header__view-tab${workspaceView === "week" ? " is-active" : ""}`}
           onClick={() => onWorkspaceViewChange("week")}
         >
           Ukeplan
@@ -110,7 +110,7 @@ export default function ProviderMenuCommandHeader({
           type="button"
           role="tab"
           aria-selected={workspaceView === "catalog"}
-          className={`menu-command-header__view-tab${workspaceView === "catalog" ? " is-active" : ""}`}
+          className={`lp-editor-command-header__view-tab${workspaceView === "catalog" ? " is-active" : ""}`}
           onClick={() => onWorkspaceViewChange("catalog")}
         >
           Menykatalog

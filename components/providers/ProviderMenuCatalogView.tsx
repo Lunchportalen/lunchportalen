@@ -32,12 +32,12 @@ export default function ProviderMenuCatalogView({
   }
 
   return (
-    <section className="ds-provider-menu-catalog" aria-label="Menykatalog">
-      <header className="ds-provider-menu-catalog__head">
+    <section className="lp-editor-catalog" aria-label="Menykatalog">
+      <header className="lp-editor-catalog__head">
         <h2 className="ds-h4">Menykatalog</h2>
         <p className="ds-body">Faste alternativer for din leverandør — ikke ukesinnhold.</p>
         {catalogSupportsPersistentEdit() ? (
-          <p className="ds-provider-menu-catalog__gap" role="status">
+          <p className="lp-editor-catalog__gap" role="status">
             {CATALOG_PERSISTENCE_GAP}
           </p>
         ) : null}
@@ -47,33 +47,33 @@ export default function ProviderMenuCatalogView({
         <ProviderMenuCatalogEditor tier={tier} catalog={catalog} onCatalogSaved={onCatalogSaved} />
       ) : null}
 
-      <div className="ds-provider-menu-catalog__groups">
+      <div className="lp-editor-catalog__groups">
         {[...byCategory.entries()].map(([label, items]) => (
-          <section key={label} className="ds-provider-menu-catalog__group">
-            <h3 className="ds-provider-menu-catalog__group-title">{label}</h3>
-            <ul className="ds-provider-menu-catalog__list">
+          <section key={label} className="lp-editor-catalog__group">
+            <h3 className="lp-editor-catalog__group-title">{label}</h3>
+            <ul className="lp-editor-catalog__list">
               {items.map((item) => (
                 <li key={item.id}>
                   <button
                     type="button"
-                    className="ds-provider-menu-catalog__item"
+                    className="lp-editor-catalog__item"
                     onClick={() => onSelectVariant(item)}
                   >
-                    <span className="ds-provider-menu-catalog__item-label">{item.label}</span>
+                    <span className="lp-editor-catalog__item-label">{item.label}</span>
                     {item.source === "SANITY" ? (
-                      <span className="ds-provider-menu-catalog__item-meta">Sanity/bank</span>
+                      <span className="lp-editor-catalog__item-meta">Sanity/bank</span>
                     ) : (
-                      <span className="ds-provider-menu-catalog__item-meta">Din katalog</span>
+                      <span className="lp-editor-catalog__item-meta">Din katalog</span>
                     )}
                     {item.allergens.length > 0 ? (
-                      <span className="ds-provider-menu-catalog__item-allergens">
+                      <span className="lp-editor-catalog__item-allergens">
                         {item.allergens.join(", ")}
                       </span>
                     ) : null}
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt="" className="ds-provider-menu-catalog__thumb" />
+                      <img src={item.imageUrl} alt="" className="lp-editor-catalog__thumb" />
                     ) : (
-                      <span className="ds-provider-menu-catalog__media-slot" aria-hidden="true" />
+                      <span className="lp-editor-catalog__media-slot" aria-hidden="true" />
                     )}
                   </button>
                 </li>
