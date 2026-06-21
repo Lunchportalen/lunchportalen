@@ -8,6 +8,7 @@ import pg from "pg";
 import {
   SMOKE_COMPANY_ID,
   SMOKE_LOCATION_ID,
+  SMOKE_ORDER_DATE,
   SMOKE_EMPLOYEE_A1,
   SMOKE_KITCHEN_USER_A,
   SMOKE_DRIVER_USER_A,
@@ -64,26 +65,55 @@ async function ensureProviderMemberships(locationId) {
 
 /** Pick a service date with published menu — future first, else latest fixture (past) with explicit menu fields. */
 async function resolveVerifyOrderContext(client, locationId) {
+  const menuSelect = `select msd.service_date::text as d, msd.id as menu_day_id, msd.company_id, msd.cutoff_at
+     from public.menu_service_days msd
+     where msd.location_id = $1::uuid
+       and msd.state in ('published'::public.menu_state, 'locked'::public.menu_state)`;
+
+  const agreementExists = `exists (
+       select 1
+       from public.agreements a
+       where a.company_id = msd.company_id
+         and a.location_id = msd.location_id
+         and upper(a.status::text) = 'ACTIVE'
+         and coalesce(a.starts_at, a.start_date) <= msd.service_date
+         and (a.ends_at is null or a.ends_at >= msd.service_date)
+     )`;
+
   const envOverride = String(process.env.BATCH_VERIFY_ORDER_DATE ?? "").trim();
   if (envOverride) {
     const { rows } = await client.query(
-      `select msd.service_date::text as d, msd.id as menu_day_id, msd.company_id, msd.cutoff_at
-       from public.menu_service_days msd
-       where msd.location_id = $1::uuid and msd.service_date = $2::date
-         and msd.state in ('published'::public.menu_state, 'locked'::public.menu_state)
-       limit 1`,
+      `${menuSelect} and msd.service_date = $2::date and ${agreementExists} limit 1`,
       [locationId, envOverride],
     );
     if (!rows[0]) throw new Error(`BATCH_VERIFY_NO_MENU: no menu on ${envOverride} for ${locationId}`);
-    return { orderDate: rows[0].d, menuDayId: rows[0].menu_day_id, companyId: rows[0].company_id, cutoffAt: rows[0].cutoff_at, bypassDefaults: false };
+    return {
+      orderDate: rows[0].d,
+      menuDayId: rows[0].menu_day_id,
+      companyId: rows[0].company_id,
+      cutoffAt: rows[0].cutoff_at,
+      bypassDefaults: rows[0].d < (await client.query(`select public.oslo_today()::text as d`)).rows[0].d,
+    };
+  }
+
+  const { rows: fixture } = await client.query(
+    `${menuSelect} and msd.service_date = $2::date and ${agreementExists} limit 1`,
+    [locationId, SMOKE_ORDER_DATE],
+  );
+  if (fixture[0]) {
+    return {
+      orderDate: fixture[0].d,
+      menuDayId: fixture[0].menu_day_id,
+      companyId: fixture[0].company_id,
+      cutoffAt: fixture[0].cutoff_at,
+      bypassDefaults: true,
+    };
   }
 
   const { rows: future } = await client.query(
-    `select msd.service_date::text as d, msd.id as menu_day_id, msd.company_id, msd.cutoff_at
-     from public.menu_service_days msd
-     where msd.location_id = $1::uuid
+    `${menuSelect}
        and msd.service_date >= public.oslo_today()
-       and msd.state in ('published'::public.menu_state, 'locked'::public.menu_state)
+       and ${agreementExists}
      order by msd.service_date asc
      limit 1`,
     [locationId],
@@ -99,16 +129,14 @@ async function resolveVerifyOrderContext(client, locationId) {
   }
 
   const { rows: latest } = await client.query(
-    `select msd.service_date::text as d, msd.id as menu_day_id, msd.company_id, msd.cutoff_at
-     from public.menu_service_days msd
-     where msd.location_id = $1::uuid
-       and msd.state in ('published'::public.menu_state, 'locked'::public.menu_state)
+    `${menuSelect}
+       and ${agreementExists}
      order by msd.service_date desc
      limit 1`,
     [locationId],
   );
   if (!latest[0]) {
-    throw new Error(`BATCH_VERIFY_NO_MENU: no menu_service_days for location ${locationId}`);
+    throw new Error(`BATCH_VERIFY_NO_MENU: no menu_service_days with active agreement for location ${locationId}`);
   }
   return {
     orderDate: latest[0].d,
