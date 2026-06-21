@@ -13,6 +13,8 @@ export type ProviderOrderLockState = {
   datesWithOrders: ReadonlySet<string>;
   /** `categoryKey::itemSlug` (lowercase) */
   lockedCatalogItemKeys: ReadonlySet<string>;
+  /** Distinct ACTIVE order employees per service date (provider-scoped). */
+  orderCountsByDate: ReadonlyMap<string, number>;
   /** Fail-closed: treat writes as locked when Supabase check failed */
   queryFailed: boolean;
 };
@@ -62,6 +64,7 @@ function failClosedState(): ProviderOrderLockState {
   return {
     datesWithOrders: new Set(),
     lockedCatalogItemKeys: new Set(),
+    orderCountsByDate: new Map(),
     queryFailed: true,
   };
 }
@@ -88,12 +91,23 @@ export async function loadProviderOrderLockState(providerId: string): Promise<Pr
       return {
         datesWithOrders: new Set(),
         lockedCatalogItemKeys: new Set(),
+        orderCountsByDate: new Map(),
         queryFailed: false,
       };
     }
 
     const orderKeys = new Set(orders.map(orderMatchKey));
     const datesWithOrders = new Set(orders.map((o) => o.date));
+    const usersByDate = new Map<string, Set<string>>();
+    for (const o of orders) {
+      const bucket = usersByDate.get(o.date) ?? new Set<string>();
+      bucket.add(o.user_id);
+      usersByDate.set(o.date, bucket);
+    }
+    const orderCountsByDate = new Map<string, number>();
+    for (const [date, users] of usersByDate.entries()) {
+      orderCountsByDate.set(date, users.size);
+    }
     const dates = [...datesWithOrders];
 
     const { data: choicesRaw, error: choicesError } = await admin
@@ -117,6 +131,7 @@ export async function loadProviderOrderLockState(providerId: string): Promise<Pr
     return {
       datesWithOrders,
       lockedCatalogItemKeys,
+      orderCountsByDate,
       queryFailed: false,
     };
   } catch {

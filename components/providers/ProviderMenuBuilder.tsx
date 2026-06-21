@@ -52,6 +52,8 @@ import {
   type ProviderMenuPriceView,
 } from "@/lib/providers/providerMenuPriceDisplay";
 
+import "@/app/styles/ds/provider-menu-editor.css";
+
 type MenuWeekResponse = {
   ok: boolean;
   rid?: string;
@@ -73,9 +75,12 @@ type MenuWeekResponse = {
       upgradeNote: string | null;
       status: "draft" | "published";
       orderLocked?: boolean;
+      autoFilled?: boolean;
+      providerOverride?: boolean;
     }>;
     prices: Record<PlanTier, ProviderMenuPriceView>;
     catalog?: ProviderMenuCatalogSnapshot;
+    orderCountsByDate?: Record<string, number>;
   };
 };
 
@@ -126,6 +131,7 @@ export default function ProviderMenuBuilder() {
   const [prices, setPrices] = useState<Record<PlanTier, ProviderMenuPriceView> | null>(null);
   const [catalog, setCatalog] = useState<ProviderMenuCatalogSnapshot>(EMPTY_PROVIDER_MENU_CATALOG);
   const [slots, setSlots] = useState<Record<string, ResolvedProviderMenuSlot>>({});
+  const [orderCountsByDate, setOrderCountsByDate] = useState<Record<string, number>>({});
   const [form, setForm] = useState<ResolvedProviderMenuSlot | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -174,11 +180,14 @@ export default function ProviderMenuBuilder() {
       }
       setPrices(json.data.prices);
       setCatalog(json.data.catalog ?? EMPTY_PROVIDER_MENU_CATALOG);
+      setOrderCountsByDate(json.data.orderCountsByDate ?? {});
       const merged = mergeProviderMenuRowsIntoSlots(
         json.data.items.map((item) => ({
           ...item,
           approvedForPublish: item.status === "published",
           customerVisible: item.status === "published",
+          providerOverride: item.providerOverride,
+          autoFilled: item.autoFilled,
         })),
       );
       const next: Record<string, ResolvedProviderMenuSlot> = { ...merged };
@@ -358,18 +367,20 @@ export default function ProviderMenuBuilder() {
 
   const varmrettEditorState = useMemo(() => {
     if (!selected?.date || selected.category !== "varmrett") {
-      return { providerOverride: false, hasGeneratedBaseline: false, orderLocked: false };
+      return { providerOverride: false, hasGeneratedBaseline: false, orderLocked: false, autoFilled: false };
     }
     let providerOverride = false;
     let hasGeneratedBaseline = false;
     let orderLocked = false;
+    let autoFilled = false;
     for (const t of PLAN_TIERS) {
       const slot = slots[slotKey(selected.date, t, "varmrett")];
       if (slot?.providerOverride) providerOverride = true;
+      if (slot?.autoFilled) autoFilled = true;
       if (slot?.hasGeneratedBaseline) hasGeneratedBaseline = true;
       if (slot?.orderLocked) orderLocked = true;
     }
-    return { providerOverride, hasGeneratedBaseline, orderLocked };
+    return { providerOverride, hasGeneratedBaseline, orderLocked, autoFilled };
   }, [selected, slots]);
 
   const editorContext =
@@ -438,7 +449,7 @@ export default function ProviderMenuBuilder() {
   const inspectorOpen = Boolean(form && selected);
 
   return (
-    <div className="ds-provider-menu-workspace provider-menu-workspace">
+    <div className="lp-editor-root lp-editor-workspace">
       <ProviderMenuCommandHeader
         tier={tier}
         weekStart={weekStart}
@@ -464,7 +475,7 @@ export default function ProviderMenuBuilder() {
       />
 
       {error ? (
-        <p className="ds-provider-menu-builder__error" role="alert">
+        <p className="lp-editor-builder__error" role="alert">
           {error}
         </p>
       ) : null}
@@ -475,15 +486,15 @@ export default function ProviderMenuBuilder() {
       ) : null}
 
       <div
-        className={`provider-menu-layout ds-provider-menu-workspace__body${inspectorOpen ? " is-inspector-open" : " is-inspector-idle"}${loading ? " is-week-loading" : ""}`}
+        className={`lp-editor-layout lp-editor-workspace__body${inspectorOpen ? " is-inspector-open" : " is-inspector-idle"}${loading ? " is-week-loading" : ""}`}
       >
-        <div className={`ds-provider-menu-workspace__planner${loading && !prices ? " is-initial-loading" : ""}`}>
+        <div className={`lp-editor-workspace__planner${loading && !prices ? " is-initial-loading" : ""}`}>
           {workspaceView === "week" ? (
             <>
               {loading && !prices ? (
-                <div className="menu-week-skeleton" aria-busy="true" aria-label="Laster meny">
+                <div className="lp-editor-skeleton" aria-busy="true" aria-label="Laster meny">
                   {weekDates.map((date) => (
-                    <div key={date} className="menu-week-skeleton__day" />
+                    <div key={date} className="lp-editor-skeleton__day" />
                   ))}
                 </div>
               ) : null}
@@ -493,11 +504,12 @@ export default function ProviderMenuBuilder() {
                 weekDates={weekDates}
                 slots={slots}
                 selected={selected}
+                orderCountsByDate={orderCountsByDate}
                 onSelect={openSelection}
               />
               {!inspectorOpen ? (
-                <p className="menu-planner-idle-hint">
-                  <span className="menu-planner-idle-hint__mark" aria-hidden="true" />
+                <p className="lp-editor-planner-hint">
+                  <span className="lp-editor-planner-hint__mark" aria-hidden="true" />
                   Velg en dag i ukeplanen for å redigere varmrett, valg eller Enterprise-upgrade.
                 </p>
               ) : null}
@@ -512,7 +524,7 @@ export default function ProviderMenuBuilder() {
           )}
         </div>
 
-        <div className="ds-provider-menu-workspace__inspector">
+        <div className="lp-editor-workspace__inspector">
           <ProviderMenuEditorPanel
           open={inspectorOpen}
           context={editorContext}
@@ -528,8 +540,12 @@ export default function ProviderMenuBuilder() {
           onPublish={() => startTransition(() => save("published"))}
           onResetToGenerated={() => startTransition(() => resetVarmrettToGenerated())}
           varmrettProviderOverride={varmrettEditorState.providerOverride}
+          varmrettAutoFilled={varmrettEditorState.autoFilled}
           varmrettHasGeneratedBaseline={varmrettEditorState.hasGeneratedBaseline}
           varmrettOrderLocked={varmrettEditorState.orderLocked}
+          varmrettOrderCount={
+            selected?.date ? orderCountsByDate[selected.date] ?? 0 : 0
+          }
           onCopyFromBasis={() => copyFromPackage("BASIS")}
           onCopyFromLuxus={() => copyFromPackage("LUXUS")}
           pending={pending}

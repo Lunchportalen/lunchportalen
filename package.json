@@ -32,6 +32,8 @@
     "e2e:update-snapshots": "playwright test --config playwright.config.ts --update-snapshots",
     "e2e:week-visual": "playwright test --config playwright.week-visual.config.ts",
     "e2e:week-visual:update": "playwright test --config playwright.week-visual.config.ts --update-snapshots",
+    "e2e:provider-meny-visual": "playwright test --config playwright.provider-meny.config.ts",
+    "e2e:provider-meny-visual:update": "playwright test --config playwright.provider-meny.config.ts --update-snapshots",
     "e2e:characterize-screenshot-red": "node scripts/e2e/characterize-steg8-screenshot-red.mjs",
     "e2e:install": "playwright install --with-deps",
     "e2e:debug": "playwright test --config playwright.config.ts --debug",

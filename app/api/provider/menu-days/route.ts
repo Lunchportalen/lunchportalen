@@ -251,6 +251,11 @@ export async function GET(req: NextRequest) {
   const lockedItems = applyOrderLocksToMenuDayRows(items, lockState);
   const varmrettLockedDates = [...lockState.datesWithOrders].filter((d) => dates.includes(d));
 
+  const orderCountsByDate: Record<string, number> = {};
+  for (const [date, count] of lockState.orderCountsByDate.entries()) {
+    orderCountsByDate[date] = count;
+  }
+
   return jsonOk(
     rid,
     {
@@ -260,6 +265,7 @@ export async function GET(req: NextRequest) {
       prices,
       catalog,
       varmrettLockedDates,
+      orderCountsByDate,
       providerId: provider.id,
       providerSlug: provider.slug,
     },

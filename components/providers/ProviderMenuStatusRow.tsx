@@ -94,57 +94,57 @@ export default function ProviderMenuStatusRow({
       : null;
 
   return (
-    <section className="menu-week-cockpit" aria-label="Uke-cockpit">
-      <div className="menu-week-cockpit__grid">
-        <div className="menu-week-cockpit__main">
-          <p className="menu-week-cockpit__eyebrow">Operativ ukestatus</p>
-          <p className="menu-week-cockpit__summary">{cockpitLine}</p>
-          <div className="menu-week-cockpit__meta">
-            <span className="menu-week-cockpit__tier">{tierLabel}</span>
+    <section className="lp-editor-cockpit" aria-label="Uke-cockpit">
+      <div className="lp-editor-cockpit__grid">
+        <div className="lp-editor-cockpit__main">
+          <p className="lp-editor-cockpit__eyebrow">Operativ ukestatus</p>
+          <p className="lp-editor-cockpit__summary">{cockpitLine}</p>
+          <div className="lp-editor-cockpit__meta">
+            <span className="lp-editor-cockpit__tier">{tierLabel}</span>
             {priceExVatNok != null ? (
-              <span className="menu-week-cockpit__price">{formatPriceExVatLabel(priceExVatNok)}</span>
+              <span className="lp-editor-cockpit__price">{formatPriceExVatLabel(priceExVatNok)}</span>
             ) : null}
-            <span className={`menu-week-cockpit__status ${displayStatusClass}`} role="status">
+            <span className={`lp-editor-cockpit__status ${displayStatusClass}`} role="status">
               {displayStatus}
             </span>
           </div>
         </div>
 
-        <div className="menu-week-cockpit__metrics" aria-label="Ukeprogresjon">
-          <div className="menu-week-cockpit__metric">
-            <span className="menu-week-cockpit__metric-value">
+        <div className="lp-editor-cockpit__metrics" aria-label="Ukeprogresjon">
+          <div className="lp-editor-cockpit__metric">
+            <span className="lp-editor-cockpit__metric-value">
               {metrics.varmrettFilled}/{metrics.daysPlanned}
             </span>
-            <span className="menu-week-cockpit__metric-label">Varmrett satt</span>
+            <span className="lp-editor-cockpit__metric-label">Varmrett satt</span>
           </div>
-          <div className="menu-week-cockpit__metric">
-            <span className="menu-week-cockpit__metric-value">{varmrettPublishedDays}</span>
-            <span className="menu-week-cockpit__metric-label">Varmrett publisert</span>
+          <div className="lp-editor-cockpit__metric">
+            <span className="lp-editor-cockpit__metric-value">{varmrettPublishedDays}</span>
+            <span className="lp-editor-cockpit__metric-label">Varmrett publisert</span>
           </div>
-          <div className="menu-week-cockpit__metric">
-            <span className="menu-week-cockpit__metric-value">{varmrettDraftDays}</span>
-            <span className="menu-week-cockpit__metric-label">Varmrett utkast</span>
+          <div className="lp-editor-cockpit__metric">
+            <span className="lp-editor-cockpit__metric-value">{varmrettDraftDays}</span>
+            <span className="lp-editor-cockpit__metric-label">Varmrett utkast</span>
           </div>
         </div>
 
-        <div className="menu-week-cockpit__action">
-          <span className="menu-week-cockpit__next-label">Neste steg</span>
-          <span className="menu-week-cockpit__next-step">{nextStep}</span>
+        <div className="lp-editor-cockpit__action">
+          <span className="lp-editor-cockpit__next-label">Neste steg</span>
+          <span className="lp-editor-cockpit__next-step">{nextStep}</span>
         </div>
       </div>
 
-      <div className="menu-week-cockpit__progress" aria-hidden="true">
-        <div className="menu-week-cockpit__progress-track">
+      <div className="lp-editor-cockpit__progress" aria-hidden="true">
+        <div className="lp-editor-cockpit__progress-track">
           <div
-            className={`menu-week-cockpit__progress-fill${varmrettProgress >= 100 ? " is-complete" : ""}`}
+            className={`lp-editor-cockpit__progress-fill${varmrettProgress >= 100 ? " is-complete" : ""}`}
             style={{ width: `${varmrettProgress}%` }}
           />
         </div>
-        <span className="menu-week-cockpit__progress-label">{varmrettProgress}% varmrett klar</span>
+        <span className="lp-editor-cockpit__progress-label">{varmrettProgress}% varmrett klar</span>
       </div>
 
       {varmrettWarning ? (
-        <p className="menu-week-cockpit__warning" role="status">
+        <p className="lp-editor-cockpit__warning" role="status">
           {varmrettWarning}. Uken kan ikke publiseres før alle leveringsdager har dagens varmrett.
         </p>
       ) : null}

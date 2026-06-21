@@ -20,6 +20,7 @@ function lockState(
   return {
     datesWithOrders: partial.datesWithOrders ?? new Set(),
     lockedCatalogItemKeys: partial.lockedCatalogItemKeys ?? new Set(),
+    orderCountsByDate: partial.orderCountsByDate ?? new Map(),
     queryFailed: partial.queryFailed,
   };
 }
@@ -38,6 +39,18 @@ describe("providerMenuOrderLock", () => {
     });
     expect(isCatalogItemLocked(state, "paasmurt", "laks")).toBe(true);
     expect(isCatalogItemLocked(state, "paasmurt", "kylling")).toBe(false);
+  });
+
+  test("orderCountsByDate is exposed on lock state", () => {
+    const state = lockState({
+      queryFailed: false,
+      orderCountsByDate: new Map([
+        ["2026-06-16", 14],
+        ["2026-06-17", 3],
+      ]),
+    });
+    expect(state.orderCountsByDate.get("2026-06-16")).toBe(14);
+    expect(state.orderCountsByDate.get("2026-06-17")).toBe(3);
   });
 
   test("fail-closed query marks catalog items locked", () => {
