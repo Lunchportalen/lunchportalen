@@ -13,7 +13,7 @@ export type LocaleReadinessRow = {
 
 /**
  * Documented locale model for provider/customer surfaces.
- * Provider default locale is the only storable scope today (provider_settings.locale).
+ * Storable today: provider_settings.locale (provider UI) and profiles.preferred_locale (app UI).
  */
 export const PROVIDER_LOCALE_READINESS: readonly LocaleReadinessRow[] = [
   {
