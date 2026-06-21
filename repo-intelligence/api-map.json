@@ -122,6 +122,27 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/admin/agreement/change-requests/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/admin/agreement/change-requests",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/admin/agreement/change-requests/[requestId]/cancel/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/admin/agreement/change-requests/[requestId]/cancel",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/admin/agreements/route.ts",
       "methods": [
         "GET"
@@ -2558,6 +2579,16 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/cron/menu-week-opening-notify/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/cron/menu-week-opening-notify",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/cron/menu-week-rollout/route.ts",
       "methods": [
         "GET"
@@ -2833,6 +2864,19 @@
       "rpc_calls": [],
       "uses_tables": [
         "ai_activity_log"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/employee/notification-preferences/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "route": "/api/employee/notification-preferences",
+      "rpc_calls": [],
+      "uses_tables": [
+        "employee_notification_preferences"
       ]
     },
     {
@@ -3881,11 +3925,75 @@
     },
     {
       "confidence": "confirmed",
-      "file": "app/api/provider/menu-days/route.ts",
+      "file": "app/api/provider/customers/[companyId]/agreement/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "route": "/api/provider/customers/[companyId]/agreement",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/customers/[companyId]/remove/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/provider/customers/[companyId]/remove",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/customers/[companyId]/restore/route.ts",
       "methods": [
         "POST"
       ],
+      "route": "/api/provider/customers/[companyId]/restore",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/menu-catalog/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/provider/menu-catalog",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/menu-days/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "route": "/api/provider/menu-days",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/menu-days/varmrett/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/menu-days/varmrett",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/menu-days/varmrett/reset/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/menu-days/varmrett/reset",
       "rpc_calls": [],
       "uses_tables": []
     },
@@ -4600,6 +4708,16 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/superadmin/agreement-change-requests/[requestId]/approve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/superadmin/agreement-change-requests/[requestId]/approve",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/superadmin/agreements/route.ts",
       "methods": [
         "GET",
@@ -4884,13 +5002,8 @@
       "route": "/api/superadmin/companies",
       "rpc_calls": [],
       "uses_tables": [
-        "agreements",
         "audit_events",
-        "companies",
-        "company_agreements",
-        "company_current_agreement",
-        "company_registrations",
-        "profiles"
+        "companies"
       ]
     },
     {
@@ -5011,6 +5124,19 @@
       "route": "/api/superadmin/companies/[companyId]/reject",
       "rpc_calls": [],
       "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/companies/[companyId]/remove/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/superadmin/companies/[companyId]/remove",
+      "rpc_calls": [],
+      "uses_tables": [
+        "companies"
+      ]
     },
     {
       "confidence": "confirmed",

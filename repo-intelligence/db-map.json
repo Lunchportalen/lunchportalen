@@ -28,13 +28,22 @@
         "lib/revenue/applyLoop.ts"
       ]
     },
+    "agreement_change_requests": {
+      "used_in": [
+        "lib/agreements/changeRequestService.ts",
+        "lib/agreements/resolveAgreementForDate.ts"
+      ]
+    },
     "agreement_delivery_days": {
       "used_in": [
         "lib/agreement/currentAgreement.ts",
+        "lib/agreements/resolveAgreementForDate.ts",
         "lib/auth/agreementStatus.ts",
         "lib/menu-publish/runMenuWeekRolloutCore.ts",
         "lib/menu-publish/syncMenuServiceDayItems.ts",
-        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts"
+        "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/providers/loadProviderCustomerDetail.ts",
+        "lib/server/provider/providerCustomerAgreementService.ts"
       ]
     },
     "agreement_invoice_lines": {
@@ -60,13 +69,14 @@
         "app/api/superadmin/agreements/[agreementId]/activate/route.ts",
         "app/api/superadmin/agreements/list/route.ts",
         "app/api/superadmin/companies/[companyId]/route.ts",
-        "app/api/superadmin/companies/route.ts",
         "app/api/week/route.ts",
         "app/kitchen/page.tsx",
         "app/superadmin/agreements/page.tsx",
         "lib/admin/fetchAgreementPageDataServer.ts",
         "lib/agreement/currentAgreement.ts",
         "lib/agreement/loadAgreementContext.ts",
+        "lib/agreements/changeRequestService.ts",
+        "lib/agreements/resolveAgreementForDate.ts",
         "lib/auth/getScopeServer.ts",
         "lib/auth/scope.ts",
         "lib/billing/invoiceEngine.ts",
@@ -75,14 +85,19 @@
         "lib/menu-publish/runMenuWeekRolloutCore.ts",
         "lib/menu-publish/syncMenuServiceDayItems.ts",
         "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/notifications/menuWeekOpeningNotify.ts",
         "lib/pricing/priceForDate.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
         "lib/providers/loadProviderDashboard.ts",
         "lib/server/admin/loadCompanyOperationalBrief.ts",
         "lib/server/admin/loadCompanyWeekBookabilityOverview.ts",
         "lib/server/agreements/ledgerAgreementApproval.ts",
+        "lib/server/provider/providerCustomerAgreementService.ts",
+        "lib/server/provider/providerCustomerRestore.ts",
         "lib/server/superadmin/createAgreementDraftFromRegistration.ts",
         "lib/server/superadmin/loadCompanyRegistrationsInbox.ts",
+        "lib/server/superadmin/loadSuperadminProviderDetail.ts",
+        "lib/server/superadmin/loadSuperadminProviderList.ts",
         "lib/superadmin/loadSuperadminHomeSignals.ts",
         "lib/superadmin/queries.ts",
         "scripts/k6/diag-prod-pool-access.mjs",
@@ -322,6 +337,7 @@
         "lib/ipo/governance.ts",
         "lib/ops/logOpsEvent.ts",
         "lib/ops/signals.ts",
+        "lib/providers/loadProviderCustomerDetail.ts",
         "lib/security/dashboardAudit.ts",
         "lib/server/admin/loadCompanyOperativeRecentHistory.ts",
         "lib/server/superadmin/loadDailyOperationalBrief.ts"
@@ -436,6 +452,7 @@
         "app/api/superadmin/cfo/summary/route.ts",
         "app/api/superadmin/companies/[companyId]/archive/route.ts",
         "app/api/superadmin/companies/[companyId]/archive/summary/route.ts",
+        "app/api/superadmin/companies/[companyId]/remove/route.ts",
         "app/api/superadmin/companies/[companyId]/route.ts",
         "app/api/superadmin/companies/agreement/route.ts",
         "app/api/superadmin/companies/route.ts",
@@ -462,6 +479,7 @@
         "app/superadmin/overview/page.tsx",
         "lib/admin/fetchAgreementPageDataServer.ts",
         "lib/admin/loadAdminContext.ts",
+        "lib/admin/loadDashboardCompanyMeta.ts",
         "lib/admin/readCompanyDisplayName.ts",
         "lib/agreement/loadAgreementContext.ts",
         "lib/ai/billing.ts",
@@ -488,6 +506,7 @@
         "lib/menu-publish/syncMenuServiceDayItems.ts",
         "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
         "lib/menu/providerMenuScope.ts",
+        "lib/notifications/menuWeekOpeningNotify.ts",
         "lib/orders/backupContext.ts",
         "lib/orders/companyOrderEligibility.ts",
         "lib/platform/engine.ts",
@@ -498,8 +517,16 @@
         "lib/saas/billing.ts",
         "lib/saas/onboarding.ts",
         "lib/server/agreements/ledgerAgreementApproval.ts",
+        "lib/server/provider/providerCustomerAgreementService.ts",
+        "lib/server/provider/providerCustomerRemoval.ts",
+        "lib/server/provider/providerCustomerRestore.ts",
+        "lib/server/provider/providerCustomerRouteAuth.ts",
         "lib/server/superadmin/companyLifecycleStatusApply.ts",
         "lib/server/superadmin/createAgreementDraftFromRegistration.ts",
+        "lib/server/superadmin/executeCompanyRemoval.ts",
+        "lib/server/superadmin/loadSuperadminProviderDetail.ts",
+        "lib/server/superadmin/loadSuperadminProviderList.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "lib/superadmin/loadSuperadminHomeSignals.ts",
         "lib/superadmin/queries.ts",
         "scripts/system-test/steps/createCompany.ts",
@@ -515,7 +542,6 @@
         "app/api/superadmin/agreements/[agreementId]/resume/route.ts",
         "app/api/superadmin/companies/[companyId]/agreement/status/route.ts",
         "app/api/superadmin/companies/[companyId]/route.ts",
-        "app/api/superadmin/companies/route.ts",
         "app/api/superadmin/invoices/csv/route.ts"
       ]
     },
@@ -534,7 +560,6 @@
         "app/api/kitchen/batch/start/route.ts",
         "app/api/me/agreement/route.ts",
         "app/api/order/window/route.ts",
-        "app/api/superadmin/companies/route.ts",
         "app/api/superadmin/system/flow/diagnostics/route.ts",
         "lib/admin/fetchAgreementPageDataServer.ts",
         "lib/agreement/requireRule.ts",
@@ -616,11 +641,15 @@
         "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
         "lib/orders/backupContext.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
+        "lib/providers/providerOrderEnrichment.ts",
         "lib/server/admin/loadCompanyOperationalBrief.ts",
         "lib/server/admin/loadCompanyOperativeDayRoster.ts",
         "lib/server/admin/loadCompanyOperativeRecentHistory.ts",
         "lib/server/agreements/ledgerAgreementApproval.ts",
         "lib/server/employee/loadEmployeeOwnLunchRecentHistory.ts",
+        "lib/server/provider/providerCustomerAgreementService.ts",
+        "lib/server/superadmin/executeCompanyRemoval.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "scripts/system-test/steps/createLocation.ts",
         "scripts/system-test/utils/cleanup.ts"
       ]
@@ -634,10 +663,10 @@
       "used_in": [
         "app/api/public/register-company/route.ts",
         "app/api/superadmin/companies/[companyId]/route.ts",
-        "app/api/superadmin/companies/route.ts",
         "lib/orderBackup/admin.ts",
         "lib/providers/loadProviderRegistrations.ts",
         "lib/server/agreements/ledgerAgreementApproval.ts",
+        "lib/server/provider/providerCustomerAgreementService.ts",
         "lib/server/superadmin/loadCompanyRegistrationsInbox.ts"
       ]
     },
@@ -798,7 +827,10 @@
         "app/api/order/cancel/route.ts",
         "app/api/order/window/route.ts",
         "lib/kitchen/dayData.ts",
-        "lib/server/kitchen/loadOperativeKitchenOrders.ts"
+        "lib/provider-menu/providerMenuOrderLock.ts",
+        "lib/providers/providerOrderEnrichment.ts",
+        "lib/server/kitchen/loadOperativeKitchenOrders.ts",
+        "lib/superadmin/loadPilotControlCenter.ts"
       ]
     },
     "deliveries": {
@@ -850,7 +882,15 @@
         "app/api/superadmin/employees/[userId]/route.ts",
         "app/api/superadmin/users/cleanup/route.ts",
         "app/api/superadmin/users/delete/route.ts",
-        "lib/invites/createEmployeeSingleInvite.ts"
+        "lib/invites/createEmployeeSingleInvite.ts",
+        "lib/invites/resolveEmployeeInviteContext.ts",
+        "lib/superadmin/loadPilotControlCenter.ts"
+      ]
+    },
+    "employee_notification_preferences": {
+      "used_in": [
+        "app/api/employee/notification-preferences/route.ts",
+        "lib/notifications/menuWeekOpeningNotify.ts"
       ]
     },
     "enterprise_groups": {
@@ -1069,7 +1109,6 @@
         "lib/integrations/tripletex/providerSaasInvoiceSync.ts",
         "lib/integrations/tripletex/reprocessWebhookEvent.ts",
         "lib/integrations/tripletex/webhookHandlers.ts",
-        "lib/providers/loadProviderCustomerDetail.ts",
         "lib/providers/loadProviderDashboard.ts"
       ]
     },
@@ -1100,6 +1139,11 @@
         "lib/social/mediaAdapter.ts"
       ]
     },
+    "memberships": {
+      "used_in": [
+        "lib/server/superadmin/executeCompanyRemoval.ts"
+      ]
+    },
     "menu_service_day_items": {
       "used_in": [
         "lib/menu-publish/syncMenuServiceDayItems.ts",
@@ -1111,6 +1155,7 @@
       "used_in": [
         "lib/menu-publish/syncMenuServiceDayItems.ts",
         "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "lib/week/loadEmployeeWeekMenusFromMsdi.ts",
         "scripts/smoke/_first-menu-order-smoke.mjs"
       ]
@@ -1119,6 +1164,11 @@
       "used_in": [
         "app/api/cron/week-visibility/route.ts",
         "app/api/superadmin/menus-week/route.ts"
+      ]
+    },
+    "menu_week_opening_send_log": {
+      "used_in": [
+        "lib/notifications/menuWeekOpeningNotify.ts"
       ]
     },
     "ops_events": {
@@ -1133,7 +1183,8 @@
     },
     "order_items": {
       "used_in": [
-        "lib/providers/loadKitchenOrders.ts",
+        "lib/providers/providerOrderEnrichment.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "scripts/smoke/_first-menu-order-smoke.mjs"
       ]
     },
@@ -1216,10 +1267,11 @@
         "lib/orders/readers/getOrderForScopedUser.ts",
         "lib/platform/engine.ts",
         "lib/predictive/data.ts",
+        "lib/provider-menu/providerMenuOrderLock.ts",
         "lib/providers/loadKitchenOrders.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
-        "lib/providers/loadProviderCustomers.ts",
         "lib/providers/loadProviderDashboard.ts",
+        "lib/providers/providerCustomerCounts.ts",
         "lib/revenue/applyLeadPipelineOrderAttribution.ts",
         "lib/revenue/collect.ts",
         "lib/revenue/getRevenueByPost.ts",
@@ -1227,10 +1279,16 @@
         "lib/server/employee/loadEmployeeOwnLunchRecentHistory.ts",
         "lib/server/kitchen/loadOperativeKitchenOrders.ts",
         "lib/strategy/collect.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "lib/superadmin/loadSuperadminHomeSignals.ts",
         "scripts/ci-guard.mjs",
         "scripts/smoke/_first-menu-order-smoke.mjs",
         "scripts/testSocialFlow.ts"
+      ]
+    },
+    "organizations": {
+      "used_in": [
+        "lib/server/superadmin/executeCompanyRemoval.ts"
       ]
     },
     "outbox": {
@@ -1345,7 +1403,6 @@
         "app/api/superadmin/companies/[companyId]/archive/summary/route.ts",
         "app/api/superadmin/companies/[companyId]/orders/route.ts",
         "app/api/superadmin/companies/[companyId]/route.ts",
-        "app/api/superadmin/companies/route.ts",
         "app/api/superadmin/diagnostics/repair/route.ts",
         "app/api/superadmin/diagnostics/route.ts",
         "app/api/superadmin/employees/[userId]/route.ts",
@@ -1396,13 +1453,18 @@
         "lib/kitchen/ordersFeed.ts",
         "lib/kitchen/report.ts",
         "lib/metrics/collect.ts",
+        "lib/notifications/menuWeekOpeningNotify.ts",
         "lib/observability/graphMetrics.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
-        "lib/providers/loadProviderCustomers.ts",
+        "lib/providers/providerCustomerCounts.ts",
+        "lib/providers/providerOrderEnrichment.ts",
         "lib/saas/onboarding.ts",
         "lib/saas/tenant.ts",
         "lib/server/admin/loadCompanyOperativeDayRoster.ts",
         "lib/server/admin/loadCompanyOperativeRecentHistory.ts",
+        "lib/server/superadmin/executeCompanyRemoval.ts",
+        "lib/server/superadmin/loadSuperadminProviderDetail.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "lib/superadmin/queries.ts",
         "lib/system/health.ts",
         "lib/system/systemHealthAggregator.ts",
@@ -1423,7 +1485,14 @@
     "provider_memberships": {
       "used_in": [
         "lib/auth/getAuthContext.ts",
-        "lib/auth/provider.ts"
+        "lib/auth/provider.ts",
+        "lib/server/provider/providerCustomerRouteAuth.ts",
+        "lib/superadmin/loadPilotControlCenter.ts"
+      ]
+    },
+    "provider_price_rules": {
+      "used_in": [
+        "lib/providers/providerMenuPriceConfig.ts"
       ]
     },
     "provider_service_areas": {
@@ -1474,16 +1543,25 @@
       "used_in": [
         "app/api/webhooks/tripletex-provider/[providerId]/route.ts",
         "app/superadmin/providers/[id]/billing/page.tsx",
+        "lib/admin/loadDashboardCompanyMeta.ts",
         "lib/auth/providerContext.ts",
         "lib/cms/syncProviderToSanity.ts",
         "lib/integrations/tripletex/providerCustomerSync.ts",
+        "lib/invites/createEmployeeSingleInvite.ts",
+        "lib/invites/resolveEmployeeInviteContext.ts",
         "lib/menu-publish/resolveMenuDayProvider.ts",
         "lib/menu/providerMenuScope.ts",
         "lib/providers/loadProviderBilling.ts",
+        "lib/providers/loadProviderCustomerDetail.ts",
+        "lib/providers/loadProviderCustomers.ts",
         "lib/providers/providerNotificationRecipients.ts",
         "lib/providers/saveProviderLogo.ts",
         "lib/providers/saveProviderSettings.ts",
+        "lib/server/provider/providerCustomerRemoval.ts",
         "lib/server/superadmin/loadCompanyRegistrationsInbox.ts",
+        "lib/server/superadmin/loadSuperadminProviderDetail.ts",
+        "lib/server/superadmin/loadSuperadminProviderList.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
         "lib/superadmin/tripletexAdminData.ts"
       ]
     },

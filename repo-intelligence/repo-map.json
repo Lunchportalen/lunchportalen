@@ -65,6 +65,7 @@
     },
     {
       "exports": [
+        "ALLERGEN_UNVERIFIED_NOTICE",
         "DayChoiceSelection",
         "DayRow",
         "WeekCategoryCards",
@@ -87,12 +88,14 @@
       "http_methods": [],
       "imports": [
         "@/components/employee/WeekAllergenProfileCard",
+        "@/components/week/WeekMenuNotificationToggle",
         "@/lib/cms/menuDayContract",
         "@/lib/date/format",
         "@/lib/date/oslo",
         "@/lib/employee/orderedMealDisplay",
         "@/lib/hooks/useMediaQuery",
         "@/lib/week/orderPatternsClient",
+        "@/lib/week/weekMenuReadiness",
         "@sentry/nextjs",
         "lucide-react",
         "next/link",
@@ -535,15 +538,55 @@
     },
     {
       "exports": [
+        "default"
+      ],
+      "fetch_urls": [
+        "/api/auth/accept-invite"
+      ],
+      "http_methods": [],
+      "imports": [
+        "@/lib/onboarding/employeeActivationCopy",
+        "@/lib/types/database",
+        "@supabase/ssr",
+        "next/link",
+        "next/navigation",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "app/(auth)/register/employee/RegisterEmployeeClient.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/onboarding/employeeActivationCopy",
+        "next/link"
+      ],
+      "keywords_hit": [],
+      "path": "app/(auth)/register/employee/RegisterEmployeeInviteStateCard.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "default",
         "metadata"
       ],
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "@/app/(auth)/accept-invite/AcceptInviteClient",
-        "next",
-        "next/navigation"
+        "./RegisterEmployeeClient",
+        "./RegisterEmployeeInviteStateCard",
+        "@/lib/invites/resolveEmployeeInviteContext",
+        "@/lib/onboarding/employeeActivationCopy",
+        "next"
       ],
       "keywords_hit": [],
       "path": "app/(auth)/register/employee/page.tsx",
@@ -662,9 +705,10 @@
         "@/components/ui/button",
         "@/components/ui/input",
         "@/components/ui/label",
+        "@/lib/auth/postResetRedirect",
+        "@/lib/auth/recoveryHash",
         "@/lib/supabase/client",
         "next/link",
-        "next/navigation",
         "react"
       ],
       "keywords_hit": [],
@@ -8502,14 +8546,18 @@
       "imports": [
         "@/components/admin/AdminCompanySelect",
         "@/components/admin/AdminPageShell",
+        "@/components/admin/AdminTechnicalDetails",
+        "@/components/admin/AgreementChangeRequestPanel",
         "@/components/admin/BlockedState",
         "@/components/admin/SupportReportButton",
         "@/components/ui/badge",
         "@/components/ui/card",
         "@/lib/admin/agreement/types",
-        "@/lib/admin/constants",
+        "@/lib/admin/companyAdminCopy",
+        "@/lib/admin/dashboardOnboarding",
         "@/lib/admin/fetchAgreementPageDataServer",
         "@/lib/admin/loadAdminContext",
+        "@/lib/admin/loadDashboardCompanyMeta",
         "@/lib/date/format",
         "react"
       ],
@@ -8929,6 +8977,8 @@
       ],
       "http_methods": [],
       "imports": [
+        "@/components/admin/AdminTechnicalDetails",
+        "@/lib/admin/companyAdminCopy",
         "react"
       ],
       "keywords_hit": [
@@ -8952,6 +9002,7 @@
         "./AdminInsightsClient",
         "@/components/admin/BlockedState",
         "@/components/admin/SupportReportButton",
+        "@/lib/admin/companyAdminCopy",
         "@/lib/admin/loadAdminContext",
         "next/link"
       ],
@@ -9161,6 +9212,7 @@
         "@/components/admin/AgreementDeliveryBasisView",
         "@/components/admin/BlockedState",
         "@/components/admin/SupportReportButton",
+        "@/lib/admin/companyAdminCopy",
         "@/lib/admin/fetchAgreementPageDataServer",
         "@/lib/admin/loadAdminContext",
         "@/lib/server/admin/loadCompanyOperationalBrief"
@@ -9197,6 +9249,7 @@
         "@/components/admin/BlockedState",
         "@/components/admin/LocationsPanel",
         "@/components/admin/SupportReportButton",
+        "@/lib/admin/companyAdminCopy",
         "@/lib/admin/loadAdminContext",
         "next/link"
       ],
@@ -9292,14 +9345,48 @@
     },
     {
       "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/admin/dashboardOnboarding",
+        "next/link"
+      ],
+      "keywords_hit": [],
+      "path": "app/admin/page-sections/CommandCenterHero.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "AdminKpi",
         "default"
       ],
       "fetch_urls": [],
       "http_methods": [],
-      "imports": [],
+      "imports": [
+        "next/link"
+      ],
       "keywords_hit": [],
       "path": "app/admin/page-sections/KpiRow.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/admin/dashboardOnboarding",
+        "next/link"
+      ],
+      "keywords_hit": [],
+      "path": "app/admin/page-sections/OnboardingActionPanel.tsx",
       "rpc_calls": [],
       "type": "other",
       "uses_tables": []
@@ -9311,9 +9398,29 @@
       ],
       "fetch_urls": [],
       "http_methods": [],
-      "imports": [],
-      "keywords_hit": [],
+      "imports": [
+        "@/lib/admin/dashboardOnboarding",
+        "next/link"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "app/admin/page-sections/OrdersChart.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/admin/dashboardOnboarding"
+      ],
+      "keywords_hit": [],
+      "path": "app/admin/page-sections/ReadinessStrip.tsx",
       "rpc_calls": [],
       "type": "other",
       "uses_tables": []
@@ -9357,14 +9464,19 @@
       "http_methods": [],
       "imports": [
         "./page-sections/ActivityFeed",
+        "./page-sections/CommandCenterHero",
         "./page-sections/KpiRow",
+        "./page-sections/OnboardingActionPanel",
         "./page-sections/OrdersChart",
+        "./page-sections/ReadinessStrip",
         "./page-sections/SystemStatus",
         "./page-sections/TodayRoster",
         "@/components/admin/BlockedState",
         "@/components/admin/SupportReportButton",
         "@/lib/admin/agreementLabel",
+        "@/lib/admin/dashboardOnboarding",
         "@/lib/admin/loadAdminContext",
+        "@/lib/admin/loadDashboardCompanyMeta",
         "@/lib/auth/agreementStatus",
         "@/lib/auth/getAuthContext",
         "@/lib/server/admin/loadCompanyOperationalBrief",
@@ -9385,16 +9497,21 @@
         "default"
       ],
       "fetch_urls": [
+        "/api/admin/locations",
         "/api/admin/people"
       ],
       "http_methods": [],
       "imports": [
         "@/components/admin/AdminPageShell",
+        "@/components/admin/AdminTechnicalDetails",
         "@/components/admin/EmployeesTable",
         "@/components/admin/InvitesPanel",
         "@/components/admin/SupportReportButton",
         "@/components/ui/button",
         "@/components/ui/card",
+        "@/lib/admin/companyAdminCopy",
+        "@/lib/admin/peopleReadiness",
+        "@/lib/date/format",
         "next/link",
         "react"
       ],
@@ -9439,6 +9556,7 @@
         "@/components/admin/AdminPageShell",
         "@/components/admin/BlockedState",
         "@/components/admin/SupportReportButton",
+        "@/lib/admin/companyAdminCopy",
         "@/lib/admin/loadAdminContext",
         "@/lib/date/format",
         "@/lib/server/admin/loadCompanyWeekBookabilityOverview",
@@ -9627,6 +9745,56 @@
         "employee_invites",
         "profiles"
       ]
+    },
+    {
+      "exports": [
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "POST"
+      ],
+      "imports": [
+        "@/lib/agreements/changeRequestService",
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/admin/agreement/change-requests/[requestId]/cancel/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GET",
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "imports": [
+        "@/lib/agreements/changeRequestService",
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/admin/agreement/change-requests/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
     },
     {
       "exports": [
@@ -11733,12 +11901,16 @@
         "POST"
       ],
       "imports": [
+        "@/lib/auth/recoveryActionLink",
+        "@/lib/email/passwordResetMail",
         "@/lib/http/respond",
         "@/lib/http/routeGuard",
+        "@/lib/ops/log",
+        "@/lib/orderBackup/smtp",
         "@/lib/supabase/admin",
+        "@/lib/system/emails",
         "@/lib/url/appUrl",
-        "next/server",
-        "nodemailer"
+        "next/server"
       ],
       "keywords_hit": [],
       "path": "app/api/auth/forgot-password/route.ts",
@@ -15325,6 +15497,33 @@
         "GET"
       ],
       "imports": [
+        "@/lib/http/cronAuth",
+        "@/lib/http/cronObservability",
+        "@/lib/http/respond",
+        "@/lib/http/weekCronObservability",
+        "@/lib/notifications/menuWeekOpeningCore",
+        "@/lib/notifications/menuWeekOpeningNotify",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/cron/menu-week-opening-notify/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GET",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET"
+      ],
+      "imports": [
         "@/lib/cms/providerSanityConstants",
         "@/lib/http/cronAuth",
         "@/lib/http/cronObservability",
@@ -15656,7 +15855,8 @@
       "imports": [
         "@/lib/http/cronAuth",
         "@/lib/http/cronObservability",
-        "@/lib/http/respond"
+        "@/lib/http/respond",
+        "@/lib/http/weekCronObservability"
       ],
       "keywords_hit": [],
       "path": "app/api/cron/week-scheduler/route.ts",
@@ -15974,6 +16174,35 @@
       "type": "api",
       "uses_tables": [
         "ai_activity_log"
+      ]
+    },
+    {
+      "exports": [
+        "GET",
+        "PATCH",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "PATCH"
+      ],
+      "imports": [
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "@/lib/notifications/menuWeekOpeningCore",
+        "@/lib/supabase/adminAny",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/employee/notification-preferences/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": [
+        "employee_notification_preferences"
       ]
     },
     {
@@ -18504,6 +18733,160 @@
     },
     {
       "exports": [
+        "GET",
+        "PATCH",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "PATCH"
+      ],
+      "imports": [
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "@/lib/providers/providerCustomerAgreementTypes",
+        "@/lib/server/provider/providerCustomerAgreementService",
+        "@/lib/server/provider/providerCustomerRouteAuth",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/customers/[companyId]/agreement/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GET",
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "imports": [
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "@/lib/server/provider/providerCustomerRemoval",
+        "@/lib/server/provider/providerCustomerRouteAuth",
+        "@/lib/server/superadmin/companyRemovalPolicy",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/customers/[companyId]/remove/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "POST"
+      ],
+      "imports": [
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "@/lib/server/provider/providerCustomerRestore",
+        "@/lib/server/provider/providerCustomerRouteAuth",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/customers/[companyId]/restore/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GET",
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/auth/providerContext",
+        "@/lib/cms/lunchCategory",
+        "@/lib/http/respond",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/menuCatalogWrite",
+        "@/lib/provider-menu/providerMenuCatalogReadModel",
+        "@/lib/provider-menu/providerMenuOrderLock",
+        "@/lib/sanity/client",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/menu-catalog/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GET",
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/auth/providerContext",
+        "@/lib/cms/lunchCategory",
+        "@/lib/cms/menuDayContract",
+        "@/lib/date/oslo",
+        "@/lib/http/respond",
+        "@/lib/menu-publish/syncMenuServiceDaysFromMenuDay",
+        "@/lib/provider-menu/loadProviderMenuDays",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/provider-menu/menuDayPayload",
+        "@/lib/provider-menu/providerMenuCatalogReadModel",
+        "@/lib/provider-menu/providerMenuOrderLock",
+        "@/lib/providers/providerMenuPackageSurface",
+        "@/lib/providers/providerMenuPriceConfig",
+        "@/lib/sanity/client",
+        "@/lib/supabase/admin",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/menu-days/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "POST",
         "dynamic",
         "revalidate",
@@ -18520,13 +18903,46 @@
         "@/lib/http/respond",
         "@/lib/menu-publish/syncMenuServiceDaysFromMenuDay",
         "@/lib/provider-menu/menuDayPayload",
+        "@/lib/provider-menu/providerMenuOrderLock",
+        "@/lib/provider-menu/varmrettSharedWrite",
         "@/lib/sanity/client",
         "@/lib/supabase/admin",
         "next/server",
         "server-only"
       ],
       "keywords_hit": [],
-      "path": "app/api/provider/menu-days/route.ts",
+      "path": "app/api/provider/menu-days/varmrett/reset/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "POST"
+      ],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/auth/providerContext",
+        "@/lib/http/respond",
+        "@/lib/menu-publish/syncMenuServiceDaysFromMenuDay",
+        "@/lib/provider-menu/menuDayPayload",
+        "@/lib/provider-menu/providerMenuOrderLock",
+        "@/lib/provider-menu/varmrettSharedWrite",
+        "@/lib/sanity/client",
+        "@/lib/supabase/admin",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/menu-days/varmrett/route.ts",
       "rpc_calls": [],
       "type": "api",
       "uses_tables": []
@@ -20243,6 +20659,30 @@
     },
     {
       "exports": [
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "POST"
+      ],
+      "imports": [
+        "@/lib/agreements/changeRequestService",
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/superadmin/agreement-change-requests/[requestId]/approve/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "DELETE",
         "GET",
         "POST",
@@ -21085,6 +21525,37 @@
     {
       "exports": [
         "GET",
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "imports": [
+        "@/lib/auth/isSuperadminProfile",
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "@/lib/server/superadmin/companyRemovalPolicy",
+        "@/lib/server/superadmin/executeCompanyRemoval",
+        "@/lib/supabase/admin",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/superadmin/companies/[companyId]/remove/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": [
+        "companies"
+      ]
+    },
+    {
+      "exports": [
+        "GET",
         "dynamic",
         "revalidate",
         "runtime"
@@ -21100,6 +21571,7 @@
         "@/lib/http/respond",
         "@/lib/http/routeGuard",
         "@/lib/server/superadmin/loadCompanyRegistrationsInbox",
+        "@/lib/server/superadmin/loadSuperadminProviderDetail",
         "@/lib/supabase/admin",
         "next/server"
       ],
@@ -21184,11 +21656,9 @@
         "POST"
       ],
       "imports": [
-        "@/lib/agreements/contractBindingCompute",
-        "@/lib/date/oslo",
         "@/lib/http/respond",
         "@/lib/http/routeGuard",
-        "@/lib/server/superadmin/loadCompanyRegistrationsInbox",
+        "@/lib/server/superadmin/loadSuperadminProviderList",
         "@/lib/supabase/admin",
         "next/server",
         "server-only"
@@ -21198,13 +21668,8 @@
       "rpc_calls": [],
       "type": "api",
       "uses_tables": [
-        "agreements",
         "audit_events",
-        "companies",
-        "company_agreements",
-        "company_current_agreement",
-        "company_registrations",
-        "profiles"
+        "companies"
       ]
     },
     {
@@ -23870,14 +24335,13 @@
         "@/lib/cms/menuDayContract",
         "@/lib/date/oslo",
         "@/lib/date/week",
-        "@/lib/db/profileLookup",
         "@/lib/http/respond",
         "@/lib/menu/providerMenuScope",
         "@/lib/ops/log",
         "@/lib/supabase/admin",
-        "@/lib/supabase/server",
         "@/lib/week/employeeWeekMenuDays",
-        "@/lib/week/loadEmployeeWeekMenusFromMsdi"
+        "@/lib/week/loadEmployeeWeekMenusFromMsdi",
+        "@/lib/week/resolveEmployeeWeekScope"
       ],
       "keywords_hit": [],
       "path": "app/api/week/route.ts",
@@ -23998,6 +24462,24 @@
     },
     {
       "exports": [
+        "default"
+      ],
+      "fetch_urls": [
+        "/api/auth/logout"
+      ],
+      "http_methods": [],
+      "imports": [
+        "next/link",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "app/avtale-ikke-aktiv/InactiveAgreementRecovery.client.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "default",
         "dynamic",
         "revalidate"
@@ -24005,8 +24487,9 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "lucide-react",
-        "next/link"
+        "./InactiveAgreementRecovery.client",
+        "@/lib/auth/inactiveAgreementGateRecovery",
+        "lucide-react"
       ],
       "keywords_hit": [],
       "path": "app/avtale-ikke-aktiv/page.tsx",
@@ -24815,7 +25298,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "@/components/providers/ProviderMenuEditor",
+        "@/components/providers/ProviderMenuBuilder",
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/auth/providerContext",
@@ -25616,6 +26099,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/auth/AuthenticatedShellAccount",
         "next/image",
         "next/link",
         "next/navigation"
@@ -25839,6 +26323,7 @@
       ],
       "http_methods": [],
       "imports": [
+        "@/components/superadmin/shell/SuperadminShell",
         "next/link",
         "react"
       ],
@@ -25859,6 +26344,7 @@
       "http_methods": [],
       "imports": [
         "./agreements-client",
+        "@/components/superadmin/shell/SuperadminShell",
         "@/lib/auth/getRoleForUser",
         "@/lib/auth/roles",
         "@/lib/server/superadmin/loadCompanyRegistrationsInbox",
@@ -25919,6 +26405,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/superadmin/shell/SuperadminShell",
         "@/lib/audit/operativeAuditStream",
         "next/link",
         "react"
@@ -25940,6 +26427,7 @@
       "http_methods": [],
       "imports": [
         "./audit-client",
+        "@/components/superadmin/shell/SuperadminShell",
         "@/lib/supabase/server",
         "next/navigation",
         "react",
@@ -26045,6 +26533,24 @@
     },
     {
       "exports": [
+        "default"
+      ],
+      "fetch_urls": [
+        "/api/superadmin/companies/${encodeURIComponent(companyId)}/remove"
+      ],
+      "http_methods": [],
+      "imports": [
+        "react",
+        "react-dom"
+      ],
+      "keywords_hit": [],
+      "path": "app/superadmin/companies/CompanyRemovalDialog.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "CompanyStatus",
         "default"
       ],
@@ -26130,6 +26636,43 @@
       ],
       "keywords_hit": [],
       "path": "app/superadmin/companies/[companyId]/InvoicesCard.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/app/superadmin/companies/CompanyRemovalDialog",
+        "@/components/superadmin/shell/SuperadminShell",
+        "@/lib/date/format",
+        "@/lib/server/superadmin/loadSuperadminProviderDetail",
+        "next/link",
+        "next/navigation",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "app/superadmin/companies/[companyId]/ProviderDetailClient.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "./ProviderDetailClient",
+        "@/lib/server/superadmin/loadSuperadminProviderDetail"
+      ],
+      "keywords_hit": [],
+      "path": "app/superadmin/companies/[companyId]/ProviderDetailView.tsx",
       "rpc_calls": [],
       "type": "other",
       "uses_tables": []
@@ -26240,11 +26783,13 @@
         "./AgreementCard",
         "./ArchivePanel",
         "./InvoiceBasisPanel",
+        "./ProviderDetailView",
         "@/components/audit/AuditCompanyPanel",
         "@/lib/agreements/buildAgreementDocumentOverview",
         "@/lib/agreements/contractBindingCompute",
         "@/lib/cms/menuDayContract",
         "@/lib/date/format",
+        "@/lib/server/superadmin/loadSuperadminProviderDetail",
         "next/headers",
         "next/link",
         "next/navigation"
@@ -26271,6 +26816,7 @@
       ],
       "http_methods": [],
       "imports": [
+        "./CompanyRemovalDialog",
         "@/lib/date/format",
         "@/lib/date/oslo",
         "@/lib/url/qs",
@@ -26296,11 +26842,11 @@
       "http_methods": [],
       "imports": [
         "./companies-client",
+        "@/components/superadmin/shell/SuperadminShell",
         "@/lib/auth/getRoleForUser",
         "@/lib/auth/roles",
         "@/lib/cms/backoffice/getSuperadminCompaniesContent",
         "@/lib/supabase/server",
-        "next/link",
         "next/navigation",
         "react",
         "server-only"
@@ -26383,6 +26929,7 @@
         "@/components/superadmin/controlTower/CategoryDominancePanel",
         "@/components/superadmin/controlTower/DominationStrategyPanel",
         "@/components/superadmin/controlTower/GoLiveEnginePanel",
+        "@/components/superadmin/shell/SuperadminShell",
         "@/lib/auth/getAuthContext",
         "@/lib/autopilot/collectMetrics",
         "@/lib/controlTower/aggregator",
@@ -26763,7 +27310,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "./GlobalControlTowerClient"
+        "./GlobalControlTowerClient",
+        "@/components/superadmin/shell/SuperadminShell"
       ],
       "keywords_hit": [],
       "path": "app/superadmin/global/page.tsx",
@@ -27096,6 +27644,7 @@
       "http_methods": [],
       "imports": [
         "./_components/ControlTowerNav",
+        "@/app/styles/ds/superadmin-shell.css",
         "@/components/auth/BlockedAccess",
         "@/lib/auth/getAuthContext",
         "@/lib/auth/roleHome",
@@ -27111,13 +27660,31 @@
     },
     {
       "exports": [
-        "default",
-        "revalidate"
+        "default"
       ],
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "@/components/superadmin/OperationsToday"
+        "@/components/superadmin/shell/SuperadminShell"
+      ],
+      "keywords_hit": [],
+      "path": "app/superadmin/operations/error.tsx",
+      "rpc_calls": [],
+      "type": "other",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/components/superadmin/OperationsToday",
+        "@/components/superadmin/shell/SuperadminShell"
       ],
       "keywords_hit": [],
       "path": "app/superadmin/operations/page.tsx",
@@ -27234,6 +27801,26 @@
       ],
       "keywords_hit": [],
       "path": "app/superadmin/page.tsx",
+      "rpc_calls": [],
+      "type": "route",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/components/superadmin/PilotControlCenterView",
+        "@/lib/superadmin/loadPilotControlCenter",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/superadmin/pilot-control/page.tsx",
       "rpc_calls": [],
       "type": "route",
       "uses_tables": []
@@ -27783,6 +28370,7 @@
       "http_methods": [],
       "imports": [
         "./SystemClient",
+        "@/components/superadmin/shell/SuperadminShell",
         "@/lib/supabase/server",
         "next/navigation"
       ],
@@ -27889,6 +28477,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/superadmin/shell/SuperadminShell",
         "@/components/superadmin/tripletex/TripletexSubNav",
         "@/lib/superadmin/tripletexAdminData",
         "next/link"
@@ -27964,9 +28553,6 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "@/components/superadmin/SuperadminUsersClient",
-        "@/lib/auth/isSuperadminProfile",
-        "@/lib/supabase/server",
         "next/navigation"
       ],
       "keywords_hit": [],
@@ -28354,6 +28940,22 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/admin/companyAdminCopy",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/admin/AdminTechnicalDetails.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
         "@/components/admin/SupportReportButton",
         "@/lib/agreement/currentAgreement",
         "@/lib/date/oslo",
@@ -28373,9 +28975,29 @@
       "exports": [
         "default"
       ],
+      "fetch_urls": [
+        "/api/admin/agreement/change-requests"
+      ],
+      "http_methods": [],
+      "imports": [
+        "@/components/ui/card",
+        "@/lib/admin/agreement/types",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/admin/AgreementChangeRequestPanel.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/admin/AdminTechnicalDetails",
         "@/lib/admin/agreement/types",
         "@/lib/date/format",
         "@/lib/server/admin/loadCompanyOperationalBrief",
@@ -28432,6 +29054,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/admin/AdminTechnicalDetails",
         "@/lib/date/format",
         "@/lib/server/admin/loadCompanyOperationalBrief",
         "next/link"
@@ -28469,6 +29092,7 @@
       ],
       "http_methods": [],
       "imports": [
+        "@/lib/admin/companyAdminCopy",
         "@/lib/date/format",
         "react"
       ],
@@ -28573,6 +29197,7 @@
       ],
       "http_methods": [],
       "imports": [
+        "@/lib/admin/companyAdminCopy",
         "react"
       ],
       "keywords_hit": [],
@@ -28947,6 +29572,21 @@
     },
     {
       "exports": [
+        "AuthenticatedShellAccount"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/components/auth/LogoutClient"
+      ],
+      "keywords_hit": [],
+      "path": "components/auth/AuthenticatedShellAccount.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "default"
       ],
       "fetch_urls": [],
@@ -29002,11 +29642,10 @@
       "exports": [
         "default"
       ],
-      "fetch_urls": [
-        "/api/auth/logout"
-      ],
+      "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/auth/LogoutClient",
         "react"
       ],
       "keywords_hit": [],
@@ -29017,10 +29656,13 @@
     },
     {
       "exports": [
+        "LOGOUT_ERROR_MESSAGE",
         "LogoutClientButton",
         "LogoutClientButtonProps",
         "LogoutOnMountRedirect",
-        "default"
+        "LogoutRedirectResult",
+        "default",
+        "performLogoutRedirect"
       ],
       "fetch_urls": [
         "/api/auth/logout"
@@ -32389,10 +33031,14 @@
       "http_methods": [],
       "imports": [
         "@/app/leverandor/kunder/actions",
+        "@/components/providers/ProviderCustomerAgreementEditDialog",
+        "@/components/providers/ProviderDetailAccordionSection",
         "@/components/providers/SuspendDialog",
         "@/lib/providers/customerTypes",
         "@/lib/providers/loadProviderCustomerDetail",
         "@/lib/providers/providerCustomerAgreementSurface",
+        "@/lib/providers/providerCustomerDetailActivity",
+        "@/lib/providers/providerCustomerDetailSurface",
         "next/navigation",
         "react"
       ],
@@ -32411,6 +33057,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/providers/ProviderCustomerRemovalDialog",
+        "@/components/providers/ProviderCustomerRestoreDialog",
         "@/lib/providers/customerTypes",
         "@/lib/providers/providerCustomersSurface",
         "next/link",
@@ -32551,6 +33199,72 @@
     },
     {
       "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreements/normalize",
+        "@/lib/providers/providerCustomerAgreementTypes",
+        "@/lib/providers/providerCustomerBilling",
+        "react",
+        "react-dom"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderCustomerAgreementEditDialog.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "react",
+        "react-dom"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderCustomerRemovalDialog.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "react",
+        "react-dom"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderCustomerRestoreDialog.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderDetailAccordionSection.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "ProviderLogoUploaderProps",
         "default"
       ],
@@ -32571,6 +33285,94 @@
         "default"
       ],
       "fetch_urls": [
+        "/api/provider/menu-days",
+        "/api/provider/menu-days/varmrett/reset"
+      ],
+      "http_methods": [],
+      "imports": [
+        "@/components/providers/ProviderMenuCatalogView",
+        "@/components/providers/ProviderMenuCommandHeader",
+        "@/components/providers/ProviderMenuEditorPanel",
+        "@/components/providers/ProviderMenuStatusRow",
+        "@/components/providers/ProviderMenuWeekPlanner",
+        "@/lib/cms/menuDayContract",
+        "@/lib/date/oslo",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/provider-menu/mergeProviderMenuSlots",
+        "@/lib/provider-menu/providerMenuCatalogReadModel",
+        "@/lib/provider-menu/providerMenuCatalogSurface",
+        "@/lib/provider-menu/providerMenuTierContract",
+        "@/lib/provider-menu/providerMenuWorkspace",
+        "@/lib/providers/providerMenuPackageSurface",
+        "@/lib/providers/providerMenuPriceDisplay",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuBuilder.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [
+        "/api/provider/menu-catalog"
+      ],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuCatalogEditor.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/components/providers/ProviderMenuCatalogEditor",
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/providerMenuCatalogReadModel"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuCatalogView.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/providerMenuWorkspace",
+        "@/lib/providers/providerMenuPriceDisplay"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuCommandHeader.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [
         "/api/provider/menu-days"
       ],
       "http_methods": [],
@@ -32580,6 +33382,65 @@
       ],
       "keywords_hit": [],
       "path": "components/providers/ProviderMenuEditor.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/mergeProviderMenuSlots",
+        "@/lib/provider-menu/providerMenuTierContract",
+        "@/lib/provider-menu/providerMenuWorkspace",
+        "@/lib/providers/providerMenuPackageSurface",
+        "@/lib/providers/providerMenuPriceDisplay",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuEditorPanel.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/provider-menu/providerMenuWorkspace",
+        "@/lib/providers/providerMenuPriceDisplay"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuStatusRow.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "WeekSelection",
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/provider-menu/mergeProviderMenuSlots",
+        "@/lib/provider-menu/providerMenuCatalogSurface",
+        "@/lib/provider-menu/providerMenuWorkspace",
+        "@/lib/providers/providerMenuPackageSurface"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuWeekPlanner.tsx",
       "rpc_calls": [],
       "type": "component",
       "uses_tables": []
@@ -33277,6 +34138,26 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/superadmin/shell/SuperadminShell",
+        "@/lib/superadmin/loadPilotControlCenter",
+        "@/lib/superadmin/pilotControlChecklist",
+        "next/link"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "components/superadmin/PilotControlCenterView.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
         "@/lib/date/oslo",
         "@/lib/superadmin/queries"
       ],
@@ -33346,6 +34227,7 @@
         "@/app/superadmin/_components/OperationalStatusStrip",
         "@/components/superadmin/SuperadminDeviationIndicator",
         "@/components/superadmin/SuperadminRealtimeFeed",
+        "@/components/superadmin/shell/SuperadminShell",
         "@/lib/superadmin/capabilities",
         "@/lib/superadmin/loadSuperadminHomeSignals",
         "next/link"
@@ -33518,6 +34400,7 @@
       "http_methods": [],
       "imports": [
         "@/components/superadmin/ConfirmDestructiveDialog",
+        "@/components/superadmin/shell/SuperadminShell",
         "@/components/ui/toast",
         "react"
       ],
@@ -33687,6 +34570,36 @@
       ],
       "keywords_hit": [],
       "path": "components/superadmin/controlTower/SecondsSinceUpdate.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CommandItem",
+        "MetricCell",
+        "StatusRailItem",
+        "SuperadminAsideRail",
+        "SuperadminBadge",
+        "SuperadminCommandList",
+        "SuperadminContextNote",
+        "SuperadminEmptyState",
+        "SuperadminHero",
+        "SuperadminMetricRow",
+        "SuperadminPageShell",
+        "SuperadminReadOnlyNotice",
+        "SuperadminSection",
+        "SuperadminStatusRail",
+        "SuperadminTableSurface"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "next/link",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/superadmin/shell/SuperadminShell.tsx",
       "rpc_calls": [],
       "type": "component",
       "uses_tables": []
@@ -34405,6 +35318,23 @@
         "default"
       ],
       "fetch_urls": [
+        "/api/employee/notification-preferences"
+      ],
+      "http_methods": [],
+      "imports": [
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/week/WeekMenuNotificationToggle.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [
         "/api/week"
       ],
       "http_methods": [],
@@ -34504,6 +35434,45 @@
     },
     {
       "exports": [
+        "AGREEMENT_CHANGE_NOTE",
+        "INSIGHTS_EMPTY_BODY",
+        "INSIGHTS_EMPTY_TITLE",
+        "LOCATIONS_SCOPE_NOTE",
+        "PEOPLE_INVITES_ACCORDION_NOTE",
+        "PEOPLE_LIST_TITLE",
+        "PEOPLE_ONBOARDING_EMPTY_BODY",
+        "PEOPLE_ONBOARDING_EMPTY_TITLE",
+        "PEOPLE_READINESS_ACTIVE_BODY",
+        "PEOPLE_READINESS_ACTIVE_CTA",
+        "PEOPLE_READINESS_ACTIVE_TITLE",
+        "PEOPLE_READINESS_EMPTY_BODY",
+        "PEOPLE_READINESS_EMPTY_TITLE",
+        "PEOPLE_READINESS_HAS_EMPLOYEES",
+        "PEOPLE_READINESS_NEXT_INVITE",
+        "PEOPLE_READINESS_PENDING_BODY",
+        "PEOPLE_READINESS_PENDING_NEXT",
+        "PEOPLE_READINESS_PENDING_TITLE",
+        "PEOPLE_SUPPORT_ACCORDION_NOTE",
+        "SUPPORT_BUTTON_LABEL",
+        "TECHNICAL_DETAILS_SUMMARY",
+        "UKE_BESTILLBARHET_SUBTITLE",
+        "bookabilityDayStatus",
+        "locationStatusLabel",
+        "peopleListScopeNote",
+        "peoplePageSubtitleEmpty",
+        "peoplePageSubtitleFollowUp"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/admin/companyAdminCopy.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "formatCompanyDashboardPeriodLabel",
         "formatNokFromCents"
       ],
@@ -34544,6 +35513,51 @@
       "imports": [],
       "keywords_hit": [],
       "path": "lib/admin/constants.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "AGREEMENT_HREF",
+        "ChartEmptyVariant",
+        "DashboardBuildInput",
+        "INVITE_EMPLOYEES_HREF",
+        "OnboardingChecklistStep",
+        "ReadinessStripItem",
+        "assertNoForbiddenDashboardCopy",
+        "buildDashboardActivity",
+        "buildDashboardKpis",
+        "buildDashboardRoster",
+        "buildDashboardSystemStatus",
+        "buildHeroHeading",
+        "buildHeroSubtext",
+        "buildOnboardingChecklist",
+        "buildReadinessStrip",
+        "cutoffFootUser",
+        "formatDashboardBillingLabel",
+        "formatDeliveryDaysLabel",
+        "formatProviderLabel",
+        "isOnboardingMode",
+        "resolveChartEmptyVariant",
+        "shouldShowChartEmptyState"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/app/admin/page-sections/ActivityFeed",
+        "@/app/admin/page-sections/KpiRow",
+        "@/app/admin/page-sections/SystemStatus",
+        "@/app/admin/page-sections/TodayRoster",
+        "@/lib/admin/agreementLabel",
+        "@/lib/agreements/normalize",
+        "@/lib/auth/agreementStatus",
+        "@/lib/server/admin/loadCompanyOperationalBrief"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/admin/dashboardOnboarding.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -34654,6 +35668,26 @@
     },
     {
       "exports": [
+        "DashboardCompanyMeta",
+        "loadDashboardCompanyMeta"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/supabase/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/admin/loadDashboardCompanyMeta.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "companies",
+        "providers"
+      ]
+    },
+    {
+      "exports": [
         "AdvanceOrderStatusResult",
         "OrderStatusError",
         "advanceOrderStatus"
@@ -34670,6 +35704,21 @@
       "rpc_calls": [
         "lp_order_advance_status"
       ],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "PeopleReadinessPhase",
+        "isPendingEmployeeInvite",
+        "resolvePeopleReadinessPhase"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/admin/peopleReadiness.ts",
+      "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
     },
@@ -35461,6 +36510,83 @@
     },
     {
       "exports": [
+        "approveAgreementChangeRequest",
+        "cancelAgreementChangeRequest",
+        "createPackageByDayChangeRequest",
+        "listAgreementChangeRequests",
+        "rejectAgreementChangeRequest"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreement/currentAgreement",
+        "@/lib/agreements/changeRequestTypes",
+        "@/lib/agreements/changeRequestValidation",
+        "@/lib/agreements/deliveryDays",
+        "@/lib/agreements/normalize",
+        "@/lib/audit/write",
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/agreements/changeRequestService.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "agreement_change_requests",
+        "agreements"
+      ]
+    },
+    {
+      "exports": [
+        "AgreementChangeRequestRow",
+        "AgreementChangeRequestStatus",
+        "AgreementChangeType",
+        "AgreementSnapshotForResolver",
+        "AgreementTierSource",
+        "PackageByDayOverride",
+        "PackageByDayRequestedChange",
+        "ResolvedAgreementForDate",
+        "ResolvedAgreementForDateError",
+        "ResolvedAgreementForDateResult"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreements/normalize"
+      ],
+      "keywords_hit": [],
+      "path": "lib/agreements/changeRequestTypes.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ValidationErr",
+        "ValidationOk",
+        "ValidationResult",
+        "buildCurrentSnapshot",
+        "parsePackageByDayRequestedChange",
+        "validateEffectiveFrom",
+        "validateEffectiveTo",
+        "validateOverridesAgainstDeliveryDays"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreements/changeRequestTypes",
+        "@/lib/agreements/deliveryDays",
+        "@/lib/agreements/normalize"
+      ],
+      "keywords_hit": [],
+      "path": "lib/agreements/changeRequestValidation.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "COMPANY_AGREEMENT_STATUSES",
         "CompanyAgreementStatus",
         "normalizeCompanyAgreementStatus"
@@ -35575,6 +36701,31 @@
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
+    },
+    {
+      "exports": [
+        "dayKeyFromIsoDate",
+        "resolveAgreementForDate",
+        "resolveAgreementForDateFromSnapshot"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreements/changeRequestTypes",
+        "@/lib/agreements/deliveryDays",
+        "@/lib/agreements/normalize",
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/agreements/resolveAgreementForDate.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "agreement_change_requests",
+        "agreement_delivery_days",
+        "agreements"
+      ]
     },
     {
       "exports": [
@@ -41441,6 +42592,29 @@
     },
     {
       "exports": [
+        "InactiveAgreementPageContext",
+        "loadInactiveAgreementPageContext"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/auth/agreementStatus",
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/auth/role",
+        "@/lib/auth/roleHome",
+        "@/lib/supabase/server",
+        "next/navigation",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/auth/inactiveAgreementGateRecovery.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "isSuperadminProfile"
       ],
       "fetch_urls": [],
@@ -41560,6 +42734,27 @@
     },
     {
       "exports": [
+        "POST_RESET_REDIRECT_MESSAGE",
+        "POST_RESET_SUCCESS_MESSAGE",
+        "buildPostLoginRedirectUrl",
+        "redirectAfterPasswordReset",
+        "syncAuthSessionToServer"
+      ],
+      "fetch_urls": [
+        "/api/auth/session"
+      ],
+      "http_methods": [],
+      "imports": [
+        "@supabase/supabase-js"
+      ],
+      "keywords_hit": [],
+      "path": "lib/auth/postResetRedirect.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "canAccessProvider",
         "getProviderMemberships",
         "getProviderRole",
@@ -41616,6 +42811,43 @@
       ],
       "keywords_hit": [],
       "path": "lib/auth/rateLimit.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CANONICAL_PASSWORD_RESET_REDIRECT",
+        "describeRedirectTo",
+        "extractRedirectToFromActionLink",
+        "normalizeRecoveryActionLink"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/url/resolveAppBaseUrl"
+      ],
+      "keywords_hit": [],
+      "path": "lib/auth/recoveryActionLink.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ParsedRecoveryHash",
+        "RECOVERY_CHECKING_MESSAGE",
+        "RECOVERY_EXPIRED_MESSAGE",
+        "clearRecoveryHashFromUrl",
+        "isRecoveryHashExpired",
+        "isRecoveryHashValid",
+        "parseRecoveryHash"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/auth/recoveryHash.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -45157,10 +46389,17 @@
     {
       "exports": [
         "LunchCategorySanityRow",
+        "categoryTiersForEditableKey",
         "fetchActiveLunchCategoryRows",
+        "fetchLunchCategoryRowsForProvider",
+        "fetchLunchCategoryTemplateRows",
         "filterLunchCategoryItemsRawForPlanTier",
         "getLunchCategoryStaticItemsByPlanTier",
+        "getLunchCategoryStaticItemsByPlanTierForProvider",
+        "isEditableLunchCategoryKey",
         "mapLunchCategoryDocItemsToMenuItems",
+        "mergeLunchCategoryRowsWithTemplateFallback",
+        "providerLunchCategoryDocId",
         "staticMenuItemsByCategoryForPlanTier"
       ],
       "fetch_urls": [],
@@ -45168,6 +46407,7 @@
       "imports": [
         "@/lib/cms/menuDay",
         "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/lunchCategoryCatalog",
         "@/lib/sanity/client",
         "server-only"
       ],
@@ -48234,6 +49474,19 @@
     },
     {
       "exports": [
+        "buildPasswordResetEmail"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/email/passwordResetMail.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "SendEmailArgs",
         "sendEmail"
       ],
@@ -48264,6 +49517,21 @@
       "imports": [],
       "keywords_hit": [],
       "path": "lib/email/templates/companyApproved.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "buildEmployeeInviteEmail"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/onboarding/employeeActivationCopy"
+      ],
+      "keywords_hit": [],
+      "path": "lib/email/templates/employeeInvite.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -52515,6 +53783,34 @@
     },
     {
       "exports": [
+        "MenuWeekOpeningNotifyAnomaly",
+        "MenuWeekOpeningNotifyAnomalyKind",
+        "MenuWeekOpeningNotifyMetrics",
+        "WEEK_CRON_OBSERVABILITY_ALLOWLIST",
+        "WeekCronObservabilityPath",
+        "WeekSchedulerEvaluation",
+        "WeekSchedulerSubCallFailure",
+        "WeekSchedulerSubCallResult",
+        "detectMenuWeekOpeningNotifyAnomalies",
+        "evaluateWeekSchedulerSubCalls",
+        "isWeekCronObservabilityPath",
+        "reportMenuWeekOpeningNotifyAnomalies",
+        "reportWeekSchedulerSubCallFailures"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/sentry/capture",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/http/weekCronObservability.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "withApiAiEntrypoint"
       ],
       "fetch_urls": [],
@@ -53781,7 +55077,6 @@
     {
       "exports": [
         "CreateEmployeeSingleInviteResult",
-        "EMPLOYEE_INVITE_TTL_MS",
         "createEmployeeSingleInvite",
         "isInviteEmail",
         "normInviteEmail"
@@ -53791,6 +55086,8 @@
       "imports": [
         "@/lib/audit/actions",
         "@/lib/email/send",
+        "@/lib/email/templates/employeeInvite",
+        "@/lib/invites/employeeInviteConstants",
         "@/lib/invites/employeeInviteUrl",
         "@/lib/supabase/admin",
         "@/lib/system/emails",
@@ -53805,8 +55102,22 @@
         "companies",
         "company_locations",
         "employee_invites",
-        "profiles"
+        "profiles",
+        "providers"
       ]
+    },
+    {
+      "exports": [
+        "EMPLOYEE_INVITE_TTL_MS"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/invites/employeeInviteConstants.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
     },
     {
       "exports": [
@@ -53824,6 +55135,29 @@
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
+    },
+    {
+      "exports": [
+        "EmployeeInviteContext",
+        "EmployeeInviteContextErr",
+        "EmployeeInviteContextOk",
+        "resolveEmployeeInviteContext"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/supabase/admin",
+        "node:crypto",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/invites/resolveEmployeeInviteContext.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "employee_invites",
+        "providers"
+      ]
     },
     {
       "exports": [
@@ -54862,13 +56196,24 @@
     {
       "exports": [
         "CostTier",
+        "GenerateWeekMenuResult",
         "Meal",
         "NutritionPer100g",
         "PickRelax",
         "PlanTier",
         "ProductionComplexity",
+        "WEEKDAY_CATEGORY_PINS",
+        "bindMealCategoryBooleans",
+        "buildPoolForDay",
+        "buildRolloutSelectionSeed",
         "generateWeekMenu",
-        "pickFirstWeekdayMealForDiagnostics"
+        "getWeekdayCategoryPin",
+        "isReservedForOtherPinDay",
+        "mealHasTag",
+        "mergeMealPoolsById",
+        "mulberry32",
+        "pickFirstWeekdayMealForDiagnostics",
+        "seededSortJitter"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -54956,6 +56301,8 @@
       "exports": [
         "MenuWeekRolloutResult",
         "RunMenuWeekRolloutOptions",
+        "SharedWeekDayPlan",
+        "intersectMealPools",
         "loadActivePlanTiers",
         "runMenuWeekRollout",
         "validateRolloutWeekMondayIso"
@@ -56780,6 +58127,73 @@
     },
     {
       "exports": [
+        "MENU_WEEK_OPENING_CHANNEL_EMAIL",
+        "MenuWeekOpeningRecipient",
+        "filterRecipientsForSend",
+        "formatWeekRangeNo",
+        "isMenuWeekOpeningNotifyWindow",
+        "menuWeekOpeningEnabledFromPref",
+        "shouldRunMenuWeekOpeningNotify",
+        "weekOpeningEventKey",
+        "weekOpeningThirdWeekMonday"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/date/oslo",
+        "@/lib/week/availability"
+      ],
+      "keywords_hit": [],
+      "path": "lib/notifications/menuWeekOpeningCore.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "buildMenuWeekOpeningEmail"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/notifications/menuWeekOpeningEmailTemplate.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "MenuWeekOpeningNotifyResult",
+        "runMenuWeekOpeningEmailNotify"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/date/oslo",
+        "@/lib/menu/providerMenuScope",
+        "@/lib/notifications/menuWeekOpeningCore",
+        "@/lib/notifications/menuWeekOpeningEmailTemplate",
+        "@/lib/orderBackup/smtp",
+        "@/lib/provider-menu/loadProviderMenuDays",
+        "@/lib/supabase/admin",
+        "@/lib/supabase/adminAny",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/notifications/menuWeekOpeningNotify.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "agreements",
+        "companies",
+        "employee_notification_preferences",
+        "menu_week_opening_send_log",
+        "profiles"
+      ]
+    },
+    {
+      "exports": [
         "ActionTraceRecord",
         "traceAction"
       ],
@@ -57376,6 +58790,44 @@
       "imports": [],
       "keywords_hit": [],
       "path": "lib/onboarding/cmsBundleTypes.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "EMPLOYEE_ACTIVATION_CTA_EMAIL",
+        "EMPLOYEE_ACTIVATION_CTA_FORM",
+        "EMPLOYEE_ACTIVATION_EMAIL_HERO",
+        "EMPLOYEE_ACTIVATION_EXPIRY_NOTE",
+        "EMPLOYEE_ACTIVATION_FORM_BUSY",
+        "EMPLOYEE_ACTIVATION_FORM_LEAD",
+        "EMPLOYEE_ACTIVATION_FORM_TITLE",
+        "EMPLOYEE_ACTIVATION_LEAD",
+        "EMPLOYEE_ACTIVATION_NEXT_STEPS",
+        "EMPLOYEE_ACTIVATION_PAGE_EYEBROW",
+        "EMPLOYEE_ACTIVATION_PAGE_TITLE",
+        "EMPLOYEE_ACTIVATION_ROLE_LABEL",
+        "EMPLOYEE_ACTIVATION_SECURITY_NOTE",
+        "EMPLOYEE_ACTIVATION_SECURITY_NOTE_PAGE",
+        "EMPLOYEE_ACTIVATION_STATUS_BADGE",
+        "EMPLOYEE_ACTIVATION_STATUS_LABEL",
+        "EMPLOYEE_ACTIVATION_SUPPORT_NOTE",
+        "EMPLOYEE_ACTIVATION_UNEXPECTED_NOTE",
+        "EMPLOYEE_INVITE_UNAVAILABLE_COPY",
+        "EMPLOYEE_INVITE_UNAVAILABLE_TITLE",
+        "employeeActivationEmailSubject",
+        "employeeActivationHeroSubtitle",
+        "employeeActivationPageLead",
+        "employeeActivationStatusSub"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/invites/employeeInviteConstants"
+      ],
+      "keywords_hit": [],
+      "path": "lib/onboarding/employeeActivationCopy.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -60313,6 +61765,120 @@
       "uses_tables": []
     },
     {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/provider-menu/providerMenuTierContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/basisMenuContract.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderMenuDayRow",
+        "loadProviderMenuDaySlot",
+        "loadProviderMenuDaysForDates"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/cms/menuDayProviderFilter",
+        "@/lib/cms/providerSanityConstants",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/sanity/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/loadProviderMenuDays.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CATALOG_WEEK_PUBLISH_HINT",
+        "CatalogFixedVariant",
+        "EDITABLE_LUNCH_CATEGORY_KEYS",
+        "EMPTY_PROVIDER_MENU_CATALOG",
+        "EditableLunchCategoryKey",
+        "LUNCH_CATEGORY_ALLERGENS",
+        "ProviderLunchCategoryItemRow",
+        "ProviderLunchCategoryRow",
+        "ProviderMenuCatalogSnapshot",
+        "categoryFromLunchCategoryKey",
+        "categoryLabelFromCatalog",
+        "categoryRowForCategory",
+        "fixedVariantsFromCatalog",
+        "tierAccessForCategoryRow",
+        "tierAccessForItem",
+        "workspaceCategoriesFromCatalog"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/provider-menu/providerMenuTierContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/lunchCategoryCatalog.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "MenuCatalogWriteError",
+        "MenuCatalogWriteInput",
+        "MenuCatalogWriteItemInput",
+        "MenuCatalogWriteValidationError",
+        "ProviderLunchCategoryWriteDoc",
+        "buildProviderLunchCategoryDoc",
+        "persistProviderMenuCatalog",
+        "validateMenuCatalogWriteInput"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/lunchCategory",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/providerMenuCatalogReadModel",
+        "@/lib/provider-menu/providerMenuOrderLock",
+        "@/lib/sanity/server",
+        "@sanity/client",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/menuCatalogWrite.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "PROVIDER_MENU_CATEGORY_ORDER",
+        "canonicalMenuCategory",
+        "categoriesForTierInOrder",
+        "isPlaceholderMenuTitle",
+        "menuSlotHasContent"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/menuCategoryCanonical.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
       "exports": [
         "MenuDayInput",
         "MenuDayPayloadResult",
@@ -60327,10 +61893,252 @@
       "imports": [
         "@/lib/cms/menuDayContract",
         "@/lib/cms/providerSanityConstants",
+        "@/lib/provider-menu/loadProviderMenuDays",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/providers/providerMenuPackageSurface",
+        "@/lib/providers/providerMenuPriceConfig",
         "server-only"
       ],
       "keywords_hit": [],
       "path": "lib/provider-menu/menuDayPayload.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "canonicalVariantTitle"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/menuVariantCanonical.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ResolvedProviderMenuSlot",
+        "SlotContentSource",
+        "mergeProviderMenuRowsIntoSlots",
+        "resolveProviderMenuSlot",
+        "slotDisplayStatus",
+        "slotDisplayTitle"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/loadProviderMenuDays",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/providers/providerMenuPackageSurface"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/mergeProviderMenuSlots.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CATALOG_PERSISTENCE_GAP",
+        "EMPLOYEE_WEEK_IMAGE_GAP",
+        "MenuCatalogSource",
+        "MenuCatalogVariant",
+        "buildMenuCatalogSnapshot",
+        "buildMenuCatalogVariants",
+        "catalogSupportsPersistentEdit",
+        "catalogVariantByKey",
+        "catalogVariantsForTier",
+        "normalizeProviderLunchCategoryRows"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/providerMenuTierContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuCatalogReadModel.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderVariantDisplayRow",
+        "VariantDisplayStatus",
+        "providerWorkspaceCategories",
+        "resolveVariantRowsForDay",
+        "summarizeWorkspaceWeekStatus"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/provider-menu/mergeProviderMenuSlots",
+        "@/lib/provider-menu/providerMenuCatalogReadModel",
+        "@/lib/provider-menu/providerMenuTierContract",
+        "@/lib/providers/providerMenuPackageSurface"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuCatalogSurface.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "MENU_ORDER_LOCKED_CODE",
+        "ProviderMenuOrderLockError",
+        "ProviderOrderLockState",
+        "applyOrderLocksToCatalog",
+        "applyOrderLocksToMenuDayRows",
+        "assertCatalogWriteAllowed",
+        "assertVarmrettContentChangeAllowed",
+        "isCatalogItemLocked",
+        "isVarmrettDateLocked",
+        "loadProviderOrderLockState",
+        "lunchCategoryKeyFromChoiceKey"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/mealTypeKey",
+        "@/lib/date/oslo",
+        "@/lib/provider-menu/loadProviderMenuDays",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/menuCatalogWrite",
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/provider-menu/providerMenuOrderLock.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "day_choices",
+        "orders"
+      ]
+    },
+    {
+      "exports": [
+        "BASIS_WORKSPACE_CATEGORIES",
+        "CATEGORY_VARIANT_CONTRACT",
+        "ENTERPRISE_TIER_MODEL",
+        "ENTERPRISE_WORKSPACE_CATEGORIES",
+        "FixedMenuVariant",
+        "LUXUS_WORKSPACE_CATEGORIES",
+        "MENU_TIER_CONTRACT_SOURCE",
+        "PROVIDER_MENU_CATEGORY_CONTRACTS",
+        "ProviderMenuCategoryContract",
+        "ProviderMenuTier",
+        "contractForCategory",
+        "fixedVariantsForCategory",
+        "isSanityDrivenCategory",
+        "tierIncludesCategory",
+        "workspaceCategoriesForTier"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/menuCategoryCanonical"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuTierContract.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CategoryDaySummary",
+        "CategoryGroupRow",
+        "DAY_PACKAGE_INCLUDES",
+        "DayCardSummary",
+        "ENTERPRISE_DEFAULT_SUGGESTION",
+        "ENTERPRISE_UPGRADE_QUICK_CHOICES",
+        "ENTERPRISE_UPGRADE_SELECTION_KEY",
+        "EditorContext",
+        "EditorFocus",
+        "EnterpriseUpgradeDaySummary",
+        "EnterpriseUpgradeQuickChoice",
+        "PACKAGE_CARD_COPY",
+        "PACKAGE_WARM_DISH_HELPER",
+        "PRODUCTION_RULE_TEXT",
+        "PRODUCTION_RULE_TITLE",
+        "SHARED_WARM_DISH_HINT",
+        "WeekWorkspaceMetrics",
+        "WorkspaceStatusChip",
+        "applyEnterpriseUpgradePreset",
+        "buildEditorContext",
+        "buildWeekCockpitSummary",
+        "editorContextLine",
+        "enterpriseUpgradeHasContent",
+        "resolveNextStepAction",
+        "resolveSharedVarmrettSlot",
+        "statusChipFromRowStatus",
+        "statusChipLabel",
+        "summarizeCategoryDay",
+        "summarizeDayCard",
+        "summarizeEnterpriseUpgradeDay",
+        "summarizeSharedVarmrettDay",
+        "summarizeWeekMetrics",
+        "weekReadinessLabel"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/provider-menu/menuCategoryCanonical",
+        "@/lib/provider-menu/mergeProviderMenuSlots",
+        "@/lib/provider-menu/providerMenuCatalogSurface",
+        "@/lib/provider-menu/providerMenuTierContract",
+        "@/lib/providers/providerMenuPackageSurface"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuWorkspace.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GeneratedBaseline",
+        "VARMRETT_SHARED_TIERS",
+        "VarmrettSharedInput",
+        "VarmrettSharedWriteResult",
+        "getEmployeeVisibleOrderDates",
+        "isVarmrettDivergentForDate",
+        "parseVarmrettSharedBody",
+        "resetSharedVarmrettToBaseline",
+        "snapshotBaselineFromRow",
+        "varmrettTierSignatures",
+        "writeSharedVarmrettForProvider"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/date/oslo",
+        "@/lib/provider-menu/loadProviderMenuDays",
+        "@/lib/provider-menu/menuDayPayload",
+        "@/lib/provider-menu/providerMenuOrderLock",
+        "@/lib/week/availability",
+        "@sanity/client",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/varmrettSharedWrite.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -60366,6 +62174,35 @@
         "orders"
       ],
       "path": "lib/providers/customerTypes.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "KitchenOrderChoiceContext",
+        "KitchenOrderItemDisplay",
+        "KitchenOrderItemDisplayInput",
+        "VariantTitleLookup",
+        "buildKitchenOrderItemDisplay",
+        "dayChoiceKey",
+        "formatProviderOrderItemLine",
+        "locationDisplayName",
+        "parseAllergensSnapshot",
+        "profileDisplayName",
+        "profileEmail",
+        "resolveChoiceLabel",
+        "resolveVariantTitle",
+        "resolveVariantTitleFromLookup"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/mealTypeDisplayFallback",
+        "@/lib/cms/mealTypeKey"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/kitchenOrderDisplay.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -60415,7 +62252,10 @@
       "imports": [
         "@/lib/date/oslo",
         "@/lib/date/week",
+        "@/lib/kitchen/kitchenMealNote",
+        "@/lib/providers/kitchenOrderDisplay",
         "@/lib/providers/kitchenOrderStatus",
+        "@/lib/providers/providerOrderEnrichment",
         "@/lib/providers/providerOrdersSurface",
         "@/lib/supabase/server",
         "server-only"
@@ -60428,7 +62268,6 @@
       "type": "lib",
       "uses_tables": [
         "companies",
-        "order_items",
         "orders"
       ]
     },
@@ -60462,6 +62301,8 @@
         "ProviderCompanyLocationRow",
         "ProviderCompanyStats",
         "ProviderCustomerDetail",
+        "ProviderEmployeeRow",
+        "ProviderOrderLineRow",
         "ProviderOrderRow",
         "loadProviderCustomerDetail"
       ],
@@ -60469,8 +62310,15 @@
       "http_methods": [],
       "imports": [
         "@/lib/date/oslo",
+        "@/lib/kitchen/kitchenMealNote",
         "@/lib/providers/customerTypes",
-        "@/lib/providers/loadProviderDashboard",
+        "@/lib/providers/kitchenOrderDisplay",
+        "@/lib/providers/providerCustomerBilling",
+        "@/lib/providers/providerCustomerCounts",
+        "@/lib/providers/providerCustomerDetailActivity",
+        "@/lib/providers/providerCustomerScope",
+        "@/lib/providers/providerOrderEnrichment",
+        "@/lib/supabase/admin",
         "@/lib/supabase/server",
         "server-only"
       ],
@@ -60481,12 +62329,14 @@
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": [
+        "agreement_delivery_days",
         "agreements",
+        "audit_events",
         "companies",
         "company_locations",
-        "lifecycle_audit_log",
         "orders",
-        "profiles"
+        "profiles",
+        "providers"
       ]
     },
     {
@@ -60498,6 +62348,9 @@
       "imports": [
         "@/lib/date/oslo",
         "@/lib/providers/customerTypes",
+        "@/lib/providers/providerCustomerBilling",
+        "@/lib/providers/providerCustomerCounts",
+        "@/lib/providers/providerCustomerScope",
         "@/lib/providers/providerCustomersSurface",
         "@/lib/supabase/server",
         "server-only"
@@ -60510,8 +62363,7 @@
       "type": "lib",
       "uses_tables": [
         "companies",
-        "orders",
-        "profiles"
+        "providers"
       ]
     },
     {
@@ -60687,6 +62539,8 @@
         "ProviderAgreementDisplay",
         "ProviderAgreementSourceRow",
         "agreementDeliveryDaysDisplay",
+        "agreementLocationLabel",
+        "agreementPackageLabel",
         "agreementStatusLabel",
         "agreementStatusTone",
         "agreementTierLabel",
@@ -60697,9 +62551,149 @@
       ],
       "fetch_urls": [],
       "http_methods": [],
-      "imports": [],
+      "imports": [
+        "@/lib/providers/providerCustomerBilling"
+      ],
       "keywords_hit": [],
       "path": "lib/providers/providerCustomerAgreementSurface.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderAgreementBilling",
+        "ProviderAgreementContact",
+        "ProviderAgreementDayMenu",
+        "ProviderAgreementDeliveryWindow",
+        "ProviderAgreementLocation",
+        "ProviderAgreementPatchInput",
+        "ProviderAgreementPatchPayload",
+        "ProviderAgreementReadModel",
+        "ProviderAgreementUpdateResult"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreements/normalize",
+        "@/lib/providers/providerCustomerBilling"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerCustomerAgreementTypes.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "InvoiceMethod",
+        "LUNCHPORTALEN_COMMISSION_RATE",
+        "ProviderBillingBasis",
+        "ProviderBillingBasisConfidence",
+        "ProviderBillingContact",
+        "ProviderInvoiceSettings",
+        "buildInvoiceRecipientLabel",
+        "buildProviderInvoiceSettings",
+        "computeBillingBasis",
+        "formatDeliveryAddress",
+        "formatDeliveryAddressInline",
+        "formatNok",
+        "invoiceMethodLabel",
+        "resolveCompanyOrgnr",
+        "resolveInvoiceMethod",
+        "suggestEhfEndpoint",
+        "sumOrderRevenueCents"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/orgnr/no"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/providers/providerCustomerBilling.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderCustomerCounts",
+        "ProviderCustomerCountsResult",
+        "loadProviderCustomerCountsForCompanies"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/providers/providerCustomerCounts.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "orders",
+        "profiles"
+      ]
+    },
+    {
+      "exports": [
+        "PROVIDER_CUSTOMER_ACTIVITY_EMPTY",
+        "ProviderCustomerActivityItem",
+        "ProviderCustomerActivityRow",
+        "mapProviderCustomerDetailActivity"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/providers/providerCustomerDetailActivity.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "PROVIDER_CUSTOMER_DETAIL_COPY",
+        "ProviderBillingBasisDisplay",
+        "ProviderCustomerIdentityDisplay",
+        "buildBillingBasisBadges",
+        "buildBillingBasisDisplay",
+        "buildBillingBasisStatusLabel",
+        "buildCustomerIdentityDisplay"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/providers/customerTypes",
+        "@/lib/providers/providerCustomerAgreementSurface",
+        "@/lib/providers/providerCustomerBilling"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/providers/providerCustomerDetailSurface.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CompanyCustomerIdentity",
+        "ProviderIdentity",
+        "isProviderSelfCustomer"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerCustomerScope.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -60713,6 +62707,7 @@
         "ProviderCustomersPaginationModel",
         "buildCustomerStatusCounts",
         "buildCustomersPaginationModel",
+        "formatProviderCustomerCount",
         "formatProviderCustomerUpdated",
         "providerCustomersEmptyState",
         "providerCustomersSubheading"
@@ -60771,6 +62766,103 @@
     },
     {
       "exports": [
+        "LocaleReadinessRow",
+        "PROVIDER_LOCALE_READINESS",
+        "providerLocaleHasCompanyStorage",
+        "providerLocaleStorableScopes"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/providers/operationalSettingsShared"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerLocaleReadiness.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ENTERPRISE_UPGRADE_LABELS",
+        "ENTERPRISE_UPGRADE_TYPES",
+        "EnterpriseUpgradeType",
+        "EnterpriseValidationWarning",
+        "MarginEstimate",
+        "PROVIDER_MENU_BUILDER_COPY",
+        "ProviderMenuPriceView",
+        "ProviderMenuSlotKey",
+        "ProviderMenuSlotState",
+        "WEEKDAY_KEYS",
+        "WEEKDAY_LABELS",
+        "WeekdayKey",
+        "categoriesForTier",
+        "categoryLabel",
+        "computeMarginEstimate",
+        "isValidPlanTier",
+        "parseAllergensDisplay",
+        "slotKey",
+        "summarizeWeekStatus",
+        "validateEnterprisePublish",
+        "weekDatesFromStart"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuPackageSurface.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderMenuPriceDisplay",
+        "ProviderMenuPriceSource",
+        "centsToNok",
+        "computePriceIncVatNok",
+        "fallbackProviderMenuPrices",
+        "loadProviderMenuPrices"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/menu-publish/tierPricing",
+        "@/lib/providers/providerMenuPriceDisplay",
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuPriceConfig.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "provider_price_rules"
+      ]
+    },
+    {
+      "exports": [
+        "ProviderMenuPriceView",
+        "formatPriceExVatLabel",
+        "formatPriceIncVatLabel",
+        "formatProviderMenuPricePair"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuPriceDisplay.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "ProviderNotificationRecipients",
         "ProviderNotificationSourceRows",
         "ProviderOperationsEmailSource",
@@ -60792,6 +62884,33 @@
       "uses_tables": [
         "provider_settings",
         "providers"
+      ]
+    },
+    {
+      "exports": [
+        "ProviderOrderEnrichmentBundle",
+        "buildAllowedDayChoiceKeys",
+        "fetchProviderOrderEnrichment",
+        "ingestScopedDayChoiceRow",
+        "ingestScopedOrderItemRow",
+        "scopedOrderIdSet"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/providers/kitchenOrderDisplay",
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerOrderEnrichment.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "company_locations",
+        "day_choices",
+        "order_items",
+        "profiles"
       ]
     },
     {
@@ -65520,6 +67639,151 @@
     },
     {
       "exports": [
+        "EDITABLE_PLANS",
+        "ProviderAgreementActor",
+        "ProviderAgreementServiceErr",
+        "ProviderAgreementServiceOk",
+        "ProviderAgreementServiceResult",
+        "executeProviderCustomerAgreementUpdate",
+        "listEditableWeekdays",
+        "loadProviderCustomerAgreement"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreements/deliveryDays",
+        "@/lib/agreements/normalize",
+        "@/lib/audit/auditWrite",
+        "@/lib/observability/incident",
+        "@/lib/providers/providerCustomerAgreementTypes",
+        "@/lib/providers/providerCustomerBilling",
+        "@/lib/server/provider/providerCustomerAgreementValidation",
+        "@/lib/server/provider/providerCustomerRemoval",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/provider/providerCustomerAgreementService.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "agreement_delivery_days",
+        "agreements",
+        "companies",
+        "company_locations",
+        "company_registrations"
+      ]
+    },
+    {
+      "exports": [
+        "ValidationErr",
+        "ValidationOk",
+        "ValidationResult",
+        "defaultPlanFromDayMenus",
+        "timeFromDbValue",
+        "timeToDbValue",
+        "validateProviderAgreementPatch"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/agreements/deliveryDays",
+        "@/lib/agreements/normalize",
+        "@/lib/orgnr/no",
+        "@/lib/phone/no",
+        "@/lib/providers/providerCustomerAgreementTypes",
+        "@/lib/providers/providerCustomerBilling",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/provider/providerCustomerAgreementValidation.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderCustomerRemovalScopeError",
+        "ProviderScopedCustomer",
+        "executeProviderCustomerRemoval",
+        "getProviderCustomerRemovalEligibility",
+        "loadProviderScopedCustomer"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/audit/auditWrite",
+        "@/lib/observability/incident",
+        "@/lib/providers/providerCustomerScope",
+        "@/lib/server/superadmin/companyRemovalPolicy",
+        "@/lib/server/superadmin/executeCompanyRemoval",
+        "@/lib/server/superadmin/superadminEntityKind",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/provider/providerCustomerRemoval.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "companies",
+        "providers"
+      ]
+    },
+    {
+      "exports": [
+        "CompanyRemovalActor",
+        "ProviderCustomerRestoreResult",
+        "executeProviderCustomerRestore"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/audit/auditWrite",
+        "@/lib/observability/incident",
+        "@/lib/server/provider/providerCustomerRemoval",
+        "@/lib/server/superadmin/companyRemovalPolicy",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/provider/providerCustomerRestore.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "agreements",
+        "companies"
+      ]
+    },
+    {
+      "exports": [
+        "ProviderCustomerAdminAuth",
+        "authorizeProviderCustomerAdmin"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/http/respond",
+        "@/lib/ops/log",
+        "@/lib/providers/types",
+        "@/lib/supabase/admin",
+        "@supabase/supabase-js",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/provider/providerCustomerRouteAuth.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "companies",
+        "provider_memberships"
+      ]
+    },
+    {
+      "exports": [
         "AGREEMENT_DRAFT_FLOW_DISABLED_CODE",
         "AGREEMENT_DRAFT_FLOW_DISABLED_MESSAGE",
         "AGREEMENT_DRAFT_FLOW_DISABLED_UI_COPY"
@@ -65556,6 +67820,34 @@
     },
     {
       "exports": [
+        "CompanyDependencyCounts",
+        "CompanyRemovalEligibility",
+        "buildConfirmationTargets",
+        "evaluateCompanyRemovalEligibility",
+        "hasCriticalOperationalHistory",
+        "isProtectedPilotCompany",
+        "loadCompanyDependencyCounts",
+        "matchesArchiveConfirmation",
+        "matchesHardDeleteConfirmation"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/db/missingRelation",
+        "@/lib/server/superadmin/superadminEntityKind",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/server/superadmin/companyRemovalPolicy.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "AgreementDraftFromRegistrationScope",
         "AgreementWeekday",
         "DerivedPendingAgreementRpc",
@@ -65586,6 +67878,40 @@
       "uses_tables": [
         "agreements",
         "companies"
+      ]
+    },
+    {
+      "exports": [
+        "CompanyRemovalActor",
+        "CompanyRemovalDependencyDetail",
+        "CompanyRemovalResult",
+        "cleanupHardDeleteDependencies",
+        "executeCompanyRemoval",
+        "parseDbDependencyError"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/audit/auditWrite",
+        "@/lib/db/missingRelation",
+        "@/lib/observability/incident",
+        "@/lib/server/superadmin/companyRemovalPolicy",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [
+        "lead_pipeline",
+        "orders"
+      ],
+      "path": "lib/server/superadmin/executeCompanyRemoval.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "memberships",
+        "organizations",
+        "profiles"
       ]
     },
     {
@@ -65674,6 +68000,76 @@
         "closed_dates",
         "outbox"
       ]
+    },
+    {
+      "exports": [
+        "SuperadminProviderCustomerRow",
+        "SuperadminProviderDetail",
+        "loadSuperadminProviderDetail"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/providers/providerCustomerScope",
+        "@/lib/server/superadmin/superadminEntityKind",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/superadmin/loadSuperadminProviderDetail.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "agreements",
+        "companies",
+        "profiles",
+        "providers"
+      ]
+    },
+    {
+      "exports": [
+        "SuperadminProviderListRow",
+        "SuperadminProviderListStatus",
+        "loadSuperadminProviderList"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/providers/providerCustomerScope",
+        "@/lib/server/superadmin/superadminEntityKind",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/superadmin/loadSuperadminProviderList.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "agreements",
+        "companies",
+        "providers"
+      ]
+    },
+    {
+      "exports": [
+        "OrganizationMetadata",
+        "PROTECTED_SYSTEM_COMPANY_MESSAGE",
+        "isLunchCustomerCompanyRow",
+        "isProtectedSystemCompany",
+        "isSuperadminMainListProviderRow",
+        "isSystemPlatformCompanyName",
+        "isSystemPlatformOrganization"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/server/superadmin/superadminEntityKind.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
     },
     {
       "exports": [
@@ -67826,6 +70222,48 @@
     },
     {
       "exports": [
+        "PILOT_CONTROL_LOADER_READ_ONLY",
+        "PilotControlCenterData",
+        "PilotControlStatusCounts",
+        "PilotLatestOrder",
+        "buildPilotLatestOrderDisplayLine",
+        "loadPilotControlCenter"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/auth/agreementStatus",
+        "@/lib/date/oslo",
+        "@/lib/date/week",
+        "@/lib/kitchen/kitchenMealNote",
+        "@/lib/providers/kitchenOrderDisplay",
+        "@/lib/supabase/admin",
+        "@/lib/superadmin/pilotControlChecklist",
+        "@/lib/superadmin/pilotControlConfig",
+        "@supabase/supabase-js",
+        "server-only"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/superadmin/loadPilotControlCenter.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "companies",
+        "company_locations",
+        "day_choices",
+        "employee_invites",
+        "menu_service_days",
+        "order_items",
+        "orders",
+        "profiles",
+        "provider_memberships",
+        "providers"
+      ]
+    },
+    {
+      "exports": [
         "LoadSuperadminHomeSignalsResult",
         "SuperadminHomeSignalsOk",
         "loadSuperadminHomeSignals"
@@ -67875,6 +70313,47 @@
       "imports": [],
       "keywords_hit": [],
       "path": "lib/superadmin/paging.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ChecklistLevel",
+        "GoldenPathChecklistItem",
+        "OperationalBadge",
+        "PilotChecklistInput",
+        "PilotHealthFlags",
+        "deriveOperationalBadge",
+        "derivePilotHealthFlags",
+        "evaluateGoldenPathChecklist"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/superadmin/pilotControlChecklist.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "PilotControlScope",
+        "PilotControlScopeSource",
+        "mergePilotScope",
+        "pilotScopeFromEnv",
+        "pilotScopeFromQuery"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/superadmin/pilotControlConfig.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -68787,11 +71266,13 @@
     },
     {
       "exports": [
-        "getAppBaseUrl"
+        "getAppBaseUrl",
+        "getPasswordResetRedirectUrl"
       ],
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/url/resolveAppBaseUrl",
         "server-only"
       ],
       "keywords_hit": [],
@@ -68824,6 +71305,26 @@
       "imports": [],
       "keywords_hit": [],
       "path": "lib/url/qs.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CANONICAL_PRODUCTION_APP_HOST",
+        "CANONICAL_PRODUCTION_APP_URL",
+        "LOCAL_DEV_APP_URL",
+        "ResolveAppBaseUrlInput",
+        "isLocalDevPasswordResetContext",
+        "pickExplicitAppUrl",
+        "resolveAppBaseUrl",
+        "resolvePasswordResetRedirectUrl"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/url/resolveAppBaseUrl.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -69189,9 +71690,11 @@
         "canSeeThisWeek",
         "dayCutoff0800",
         "getVisibleWindow",
+        "hhmmToMin",
         "isAfterFriday1400",
         "isAfterFriday1500",
         "nextWeekOpens",
+        "osloParts",
         "visibleWeekStarts",
         "weekStartMon"
       ],
@@ -69268,6 +71771,44 @@
       ],
       "keywords_hit": [],
       "path": "lib/week/orderPatternsClient.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "EmployeeWeekScopeErr",
+        "EmployeeWeekScopeOk",
+        "EmployeeWeekScopeResult",
+        "resolveEmployeeWeekScope"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/http/respond",
+        "server-only"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/week/resolveEmployeeWeekScope.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "WeekMenuReadinessDay",
+        "isWeekMenuComingSoon"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/date/oslo"
+      ],
+      "keywords_hit": [],
+      "path": "lib/week/weekMenuReadiness.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -70322,6 +72863,52 @@
       "uses_tables": []
     },
     {
+      "exports": [
+        "OVERRIDE_LABEL",
+        "PROTECTED_GOLDEN_PATH_PREFIXES",
+        "PROTECTED_GOLDEN_PATH_TEST_PREFIXES",
+        "PROTECTED_GUARD_EXEMPT_PREFIXES",
+        "PROTECTED_MIGRATION_RE",
+        "PR_BODY_MARKER",
+        "detectProtectedGoldenPathChanges",
+        "evaluateProtectedPathGuard",
+        "isProtectedGoldenPathFile",
+        "isProtectedGoldenPathTestFile"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "node:child_process",
+        "node:fs",
+        "node:path",
+        "node:url"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "scripts/ci/guard-protected-golden-path.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "./guard-protected-golden-path.mjs",
+        "node:assert/strict",
+        "node:child_process"
+      ],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "scripts/ci/guard-protected-golden-path.test.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
       "exports": [],
       "fetch_urls": [],
       "http_methods": [],
@@ -70402,9 +72989,24 @@
       "uses_tables": []
     },
     {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "node:child_process",
+        "pg"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/ci/repair-staging-provider-cutoff-ledger.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
       "exports": [
         "REQUIRED_CHECK_CONTEXT_NAMES",
-        "REQUIRED_CHECK_PATH_CONFIG"
+        "REQUIRED_CHECK_PATH_CONFIG",
+        "SUPABASE_MIGRATE_CI_PATHS"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -70548,6 +73150,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "./required-check-path-patterns.mjs",
         "./verify-required-check-path-drift.mjs",
         "node:assert/strict",
         "node:path"
@@ -71182,6 +73785,40 @@
       ],
       "keywords_hit": [],
       "path": "scripts/lint-design-tokens.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "node:child_process",
+        "node:path",
+        "node:url"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/menu-publish/dryrun-week-generation.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/providerSanityConstants",
+        "@/lib/menu-publish/calendar",
+        "@/lib/menu-publish/runMenuWeekRolloutCore",
+        "@sanity/client",
+        "@supabase/supabase-js",
+        "dotenv",
+        "node:path"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/menu-publish/dryrun-week-generation.ts",
       "rpc_calls": [],
       "type": "script",
       "uses_tables": []
@@ -72774,6 +75411,22 @@
       "imports": [],
       "keywords_hit": [],
       "path": "scripts/verify/decode-jwt-claims.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@playwright/test",
+        "dotenv",
+        "node:fs/promises",
+        "node:path"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/visual-qa/capture-provider-meny.mjs",
       "rpc_calls": [],
       "type": "script",
       "uses_tables": []
