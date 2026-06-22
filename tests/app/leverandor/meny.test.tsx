@@ -341,6 +341,72 @@ describe("Provider menu editor and catalog i18n", () => {
     expect(html).not.toContain("Select a day");
   });
 
+  test("en varmrett panel shows Save hot meal / Cancel / Reset to generated and economy labels", async () => {
+    const messages = await loadMessagesForLocale("en");
+    const ProviderMenuEditorPanel = (await import("@/components/providers/ProviderMenuEditorPanel")).default;
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ProviderMenuEditorPanel
+          open
+          layoutMode="panel"
+          tier="LUXUS"
+          context={{
+            tierLabel: "Luxus",
+            weekdayLabel: "Monday",
+            date: "2026-06-16",
+            categoryLabel: "Varmrett",
+            variantLabel: null,
+            editorFocus: "varmrett",
+            mode: "varmrett",
+          }}
+          form={{
+            date: "2026-06-16",
+            tier: "LUXUS",
+            category: "varmrett",
+            mealTitle: "Kyllinggryte",
+            description: "Provider-owned description",
+            allergensText: "melk",
+            estimatedCostPerPortion: 45,
+            sourcePackage: null,
+            upgradeType: null,
+            upgradeNote: "",
+            status: "draft",
+            contentSource: "draft",
+          }}
+          onFormChange={() => {}}
+          onClose={() => {}}
+          onSaveDraft={() => {}}
+          onPublish={() => {}}
+          onCopyFromBasis={() => {}}
+          onCopyFromLuxus={() => {}}
+          pending={false}
+          margin={{
+            priceExVatNok: 130,
+            estimatedCostNok: 45,
+            grossMarginNok: 85,
+            marginPercent: 65,
+          }}
+          enterpriseWarnings={[]}
+          confirmWarnings={false}
+          onConfirmWarningsChange={() => {}}
+          varmrettHasGeneratedBaseline
+          onResetToGenerated={() => {}}
+        />
+      </NextIntlClientProvider>,
+    );
+
+    expect(html).toContain("lp-editor-panel-varmrett");
+    expect(html).toContain("Save hot meal");
+    expect(html).toContain("Cancel");
+    expect(html).toContain("Reset to generated");
+    expect(html).toContain("Raw material cost (kr)");
+    expect(html).toContain("Margin per portion");
+    expect(html).toContain("Shared · Basis, Luxus, Enterprise");
+    expect(html).toContain("Kyllinggryte");
+    expect(html).not.toContain("Lagre varmrett");
+    expect(html).not.toContain("Tilbakestill til generert");
+  });
+
   test("en catalog shows Menu catalog / Add choice / Save catalog", async () => {
     const messages = await loadMessagesForLocale("en");
     const ProviderMenuCatalogEditor = (await import("@/components/providers/ProviderMenuCatalogEditor")).default;
