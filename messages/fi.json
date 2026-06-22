@@ -85,6 +85,100 @@
           "action": "Katso laskut"
         }
       }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Vain katselu",
+        "readOnlyLead": "Sinulla ei ole oikeutta muokata menua. Ota yhteyttä toimittajan ylläpitäjään saadaksesi muokkausoikeuden."
+      },
+      "header": {
+        "eyebrow": "Menueditori",
+        "lead": "Suunnittele viikko, aseta päivän yhteinen lämmin ateria ja julkaise tilausta varten.",
+        "prevWeek": "← Edellinen",
+        "nextWeek": "Seuraava →",
+        "weekFrom": "Viikko alkaen {date}",
+        "weekTitle": "Viikko {week} · {year}",
+        "weekNavAria": "Viikkonavigointi",
+        "tierTabsAria": "Menupaketit",
+        "priceLineAria": "Tasohinta ja tuotantosääntö",
+        "workspaceAria": "Työtila",
+        "sharedWarmMealRule": "Lämmin ateria on yhteinen kaikille kolmelle tasolle."
+      },
+      "tabs": {
+        "weekPlan": "Viikkosuunnitelma",
+        "catalog": "Menukatalogi"
+      },
+      "status": {
+        "ariaLabel": "Viikon tila",
+        "readyAllGenerated": "Viikko valmis — lämmin ateria luotu kaikille {days} päivälle",
+        "daysMissingVarmrett": "{count, plural, one {# päivä ilman lämmintä ateriaa} other {# päivää ilman lämmintä ateriaa}}",
+        "daysWithVarmrett": "{filled} / {total} päivää lämpimällä aterialla",
+        "autoRolloutMeta": "Julkaistaan automaattisesti torstaina klo 08:00 · työntekijät näkevät viikon klo 14:00",
+        "fillMissingMeta": "Täytä puuttuvat lämpimät ateriat ennen viikon julkaisua",
+        "autoRolloutChip": "Automaattinen julkaisu käytössä",
+        "daysPublished": "{count, plural, one {# päivä julkaistu} other {# päivää julkaistu}}"
+      },
+      "week": {
+        "plannerTitle": "Viikkosuunnitelma",
+        "plannerLead": "Yhteinen lämmin ateria päivää kohti — luotu oletus, jota voit muuttaa.",
+        "ariaLabel": "Viikkosuunnitelma",
+        "loadingAria": "Ladataan menua",
+        "hotMealEyebrow": "Päivän lämmin ateria",
+        "hotMealMissing": "Lämmin ateria puuttuu",
+        "hotMealMissingHint": "Lisää päivän lämmin ateria ennen kuin tämä päivä voidaan julkaista.",
+        "hotMealFallback": "Lämmin ateria",
+        "enterpriseUpgrade": "Enterprise-päivitys",
+        "badges": {
+          "generated": "Luotu",
+          "fridayTreat": "Perjantaiherkku",
+          "overridden": "Ylikirjoitettu",
+          "hasOrder": "Tilauksia"
+        },
+        "actions": {
+          "add": "Lisää",
+          "viewDay": "Näytä päivä",
+          "editNow": "Muokkaa nyt",
+          "edit": "Muokkaa"
+        },
+        "allergens": {
+          "confirmed": "Allergeenit: {list}",
+          "unconfirmed": "Allergeeneja ei vahvistettu — ota yhteyttä toimittajaan",
+          "opensAfterDelivery": "Avautuu muokattavaksi toimituksen jälkeen"
+        },
+        "pins": {
+          "soup": "Keitto",
+          "fish": "Kala",
+          "fridayTreat": "Perjantaiherkku"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Tilauksia · {count} annosta",
+          "hasOrderLocked": "Tilauksia · lukittu"
+        },
+        "costHint": "Kustannus {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Maanantai",
+        "tue": "Tiistai",
+        "wed": "Keskiviikko",
+        "thu": "Torstai",
+        "fri": "Perjantai"
+      },
+      "errors": {
+        "loadFailed": "Menua ei voitu ladata.",
+        "saveFailed": "Menua ei voitu tallentaa."
+      },
+      "success": {
+        "published": "Menu julkaistu.",
+        "draftSaved": "Luonnos tallennettu.",
+        "resetVarmrett": "Lämmin ateria palautettu luotuun."
+      },
+      "price": {
+        "exVatSuffix": "kr ilman ALV",
+        "incVatSuffix": "kr sis. ALV",
+        "exVatShort": "ilman ALV",
+        "incVatShort": "sis. ALV",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      }
     }
   }
 }

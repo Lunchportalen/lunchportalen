@@ -85,6 +85,100 @@
           "action": "View invoices"
         }
       }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "View only",
+        "readOnlyLead": "You do not have permission to edit the menu. Contact your provider administrator for edit access."
+      },
+      "header": {
+        "eyebrow": "Menu editor",
+        "lead": "Plan the week, set the shared hot meal for each day and publish for ordering.",
+        "prevWeek": "← Previous",
+        "nextWeek": "Next →",
+        "weekFrom": "Week from {date}",
+        "weekTitle": "Week {week} · {year}",
+        "weekNavAria": "Week navigation",
+        "tierTabsAria": "Menu packages",
+        "priceLineAria": "Tier price and production rule",
+        "workspaceAria": "Workspace",
+        "sharedWarmMealRule": "The hot meal is shared across all three tiers."
+      },
+      "tabs": {
+        "weekPlan": "Week plan",
+        "catalog": "Menu catalog"
+      },
+      "status": {
+        "ariaLabel": "Week status",
+        "readyAllGenerated": "Week ready — hot meal generated for all {days} days",
+        "daysMissingVarmrett": "{count, plural, one {# day missing hot meal} other {# days missing hot meal}}",
+        "daysWithVarmrett": "{filled} of {total} days with hot meal",
+        "autoRolloutMeta": "Published automatically Thursday 08:00 · employees see the week at 14:00",
+        "fillMissingMeta": "Fill in missing hot meals before the week can be published",
+        "autoRolloutChip": "Auto-rollout active",
+        "daysPublished": "{count, plural, one {# day published} other {# days published}}"
+      },
+      "week": {
+        "plannerTitle": "Week plan",
+        "plannerLead": "Shared hot meal per day — generated default you can override.",
+        "ariaLabel": "Week plan",
+        "loadingAria": "Loading menu",
+        "hotMealEyebrow": "Today's hot meal",
+        "hotMealMissing": "Hot meal missing",
+        "hotMealMissingHint": "Add today's hot meal before this day can be published.",
+        "hotMealFallback": "Hot meal",
+        "enterpriseUpgrade": "Enterprise upgrade",
+        "badges": {
+          "generated": "Generated",
+          "fridayTreat": "Friday treat",
+          "overridden": "Overridden",
+          "hasOrder": "Has orders"
+        },
+        "actions": {
+          "add": "Add",
+          "viewDay": "View day",
+          "editNow": "Edit now",
+          "edit": "Edit"
+        },
+        "allergens": {
+          "confirmed": "Allergens: {list}",
+          "unconfirmed": "Allergens not confirmed — contact provider",
+          "opensAfterDelivery": "Opens for editing after delivery"
+        },
+        "pins": {
+          "soup": "Soup",
+          "fish": "Fish",
+          "fridayTreat": "Friday treat"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Has orders · {count} portions",
+          "hasOrderLocked": "Has orders · locked"
+        },
+        "costHint": "Cost {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday"
+      },
+      "errors": {
+        "loadFailed": "Could not load menu.",
+        "saveFailed": "Could not save menu."
+      },
+      "success": {
+        "published": "Menu published.",
+        "draftSaved": "Draft saved.",
+        "resetVarmrett": "Hot meal reset to generated."
+      },
+      "price": {
+        "exVatSuffix": "kr ex. VAT",
+        "incVatSuffix": "kr incl. VAT",
+        "exVatShort": "ex. VAT",
+        "incVatShort": "incl. VAT",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      }
     }
   }
 }

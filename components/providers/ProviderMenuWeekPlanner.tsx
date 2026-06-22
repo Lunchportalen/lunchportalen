@@ -1,5 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
+import { useTranslations } from "next-intl";
+
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
 import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
@@ -11,7 +14,7 @@ import {
   type EditorFocus,
   type WorkspaceStatusChip,
 } from "@/lib/provider-menu/providerMenuWorkspace";
-import { WEEKDAY_KEYS, WEEKDAY_LABELS } from "@/lib/providers/providerMenuPackageSurface";
+import { WEEKDAY_KEYS, type WeekdayKey } from "@/lib/providers/providerMenuPackageSurface";
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 
 export type WeekSelection = {
@@ -34,13 +37,16 @@ type Props = {
 
 const ENTERPRISE_UPGRADE_DELTA = 40;
 
-const CATEGORY_PIN_META: Record<
-  string,
-  { label: string; classSuffix: string; icon: string }
-> = {
-  suppe: { label: "Suppe", classSuffix: "suppe", icon: "🍲" },
-  fisk: { label: "Fisk", classSuffix: "fish", icon: "🐟" },
-  fredagskos: { label: "Fredagskos", classSuffix: "fri", icon: "🎉" },
+const CATEGORY_PIN_KEYS: Record<string, "soup" | "fish" | "fridayTreat"> = {
+  suppe: "soup",
+  fisk: "fish",
+  fredagskos: "fridayTreat",
+};
+
+const CATEGORY_PIN_CLASS: Record<string, { classSuffix: string; icon: string }> = {
+  suppe: { classSuffix: "suppe", icon: "🍲" },
+  fisk: { classSuffix: "fish", icon: "🐟" },
+  fredagskos: { classSuffix: "fri", icon: "🎉" },
 };
 
 function formatDisplayDate(iso: string): string {
@@ -63,14 +69,24 @@ export default function ProviderMenuWeekPlanner({
   orderCountsByDate,
   onSelect,
 }: Props) {
+  const t = useTranslations("provider.menu");
   const categories = providerWorkspaceCategories(catalog, tier);
   const hasPremium = categories.some((c) => c === "sushi" || c === "pokebowl" || c === "thai");
 
+  const weekdayLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        WEEKDAY_KEYS.map((key) => [key, t(`weekdays.${key as WeekdayKey}`)]),
+      ) as Record<WeekdayKey, string>,
+    [t],
+  );
+
   return (
     <div className="lp-editor-grid-scroll">
-      <div className="lp-editor-days" role="region" aria-label="Ukeplan">
+      <div className="lp-editor-days" role="region" aria-label={t("week.ariaLabel")}>
         {weekDates.map((date, idx) => {
-          const weekdayLabel = WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? date;
+          const weekdayKey = WEEKDAY_KEYS[idx]!;
+          const weekdayLabel = weekdayLabels[weekdayKey] ?? date;
           const card = summarizeDayCard(slots, date, tier, weekdayLabel, categories, catalog);
           const varmrett = card.varmrett;
           const varmrettRow = varmrett.rows[0];
@@ -78,10 +94,11 @@ export default function ProviderMenuWeekPlanner({
           const varmrettSlot = varmrett.slot;
           const varmrettOrderLocked = varmrettSlot?.orderLocked === true;
           const varmrettOrderCount = orderCountsByDate[date] ?? 0;
-          const isFriday = WEEKDAY_KEYS[idx] === "fri";
+          const isFriday = weekdayKey === "fri";
           const isDaySelected = selected?.date === date;
           const pinTag = getWeekdayCategoryPin(idx);
-          const pinMeta = pinTag ? CATEGORY_PIN_META[pinTag] : null;
+          const pinKey = pinTag ? CATEGORY_PIN_KEYS[pinTag] : null;
+          const pinClass = pinTag ? CATEGORY_PIN_CLASS[pinTag] : null;
 
           const showGeneratedBadge =
             !varmrettMissing &&
@@ -92,15 +109,15 @@ export default function ProviderMenuWeekPlanner({
             !varmrettOrderLocked && varmrettSlot?.providerOverride === true;
           const costHint =
             menuSlotHasContent(varmrettSlot) && varmrettSlot.estimatedCostPerPortion != null
-              ? `Kost ${varmrettSlot.estimatedCostPerPortion} kr`
+              ? t("week.costHint", { amount: varmrettSlot.estimatedCostPerPortion })
               : null;
 
           const allergensText = varmrettSlot?.allergensText?.trim() ?? "";
           const allergenNote = varmrettOrderLocked
-            ? "Åpnes for endring når levert"
+            ? t("week.allergens.opensAfterDelivery")
             : allergensText
-              ? `Allergener: ${allergensText}`
-              : "Allergener ikke bekreftet — kontakt leverandør";
+              ? t("week.allergens.confirmed", { list: allergensText })
+              : t("week.allergens.unconfirmed");
 
           const premiumLabels = card.premiumGroups.map((g) => g.categoryLabel);
           const premiumCount = card.premiumGroups.reduce((sum, g) => sum + g.variantCount, 0);
@@ -150,30 +167,32 @@ export default function ProviderMenuWeekPlanner({
 
               <div className="lp-editor-day__hero">
                 <div className="lp-editor-day__hero-inner">
-                  <div className="lp-editor-day__eyebrow">Dagens varmrett</div>
+                  <div className="lp-editor-day__eyebrow">{t("week.hotMealEyebrow")}</div>
                   {varmrettMissing ? (
                   <>
-                    <div className="lp-editor-day__name">Varmrett mangler</div>
-                    <p className="lp-editor-day__hint">
-                      Legg inn dagens varmrett før denne dagen kan publiseres.
-                    </p>
+                    <div className="lp-editor-day__name">{t("week.hotMealMissing")}</div>
+                    <p className="lp-editor-day__hint">{t("week.hotMealMissingHint")}</p>
                   </>
                 ) : (
                   <>
-                    <div className="lp-editor-day__name">{varmrettRow?.title ?? "Varmrett"}</div>
+                    <div className="lp-editor-day__name">{varmrettRow?.title ?? t("week.hotMealFallback")}</div>
                     <div className="lp-editor-day__sub">
                       {showGeneratedBadge ? (
                         <span
                           className={`lp-editor-badge lp-editor-day__badge${isFriday ? " is-friday" : " is-generated"}`}
                         >
-                          {isFriday ? "Fredagskos" : "Generert"}
+                          {isFriday ? t("week.badges.fridayTreat") : t("week.badges.generated")}
                         </span>
                       ) : null}
                       {showOverrideBadge ? (
-                        <span className="lp-editor-badge lp-editor-day__badge is-overridden">Overstyrt</span>
+                        <span className="lp-editor-badge lp-editor-day__badge is-overridden">
+                          {t("week.badges.overridden")}
+                        </span>
                       ) : null}
                       {varmrettOrderLocked ? (
-                        <span className="lp-editor-badge lp-editor-day__badge is-order-lock">Har bestilling</span>
+                        <span className="lp-editor-badge lp-editor-day__badge is-order-lock">
+                          {t("week.badges.hasOrder")}
+                        </span>
                       ) : null}
                       {costHint ? <span className="lp-editor-day__kost">{costHint}</span> : null}
                     </div>
@@ -182,17 +201,19 @@ export default function ProviderMenuWeekPlanner({
                 </div>
               </div>
 
-              {pinMeta ? (
-                <span className={`lp-editor-day__pin lp-editor-day__pin--${pinMeta.classSuffix}`}>
-                  <span aria-hidden="true">{pinMeta.icon}</span>
-                  {pinMeta.label}
+              {pinKey && pinClass ? (
+                <span className={`lp-editor-day__pin lp-editor-day__pin--${pinClass.classSuffix}`}>
+                  <span aria-hidden="true">{pinClass.icon}</span>
+                  {t(`week.pins.${pinKey}`)}
                 </span>
               ) : null}
 
               {varmrettOrderLocked ? (
                 <div className="lp-editor-day__lockbar" role="status">
                   <span aria-hidden="true">🔒</span>
-                  Har bestilling · {varmrettOrderCount > 0 ? `${varmrettOrderCount} porsjoner` : "låst"}
+                  {varmrettOrderCount > 0
+                    ? t("week.orderLock.hasOrderWithPortions", { count: varmrettOrderCount })
+                    : t("week.orderLock.hasOrderLocked")}
                 </div>
               ) : null}
 
@@ -250,7 +271,7 @@ export default function ProviderMenuWeekPlanner({
                     <span className="lp-editor-day__catrow-icon" aria-hidden="true">
                       {upgradeDone ? "✓" : "+"}
                     </span>
-                    <span className="lp-editor-day__catrow-label">Enterprise-upgrade</span>
+                    <span className="lp-editor-day__catrow-label">{t("week.enterpriseUpgrade")}</span>
                     <span className="lp-editor-day__catrow-n">+{ENTERPRISE_UPGRADE_DELTA}</span>
                   </button>
                 ) : null}
@@ -272,7 +293,13 @@ export default function ProviderMenuWeekPlanner({
                 }}
               >
                 <span aria-hidden="true">{varmrettOrderLocked ? "👁" : "✎"}</span>
-                {varmrettMissing ? "Legg inn" : varmrettOrderLocked ? "Se dag" : isDaySelected ? "Rediger nå" : "Rediger"}
+                {varmrettMissing
+                  ? t("week.actions.add")
+                  : varmrettOrderLocked
+                    ? t("week.actions.viewDay")
+                    : isDaySelected
+                      ? t("week.actions.editNow")
+                      : t("week.actions.edit")}
               </button>
             </article>
           );
