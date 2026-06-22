@@ -3,15 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { LogoutClientButton } from "@/components/auth/LogoutClient";
 import type { ProviderRole } from "@/lib/providers/types";
 
 type IconName = "grid" | "users" | "orders" | "document" | "pin" | "settings" | "billing" | "logout";
 
+type NavLabelKey =
+  | "dashboard"
+  | "orders"
+  | "customers"
+  | "registrations"
+  | "menu"
+  | "areas"
+  | "invoices"
+  | "settings"
+  | "logout"
+  | "more";
+
 type NavItem = {
   href?: string;
-  label: string;
+  labelKey: NavLabelKey;
   icon: IconName;
   exact?: boolean;
   disabled?: boolean;
@@ -20,15 +33,15 @@ type NavItem = {
 };
 
 const NAV_ITEMS_BASE: NavItem[] = [
-  { href: "/leverandor", label: "Dashboard", icon: "grid", exact: true },
-  { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders" },
-  { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
-  { href: "/leverandor/registreringer", label: "Registreringer", icon: "document" },
-  { href: "/leverandor/meny", label: "Meny", icon: "document" },
-  { href: "/leverandor/omrader", label: "Områder", icon: "pin", adminOnly: true },
-  { href: "/leverandor/faktura", label: "Faktura", icon: "billing", adminOnly: true },
-  { href: "/leverandor/innstillinger", label: "Innstillinger", icon: "settings" },
-  { label: "Logg ut", icon: "logout", action: "logout" },
+  { href: "/leverandor", labelKey: "dashboard", icon: "grid", exact: true },
+  { href: "/leverandor/ordrer", labelKey: "orders", icon: "orders" },
+  { href: "/leverandor/kunder", labelKey: "customers", icon: "users" },
+  { href: "/leverandor/registreringer", labelKey: "registrations", icon: "document" },
+  { href: "/leverandor/meny", labelKey: "menu", icon: "document" },
+  { href: "/leverandor/omrader", labelKey: "areas", icon: "pin", adminOnly: true },
+  { href: "/leverandor/faktura", labelKey: "invoices", icon: "billing", adminOnly: true },
+  { href: "/leverandor/innstillinger", labelKey: "settings", icon: "settings" },
+  { labelKey: "logout", icon: "logout", action: "logout" },
 ];
 
 function navItemsForRole(kitchenOnly: boolean, providerAdmin: boolean): NavItem[] {
@@ -40,11 +53,11 @@ function navItemsForRole(kitchenOnly: boolean, providerAdmin: boolean): NavItem[
     });
   }
   return [
-    { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders", exact: true },
-    { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
-    { href: "/leverandor/meny", label: "Meny", icon: "document" },
-    { href: "/leverandor/innstillinger", label: "Innstillinger", icon: "settings" },
-    { label: "Logg ut", icon: "logout", action: "logout" },
+    { href: "/leverandor/ordrer", labelKey: "orders", icon: "orders", exact: true },
+    { href: "/leverandor/kunder", labelKey: "customers", icon: "users" },
+    { href: "/leverandor/meny", labelKey: "menu", icon: "document" },
+    { href: "/leverandor/innstillinger", labelKey: "settings", icon: "settings" },
+    { labelKey: "logout", icon: "logout", action: "logout" },
   ];
 }
 
@@ -118,17 +131,23 @@ function isActive(pathname: string, item: NavItem) {
 function NavLink({
   item,
   pathname,
+  label,
+  logoutLabel,
+  comingSoonLabel,
   onNavigate,
 }: {
   item: NavItem;
   pathname: string;
+  label: string;
+  logoutLabel: string;
+  comingSoonLabel: string;
   onNavigate?: () => void;
 }) {
   const active = item.href ? isActive(pathname, item) : false;
   const className = `ds-admin-sidebar__item${active ? " is-active" : ""}${item.disabled ? " ds-provider-nav__item is-disabled" : ""}`;
 
   if (item.action === "logout") {
-    return <LogoutClientButton className={className} aria-label="Logg ut" title="Logg ut" />;
+    return <LogoutClientButton className={className} aria-label={logoutLabel} title={logoutLabel} />;
   }
 
   if (item.disabled || !item.href) {
@@ -136,8 +155,8 @@ function NavLink({
       <span className={className} aria-disabled="true">
         <ProviderIcon name={item.icon} />
         <span>
-          {item.label}
-          <span className="ds-provider-activity__meta"> (kommer)</span>
+          {label}
+          <span className="ds-provider-activity__meta"> {comingSoonLabel}</span>
         </span>
       </span>
     );
@@ -151,15 +170,9 @@ function NavLink({
       onClick={onNavigate}
     >
       <ProviderIcon name={item.icon} />
-      <span>{item.label}</span>
+      <span>{label}</span>
     </Link>
   );
-}
-
-function roleLabel(role: ProviderRole | null): string {
-  if (role === "provider_admin") return "Administrator";
-  if (role === "provider_kitchen") return "Kjøkken";
-  return "Leverandør";
 }
 
 function BrandBlock({
@@ -167,11 +180,13 @@ function BrandBlock({
   logoUrl,
   accentColor,
   userRole,
+  roleLabel,
 }: {
   providerName: string;
   logoUrl: string | null;
   accentColor: string | null;
   userRole: ProviderRole | null;
+  roleLabel: string;
 }) {
   return (
     <div className="ds-admin-sidebar__brand">
@@ -190,7 +205,7 @@ function BrandBlock({
         {accentColor ? (
           <span className="ds-provider-nav__accent" style={{ background: accentColor }} aria-hidden="true" />
         ) : null}
-        <div className="ds-admin-sidebar__sub">{roleLabel(userRole)}</div>
+        <div className="ds-admin-sidebar__sub">{roleLabel}</div>
       </div>
     </div>
   );
@@ -199,16 +214,30 @@ function BrandBlock({
 function SidebarNav({
   pathname,
   items,
+  labelForItem,
+  logoutLabel,
+  comingSoonLabel,
   onNavigate,
 }: {
   pathname: string;
   items: NavItem[];
+  labelForItem: (item: NavItem) => string;
+  logoutLabel: string;
+  comingSoonLabel: string;
   onNavigate?: () => void;
 }) {
   return (
     <nav className="ds-admin-sidebar__nav" aria-label="Leverandør">
       {items.map((item) => (
-        <NavLink key={item.label} item={item} pathname={pathname} onNavigate={onNavigate} />
+        <NavLink
+          key={item.labelKey}
+          item={item}
+          pathname={pathname}
+          label={labelForItem(item)}
+          logoutLabel={logoutLabel}
+          comingSoonLabel={comingSoonLabel}
+          onNavigate={onNavigate}
+        />
       ))}
     </nav>
   );
@@ -238,6 +267,7 @@ export default function ProviderNav({
 }: ProviderNavProps) {
   const pathname = usePathname() || "/leverandor";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const t = useTranslations("provider.nav");
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -249,26 +279,44 @@ export default function ProviderNav({
   }, [drawerOpen]);
 
   const navItems = navItemsForRole(kitchenOnly, providerAdmin);
+  const labelForItem = (item: NavItem) => t(item.labelKey);
+  const roleLabel =
+    userRole === "provider_admin" ? t("roleAdmin") : userRole === "provider_kitchen" ? t("roleKitchen") : t("roleDefault");
+  const logoutLabel = t("logout");
+  const comingSoonLabel = t("comingSoon");
+
   const mobilePrimary: NavItem[] = kitchenOnly
-    ? [navItems[0], navItems[1], navItems[2], { label: "Mer", icon: "settings", href: "/leverandor/innstillinger" }]
-    : [navItems[0], navItems[1], navItems[2], { label: "Mer", icon: "settings", href: "/leverandor/innstillinger" }];
+    ? [navItems[0], navItems[1], navItems[2], { labelKey: "more", icon: "settings", href: "/leverandor/innstillinger" }]
+    : [navItems[0], navItems[1], navItems[2], { labelKey: "more", icon: "settings", href: "/leverandor/innstillinger" }];
 
   return (
     <>
       <aside className="ds-admin-sidebar" aria-label="Leverandør (desktop)">
-        <BrandBlock providerName={providerName} logoUrl={logoUrl} accentColor={accentColor} userRole={userRole} />
-        <SidebarNav pathname={pathname} items={navItems} />
+        <BrandBlock
+          providerName={providerName}
+          logoUrl={logoUrl}
+          accentColor={accentColor}
+          userRole={userRole}
+          roleLabel={roleLabel}
+        />
+        <SidebarNav
+          pathname={pathname}
+          items={navItems}
+          labelForItem={labelForItem}
+          logoutLabel={logoutLabel}
+          comingSoonLabel={comingSoonLabel}
+        />
       </aside>
 
       <div className="ds-provider-topbar ds-provider-topbar--mobile-only">
         <button
           type="button"
           className="ds-provider-menu-toggle"
-          aria-label="Åpne meny"
+          aria-label={t("openMenu")}
           aria-expanded={drawerOpen}
           onClick={() => setDrawerOpen(true)}
         >
-          Meny
+          {t("menu")}
         </button>
       </div>
 
@@ -277,12 +325,25 @@ export default function ProviderNav({
           <button
             type="button"
             className="ds-provider-drawer-backdrop"
-            aria-label="Lukk meny"
+            aria-label={t("closeMenu")}
             onClick={() => setDrawerOpen(false)}
           />
-          <div className={`ds-provider-drawer is-open`} role="dialog" aria-modal="true" aria-label="Leverandørmeny">
-            <BrandBlock providerName={providerName} logoUrl={logoUrl} accentColor={accentColor} userRole={userRole} />
-            <SidebarNav pathname={pathname} items={navItems} onNavigate={() => setDrawerOpen(false)} />
+          <div className={`ds-provider-drawer is-open`} role="dialog" aria-modal="true" aria-label={t("providerMenu")}>
+            <BrandBlock
+              providerName={providerName}
+              logoUrl={logoUrl}
+              accentColor={accentColor}
+              userRole={userRole}
+              roleLabel={roleLabel}
+            />
+            <SidebarNav
+              pathname={pathname}
+              items={navItems}
+              labelForItem={labelForItem}
+              logoutLabel={logoutLabel}
+              comingSoonLabel={comingSoonLabel}
+              onNavigate={() => setDrawerOpen(false)}
+            />
           </div>
         </>
       ) : null}
@@ -299,11 +360,11 @@ export default function ProviderNav({
               aria-current={active ? "page" : undefined}
             >
               <ProviderIcon name={item.icon} />
-              <span>{item.label}</span>
+              <span>{labelForItem(item)}</span>
             </Link>
           );
         })}
-        <LogoutClientButton className="ds-admin-mobile-nav__item" aria-label="Logg ut" title="Logg ut" />
+        <LogoutClientButton className="ds-admin-mobile-nav__item" aria-label={logoutLabel} title={logoutLabel} />
       </nav>
     </>
   );

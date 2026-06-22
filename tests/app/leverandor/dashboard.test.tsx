@@ -1,13 +1,77 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { renderToStaticMarkup } from "react-dom/server";
+import React from "react";
+import { NextIntlClientProvider } from "next-intl";
 
-describe("LeverandorDashboardPage locale switcher", () => {
-  test("dashboard topbar includes LocaleSwitcher with profile persistence", () => {
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/leverandor",
+}));
+
+vi.mock("@/components/auth/LogoutClient", () => ({
+  LogoutClientButton: ({ className, ...props }: { className?: string }) => (
+    <button type="button" className={className} {...props}>
+      Log out
+    </button>
+  ),
+}));
+
+describe("LeverandorDashboardPage i18n", () => {
+  test("dashboard page uses getTranslations for provider.dashboard", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/page.tsx"), "utf8");
-    expect(source).toContain("ds-provider-topbar");
+    expect(source).toContain('getTranslations("provider.dashboard")');
     expect(source).toContain("LocaleSwitcher");
-    expect(source).toContain("ds-provider-topbar__locale");
     expect(source).toContain("persistProfile");
+    expect(source).not.toContain('label: "Aktive kunder"');
+  });
+
+  test("nb messages include dashboard shell defaults", async () => {
+    const messages = await loadMessagesForLocale("nb");
+    const dashboard = messages.provider as { dashboard: Record<string, string> };
+    expect(dashboard.dashboard.eyebrow).toBe("Leverandør");
+    expect(dashboard.dashboard.activeCustomers).toBe("Aktive kunder");
+    expect(dashboard.dashboard.quickActionsSection).toBe("Hurtighandlinger");
+  });
+
+  test("en messages include dashboard shell translations", async () => {
+    const messages = await loadMessagesForLocale("en");
+    const dashboard = messages.provider as { dashboard: Record<string, string> };
+    expect(dashboard.dashboard.eyebrow).toBe("Provider");
+    expect(dashboard.dashboard.activeCustomers).toBe("Active customers");
+    expect(dashboard.dashboard.quickActionsSection).toBe("Quick actions");
+  });
+});
+
+describe("ProviderNav i18n", () => {
+  test("ProviderNav uses useTranslations for provider.nav", async () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain('useTranslations("provider.nav")');
+    expect(source).toContain("labelKey");
+    expect(source).not.toContain('label: "Ordrer"');
+  });
+
+  test("renders English nav labels when locale is en", async () => {
+    const messages = await loadMessagesForLocale("en");
+    const { default: ProviderNav } = await import("@/components/providers/ProviderNav");
+
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ProviderNav
+          providerName="Melhus Catering AS"
+          logoUrl={null}
+          userRole="provider_admin"
+          providerAdmin
+        />
+      </NextIntlClientProvider>,
+    );
+
+    expect(html).toContain("Orders");
+    expect(html).toContain("Customers");
+    expect(html).toContain("Menu");
+    expect(html).toContain("Settings");
+    expect(html).toContain("Melhus Catering AS");
   });
 });

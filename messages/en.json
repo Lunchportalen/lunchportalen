@@ -11,5 +11,72 @@
   "localeSwitcher": {
     "label": "Choose language",
     "current": "Current language: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Orders",
+      "customers": "Customers",
+      "registrations": "Registrations",
+      "menu": "Menu",
+      "areas": "Areas",
+      "invoices": "Invoices",
+      "settings": "Settings",
+      "logout": "Log out",
+      "more": "More",
+      "comingSoon": "(coming soon)",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "providerMenu": "Provider menu",
+      "sidebarLabel": "Provider",
+      "roleAdmin": "Administrator",
+      "roleKitchen": "Kitchen",
+      "roleDefault": "Provider"
+    },
+    "dashboard": {
+      "eyebrow": "Provider",
+      "lead": "Overview of customers, agreements and operations.",
+      "kpiSection": "Key metrics",
+      "activeCustomers": "Active customers",
+      "activeCustomersFoot": "Companies with an active lunch arrangement",
+      "activeAgreements": "Active customer agreements",
+      "activeAgreementsFoot": "Customer agreements linked to active companies",
+      "activeAgreementsLinkTitle": "View active business customers and agreements",
+      "ordersThisWeek": "Orders this week",
+      "ordersThisWeekFoot": "Orders placed in the current week",
+      "revenueLast30Days": "Order value last 30 days",
+      "revenueLast30DaysFoot": "Total order value",
+      "followUpSection": "Needs follow-up",
+      "followUpAllClearTitle": "Everything looks good",
+      "followUpAllClearText": "No critical follow-up items right now.",
+      "quickActionsSection": "Quick actions",
+      "recentActivitySection": "Recent activity",
+      "activityEmptyTitle": "No relevant activity yet.",
+      "activityEmptyText": "When customers register, agreements are approved or orders arrive, they will appear here.",
+      "quickActionOrdersTitle": "View today's deliveries",
+      "quickActionOrdersText": "Get an overview of orders and production for the next delivery day.",
+      "quickActionCustomersTitle": "View customers",
+      "quickActionCustomersText": "Manage companies, agreements and delivery setup.",
+      "quickActionMenuTitle": "Menu and publishing",
+      "quickActionMenuTextEnabled": "Manage the menu content shown to customers.",
+      "quickActionMenuTextDisabled": "View menu content and provider editing status.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Menu editing is not enabled",
+          "text": "Menu content is currently managed by Lunchportalen.",
+          "action": "View menu status"
+        },
+        "noOrdersThisWeek": {
+          "title": "No orders this week",
+          "text": "Check back when customers start ordering upcoming deliveries.",
+          "action": "View orders"
+        },
+        "noRevenue30d": {
+          "title": "No order value last 30 days",
+          "text": "When orders come in, total order value will appear here.",
+          "action": "View invoices"
+        }
+      }
+    }
   }
 }

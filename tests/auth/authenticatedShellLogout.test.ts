@@ -50,7 +50,8 @@ describe("Authenticated shell logout", () => {
   it("Provider shell has logout in navigation", () => {
     const nav = readSource("components/providers/ProviderNav.tsx");
     expect(nav).toContain("LogoutClientButton");
-    expect(nav).toContain('label: "Logg ut"');
+    expect(nav).toContain('labelKey: "logout"');
+    expect(nav).toContain('action: "logout"');
   });
 
   it("Company admin shell has logout in topbar user menu", () => {

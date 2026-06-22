@@ -23,6 +23,9 @@ describe("i18n messages", () => {
     const messages = await loadMessagesForLocale("en");
     expect(messages.common).toMatchObject({ save: "Save", loading: "Loading …" });
     expect(messages.localeSwitcher).toMatchObject({ label: "Choose language" });
+    const provider = messages.provider as { nav: { orders: string }; dashboard: { eyebrow: string } };
+    expect(provider.nav.orders).toBe("Orders");
+    expect(provider.dashboard.eyebrow).toBe("Provider");
     expect(JSON.stringify(messages)).not.toContain("[EN]");
   });
 });
