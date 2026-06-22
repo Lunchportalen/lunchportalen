@@ -11,5 +11,72 @@
   "localeSwitcher": {
     "label": "Velg språk",
     "current": "Gjeldende språk: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Ordrer",
+      "customers": "Kunder",
+      "registrations": "Registreringer",
+      "menu": "Meny",
+      "areas": "Områder",
+      "invoices": "Faktura",
+      "settings": "Innstillinger",
+      "logout": "Logg ut",
+      "more": "Mer",
+      "comingSoon": "(kommer)",
+      "openMenu": "Åpne meny",
+      "closeMenu": "Lukk meny",
+      "providerMenu": "Leverandørmeny",
+      "sidebarLabel": "Leverandør",
+      "roleAdmin": "Administrator",
+      "roleKitchen": "Kjøkken",
+      "roleDefault": "Leverandør"
+    },
+    "dashboard": {
+      "eyebrow": "Leverandør",
+      "lead": "Oversikt over kunder, avtaler og drift.",
+      "kpiSection": "Nøkkeltall",
+      "activeCustomers": "Aktive kunder",
+      "activeCustomersFoot": "Bedrifter med aktiv lunsjordning",
+      "activeAgreements": "Aktive kundeavtaler",
+      "activeAgreementsFoot": "Kundeavtaler knyttet til aktive bedrifter",
+      "activeAgreementsLinkTitle": "Se aktive bedriftskunder og avtaler",
+      "ordersThisWeek": "Ordrer denne uken",
+      "ordersThisWeekFoot": "Bestillinger i inneværende uke",
+      "revenueLast30Days": "Ordreverdi siste 30 dager",
+      "revenueLast30DaysFoot": "Samlet ordreverdi",
+      "followUpSection": "Må følges opp",
+      "followUpAllClearTitle": "Alt ser ryddig ut",
+      "followUpAllClearText": "Ingen kritiske oppfølgingspunkter akkurat nå.",
+      "quickActionsSection": "Hurtighandlinger",
+      "recentActivitySection": "Siste aktivitet",
+      "activityEmptyTitle": "Ingen relevant aktivitet ennå.",
+      "activityEmptyText": "Når kunder registreres, avtaler godkjennes eller ordre kommer inn, vises det her.",
+      "quickActionOrdersTitle": "Se dagens leveranser",
+      "quickActionOrdersText": "Få oversikt over ordre og produksjon for neste leveringsdag.",
+      "quickActionCustomersTitle": "Se kunder",
+      "quickActionCustomersText": "Administrer bedrifter, avtaler og leveringsoppsett.",
+      "quickActionMenuTitle": "Meny og publisering",
+      "quickActionMenuTextEnabled": "Administrer menyinnholdet som vises for kundene.",
+      "quickActionMenuTextDisabled": "Se status for menyinnhold og provider-redigering.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Menyredigering ikke aktivert",
+          "text": "Menyinnhold administreres foreløpig av Lunchportalen.",
+          "action": "Se menystatus"
+        },
+        "noOrdersThisWeek": {
+          "title": "Ingen ordre denne uken",
+          "text": "Følg med når kundene begynner å bestille for kommende leveranser.",
+          "action": "Se ordrer"
+        },
+        "noRevenue30d": {
+          "title": "Ingen ordreverdi siste 30 dager",
+          "text": "Når bestillinger kommer inn, vises samlet ordreverdi her.",
+          "action": "Se faktura"
+        }
+      }
+    }
   }
 }

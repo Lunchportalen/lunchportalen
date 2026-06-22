@@ -7,6 +7,7 @@ import "server-only";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import LocaleSwitcher from "@/components/nav/LocaleSwitcher";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
@@ -14,14 +15,46 @@ import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { getVerifiedSanityStudioBaseUrl } from "@/lib/cms/sanityStudioUrl";
 import { formatProviderRevenue, loadProviderDashboard } from "@/lib/providers/loadProviderDashboard";
 import {
-  PROVIDER_ACTIVITY_EMPTY_STATE,
-  PROVIDER_FOLLOW_UP_ALL_CLEAR,
   buildProviderFollowUps,
   mapProviderDashboardActivity,
+  type ProviderFollowUpItem,
 } from "@/lib/providers/providerDashboardActivity";
 import { PROVIDER_AGREEMENTS_KPI_COPY } from "@/lib/providers/providerDashboardKpis";
 
+const FOLLOW_UP_MESSAGE_KEYS: Record<string, { title: string; text: string; action: string }> = {
+  "menu-editing-disabled": {
+    title: "menuEditingDisabled.title",
+    text: "menuEditingDisabled.text",
+    action: "menuEditingDisabled.action",
+  },
+  "no-orders-this-week": {
+    title: "noOrdersThisWeek.title",
+    text: "noOrdersThisWeek.text",
+    action: "noOrdersThisWeek.action",
+  },
+  "no-revenue-30d": {
+    title: "noRevenue30d.title",
+    text: "noRevenue30d.text",
+    action: "noRevenue30d.action",
+  },
+};
+
+function translateFollowUp(
+  item: ProviderFollowUpItem,
+  t: Awaited<ReturnType<typeof getTranslations<"provider.dashboard">>>,
+): ProviderFollowUpItem {
+  const keys = FOLLOW_UP_MESSAGE_KEYS[item.id];
+  if (!keys) return item;
+  return {
+    ...item,
+    title: t(`followUp.${keys.title}`),
+    text: t(`followUp.${keys.text}`),
+    actionLabel: t(`followUp.${keys.action}`),
+  };
+}
+
 export default async function LeverandorDashboardPage() {
+  const t = await getTranslations("provider.dashboard");
   const auth = await getAuthContext();
   if (!auth.ok || !auth.user?.id) redirect("/login?next=%2Fleverandor");
 
@@ -46,42 +79,48 @@ export default async function LeverandorDashboardPage() {
     ordersThisWeek: stats.ordersThisWeek,
     activeCustomers: stats.activeCustomers,
     revenueLast30DaysNok: stats.revenueLast30DaysNok,
-  });
+  }).map((item) => translateFollowUp(item, t));
 
   const kpis: Array<{ label: string; value: string; foot: string; href?: string; linkTitle?: string }> = [
-    { label: "Aktive kunder", value: String(stats.activeCustomers), foot: "Bedrifter med aktiv lunsjordning" },
     {
-      label: PROVIDER_AGREEMENTS_KPI_COPY.label,
-      value: String(stats.activeAgreements),
-      foot: PROVIDER_AGREEMENTS_KPI_COPY.foot,
-      href: PROVIDER_AGREEMENTS_KPI_COPY.href,
-      linkTitle: PROVIDER_AGREEMENTS_KPI_COPY.linkTitle,
+      label: t("activeCustomers"),
+      value: String(stats.activeCustomers),
+      foot: t("activeCustomersFoot"),
     },
-    { label: "Ordrer denne uken", value: String(stats.ordersThisWeek), foot: "Bestillinger i inneværende uke" },
     {
-      label: "Ordreverdi siste 30 dager",
+      label: t("activeAgreements"),
+      value: String(stats.activeAgreements),
+      foot: t("activeAgreementsFoot"),
+      href: PROVIDER_AGREEMENTS_KPI_COPY.href,
+      linkTitle: t("activeAgreementsLinkTitle"),
+    },
+    {
+      label: t("ordersThisWeek"),
+      value: String(stats.ordersThisWeek),
+      foot: t("ordersThisWeekFoot"),
+    },
+    {
+      label: t("revenueLast30Days"),
       value: formatProviderRevenue(stats.revenueLast30DaysNok),
-      foot: "Samlet ordreverdi",
+      foot: t("revenueLast30DaysFoot"),
     },
   ];
 
   const quickActions = [
     {
       href: "/leverandor/ordrer",
-      title: "Se dagens leveranser",
-      text: "Få oversikt over ordre og produksjon for neste leveringsdag.",
+      title: t("quickActionOrdersTitle"),
+      text: t("quickActionOrdersText"),
     },
     {
       href: "/leverandor/kunder",
-      title: "Se kunder",
-      text: "Administrer bedrifter, avtaler og leveringsoppsett.",
+      title: t("quickActionCustomersTitle"),
+      text: t("quickActionCustomersText"),
     },
     {
       href: "/leverandor/meny",
-      title: "Meny og publisering",
-      text: menuEditingEnabled
-        ? "Administrer menyinnholdet som vises for kundene."
-        : "Se status for menyinnhold og provider-redigering.",
+      title: t("quickActionMenuTitle"),
+      text: menuEditingEnabled ? t("quickActionMenuTextEnabled") : t("quickActionMenuTextDisabled"),
     },
   ];
 
@@ -89,14 +128,14 @@ export default async function LeverandorDashboardPage() {
     <div className="ds-container">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">Leverandør</p>
+          <p className="ds-eyebrow">{t("eyebrow")}</p>
           <h1 className="ds-h2">{provider.name}</h1>
-          <p className="ds-lead">Oversikt over kunder, avtaler og drift.</p>
+          <p className="ds-lead">{t("lead")}</p>
         </div>
         <LocaleSwitcher className="ds-provider-topbar__locale" persistProfile />
       </header>
 
-      <section className="ds-section" aria-label="Nøkkeltall">
+      <section className="ds-section" aria-label={t("kpiSection")}>
         <div className="ds-admin-kpi-row">
           {kpis.map((item) =>
             item.href ? (
@@ -121,12 +160,12 @@ export default async function LeverandorDashboardPage() {
         </div>
       </section>
 
-      <section className="ds-section" aria-label="Må følges opp">
-        <h2 className="ds-h2">Må følges opp</h2>
+      <section className="ds-section" aria-label={t("followUpSection")}>
+        <h2 className="ds-h2">{t("followUpSection")}</h2>
         {followUps.length === 0 ? (
           <div className="ds-provider-empty">
-            <p className="ds-provider-empty__title">{PROVIDER_FOLLOW_UP_ALL_CLEAR.title}</p>
-            <p className="ds-provider-empty__text">{PROVIDER_FOLLOW_UP_ALL_CLEAR.text}</p>
+            <p className="ds-provider-empty__title">{t("followUpAllClearTitle")}</p>
+            <p className="ds-provider-empty__text">{t("followUpAllClearText")}</p>
           </div>
         ) : (
           <div className="ds-provider-followup-grid">
@@ -143,8 +182,8 @@ export default async function LeverandorDashboardPage() {
         )}
       </section>
 
-      <section className="ds-section" aria-label="Hurtighandlinger">
-        <h2 className="ds-h2">Hurtighandlinger</h2>
+      <section className="ds-section" aria-label={t("quickActionsSection")}>
+        <h2 className="ds-h2">{t("quickActionsSection")}</h2>
         <div className="ds-provider-quick-grid">
           {quickActions.map((action) => (
             <Link href={action.href} className="ds-card" key={action.href}>
@@ -155,12 +194,12 @@ export default async function LeverandorDashboardPage() {
         </div>
       </section>
 
-      <section className="ds-section" aria-label="Siste aktivitet">
-        <h2 className="ds-h2">Siste aktivitet</h2>
+      <section className="ds-section" aria-label={t("recentActivitySection")}>
+        <h2 className="ds-h2">{t("recentActivitySection")}</h2>
         {activity.length === 0 ? (
           <div className="ds-provider-empty">
-            <p className="ds-provider-empty__title">{PROVIDER_ACTIVITY_EMPTY_STATE.title}</p>
-            <p className="ds-provider-empty__text">{PROVIDER_ACTIVITY_EMPTY_STATE.text}</p>
+            <p className="ds-provider-empty__title">{t("activityEmptyTitle")}</p>
+            <p className="ds-provider-empty__text">{t("activityEmptyText")}</p>
           </div>
         ) : (
           <div className="ds-provider-activity">
