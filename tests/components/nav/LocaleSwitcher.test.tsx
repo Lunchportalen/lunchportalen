@@ -30,11 +30,11 @@ describe("LocaleSwitcher", () => {
     }
   });
 
-  it("persists profile only for nb/en until DB migration", () => {
+  it("persists profile for all app locales when persistProfile is enabled", () => {
     const source = readFileSync(resolve(process.cwd(), "components/nav/LocaleSwitcher.tsx"), "utf8");
-    expect(source).toContain("isProfilePersistLocale");
+    expect(source).not.toContain("isProfilePersistLocale");
     expect(source).toContain("persistLocalePreference");
-    expect(source).toContain("profiles.preferred_locale CHECK");
+    expect(source).toContain("if (persistProfile)");
     expect(source).toContain("setLocaleCookie");
     expect(source).toContain("router.refresh");
   });

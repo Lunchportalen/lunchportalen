@@ -20,11 +20,6 @@ export const LOCALE_REGISTRY: Record<
   es: { label: "Español", htmlLang: "es-ES", intl: "es-ES" },
 };
 
-/** Locales storable in profiles.preferred_locale today (DB check constraint). */
-export const PROFILE_PERSIST_LOCALES = ["nb", "en"] as const;
-
-export type ProfilePersistLocale = (typeof PROFILE_PERSIST_LOCALES)[number];
-
 export function isAppLocale(value: unknown): value is AppLocale {
   return typeof value === "string" && (APP_LOCALES as readonly string[]).includes(value);
 }
@@ -45,8 +40,4 @@ export function intlLocaleForAppLocale(locale: AppLocale): string {
 
 export function getLocaleLabel(locale: AppLocale): string {
   return LOCALE_REGISTRY[locale].label;
-}
-
-export function isProfilePersistLocale(locale: AppLocale): locale is ProfilePersistLocale {
-  return (PROFILE_PERSIST_LOCALES as readonly string[]).includes(locale);
 }
