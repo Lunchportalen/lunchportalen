@@ -8,6 +8,7 @@ import "server-only";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import LocaleSwitcher from "@/components/nav/LocaleSwitcher";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { getVerifiedSanityStudioBaseUrl } from "@/lib/cms/sanityStudioUrl";
@@ -92,6 +93,7 @@ export default async function LeverandorDashboardPage() {
           <h1 className="ds-h2">{provider.name}</h1>
           <p className="ds-lead">Oversikt over kunder, avtaler og drift.</p>
         </div>
+        <LocaleSwitcher className="ds-provider-topbar__locale" persistProfile />
       </header>
 
       <section className="ds-section" aria-label="Nøkkeltall">
