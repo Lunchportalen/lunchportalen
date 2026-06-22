@@ -112,7 +112,8 @@ Update intentionally: `node scripts/ci/commercial-hardcodes-guard.mjs --update-a
 | R0 — ADR-017 | Merged |
 | R1 — Read-only inventory | Done (this doc) |
 | R2 — Inert skeleton + guard | Done |
-| R3 — Money/tax display helpers (NO only) | Planned |
+| R3A — Inert money/tax display helper (`lib/commercial/moneyDisplay.ts`) | Done (not wired to runtime) |
+| R3 — Money/tax display helpers wired (NO only) | Planned |
 | R4 — Provider price settings market-ready | Planned |
 | R5 — Commission policy skeleton (inert) | Planned |
 | R6 — Commission ledger dry-run | Planned |
