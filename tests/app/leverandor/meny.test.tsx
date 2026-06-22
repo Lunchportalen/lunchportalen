@@ -231,7 +231,7 @@ describe("ProviderNav kitchen-only menu access", () => {
     const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
     expect(source).toContain('href: "/leverandor/meny", labelKey: "menu"');
     const kitchenBlock = source.slice(source.indexOf("if (!kitchenOnly)"));
-    expect(kitchenBlock).toMatch(/kitchenOnly[\s\S]*\/leverandor\/meny[\s\S]*Meny/);
+    expect(kitchenBlock).toMatch(/kitchenOnly[\s\S]*\/leverandor\/meny[\s\S]*labelKey: "menu"/);
   });
 });
 
