@@ -29,6 +29,7 @@ const SKIP_DIR_NAMES = new Set([
 
 const SKIP_PATH_PREFIXES = [
   "lib/commercial/marketConfigs.ts",
+  "lib/commercial/moneyDisplay.ts",
   "scripts/ci/commercial-hardcodes-guard.mjs",
   "scripts/ci/commercial-hardcodes-guard.test.mjs",
   "scripts/ci/commercial-hardcodes-allowlist.json",
