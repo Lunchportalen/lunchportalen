@@ -116,7 +116,7 @@
         "autoRolloutMeta": "Publiseres automatisk torsdag 08:00 · ansatte ser uka kl. 14:00",
         "fillMissingMeta": "Fyll inn manglende varmretter før uken kan publiseres",
         "autoRolloutChip": "Auto-rollout aktiv",
-        "daysPublished": "{count, plural, one {# dag publisert} other {# dager publisert}}"
+        "daysPublished": "{count} dag(er) publisert"
       },
       "week": {
         "plannerTitle": "Ukeplan",

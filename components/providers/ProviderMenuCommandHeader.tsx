@@ -87,20 +87,21 @@ export default function ProviderMenuCommandHeader({
 
       {tierPrice ? (
         <p className="lp-editor-priceline-compact" aria-label={t("header.priceLineAria")}>
-          {t("price.compactLine", {
-            tier: TIER_LABELS[tier],
-            exPrice: formatPriceAmount(tierPrice.priceExVatNok, intlLocale, {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 2,
-            }),
-            incPrice: formatPriceAmount(tierPrice.priceIncVatNok, intlLocale, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }),
-            exShort: t("price.exVatShort"),
-            incShort: t("price.incVatShort"),
-            sharedRule: t("header.sharedWarmMealRule"),
-          })}
+          <strong>{TIER_LABELS[tier]}</strong>
+          {" · "}
+          {formatPriceAmount(tierPrice.priceExVatNok, intlLocale, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}{" "}
+          {t("price.exVatShort")}
+          {" / "}
+          {formatPriceAmount(tierPrice.priceIncVatNok, intlLocale, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}{" "}
+          {t("price.incVatShort")}
+          {". "}
+          {t("header.sharedWarmMealRule")}
         </p>
       ) : null}
 
