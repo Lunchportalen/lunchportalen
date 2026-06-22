@@ -178,6 +178,178 @@
         "exVatShort": "zzgl. MwSt.",
         "incVatShort": "inkl. MwSt.",
         "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Bearbeitungsbereich",
+        "idle": {
+          "title": "Tag auswählen",
+          "leadPanel": "Klicken Sie im Wochenplan auf einen Tag, um Tagesgericht und Katalog zu bearbeiten.",
+          "leadInspector": "Klicken Sie im Wochenplan auf das Tagesgericht oder eine Auswahl."
+        },
+        "status": {
+          "published": "Veröffentlicht",
+          "draft": "Entwurf",
+          "notPublished": "Nicht veröffentlicht"
+        },
+        "inspector": {
+          "editDay": "{weekday} bearbeiten",
+          "headerSharedWarmMeal": "Heutiges gemeinsames Tagesgericht",
+          "headerEnterpriseUpgrade": "Enterprise-Upgrade für das heutige Tagesgericht",
+          "close": "Schließen",
+          "fixedChoices": "Feste Auswahl",
+          "fixedChoicesNote": "Kataloggesteuerte Auswahl — veröffentlichen Sie die Kategorie für diesen Tag.",
+          "allergensPrefix": "Allergene: {list}",
+          "singleChoice": "Feste Auswahl",
+          "singleChoiceNote": "Kataloggesteuert — veröffentlichen Sie die Kategorie zur Aktivierung.",
+          "content": "Inhalt",
+          "mealNamePlaceholder": "Namen des Gerichts eingeben",
+          "sharedKitchenLead": "Gemeinsames Küchengericht für Basis, Luxus und Enterprise an diesem Tag.",
+          "orderLock": "Bestellungen vorhanden",
+          "employeesOrdered": "{count} Mitarbeitende haben bestellt",
+          "opensAfterServingDay": "Öffnet nach dem Ausgabetag"
+        },
+        "varmrett": {
+          "ariaLabel": "Tagesgericht bearbeiten",
+          "title": "Tagesgericht bearbeiten — {dateLabel}",
+          "scope": "Die Änderung gilt für alle drei Stufen.",
+          "sharedBadge": "Gemeinsam · Basis, Luxus, Enterprise",
+          "generatedStamp": "Generierter Standard aus der Rezeptbank. Sie können bearbeiten, selbst erstellen oder zurücksetzen.",
+          "meal": "Gericht",
+          "description": "Beschreibung",
+          "allergens": "Allergene",
+          "allergensPlaceholder": "Z. B. Milch, Weizen",
+          "rawCost": "Wareneinsatz (kr)",
+          "estimatedRawCost": "Geschätzter Wareneinsatz (kr)",
+          "mealName": "Name des Gerichts",
+          "resetGenerated": "Auf generiert zurücksetzen",
+          "cancel": "Abbrechen",
+          "save": "Tagesgericht speichern",
+          "saving": "Speichert…",
+          "todayHotMeal": "Heutiges Tagesgericht"
+        },
+        "economy": {
+          "ariaLabel": "Wirtschaftlichkeit",
+          "title": "Wirtschaftlichkeit",
+          "tierPrice": "Stufenpreis ({tier}, zzgl. MwSt.)",
+          "rawCost": "− Wareneinsatz",
+          "commission": "− Lunchportalen 5 %",
+          "marginPerPortion": "Marge pro Portion",
+          "enterRawCostHint": "Wareneinsatz eingeben, um die Marge zu berechnen.",
+          "priceExVat": "Preis zzgl. MwSt.",
+          "estimatedCost": "Geschätzte Kosten",
+          "contribution": "Deckungsbeitrag"
+        },
+        "enterprise": {
+          "title": "Enterprise-Upgrade",
+          "lead": "Mehrwert – gleiches Tagesgericht. Kein neues Küchengericht.",
+          "todayWarmMeal": "Heutiges Tagesgericht",
+          "warmMealMissing": "Heutiges Tagesgericht fehlt — zuerst das Tagesgericht hinzufügen.",
+          "sameWarmMealNote": "Enterprise basiert auf demselben Tagesgericht – ohne neues Küchengericht.",
+          "surcharge": "Aufpreis",
+          "estimatedRawCost": "Gesch. Wareneinsatz",
+          "extraContribution": "Zusätzlicher Deckungsbeitrag",
+          "suggestedTitle": "Vorgeschlagenes Enterprise-Upgrade",
+          "useSuggestion": "Vorschlag verwenden",
+          "chooseOther": "Anderes wählen",
+          "selectedUpgrade": "Gewähltes Upgrade",
+          "upgradeSelected": "Upgrade gewählt",
+          "quickChoicesTitle": "Schnelle Premium-Auswahl",
+          "quickChoicesLead": "Mehrwert – gleiches Tagesgericht",
+          "quickChoicesAria": "Schnelle Premium-Auswahl",
+          "hideManual": "Manuelle Bearbeitung ausblenden",
+          "editManual": "Manuell bearbeiten",
+          "manualLead": "Erweiterte Bearbeitung",
+          "buildFromLuxus": "Auf Basis von Luxus",
+          "buildFromTier": "Auf Basis von {tier}",
+          "basedOn": "Basiert auf",
+          "none": "Keine",
+          "upgradeType": "Upgrade-Typ",
+          "chooseType": "Typ wählen",
+          "customerExtra": "Was erhält der Kunde zusätzlich?",
+          "customerExtraPlaceholder": "Premium-Protein, größere Portion, Dessert/Obst…",
+          "confirmPublishDespiteWarning": "Ich bestätige die Veröffentlichung trotz Warnung."
+        },
+        "actions": {
+          "saveDraft": "Entwurf speichern",
+          "publishDay": "Tag veröffentlichen",
+          "saving": "Speichert…",
+          "publishing": "Veröffentlicht…"
+        }
+      },
+      "catalog": {
+        "title": "Menükatalog",
+        "leadAccordion": "Die Auswahl, die Sie je Kategorie anbieten. Die Struktur bleibt fest — den Inhalt bestimmen Sie.",
+        "leadView": "Feste Optionen für Ihren Anbieter — kein Wocheninhalt.",
+        "ownCatalogTitle": "Ihr eigener Katalog",
+        "ownCatalogText": "Änderungen betreffen nur Ihr Menü. Andere Anbieter sehen ihren eigenen Katalog — niemand teilt Inhalte mit Ihnen.",
+        "isolated": "Isoliert",
+        "tierBadgeAll": "Alle Stufen",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} Auswahlmöglichkeiten",
+        "lockedCount": "{count} gesperrt",
+        "edit": "Bearbeiten",
+        "close": "Schließen",
+        "addChoice": "+ Auswahl hinzufügen",
+        "addChoiceLegacy": "Auswahl hinzufügen",
+        "publishHint": "Änderungen im Katalog gelten ab der nächsten Wochenveröffentlichung für Wochen-/Küchenansicht. Das Bestellfenster wird sofort aktualisiert.",
+        "saveCatalog": "Katalog speichern",
+        "cancel": "Abbrechen",
+        "saving": "Speichert…",
+        "legacyTitle": "Ihr Menükatalog",
+        "legacyLead": "Das ändert nur die festen Optionen Ihres Anbieters — nicht die anderer Cateringunternehmen.",
+        "category": "Kategorie",
+        "titleField": "Titel",
+        "noEditableCategories": "Keine bearbeitbaren Kategorien für {tier}.",
+        "editCatalogAria": "Menükatalog bearbeiten",
+        "catalogAria": "Menükatalog",
+        "orderLocked": "Bestellungen vorhanden",
+        "orderSortHint": "Die Reihenfolge wird vom Katalog gesteuert",
+        "view": {
+          "sanityBank": "Sanity/Bank",
+          "yourCatalog": "Ihr Katalog"
+        },
+        "item": {
+          "namePlaceholder": "Name der Auswahl",
+          "locked": "Gesperrt",
+          "vegetarian": "Vegetarisch",
+          "allergensAria": "Allergene",
+          "remove": "Entfernen",
+          "removeChoice": "{name} entfernen",
+          "removeFallback": "Auswahl"
+        },
+        "messages": {
+          "saveFailed": "Katalog konnte nicht gespeichert werden.",
+          "saved": "Katalog gespeichert."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Extra Protein + Dessert/Obst",
+          "explanation": "Bietet dem Kunden mehr Wert, ohne ein neues Küchengericht zu produzieren.",
+          "note": "Extra Protein und Dessert/Obst als Premium-Ergänzung zum heutigen Tagesgericht"
+        },
+        "quickChoices": {
+          "protein": { "label": "Extra Protein", "note": "Extra Protein zum heutigen Tagesgericht" },
+          "portion": { "label": "Größere Portion", "note": "Größere Portion des heutigen Tagesgerichts" },
+          "dessert": { "label": "Dessert/Obst", "note": "Dessert oder Obst als Premium-Ergänzung" },
+          "topping": { "label": "Premium-Topping", "note": "Premium-Topping zum heutigen Tagesgericht" },
+          "side": { "label": "Extra Beilage", "note": "Extra Beilage zum heutigen Tagesgericht" },
+          "season": { "label": "Saisonales Upgrade", "note": "Saisonales Enterprise-Upgrade zum heutigen Tagesgericht" }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Premium-Protein",
+          "EXTRA_SIDE": "Extra Beilage",
+          "DESSERT_FRUIT": "Dessert/Obst/Snack",
+          "LARGER_PORTION": "Größere Portion",
+          "PREMIUM_LABELING": "Premium-Kennzeichnung/Kontrolle",
+          "PRIORITY_DELIVERY": "Priorisiertes Lieferfenster",
+          "OTHER": "Eigenes/anderes"
+        },
+        "source": {
+          "basedOnBasis": "Basiert auf Basis",
+          "basedOnLuxus": "Basiert auf Luxus",
+          "ownEnterprise": "Eigenes Enterprise"
+        }
       }
     }
   }

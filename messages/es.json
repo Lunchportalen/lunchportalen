@@ -178,6 +178,178 @@
         "exVatShort": "sin IVA",
         "incVatShort": "con IVA",
         "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Panel de edición",
+        "idle": {
+          "title": "Selecciona un día",
+          "leadPanel": "Haz clic en un día del plan semanal para editar el plato caliente y el catálogo.",
+          "leadInspector": "Haz clic en el plato caliente o en una opción del plan semanal."
+        },
+        "status": {
+          "published": "Publicado",
+          "draft": "Borrador",
+          "notPublished": "No publicado"
+        },
+        "inspector": {
+          "editDay": "Editar {weekday}",
+          "headerSharedWarmMeal": "Plato caliente compartido del día",
+          "headerEnterpriseUpgrade": "Upgrade Enterprise sobre el plato caliente del día",
+          "close": "Cerrar",
+          "fixedChoices": "Opciones fijas",
+          "fixedChoicesNote": "Opciones controladas por catálogo — publica la categoría para este día.",
+          "allergensPrefix": "Alérgenos: {list}",
+          "singleChoice": "Opción fija",
+          "singleChoiceNote": "Controlado por catálogo — publica la categoría para activarlo.",
+          "content": "Contenido",
+          "mealNamePlaceholder": "Introduce el nombre del plato",
+          "sharedKitchenLead": "Plato de cocina compartido para Basis, Luxus y Enterprise este día.",
+          "orderLock": "Con pedidos",
+          "employeesOrdered": "{count} empleados han pedido",
+          "opensAfterServingDay": "Se abre después del día de servicio"
+        },
+        "varmrett": {
+          "ariaLabel": "Editar plato caliente",
+          "title": "Editar plato caliente — {dateLabel}",
+          "scope": "El cambio se aplica a los tres niveles.",
+          "sharedBadge": "Compartido · Basis, Luxus, Enterprise",
+          "generatedStamp": "Estándar generado desde el banco de platos. Puedes editar, crear uno propio o restablecer.",
+          "meal": "Plato",
+          "description": "Descripción",
+          "allergens": "Alérgenos",
+          "allergensPlaceholder": "P. ej., leche, trigo",
+          "rawCost": "Coste de materias primas (kr)",
+          "estimatedRawCost": "Coste estimado de materias primas (kr)",
+          "mealName": "Nombre del plato",
+          "resetGenerated": "Restablecer al generado",
+          "cancel": "Cancelar",
+          "save": "Guardar plato caliente",
+          "saving": "Guardando…",
+          "todayHotMeal": "Plato caliente del día"
+        },
+        "economy": {
+          "ariaLabel": "Economía",
+          "title": "Economía",
+          "tierPrice": "Precio del nivel ({tier}, sin IVA)",
+          "rawCost": "− Coste de materias primas",
+          "commission": "− Lunchportalen 5 %",
+          "marginPerPortion": "Margen por ración",
+          "enterRawCostHint": "Introduce el coste de materias primas para calcular el margen.",
+          "priceExVat": "Precio sin IVA",
+          "estimatedCost": "Coste estimado",
+          "contribution": "Margen de contribución"
+        },
+        "enterprise": {
+          "title": "Upgrade Enterprise",
+          "lead": "Valor extra – mismo plato caliente. Sin nuevo plato de cocina.",
+          "todayWarmMeal": "Plato caliente del día",
+          "warmMealMissing": "Falta el plato caliente del día — añade primero el plato caliente.",
+          "sameWarmMealNote": "Enterprise se basa en el mismo plato caliente – sin nuevo plato de cocina.",
+          "surcharge": "Recargo",
+          "estimatedRawCost": "Coste estimado de materias primas",
+          "extraContribution": "Margen de contribución extra",
+          "suggestedTitle": "Upgrade Enterprise sugerido",
+          "useSuggestion": "Usar sugerencia",
+          "chooseOther": "Elegir otro",
+          "selectedUpgrade": "Upgrade seleccionado",
+          "upgradeSelected": "Upgrade seleccionado",
+          "quickChoicesTitle": "Elección premium rápida",
+          "quickChoicesLead": "Valor extra – mismo plato caliente",
+          "quickChoicesAria": "Elección premium rápida",
+          "hideManual": "Ocultar edición manual",
+          "editManual": "Editar manualmente",
+          "manualLead": "Edición avanzada",
+          "buildFromLuxus": "Construir desde Luxus",
+          "buildFromTier": "Construir desde {tier}",
+          "basedOn": "Basado en",
+          "none": "Ninguno",
+          "upgradeType": "Tipo de upgrade",
+          "chooseType": "Elegir tipo",
+          "customerExtra": "¿Qué recibe extra el cliente?",
+          "customerExtraPlaceholder": "Proteína premium, ración más grande, postre/fruta…",
+          "confirmPublishDespiteWarning": "Confirmo la publicación a pesar de la advertencia."
+        },
+        "actions": {
+          "saveDraft": "Guardar borrador",
+          "publishDay": "Publicar día",
+          "saving": "Guardando…",
+          "publishing": "Publicando…"
+        }
+      },
+      "catalog": {
+        "title": "Catálogo del menú",
+        "leadAccordion": "Las opciones que ofreces bajo cada categoría. La estructura es fija — el contenido es tuyo.",
+        "leadView": "Opciones fijas de tu proveedor — no contenido semanal.",
+        "ownCatalogTitle": "Tu propio catálogo",
+        "ownCatalogText": "Los cambios solo afectan a tu menú. Otros proveedores ven el suyo — nadie comparte contenido contigo.",
+        "isolated": "Aislado",
+        "tierBadgeAll": "Todos los niveles",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} opciones",
+        "lockedCount": "{count} bloqueadas",
+        "edit": "Editar",
+        "close": "Cerrar",
+        "addChoice": "+ Añadir opción",
+        "addChoiceLegacy": "Añadir opción",
+        "publishHint": "Los cambios del catálogo se aplican desde la próxima publicación semanal para la vista semanal/cocina. La ventana de pedidos se actualiza al instante.",
+        "saveCatalog": "Guardar catálogo",
+        "cancel": "Cancelar",
+        "saving": "Guardando…",
+        "legacyTitle": "Tu catálogo del menú",
+        "legacyLead": "Esto solo cambia las opciones fijas de tu proveedor — no las de otras empresas de catering.",
+        "category": "Categoría",
+        "titleField": "Título",
+        "noEditableCategories": "No hay categorías editables para {tier}.",
+        "editCatalogAria": "Editar catálogo del menú",
+        "catalogAria": "Catálogo del menú",
+        "orderLocked": "Con pedidos",
+        "orderSortHint": "El orden lo controla el catálogo",
+        "view": {
+          "sanityBank": "Sanity/banco",
+          "yourCatalog": "Tu catálogo"
+        },
+        "item": {
+          "namePlaceholder": "Nombre de la opción",
+          "locked": "Bloqueado",
+          "vegetarian": "Vegetariano",
+          "allergensAria": "Alérgenos",
+          "remove": "Eliminar",
+          "removeChoice": "Eliminar {name}",
+          "removeFallback": "opción"
+        },
+        "messages": {
+          "saveFailed": "No se pudo guardar el catálogo.",
+          "saved": "Catálogo guardado."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Proteína extra + postre/fruta",
+          "explanation": "Aporta más valor al cliente sin crear un nuevo plato de cocina.",
+          "note": "Proteína extra y postre/fruta como añadido premium al plato caliente del día"
+        },
+        "quickChoices": {
+          "protein": { "label": "Proteína extra", "note": "Proteína extra para el plato caliente del día" },
+          "portion": { "label": "Ración más grande", "note": "Ración más grande del plato caliente del día" },
+          "dessert": { "label": "Postre/fruta", "note": "Postre o fruta como añadido premium" },
+          "topping": { "label": "Topping premium", "note": "Topping premium para el plato caliente del día" },
+          "side": { "label": "Acompañamiento extra", "note": "Acompañamiento extra para el plato caliente del día" },
+          "season": { "label": "Upgrade de temporada", "note": "Upgrade Enterprise de temporada para el plato caliente del día" }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Proteína premium",
+          "EXTRA_SIDE": "Acompañamiento extra",
+          "DESSERT_FRUIT": "Postre/fruta/snack",
+          "LARGER_PORTION": "Ración más grande",
+          "PREMIUM_LABELING": "Etiquetado/control premium",
+          "PRIORITY_DELIVERY": "Franja de entrega prioritaria",
+          "OTHER": "Propio/otro"
+        },
+        "source": {
+          "basedOnBasis": "Basado en Basis",
+          "basedOnLuxus": "Basado en Luxus",
+          "ownEnterprise": "Enterprise propio"
+        }
       }
     }
   }

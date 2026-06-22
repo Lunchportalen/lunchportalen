@@ -178,6 +178,178 @@
         "exVatShort": "ekskl. moms",
         "incVatShort": "inkl. moms",
         "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Redigeringspanel",
+        "idle": {
+          "title": "Vælg en dag",
+          "leadPanel": "Klik på en dag i ugeplanen for at redigere varmret og katalog.",
+          "leadInspector": "Klik på varmretten eller et valg i ugeplanen."
+        },
+        "status": {
+          "published": "Publiceret",
+          "draft": "Kladde",
+          "notPublished": "Ikke publiceret"
+        },
+        "inspector": {
+          "editDay": "Rediger {weekday}",
+          "headerSharedWarmMeal": "Dagens fælles varmret",
+          "headerEnterpriseUpgrade": "Enterprise-opgradering af dagens varmret",
+          "close": "Luk",
+          "fixedChoices": "Faste valg",
+          "fixedChoicesNote": "Katalogstyrede valg — publicer kategorien for denne dag.",
+          "allergensPrefix": "Allergener: {list}",
+          "singleChoice": "Fast valg",
+          "singleChoiceNote": "Katalogstyret — publicer kategorien for at aktivere.",
+          "content": "Indhold",
+          "mealNamePlaceholder": "Indtast rettens navn",
+          "sharedKitchenLead": "Fælles køkkenret for Basis, Luxus og Enterprise denne dag.",
+          "orderLock": "Har bestillinger",
+          "employeesOrdered": "{count} medarbejdere har bestilt",
+          "opensAfterServingDay": "Åbner efter serveringsdagen"
+        },
+        "varmrett": {
+          "ariaLabel": "Rediger varmret",
+          "title": "Rediger varmret — {dateLabel}",
+          "scope": "Ændringen gælder alle tre niveauer.",
+          "sharedBadge": "Fælles · Basis, Luxus, Enterprise",
+          "generatedStamp": "Genereret standard fra retbanken. Du kan redigere, lave din egen eller nulstille.",
+          "meal": "Ret",
+          "description": "Beskrivelse",
+          "allergens": "Allergener",
+          "allergensPlaceholder": "Fx mælk, hvede",
+          "rawCost": "Råvareomkostning (kr)",
+          "estimatedRawCost": "Estimeret råvareomkostning (kr)",
+          "mealName": "Rettens navn",
+          "resetGenerated": "Nulstil til genereret",
+          "cancel": "Annuller",
+          "save": "Gem varmret",
+          "saving": "Gemmer…",
+          "todayHotMeal": "Dagens varmret"
+        },
+        "economy": {
+          "ariaLabel": "Økonomi",
+          "title": "Økonomi",
+          "tierPrice": "Niveaupris ({tier}, ekskl. moms)",
+          "rawCost": "− Råvareomkostning",
+          "commission": "− Lunchportalen 5 %",
+          "marginPerPortion": "Margin pr. portion",
+          "enterRawCostHint": "Indtast råvareomkostning for at beregne margin.",
+          "priceExVat": "Pris ekskl. moms",
+          "estimatedCost": "Estimeret omkostning",
+          "contribution": "Dækningsbidrag"
+        },
+        "enterprise": {
+          "title": "Enterprise-opgradering",
+          "lead": "Ekstra værdi – samme varmret. Ingen ny køkkenret.",
+          "todayWarmMeal": "Dagens varmret",
+          "warmMealMissing": "Dagens varmret mangler — tilføj varmretten først.",
+          "sameWarmMealNote": "Enterprise bygger på samme varmret – uden ny køkkenret.",
+          "surcharge": "Merpris",
+          "estimatedRawCost": "Est. råvareomkostning",
+          "extraContribution": "Ekstra dækningsbidrag",
+          "suggestedTitle": "Foreslået Enterprise-opgradering",
+          "useSuggestion": "Brug forslag",
+          "chooseOther": "Vælg andet",
+          "selectedUpgrade": "Valgt opgradering",
+          "upgradeSelected": "Opgradering valgt",
+          "quickChoicesTitle": "Hurtigt premiumvalg",
+          "quickChoicesLead": "Ekstra værdi – samme varmret",
+          "quickChoicesAria": "Hurtigt premiumvalg",
+          "hideManual": "Skjul manuel redigering",
+          "editManual": "Rediger manuelt",
+          "manualLead": "Avanceret redigering",
+          "buildFromLuxus": "Byg fra Luxus",
+          "buildFromTier": "Byg fra {tier}",
+          "basedOn": "Bygget på",
+          "none": "Ingen",
+          "upgradeType": "Type opgradering",
+          "chooseType": "Vælg type",
+          "customerExtra": "Hvad får kunden ekstra?",
+          "customerExtraPlaceholder": "Premium-protein, større portion, dessert/frugt…",
+          "confirmPublishDespiteWarning": "Jeg bekræfter publicering på trods af advarslen."
+        },
+        "actions": {
+          "saveDraft": "Gem kladde",
+          "publishDay": "Publicer dag",
+          "saving": "Gemmer…",
+          "publishing": "Publicerer…"
+        }
+      },
+      "catalog": {
+        "title": "Menukatalog",
+        "leadAccordion": "Valgene, du tilbyder under hver kategori. Strukturen ligger fast — indholdet ejer du.",
+        "leadView": "Faste alternativer for din leverandør — ikke ugeindhold.",
+        "ownCatalogTitle": "Dit eget katalog",
+        "ownCatalogText": "Ændringer påvirker kun din menu. Andre leverandører ser deres egen — ingen deler indhold med dig.",
+        "isolated": "Isoleret",
+        "tierBadgeAll": "Alle niveauer",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} valg",
+        "lockedCount": "{count} låste",
+        "edit": "Rediger",
+        "close": "Luk",
+        "addChoice": "+ Tilføj valg",
+        "addChoiceLegacy": "Tilføj valg",
+        "publishHint": "Ændringer i kataloget gælder fra næste ugepublicering for uge-/køkkenvisningen. Ordrevinduet opdateres med det samme.",
+        "saveCatalog": "Gem katalog",
+        "cancel": "Annuller",
+        "saving": "Gemmer…",
+        "legacyTitle": "Dit menukatalog",
+        "legacyLead": "Dette ændrer kun din leverandørs faste valg — ikke andre cateringfirmaers.",
+        "category": "Kategori",
+        "titleField": "Titel",
+        "noEditableCategories": "Ingen redigerbare kategorier for {tier}.",
+        "editCatalogAria": "Rediger menukatalog",
+        "catalogAria": "Menukatalog",
+        "orderLocked": "Har bestillinger",
+        "orderSortHint": "Rækkefølgen styres af kataloget",
+        "view": {
+          "sanityBank": "Sanity/bank",
+          "yourCatalog": "Dit katalog"
+        },
+        "item": {
+          "namePlaceholder": "Navn på valg",
+          "locked": "Låst",
+          "vegetarian": "Vegetarisk",
+          "allergensAria": "Allergener",
+          "remove": "Fjern",
+          "removeChoice": "Fjern {name}",
+          "removeFallback": "valg"
+        },
+        "messages": {
+          "saveFailed": "Kunne ikke gemme katalog.",
+          "saved": "Katalog gemt."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Ekstra protein + dessert/frugt",
+          "explanation": "Giver kunden mere værdi uden at lave en ny køkkenret.",
+          "note": "Ekstra protein og dessert/frugt som premium-tilføjelse til dagens varmret"
+        },
+        "quickChoices": {
+          "protein": { "label": "Ekstra protein", "note": "Ekstra protein til dagens varmret" },
+          "portion": { "label": "Større portion", "note": "Større portion af dagens varmret" },
+          "dessert": { "label": "Dessert/frugt", "note": "Dessert eller frugt som premium-tilføjelse" },
+          "topping": { "label": "Premium-topping", "note": "Premium-topping til dagens varmret" },
+          "side": { "label": "Ekstra tilbehør", "note": "Ekstra tilbehør til dagens varmret" },
+          "season": { "label": "Sæsonopgradering", "note": "Sæsonbaseret Enterprise-opgradering til dagens varmret" }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Premium-protein",
+          "EXTRA_SIDE": "Ekstra tilbehør",
+          "DESSERT_FRUIT": "Dessert/frugt/snack",
+          "LARGER_PORTION": "Større portion",
+          "PREMIUM_LABELING": "Premium-mærkning/kontrol",
+          "PRIORITY_DELIVERY": "Prioriteret leveringsvindue",
+          "OTHER": "Eget/andet"
+        },
+        "source": {
+          "basedOnBasis": "Baseret på Basis",
+          "basedOnLuxus": "Baseret på Luxus",
+          "ownEnterprise": "Egen Enterprise"
+        }
       }
     }
   }

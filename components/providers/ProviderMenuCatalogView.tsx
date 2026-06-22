@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
 import {
@@ -7,7 +8,6 @@ import {
   catalogSupportsPersistentEdit,
   type MenuCatalogVariant,
 } from "@/lib/provider-menu/providerMenuCatalogReadModel";
-import { CATALOG_PERSISTENCE_GAP } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 
 type Props = {
@@ -23,6 +23,7 @@ export default function ProviderMenuCatalogView({
   onSelectVariant,
   onCatalogSaved,
 }: Props) {
+  const t = useTranslations("provider.menu");
   const variants = catalogVariantsForTier(catalog, tier);
   const byCategory = new Map<string, MenuCatalogVariant[]>();
   for (const v of variants) {
@@ -32,13 +33,13 @@ export default function ProviderMenuCatalogView({
   }
 
   return (
-    <section className="lp-editor-catalog" aria-label="Menykatalog">
+    <section className="lp-editor-catalog" aria-label={t("catalog.catalogAria")}>
       <header className="lp-editor-catalog__head">
-        <h2 className="ds-h4">Menykatalog</h2>
-        <p className="ds-body">Faste alternativer for din leverandør — ikke ukesinnhold.</p>
+        <h2 className="ds-h4">{t("catalog.title")}</h2>
+        <p className="ds-body">{t("catalog.leadView")}</p>
         {catalogSupportsPersistentEdit() ? (
           <p className="lp-editor-catalog__gap" role="status">
-            {CATALOG_PERSISTENCE_GAP}
+            {t("catalog.publishHint")}
           </p>
         ) : null}
       </header>
@@ -61,9 +62,9 @@ export default function ProviderMenuCatalogView({
                   >
                     <span className="lp-editor-catalog__item-label">{item.label}</span>
                     {item.source === "SANITY" ? (
-                      <span className="lp-editor-catalog__item-meta">Sanity/bank</span>
+                      <span className="lp-editor-catalog__item-meta">{t("catalog.view.sanityBank")}</span>
                     ) : (
-                      <span className="lp-editor-catalog__item-meta">Din katalog</span>
+                      <span className="lp-editor-catalog__item-meta">{t("catalog.view.yourCatalog")}</span>
                     )}
                     {item.allergens.length > 0 ? (
                       <span className="lp-editor-catalog__item-allergens">
