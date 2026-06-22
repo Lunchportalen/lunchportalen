@@ -35,6 +35,8 @@
       "closeMenu": "Lukk meny",
       "providerMenu": "Leverandørmeny",
       "sidebarLabel": "Leverandør",
+      "desktopLabel": "Leverandør (desktop)",
+      "mobileLabel": "Hovednavigasjon (mobil)",
       "roleAdmin": "Administrator",
       "roleKitchen": "Kjøkken",
       "roleDefault": "Leverandør"

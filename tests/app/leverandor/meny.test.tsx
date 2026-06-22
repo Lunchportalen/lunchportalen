@@ -212,11 +212,11 @@ describe("ProviderMenuCatalogEditor accordion", () => {
 });
 
 describe("LeverandorMenyPage full-width frame", () => {
-  test("page uses lean topbar with locale only (no duplicate branding)", () => {
+  test("page uses full-width editor frame without locale switcher or duplicate branding", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/meny/page.tsx"), "utf8");
     expect(source).toContain("lp-editor-page");
-    expect(source).toContain("lp-editor-topbar");
-    expect(source).toContain("LocaleSwitcher");
+    expect(source).not.toContain("LocaleSwitcher");
+    expect(source).not.toContain("lp-editor-topbar");
     expect(source).not.toContain("LP-logo-uten-bakgrunn");
     expect(source).not.toContain("lp-editor-topbar__brand");
     expect(source).not.toContain("lp-editor-topbar__who");

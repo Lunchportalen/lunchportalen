@@ -35,6 +35,8 @@
       "closeMenu": "Cerrar menú",
       "providerMenu": "Menú del proveedor",
       "sidebarLabel": "Proveedor",
+      "desktopLabel": "Proveedor (escritorio)",
+      "mobileLabel": "Navegación principal (móvil)",
       "roleAdmin": "Administrador",
       "roleKitchen": "Cocina",
       "roleDefault": "Proveedor"

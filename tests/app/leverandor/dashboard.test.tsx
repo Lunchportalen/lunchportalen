@@ -53,6 +53,16 @@ describe("ProviderNav i18n", () => {
     expect(source).not.toContain('label: "Ordrer"');
   });
 
+  test("ProviderNav aria-labels use i18n keys not hardcoded Norwegian", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain('t("sidebarLabel")');
+    expect(source).toContain('t("desktopLabel")');
+    expect(source).toContain('t("mobileLabel")');
+    expect(source).not.toContain('aria-label="Leverandør"');
+    expect(source).not.toContain('aria-label="Leverandør (desktop)"');
+    expect(source).not.toContain('aria-label="Hovednavigasjon (mobil)"');
+  });
+
   test("renders English nav labels when locale is en", async () => {
     const messages = await loadMessagesForLocale("en");
     const { default: ProviderNav } = await import("@/components/providers/ProviderNav");
@@ -73,5 +83,27 @@ describe("ProviderNav i18n", () => {
     expect(html).toContain("Menu");
     expect(html).toContain("Settings");
     expect(html).toContain("Melhus Catering AS");
+    expect(html).toContain('aria-label="Provider (desktop)"');
+    expect(html).toContain('aria-label="Main navigation (mobile)"');
+  });
+
+  test("renders Norwegian nav aria-labels when locale is nb", async () => {
+    const messages = await loadMessagesForLocale("nb");
+    const { default: ProviderNav } = await import("@/components/providers/ProviderNav");
+
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="nb" messages={messages}>
+        <ProviderNav
+          providerName="Melhus Catering AS"
+          logoUrl={null}
+          userRole="provider_admin"
+          providerAdmin
+        />
+      </NextIntlClientProvider>,
+    );
+
+    expect(html).toContain("Ordrer");
+    expect(html).toContain('aria-label="Leverandør (desktop)"');
+    expect(html).toContain('aria-label="Hovednavigasjon (mobil)"');
   });
 });

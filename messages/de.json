@@ -35,6 +35,8 @@
       "closeMenu": "Menü schließen",
       "providerMenu": "Anbietermenü",
       "sidebarLabel": "Anbieter",
+      "desktopLabel": "Anbieter (Desktop)",
+      "mobileLabel": "Hauptnavigation (Mobil)",
       "roleAdmin": "Administrator",
       "roleKitchen": "Küche",
       "roleDefault": "Anbieter"

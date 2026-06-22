@@ -217,6 +217,7 @@ function SidebarNav({
   labelForItem,
   logoutLabel,
   comingSoonLabel,
+  sidebarLabel,
   onNavigate,
 }: {
   pathname: string;
@@ -224,10 +225,11 @@ function SidebarNav({
   labelForItem: (item: NavItem) => string;
   logoutLabel: string;
   comingSoonLabel: string;
+  sidebarLabel: string;
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="ds-admin-sidebar__nav" aria-label="Leverandør">
+    <nav className="ds-admin-sidebar__nav" aria-label={sidebarLabel}>
       {items.map((item) => (
         <NavLink
           key={item.labelKey}
@@ -291,7 +293,7 @@ export default function ProviderNav({
 
   return (
     <>
-      <aside className="ds-admin-sidebar" aria-label="Leverandør (desktop)">
+      <aside className="ds-admin-sidebar" aria-label={t("desktopLabel")}>
         <BrandBlock
           providerName={providerName}
           logoUrl={logoUrl}
@@ -305,6 +307,7 @@ export default function ProviderNav({
           labelForItem={labelForItem}
           logoutLabel={logoutLabel}
           comingSoonLabel={comingSoonLabel}
+          sidebarLabel={t("sidebarLabel")}
         />
       </aside>
 
@@ -342,13 +345,14 @@ export default function ProviderNav({
               labelForItem={labelForItem}
               logoutLabel={logoutLabel}
               comingSoonLabel={comingSoonLabel}
+              sidebarLabel={t("sidebarLabel")}
               onNavigate={() => setDrawerOpen(false)}
             />
           </div>
         </>
       ) : null}
 
-      <nav className="ds-admin-mobile-nav" aria-label="Hovednavigasjon (mobil)">
+      <nav className="ds-admin-mobile-nav" aria-label={t("mobileLabel")}>
         {mobilePrimary.map((item) => {
           if (!item.href) return null;
           const active = isActive(pathname, item);

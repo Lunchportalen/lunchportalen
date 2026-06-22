@@ -35,6 +35,8 @@
       "closeMenu": "Stäng meny",
       "providerMenu": "Leverantörsmeny",
       "sidebarLabel": "Leverantör",
+      "desktopLabel": "Leverantör (dator)",
+      "mobileLabel": "Huvudnavigering (mobil)",
       "roleAdmin": "Administratör",
       "roleKitchen": "Kök",
       "roleDefault": "Leverantör"
