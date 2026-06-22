@@ -6,7 +6,13 @@
   },
   "nav": {
     "languageNb": "Norsk",
-    "languageEn": "English"
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
   },
   "localeSwitcher": {
     "label": "Choose language",

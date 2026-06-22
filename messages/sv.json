@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Laddar …",
+    "save": "Spara",
+    "language": "Språk"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Välj språk",
+    "current": "Aktuellt språk: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Ordrar",
+      "customers": "Kunder",
+      "registrations": "Registreringar",
+      "menu": "Meny",
+      "areas": "Områden",
+      "invoices": "Faktura",
+      "settings": "Inställningar",
+      "logout": "Logga ut",
+      "more": "Mer",
+      "comingSoon": "(kommer snart)",
+      "openMenu": "Öppna meny",
+      "closeMenu": "Stäng meny",
+      "providerMenu": "Leverantörsmeny",
+      "sidebarLabel": "Leverantör",
+      "roleAdmin": "Administratör",
+      "roleKitchen": "Kök",
+      "roleDefault": "Leverantör"
+    },
+    "dashboard": {
+      "eyebrow": "Leverantör",
+      "lead": "Översikt över kunder, avtal och drift.",
+      "kpiSection": "Nyckeltal",
+      "activeCustomers": "Aktiva kunder",
+      "activeCustomersFoot": "Företag med aktiv lunchlösning",
+      "activeAgreements": "Aktiva kundavtal",
+      "activeAgreementsFoot": "Kundavtal kopplade till aktiva företag",
+      "activeAgreementsLinkTitle": "Visa aktiva företagskunder och avtal",
+      "ordersThisWeek": "Ordrar denna vecka",
+      "ordersThisWeekFoot": "Beställningar under innevarande vecka",
+      "revenueLast30Days": "Ordervärde senaste 30 dagarna",
+      "revenueLast30DaysFoot": "Totalt ordervärde",
+      "followUpSection": "Behöver uppföljning",
+      "followUpAllClearTitle": "Allt ser bra ut",
+      "followUpAllClearText": "Inga kritiska uppföljningspunkter just nu.",
+      "quickActionsSection": "Snabbåtgärder",
+      "recentActivitySection": "Senaste aktivitet",
+      "activityEmptyTitle": "Ingen relevant aktivitet ännu.",
+      "activityEmptyText": "När kunder registreras, avtal godkänns eller ordrar kommer in visas det här.",
+      "quickActionOrdersTitle": "Se dagens leveranser",
+      "quickActionOrdersText": "Få överblick över ordrar och produktion för nästa leveransdag.",
+      "quickActionCustomersTitle": "Se kunder",
+      "quickActionCustomersText": "Hantera företag, avtal och leveransupplägg.",
+      "quickActionMenuTitle": "Meny och publicering",
+      "quickActionMenuTextEnabled": "Hantera menyinnehållet som visas för kunderna.",
+      "quickActionMenuTextDisabled": "Se status för menyinnehåll och leverantörsredigering.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Menyredigering är inte aktiverad",
+          "text": "Menyinhåll hanteras för närvarande av Lunchportalen.",
+          "action": "Se menystatus"
+        },
+        "noOrdersThisWeek": {
+          "title": "Inga ordrar denna vecka",
+          "text": "Följ upp när kunderna börjar beställa kommande leveranser.",
+          "action": "Se ordrar"
+        },
+        "noRevenue30d": {
+          "title": "Inget ordervärde senaste 30 dagarna",
+          "text": "När beställningar kommer in visas totalt ordervärde här.",
+          "action": "Se faktura"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Wird geladen …",
+    "save": "Speichern",
+    "language": "Sprache"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Sprache wählen",
+    "current": "Aktuelle Sprache: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Bestellungen",
+      "customers": "Kunden",
+      "registrations": "Registrierungen",
+      "menu": "Menü",
+      "areas": "Gebiete",
+      "invoices": "Rechnungen",
+      "settings": "Einstellungen",
+      "logout": "Abmelden",
+      "more": "Mehr",
+      "comingSoon": "(demnächst)",
+      "openMenu": "Menü öffnen",
+      "closeMenu": "Menü schließen",
+      "providerMenu": "Anbietermenü",
+      "sidebarLabel": "Anbieter",
+      "roleAdmin": "Administrator",
+      "roleKitchen": "Küche",
+      "roleDefault": "Anbieter"
+    },
+    "dashboard": {
+      "eyebrow": "Anbieter",
+      "lead": "Überblick über Kunden, Verträge und Betrieb.",
+      "kpiSection": "Kennzahlen",
+      "activeCustomers": "Aktive Kunden",
+      "activeCustomersFoot": "Unternehmen mit aktivem Mittagsangebot",
+      "activeAgreements": "Aktive Kundenverträge",
+      "activeAgreementsFoot": "Kundenverträge mit aktiven Unternehmen",
+      "activeAgreementsLinkTitle": "Aktive Firmenkunden und Verträge anzeigen",
+      "ordersThisWeek": "Bestellungen diese Woche",
+      "ordersThisWeekFoot": "Bestellungen in der laufenden Woche",
+      "revenueLast30Days": "Bestellwert der letzten 30 Tage",
+      "revenueLast30DaysFoot": "Gesamtbestellwert",
+      "followUpSection": "Nachverfolgung nötig",
+      "followUpAllClearTitle": "Alles sieht gut aus",
+      "followUpAllClearText": "Derzeit keine kritischen Nachverfolgungspunkte.",
+      "quickActionsSection": "Schnellaktionen",
+      "recentActivitySection": "Letzte Aktivität",
+      "activityEmptyTitle": "Noch keine relevante Aktivität.",
+      "activityEmptyText": "Wenn Kunden sich registrieren, Verträge genehmigt oder Bestellungen eingehen, erscheinen sie hier.",
+      "quickActionOrdersTitle": "Heutige Lieferungen anzeigen",
+      "quickActionOrdersText": "Überblick über Bestellungen und Produktion für den nächsten Liefertag.",
+      "quickActionCustomersTitle": "Kunden anzeigen",
+      "quickActionCustomersText": "Unternehmen, Verträge und Lieferkonfiguration verwalten.",
+      "quickActionMenuTitle": "Menü und Veröffentlichung",
+      "quickActionMenuTextEnabled": "Menüinhalte verwalten, die Kunden angezeigt werden.",
+      "quickActionMenuTextDisabled": "Status von Menüinhalten und Anbieterbearbeitung anzeigen.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Menübearbeitung nicht aktiviert",
+          "text": "Menüinhalte werden derzeit von Lunchportalen verwaltet.",
+          "action": "Menüstatus anzeigen"
+        },
+        "noOrdersThisWeek": {
+          "title": "Keine Bestellungen diese Woche",
+          "text": "Beobachten, wenn Kunden kommende Lieferungen bestellen.",
+          "action": "Bestellungen anzeigen"
+        },
+        "noRevenue30d": {
+          "title": "Kein Bestellwert in den letzten 30 Tagen",
+          "text": "Wenn Bestellungen eingehen, erscheint der Gesamtwert hier.",
+          "action": "Rechnungen anzeigen"
+        }
+      }
+    }
+  }
+}
