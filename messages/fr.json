@@ -178,6 +178,178 @@
         "exVatShort": "HT",
         "incVatShort": "TTC",
         "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Panneau d'édition",
+        "idle": {
+          "title": "Sélectionnez un jour",
+          "leadPanel": "Cliquez sur un jour dans le plan hebdomadaire pour modifier le plat chaud et le catalogue.",
+          "leadInspector": "Cliquez sur le plat chaud ou sur un choix dans le plan hebdomadaire."
+        },
+        "status": {
+          "published": "Publié",
+          "draft": "Brouillon",
+          "notPublished": "Non publié"
+        },
+        "inspector": {
+          "editDay": "Modifier {weekday}",
+          "headerSharedWarmMeal": "Plat chaud partagé du jour",
+          "headerEnterpriseUpgrade": "Upgrade Enterprise sur le plat chaud du jour",
+          "close": "Fermer",
+          "fixedChoices": "Choix fixes",
+          "fixedChoicesNote": "Choix pilotés par le catalogue — publiez la catégorie pour ce jour.",
+          "allergensPrefix": "Allergènes : {list}",
+          "singleChoice": "Choix fixe",
+          "singleChoiceNote": "Piloté par le catalogue — publiez la catégorie pour activer.",
+          "content": "Contenu",
+          "mealNamePlaceholder": "Saisissez le nom du plat",
+          "sharedKitchenLead": "Plat de cuisine partagé pour Basis, Luxus et Enterprise ce jour-là.",
+          "orderLock": "Commandes présentes",
+          "employeesOrdered": "{count} employés ont commandé",
+          "opensAfterServingDay": "S'ouvre après le jour de service"
+        },
+        "varmrett": {
+          "ariaLabel": "Modifier le plat chaud",
+          "title": "Modifier le plat chaud — {dateLabel}",
+          "scope": "La modification s'applique aux trois niveaux.",
+          "sharedBadge": "Partagé · Basis, Luxus, Enterprise",
+          "generatedStamp": "Standard généré depuis la banque de plats. Vous pouvez modifier, créer le vôtre ou réinitialiser.",
+          "meal": "Plat",
+          "description": "Description",
+          "allergens": "Allergènes",
+          "allergensPlaceholder": "Ex. lait, blé",
+          "rawCost": "Coût matière (kr)",
+          "estimatedRawCost": "Coût matière estimé (kr)",
+          "mealName": "Nom du plat",
+          "resetGenerated": "Réinitialiser au généré",
+          "cancel": "Annuler",
+          "save": "Enregistrer le plat chaud",
+          "saving": "Enregistrement…",
+          "todayHotMeal": "Plat chaud du jour"
+        },
+        "economy": {
+          "ariaLabel": "Économie",
+          "title": "Économie",
+          "tierPrice": "Prix du niveau ({tier}, HT)",
+          "rawCost": "− Coût matière",
+          "commission": "− Lunchportalen 5 %",
+          "marginPerPortion": "Marge par portion",
+          "enterRawCostHint": "Saisissez le coût matière pour calculer la marge.",
+          "priceExVat": "Prix HT",
+          "estimatedCost": "Coût estimé",
+          "contribution": "Marge de contribution"
+        },
+        "enterprise": {
+          "title": "Upgrade Enterprise",
+          "lead": "Valeur supplémentaire – même plat chaud. Aucun nouveau plat en cuisine.",
+          "todayWarmMeal": "Plat chaud du jour",
+          "warmMealMissing": "Le plat chaud du jour est manquant — ajoutez d'abord le plat chaud.",
+          "sameWarmMealNote": "Enterprise repose sur le même plat chaud – sans nouveau plat en cuisine.",
+          "surcharge": "Supplément",
+          "estimatedRawCost": "Coût matière estimé",
+          "extraContribution": "Marge de contribution supplémentaire",
+          "suggestedTitle": "Upgrade Enterprise suggéré",
+          "useSuggestion": "Utiliser la suggestion",
+          "chooseOther": "Choisir autre chose",
+          "selectedUpgrade": "Upgrade sélectionné",
+          "upgradeSelected": "Upgrade sélectionné",
+          "quickChoicesTitle": "Choix premium rapide",
+          "quickChoicesLead": "Valeur supplémentaire – même plat chaud",
+          "quickChoicesAria": "Choix premium rapide",
+          "hideManual": "Masquer l'édition manuelle",
+          "editManual": "Modifier manuellement",
+          "manualLead": "Édition avancée",
+          "buildFromLuxus": "Construire depuis Luxus",
+          "buildFromTier": "Construire depuis {tier}",
+          "basedOn": "Basé sur",
+          "none": "Aucun",
+          "upgradeType": "Type d'upgrade",
+          "chooseType": "Choisir un type",
+          "customerExtra": "Qu'obtient le client en plus ?",
+          "customerExtraPlaceholder": "Protéine premium, portion plus grande, dessert/fruit…",
+          "confirmPublishDespiteWarning": "Je confirme la publication malgré l'avertissement."
+        },
+        "actions": {
+          "saveDraft": "Enregistrer le brouillon",
+          "publishDay": "Publier le jour",
+          "saving": "Enregistrement…",
+          "publishing": "Publication…"
+        }
+      },
+      "catalog": {
+        "title": "Catalogue menu",
+        "leadAccordion": "Les choix que vous proposez dans chaque catégorie. La structure reste fixe — vous maîtrisez le contenu.",
+        "leadView": "Options fixes pour votre fournisseur — pas le contenu hebdomadaire.",
+        "ownCatalogTitle": "Votre propre catalogue",
+        "ownCatalogText": "Les modifications affectent uniquement votre menu. Les autres fournisseurs voient le leur — personne ne partage son contenu avec vous.",
+        "isolated": "Isolé",
+        "tierBadgeAll": "Tous les niveaux",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} choix",
+        "lockedCount": "{count} verrouillés",
+        "edit": "Modifier",
+        "close": "Fermer",
+        "addChoice": "+ Ajouter un choix",
+        "addChoiceLegacy": "Ajouter un choix",
+        "publishHint": "Les modifications du catalogue s'appliquent à partir de la prochaine publication hebdomadaire pour la vue semaine/cuisine. La fenêtre de commande est mise à jour immédiatement.",
+        "saveCatalog": "Enregistrer le catalogue",
+        "cancel": "Annuler",
+        "saving": "Enregistrement…",
+        "legacyTitle": "Votre catalogue menu",
+        "legacyLead": "Cela modifie uniquement les choix fixes de votre fournisseur — pas ceux des autres entreprises de restauration.",
+        "category": "Catégorie",
+        "titleField": "Titre",
+        "noEditableCategories": "Aucune catégorie modifiable pour {tier}.",
+        "editCatalogAria": "Modifier le catalogue menu",
+        "catalogAria": "Catalogue menu",
+        "orderLocked": "Commandes présentes",
+        "orderSortHint": "L'ordre est contrôlé par le catalogue",
+        "view": {
+          "sanityBank": "Sanity/banque",
+          "yourCatalog": "Votre catalogue"
+        },
+        "item": {
+          "namePlaceholder": "Nom du choix",
+          "locked": "Verrouillé",
+          "vegetarian": "Végétarien",
+          "allergensAria": "Allergènes",
+          "remove": "Supprimer",
+          "removeChoice": "Supprimer {name}",
+          "removeFallback": "choix"
+        },
+        "messages": {
+          "saveFailed": "Impossible d'enregistrer le catalogue.",
+          "saved": "Catalogue enregistré."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Protéine supplémentaire + dessert/fruit",
+          "explanation": "Apporte plus de valeur au client sans créer un nouveau plat en cuisine.",
+          "note": "Protéine supplémentaire et dessert/fruit comme supplément premium du plat chaud du jour"
+        },
+        "quickChoices": {
+          "protein": { "label": "Protéine supplémentaire", "note": "Protéine supplémentaire pour le plat chaud du jour" },
+          "portion": { "label": "Portion plus grande", "note": "Portion plus grande du plat chaud du jour" },
+          "dessert": { "label": "Dessert/fruit", "note": "Dessert ou fruit comme supplément premium" },
+          "topping": { "label": "Garniture premium", "note": "Garniture premium pour le plat chaud du jour" },
+          "side": { "label": "Accompagnement supplémentaire", "note": "Accompagnement supplémentaire pour le plat chaud du jour" },
+          "season": { "label": "Upgrade saisonnier", "note": "Upgrade Enterprise saisonnier pour le plat chaud du jour" }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Protéine premium",
+          "EXTRA_SIDE": "Accompagnement supplémentaire",
+          "DESSERT_FRUIT": "Dessert/fruit/snack",
+          "LARGER_PORTION": "Portion plus grande",
+          "PREMIUM_LABELING": "Étiquetage/contrôle premium",
+          "PRIORITY_DELIVERY": "Créneau de livraison prioritaire",
+          "OTHER": "Personnalisé/autre"
+        },
+        "source": {
+          "basedOnBasis": "Basé sur Basis",
+          "basedOnLuxus": "Basé sur Luxus",
+          "ownEnterprise": "Enterprise propre"
+        }
       }
     }
   }

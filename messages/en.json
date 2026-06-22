@@ -178,6 +178,178 @@
         "exVatShort": "ex. VAT",
         "incVatShort": "incl. VAT",
         "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Editor panel",
+        "idle": {
+          "title": "Select a day",
+          "leadPanel": "Click a day in the week plan to edit the hot meal and catalog.",
+          "leadInspector": "Click the hot meal or a choice in the week plan."
+        },
+        "status": {
+          "published": "Published",
+          "draft": "Draft",
+          "notPublished": "Not published"
+        },
+        "inspector": {
+          "editDay": "Edit {weekday}",
+          "headerSharedWarmMeal": "Today's shared hot meal",
+          "headerEnterpriseUpgrade": "Enterprise upgrade on today's hot meal",
+          "close": "Close",
+          "fixedChoices": "Fixed choices",
+          "fixedChoicesNote": "Catalog-driven choices — publish the category for this day.",
+          "allergensPrefix": "Allergens: {list}",
+          "singleChoice": "Fixed choice",
+          "singleChoiceNote": "Catalog-driven — publish the category to activate.",
+          "content": "Content",
+          "mealNamePlaceholder": "Enter meal name",
+          "sharedKitchenLead": "Shared kitchen meal for Basis, Luxus and Enterprise this day.",
+          "orderLock": "Has orders",
+          "employeesOrdered": "{count} employees have ordered",
+          "opensAfterServingDay": "Opens after the serving day"
+        },
+        "varmrett": {
+          "ariaLabel": "Edit hot meal",
+          "title": "Edit hot meal — {dateLabel}",
+          "scope": "The change applies to all three tiers.",
+          "sharedBadge": "Shared · Basis, Luxus, Enterprise",
+          "generatedStamp": "Generated default from the meal bank. You can edit, create your own, or reset.",
+          "meal": "Meal",
+          "description": "Description",
+          "allergens": "Allergens",
+          "allergensPlaceholder": "E.g. milk, wheat",
+          "rawCost": "Raw material cost (kr)",
+          "estimatedRawCost": "Estimated raw material cost (kr)",
+          "mealName": "Meal name",
+          "resetGenerated": "Reset to generated",
+          "cancel": "Cancel",
+          "save": "Save hot meal",
+          "saving": "Saving…",
+          "todayHotMeal": "Today's hot meal"
+        },
+        "economy": {
+          "ariaLabel": "Economics",
+          "title": "Economics",
+          "tierPrice": "Tier price ({tier}, ex. VAT)",
+          "rawCost": "− Raw material cost",
+          "commission": "− Lunchportalen 5%",
+          "marginPerPortion": "Margin per portion",
+          "enterRawCostHint": "Enter raw material cost to calculate margin.",
+          "priceExVat": "Price ex. VAT",
+          "estimatedCost": "Estimated cost",
+          "contribution": "Contribution margin"
+        },
+        "enterprise": {
+          "title": "Enterprise upgrade",
+          "lead": "Extra value – same hot meal. No new kitchen dish.",
+          "todayWarmMeal": "Today's hot meal",
+          "warmMealMissing": "Today's hot meal is missing — add the hot meal first.",
+          "sameWarmMealNote": "Enterprise builds on the same hot meal – without a new kitchen dish.",
+          "surcharge": "Surcharge",
+          "estimatedRawCost": "Est. raw material cost",
+          "extraContribution": "Extra contribution margin",
+          "suggestedTitle": "Suggested Enterprise upgrade",
+          "useSuggestion": "Use suggestion",
+          "chooseOther": "Choose other",
+          "selectedUpgrade": "Selected upgrade",
+          "upgradeSelected": "Upgrade selected",
+          "quickChoicesTitle": "Quick premium choice",
+          "quickChoicesLead": "Extra value – same hot meal",
+          "quickChoicesAria": "Quick premium choice",
+          "hideManual": "Hide manual editing",
+          "editManual": "Edit manually",
+          "manualLead": "Advanced editing",
+          "buildFromLuxus": "Build from Luxus",
+          "buildFromTier": "Build from {tier}",
+          "basedOn": "Based on",
+          "none": "None",
+          "upgradeType": "Upgrade type",
+          "chooseType": "Choose type",
+          "customerExtra": "What does the customer get extra?",
+          "customerExtraPlaceholder": "Premium protein, larger portion, dessert/fruit…",
+          "confirmPublishDespiteWarning": "I confirm publishing despite the warning."
+        },
+        "actions": {
+          "saveDraft": "Save draft",
+          "publishDay": "Publish day",
+          "saving": "Saving…",
+          "publishing": "Publishing…"
+        }
+      },
+      "catalog": {
+        "title": "Menu catalog",
+        "leadAccordion": "The choices you offer under each category. The structure is fixed — you own the content.",
+        "leadView": "Fixed options for your provider — not weekly menu content.",
+        "ownCatalogTitle": "Your own catalog",
+        "ownCatalogText": "Changes affect only your menu. Other providers see their own — no shared content.",
+        "isolated": "Isolated",
+        "tierBadgeAll": "All tiers",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} choices",
+        "lockedCount": "{count} locked",
+        "edit": "Edit",
+        "close": "Close",
+        "addChoice": "+ Add choice",
+        "addChoiceLegacy": "Add choice",
+        "publishHint": "Catalog changes apply from the next week publish for week/kitchen view. The order window updates immediately.",
+        "saveCatalog": "Save catalog",
+        "cancel": "Cancel",
+        "saving": "Saving…",
+        "legacyTitle": "Your menu catalog",
+        "legacyLead": "This changes only your provider's fixed choices — not other catering companies.",
+        "category": "Category",
+        "titleField": "Title",
+        "noEditableCategories": "No editable categories for {tier}.",
+        "editCatalogAria": "Edit menu catalog",
+        "catalogAria": "Menu catalog",
+        "orderLocked": "Has orders",
+        "orderSortHint": "Order is controlled by the catalog",
+        "view": {
+          "sanityBank": "Sanity/bank",
+          "yourCatalog": "Your catalog"
+        },
+        "item": {
+          "namePlaceholder": "Choice name",
+          "locked": "Locked",
+          "vegetarian": "Vegetarian",
+          "allergensAria": "Allergens",
+          "remove": "Remove",
+          "removeChoice": "Remove {name}",
+          "removeFallback": "choice"
+        },
+        "messages": {
+          "saveFailed": "Could not save catalog.",
+          "saved": "Catalog saved."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Extra protein + dessert/fruit",
+          "explanation": "Gives the customer more value without creating a new kitchen dish.",
+          "note": "Extra protein and dessert/fruit as a premium add-on to today's hot meal"
+        },
+        "quickChoices": {
+          "protein": { "label": "Extra protein", "note": "Extra protein for today's hot meal" },
+          "portion": { "label": "Larger portion", "note": "Larger portion of today's hot meal" },
+          "dessert": { "label": "Dessert/fruit", "note": "Dessert or fruit as a premium add-on" },
+          "topping": { "label": "Premium topping", "note": "Premium topping for today's hot meal" },
+          "side": { "label": "Extra side", "note": "Extra side for today's hot meal" },
+          "season": { "label": "Seasonal upgrade", "note": "Seasonal Enterprise upgrade for today's hot meal" }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Premium protein",
+          "EXTRA_SIDE": "Extra side",
+          "DESSERT_FRUIT": "Dessert/fruit/snack",
+          "LARGER_PORTION": "Larger portion",
+          "PREMIUM_LABELING": "Premium labelling/control",
+          "PRIORITY_DELIVERY": "Priority delivery window",
+          "OTHER": "Custom/other"
+        },
+        "source": {
+          "basedOnBasis": "Based on Basis",
+          "basedOnLuxus": "Based on Luxus",
+          "ownEnterprise": "Own Enterprise"
+        }
       }
     }
   }

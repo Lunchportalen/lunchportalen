@@ -106,13 +106,14 @@ describe("ProviderMenuBuilder workspace layout", () => {
     const workspace = readFileSync(resolve(process.cwd(), "lib/provider-menu/providerMenuWorkspace.ts"), "utf8");
     expect(workspace).toContain("felles for alle pakker");
     expect(workspace).toContain("Enterprise-upgrade");
-    expect(editor).toContain("Foreslått Enterprise-upgrade");
-    expect(editor).toContain("Bruk forslag");
-    expect(editor).toContain("Rediger manuelt");
-    expect(editor).toContain("Enterprise bygger på samme Varmrett");
+    expect(editor).toContain('useTranslations("provider.menu")');
+    expect(editor).toContain('t("editor.enterprise.suggestedTitle")');
+    expect(editor).toContain('t("editor.enterprise.useSuggestion")');
+    expect(editor).toContain('t("editor.enterprise.editManual")');
+    expect(editor).toContain('t("editor.enterprise.sameWarmMealNote")');
     expect(editor).toContain("isEnterpriseUpgradeMode");
     expect(editor).toContain("lp-editor-panel-varmrett");
-    expect(editor).toContain("Lunchportalen 5 %");
+    expect(editor).toContain('t("editor.economy.commission")');
     expect(editor).not.toMatch(/varmmrett/i);
   });
 
@@ -168,17 +169,30 @@ describe("ProviderMenuCatalogEditor accordion", () => {
     ],
   };
 
-  test("accordion shows all five categories with tier badges and isolate banner", async () => {
+  async function renderCatalogEditor(
+    locale: "nb" | "en" | "de" = "nb",
+    props: {
+      tier?: "BASIS" | "LUXUS" | "ENTERPRISE";
+      initialOpenCategoryKey?: string;
+    } = {},
+  ) {
+    const messages = await loadMessagesForLocale(locale);
     const ProviderMenuCatalogEditor = (await import("@/components/providers/ProviderMenuCatalogEditor")).default;
-    const html = renderToStaticMarkup(
-      React.createElement(ProviderMenuCatalogEditor, {
-        tier: "ENTERPRISE",
-        catalog: CATALOG_FIXTURE,
-        onCatalogSaved: () => {},
-        panelMode: true,
-        initialOpenCategoryKey: "paasmurt",
-      }),
+    return renderToStaticMarkup(
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        {React.createElement(ProviderMenuCatalogEditor, {
+          tier: props.tier ?? "ENTERPRISE",
+          catalog: CATALOG_FIXTURE,
+          onCatalogSaved: () => {},
+          panelMode: true,
+          initialOpenCategoryKey: props.initialOpenCategoryKey ?? "paasmurt",
+        })}
+      </NextIntlClientProvider>,
     );
+  }
+
+  test("accordion shows all five categories with tier badges and isolate banner", async () => {
+    const html = await renderCatalogEditor("nb");
     expect(html).toContain("Menykatalog");
     expect(html).toContain("Valgene du tilbyr under hver kategori");
     expect(html).toContain("Din egen katalog");
@@ -194,16 +208,7 @@ describe("ProviderMenuCatalogEditor accordion", () => {
   });
 
   test("open category shows Legg til valg row", async () => {
-    const ProviderMenuCatalogEditor = (await import("@/components/providers/ProviderMenuCatalogEditor")).default;
-    const html = renderToStaticMarkup(
-      React.createElement(ProviderMenuCatalogEditor, {
-        tier: "BASIS",
-        catalog: CATALOG_FIXTURE,
-        onCatalogSaved: () => {},
-        panelMode: true,
-        initialOpenCategoryKey: "paasmurt",
-      }),
-    );
+    const html = await renderCatalogEditor("nb", { tier: "BASIS" });
     expect(html).toContain("+ Legg til valg");
     expect(html).toContain("Lagre katalog");
     expect(html).toContain("Avbryt");
@@ -217,6 +222,7 @@ describe("ProviderMenuCatalogEditor accordion", () => {
     expect(source).not.toMatch(/varmmrett/i);
     expect(source).not.toMatch(/RID:/);
     expect(source).toContain("/api/provider/menu-catalog");
+    expect(source).toContain('useTranslations("provider.menu")');
   });
 });
 
@@ -279,8 +285,126 @@ describe("ProviderMenuBuilder i18n", () => {
       resolve(process.cwd(), "components/providers/ProviderMenuWeekPlanner.tsx"),
       "utf8",
     );
+    const editorPanel = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuEditorPanel.tsx"),
+      "utf8",
+    );
+    const catalogView = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuCatalogView.tsx"),
+      "utf8",
+    );
     expect(header).toContain('useTranslations("provider.menu")');
     expect(planner).toContain('useTranslations("provider.menu")');
+    expect(editorPanel).toContain('useTranslations("provider.menu")');
+    expect(catalogView).toContain('useTranslations("provider.menu")');
+  });
+});
+
+describe("Provider menu editor and catalog i18n", () => {
+  async function renderEditorPanelIdle(locale: "nb" | "en" | "de" = "en") {
+    const messages = await loadMessagesForLocale(locale);
+    const ProviderMenuEditorPanel = (await import("@/components/providers/ProviderMenuEditorPanel")).default;
+    return renderToStaticMarkup(
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <ProviderMenuEditorPanel
+          open={false}
+          context={null}
+          form={null}
+          layoutMode="panel"
+          onFormChange={() => {}}
+          onClose={() => {}}
+          onSaveDraft={() => {}}
+          onPublish={() => {}}
+          onCopyFromBasis={() => {}}
+          onCopyFromLuxus={() => {}}
+          pending={false}
+          margin={null}
+          enterpriseWarnings={[]}
+          confirmWarnings={false}
+          onConfirmWarningsChange={() => {}}
+          tier="LUXUS"
+        />
+      </NextIntlClientProvider>,
+    );
+  }
+
+  test("en editor idle shows English labels", async () => {
+    const html = await renderEditorPanelIdle("en");
+    expect(html).toContain("Select a day");
+    expect(html).toContain("Click a day in the week plan");
+    expect(html).not.toContain("Velg en dag");
+  });
+
+  test("de editor idle shows German labels", async () => {
+    const html = await renderEditorPanelIdle("de");
+    expect(html).toContain("Tag auswählen");
+    expect(html).not.toContain("Select a day");
+  });
+
+  test("en catalog shows Menu catalog / Add choice / Save catalog", async () => {
+    const messages = await loadMessagesForLocale("en");
+    const ProviderMenuCatalogEditor = (await import("@/components/providers/ProviderMenuCatalogEditor")).default;
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        {React.createElement(ProviderMenuCatalogEditor, {
+          tier: "BASIS",
+          catalog: {
+            rows: [
+              {
+                key: "paasmurt",
+                title: "Påsmurt",
+                allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+                items: [{ key: "ost-skinke", title: "Ost & Skinke", allergens: ["melk"], isVegetarian: false }],
+              },
+            ],
+          },
+          onCatalogSaved: () => {},
+          panelMode: true,
+          initialOpenCategoryKey: "paasmurt",
+        })}
+      </NextIntlClientProvider>,
+    );
+    expect(html).toContain("Menu catalog");
+    expect(html).toContain("+ Add choice");
+    expect(html).toContain("Save catalog");
+    expect(html).toContain("Ost &amp; Skinke");
+    expect(html).not.toContain("Menykatalog");
+  });
+
+  test("de catalog keeps Basis/Luxus/Enterprise and provider catalog titles", async () => {
+    const messages = await loadMessagesForLocale("de");
+    const ProviderMenuCatalogEditor = (await import("@/components/providers/ProviderMenuCatalogEditor")).default;
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="de" messages={messages}>
+        {React.createElement(ProviderMenuCatalogEditor, {
+          tier: "ENTERPRISE",
+          catalog: {
+            rows: [
+              {
+                key: "paasmurt",
+                title: "Påsmurt",
+                allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+                items: [{ key: "ost-skinke", title: "Ost & Skinke", allergens: [], isVegetarian: false }],
+              },
+              {
+                key: "sushi",
+                title: "Sushi",
+                allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+                items: [{ key: "sushi-pakke", title: "Sushi-pakke", allergens: [], isVegetarian: false }],
+              },
+            ],
+          },
+          onCatalogSaved: () => {},
+          panelMode: true,
+          initialOpenCategoryKey: "paasmurt",
+        })}
+      </NextIntlClientProvider>,
+    );
+    expect(html).toContain("Menükatalog");
+    expect(html).toContain("Luxus + Enterprise");
+    expect(html).toContain("Ost &amp; Skinke");
+    expect(html).toContain("Påsmurt");
+    expect(html).not.toContain("Menu catalog");
   });
 });
 

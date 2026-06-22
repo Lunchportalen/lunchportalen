@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import {
-  CATALOG_WEEK_PUBLISH_HINT,
   EDITABLE_LUNCH_CATEGORY_KEYS,
   LUNCH_CATEGORY_ALLERGENS,
   categoryFromLunchCategoryKey,
@@ -23,8 +23,17 @@ type CatalogItemDraft = {
 
 const PREMIUM_CATEGORY_KEYS = new Set<EditableLunchCategoryKey>(["sushi", "pokebowl", "thaimat"]);
 
-function tierBadgeForCategoryKey(key: EditableLunchCategoryKey): string {
-  return PREMIUM_CATEGORY_KEYS.has(key) ? "Luxus + Enterprise" : "Alle nivåer";
+const TIER_DISPLAY_LABELS: Record<PlanTier, string> = {
+  BASIS: "Basis",
+  LUXUS: "Luxus",
+  ENTERPRISE: "Enterprise",
+};
+
+function tierBadgeForCategoryKey(
+  key: EditableLunchCategoryKey,
+  t: ReturnType<typeof useTranslations<"provider.menu">>,
+): string {
+  return PREMIUM_CATEGORY_KEYS.has(key) ? t("catalog.tierBadgeLuxusEnterprise") : t("catalog.tierBadgeAll");
 }
 
 function itemsForCategory(catalog: ProviderMenuCatalogSnapshot, categoryKey: string): CatalogItemDraft[] {
@@ -69,11 +78,13 @@ function CatalogItemRow({
   index,
   onChange,
   onRemove,
+  t,
 }: {
   item: CatalogItemDraft;
   index: number;
   onChange: (index: number, next: CatalogItemDraft) => void;
   onRemove: (index: number) => void;
+  t: ReturnType<typeof useTranslations<"provider.menu">>;
 }) {
   const toggleAllergen = (allergen: string) => {
     const set = new Set(item.allergens);
@@ -84,7 +95,7 @@ function CatalogItemRow({
 
   return (
     <li className={`lp-editor-catalog-acc__item${item.orderLocked ? " is-order-locked" : ""}`}>
-      <span className="lp-editor-catalog-acc__drag" aria-hidden="true" title="Rekkefølge styres av katalog">
+      <span className="lp-editor-catalog-acc__drag" aria-hidden="true" title={t("catalog.orderSortHint")}>
         ⠿
       </span>
       <input
@@ -92,17 +103,17 @@ function CatalogItemRow({
         className="lp-editor-catalog-acc__input"
         value={item.title}
         disabled={item.orderLocked}
-        placeholder="Navn på valg"
+        placeholder={t("catalog.item.namePlaceholder")}
         onChange={(e) => onChange(index, { ...item, title: e.target.value })}
         maxLength={120}
       />
       <div className="lp-editor-catalog-acc__tags">
         {item.orderLocked ? (
           <span className="lp-editor-catalog-acc__tag is-locked">
-            <span aria-hidden="true">🔒</span> Låst
+            <span aria-hidden="true">🔒</span> {t("catalog.item.locked")}
           </span>
         ) : null}
-        {item.isVegetarian ? <span className="lp-editor-catalog-acc__tag is-veg">Vegetar</span> : null}
+        {item.isVegetarian ? <span className="lp-editor-catalog-acc__tag is-veg">{t("catalog.item.vegetarian")}</span> : null}
         {item.allergens.slice(0, 3).map((a) => (
           <span key={a} className="lp-editor-catalog-acc__tag is-allergen">
             {a}
@@ -120,9 +131,9 @@ function CatalogItemRow({
               checked={item.isVegetarian}
               onChange={(e) => onChange(index, { ...item, isVegetarian: e.target.checked })}
             />
-            Vegetar
+            {t("catalog.item.vegetarian")}
           </label>
-          <div className="lp-editor-catalog-acc__allergen-chips" role="group" aria-label="Allergener">
+          <div className="lp-editor-catalog-acc__allergen-chips" role="group" aria-label={t("catalog.item.allergensAria")}>
             {LUNCH_CATEGORY_ALLERGENS.map((a) => (
               <button
                 key={a}
@@ -140,7 +151,9 @@ function CatalogItemRow({
         type="button"
         className="lp-editor-catalog-acc__remove"
         disabled={item.orderLocked}
-        aria-label={`Fjern ${item.title || "valg"}`}
+        aria-label={t("catalog.item.removeChoice", {
+          name: item.title || t("catalog.item.removeFallback"),
+        })}
         onClick={() => onRemove(index)}
       >
         ×
@@ -159,9 +172,10 @@ function CategoryAccordion({
   onItemsChange,
   onCancel,
   onSave,
-}: CategoryAccordionProps) {
+  t,
+}: CategoryAccordionProps & { t: ReturnType<typeof useTranslations<"provider.menu">> }) {
   const label = categoryLabel(catalog, categoryKey);
-  const tierBadge = tierBadgeForCategoryKey(categoryKey);
+  const tierBadge = tierBadgeForCategoryKey(categoryKey, t);
   const lockedCount = items.filter((i) => i.orderLocked).length;
 
   return (
@@ -170,15 +184,13 @@ function CategoryAccordion({
         <button type="button" className="lp-editor-catalog-acc__head-main" onClick={onToggle}>
           <span className="lp-editor-catalog-acc__name">{label}</span>
           <span className="lp-editor-catalog-acc__tier">{tierBadge}</span>
-          <span className="lp-editor-catalog-acc__count">
-            {items.length} {items.length === 1 ? "valg" : "valg"}
-          </span>
+          <span className="lp-editor-catalog-acc__count">{t("catalog.choicesCount", { count: items.length })}</span>
           {lockedCount > 0 ? (
-            <span className="lp-editor-catalog-acc__locked">{lockedCount} låst</span>
+            <span className="lp-editor-catalog-acc__locked">{t("catalog.lockedCount", { count: lockedCount })}</span>
           ) : null}
         </button>
         <button type="button" className="lp-editor-catalog-acc__edit" onClick={onToggle}>
-          {isOpen ? "Lukk" : "Rediger"}
+          {isOpen ? t("catalog.close") : t("catalog.edit")}
         </button>
         <span className={`lp-editor-catalog-acc__chevron${isOpen ? " is-open" : ""}`} aria-hidden="true">
           ▾
@@ -193,6 +205,7 @@ function CategoryAccordion({
                 key={item.key ?? `new-${index}`}
                 item={item}
                 index={index}
+                t={t}
                 onChange={(i, next) =>
                   onItemsChange(items.map((row, ri) => (ri === i ? next : row)))
                 }
@@ -205,15 +218,15 @@ function CategoryAccordion({
             className="lp-editor-catalog-acc__add"
             onClick={() => onItemsChange([...items, { title: "", allergens: [], isVegetarian: false }])}
           >
-            + Legg til valg
+            {t("catalog.addChoice")}
           </button>
           <p className="lp-editor-catalog-acc__note" role="note">
             <span aria-hidden="true">ℹ</span>
-            {CATALOG_WEEK_PUBLISH_HINT}
+            {t("catalog.publishHint")}
           </p>
           <footer className="lp-editor-catalog-acc__footer">
             <button type="button" className="ds-btn ds-btn--ghost" disabled={saving} onClick={onCancel}>
-              Avbryt
+              {t("catalog.cancel")}
             </button>
             <button
               type="button"
@@ -221,7 +234,7 @@ function CategoryAccordion({
               disabled={saving || items.length === 0}
               onClick={onSave}
             >
-              {saving ? "Lagrer…" : "Lagre katalog"}
+              {saving ? t("catalog.saving") : t("catalog.saveCatalog")}
             </button>
           </footer>
         </div>
@@ -239,6 +252,7 @@ function CatalogAccordionEditor({
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
   initialOpenCategoryKey?: string;
 }) {
+  const t = useTranslations("provider.menu");
   const [openKey, setOpenKey] = useState<string | null>(initialOpenCategoryKey ?? null);
   const [drafts, setDrafts] = useState<Record<string, CatalogItemDraft[]>>({});
   const [saving, setSaving] = useState(false);
@@ -298,37 +312,33 @@ function CatalogAccordionEditor({
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        setError(json.message ?? "Kunne ikke lagre katalog.");
+        setError(json.message ?? t("catalog.messages.saveFailed"));
         return;
       }
       if (json.data?.catalog) {
         onCatalogSaved(json.data.catalog);
       }
-      setMessage("Katalog lagret.");
+      setMessage(t("catalog.messages.saved"));
     } catch {
-      setError("Kunne ikke lagre katalog.");
+      setError(t("catalog.messages.saveFailed"));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <section className="lp-editor-catalog-editor lp-editor-catalog-editor--accordion" aria-label="Menykatalog">
+    <section className="lp-editor-catalog-editor lp-editor-catalog-editor--accordion" aria-label={t("catalog.catalogAria")}>
       <header className="lp-editor-catalog-head">
-        <h2 className="lp-editor-catalog-head__title">Menykatalog</h2>
-        <p className="lp-editor-catalog-head__lead">
-          Valgene du tilbyr under hver kategori. Strukturen ligger fast — innholdet eier du.
-        </p>
+        <h2 className="lp-editor-catalog-head__title">{t("catalog.title")}</h2>
+        <p className="lp-editor-catalog-head__lead">{t("catalog.leadAccordion")}</p>
       </header>
 
       <div className="lp-editor-catalog-isolate">
         <div className="lp-editor-catalog-isolate__body">
-          <b className="lp-editor-catalog-isolate__title">Din egen katalog</b>
-          <p className="lp-editor-catalog-isolate__text">
-            Endringer påvirker kun din meny. Andre leverandører ser sin egen — ingen deler innhold med deg.
-          </p>
+          <b className="lp-editor-catalog-isolate__title">{t("catalog.ownCatalogTitle")}</b>
+          <p className="lp-editor-catalog-isolate__text">{t("catalog.ownCatalogText")}</p>
         </div>
-        <span className="lp-editor-catalog-isolate__pill">Isolert</span>
+        <span className="lp-editor-catalog-isolate__pill">{t("catalog.isolated")}</span>
       </div>
 
       <div className="lp-editor-catalog-accordion">
@@ -342,6 +352,7 @@ function CatalogAccordionEditor({
               isOpen={openKey === key}
               items={items}
               saving={saving && openKey === key}
+              t={t}
               onToggle={() => toggleCategory(key)}
               onItemsChange={(next) => setDrafts((prev) => ({ ...prev, [key]: next }))}
               onCancel={cancelEdit}
@@ -374,6 +385,7 @@ function CatalogLegacyEditor({
   catalog: ProviderMenuCatalogSnapshot;
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
 }) {
+  const t = useTranslations("provider.menu");
   const editableKeys = useMemo(
     () =>
       EDITABLE_LUNCH_CATEGORY_KEYS.filter((key) => {
@@ -436,15 +448,15 @@ function CatalogLegacyEditor({
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        setError(json.message ?? "Kunne ikke lagre katalog.");
+        setError(json.message ?? t("catalog.messages.saveFailed"));
         return;
       }
       if (json.data?.catalog) {
         onCatalogSaved(json.data.catalog);
       }
-      setMessage("Katalog lagret.");
+      setMessage(t("catalog.messages.saved"));
     } catch {
-      setError("Kunne ikke lagre katalog.");
+      setError(t("catalog.messages.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -453,26 +465,24 @@ function CatalogLegacyEditor({
   if (editableKeys.length === 0) {
     return (
       <p className="ds-body" role="status">
-        Ingen redigerbare kategorier for {tier}.
+        {t("catalog.noEditableCategories", { tier: TIER_DISPLAY_LABELS[tier] ?? tier })}
       </p>
     );
   }
 
   return (
-    <section className="lp-editor-catalog-editor" aria-label="Rediger menykatalog">
+    <section className="lp-editor-catalog-editor" aria-label={t("catalog.editCatalogAria")}>
       <header className="lp-editor-catalog-editor__head">
-        <h2 className="ds-h4">Din menykatalog</h2>
-        <p className="ds-body">
-          Dette endrer kun din leverandørs faste valg — ikke andre cateringfirmaer.
-        </p>
+        <h2 className="ds-h4">{t("catalog.legacyTitle")}</h2>
+        <p className="ds-body">{t("catalog.legacyLead")}</p>
         <p className="lp-editor-catalog__gap" role="status">
-          {CATALOG_WEEK_PUBLISH_HINT}
+          {t("catalog.publishHint")}
         </p>
       </header>
 
       <div className="lp-editor-catalog-editor__toolbar">
         <label className="lp-editor-catalog-editor__label" htmlFor="catalog-category">
-          Kategori
+          {t("catalog.category")}
         </label>
         <select
           id="catalog-category"
@@ -501,15 +511,15 @@ function CatalogLegacyEditor({
             className={`lp-editor-catalog-editor__row${item.orderLocked ? " is-order-locked" : ""}`}
           >
             {item.orderLocked ? (
-              <span className="lp-editor-order-lock" title="Har bestilling">
+              <span className="lp-editor-order-lock" title={t("catalog.orderLocked")}>
                 <span className="lp-editor-order-lock__icon" aria-hidden="true">
                   🔒
                 </span>
-                <span className="lp-editor-order-lock__text">Har bestilling</span>
+                <span className="lp-editor-order-lock__text">{t("catalog.orderLocked")}</span>
               </span>
             ) : null}
             <label className="lp-editor-catalog-editor__label">
-              Tittel
+              {t("catalog.titleField")}
               <input
                 type="text"
                 className="lp-editor-catalog-editor__input"
@@ -534,10 +544,10 @@ function CatalogLegacyEditor({
                   )
                 }
               />
-              Vegetar
+              {t("catalog.item.vegetarian")}
             </label>
             <fieldset className="lp-editor-catalog-editor__allergens" disabled={item.orderLocked}>
-              <legend className="lp-editor-catalog-editor__legend">Allergener</legend>
+              <legend className="lp-editor-catalog-editor__legend">{t("catalog.item.allergensAria")}</legend>
               {LUNCH_CATEGORY_ALLERGENS.map((a) => (
                 <label key={a} className="lp-editor-catalog-editor__checkbox">
                   <input
@@ -555,7 +565,7 @@ function CatalogLegacyEditor({
               disabled={item.orderLocked}
               onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))}
             >
-              Fjern
+              {t("catalog.item.remove")}
             </button>
           </li>
         ))}
@@ -567,7 +577,7 @@ function CatalogLegacyEditor({
           className="lp-editor-catalog-editor__add"
           onClick={() => setItems((prev) => [...prev, { title: "", allergens: [], isVegetarian: false }])}
         >
-          Legg til valg
+          {t("catalog.addChoiceLegacy")}
         </button>
         <button
           type="button"
@@ -575,7 +585,7 @@ function CatalogLegacyEditor({
           disabled={saving || items.length === 0}
           onClick={() => void saveLegacy()}
         >
-          {saving ? "Lagrer…" : "Lagre katalog"}
+          {saving ? t("catalog.saving") : t("catalog.saveCatalog")}
         </button>
       </div>
 

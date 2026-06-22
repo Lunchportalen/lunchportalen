@@ -178,6 +178,178 @@
         "exVatShort": "ilman ALV",
         "incVatShort": "sis. ALV",
         "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Muokkauspaneeli",
+        "idle": {
+          "title": "Valitse päivä",
+          "leadPanel": "Klikkaa viikonäkymästä päivää muokataksesi lämmintä ateriaa ja katalogia.",
+          "leadInspector": "Klikkaa lämpimää ateriaa tai valintaa viikonäkymässä."
+        },
+        "status": {
+          "published": "Julkaistu",
+          "draft": "Luonnos",
+          "notPublished": "Ei julkaistu"
+        },
+        "inspector": {
+          "editDay": "Muokkaa {weekday}",
+          "headerSharedWarmMeal": "Päivän yhteinen lämmin ateria",
+          "headerEnterpriseUpgrade": "Enterprise-päivitys päivän lämpimään ateriaan",
+          "close": "Sulje",
+          "fixedChoices": "Kiinteät valinnat",
+          "fixedChoicesNote": "Katalogiohjatut valinnat — julkaise kategoria tälle päivälle.",
+          "allergensPrefix": "Allergeenit: {list}",
+          "singleChoice": "Kiinteä valinta",
+          "singleChoiceNote": "Katalogiohjattu — aktivoi julkaisemalla kategoria.",
+          "content": "Sisältö",
+          "mealNamePlaceholder": "Syötä annoksen nimi",
+          "sharedKitchenLead": "Yhteinen keittiöannos Basis-, Luxus- ja Enterprise-tasoille tälle päivälle.",
+          "orderLock": "Tilauksia",
+          "employeesOrdered": "{count} työntekijää on tilannut",
+          "opensAfterServingDay": "Avautuu tarjoilupäivän jälkeen"
+        },
+        "varmrett": {
+          "ariaLabel": "Muokkaa lämmintä ateriaa",
+          "title": "Muokkaa lämmintä ateriaa — {dateLabel}",
+          "scope": "Muutos koskee kaikkia kolmea tasoa.",
+          "sharedBadge": "Yhteinen · Basis, Luxus, Enterprise",
+          "generatedStamp": "Ateriapankista luotu oletus. Voit muokata, tehdä oman tai palauttaa.",
+          "meal": "Ateria",
+          "description": "Kuvaus",
+          "allergens": "Allergeenit",
+          "allergensPlaceholder": "Esim. maito, vehnä",
+          "rawCost": "Raaka-ainekustannus (kr)",
+          "estimatedRawCost": "Arvioitu raaka-ainekustannus (kr)",
+          "mealName": "Annoksen nimi",
+          "resetGenerated": "Palauta luotuun",
+          "cancel": "Peruuta",
+          "save": "Tallenna lämmin ateria",
+          "saving": "Tallennetaan…",
+          "todayHotMeal": "Päivän lämmin ateria"
+        },
+        "economy": {
+          "ariaLabel": "Talous",
+          "title": "Talous",
+          "tierPrice": "Tason hinta ({tier}, ilman ALV)",
+          "rawCost": "− Raaka-ainekustannus",
+          "commission": "− Lunchportalen 5 %",
+          "marginPerPortion": "Kate per annos",
+          "enterRawCostHint": "Syötä raaka-ainekustannus katelaskentaa varten.",
+          "priceExVat": "Hinta ilman ALV",
+          "estimatedCost": "Arvioitu kustannus",
+          "contribution": "Myyntikate"
+        },
+        "enterprise": {
+          "title": "Enterprise-päivitys",
+          "lead": "Lisäarvoa – sama lämmin ateria. Ei uutta keittiöannosta.",
+          "todayWarmMeal": "Päivän lämmin ateria",
+          "warmMealMissing": "Päivän lämmin ateria puuttuu — lisää lämmin ateria ensin.",
+          "sameWarmMealNote": "Enterprise perustuu samaan lämpimään ateriaan – ilman uutta keittiöannosta.",
+          "surcharge": "Lisähinta",
+          "estimatedRawCost": "Arv. raaka-ainekustannus",
+          "extraContribution": "Lisäkate",
+          "suggestedTitle": "Ehdotettu Enterprise-päivitys",
+          "useSuggestion": "Käytä ehdotusta",
+          "chooseOther": "Valitse muu",
+          "selectedUpgrade": "Valittu päivitys",
+          "upgradeSelected": "Päivitys valittu",
+          "quickChoicesTitle": "Nopea premium-valinta",
+          "quickChoicesLead": "Lisäarvoa – sama lämmin ateria",
+          "quickChoicesAria": "Nopea premium-valinta",
+          "hideManual": "Piilota manuaalinen muokkaus",
+          "editManual": "Muokkaa manuaalisesti",
+          "manualLead": "Edistynyt muokkaus",
+          "buildFromLuxus": "Rakenna Luxus-tasosta",
+          "buildFromTier": "Rakenna tasosta {tier}",
+          "basedOn": "Perustuu",
+          "none": "Ei mitään",
+          "upgradeType": "Päivityksen tyyppi",
+          "chooseType": "Valitse tyyppi",
+          "customerExtra": "Mitä asiakas saa ekstraa?",
+          "customerExtraPlaceholder": "Premium-proteiini, suurempi annos, jälkiruoka/hedelmä…",
+          "confirmPublishDespiteWarning": "Vahvistan julkaisun varoituksesta huolimatta."
+        },
+        "actions": {
+          "saveDraft": "Tallenna luonnos",
+          "publishDay": "Julkaise päivä",
+          "saving": "Tallennetaan…",
+          "publishing": "Julkaistaan…"
+        }
+      },
+      "catalog": {
+        "title": "Menukatalogi",
+        "leadAccordion": "Valinnat, joita tarjoat kunkin kategorian alla. Rakenne pysyy samana — sisältö on sinun.",
+        "leadView": "Toimittajasi kiinteät vaihtoehdot — ei viikon sisältöä.",
+        "ownCatalogTitle": "Oma katalogisi",
+        "ownCatalogText": "Muutokset vaikuttavat vain omaan menuusi. Muut toimittajat näkevät omansa — kukaan ei jaa sisältöä kanssasi.",
+        "isolated": "Eristetty",
+        "tierBadgeAll": "Kaikki tasot",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} valintaa",
+        "lockedCount": "{count} lukittu",
+        "edit": "Muokkaa",
+        "close": "Sulje",
+        "addChoice": "+ Lisää valinta",
+        "addChoiceLegacy": "Lisää valinta",
+        "publishHint": "Katalogimuutokset tulevat voimaan seuraavassa viikon julkaisussa viikko-/keittiönäkymässä. Tilausikkuna päivittyy heti.",
+        "saveCatalog": "Tallenna katalogi",
+        "cancel": "Peruuta",
+        "saving": "Tallennetaan…",
+        "legacyTitle": "Menukatalogisi",
+        "legacyLead": "Tämä muuttaa vain toimittajasi kiinteitä valintoja — ei muiden catering-yritysten.",
+        "category": "Kategoria",
+        "titleField": "Otsikko",
+        "noEditableCategories": "Ei muokattavia kategorioita tasolle {tier}.",
+        "editCatalogAria": "Muokkaa menukatalogia",
+        "catalogAria": "Menukatalogi",
+        "orderLocked": "Tilauksia",
+        "orderSortHint": "Järjestys määräytyy katalogin mukaan",
+        "view": {
+          "sanityBank": "Sanity/pankki",
+          "yourCatalog": "Oma katalogi"
+        },
+        "item": {
+          "namePlaceholder": "Valinnan nimi",
+          "locked": "Lukittu",
+          "vegetarian": "Kasvis",
+          "allergensAria": "Allergeenit",
+          "remove": "Poista",
+          "removeChoice": "Poista {name}",
+          "removeFallback": "valinta"
+        },
+        "messages": {
+          "saveFailed": "Katalogin tallennus epäonnistui.",
+          "saved": "Katalogi tallennettu."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Lisäproteiinia + jälkiruoka/hedelmä",
+          "explanation": "Antaa asiakkaalle enemmän arvoa ilman uutta keittiöannosta.",
+          "note": "Lisäproteiinia ja jälkiruoka/hedelmä premium-lisänä päivän lämpimään ateriaan"
+        },
+        "quickChoices": {
+          "protein": { "label": "Lisäproteiini", "note": "Lisäproteiinia päivän lämpimään ateriaan" },
+          "portion": { "label": "Suurempi annos", "note": "Suurempi annos päivän lämmintä ateriaa" },
+          "dessert": { "label": "Jälkiruoka/hedelmä", "note": "Jälkiruoka tai hedelmä premium-lisänä" },
+          "topping": { "label": "Premium-täyte", "note": "Premium-täyte päivän lämpimään ateriaan" },
+          "side": { "label": "Lisälisuke", "note": "Lisälisuke päivän lämpimään ateriaan" },
+          "season": { "label": "Kausipäivitys", "note": "Kausipohjainen Enterprise-päivitys päivän lämpimään ateriaan" }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Premium-proteiini",
+          "EXTRA_SIDE": "Lisälisuke",
+          "DESSERT_FRUIT": "Jälkiruoka/hedelmä/välipala",
+          "LARGER_PORTION": "Suurempi annos",
+          "PREMIUM_LABELING": "Premium-merkintä/valvonta",
+          "PRIORITY_DELIVERY": "Priorisoitu toimitusikkuna",
+          "OTHER": "Oma/muu"
+        },
+        "source": {
+          "basedOnBasis": "Perustuu Basis-tasoon",
+          "basedOnLuxus": "Perustuu Luxus-tasoon",
+          "ownEnterprise": "Oma Enterprise"
+        }
       }
     }
   }
