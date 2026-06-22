@@ -221,6 +221,15 @@ describe("LeverandorMenyPage full-width frame", () => {
   });
 });
 
+describe("ProviderNav kitchen-only menu access", () => {
+  test("kitchen-only nav includes Meny link to /leverandor/meny", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain('href: "/leverandor/meny", label: "Meny"');
+    const kitchenBlock = source.slice(source.indexOf("if (!kitchenOnly)"));
+    expect(kitchenBlock).toMatch(/kitchenOnly[\s\S]*\/leverandor\/meny[\s\S]*Meny/);
+  });
+});
+
 describe("provider menu safety guards", () => {
   const guardedFiles = [
     "components/providers/ProviderMenuBuilder.tsx",

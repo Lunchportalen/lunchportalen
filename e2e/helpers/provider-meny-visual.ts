@@ -221,6 +221,12 @@ export async function waitForProviderMenyVisualReady(page: Page): Promise<void> 
   });
   await expect(page.locator(".lp-editor-layout")).not.toHaveClass(/is-week-loading/);
   await page.locator(".lp-editor-priceline-compact").waitFor({ state: "visible", timeout: 20_000 });
+  await expect(
+    page.locator('.ds-admin-sidebar__nav a[href="/leverandor/meny"]').filter({ hasText: "Meny" }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.ds-admin-sidebar__nav a[href="/leverandor/meny"].is-active'),
+  ).toBeVisible();
   await waitForFontsReady(page);
   await page.evaluate(() => {
     document.documentElement.classList.add("lp-provider-meny-visual-regression");
