@@ -13,11 +13,8 @@ export {
   htmlLangForAppLocale,
   intlLocaleForAppLocale,
   isAppLocale,
-  isProfilePersistLocale,
   parseAppLocale,
-  PROFILE_PERSIST_LOCALES,
   type AppLocale,
-  type ProfilePersistLocale,
 } from "@/lib/i18n/localeRegistry";
 
 export const LP_LOCALE_COOKIE = "lp_locale";

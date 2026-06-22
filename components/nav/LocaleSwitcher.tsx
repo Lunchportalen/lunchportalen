@@ -7,7 +7,6 @@ import { useTransition } from "react";
 import {
   APP_LOCALES,
   getLocaleLabel,
-  isProfilePersistLocale,
   LP_LOCALE_COOKIE,
   type AppLocale,
 } from "@/lib/i18n/middlewareLocale";
@@ -29,7 +28,7 @@ async function persistLocalePreference(locale: AppLocale) {
 }
 
 type LocaleSwitcherProps = {
-  /** When true, POST /api/user/locale after cookie change (nb/en only until DB migration). */
+  /** When true, POST /api/user/locale after cookie change. */
   persistProfile?: boolean;
   className?: string;
 };
@@ -48,8 +47,7 @@ export default function LocaleSwitcher({ persistProfile = false, className }: Lo
 
     setLocaleCookie(next);
 
-    // profiles.preferred_locale CHECK allows nb|en only — cookie-only for other locales until DB PR.
-    if (persistProfile && isProfilePersistLocale(next)) {
+    if (persistProfile) {
       await persistLocalePreference(next);
     }
 

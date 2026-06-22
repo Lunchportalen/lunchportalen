@@ -7,9 +7,7 @@ import {
   htmlLangForAppLocale,
   intlLocaleForAppLocale,
   isAppLocale,
-  isProfilePersistLocale,
   parseAppLocale,
-  PROFILE_PERSIST_LOCALES,
 } from "@/lib/i18n/localeRegistry";
 
 describe("localeRegistry", () => {
@@ -59,11 +57,10 @@ describe("localeRegistry", () => {
     expect(getLocaleLabel("fr")).toBe("Français");
   });
 
-  it("profile persist allowlist is nb/en only until DB migration", () => {
-    expect(PROFILE_PERSIST_LOCALES).toEqual(["nb", "en"]);
-    expect(isProfilePersistLocale("nb")).toBe(true);
-    expect(isProfilePersistLocale("en")).toBe(true);
-    expect(isProfilePersistLocale("sv")).toBe(false);
-    expect(isProfilePersistLocale("de")).toBe(false);
+  it("all app locales are valid for profile persistence after DB migration", () => {
+    for (const locale of APP_LOCALES) {
+      expect(isAppLocale(locale)).toBe(true);
+      expect(parseAppLocale(locale)).toBe(locale);
+    }
   });
 });
