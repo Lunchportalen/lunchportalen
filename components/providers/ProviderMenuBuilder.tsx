@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 import ProviderMenuCatalogView from "@/components/providers/ProviderMenuCatalogView";
@@ -50,11 +51,7 @@ import {
   validateEnterprisePublish,
   weekDatesFromStart,
 } from "@/lib/providers/providerMenuPackageSurface";
-import {
-  formatPriceExVatLabel,
-  formatPriceIncVatLabel,
-  type ProviderMenuPriceView,
-} from "@/lib/providers/providerMenuPriceDisplay";
+import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
 
 import "@/app/styles/ds/provider-menu-editor.css";
 
@@ -128,6 +125,7 @@ function weekdayLabelForDate(date: string, weekDates: string[]): string {
 }
 
 export default function ProviderMenuBuilder() {
+  const t = useTranslations("provider.menu");
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
@@ -178,7 +176,7 @@ export default function ProviderMenuBuilder() {
       });
       const json = (await res.json()) as MenuWeekResponse;
       if (!res.ok || !json.ok || !json.data) {
-        setError(json.message ?? "Kunne ikke laste meny.");
+        setError(json.message ?? t("errors.loadFailed"));
         setLoading(false);
         return;
       }
@@ -207,11 +205,11 @@ export default function ProviderMenuBuilder() {
 
       setSlots(next);
     } catch {
-      setError("Kunne ikke laste meny.");
+      setError(t("errors.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [weekStart]);
+  }, [weekStart, t]);
 
   useEffect(() => {
     void loadWeek();
@@ -376,7 +374,7 @@ export default function ProviderMenuBuilder() {
       return;
     }
 
-    setMessage(status === "published" ? "Meny publisert." : "Utkast lagret.");
+    setMessage(status === "published" ? t("success.published") : t("success.draftSaved"));
     setConfirmWarnings(false);
     await loadWeek();
   }
@@ -400,7 +398,7 @@ export default function ProviderMenuBuilder() {
       return;
     }
 
-    setMessage("Varmrett tilbakestilt til generert.");
+    setMessage(t("success.resetVarmrett"));
     await loadWeek();
   }
 
@@ -532,17 +530,15 @@ export default function ProviderMenuBuilder() {
           {workspaceView === "week" ? (
             <>
               {loading && !prices ? (
-                <div className="lp-editor-skeleton" aria-busy="true" aria-label="Laster meny">
+                <div className="lp-editor-skeleton" aria-busy="true" aria-label={t("week.loadingAria")}>
                   {weekDates.map((date) => (
                     <div key={date} className="lp-editor-skeleton__day" />
                   ))}
                 </div>
               ) : null}
               <header className="lp-editor-planner-head">
-                <h2 className="lp-editor-planner-head__title">Ukeplan</h2>
-                <p className="lp-editor-planner-head__lead">
-                  Felles varmrett per dag — generert standard du kan overstyre.
-                </p>
+                <h2 className="lp-editor-planner-head__title">{t("week.plannerTitle")}</h2>
+                <p className="lp-editor-planner-head__lead">{t("week.plannerLead")}</p>
               </header>
               <ProviderMenuWeekPlanner
                 tier={tier}

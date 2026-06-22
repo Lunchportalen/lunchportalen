@@ -85,6 +85,100 @@
           "action": "Se faktura"
         }
       }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Kun visning",
+        "readOnlyLead": "Du har ikke adgang til at redigere menuen. Kontakt leverandøradministrator for redigeringstilgang."
+      },
+      "header": {
+        "eyebrow": "Menueditor",
+        "lead": "Planlæg ugen, angiv dagens fælles varmret og publicer til bestilling.",
+        "prevWeek": "← Forrige",
+        "nextWeek": "Næste →",
+        "weekFrom": "Uge fra {date}",
+        "weekTitle": "Uge {week} · {year}",
+        "weekNavAria": "Ugenavigation",
+        "tierTabsAria": "Menupakker",
+        "priceLineAria": "Niveaupris og produktionsregel",
+        "workspaceAria": "Arbejdsområde",
+        "sharedWarmMealRule": "Varmretten er fælles for alle tre niveauer."
+      },
+      "tabs": {
+        "weekPlan": "Ugeplan",
+        "catalog": "Menukatalog"
+      },
+      "status": {
+        "ariaLabel": "Ugestatus",
+        "readyAllGenerated": "Ugen er klar — varmret genereret for alle {days} dage",
+        "daysMissingVarmrett": "{count, plural, one {# dag mangler varmret} other {# dage mangler varmret}}",
+        "daysWithVarmrett": "{filled} af {total} dage med varmret",
+        "autoRolloutMeta": "Publiceres automatisk torsdag 08:00 · medarbejdere ser ugen kl. 14:00",
+        "fillMissingMeta": "Udfyld manglende varmretter før ugen kan publiceres",
+        "autoRolloutChip": "Auto-rollout aktiv",
+        "daysPublished": "{count, plural, one {# dag publiceret} other {# dage publiceret}}"
+      },
+      "week": {
+        "plannerTitle": "Ugeplan",
+        "plannerLead": "Fælles varmret per dag — genereret standard du kan overskrive.",
+        "ariaLabel": "Ugeplan",
+        "loadingAria": "Indlæser menu",
+        "hotMealEyebrow": "Dagens varmret",
+        "hotMealMissing": "Varmret mangler",
+        "hotMealMissingHint": "Tilføj dagens varmret før denne dag kan publiceres.",
+        "hotMealFallback": "Varmret",
+        "enterpriseUpgrade": "Enterprise-upgrade",
+        "badges": {
+          "generated": "Genereret",
+          "fridayTreat": "Fredagskos",
+          "overridden": "Tilsidesat",
+          "hasOrder": "Har bestilling"
+        },
+        "actions": {
+          "add": "Tilføj",
+          "viewDay": "Se dag",
+          "editNow": "Rediger nu",
+          "edit": "Rediger"
+        },
+        "allergens": {
+          "confirmed": "Allergener: {list}",
+          "unconfirmed": "Allergener ikke bekræftet — kontakt leverandør",
+          "opensAfterDelivery": "Åbnes for redigering efter levering"
+        },
+        "pins": {
+          "soup": "Suppe",
+          "fish": "Fisk",
+          "fridayTreat": "Fredagskos"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Har bestilling · {count} portioner",
+          "hasOrderLocked": "Har bestilling · låst"
+        },
+        "costHint": "Kost {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Mandag",
+        "tue": "Tirsdag",
+        "wed": "Onsdag",
+        "thu": "Torsdag",
+        "fri": "Fredag"
+      },
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse menu.",
+        "saveFailed": "Kunne ikke gemme menu."
+      },
+      "success": {
+        "published": "Menu publiceret.",
+        "draftSaved": "Kladde gemt.",
+        "resetVarmrett": "Varmret nulstillet til genereret."
+      },
+      "price": {
+        "exVatSuffix": "kr ekskl. moms",
+        "incVatSuffix": "kr inkl. moms",
+        "exVatShort": "ekskl. moms",
+        "incVatShort": "inkl. moms",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      }
     }
   }
 }

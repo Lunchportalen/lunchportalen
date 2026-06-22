@@ -85,6 +85,100 @@
           "action": "Rechnungen anzeigen"
         }
       }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Nur Ansicht",
+        "readOnlyLead": "Sie haben keine Berechtigung, das Menü zu bearbeiten. Wenden Sie sich an den Lieferantenadministrator."
+      },
+      "header": {
+        "eyebrow": "Menü-Editor",
+        "lead": "Woche planen, gemeinsames Tagesgericht festlegen und zur Bestellung veröffentlichen.",
+        "prevWeek": "← Zurück",
+        "nextWeek": "Weiter →",
+        "weekFrom": "Woche ab {date}",
+        "weekTitle": "Woche {week} · {year}",
+        "weekNavAria": "Wochennavigation",
+        "tierTabsAria": "Menüpakete",
+        "priceLineAria": "Stufenpreis und Produktionsregel",
+        "workspaceAria": "Arbeitsbereich",
+        "sharedWarmMealRule": "Das Tagesgericht gilt für alle drei Stufen."
+      },
+      "tabs": {
+        "weekPlan": "Wochenplan",
+        "catalog": "Menükatalog"
+      },
+      "status": {
+        "ariaLabel": "Wochenstatus",
+        "readyAllGenerated": "Woche bereit — Tagesgericht für alle {days} Tage generiert",
+        "daysMissingVarmrett": "{count, plural, one {# Tag ohne Tagesgericht} other {# Tage ohne Tagesgericht}}",
+        "daysWithVarmrett": "{filled} von {total} Tagen mit Tagesgericht",
+        "autoRolloutMeta": "Automatische Veröffentlichung Donnerstag 08:00 · Mitarbeitende sehen die Woche um 14:00",
+        "fillMissingMeta": "Fehlende Tagesgerichte ausfüllen, bevor die Woche veröffentlicht werden kann",
+        "autoRolloutChip": "Auto-Rollout aktiv",
+        "daysPublished": "{count, plural, one {# Tag veröffentlicht} other {# Tage veröffentlicht}}"
+      },
+      "week": {
+        "plannerTitle": "Wochenplan",
+        "plannerLead": "Gemeinsames Tagesgericht pro Tag — generierte Standardvorgabe, die Sie überschreiben können.",
+        "ariaLabel": "Wochenplan",
+        "loadingAria": "Menü wird geladen",
+        "hotMealEyebrow": "Heutiges Tagesgericht",
+        "hotMealMissing": "Tagesgericht fehlt",
+        "hotMealMissingHint": "Tagesgericht hinzufügen, bevor dieser Tag veröffentlicht werden kann.",
+        "hotMealFallback": "Tagesgericht",
+        "enterpriseUpgrade": "Enterprise-Upgrade",
+        "badges": {
+          "generated": "Generiert",
+          "fridayTreat": "Freitagsgenuss",
+          "overridden": "Überschrieben",
+          "hasOrder": "Bestellungen"
+        },
+        "actions": {
+          "add": "Hinzufügen",
+          "viewDay": "Tag anzeigen",
+          "editNow": "Jetzt bearbeiten",
+          "edit": "Bearbeiten"
+        },
+        "allergens": {
+          "confirmed": "Allergene: {list}",
+          "unconfirmed": "Allergene nicht bestätigt — Lieferant kontaktieren",
+          "opensAfterDelivery": "Bearbeitung nach Lieferung möglich"
+        },
+        "pins": {
+          "soup": "Suppe",
+          "fish": "Fisch",
+          "fridayTreat": "Freitagsgenuss"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Bestellungen · {count} Portionen",
+          "hasOrderLocked": "Bestellungen · gesperrt"
+        },
+        "costHint": "Kosten {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Montag",
+        "tue": "Dienstag",
+        "wed": "Mittwoch",
+        "thu": "Donnerstag",
+        "fri": "Freitag"
+      },
+      "errors": {
+        "loadFailed": "Menü konnte nicht geladen werden.",
+        "saveFailed": "Menü konnte nicht gespeichert werden."
+      },
+      "success": {
+        "published": "Menü veröffentlicht.",
+        "draftSaved": "Entwurf gespeichert.",
+        "resetVarmrett": "Tagesgericht auf generiert zurückgesetzt."
+      },
+      "price": {
+        "exVatSuffix": "kr zzgl. MwSt.",
+        "incVatSuffix": "kr inkl. MwSt.",
+        "exVatShort": "zzgl. MwSt.",
+        "incVatShort": "inkl. MwSt.",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      }
     }
   }
 }

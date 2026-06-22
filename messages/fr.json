@@ -85,6 +85,100 @@
           "action": "Voir les factures"
         }
       }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Lecture seule",
+        "readOnlyLead": "Vous n'avez pas l'autorisation de modifier le menu. Contactez l'administrateur fournisseur."
+      },
+      "header": {
+        "eyebrow": "Éditeur de menu",
+        "lead": "Planifiez la semaine, définissez le plat chaud commun du jour et publiez pour la commande.",
+        "prevWeek": "← Précédent",
+        "nextWeek": "Suivant →",
+        "weekFrom": "Semaine du {date}",
+        "weekTitle": "Semaine {week} · {year}",
+        "weekNavAria": "Navigation de semaine",
+        "tierTabsAria": "Forfaits menu",
+        "priceLineAria": "Prix du forfait et règle de production",
+        "workspaceAria": "Espace de travail",
+        "sharedWarmMealRule": "Le plat chaud est commun aux trois forfaits."
+      },
+      "tabs": {
+        "weekPlan": "Plan hebdomadaire",
+        "catalog": "Catalogue menu"
+      },
+      "status": {
+        "ariaLabel": "Statut de la semaine",
+        "readyAllGenerated": "Semaine prête — plat chaud généré pour les {days} jours",
+        "daysMissingVarmrett": "{count, plural, one {# jour sans plat chaud} other {# jours sans plat chaud}}",
+        "daysWithVarmrett": "{filled} sur {total} jours avec plat chaud",
+        "autoRolloutMeta": "Publication automatique jeudi 08:00 · les employés voient la semaine à 14:00",
+        "fillMissingMeta": "Complétez les plats chauds manquants avant de publier la semaine",
+        "autoRolloutChip": "Déploiement auto actif",
+        "daysPublished": "{count, plural, one {# jour publié} other {# jours publiés}}"
+      },
+      "week": {
+        "plannerTitle": "Plan hebdomadaire",
+        "plannerLead": "Plat chaud commun par jour — standard généré que vous pouvez modifier.",
+        "ariaLabel": "Plan hebdomadaire",
+        "loadingAria": "Chargement du menu",
+        "hotMealEyebrow": "Plat chaud du jour",
+        "hotMealMissing": "Plat chaud manquant",
+        "hotMealMissingHint": "Ajoutez le plat chaud du jour avant de publier ce jour.",
+        "hotMealFallback": "Plat chaud",
+        "enterpriseUpgrade": "Upgrade Enterprise",
+        "badges": {
+          "generated": "Généré",
+          "fridayTreat": "Plaisir du vendredi",
+          "overridden": "Modifié",
+          "hasOrder": "Commandes"
+        },
+        "actions": {
+          "add": "Ajouter",
+          "viewDay": "Voir le jour",
+          "editNow": "Modifier maintenant",
+          "edit": "Modifier"
+        },
+        "allergens": {
+          "confirmed": "Allergènes : {list}",
+          "unconfirmed": "Allergènes non confirmés — contactez le fournisseur",
+          "opensAfterDelivery": "Modifiable après la livraison"
+        },
+        "pins": {
+          "soup": "Soupe",
+          "fish": "Poisson",
+          "fridayTreat": "Plaisir du vendredi"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Commandes · {count} portions",
+          "hasOrderLocked": "Commandes · verrouillé"
+        },
+        "costHint": "Coût {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Lundi",
+        "tue": "Mardi",
+        "wed": "Mercredi",
+        "thu": "Jeudi",
+        "fri": "Vendredi"
+      },
+      "errors": {
+        "loadFailed": "Impossible de charger le menu.",
+        "saveFailed": "Impossible d'enregistrer le menu."
+      },
+      "success": {
+        "published": "Menu publié.",
+        "draftSaved": "Brouillon enregistré.",
+        "resetVarmrett": "Plat chaud réinitialisé au contenu généré."
+      },
+      "price": {
+        "exVatSuffix": "kr HT",
+        "incVatSuffix": "kr TTC",
+        "exVatShort": "HT",
+        "incVatShort": "TTC",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      }
     }
   }
 }

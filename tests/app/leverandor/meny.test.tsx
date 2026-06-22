@@ -3,6 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { NextIntlClientProvider } from "next-intl";
+
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
@@ -19,6 +22,16 @@ const FALLBACK_PRICES = {
     source: "fallback",
   },
 };
+
+async function renderProviderMenuBuilder(locale: "nb" | "en" | "es" = "nb") {
+  const messages = await loadMessagesForLocale(locale);
+  const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
+  return renderToStaticMarkup(
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <ProviderMenuBuilder />
+    </NextIntlClientProvider>,
+  );
+}
 
 describe("ProviderMenuBuilder workspace layout", () => {
   beforeEach(() => {
@@ -40,8 +53,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
   });
 
   test("renders command header with tier lens and priceline", async () => {
-    const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
-    const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
+    const html = await renderProviderMenuBuilder("nb");
     expect(html).toContain("lp-editor-command-header");
     expect(html).toContain("lp-editor-tier-lens");
     expect(html).toContain("lp-editor-status-strip");
@@ -50,8 +62,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
   });
 
   test("renders dual-panel workspace with week grid", async () => {
-    const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
-    const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
+    const html = await renderProviderMenuBuilder("nb");
     expect(html).toContain("lp-editor-layout");
     expect(html).toContain("lp-editor-days");
     expect(html).toContain("lp-editor-panels");
@@ -61,8 +72,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
   });
 
   test("day card renders mockup-aligned structure", async () => {
-    const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
-    const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
+    const html = await renderProviderMenuBuilder("nb");
     expect(html).toContain("lp-editor-day__name");
     expect(html).toContain("lp-editor-day__catline");
     expect(html).toContain("lp-editor-day__editbtn");
@@ -71,8 +81,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
   });
 
   test("panel idle guides day selection", async () => {
-    const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
-    const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
+    const html = await renderProviderMenuBuilder("nb");
     expect(html).toContain("lp-editor-panel__idle");
     expect(html).toContain("Klikk en dag i ukeplanen");
   });
@@ -223,6 +232,55 @@ describe("LeverandorMenyPage full-width frame", () => {
     expect(source).not.toContain("lp-editor-topbar__avatar");
     expect(source).not.toContain("ds-container");
     expect(source).not.toContain('className="ds-h2">Meny</h1>');
+  });
+
+  test("page uses getTranslations for read-only gate", () => {
+    const source = readFileSync(resolve(process.cwd(), "app/leverandor/meny/page.tsx"), "utf8");
+    expect(source).toContain('getTranslations("provider.menu.page")');
+    expect(source).toContain('t("readOnlyTitle")');
+    expect(source).not.toContain("Kun visning");
+  });
+});
+
+describe("ProviderMenuBuilder i18n", () => {
+  test("nb default shows Meny-editor and Ukeplan", async () => {
+    const html = await renderProviderMenuBuilder("nb");
+    expect(html).toContain("Meny-editor");
+    expect(html).toContain("Ukeplan");
+    expect(html).toContain("Basis");
+    expect(html).toContain("Luxus");
+    expect(html).toContain("Enterprise");
+  });
+
+  test("en locale shows Menu editor and Week plan", async () => {
+    const html = await renderProviderMenuBuilder("en");
+    expect(html).toContain("Menu editor");
+    expect(html).toContain("Week plan");
+    expect(html).toContain("Basis");
+    expect(html).toContain("Luxus");
+    expect(html).toContain("Enterprise");
+    expect(html).not.toContain("Meny-editor");
+  });
+
+  test("es locale shows Editor de menú and Plan semanal", async () => {
+    const html = await renderProviderMenuBuilder("es");
+    expect(html).toContain("Editor de menú");
+    expect(html).toContain("Plan semanal");
+    expect(html).toContain("Basis");
+    expect(html).not.toContain("Meny-editor");
+  });
+
+  test("command header and week planner use useTranslations", () => {
+    const header = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuCommandHeader.tsx"),
+      "utf8",
+    );
+    const planner = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuWeekPlanner.tsx"),
+      "utf8",
+    );
+    expect(header).toContain('useTranslations("provider.menu")');
+    expect(planner).toContain('useTranslations("provider.menu")');
   });
 });
 

@@ -5,6 +5,7 @@ export const revalidate = 0;
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import ProviderMenuBuilder from "@/components/providers/ProviderMenuBuilder";
 import { hasProviderRole } from "@/lib/auth/provider";
@@ -23,6 +24,7 @@ export default async function LeverandorMenyPage() {
   if (!canView) redirect("/leverandor");
 
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_kitchen");
+  const t = await getTranslations("provider.menu.page");
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
@@ -30,10 +32,8 @@ export default async function LeverandorMenyPage() {
         <ProviderMenuBuilder />
       ) : (
         <section className="ds-card ds-provider-meny-card">
-          <h2 className="ds-h3">Kun visning</h2>
-          <p className="ds-body">
-            Du har ikke tilgang til å redigere meny. Kontakt leverandøradministrator for å få redigeringstilgang.
-          </p>
+          <h2 className="ds-h3">{t("readOnlyTitle")}</h2>
+          <p className="ds-body">{t("readOnlyLead")}</p>
         </section>
       )}
     </div>

@@ -1,11 +1,13 @@
 "use client";
 
+import { useTranslations, useLocale } from "next-intl";
+
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import { PLAN_TIERS } from "@/lib/cms/menuDayContract";
-import { weekHeadingFromMondayStart } from "@/lib/date/week";
+import { isoWeekNumberFromMondayStart } from "@/lib/date/week";
+import { intlLocaleForAppLocale, isAppLocale } from "@/lib/i18n/localeRegistry";
 import {
-  formatPriceExVatLabel,
-  formatPriceIncVatLabel,
+  formatPriceAmount,
   type ProviderMenuPriceView,
 } from "@/lib/providers/providerMenuPriceDisplay";
 
@@ -36,43 +38,46 @@ export default function ProviderMenuCommandHeader({
   workspaceView,
   onWorkspaceViewChange,
 }: Props) {
+  const t = useTranslations("provider.menu");
+  const locale = useLocale();
+  const intlLocale = isAppLocale(locale) ? intlLocaleForAppLocale(locale) : locale;
   const tierPrice = prices?.[tier];
+  const week = isoWeekNumberFromMondayStart(weekStart);
+  const year = weekStart.slice(0, 4);
 
   return (
     <header className="lp-editor-command-header">
       <div className="lp-editor-page-head">
         <div className="lp-editor-page-head__main">
-          <p className="lp-editor-page-head__eyebrow">Meny-editor</p>
-          <h1 className="lp-editor-page-head__title">{weekHeadingFromMondayStart(weekStart)}</h1>
-          <p className="lp-editor-page-head__lead">
-            Planlegg uke, sett dagens felles varmrett og publiser for bestilling.
-          </p>
+          <p className="lp-editor-page-head__eyebrow">{t("header.eyebrow")}</p>
+          <h1 className="lp-editor-page-head__title">{t("header.weekTitle", { week, year })}</h1>
+          <p className="lp-editor-page-head__lead">{t("header.lead")}</p>
         </div>
 
-        <div className="lp-editor-page-head__week-nav-pill" aria-label="Ukenavigasjon">
+        <div className="lp-editor-page-head__week-nav-pill" aria-label={t("header.weekNavAria")}>
           <button type="button" className="ds-btn ds-btn--ghost" onClick={onPrevWeek}>
-            ← Forrige
+            {t("header.prevWeek")}
           </button>
-          <span className="lp-editor-page-head__week-label">Uke fra {weekStart}</span>
+          <span className="lp-editor-page-head__week-label">{t("header.weekFrom", { date: weekStart })}</span>
           <button type="button" className="ds-btn ds-btn--ghost" onClick={onNextWeek}>
-            Neste →
+            {t("header.nextWeek")}
           </button>
         </div>
 
-        <div className="lp-editor-tier-lens" role="tablist" aria-label="Menypakker">
-          {PLAN_TIERS.map((t) => {
-            const price = prices?.[t];
-            const active = tier === t;
+        <div className="lp-editor-tier-lens" role="tablist" aria-label={t("header.tierTabsAria")}>
+          {PLAN_TIERS.map((planTier) => {
+            const price = prices?.[planTier];
+            const active = tier === planTier;
             return (
               <button
-                key={t}
+                key={planTier}
                 type="button"
                 role="tab"
                 aria-selected={active}
                 className={`lp-editor-tier-lens__btn${active ? " is-active" : ""}`}
-                onClick={() => onTierChange(t)}
+                onClick={() => onTierChange(planTier)}
               >
-                {TIER_LABELS[t]}
+                {TIER_LABELS[planTier]}
                 <small>{price ? `${price.priceExVatNok} kr` : "—"}</small>
               </button>
             );
@@ -81,17 +86,26 @@ export default function ProviderMenuCommandHeader({
       </div>
 
       {tierPrice ? (
-        <p className="lp-editor-priceline-compact" aria-label="Tier-pris og produksjonsregel">
+        <p className="lp-editor-priceline-compact" aria-label={t("header.priceLineAria")}>
           <strong>{TIER_LABELS[tier]}</strong>
           {" · "}
-          {formatPriceExVatLabel(tierPrice.priceExVatNok).replace(" kr eks. mva", " eks")}
+          {formatPriceAmount(tierPrice.priceExVatNok, intlLocale, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}{" "}
+          {t("price.exVatShort")}
           {" / "}
-          {formatPriceIncVatLabel(tierPrice.priceIncVatNok).replace(" kr inkl. mva", " inkl mva")}
-          {". Varmretten er felles for alle tre nivåene."}
+          {formatPriceAmount(tierPrice.priceIncVatNok, intlLocale, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}{" "}
+          {t("price.incVatShort")}
+          {". "}
+          {t("header.sharedWarmMealRule")}
         </p>
       ) : null}
 
-      <div className="lp-editor-command-header__views" role="tablist" aria-label="Workspace">
+      <div className="lp-editor-command-header__views" role="tablist" aria-label={t("header.workspaceAria")}>
         <button
           type="button"
           role="tab"
@@ -99,7 +113,7 @@ export default function ProviderMenuCommandHeader({
           className={`lp-editor-command-header__view-tab${workspaceView === "week" ? " is-active" : ""}`}
           onClick={() => onWorkspaceViewChange("week")}
         >
-          Ukeplan
+          {t("tabs.weekPlan")}
         </button>
         <button
           type="button"
@@ -108,7 +122,7 @@ export default function ProviderMenuCommandHeader({
           className={`lp-editor-command-header__view-tab${workspaceView === "catalog" ? " is-active" : ""}`}
           onClick={() => onWorkspaceViewChange("catalog")}
         >
-          Menykatalog
+          {t("tabs.catalog")}
         </button>
       </div>
     </header>

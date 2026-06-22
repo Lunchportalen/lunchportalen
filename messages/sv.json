@@ -85,6 +85,100 @@
           "action": "Se faktura"
         }
       }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Endast visning",
+        "readOnlyLead": "Du har inte behörighet att redigera menyn. Kontakta leverantörsadministratören för redigeringsåtkomst."
+      },
+      "header": {
+        "eyebrow": "Menyredigerare",
+        "lead": "Planera veckan, ange dagens gemensamma varmrätt och publicera för beställning.",
+        "prevWeek": "← Föregående",
+        "nextWeek": "Nästa →",
+        "weekFrom": "Vecka från {date}",
+        "weekTitle": "Vecka {week} · {year}",
+        "weekNavAria": "Veckonavigering",
+        "tierTabsAria": "Menypaket",
+        "priceLineAria": "Nivåpris och produktionsregel",
+        "workspaceAria": "Arbetsyta",
+        "sharedWarmMealRule": "Varmrätten är gemensam för alla tre nivåerna."
+      },
+      "tabs": {
+        "weekPlan": "Veckoplan",
+        "catalog": "Menykatalog"
+      },
+      "status": {
+        "ariaLabel": "Veckostatus",
+        "readyAllGenerated": "Veckan är klar — varmrätt genererad för alla {days} dagar",
+        "daysMissingVarmrett": "{count, plural, one {# dag saknar varmrätt} other {# dagar saknar varmrätt}}",
+        "daysWithVarmrett": "{filled} av {total} dagar med varmrätt",
+        "autoRolloutMeta": "Publiceras automatiskt torsdag 08:00 · anställda ser veckan kl. 14:00",
+        "fillMissingMeta": "Fyll i saknade varmrätter innan veckan kan publiceras",
+        "autoRolloutChip": "Auto-rollout aktiv",
+        "daysPublished": "{count, plural, one {# dag publicerad} other {# dagar publicerade}}"
+      },
+      "week": {
+        "plannerTitle": "Veckoplan",
+        "plannerLead": "Gemensam varmrätt per dag — genererad standard du kan åsidosätta.",
+        "ariaLabel": "Veckoplan",
+        "loadingAria": "Laddar meny",
+        "hotMealEyebrow": "Dagens varmrätt",
+        "hotMealMissing": "Varmrätt saknas",
+        "hotMealMissingHint": "Lägg till dagens varmrätt innan denna dag kan publiceras.",
+        "hotMealFallback": "Varmrätt",
+        "enterpriseUpgrade": "Enterprise-upgrade",
+        "badges": {
+          "generated": "Genererad",
+          "fridayTreat": "Fredagsmys",
+          "overridden": "Åsidosatt",
+          "hasOrder": "Har beställning"
+        },
+        "actions": {
+          "add": "Lägg till",
+          "viewDay": "Visa dag",
+          "editNow": "Redigera nu",
+          "edit": "Redigera"
+        },
+        "allergens": {
+          "confirmed": "Allergener: {list}",
+          "unconfirmed": "Allergener ej bekräftade — kontakta leverantör",
+          "opensAfterDelivery": "Öppnas för redigering efter leverans"
+        },
+        "pins": {
+          "soup": "Soppa",
+          "fish": "Fisk",
+          "fridayTreat": "Fredagsmys"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Har beställning · {count} portioner",
+          "hasOrderLocked": "Har beställning · låst"
+        },
+        "costHint": "Kostnad {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Måndag",
+        "tue": "Tisdag",
+        "wed": "Onsdag",
+        "thu": "Torsdag",
+        "fri": "Fredag"
+      },
+      "errors": {
+        "loadFailed": "Kunde inte ladda menyn.",
+        "saveFailed": "Kunde inte spara menyn."
+      },
+      "success": {
+        "published": "Meny publicerad.",
+        "draftSaved": "Utkast sparat.",
+        "resetVarmrett": "Varmrätt återställd till genererad."
+      },
+      "price": {
+        "exVatSuffix": "kr exkl. moms",
+        "incVatSuffix": "kr inkl. moms",
+        "exVatShort": "exkl. moms",
+        "incVatShort": "inkl. moms",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      }
     }
   }
 }
