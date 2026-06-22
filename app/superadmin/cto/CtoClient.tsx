@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { formatMoneyDisplay } from "@/lib/commercial/moneyDisplay";
 
 type CtoOk = { ok: true; rid: string; data: any };
 type CtoErr = { ok: false; rid?: string; error: string; message?: string; status?: number };
@@ -11,8 +12,15 @@ function num(v: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function formatNok(v: number) {
-  return `${Math.round(v).toLocaleString("no-NO")} kr`;
+/** NO-only CTO revenue KPI display — ADR-017 R3C first runtime wiring. */
+export function formatCtoRevenueDisplay(revenue: unknown): string {
+  return formatMoneyDisplay({
+    amountMinor: Math.round(num(revenue) * 100),
+    currency: "NOK",
+    locale: "nb-NO",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).formatted;
 }
 
 export default function CtoClient() {
@@ -89,7 +97,7 @@ export default function CtoClient() {
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl bg-white p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Omsetning (ordre)</div>
-          <div className="mt-2 text-2xl font-semibold tabular-nums">{formatNok(num(model.revenue))}</div>
+          <div className="mt-2 text-2xl font-semibold tabular-nums">{formatCtoRevenueDisplay(model.revenue)}</div>
         </div>
         <div className="rounded-2xl bg-white p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--lp-muted))]">Konvertering</div>
