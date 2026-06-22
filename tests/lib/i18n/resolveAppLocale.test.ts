@@ -18,4 +18,10 @@ describe("resolveAppLocale", () => {
     expect(resolveAppLocale({ cookie: "invalid", profile: "also-invalid" })).toBe("nb");
     expect(resolveAppLocale({ cookie: null, profile: null })).toBe("nb");
   });
+
+  it("accepts new registry locales from cookie", () => {
+    expect(resolveAppLocale({ cookie: "sv" })).toBe("sv");
+    expect(resolveAppLocale({ cookie: "de", profile: "nb" })).toBe("de");
+    expect(resolveAppLocale({ cookie: null, profile: "es" })).toBe("es");
+  });
 });

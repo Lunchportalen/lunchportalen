@@ -4,7 +4,13 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
-import { APP_LOCALES, LP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n/middlewareLocale";
+import {
+  APP_LOCALES,
+  getLocaleLabel,
+  isProfilePersistLocale,
+  LP_LOCALE_COOKIE,
+  type AppLocale,
+} from "@/lib/i18n/middlewareLocale";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
@@ -13,8 +19,7 @@ function setLocaleCookie(locale: AppLocale) {
   document.cookie = `${LP_LOCALE_COOKIE}=${locale}; Path=/; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax${secure}`;
 }
 
-async function persistLocalePreference(locale: AppLocale, isAuthenticated: boolean) {
-  if (!isAuthenticated) return;
+async function persistLocalePreference(locale: AppLocale) {
   await fetch("/api/user/locale", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -24,7 +29,7 @@ async function persistLocalePreference(locale: AppLocale, isAuthenticated: boole
 }
 
 type LocaleSwitcherProps = {
-  /** When true, POST /api/user/locale after cookie change. */
+  /** When true, POST /api/user/locale after cookie change (nb/en only until DB migration). */
   persistProfile?: boolean;
   className?: string;
 };
@@ -32,18 +37,22 @@ type LocaleSwitcherProps = {
 export default function LocaleSwitcher({ persistProfile = false, className }: LocaleSwitcherProps) {
   const locale = useLocale() as AppLocale;
   const t = useTranslations("localeSwitcher");
-  const tNav = useTranslations("nav");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  const currentLabel = locale === "en" ? tNav("languageEn") : tNav("languageNb");
+  const currentLabel = getLocaleLabel(locale);
 
   async function onChange(nextRaw: string) {
     const next = APP_LOCALES.find((item) => item === nextRaw);
     if (!next || next === locale) return;
 
     setLocaleCookie(next);
-    await persistLocalePreference(next, persistProfile);
+
+    // profiles.preferred_locale CHECK allows nb|en only — cookie-only for other locales until DB PR.
+    if (persistProfile && isProfilePersistLocale(next)) {
+      await persistLocalePreference(next);
+    }
+
     startTransition(() => {
       router.refresh();
     });
@@ -64,8 +73,11 @@ export default function LocaleSwitcher({ persistProfile = false, className }: Lo
           void onChange(event.target.value);
         }}
       >
-        <option value="nb">{tNav("languageNb")}</option>
-        <option value="en">{tNav("languageEn")}</option>
+        {APP_LOCALES.map((code) => (
+          <option key={code} value={code}>
+            {getLocaleLabel(code)}
+          </option>
+        ))}
       </select>
     </label>
   );

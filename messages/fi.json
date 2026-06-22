@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Ladataan …",
+    "save": "Tallenna",
+    "language": "Kieli"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Valitse kieli",
+    "current": "Nykyinen kieli: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Tilaukset",
+      "customers": "Asiakkaat",
+      "registrations": "Rekisteröinnit",
+      "menu": "Menu",
+      "areas": "Alueet",
+      "invoices": "Laskut",
+      "settings": "Asetukset",
+      "logout": "Kirjaudu ulos",
+      "more": "Lisää",
+      "comingSoon": "(tulossa)",
+      "openMenu": "Avaa valikko",
+      "closeMenu": "Sulje valikko",
+      "providerMenu": "Toimittajavalikko",
+      "sidebarLabel": "Toimittaja",
+      "roleAdmin": "Ylläpitäjä",
+      "roleKitchen": "Keittiö",
+      "roleDefault": "Toimittaja"
+    },
+    "dashboard": {
+      "eyebrow": "Toimittaja",
+      "lead": "Yleiskatsaus asiakkaisiin, sopimuksiin ja toimintaan.",
+      "kpiSection": "Avainluvut",
+      "activeCustomers": "Aktiiviset asiakkaat",
+      "activeCustomersFoot": "Yritykset, joilla on aktiivinen lounasjärjestely",
+      "activeAgreements": "Aktiiviset asiakassopimukset",
+      "activeAgreementsFoot": "Aktiivisiin yrityksiin liittyvät asiakassopimukset",
+      "activeAgreementsLinkTitle": "Näytä aktiiviset yritysasiakkaat ja sopimukset",
+      "ordersThisWeek": "Tilaukset tällä viikolla",
+      "ordersThisWeekFoot": "Tilaukset kuluvalla viikolla",
+      "revenueLast30Days": "Tilausarvo viimeiset 30 päivää",
+      "revenueLast30DaysFoot": "Tilausten kokonaisarvo",
+      "followUpSection": "Vaatii seurantaa",
+      "followUpAllClearTitle": "Kaikki näyttää hyvältä",
+      "followUpAllClearText": "Ei kriittisiä seurattavia asioita juuri nyt.",
+      "quickActionsSection": "Pikatoiminnot",
+      "recentActivitySection": "Viimeisin toiminta",
+      "activityEmptyTitle": "Ei vielä relevanttia toimintaa.",
+      "activityEmptyText": "Kun asiakkaat rekisteröityvät, sopimukset hyväksytään tai tilauksia saapuu, ne näkyvät täällä.",
+      "quickActionOrdersTitle": "Katso päivän toimitukset",
+      "quickActionOrdersText": "Saat yleiskuvan tilauksista ja tuotannosta seuraavalle toimituspäivälle.",
+      "quickActionCustomersTitle": "Katso asiakkaat",
+      "quickActionCustomersText": "Hallitse yrityksiä, sopimuksia ja toimitusasetuksia.",
+      "quickActionMenuTitle": "Menu ja julkaisu",
+      "quickActionMenuTextEnabled": "Hallitse asiakkaille näytettävää menu-sisältöä.",
+      "quickActionMenuTextDisabled": "Katso menu-sisällön ja toimittajan muokkausoikeuden tila.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Menun muokkaus ei ole käytössä",
+          "text": "Menu-sisältöä hallinnoi tällä hetkellä Lunchportalen.",
+          "action": "Katso menun tila"
+        },
+        "noOrdersThisWeek": {
+          "title": "Ei tilauksia tällä viikolla",
+          "text": "Seuraa, kun asiakkaat alkavat tilata tulevia toimituksia.",
+          "action": "Katso tilaukset"
+        },
+        "noRevenue30d": {
+          "title": "Ei tilausarvoa viimeisten 30 päivän aikana",
+          "text": "Kun tilauksia saapuu, kokonaistilausarvo näkyy täällä.",
+          "action": "Katso laskut"
+        }
+      }
+    }
+  }
+}

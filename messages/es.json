@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Cargando …",
+    "save": "Guardar",
+    "language": "Idioma"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Elegir idioma",
+    "current": "Idioma actual: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Panel",
+      "orders": "Pedidos",
+      "customers": "Clientes",
+      "registrations": "Registros",
+      "menu": "Menú",
+      "areas": "Áreas",
+      "invoices": "Facturas",
+      "settings": "Ajustes",
+      "logout": "Cerrar sesión",
+      "more": "Más",
+      "comingSoon": "(próximamente)",
+      "openMenu": "Abrir menú",
+      "closeMenu": "Cerrar menú",
+      "providerMenu": "Menú del proveedor",
+      "sidebarLabel": "Proveedor",
+      "roleAdmin": "Administrador",
+      "roleKitchen": "Cocina",
+      "roleDefault": "Proveedor"
+    },
+    "dashboard": {
+      "eyebrow": "Proveedor",
+      "lead": "Resumen de clientes, acuerdos y operaciones.",
+      "kpiSection": "Indicadores clave",
+      "activeCustomers": "Clientes activos",
+      "activeCustomersFoot": "Empresas con servicio de almuerzo activo",
+      "activeAgreements": "Acuerdos de clientes activos",
+      "activeAgreementsFoot": "Acuerdos vinculados a empresas activas",
+      "activeAgreementsLinkTitle": "Ver clientes empresariales y acuerdos activos",
+      "ordersThisWeek": "Pedidos esta semana",
+      "ordersThisWeekFoot": "Pedidos realizados en la semana actual",
+      "revenueLast30Days": "Valor de pedidos últimos 30 días",
+      "revenueLast30DaysFoot": "Valor total de pedidos",
+      "followUpSection": "Requiere seguimiento",
+      "followUpAllClearTitle": "Todo parece en orden",
+      "followUpAllClearText": "Sin puntos críticos de seguimiento por ahora.",
+      "quickActionsSection": "Acciones rápidas",
+      "recentActivitySection": "Actividad reciente",
+      "activityEmptyTitle": "Aún no hay actividad relevante.",
+      "activityEmptyText": "Cuando se registren clientes, se aprueben acuerdos o lleguen pedidos, aparecerán aquí.",
+      "quickActionOrdersTitle": "Ver entregas de hoy",
+      "quickActionOrdersText": "Obtenga una visión de pedidos y producción para el próximo día de entrega.",
+      "quickActionCustomersTitle": "Ver clientes",
+      "quickActionCustomersText": "Gestione empresas, acuerdos y configuración de entrega.",
+      "quickActionMenuTitle": "Menú y publicación",
+      "quickActionMenuTextEnabled": "Gestione el contenido del menú mostrado a los clientes.",
+      "quickActionMenuTextDisabled": "Ver estado del contenido del menú y edición del proveedor.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Edición de menú no activada",
+          "text": "El contenido del menú lo gestiona actualmente Lunchportalen.",
+          "action": "Ver estado del menú"
+        },
+        "noOrdersThisWeek": {
+          "title": "Sin pedidos esta semana",
+          "text": "Siga cuando los clientes empiecen a pedir próximas entregas.",
+          "action": "Ver pedidos"
+        },
+        "noRevenue30d": {
+          "title": "Sin valor de pedidos en 30 días",
+          "text": "Cuando lleguen pedidos, el valor total aparecerá aquí.",
+          "action": "Ver facturas"
+        }
+      }
+    }
+  }
+}

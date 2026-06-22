@@ -28,4 +28,22 @@ describe("i18n messages", () => {
     expect(provider.dashboard.eyebrow).toBe("Provider");
     expect(JSON.stringify(messages)).not.toContain("[EN]");
   });
+
+  it("loadMessagesForLocale merges nb fallback for sv, de and es", async () => {
+    const sv = await loadMessagesForLocale("sv");
+    expect(sv.common).toMatchObject({ save: "Spara" });
+    expect(sv.localeSwitcher).toMatchObject({ label: "Välj språk" });
+    const svProvider = sv.provider as { dashboard: { activeCustomers: string } };
+    expect(svProvider.dashboard.activeCustomers).toBe("Aktiva kunder");
+
+    const de = await loadMessagesForLocale("de");
+    expect(de.common).toMatchObject({ save: "Speichern" });
+    const deProvider = de.provider as { nav: { orders: string } };
+    expect(deProvider.nav.orders).toBe("Bestellungen");
+
+    const es = await loadMessagesForLocale("es");
+    expect(es.localeSwitcher).toMatchObject({ label: "Elegir idioma" });
+    const esProvider = es.provider as { dashboard: { quickActionsSection: string } };
+    expect(esProvider.dashboard.quickActionsSection).toBe("Acciones rápidas");
+  });
 });

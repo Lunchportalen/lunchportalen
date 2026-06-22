@@ -20,10 +20,21 @@ export function deepMergeMessages(base: MessageTree, override: MessageTree): Mes
   return out;
 }
 
+const LOCALE_MESSAGE_IMPORTS: Record<Exclude<AppLocale, "nb">, () => Promise<{ default: MessageTree }>> = {
+  en: () => import("../../messages/en.json"),
+  sv: () => import("../../messages/sv.json"),
+  da: () => import("../../messages/da.json"),
+  fi: () => import("../../messages/fi.json"),
+  de: () => import("../../messages/de.json"),
+  fr: () => import("../../messages/fr.json"),
+  es: () => import("../../messages/es.json"),
+};
+
 export async function loadMessagesForLocale(locale: AppLocale): Promise<MessageTree> {
   const nb = (await import("../../messages/nb.json")).default as MessageTree;
   if (locale === "nb") return nb;
 
-  const en = (await import("../../messages/en.json")).default as MessageTree;
-  return deepMergeMessages(nb, en);
+  const loadOverride = LOCALE_MESSAGE_IMPORTS[locale];
+  const override = (await loadOverride()).default as MessageTree;
+  return deepMergeMessages(nb, override);
 }

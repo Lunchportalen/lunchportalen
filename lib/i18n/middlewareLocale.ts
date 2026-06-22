@@ -1,26 +1,27 @@
 /** Edge-safe locale helpers (no server-only imports). */
 
+import {
+  DEFAULT_APP_LOCALE,
+  parseAppLocale,
+  type AppLocale,
+} from "@/lib/i18n/localeRegistry";
+
+export {
+  APP_LOCALES,
+  DEFAULT_APP_LOCALE,
+  getLocaleLabel,
+  htmlLangForAppLocale,
+  intlLocaleForAppLocale,
+  isAppLocale,
+  isProfilePersistLocale,
+  parseAppLocale,
+  PROFILE_PERSIST_LOCALES,
+  type AppLocale,
+  type ProfilePersistLocale,
+} from "@/lib/i18n/localeRegistry";
+
 export const LP_LOCALE_COOKIE = "lp_locale";
-
-export const APP_LOCALES = ["nb", "en"] as const;
-export type AppLocale = (typeof APP_LOCALES)[number];
-
-export const DEFAULT_APP_LOCALE: AppLocale = "nb";
-
-export function parseAppLocale(raw: string | null | undefined): AppLocale | null {
-  const s = String(raw ?? "").trim().toLowerCase();
-  if (s === "nb" || s === "en") return s;
-  return null;
-}
 
 export function resolveLocaleFromCookie(cookieValue: string | null | undefined): AppLocale {
   return parseAppLocale(cookieValue) ?? DEFAULT_APP_LOCALE;
-}
-
-export function htmlLangForAppLocale(locale: AppLocale): string {
-  return locale === "en" ? "en-GB" : "nb";
-}
-
-export function intlLocaleForAppLocale(locale: AppLocale): string {
-  return locale === "en" ? "en-GB" : "nb-NO";
 }
