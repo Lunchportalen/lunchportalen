@@ -42,6 +42,7 @@ function navItemsForRole(kitchenOnly: boolean, providerAdmin: boolean): NavItem[
   return [
     { href: "/leverandor/ordrer", label: "Ordrer", icon: "orders", exact: true },
     { href: "/leverandor/kunder", label: "Kunder", icon: "users" },
+    { href: "/leverandor/meny", label: "Meny", icon: "document" },
     { href: "/leverandor/innstillinger", label: "Innstillinger", icon: "settings" },
     { label: "Logg ut", icon: "logout", action: "logout" },
   ];

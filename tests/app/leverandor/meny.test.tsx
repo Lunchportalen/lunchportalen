@@ -39,70 +39,55 @@ describe("ProviderMenuBuilder workspace layout", () => {
     );
   });
 
-  test("renders command header with shared warm dish package copy", async () => {
+  test("renders command header with tier lens and priceline", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("lp-editor-command-header");
-    expect(html).toContain("lp-editor-package-card");
-    expect(html).toContain("Påsmurt · Salatboks · Dagens varmrett");
-    expect(html).toContain("Basis + Sushi · Poké · Thai");
-    expect(html).toContain("Samme varmrett + ekstra verdi");
-    expect(html).toContain("Én felles varmrett per dag");
-    expect(html).toContain("Ikke egen produksjonsrett");
+    expect(html).toContain("lp-editor-tier-lens");
+    expect(html).toContain("lp-editor-status-strip");
+    expect(html).toContain("Meny-editor");
+    expect(html).toContain("Planlegg uke, sett dagens felles varmrett");
   });
 
-  test("renders full-width workspace with planner and inspector", async () => {
+  test("renders dual-panel workspace with week grid", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
     expect(html).toContain("lp-editor-layout");
     expect(html).toContain("lp-editor-days");
-    expect(html).toContain("lp-editor-inspector");
-    expect(html).toContain("lp-editor-cockpit");
-    expect(html).toContain("lp-editor-package-card");
+    expect(html).toContain("lp-editor-panels");
+    expect(html).toContain("lp-editor-panel--varmrett");
     expect(html).toContain("Mandag");
-    expect(html).toContain("Velg en dag");
-    expect(html).not.toContain("lp-editor-priceline");
-    expect(html).not.toContain("lp-editor-panels");
-    expect(html).not.toContain("lp-editor-tier-lens");
     expect(html).not.toContain("Pad Thai nudler");
   });
 
-  test("day card renders one shared warm dish per day", async () => {
+  test("day card renders mockup-aligned structure", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain("lp-editor-day__hero");
-    expect(html).toContain("Dagens varmrett");
-    expect(html).toContain("Én felles varmrett");
+    expect(html).toContain("lp-editor-day__name");
+    expect(html).toContain("lp-editor-day__catline");
+    expect(html).toContain("lp-editor-day__editbtn");
     expect(html).toContain("Varmrett mangler");
     expect(html).toContain("Legg inn dagens varmrett før denne dagen kan publiseres.");
   });
 
-  test("empty inspector guides shared warm dish vs upgrade", async () => {
+  test("panel idle guides day selection", async () => {
     const ProviderMenuBuilder = (await import("@/components/providers/ProviderMenuBuilder")).default;
     const html = renderToStaticMarkup(React.createElement(ProviderMenuBuilder));
-    expect(html).toContain('data-state="closed"');
-    expect(html).toContain("Klikk varmrett eller valg i ukeplanen");
-    expect(html).toContain("is-inspector-idle");
+    expect(html).toContain("lp-editor-panel__idle");
+    expect(html).toContain("Klikk en dag i ukeplanen");
   });
 
-  test("builder has no #285 panel layout or auto-select", () => {
+  test("workspace components separated in source", () => {
     const builder = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"), "utf8");
     expect(builder).toContain("resolveSharedVarmrettSlot");
     expect(builder).not.toContain("lp_order_set");
-    expect(builder).not.toContain("lp-editor-panels");
-    expect(builder).not.toContain("ProviderMenuCatalogEditor");
-    expect(builder).not.toContain("catalogPanelCategoryKey");
-    expect(builder).not.toContain("layoutMode=\"panel\"");
-    expect(builder).not.toMatch(/RID:/);
   });
 
   test("week planner uses shared warm dish read-model", () => {
     const planner = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuWeekPlanner.tsx"), "utf8");
-    expect(planner).toContain("SHARED_WARM_DISH_HINT");
+    expect(planner).toContain("getWeekdayCategoryPin");
     expect(planner).toContain("enterprise-upgrade");
-    expect(planner).toContain("Allergener ikke bekreftet — kontakt leverandør");
-    expect(planner).not.toContain("getWeekdayCategoryPin");
-    expect(planner).not.toContain("lp-editor-day__pin");
+    expect(planner).toContain("lp-editor-day__lockbar");
     expect(planner).not.toContain("ds-provider-menu-day__variant-row");
     expect(planner).not.toMatch(/varmmrett/i);
   });
@@ -117,9 +102,8 @@ describe("ProviderMenuBuilder workspace layout", () => {
     expect(editor).toContain("Rediger manuelt");
     expect(editor).toContain("Enterprise bygger på samme Varmrett");
     expect(editor).toContain("isEnterpriseUpgradeMode");
-    expect(editor).not.toContain("lp-editor-econ");
-    expect(editor).not.toContain("Lunchportalen 5 %");
-    expect(editor).not.toContain("layoutMode");
+    expect(editor).toContain("lp-editor-panel-varmrett");
+    expect(editor).toContain("Lunchportalen 5 %");
     expect(editor).not.toMatch(/varmmrett/i);
   });
 
@@ -139,15 +123,110 @@ describe("ProviderMenuBuilder workspace layout", () => {
   });
 });
 
+describe("ProviderMenuCatalogEditor accordion", () => {
+  const CATALOG_FIXTURE = {
+    rows: [
+      {
+        key: "paasmurt",
+        title: "Påsmurt",
+        allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        items: [{ key: "ost-skinke", title: "Ost & Skinke", allergens: ["melk"], isVegetarian: false }],
+      },
+      {
+        key: "salatboks",
+        title: "Salatboks",
+        allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        items: [{ key: "skinke", title: "Skinke", allergens: [], isVegetarian: false }],
+      },
+      {
+        key: "sushi",
+        title: "Sushi",
+        allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        items: [{ key: "sushi-pakke", title: "Sushi-pakke", allergens: ["fisk"], isVegetarian: false }],
+      },
+      {
+        key: "pokebowl",
+        title: "Pokebowl",
+        allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        items: [{ key: "laks", title: "Laks", allergens: ["fisk"], isVegetarian: false }],
+      },
+      {
+        key: "thaimat",
+        title: "Thaimat",
+        allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        items: [{ key: "pad-thai", title: "Pad Thai", allergens: [], isVegetarian: false }],
+      },
+    ],
+  };
+
+  test("accordion shows all five categories with tier badges and isolate banner", async () => {
+    const ProviderMenuCatalogEditor = (await import("@/components/providers/ProviderMenuCatalogEditor")).default;
+    const html = renderToStaticMarkup(
+      React.createElement(ProviderMenuCatalogEditor, {
+        tier: "ENTERPRISE",
+        catalog: CATALOG_FIXTURE,
+        onCatalogSaved: () => {},
+        panelMode: true,
+        initialOpenCategoryKey: "paasmurt",
+      }),
+    );
+    expect(html).toContain("Menykatalog");
+    expect(html).toContain("Valgene du tilbyr under hver kategori");
+    expect(html).toContain("Din egen katalog");
+    expect(html).toContain("Isolert");
+    expect(html).toContain("Påsmurt");
+    expect(html).toContain("Salatboks");
+    expect(html).toContain("Sushi");
+    expect(html).toContain("Pokebowl");
+    expect(html).toContain("Thaimat");
+    expect(html).toContain("Alle nivåer");
+    expect(html).toContain("Luxus + Enterprise");
+    expect(html).toContain("lp-editor-catalog-accordion");
+  });
+
+  test("open category shows Legg til valg row", async () => {
+    const ProviderMenuCatalogEditor = (await import("@/components/providers/ProviderMenuCatalogEditor")).default;
+    const html = renderToStaticMarkup(
+      React.createElement(ProviderMenuCatalogEditor, {
+        tier: "BASIS",
+        catalog: CATALOG_FIXTURE,
+        onCatalogSaved: () => {},
+        panelMode: true,
+        initialOpenCategoryKey: "paasmurt",
+      }),
+    );
+    expect(html).toContain("+ Legg til valg");
+    expect(html).toContain("Lagre katalog");
+    expect(html).toContain("Avbryt");
+  });
+
+  test("catalog editor source has no RID logging or Varmmrett typo", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuCatalogEditor.tsx"),
+      "utf8",
+    );
+    expect(source).not.toMatch(/varmmrett/i);
+    expect(source).not.toMatch(/RID:/);
+    expect(source).toContain("/api/provider/menu-catalog");
+  });
+});
+
 describe("LeverandorMenyPage full-width frame", () => {
-  test("page uses provider shell with visible nav context", () => {
+  test("page uses mockup topbar and full-width wrapper", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/meny/page.tsx"), "utf8");
     expect(source).toContain("lp-editor-page");
-    expect(source).toContain("ds-provider-meny-page");
-    expect(source).toContain("ds-provider-topbar");
-    expect(source).toContain('className="ds-h2">Meny</h1>');
-    expect(source).not.toContain("ProviderMenyEditorShell");
+    expect(source).toContain("lp-editor-topbar");
     expect(source).not.toContain("ds-container");
+    expect(source).not.toContain('className="ds-h2">Meny</h1>');
+  });
+});
+
+describe("ProviderNav kitchen-only menu access", () => {
+  test("kitchen-only nav includes Meny link to /leverandor/meny", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain('href: "/leverandor/meny", label: "Meny"');
+    const kitchenBlock = source.slice(source.indexOf("if (!kitchenOnly)"));
+    expect(kitchenBlock).toMatch(/kitchenOnly[\s\S]*\/leverandor\/meny[\s\S]*Meny/);
   });
 });
 

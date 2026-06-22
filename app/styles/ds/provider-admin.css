@@ -1453,10 +1453,16 @@
   border-radius: 999px;
 }
 
-/* Meny workspace — subtle sidebar polish when cockpit is active */
+/* Meny workspace — mockup-aligned sidebar active state */
 .ds-provider-root:has(.lp-editor-page) .ds-admin-sidebar__item.is-active {
-  background: rgba(245, 197, 24, 0.1);
-  border-color: rgba(245, 197, 24, 0.35);
+  background: #111;
+  border-color: #111;
+  color: #fff;
+}
+
+.ds-provider-root:has(.lp-editor-page) .ds-admin-sidebar__item.is-active span,
+.ds-provider-root:has(.lp-editor-page) .ds-admin-sidebar__item.is-active a {
+  color: #fff;
 }
 
 .ds-provider-root:has(.lp-editor-page) .ds-admin-sidebar__item {
