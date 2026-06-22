@@ -22,6 +22,11 @@
   flex-wrap: wrap;
 }
 
+.ds-provider-topbar__locale {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
 .ds-provider-quick-grid {
   display: grid;
   gap: clamp(12px, 2vw, 18px);
