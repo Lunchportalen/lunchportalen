@@ -29,7 +29,6 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
     await selectProviderMenyTier(page, "Enterprise");
     await waitForProviderMenyVisualReady(page);
 
-    await expect(page.locator(".lp-editor-topbar")).toBeVisible();
     await expect(page.locator(".lp-editor-priceline-compact")).toBeVisible();
     await expect(page.locator(".lp-editor-status-strip")).toBeVisible();
     await expect(page.locator(".lp-editor-catalog-accordion")).toBeVisible();

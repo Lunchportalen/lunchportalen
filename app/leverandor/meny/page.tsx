@@ -7,7 +7,6 @@ import "server-only";
 import { redirect } from "next/navigation";
 
 import ProviderMenuBuilder from "@/components/providers/ProviderMenuBuilder";
-import LocaleSwitcher from "@/components/nav/LocaleSwitcher";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
@@ -27,10 +26,6 @@ export default async function LeverandorMenyPage() {
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
-      <header className="lp-editor-topbar" aria-label="Meny-editor verktøylinje">
-        <LocaleSwitcher className="lp-editor-topbar__locale" />
-      </header>
-
       {canEdit ? (
         <ProviderMenuBuilder />
       ) : (

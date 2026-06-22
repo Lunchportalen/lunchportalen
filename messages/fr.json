@@ -35,6 +35,8 @@
       "closeMenu": "Fermer le menu",
       "providerMenu": "Menu fournisseur",
       "sidebarLabel": "Fournisseur",
+      "desktopLabel": "Fournisseur (bureau)",
+      "mobileLabel": "Navigation principale (mobile)",
       "roleAdmin": "Administrateur",
       "roleKitchen": "Cuisine",
       "roleDefault": "Fournisseur"

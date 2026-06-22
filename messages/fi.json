@@ -35,6 +35,8 @@
       "closeMenu": "Sulje valikko",
       "providerMenu": "Toimittajavalikko",
       "sidebarLabel": "Toimittaja",
+      "desktopLabel": "Toimittaja (työpöytä)",
+      "mobileLabel": "Päänavigointi (mobiili)",
       "roleAdmin": "Ylläpitäjä",
       "roleKitchen": "Keittiö",
       "roleDefault": "Toimittaja"

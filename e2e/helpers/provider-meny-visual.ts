@@ -223,7 +223,8 @@ export async function waitForProviderMenyVisualReady(page: Page): Promise<void> 
   await page.locator(".lp-editor-priceline-compact").waitFor({ state: "visible", timeout: 20_000 });
   await expect(page.locator(".lp-editor-topbar__logo")).toHaveCount(0);
   await expect(page.locator(".lp-editor-topbar__who")).toHaveCount(0);
-  await expect(page.locator(".lp-editor-topbar__locale")).toBeVisible();
+  await expect(page.locator(".lp-editor-topbar__locale")).toHaveCount(0);
+  await expect(page.locator(".lp-editor-topbar")).toHaveCount(0);
   await expect(
     page.locator('.ds-admin-sidebar__nav a[href="/leverandor/meny"]').filter({ hasText: "Meny" }),
   ).toBeVisible();
