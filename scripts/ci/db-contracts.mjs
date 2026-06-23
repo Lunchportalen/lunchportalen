@@ -187,6 +187,44 @@ async function assertIndex(indexName, tableName) {
   console.log(`OK: index public.${tableName}.${indexName}`);
 }
 
+async function assertIndexAbsent(indexName, tableName) {
+  const { rowCount } = await client.query(
+    `SELECT 1
+     FROM pg_indexes
+     WHERE schemaname = 'public'
+       AND tablename = $1
+       AND indexname = $2`,
+    [tableName, indexName],
+  );
+  if (rowCount) {
+    throw new Error(`unexpected index public.${tableName}.${indexName} (should be absent)`);
+  }
+  console.log(`OK: index absent public.${tableName}.${indexName}`);
+}
+
+async function assertIndexDefContains(indexName, tableName, fragments) {
+  const { rows } = await client.query(
+    `SELECT indexdef
+     FROM pg_indexes
+     WHERE schemaname = 'public'
+       AND tablename = $1
+       AND indexname = $2`,
+    [tableName, indexName],
+  );
+  if (!rows.length) {
+    throw new Error(`missing index public.${tableName}.${indexName} for indexdef check`);
+  }
+  const def = String(rows[0].indexdef ?? "");
+  for (const frag of fragments) {
+    if (!def.includes(frag)) {
+      throw new Error(
+        `index public.${tableName}.${indexName} indexdef missing fragment: ${frag}`,
+      );
+    }
+  }
+  console.log(`OK: indexdef public.${tableName}.${indexName} (${fragments.length} fragments)`);
+}
+
 async function assertView(name) {
   const ok = await toRegclass(name);
   if (!ok) {
@@ -372,16 +410,17 @@ async function verifyProviderConfigFoundation() {
        AND tier IN ('BASIS', 'LUXUS', 'ENTERPRISE')
        AND market_code = 'NO'
        AND tax_basis = 'ex_tax'
+       AND tax_category = 'food_catering'
        AND currency = 'NOK'
        AND source = 'seed'`,
     [melhusId],
   );
   if (Number(priceCount[0]?.c) < 3) {
     throw new Error(
-      "provider_price_rules Melhus seed expected >=3 active NO tier rows (market_code/tax_basis/source)",
+      "provider_price_rules Melhus seed expected >=3 active NO tier rows (R4C market metadata)",
     );
   }
-  console.log("OK: provider_price_rules Melhus tier seed (>=3 NO rows, R4B metadata)");
+  console.log("OK: provider_price_rules Melhus tier seed (>=3 NO rows, R4C metadata)");
 
   for (const col of [
     "market_code",
@@ -394,7 +433,43 @@ async function verifyProviderConfigFoundation() {
     await assertColumn("provider_price_rules", col);
   }
 
-  await assertIndex("provider_price_rules_provider_tier_default_uniq", "provider_price_rules");
+  await assertIndex(
+    "provider_price_rules_provider_market_tier_default_uniq",
+    "provider_price_rules",
+  );
+  await assertIndexAbsent(
+    "provider_price_rules_provider_tier_default_uniq",
+    "provider_price_rules",
+  );
+  await assertIndexDefContains("provider_price_rules_provider_market_tier_default_uniq", "provider_price_rules", [
+    "provider_id",
+    "market_code",
+    "tier",
+    "(customer_id IS NULL)",
+    "(agreement_id IS NULL)",
+    "(menu_category_key IS NULL)",
+    "(menu_item_id IS NULL)",
+    "(is_active = true)",
+  ]);
+
+  const { rows: dupRows } = await client.query(
+    `SELECT provider_id, market_code, tier, COUNT(*)::int AS c
+     FROM public.provider_price_rules
+     WHERE customer_id IS NULL
+       AND agreement_id IS NULL
+       AND menu_category_key IS NULL
+       AND menu_item_id IS NULL
+       AND tier IS NOT NULL
+       AND is_active = true
+     GROUP BY provider_id, market_code, tier
+     HAVING COUNT(*) > 1`,
+  );
+  if (dupRows.length > 0) {
+    throw new Error(
+      `provider_price_rules duplicate active tier-defaults: ${dupRows.length} group(s)`,
+    );
+  }
+  console.log("OK: provider_price_rules no duplicate active tier-defaults (R4C)");
 
   await assertView("provider_price_rules_tier_defaults_v1");
   for (const col of [

@@ -1,6 +1,6 @@
 # R4 — Provider price settings market-ready (plan)
 
-**Status:** R4A done (plan) · **R4B done** (additive migration + compatibility view + db-contracts; no runtime).  
+**Status:** R4A done · R4B done · **R4C done** (market-scoped unique index + supplement seed; no runtime). **Next: R4D** (preview resolver / test only).  
 **Relates to:** [architecture-decisions.md](./architecture-decisions.md) ADR-016, ADR-017 · [commercial-inventory.md](./commercial-inventory.md)
 
 This document formalizes how `provider_price_rules` can become market/currency/tax_basis-ready **without breaking today's NO production flow**. It is **not** operational truth until explicit cutover ADRs and phased gates pass.
@@ -176,7 +176,7 @@ order write → materialized cents on MSDI + lp_order_set (Golden Path)
 |-------|-------|----------------|
 | **R4A** | This plan + roadmap update | **None** |
 | **R4B** | Additive migration: `market_code`, `tax_basis`, audit fields; compatibility view | **None** (defaults; resolver unchanged) |
-| **R4C** | Backfill/seed NO with `market_code='NO'`, `tax_basis='ex_tax'` | **None** (same numbers) |
+| **R4C** | Market-scoped unique index + supplement seed `ON CONFLICT (provider_id, market_code, tier)` | **None** (same numbers; DO NOTHING) |
 | **R4D** | `resolveProviderMenuPricesPreview()` parallel to production reader | **Test/diagnostics only** |
 | **R4E** | Provider menu display uses preview resolver **behind flag** | Display-only |
 | **R4F** | Agreement/onboarding alignment (not frozen onboarding) | Agreement seed path |
@@ -232,10 +232,12 @@ Existing CI contracts (no R4A change):
 | Employee week API no commercial fields | `tests/api/week-profile-lookup.test.ts` (PR #304) |
 | Commercial hardcode guard | `scripts/ci/commercial-hardcodes-guard.mjs` (1015 allowlisted) |
 
-**R4B (done):** db-contracts verify `market_code`, `tax_basis`, `tax_category`, `source`, audit columns; legacy unique index `provider_price_rules_provider_tier_default_uniq`; view `provider_price_rules_tier_defaults_v1`. **No runtime resolver.** Unique index / seed `ON CONFLICT` alignment deferred to **R4C**. Employee price rule unchanged (PR #304).
+**R4B (done):** db-contracts verify market metadata columns; compatibility view `provider_price_rules_tier_defaults_v1`. **No runtime resolver.**
+
+**R4C (done):** `provider_price_rules_provider_market_tier_default_uniq` replaces legacy `provider_price_rules_provider_tier_default_uniq`; supplement Melhus seed with `market_code='NO'`, `ON CONFLICT … DO NOTHING`. **No runtime resolver.** Employee price rule unchanged (PR #304).
 
 ---
 
 ## First safe PR after R4A
 
-**R4B (merged in branch):** Additive migration (`market_code`, `tax_basis`, audit columns) + compatibility view — **no runtime resolver change**. **R4C** next: unique index + seed `ON CONFLICT` market scope.
+**R4D next:** `resolveProviderMenuPricesPreview()` parallel to production reader — **test/diagnostics only**; no `loadProviderMenuPrices()` cutover.
