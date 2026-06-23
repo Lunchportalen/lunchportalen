@@ -14,6 +14,7 @@ import {
   getDashboardDataAction,
   type DashboardData,
 } from "@/app/leverandor/innstillinger/tripletex/status/actions";
+import { resolveTripletexActionError } from "@/lib/integrations/tripletex/tripletexActionErrors";
 
 type Props = {
   providerId: string;
@@ -30,6 +31,7 @@ const POLL_INTERVAL_MS = 15_000;
 
 export default function StatusDashboardClient({ providerId, isAdmin, initialData }: Props) {
   const t = useTranslations("provider.tripletex.status.sections");
+  const tErrors = useTranslations("provider.tripletex.errors");
   const [data, setData] = useState<DashboardData>(initialData);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -39,12 +41,12 @@ export default function StatusDashboardClient({ providerId, isAdmin, initialData
     const res = await getDashboardDataAction({ providerId });
     setLoading(false);
     if (res.ok === false) {
-      setFetchError(res.error);
+      setFetchError(resolveTripletexActionError((key) => tErrors(key), res, "healthLoadFailed"));
       return;
     }
     setFetchError(null);
     setData(res.data);
-  }, [providerId]);
+  }, [providerId, tErrors]);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
