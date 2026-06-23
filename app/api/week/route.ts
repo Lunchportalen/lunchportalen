@@ -29,7 +29,6 @@ type AgreementRow = {
   company_id: string;
   status: "ACTIVE";
   plan_tier: Tier;
-  price_per_cuvert_nok: number;
   delivery_days: any;
   start_date: string;
   end_date: string | null;
@@ -104,7 +103,7 @@ export async function GET(req: Request) {
 
     const { data: agr, error: agrErr } = await admin
       .from("agreements")
-      .select("id,company_id,status,tier,price_per_meal_nok,delivery_days,starts_at,ends_at")
+      .select("id,company_id,status,tier,delivery_days,starts_at,ends_at")
       .eq("company_id", companyId)
       .eq("status", "ACTIVE")
       .order("created_at", { ascending: false })
@@ -119,7 +118,6 @@ export async function GET(req: Request) {
       company_id: (agr as any).company_id,
       status: (agr as any).status,
       plan_tier: (agr as any).tier,
-      price_per_cuvert_nok: (agr as any).price_per_meal_nok,
       delivery_days: (agr as any).delivery_days,
       start_date: (agr as any).starts_at,
       end_date: (agr as any).ends_at,
@@ -238,7 +236,6 @@ export async function GET(req: Request) {
       agreement: {
         companyId,
         plan_tier: tier,
-        price_per_cuvert_nok: agreement.price_per_cuvert_nok,
         delivery_days: deliveryDays,
         /** Operativ tier per ukedag når daymap finnes (kilde for radene i `days`). */
         day_tiers: tierByDay ?? undefined,
