@@ -8,6 +8,7 @@ import {
   rejectProviderRegistration,
 } from "@/app/leverandor/registreringer/actions";
 import type { ProviderRegistrationRow } from "@/lib/providers/loadProviderRegistrations";
+import { resolveProviderRegistrationActionError } from "@/lib/providers/providerRegistrationActionErrors";
 
 export type RegistrationApproveDialogProps = {
   open: boolean;
@@ -69,7 +70,7 @@ export default function RegistrationApproveDialog({
           : await rejectProviderRegistration(providerId, registration.id, rejectReason);
 
       if (res.success === false) {
-        setError("error" in res ? res.error : tErrors("actionFailed"));
+        setError(resolveProviderRegistrationActionError((key) => tErrors(key), res));
         return;
       }
       onDone();

@@ -275,6 +275,17 @@
         "heading": "New business customer",
         "lead": "Direct creation of business customers is not available yet. New companies in your coverage area arrive via Registrations when they express interest, and appear under Companies after approval.",
         "backToCustomers": "Back to companies"
+      },
+      "errors": {
+        "notAuthenticated": "Not signed in.",
+        "providerAdminRequired": "Only provider admins can perform this action.",
+        "customerNotFound": "Customer not found.",
+        "invalidCustomer": "Missing customer id.",
+        "reasonTooShort": "Reason must be at least 20 characters.",
+        "updateFailed": "Could not update customer.",
+        "removeFailed": "Could not delete customer.",
+        "restoreFailed": "Could not restore customer.",
+        "unknown": "Something went wrong."
       }
     },
     "registrations": {
@@ -331,7 +342,16 @@
         "saving": "Processing…"
       },
       "errors": {
-        "actionFailed": "The action failed."
+        "notAuthenticated": "Not signed in.",
+        "providerAdminRequired": "Only provider admins can perform this action.",
+        "registrationNotFound": "Registration not found.",
+        "registrationAlreadyProcessed": "This registration has already been processed.",
+        "invalidTier": "Invalid agreement tier.",
+        "rejectReasonRequired": "Provide a short reason.",
+        "approveFailed": "Could not approve registration.",
+        "rejectFailed": "Could not reject registration.",
+        "actionFailed": "The action failed.",
+        "unknown": "Something went wrong."
       }
     },
     "menu": {

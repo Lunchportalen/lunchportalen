@@ -7,11 +7,16 @@ import { revalidatePath } from "next/cache";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
+import {
+  mapRegistrationRpcErrorKey,
+  registrationActionFailure,
+  type ProviderRegistrationActionErrorKey,
+} from "@/lib/providers/providerRegistrationActionErrors";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type RegistrationActionResult =
   | { success: true; companyId?: string; agreementId?: string }
-  | { success: false; error: string };
+  | { success: false; errorKey: ProviderRegistrationActionErrorKey };
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -19,20 +24,16 @@ function safeStr(v: unknown) {
 
 async function assertProviderAdmin(providerId: string) {
   const auth = await getAuthContext();
-  if (!auth.ok || !auth.user?.id) return { ok: false as const, error: "Ikke innlogget." };
+  if (!auth.ok || !auth.user?.id) {
+    return { ok: false as const, errorKey: "notAuthenticated" as const };
+  }
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
-  if (!allowed) return { ok: false as const, error: "Kun provider-admin kan utføre denne handlingen." };
+  if (!allowed) {
+    return { ok: false as const, errorKey: "providerAdminRequired" as const };
+  }
 
   return { ok: true as const, userId: auth.user.id };
-}
-
-function mapRpcError(message: string): string {
-  const m = message.toUpperCase();
-  if (m.includes("REGISTRATION_NOT_PENDING")) return "Registreringen er allerede behandlet.";
-  if (m.includes("PERMISSION_DENIED")) return "Du har ikke tilgang til denne registreringen.";
-  if (m.includes("AGREEMENT_TIER_INVALID")) return "Ugyldig avtale-nivå.";
-  return "Handlingen feilet. Prøv igjen.";
 }
 
 export async function approveProviderRegistration(
@@ -41,7 +42,7 @@ export async function approveProviderRegistration(
   tier: "BASIS" | "LUXUS",
 ): Promise<RegistrationActionResult> {
   const gate = await assertProviderAdmin(providerId);
-  if (!gate.ok) return { success: false, error: gate.error };
+  if (!gate.ok) return registrationActionFailure(gate.errorKey);
 
   const sb = await supabaseServer();
   const { data, error } = await sb.rpc("lp_company_registration_approve_provider", {
@@ -49,7 +50,10 @@ export async function approveProviderRegistration(
     p_agreement_tier: tier,
   });
 
-  if (error) return { success: false, error: mapRpcError(error.message) };
+  if (error) {
+    const key = mapRegistrationRpcErrorKey(error.message);
+    return registrationActionFailure(key === "actionFailed" ? "approveFailed" : key);
+  }
 
   const row = (data ?? {}) as Record<string, unknown>;
   revalidatePath("/leverandor/registreringer");
@@ -67,10 +71,10 @@ export async function rejectProviderRegistration(
   reason: string,
 ): Promise<RegistrationActionResult> {
   const gate = await assertProviderAdmin(providerId);
-  if (!gate.ok) return { success: false, error: gate.error };
+  if (!gate.ok) return registrationActionFailure(gate.errorKey);
 
   const trimmed = safeStr(reason);
-  if (trimmed.length < 3) return { success: false, error: "Oppgi en kort begrunnelse." };
+  if (trimmed.length < 3) return registrationActionFailure("rejectReasonRequired");
 
   const sb = await supabaseServer();
   const { error } = await sb.rpc("lp_company_registration_reject_provider", {
@@ -78,7 +82,10 @@ export async function rejectProviderRegistration(
     p_reason: trimmed,
   });
 
-  if (error) return { success: false, error: mapRpcError(error.message) };
+  if (error) {
+    const key = mapRegistrationRpcErrorKey(error.message);
+    return registrationActionFailure(key === "actionFailed" ? "rejectFailed" : key);
+  }
 
   revalidatePath("/leverandor/registreringer");
   return { success: true };
