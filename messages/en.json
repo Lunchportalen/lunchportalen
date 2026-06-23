@@ -196,7 +196,11 @@
         "readOnlyNote": "View only — you have read access to orders."
       },
       "errors": {
-        "updateFailed": "Could not update status."
+        "notAuthenticated": "Not signed in.",
+        "orderNotFound": "Order not found.",
+        "kitchenRoleRequired": "Only kitchen roles can update status.",
+        "updateFailed": "Could not update status.",
+        "unknown": "Something went wrong."
       }
     },
     "menu": {

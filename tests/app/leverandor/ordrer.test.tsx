@@ -8,6 +8,7 @@ import {
   nextKitchenTarget,
   targetActionLabelKey,
 } from "@/lib/providers/kitchenOrderStatus";
+import { resolveProviderOrdersActionError } from "@/lib/providers/providerOrdersActionErrors";
 import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 type ProviderOrdersMessages = {
@@ -15,6 +16,7 @@ type ProviderOrdersMessages = {
     orders: {
       status: Record<string, string>;
       actions: Record<string, string>;
+      errors: Record<string, string>;
       filters: {
         status: Record<string, string>;
         date: Record<string, string>;
@@ -145,14 +147,25 @@ describe("KitchenOrderCard", () => {
     expect(html).not.toContain("Start produksjon");
     expect(html).toContain("Kun visning");
   });
+
+  test("client resolves action errorKey to translated UI text", async () => {
+    const messages = ordersMessages(await loadMessagesForLocale("en"));
+    const t = (key: string) => messages.provider.orders.errors[key] ?? key;
+    expect(
+      resolveProviderOrdersActionError(t, { success: false, errorKey: "orderNotFound" }),
+    ).toBe("Order not found.");
+  });
 });
 
 describe("advanceKitchenOrder optimistic rollback contract", () => {
-  test("action returns error shape on failure", async () => {
+  test("action failure uses errorKey contract", async () => {
     const { advanceKitchenOrder } = await import("@/app/leverandor/ordrer/actions");
-    vi.mocked(advanceKitchenOrder).mockResolvedValueOnce({ success: false, error: "PERMISSION_DENIED" });
+    vi.mocked(advanceKitchenOrder).mockResolvedValueOnce({
+      success: false,
+      errorKey: "kitchenRoleRequired",
+    });
     const res = await advanceKitchenOrder(sampleOrder.id, "PREPARED");
     expect(res.success).toBe(false);
-    if (!res.success && "error" in res) expect(res.error).toContain("PERMISSION");
+    if (res.success === false) expect(res.errorKey).toBe("kitchenRoleRequired");
   });
 });

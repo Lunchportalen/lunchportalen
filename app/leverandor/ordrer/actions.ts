@@ -4,15 +4,19 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 
-import { advanceOrderStatus, OrderStatusError } from "@/lib/admin/orderStatus";
+import { advanceOrderStatus } from "@/lib/admin/orderStatus";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { hasProviderRole } from "@/lib/auth/provider";
+import {
+  kitchenOrderActionFailure,
+  type ProviderOrdersActionErrorKey,
+} from "@/lib/providers/providerOrdersActionErrors";
 import type { KitchenStatusTarget } from "@/lib/providers/kitchenOrderStatus";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type AdvanceKitchenOrderResult =
   | { success: true; fromStatus?: string; toStatus?: string }
-  | { success: false; error: string };
+  | { success: false; errorKey: ProviderOrdersActionErrorKey };
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -29,13 +33,13 @@ export async function advanceKitchenOrder(
   targetStatus: KitchenStatusTarget,
 ): Promise<AdvanceKitchenOrderResult> {
   const auth = await getAuthContext();
-  if (!auth.ok || !auth.user?.id) return { success: false, error: "Ikke innlogget." };
+  if (!auth.ok || !auth.user?.id) return kitchenOrderActionFailure("notAuthenticated");
 
   const providerId = await resolveProviderForOrder(orderId);
-  if (!providerId) return { success: false, error: "Ordre ikke funnet." };
+  if (!providerId) return kitchenOrderActionFailure("orderNotFound");
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_kitchen");
-  if (!allowed) return { success: false, error: "Kun kjøkken-rolle kan oppdatere status." };
+  if (!allowed) return kitchenOrderActionFailure("kitchenRoleRequired");
 
   try {
     const res = await advanceOrderStatus(orderId, targetStatus);
@@ -45,8 +49,7 @@ export async function advanceKitchenOrder(
       fromStatus: res.from_status,
       toStatus: res.to_status,
     };
-  } catch (e) {
-    const msg = e instanceof OrderStatusError ? e.message : "Kunne ikke oppdatere status.";
-    return { success: false, error: msg };
+  } catch {
+    return kitchenOrderActionFailure("updateFailed");
   }
 }
