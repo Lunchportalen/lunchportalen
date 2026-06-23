@@ -56,7 +56,7 @@ Inert market catalog: `lib/commercial/marketConfigs.ts` (R2 — not imported by 
 - Order line ex/vat/gross cent fields (`lib/orders/projection.ts`)
 - `sumOrderRevenueCents()` + `computeBillingBasis()` confidence model (`complete` / `gross_only` / `incomplete`)
 - `provider_price_rules` + `provider_settings` seeded (ADR-016)
-- Employee `/week` — no employer price in UI channel (`EmployeeWeekClient.tsx`)
+- Employee `/week` — no employer price in UI or API (`EmployeeWeekClient.tsx`; `GET /api/week` agreement stripped of price fields, PR #304)
 - ADR-017 four-axis separation (locale ≠ menu culture ≠ market ≠ agreement)
 - Inert `MARKET_COMMERCIAL_CONFIGS` (R2) — only NO `productionReady`
 
@@ -116,7 +116,8 @@ Update intentionally: `node scripts/ci/commercial-hardcodes-guard.mjs --update-a
 | R3C — First runtime wiring: CTO revenue KPI (`CtoClient`) | Done (NO-only display) |
 | R3D — CFO read-only money display (`CfoClient`) | Done (NO-only display) |
 | R3 — Money/tax display helpers wired (broader) | Planned |
-| R4 — Provider price settings market-ready | Planned |
+| R4A — Provider price plan (`r4-provider-price-plan.md`) | Done (docs only) |
+| R4 — Provider price settings market-ready (R4B–R4H) | Planned |
 | R5 — Commission policy skeleton (inert) | Planned |
 | R6 — Commission ledger dry-run | Planned |
 | R7 — Billing integration per market | Planned |
