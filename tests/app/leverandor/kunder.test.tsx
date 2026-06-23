@@ -1,7 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { LIFECYCLE_REASON_MIN_LENGTH, validateLifecycleReason } from "@/lib/providers/lifecycleReason";
-import { providerCustomerStatusLabel } from "@/lib/providers/customerTypes";
+import { providerCustomerStatusLabel, providerCustomerStatusLabelKey } from "@/lib/providers/customerTypes";
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 vi.mock("@/app/leverandor/kunder/actions", () => ({
   suspendCustomer: vi.fn(),
@@ -21,7 +22,29 @@ describe("validateLifecycleReason", () => {
   });
 });
 
-describe("providerCustomerStatusLabel", () => {
+describe("providerCustomerStatusLabelKey", () => {
+  test.each([
+    ["ACTIVE", "active"],
+    ["PAUSED", "paused"],
+    ["SUSPENDED", "suspended"],
+    ["DELETED", "deleted"],
+  ] as const)("maps %s to key %s", (status, key) => {
+    expect(providerCustomerStatusLabelKey(status)).toBe(key);
+  });
+
+  test("status labels translate via UI language (nb vs en)", async () => {
+    const nb = (await loadMessagesForLocale("nb")) as {
+      provider: { customers: { status: Record<string, string> } };
+    };
+    const en = (await loadMessagesForLocale("en")) as {
+      provider: { customers: { status: Record<string, string> } };
+    };
+    expect(nb.provider.customers.status[providerCustomerStatusLabelKey("ACTIVE")]).toBe("Aktiv");
+    expect(en.provider.customers.status[providerCustomerStatusLabelKey("ACTIVE")]).toBe("Active");
+  });
+});
+
+describe("providerCustomerStatusLabel (legacy detail page)", () => {
   test.each([
     ["ACTIVE", "Aktiv"],
     ["PAUSED", "Pauset"],

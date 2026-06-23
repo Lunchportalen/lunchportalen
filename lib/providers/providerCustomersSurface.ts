@@ -1,8 +1,8 @@
 // lib/providers/providerCustomersSurface.ts
-// Provider-facing copy og rene presentasjonshelpers for /leverandor/kunder.
+// Provider-facing helpers for /leverandor/kunder (i18n keys + locale formatting).
 //
 // Prinsipp:
-// - All ny copy samles her (én kilde, klar for senere i18n) — ingen spredte strenger.
+// - UI-copy lives in messages/provider.customers.* — this module exposes ids and keys only.
 // - Konsekvent begrepsbruk: «bedrift» / «bedriftskunde» i provider-facing UI, aldri «firma».
 // - Dato/tid er locale-formatert (provider_settings.locale når satt), aldri rå ISO i UI.
 // - Ingen server-avhengigheter: brukes av både server page og client components.
@@ -10,58 +10,24 @@
 import { DEFAULT_PROVIDER_LOCALE } from "@/lib/providers/operationalSettingsShared";
 import type { ProviderCustomerFilter, ProviderCustomerStatus } from "@/lib/providers/customerTypes";
 
-export const PROVIDER_CUSTOMERS_COPY = {
-  eyebrow: "Leverandør",
-  heading: "Bedrifter",
-  searchLabel: "Søk",
-  searchPlaceholder: "Søk etter bedriftsnavn",
-  statusGroupAria: "Statusfilter",
-  cta: "Ny bedriftskunde",
-  ctaTitle: "Nye bedriftskunder kommer inn via kontrollert registrering.",
-  tableHeaders: {
-    name: "Bedrift",
-    orgnr: "Org.nr",
-    status: "Status",
-    employees: "Ansatte",
-    ordersThisWeek: "Ordre denne uken",
-    historicalOrders: "Historikk",
-    invoice: "Faktura",
-    lastUpdated: "Sist oppdatert",
-  },
-  mobileMeta: (employees: number | null, orders: number | null, history: number | null, invoice: string) =>
-    `${employees ?? "—"} ansatte · ${orders ?? "—"} ordre denne uken · ${history ?? "—"} i historikk · Faktura: ${invoice}`,
-  mobileUpdatedPrefix: "Sist oppdatert",
-  paginationAria: "Paginering",
-  paginationPrev: "Forrige",
-  paginationNext: "Neste",
-} as const;
+export const PROVIDER_CUSTOMER_FILTERS: ReadonlyArray<{ id: ProviderCustomerFilter }> = [
+  { id: "all" },
+  { id: "active" },
+  { id: "paused" },
+  { id: "suspended" },
+  { id: "deleted" },
+];
 
 export function formatProviderCustomerCount(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "—";
   return String(Math.max(0, Math.floor(value)));
 }
 
-export function providerCustomersSubheading(providerName: string): string {
-  const name = String(providerName ?? "").trim();
-  return name
-    ? `Administrer bedriftskunder, avtaler og leveringsoppsett for ${name}.`
-    : "Administrer bedriftskunder, avtaler og leveringsoppsett.";
-}
-
-export const PROVIDER_CUSTOMER_FILTERS: ReadonlyArray<{ id: ProviderCustomerFilter; label: string }> = [
-  { id: "all", label: "Alle" },
-  { id: "active", label: "Aktive" },
-  { id: "paused", label: "Pauset" },
-  { id: "suspended", label: "Suspendert" },
-  { id: "deleted", label: "Slettet" },
-];
-
 export type ProviderCustomerStatusCounts = Record<ProviderCustomerFilter, number>;
 
 /**
  * Teller statuschips fra hele det (søk-filtrerte) datasettet — ingen ny query.
  * «Alle»-chipen teller kun ikke-slettede, identisk med hva «Alle»-visningen viser.
- * Endrer aldri filtreringssemantikk; kun presentasjon.
  */
 export function buildCustomerStatusCounts(
   statuses: ReadonlyArray<ProviderCustomerStatus>,
@@ -101,47 +67,36 @@ export function formatProviderCustomerUpdated(iso: string | null | undefined, lo
   }
 }
 
-export type ProviderCustomersEmptyState = {
-  title: string;
-  text: string;
+export type ProviderCustomersEmptyStateKey = "noResults" | "noStatusMatch" | "noneYet";
+
+export type ProviderCustomersEmptyStateKeys = {
+  stateKey: ProviderCustomersEmptyStateKey;
   showCta: boolean;
 };
 
-/**
- * Rolig, hjelpsom empty state — skiller mellom søk uten treff,
- * statusfilter uten treff og «ingen bedrifter ennå».
- */
-export function providerCustomersEmptyState(input: {
+export function providerCustomersEmptyStateKeys(input: {
   hasSearch: boolean;
   filter: ProviderCustomerFilter;
-}): ProviderCustomersEmptyState {
+}): ProviderCustomersEmptyStateKeys {
   if (input.hasSearch) {
-    return {
-      title: "Ingen treff",
-      text: "Prøv et annet bedriftsnavn eller fjern filteret.",
-      showCta: false,
-    };
+    return { stateKey: "noResults", showCta: false };
   }
   if (input.filter !== "all") {
-    return {
-      title: "Ingen bedrifter med valgt status",
-      text: "Endre statusfilteret for å se flere bedriftskunder.",
-      showCta: false,
-    };
+    return { stateKey: "noStatusMatch", showCta: false };
   }
-  return {
-    title: "Ingen bedrifter ennå",
-    text: "Når bedriftskunder er registrert og godkjent, vises de her med status, avtaler og ordregrunnlag.",
-    showCta: true,
-  };
+  return { stateKey: "noneYet", showCta: true };
 }
 
+export type ProviderCustomersPaginationSummary =
+  | { kind: "single" }
+  | { kind: "plural"; count: number }
+  | { kind: "page"; currentPage: number; totalPages: number; totalCount: number };
+
 export type ProviderCustomersPaginationModel = {
-  /** Forrige/Neste vises kun når det finnes flere sider. */
   showControls: boolean;
   prevDisabled: boolean;
   nextDisabled: boolean;
-  summary: string;
+  summary: ProviderCustomersPaginationSummary;
 };
 
 /** Pagination-modell: rolig oppsummering ved én side, fulle kontroller ellers. */
@@ -159,13 +114,13 @@ export function buildCustomersPaginationModel(input: {
       showControls: false,
       prevDisabled: true,
       nextDisabled: true,
-      summary: totalCount === 1 ? "1 bedrift" : `${totalCount} bedrifter`,
+      summary: totalCount === 1 ? { kind: "single" } : { kind: "plural", count: totalCount },
     };
   }
   return {
     showControls: true,
     prevDisabled: currentPage <= 1,
     nextDisabled: currentPage >= totalPages,
-    summary: `Side ${currentPage} av ${totalPages} (${totalCount} totalt)`,
+    summary: { kind: "page", currentPage, totalPages, totalCount },
   };
 }

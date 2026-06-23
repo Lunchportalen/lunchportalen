@@ -203,6 +203,137 @@
         "unknown": "Something went wrong."
       }
     },
+    "customers": {
+      "page": {
+        "eyebrow": "Provider",
+        "heading": "Companies",
+        "leadWithProvider": "Manage business customers, agreements and delivery setup for {providerName}.",
+        "leadDefault": "Manage business customers, agreements and delivery setup."
+      },
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search by company name",
+        "statusGroupAria": "Status filter",
+        "all": "All",
+        "active": "Active",
+        "paused": "Paused",
+        "suspended": "Suspended",
+        "deleted": "Deleted"
+      },
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "suspended": "Suspended",
+        "deleted": "Deleted"
+      },
+      "table": {
+        "name": "Company",
+        "orgnr": "Org. no.",
+        "status": "Status",
+        "employees": "Employees",
+        "ordersThisWeek": "Orders this week",
+        "historicalOrders": "History",
+        "invoice": "Invoice",
+        "lastUpdated": "Last updated",
+        "actions": "Actions"
+      },
+      "actions": {
+        "newCustomer": "New business customer",
+        "newCustomerTitle": "New business customers arrive through controlled registration.",
+        "openCustomer": "Open customer",
+        "removeCustomer": "Remove customer",
+        "restoreCustomer": "Restore customer"
+      },
+      "empty": {
+        "noResults": {
+          "title": "No matches",
+          "text": "Try another company name or clear the filter."
+        },
+        "noStatusMatch": {
+          "title": "No companies with selected status",
+          "text": "Change the status filter to see more business customers."
+        },
+        "noneYet": {
+          "title": "No companies yet",
+          "text": "When business customers are registered and approved, they appear here with status, agreements and order basis."
+        }
+      },
+      "card": {
+        "mobileMeta": "{employees} employees · {orders} orders this week · {history} in history · Invoice: {invoice}",
+        "mobileUpdatedPrefix": "Last updated",
+        "orgNrPrefix": "Org. no.: {orgnr}"
+      },
+      "pagination": {
+        "aria": "Pagination",
+        "prev": "Previous",
+        "next": "Next",
+        "oneCompany": "1 company",
+        "companies": "{count} companies",
+        "page": "Page {current} of {total} ({count} total)"
+      },
+      "create": {
+        "heading": "New business customer",
+        "lead": "Direct creation of business customers is not available yet. New companies in your coverage area arrive via Registrations when they express interest, and appear under Companies after approval.",
+        "backToCustomers": "Back to companies"
+      }
+    },
+    "registrations": {
+      "page": {
+        "eyebrow": "Provider",
+        "heading": "Requests",
+        "subheading": "Review new companies interested in a lunch arrangement, and assess delivery area, contact details and desired agreement before processing."
+      },
+      "table": {
+        "company": "Company",
+        "area": "Area",
+        "contact": "Contact",
+        "employees": "Employees",
+        "received": "Received",
+        "status": "Status"
+      },
+      "status": {
+        "pending": "Pending review",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "other": "Other"
+      },
+      "summary": {
+        "none": "None pending",
+        "one": "1 pending",
+        "many": "{count} pending"
+      },
+      "actions": {
+        "review": "Review"
+      },
+      "empty": {
+        "title": "No requests pending review",
+        "text": "New business requests appear here when they match your coverage area.",
+        "steps": {
+          "reviewRequest": "Check delivery location, contact details and desired lunch arrangement when a request arrives.",
+          "approvedFlow": "Approved companies move on to customer and agreement flow.",
+          "rejectedFlow": "Rejected requests are handled in a controlled way with clear status."
+        }
+      },
+      "dialogs": {
+        "closeAria": "Close",
+        "approveTitle": "Approve registration",
+        "rejectTitle": "Reject registration",
+        "contactLabel": "Contact",
+        "phoneLabel": "Phone",
+        "employeesLabel": "Employees (approx.)",
+        "tierLabel": "Agreement tier",
+        "rejectReasonLabel": "Reason",
+        "rejectInstead": "Reject instead",
+        "approveInstead": "Approve instead",
+        "cancel": "Cancel",
+        "approve": "Approve",
+        "reject": "Reject",
+        "saving": "Processing…"
+      },
+      "errors": {
+        "actionFailed": "The action failed."
+      }
+    },
     "menu": {
       "page": {
         "readOnlyTitle": "View only",

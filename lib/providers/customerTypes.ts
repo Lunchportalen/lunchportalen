@@ -24,6 +24,16 @@ export type ProviderCustomersPage = {
   statusCounts: Record<ProviderCustomerFilter, number>;
 };
 
+export function providerCustomerStatusLabelKey(
+  status: ProviderCustomerStatus,
+): "active" | "paused" | "suspended" | "deleted" {
+  if (status === "ACTIVE") return "active";
+  if (status === "PAUSED") return "paused";
+  if (status === "SUSPENDED") return "suspended";
+  return "deleted";
+}
+
+/** @deprecated Prefer providerCustomerStatusLabelKey + i18n — kept for detail page until follow-up PR. */
 export function providerCustomerStatusLabel(status: ProviderCustomerStatus): string {
   if (status === "ACTIVE") return "Aktiv";
   if (status === "PAUSED") return "Pauset";

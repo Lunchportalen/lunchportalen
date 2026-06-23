@@ -2,15 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import RegistrationApproveDialog from "@/components/providers/RegistrationApproveDialog";
 import type { ProviderRegistrationRow } from "@/lib/providers/loadProviderRegistrations";
 import {
-  PROVIDER_REGISTRATIONS_COPY,
-  PROVIDER_REGISTRATIONS_EMPTY_STATE,
+  PROVIDER_REGISTRATIONS_EMPTY_STEP_KEYS,
   formatProviderRegistrationReceived,
-  providerRegistrationStatusLabel,
-  providerRegistrationsSummary,
+  providerRegistrationStatusLabelKey,
+  providerRegistrationsSummaryKey,
 } from "@/lib/providers/providerRegistrationsSurface";
 
 export default function ProviderRegistrationsQueue({
@@ -25,9 +25,14 @@ export default function ProviderRegistrationsQueue({
   const router = useRouter();
   const [selected, setSelected] = useState<ProviderRegistrationRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const tTable = useTranslations("provider.registrations.table");
+  const tStatus = useTranslations("provider.registrations.status");
+  const tSummary = useTranslations("provider.registrations.summary");
+  const tActions = useTranslations("provider.registrations.actions");
+  const tEmpty = useTranslations("provider.registrations.empty");
 
   const pending = useMemo(() => rows.filter((r) => r.status.toUpperCase() === "PENDING"), [rows]);
-  const copy = PROVIDER_REGISTRATIONS_COPY;
+  const summary = providerRegistrationsSummaryKey(pending.length);
 
   function openRow(row: ProviderRegistrationRow) {
     setSelected(row);
@@ -36,15 +41,19 @@ export default function ProviderRegistrationsQueue({
 
   return (
     <>
-      <p className="ds-provider-reg-summary">{providerRegistrationsSummary(pending.length)}</p>
+      <p className="ds-provider-reg-summary">
+        {summary.key === "many"
+          ? tSummary("many", { count: summary.count })
+          : tSummary(summary.key)}
+      </p>
 
       {pending.length === 0 ? (
         <div className="ds-provider-empty">
-          <p className="ds-provider-empty__title">{PROVIDER_REGISTRATIONS_EMPTY_STATE.title}</p>
-          <p className="ds-provider-empty__text">{PROVIDER_REGISTRATIONS_EMPTY_STATE.text}</p>
+          <p className="ds-provider-empty__title">{tEmpty("title")}</p>
+          <p className="ds-provider-empty__text">{tEmpty("text")}</p>
           <ul className="ds-provider-empty__steps">
-            {PROVIDER_REGISTRATIONS_EMPTY_STATE.steps.map((step) => (
-              <li key={step}>{step}</li>
+            {PROVIDER_REGISTRATIONS_EMPTY_STEP_KEYS.map((step) => (
+              <li key={step}>{tEmpty(`steps.${step}`)}</li>
             ))}
           </ul>
         </div>
@@ -53,12 +62,12 @@ export default function ProviderRegistrationsQueue({
           <table className="ds-provider-reg-table">
             <thead>
               <tr>
-                <th>{copy.tableHeaders.company}</th>
-                <th>{copy.tableHeaders.area}</th>
-                <th>{copy.tableHeaders.contact}</th>
-                <th>{copy.tableHeaders.employees}</th>
-                <th>{copy.tableHeaders.received}</th>
-                <th>{copy.tableHeaders.status}</th>
+                <th>{tTable("company")}</th>
+                <th>{tTable("area")}</th>
+                <th>{tTable("contact")}</th>
+                <th>{tTable("employees")}</th>
+                <th>{tTable("received")}</th>
+                <th>{tTable("status")}</th>
                 <th />
               </tr>
             </thead>
@@ -80,10 +89,10 @@ export default function ProviderRegistrationsQueue({
                   </td>
                   <td>{row.employee_count ?? "—"}</td>
                   <td>{formatProviderRegistrationReceived(row.created_at, locale)}</td>
-                  <td>{providerRegistrationStatusLabel(row.status)}</td>
+                  <td>{tStatus(providerRegistrationStatusLabelKey(row.status))}</td>
                   <td>
                     <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openRow(row)}>
-                      {copy.reviewAction}
+                      {tActions("review")}
                     </button>
                   </td>
                 </tr>

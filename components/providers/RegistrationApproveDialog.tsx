@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   approveProviderRegistration,
@@ -30,6 +31,8 @@ export default function RegistrationApproveDialog({
   const [mode, setMode] = useState<"approve" | "reject">("approve");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const tDialog = useTranslations("provider.registrations.dialogs");
+  const tErrors = useTranslations("provider.registrations.errors");
 
   useEffect(() => {
     if (!open) {
@@ -65,8 +68,8 @@ export default function RegistrationApproveDialog({
           ? await approveProviderRegistration(providerId, registration.id, tier)
           : await rejectProviderRegistration(providerId, registration.id, rejectReason);
 
-      if (!res.success) {
-        setError("error" in res ? res.error : "Handlingen feilet.");
+      if (res.success === false) {
+        setError("error" in res ? res.error : tErrors("actionFailed"));
         return;
       }
       onDone();
@@ -76,7 +79,7 @@ export default function RegistrationApproveDialog({
 
   return (
     <>
-      <button type="button" className="ds-provider-drawer-backdrop" aria-label="Lukk" onClick={onClose} />
+      <button type="button" className="ds-provider-drawer-backdrop" aria-label={tDialog("closeAria")} onClick={onClose} />
       <div
         ref={panelRef}
         className="ds-provider-dialog"
@@ -85,7 +88,7 @@ export default function RegistrationApproveDialog({
         aria-labelledby={titleId}
       >
         <h2 id={titleId} className="ds-h3">
-          {mode === "approve" ? "Godkjenn registrering" : "Avvis registrering"}
+          {mode === "approve" ? tDialog("approveTitle") : tDialog("rejectTitle")}
         </h2>
         <p className="ds-body">
           <strong>{registration.company_name}</strong> · {registration.orgnr} · {registration.city}{" "}
@@ -93,24 +96,24 @@ export default function RegistrationApproveDialog({
         </p>
         <dl className="ds-provider-reg-detail">
           <div>
-            <dt>Kontakt</dt>
+            <dt>{tDialog("contactLabel")}</dt>
             <dd>
               {registration.contact_name} · {registration.contact_email}
             </dd>
           </div>
           <div>
-            <dt>Telefon</dt>
+            <dt>{tDialog("phoneLabel")}</dt>
             <dd>{registration.contact_phone}</dd>
           </div>
           <div>
-            <dt>Ansatte (ca.)</dt>
+            <dt>{tDialog("employeesLabel")}</dt>
             <dd>{registration.employee_count ?? "—"}</dd>
           </div>
         </dl>
 
         {mode === "approve" ? (
           <div className="lp-demo-form">
-            <label htmlFor="reg-tier">Avtale-nivå</label>
+            <label htmlFor="reg-tier">{tDialog("tierLabel")}</label>
             <select
               id="reg-tier"
               value={tier}
@@ -122,7 +125,7 @@ export default function RegistrationApproveDialog({
           </div>
         ) : (
           <div className="lp-demo-form">
-            <label htmlFor="reg-reject-reason">Begrunnelse</label>
+            <label htmlFor="reg-reject-reason">{tDialog("rejectReasonLabel")}</label>
             <textarea
               id="reg-reject-reason"
               value={rejectReason}
@@ -147,7 +150,7 @@ export default function RegistrationApproveDialog({
               onClick={() => setMode("reject")}
               disabled={pending}
             >
-              Avvis i stedet
+              {tDialog("rejectInstead")}
             </button>
           ) : (
             <button
@@ -156,14 +159,14 @@ export default function RegistrationApproveDialog({
               onClick={() => setMode("approve")}
               disabled={pending}
             >
-              Godkjenn i stedet
+              {tDialog("approveInstead")}
             </button>
           )}
           <button type="button" className="ds-btn ds-btn--secondary" onClick={onClose} disabled={pending}>
-            Avbryt
+            {tDialog("cancel")}
           </button>
           <button type="button" className="ds-btn ds-btn--primary" onClick={onConfirm} disabled={pending}>
-            {pending ? "Behandler…" : mode === "approve" ? "Godkjenn" : "Avvis"}
+            {pending ? tDialog("saving") : mode === "approve" ? tDialog("approve") : tDialog("reject")}
           </button>
         </div>
       </div>

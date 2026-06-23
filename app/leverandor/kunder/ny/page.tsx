@@ -3,17 +3,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-export default function LeverandorNyKundePage() {
+export default async function LeverandorNyKundePage() {
+  const t = await getTranslations("provider.customers.create");
+
   return (
     <div className="ds-container">
-      <h1 className="ds-h2">Ny bedriftskunde</h1>
-      <p className="ds-lead">
-        Direkte opprettelse av bedriftskunder er ikke tilgjengelig ennå. Nye bedrifter i ditt dekningsområde kommer
-        inn via Registreringer når de melder interesse, og vises under Bedrifter etter godkjenning.
-      </p>
+      <h1 className="ds-h2">{t("heading")}</h1>
+      <p className="ds-lead">{t("lead")}</p>
       <Link href="/leverandor/kunder" className="ds-btn ds-btn--secondary">
-        Tilbake til bedrifter
+        {t("backToCustomers")}
       </Link>
     </div>
   );

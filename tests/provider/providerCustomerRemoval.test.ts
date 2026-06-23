@@ -212,7 +212,7 @@ describe("provider customer removal wiring", () => {
 
   it("CustomerList viser Fjern kunde for provider admin", () => {
     const list = readFileSync(join(ROOT, "components/providers/CustomerList.tsx"), "utf8");
-    expect(list).toContain("Fjern kunde");
+    expect(list).toContain('tActions("removeCustomer")');
     expect(list).toContain("ProviderCustomerRemovalDialog");
   });
 });

@@ -3,23 +3,24 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import ProviderCustomerRemovalDialog from "@/components/providers/ProviderCustomerRemovalDialog";
 import ProviderCustomerRestoreDialog from "@/components/providers/ProviderCustomerRestoreDialog";
 
 import {
-  providerCustomerStatusLabel,
+  providerCustomerStatusLabelKey,
   type ProviderCustomerFilter,
   type ProviderCustomerRow,
   type ProviderCustomersPage,
 } from "@/lib/providers/customerTypes";
 import {
-  PROVIDER_CUSTOMERS_COPY,
   PROVIDER_CUSTOMER_FILTERS,
   buildCustomersPaginationModel,
   formatProviderCustomerUpdated,
-  providerCustomersEmptyState,
+  providerCustomersEmptyStateKeys,
   formatProviderCustomerCount,
+  type ProviderCustomersPaginationSummary,
 } from "@/lib/providers/providerCustomersSurface";
 
 function statusBadgeClass(status: ProviderCustomerRow["status"]) {
@@ -27,6 +28,19 @@ function statusBadgeClass(status: ProviderCustomerRow["status"]) {
   if (status === "PAUSED") return "ds-provider-status-badge ds-provider-status-badge--paused";
   if (status === "SUSPENDED") return "ds-provider-status-badge ds-provider-status-badge--suspended";
   return "ds-provider-status-badge ds-provider-status-badge--deleted";
+}
+
+function formatPaginationSummary(
+  t: ReturnType<typeof useTranslations<"provider.customers.pagination">>,
+  summary: ProviderCustomersPaginationSummary,
+): string {
+  if (summary.kind === "single") return t("oneCompany");
+  if (summary.kind === "plural") return t("companies", { count: summary.count });
+  return t("page", {
+    current: summary.currentPage,
+    total: summary.totalPages,
+    count: summary.totalCount,
+  });
 }
 
 export default function CustomerList({
@@ -44,6 +58,13 @@ export default function CustomerList({
   const [pending, startTransition] = useTransition();
   const [removalTarget, setRemovalTarget] = useState<{ id: string; name: string; orgnr: string | null } | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<{ id: string; name: string; orgnr: string | null } | null>(null);
+  const tFilters = useTranslations("provider.customers.filters");
+  const tStatus = useTranslations("provider.customers.status");
+  const tTable = useTranslations("provider.customers.table");
+  const tActions = useTranslations("provider.customers.actions");
+  const tEmpty = useTranslations("provider.customers.empty");
+  const tCard = useTranslations("provider.customers.card");
+  const tPagination = useTranslations("provider.customers.pagination");
 
   const filter = (searchParams.get("filter") as ProviderCustomerFilter) || "all";
   const search = searchParams.get("q") ?? "";
@@ -64,29 +85,29 @@ export default function CustomerList({
   );
 
   const rows = useMemo(() => initial.customers, [initial.customers]);
-  const emptyState = providerCustomersEmptyState({ hasSearch: Boolean(search.trim()), filter });
+  const emptyKeys = providerCustomersEmptyStateKeys({ hasSearch: Boolean(search.trim()), filter });
   const pagination = buildCustomersPaginationModel({
     currentPage: initial.currentPage,
     totalPages: initial.totalPages,
     totalCount: initial.totalCount,
   });
-  const copy = PROVIDER_CUSTOMERS_COPY;
+  const paginationSummary = formatPaginationSummary(tPagination, pagination.summary);
 
   return (
     <div className="ds-section">
       <div className="ds-provider-list-toolbar">
         <label className="ds-provider-list-toolbar__search">
-          <span className="ds-eyebrow">{copy.searchLabel}</span>
+          <span className="ds-eyebrow">{tFilters("searchLabel")}</span>
           <input
             type="search"
             name="q"
             defaultValue={search}
-            placeholder={copy.searchPlaceholder}
+            placeholder={tFilters("searchPlaceholder")}
             className="ds-admin-search"
             onChange={(e) => pushParams({ q: e.target.value, page: "1" })}
           />
         </label>
-        <div className="ds-provider-list-toolbar__filters" role="group" aria-label={copy.statusGroupAria}>
+        <div className="ds-provider-list-toolbar__filters" role="group" aria-label={tFilters("statusGroupAria")}>
           {PROVIDER_CUSTOMER_FILTERS.map((f) => (
             <button
               key={f.id}
@@ -96,13 +117,13 @@ export default function CustomerList({
               disabled={pending}
               onClick={() => pushParams({ filter: f.id, page: "1" })}
             >
-              {f.label}
+              {tFilters(f.id)}
               <span className="ds-provider-filter-count">{initial.statusCounts?.[f.id] ?? 0}</span>
             </button>
           ))}
         </div>
-        <Link href="/leverandor/kunder/ny" className="ds-btn ds-btn--secondary" title={copy.ctaTitle}>
-          {copy.cta}
+        <Link href="/leverandor/kunder/ny" className="ds-btn ds-btn--secondary" title={tActions("newCustomerTitle")}>
+          {tActions("newCustomer")}
         </Link>
       </div>
 
@@ -110,23 +131,23 @@ export default function CustomerList({
         <table className="ds-provider-customer-table">
           <thead>
             <tr>
-              <th scope="col">{copy.tableHeaders.name}</th>
-              <th scope="col">{copy.tableHeaders.orgnr}</th>
-              <th scope="col">{copy.tableHeaders.status}</th>
-              <th scope="col">{copy.tableHeaders.employees}</th>
-              <th scope="col">{copy.tableHeaders.ordersThisWeek}</th>
-              <th scope="col">{copy.tableHeaders.historicalOrders}</th>
-              <th scope="col">{copy.tableHeaders.invoice}</th>
-              <th scope="col">{copy.tableHeaders.lastUpdated}</th>
-              {canManage ? <th scope="col" className="text-right">Handlinger</th> : null}
+              <th scope="col">{tTable("name")}</th>
+              <th scope="col">{tTable("orgnr")}</th>
+              <th scope="col">{tTable("status")}</th>
+              <th scope="col">{tTable("employees")}</th>
+              <th scope="col">{tTable("ordersThisWeek")}</th>
+              <th scope="col">{tTable("historicalOrders")}</th>
+              <th scope="col">{tTable("invoice")}</th>
+              <th scope="col">{tTable("lastUpdated")}</th>
+              {canManage ? <th scope="col" className="text-right">{tTable("actions")}</th> : null}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
                 <tr>
                   <td colSpan={canManage ? 9 : 8} className="ds-provider-reg-empty">
-                  {emptyState.title}
-                  <span className="ds-provider-reg-meta">{emptyState.text}</span>
+                  {tEmpty(`${emptyKeys.stateKey}.title`)}
+                  <span className="ds-provider-reg-meta">{tEmpty(`${emptyKeys.stateKey}.text`)}</span>
                 </td>
               </tr>
             ) : (
@@ -139,7 +160,9 @@ export default function CustomerList({
                   </td>
                   <td>{row.orgnr ?? "—"}</td>
                   <td>
-                    <span className={statusBadgeClass(row.status)}>{providerCustomerStatusLabel(row.status)}</span>
+                    <span className={statusBadgeClass(row.status)}>
+                      {tStatus(providerCustomerStatusLabelKey(row.status))}
+                    </span>
                   </td>
                   <td>{formatProviderCustomerCount(row.employeesCount)}</td>
                   <td>{formatProviderCustomerCount(row.ordersThisWeek)}</td>
@@ -150,7 +173,7 @@ export default function CustomerList({
                       <td className="text-right">
                         <div className="flex flex-wrap items-center justify-end gap-2">
                           <Link href={`/leverandor/kunder/${row.id}`} className="ds-btn ds-btn--ghost ds-btn--sm min-h-12">
-                            Åpne kunde
+                            {tActions("openCustomer")}
                           </Link>
                           {row.status === "DELETED" ? (
                             <button
@@ -158,7 +181,7 @@ export default function CustomerList({
                               className="ds-btn ds-btn--secondary ds-btn--sm min-h-12"
                               onClick={() => setRestoreTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
                             >
-                              Gjenopprett kunde
+                              {tActions("restoreCustomer")}
                             </button>
                           ) : (
                             <button
@@ -166,7 +189,7 @@ export default function CustomerList({
                               className="ds-btn ds-btn--ghost ds-btn--sm min-h-12"
                               onClick={() => setRemovalTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
                             >
-                              Fjern kunde
+                              {tActions("removeCustomer")}
                             </button>
                           )}
                         </div>
@@ -182,26 +205,30 @@ export default function CustomerList({
       <div className="ds-provider-customer-list ds-provider-customer-list--mobile" aria-busy={pending}>
         {rows.length === 0 ? (
           <div className="ds-provider-empty">
-            <p className="ds-provider-empty__title">{emptyState.title}</p>
-            <p className="ds-provider-empty__text">{emptyState.text}</p>
+            <p className="ds-provider-empty__title">{tEmpty(`${emptyKeys.stateKey}.title`)}</p>
+            <p className="ds-provider-empty__text">{tEmpty(`${emptyKeys.stateKey}.text`)}</p>
           </div>
         ) : (
           rows.map((row) => (
             <div key={row.id} className="ds-card ds-provider-customer-card">
               <Link href={`/leverandor/kunder/${row.id}`} className="block">
                 <div className="ds-card__title">{row.name}</div>
-                <span className={statusBadgeClass(row.status)}>{providerCustomerStatusLabel(row.status)}</span>
+                <span className={statusBadgeClass(row.status)}>
+                  {tStatus(providerCustomerStatusLabelKey(row.status))}
+                </span>
                 <p className="ds-card__text">
-                  {copy.mobileMeta(
-                    row.employeesCount,
-                    row.ordersThisWeek,
-                    row.historicalOrdersCount,
-                    row.invoiceMethodLabel,
-                  )}
+                  {tCard("mobileMeta", {
+                    employees: formatProviderCustomerCount(row.employeesCount),
+                    orders: formatProviderCustomerCount(row.ordersThisWeek),
+                    history: formatProviderCustomerCount(row.historicalOrdersCount),
+                    invoice: row.invoiceMethodLabel,
+                  })}
                 </p>
-                {row.orgnr ? <p className="ds-provider-activity__meta">Org.nr: {row.orgnr}</p> : null}
+                {row.orgnr ? (
+                  <p className="ds-provider-activity__meta">{tCard("orgNrPrefix", { orgnr: row.orgnr })}</p>
+                ) : null}
                 <p className="ds-provider-activity__meta">
-                  {copy.mobileUpdatedPrefix} {formatProviderCustomerUpdated(row.updatedAt, locale)}
+                  {tCard("mobileUpdatedPrefix")} {formatProviderCustomerUpdated(row.updatedAt, locale)}
                 </p>
               </Link>
               {canManage ? (
@@ -212,7 +239,7 @@ export default function CustomerList({
                       className="ds-btn ds-btn--secondary ds-btn--sm min-h-12"
                       onClick={() => setRestoreTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
                     >
-                      Gjenopprett kunde
+                      {tActions("restoreCustomer")}
                     </button>
                   ) : (
                     <button
@@ -220,7 +247,7 @@ export default function CustomerList({
                       className="ds-btn ds-btn--ghost ds-btn--sm min-h-12"
                       onClick={() => setRemovalTarget({ id: row.id, name: row.name, orgnr: row.orgnr })}
                     >
-                      Fjern kunde
+                      {tActions("removeCustomer")}
                     </button>
                   )}
                 </div>
@@ -230,7 +257,7 @@ export default function CustomerList({
         )}
       </div>
 
-      <nav className="ds-provider-pagination" aria-label={copy.paginationAria}>
+      <nav className="ds-provider-pagination" aria-label={tPagination("aria")}>
         {pagination.showControls ? (
           <button
             type="button"
@@ -238,10 +265,10 @@ export default function CustomerList({
             disabled={pagination.prevDisabled || pending}
             onClick={() => pushParams({ page: String(page - 1) })}
           >
-            {copy.paginationPrev}
+            {tPagination("prev")}
           </button>
         ) : null}
-        <span className="ds-body ds-provider-pagination__summary">{pagination.summary}</span>
+        <span className="ds-body ds-provider-pagination__summary">{paginationSummary}</span>
         {pagination.showControls ? (
           <button
             type="button"
@@ -249,7 +276,7 @@ export default function CustomerList({
             disabled={pagination.nextDisabled || pending}
             onClick={() => pushParams({ page: String(page + 1) })}
           >
-            {copy.paginationNext}
+            {tPagination("next")}
           </button>
         ) : null}
       </nav>

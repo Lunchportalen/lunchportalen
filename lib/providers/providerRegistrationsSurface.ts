@@ -1,46 +1,42 @@
 // lib/providers/providerRegistrationsSurface.ts
-// Provider-facing copy og rene presentasjonshelpers for /leverandor/registreringer.
+// Provider-facing helpers for /leverandor/registreringer (i18n keys + locale formatting).
 //
 // Prinsipp:
-// - All ny copy samles her (én kilde, klar for senere i18n) — ingen spredte strenger.
+// - UI-copy lives in messages/provider.registrations.* — this module exposes ids and keys only.
 // - Aldri rå status-enums eller rå ISO-dato i brukerrettet UI.
-// - Lover ikke e-post/onboarding-detaljer som flaten ikke viser.
 // - Ingen server-avhengigheter: brukes av både server page og client components.
 
 import { DEFAULT_PROVIDER_LOCALE } from "@/lib/providers/operationalSettingsShared";
 
-export const PROVIDER_REGISTRATIONS_COPY = {
-  eyebrow: "Leverandør",
-  // Kort H1 som ikke brekker på desktop-breakpoints; subheading bærer domenekonteksten.
-  heading: "Forespørsler",
-  subheading:
-    "Se nye bedrifter som ønsker lunsjordning, og vurder leveringsområde, kontaktinformasjon og ønsket avtale før behandling.",
-  tableHeaders: {
-    company: "Bedrift",
-    area: "Område",
-    contact: "Kontakt",
-    employees: "Ansatte",
-    received: "Mottatt",
-    status: "Status",
-  },
-  reviewAction: "Vurder",
-} as const;
+export type ProviderRegistrationStatusLabelKey = "pending" | "approved" | "rejected" | "other";
 
-/** Rolig statuslinje over tabellen — kun pending-rader lastes på denne flaten. */
-export function providerRegistrationsSummary(pendingCount: number): string {
-  const n = Math.max(0, Math.floor(pendingCount) || 0);
-  if (n === 0) return "Ingen til behandling";
-  if (n === 1) return "1 til behandling";
-  return `${n} til behandling`;
+export type ProviderRegistrationsSummaryKey = "none" | "one" | "many";
+
+export type ProviderRegistrationsEmptyStepKey = "reviewRequest" | "approvedFlow" | "rejectedFlow";
+
+export const PROVIDER_REGISTRATIONS_EMPTY_STEP_KEYS: readonly ProviderRegistrationsEmptyStepKey[] = [
+  "reviewRequest",
+  "approvedFlow",
+  "rejectedFlow",
+];
+
+/** i18n key under provider.registrations.status.* — enum values unchanged. */
+export function providerRegistrationStatusLabelKey(status: string): ProviderRegistrationStatusLabelKey {
+  const s = String(status ?? "").trim().toUpperCase();
+  if (s === "PENDING") return "pending";
+  if (s === "APPROVED") return "approved";
+  if (s === "REJECTED") return "rejected";
+  return "other";
 }
 
-/** Provider-safe statuslabels — aldri rå enum i UI. */
-export function providerRegistrationStatusLabel(status: string): string {
-  const s = String(status ?? "").trim().toUpperCase();
-  if (s === "PENDING") return "Til behandling";
-  if (s === "APPROVED") return "Godkjent";
-  if (s === "REJECTED") return "Avslått";
-  return "Annet";
+export function providerRegistrationsSummaryKey(pendingCount: number): {
+  key: ProviderRegistrationsSummaryKey;
+  count: number;
+} {
+  const n = Math.max(0, Math.floor(pendingCount) || 0);
+  if (n === 0) return { key: "none", count: 0 };
+  if (n === 1) return { key: "one", count: 1 };
+  return { key: "many", count: n };
 }
 
 /**
@@ -63,13 +59,3 @@ export function formatProviderRegistrationReceived(iso: string | null | undefine
     return "—";
   }
 }
-
-export const PROVIDER_REGISTRATIONS_EMPTY_STATE = {
-  title: "Ingen forespørsler til behandling",
-  text: "Nye bedriftsforespørsler vises her når de matcher ditt dekningsområde.",
-  steps: [
-    "Kontroller leveringssted, kontaktinformasjon og ønsket lunsjordning når en forespørsel kommer inn.",
-    "Godkjente bedrifter flyttes videre til kunde- og avtaleflyt.",
-    "Avslåtte forespørsler håndteres kontrollert med tydelig status.",
-  ],
-} as const;
