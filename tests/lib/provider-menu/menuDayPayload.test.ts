@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { MELHUS_PROVIDER_SANITY_ID } from "@/lib/cms/providerSanityConstants";
+import { fallbackProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
 import {
   buildMenuDayDocId,
   buildMenuDayPayload,
@@ -213,6 +216,41 @@ describe("buildMenuDayPayload", () => {
   test("rejects empty providerId", () => {
     const res = buildMenuDayPayload("", validInput);
     expect(res.ok).toBe(false);
+  });
+});
+
+describe("R4F: menuDayPayload price truth contract", () => {
+  test("server publish path uses fallbackProviderMenuPrices not loadProviderMenuPrices", () => {
+    const src = readFileSync(resolve(process.cwd(), "lib/provider-menu/menuDayPayload.ts"), "utf8");
+    expect(src).toContain("fallbackProviderMenuPrices()");
+    expect(src).not.toContain("loadProviderMenuPrices");
+    expect(src).not.toContain("pricePreview");
+    expect(src).not.toContain("loadProviderMenuPricesPreview");
+  });
+
+  test("enterprise publish validation uses tier fallback price not DB resolver", () => {
+    const fallback = fallbackProviderMenuPrices();
+    expect(fallback.ENTERPRISE.priceExVatNok).toBe(170);
+
+    const res = buildMenuDayPayload(PROVIDER_B, {
+      ...validInput,
+      tier: "ENTERPRISE",
+      category: "varmrett",
+      status: "published",
+      mealTitle: "Premium rett",
+      description: "Høy kost — valideres mot fallback 170 ikke DB",
+      sourcePackage: null,
+      upgradeNote: "",
+      upgradeType: null,
+      estimatedCostPerPortion: 165,
+      luxusEstimatedCost: 120,
+      confirmWarnings: false,
+    });
+
+    expect(res.ok).toBe(false);
+    if (res.ok === false) {
+      expect(res.field).toBe("confirmWarnings");
+    }
   });
 });
 

@@ -196,4 +196,75 @@ describe("loadProviderMenuPricesPreview", () => {
     expect(result.diagnostics.providerId).toBe("");
     expect(mockFrom).not.toHaveBeenCalled();
   });
+
+  describe("R4F edge cases (contract — resolver unchanged)", () => {
+    it("uses NO market rows only (SE excluded at DB query)", async () => {
+      mockPreviewQuery({
+        data: [
+          {
+            tier: "BASIS",
+            amount_ex_vat: 95,
+            vat_rate: 0.15,
+            currency: "NOK",
+            tax_basis: "ex_tax",
+            tax_category: "food_catering",
+            source: "seed",
+            market_code: "NO",
+            valid_from: null,
+            valid_to: null,
+          },
+        ],
+        error: null,
+      });
+
+      const result = await loadProviderMenuPricesPreview("provider-no-only");
+
+      expect(result.tiers.BASIS.amountExVat).toBe(95);
+      expect(result.tiers.BASIS.marketCode).toBe("NO");
+      expect(result.tiers.BASIS.source).toBe("provider_price_rules_market");
+    });
+
+    it("falls back when NO query returns empty (e.g. SE-only provider at DB)", async () => {
+      mockPreviewQuery({ data: [], error: null });
+
+      const result = await loadProviderMenuPricesPreview("provider-se-only");
+
+      expect(result.diagnostics.aggregateSource).toBe("fallback_tier_pricing");
+      expect(result.tiers.BASIS.amountExVat).toBe(90);
+      expect(result.tiers.BASIS.source).toBe("fallback_tier_pricing");
+    });
+
+    it("falls back tier when no tier-default rows (override-only excluded at DB)", async () => {
+      mockPreviewQuery({ data: [], error: null });
+
+      const result = await loadProviderMenuPricesPreview("provider-override-only");
+
+      expect(result.diagnostics.tiersFromMarket).toBe(0);
+      expect(result.tiers.LUXUS.source).toBe("fallback_tier_pricing");
+      expect(result.tiers.LUXUS.amountExVat).toBe(130);
+    });
+
+    it("mixed aggregateSource when only some NO tiers have DB rows", async () => {
+      mockPreviewQuery({
+        data: [
+          {
+            tier: "BASIS",
+            amount_ex_vat: 95,
+            vat_rate: 0.15,
+            currency: "NOK",
+            tax_basis: "ex_tax",
+            market_code: "NO",
+          },
+        ],
+        error: null,
+      });
+
+      const result = await loadProviderMenuPricesPreview("provider-partial-no");
+
+      expect(result.diagnostics.aggregateSource).toBe("mixed");
+      expect(result.tiers.BASIS.source).toBe("provider_price_rules_market");
+      expect(result.tiers.LUXUS.source).toBe("fallback_tier_pricing");
+      expect(result.tiers.ENTERPRISE.source).toBe("fallback_tier_pricing");
+    });
+  });
 });

@@ -122,10 +122,29 @@ Update intentionally: `node scripts/ci/commercial-hardcodes-guard.mjs --update-a
 | R4D — Provider menu price preview resolver (`providerMenuPricePreview.ts`) | Done (test/diagnostics only; no runtime import) |
 | R4E-1 — Provider menu API `pricePreview` behind `LP_PROVIDER_PRICE_PREVIEW_DISPLAY` | Done (optional diagnostics; `prices` unchanged) |
 | R4E-2 — Provider menu read-only preview UI strip | Done (`ProviderMenuPricePreviewStrip`; no runtime cutover) |
-| R4 — Provider price settings market-ready (R4F–R4H) | Planned |
+| R4F — Price truth map + parity tests + cutover runbook | Done (docs/tests/ADR-018; **no runtime cutover**) |
+| R4G — Market-aware production resolver behind `LP_PROVIDER_PRICE_MARKET_RESOLVER` | Planned — see [r4-provider-price-cutover-runbook.md](./r4-provider-price-cutover-runbook.md) |
+| R4G-publish — `menuDayPayload` alignment with display resolver | Planned (dual-truth documented in R4F) |
+| R4G-billing — Billing dry-run | Planned |
+| R4H — MSDI / Golden Path alignment | Planned (protected path) |
+| R4 — Provider price settings market-ready (remaining) | See phased table in [r4-provider-price-plan.md](./r4-provider-price-plan.md) |
 | R5 — Commission policy skeleton (inert) | Planned |
 | R6 — Commission ledger dry-run | Planned |
 | R7 — Billing integration per market | Planned |
 | R8 — Multi-market behind feature flag | Planned |
 
 Menu culture profile follows a **separate** ADR/roadmap — not mixed here.
+
+---
+
+## R4F price truth map (summary)
+
+| Truth | Source | Runtime today |
+|-------|--------|---------------|
+| **A — Provider UI** | `loadProviderMenuPrices()` → `prices` | Yes — menu editor display/margin |
+| **B — Preview** | `loadProviderMenuPricesPreview()` → `pricePreview` | Diagnostics only (`LP_PROVIDER_PRICE_PREVIEW_DISPLAY`) |
+| **C — Server publish** | `fallbackProviderMenuPrices()` in `menuDayPayload` | Yes — publish validation; **not DB-backed** |
+| **D — Golden Path** | `TIER_PRICE_CENTS` | Yes — MSDI / `lp_order_set` |
+| **E — Billing** | `agreements` + `lib/billing/pricing.ts` | Yes — invoicing |
+
+**R4F locks behavior in tests; does not cut over.** Full map: [r4-provider-price-plan.md §11](./r4-provider-price-plan.md). Cutover gates: [r4-provider-price-cutover-runbook.md](./r4-provider-price-cutover-runbook.md).

@@ -1,6 +1,6 @@
 # R4 — Provider price settings market-ready (plan)
 
-**Status:** R4A done · R4B done · R4C done · R4D done · R4E-1 done · **R4E-2 done** (read-only preview strip in `/leverandor/meny`; `prices` unchanged). **Next: R4F+** per plan.  
+**Status:** R4A done · R4B done · R4C done · R4D done · R4E-1 done · R4E-2 done · **R4F done** (truth map + parity tests + cutover runbook; **no runtime cutover**). **Next: R4G** (market resolver behind flag — requires ADR-018 GO).  
 **Relates to:** [architecture-decisions.md](./architecture-decisions.md) ADR-016, ADR-017 · [commercial-inventory.md](./commercial-inventory.md)
 
 This document formalizes how `provider_price_rules` can become market/currency/tax_basis-ready **without breaking today's NO production flow**. It is **not** operational truth until explicit cutover ADRs and phased gates pass.
@@ -178,10 +178,13 @@ order write → materialized cents on MSDI + lp_order_set (Golden Path)
 | **R4B** | Additive migration: `market_code`, `tax_basis`, audit fields; compatibility view | **None** (defaults; resolver unchanged) |
 | **R4C** | Market-scoped unique index + supplement seed `ON CONFLICT (provider_id, market_code, tier)` | **None** (same numbers; DO NOTHING) |
 | **R4D** | `loadProviderMenuPricesPreview()` in `lib/providers/providerMenuPricePreview.ts` | **Done — test/diagnostics only; no runtime import** |
-| **R4E** | Provider menu display uses preview resolver **behind flag** | **R4E-1 done** (API `pricePreview` optional). **R4E-2 done** (read-only strip; `prices` unchanged) |
-| **R4F** | Agreement/onboarding alignment (not frozen onboarding) | Agreement seed path |
-| **R4G** | Billing dry-run: compare agreement vs tier resolver vs invoice lines | Dry-run only |
+| **R4E** | Provider menu preview diagnostics **behind flag** | **Done** — API `pricePreview` + read-only strip; `prices` unchanged |
+| **R4F** | Truth map + parity tests + cutover runbook | **Done** — docs/tests only; **no runtime cutover** |
+| **R4G** | Market-aware production resolver v2 **behind `LP_PROVIDER_PRICE_MARKET_RESOLVER`** | Staging first; see [cutover runbook](./r4-provider-price-cutover-runbook.md) |
+| **R4G-publish** | Align `menuDayPayload` with display resolver | Planned after or with R4G — dual-truth today |
+| **R4G-billing** | Billing dry-run: agreement vs tier vs invoice | Dry-run only |
 | **R4H** | MSDI sync + `lp_order_set` alignment **behind flag** | **Golden Path** — requires `test:golden-path`, protected-path guard, rollback plan |
+| **R4F-agreement** | Agreement/onboarding alignment (not frozen onboarding) | Deferred — separate from resolver cutover |
 
 Each phase must pass `ci:commercial-hardcodes-guard` without broad allowlist expansion.
 
@@ -246,4 +249,79 @@ Existing CI contracts (no R4A change):
 
 **R4E-2 (done):** `ProviderMenuPricePreviewStrip` in `/leverandor/meny` — renders when API returns `pricePreview` (flag on). `tierPrice`, margin, publish, tier tabs use `prices` only. Types: `providerMenuPricePreviewDisplay.ts` (client-safe).
 
-**R4F next:** Agreement/onboarding alignment per plan — not automatic cutover from preview UI.
+**R4F (done):** Documented parallel price truths (see §11); parity/edge-case tests; [cutover runbook](./r4-provider-price-cutover-runbook.md); ADR-018. **No runtime cutover.**
+
+**R4G next:** Market-aware `loadProviderMenuPrices` v2 behind `LP_PROVIDER_PRICE_MARKET_RESOLVER` — staging only until drift gates pass.
+
+---
+
+## 11. Price truth map (R4F — locked contract)
+
+Five parallel truths exist today. **R4F does not merge them.** This map is the baseline for R4G+.
+
+### A. Provider UI production prices
+
+| Link | Detail |
+|------|--------|
+| Resolver | `loadProviderMenuPrices()` in `providerMenuPriceConfig.ts` |
+| API | `GET /api/provider/menu-days` → `prices` |
+| UI | `ProviderMenuBuilder.tierPrice` → `ProviderMenuCommandHeader`, `ProviderMenuStatusRow`, `ProviderMenuEditorPanel` margin |
+| Query | Legacy: `provider_price_rules` without `market_code` filter; tier defaults; fallback `tierPricing.ts` (90/130/170 @ 15%) |
+| Tests | `providerMenuPackageSurface.test.ts` — legacy contract |
+
+### B. Preview diagnostics (not production)
+
+| Link | Detail |
+|------|--------|
+| Resolver | `loadProviderMenuPricesPreview()` — market-aware `market_code='NO'`, scoped overrides |
+| API | Optional `pricePreview` when `LP_PROVIDER_PRICE_PREVIEW_DISPLAY=true` |
+| UI | `ProviderMenuPricePreviewStrip` — read-only; never affects margin/publish |
+| Mapper | `toProviderMenuPricePreviewApiPayload()` — `differsFromProduction` vs `prices` |
+| Tests | `providerMenuPricePreview.test.ts` |
+
+### C. Server publish (dual truth — documented)
+
+| Link | Detail |
+|------|--------|
+| Path | `buildMenuDayPayload()` → `fallbackProviderMenuPrices()` |
+| Validation | Server `validateEnterprisePublish` uses fallback `priceExVatNok` — **not DB** |
+| Gap | Client publish warnings use `tierPrice` from `prices` (A); server uses (C) |
+| Fix phase | **R4G-publish** — not R4F |
+| Tests | `menuDayPayload.test.ts` — R4F contract |
+
+### D. Golden Path / MSDI (protected)
+
+| Link | Detail |
+|------|--------|
+| Source | `TIER_PRICE_CENTS` in `tierPricing.ts` |
+| Consumers | `syncMenuServiceDayItems`, `lp_order_set` |
+| Rule | **Do not change** until R4H + protected-path audit |
+
+### E. Billing / commercial (separate domain)
+
+| Link | Detail |
+|------|--------|
+| Sources | `agreements.price_per_employee`, `lib/billing/pricing.ts`, Tripletex/invoice paths |
+| Rule | Not driven by provider menu resolver; R4G-billing dry-run later |
+
+---
+
+## 12. Feature flags (R4F)
+
+| Flag | Status | Rule |
+|------|--------|------|
+| `LP_PROVIDER_PRICE_PREVIEW_DISPLAY` | Implemented (R4E) | Diagnostics only — **must never change `prices`** |
+| `LP_PROVIDER_PRICE_MARKET_RESOLVER` | **Documented only (R4F)** | Planned R4G cutover; default `false`; staging first |
+
+**Do not reuse the preview flag for production cutover.**
+
+---
+
+## 13. R4F test inventory
+
+| Test file | What it locks |
+|-----------|---------------|
+| `providerMenuPricePreview.test.ts` | Preview NO scope, override exclusion, mixed fallback, parity with production for normal rows |
+| `providerMenuPackageSurface.test.ts` | Production legacy — no `market_code` filter; last row wins |
+| `menuDayPayload.test.ts` | Server publish uses `fallbackProviderMenuPrices`, not resolver/preview |
+| `week-profile-lookup.test.ts` | Employee `/api/week` — no commercial/price keys |

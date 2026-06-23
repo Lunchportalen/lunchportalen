@@ -104,6 +104,34 @@ describe("providerMenuPriceConfig fallback", () => {
     expect(prices.BASIS.priceExVatNok).toBe(90);
     expect(prices.ENTERPRISE.priceIncVatNok).toBe(195.5);
   });
+
+  it("R4F legacy contract: does not filter market_code — last row wins per tier", async () => {
+    mockFrom.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            is: () => ({
+              is: () => ({
+                not: async () => ({
+                  data: [
+                    { tier: "BASIS", amount_ex_vat: 95, vat_rate: 0.15 },
+                    { tier: "BASIS", amount_ex_vat: 200, vat_rate: 0.25 },
+                  ],
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const prices = await loadProviderMenuPrices("multi-market-legacy");
+
+    expect(prices.BASIS.priceExVatNok).toBe(200);
+    expect(prices.BASIS.vatRate).toBe(0.25);
+    expect(prices.BASIS.source).toBe("provider_price_rules");
+  });
 });
 
 describe("providerMenuPackageSurface enterprise validation", () => {
