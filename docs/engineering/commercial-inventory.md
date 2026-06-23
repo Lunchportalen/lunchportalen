@@ -114,6 +114,7 @@ Update intentionally: `node scripts/ci/commercial-hardcodes-guard.mjs --update-a
 | R2 — Inert skeleton + guard | Done |
 | R3A — Inert money/tax display helper (`lib/commercial/moneyDisplay.ts`) | Done (not wired to runtime) |
 | R3C — First runtime wiring: CTO revenue KPI (`CtoClient`) | Done (NO-only display) |
+| R3D — CFO read-only money display (`CfoClient`) | Done (NO-only display) |
 | R3 — Money/tax display helpers wired (broader) | Planned |
 | R4 — Provider price settings market-ready | Planned |
 | R5 — Commission policy skeleton (inert) | Planned |
