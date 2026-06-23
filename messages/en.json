@@ -84,6 +84,48 @@
           "text": "When orders come in, total order value will appear here.",
           "action": "View invoices"
         }
+      },
+      "activity": {
+        "registrationReceived": {
+          "title": "New customer registration received",
+          "description": "A company has registered and is awaiting review."
+        },
+        "registrationApproved": {
+          "title": "Customer approved",
+          "description": "A customer registration has been approved and activated."
+        },
+        "registrationRejected": {
+          "title": "Customer registration rejected",
+          "description": "A customer registration has been processed and rejected."
+        },
+        "agreementActivated": {
+          "title": "Agreement activated",
+          "description": "A delivery agreement has been activated."
+        },
+        "agreementUpdated": {
+          "title": "Agreement updated",
+          "description": "A delivery agreement has been changed."
+        },
+        "invoiceGenerated": {
+          "title": "Invoice basis generated",
+          "description": "New invoice basis is ready for review."
+        },
+        "orderReceived": {
+          "title": "Order received",
+          "description": "A new order has been registered."
+        },
+        "orderCancelled": {
+          "title": "Order cancelled",
+          "description": "An order has been cancelled."
+        },
+        "menuPublished": {
+          "title": "Menu published",
+          "description": "Menu content has been published and is visible to customers."
+        },
+        "settingsUpdated": {
+          "title": "Settings updated",
+          "description": "Provider settings have been changed."
+        }
       }
     },
     "menu": {
@@ -178,12 +220,16 @@
       },
       "errors": {
         "loadFailed": "Could not load menu.",
-        "saveFailed": "Could not save menu."
+        "saveFailed": "Could not save menu.",
+        "copySourceEmpty": "No {tier} menu to copy for this day/category.",
+        "resetVarmrettFailed": "Could not reset hot meal.",
+        "publishConfirmRequired": "{warning} Confirm to publish anyway."
       },
       "success": {
         "published": "Menu published.",
         "draftSaved": "Draft saved.",
-        "resetVarmrett": "Hot meal reset to generated."
+        "resetVarmrett": "Hot meal reset to generated.",
+        "copiedFromTier": "Copied from {tier}. Add Enterprise upgrade before publishing."
       },
       "price": {
         "exVatSuffix": "kr ex. VAT",

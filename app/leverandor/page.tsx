@@ -53,6 +53,17 @@ function translateFollowUp(
   };
 }
 
+function translateActivity(
+  item: ReturnType<typeof mapProviderDashboardActivity>[number],
+  t: Awaited<ReturnType<typeof getTranslations<"provider.dashboard">>>,
+) {
+  return {
+    ...item,
+    title: t(`activity.${item.messageId}.title`),
+    description: t(`activity.${item.messageId}.description`),
+  };
+}
+
 export default async function LeverandorDashboardPage() {
   const t = await getTranslations("provider.dashboard");
   const auth = await getAuthContext();
@@ -73,7 +84,7 @@ export default async function LeverandorDashboardPage() {
   // aktiverer ekstern menyredigering.
   const menuEditingEnabled = Boolean(getVerifiedSanityStudioBaseUrl());
 
-  const activity = mapProviderDashboardActivity(recentActivity);
+  const activity = mapProviderDashboardActivity(recentActivity).map((item) => translateActivity(item, t));
   const followUps = buildProviderFollowUps({
     menuEditingEnabled,
     ordersThisWeek: stats.ordersThisWeek,

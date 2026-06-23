@@ -84,6 +84,48 @@
           "text": "Når bestillinger kommer inn, vises samlet ordreverdi her.",
           "action": "Se faktura"
         }
+      },
+      "activity": {
+        "registrationReceived": {
+          "title": "Ny kunderegistrering mottatt",
+          "description": "En bedrift har registrert seg og venter på behandling."
+        },
+        "registrationApproved": {
+          "title": "Kunde godkjent",
+          "description": "En kunderegistrering er godkjent og aktivert."
+        },
+        "registrationRejected": {
+          "title": "Kunderegistrering avvist",
+          "description": "En kunderegistrering er behandlet og avvist."
+        },
+        "agreementActivated": {
+          "title": "Avtale aktivert",
+          "description": "En leveranseavtale er aktivert."
+        },
+        "agreementUpdated": {
+          "title": "Avtale oppdatert",
+          "description": "En leveranseavtale er endret."
+        },
+        "invoiceGenerated": {
+          "title": "Fakturagrunnlag generert",
+          "description": "Nytt fakturagrunnlag er klart for gjennomgang."
+        },
+        "orderReceived": {
+          "title": "Ordre mottatt",
+          "description": "En ny bestilling er registrert."
+        },
+        "orderCancelled": {
+          "title": "Ordre kansellert",
+          "description": "En bestilling er kansellert."
+        },
+        "menuPublished": {
+          "title": "Meny publisert",
+          "description": "Menyinnhold er publisert og synlig for kundene."
+        },
+        "settingsUpdated": {
+          "title": "Innstillinger oppdatert",
+          "description": "Leverandørinnstillinger er endret."
+        }
       }
     },
     "menu": {
@@ -178,12 +220,16 @@
       },
       "errors": {
         "loadFailed": "Kunne ikke laste meny.",
-        "saveFailed": "Kunne ikke lagre meny."
+        "saveFailed": "Kunne ikke lagre meny.",
+        "copySourceEmpty": "Ingen {tier}-meny å kopiere for denne dagen/kategorien.",
+        "resetVarmrettFailed": "Kunne ikke tilbakestille varmrett.",
+        "publishConfirmRequired": "{warning} Bekreft for å publisere likevel."
       },
       "success": {
         "published": "Meny publisert.",
         "draftSaved": "Utkast lagret.",
-        "resetVarmrett": "Varmrett tilbakestilt til generert."
+        "resetVarmrett": "Varmrett tilbakestilt til generert.",
+        "copiedFromTier": "Kopiert fra {tier}. Legg til Enterprise-upgrade før publisering."
       },
       "price": {
         "exVatSuffix": "kr eks. mva",

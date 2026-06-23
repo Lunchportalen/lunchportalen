@@ -118,6 +118,19 @@
         "autoRolloutChip": "Automaattinen julkaisu käytössä",
         "daysPublished": "{count, plural, one {# päivä julkaistu} other {# päivää julkaistu}}"
       },
+      "preview": {
+        "ariaLabel": "Hinta-esikatselun diagnostiikka",
+        "title": "Hinta-esikatselu",
+        "subtitle": "Vain diagnostiikka — ei käytetä tilauksiin, marginaaliin tai julkaisuun.",
+        "differs": "Poikkeaa tuotantohinnasta",
+        "sourceMarket": "Hintasäännöistä",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Sekoitettu",
+        "taxEx": "veroton",
+        "taxInc": "sis. ALV",
+        "amountExSuffix": "kr veroton",
+        "amountIncSuffix": "kr sis. ALV"
+      },
       "week": {
         "plannerTitle": "Viikkosuunnitelma",
         "plannerLead": "Yhteinen lämmin ateria päivää kohti — luotu oletus, jota voit muuttaa.",

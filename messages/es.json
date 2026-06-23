@@ -118,6 +118,19 @@
         "autoRolloutChip": "Publicación automática activa",
         "daysPublished": "{count, plural, one {# día publicado} other {# días publicados}}"
       },
+      "preview": {
+        "ariaLabel": "Diagnóstico de vista previa de precios",
+        "title": "Vista previa de precios",
+        "subtitle": "Solo diagnóstico — no se usa para pedidos, margen ni publicación.",
+        "differs": "Difiere del precio de producción",
+        "sourceMarket": "Desde reglas de precios",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Mixto",
+        "taxEx": "sin IVA",
+        "taxInc": "con IVA",
+        "amountExSuffix": "kr sin IVA",
+        "amountIncSuffix": "kr con IVA"
+      },
       "week": {
         "plannerTitle": "Plan semanal",
         "plannerLead": "Plato caliente común por día — estándar generado que puede modificar.",

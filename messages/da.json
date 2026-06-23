@@ -118,6 +118,19 @@
         "autoRolloutChip": "Auto-rollout aktiv",
         "daysPublished": "{count, plural, one {# dag publiceret} other {# dage publiceret}}"
       },
+      "preview": {
+        "ariaLabel": "Pris-preview-diagnose",
+        "title": "Pris-preview",
+        "subtitle": "Kun diagnose — bruges ikke til ordrer, margin eller publicering.",
+        "differs": "Afviger fra produktionspris",
+        "sourceMarket": "Fra prisregler",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Blandet",
+        "taxEx": "ekskl. moms",
+        "taxInc": "inkl. moms",
+        "amountExSuffix": "kr ekskl. moms",
+        "amountIncSuffix": "kr inkl. moms"
+      },
       "week": {
         "plannerTitle": "Ugeplan",
         "plannerLead": "Fælles varmret per dag — genereret standard du kan overskrive.",
