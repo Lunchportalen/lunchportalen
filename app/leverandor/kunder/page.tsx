@@ -7,13 +7,14 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
+import { getTranslations } from "next-intl/server";
+
 import CustomerList from "@/components/providers/CustomerList";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadProviderCustomers, type ProviderCustomerFilter } from "@/lib/providers/loadProviderCustomers";
 import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
-import { PROVIDER_CUSTOMERS_COPY, providerCustomersSubheading } from "@/lib/providers/providerCustomersSurface";
 
 function parseFilter(raw: string | undefined): ProviderCustomerFilter {
   const v = String(raw ?? "all").toLowerCase();
@@ -48,13 +49,17 @@ export default async function LeverandorKunderPage({
     loadProviderOperationalSettings(provider.id),
   ]);
 
+  const t = await getTranslations("provider.customers.page");
+  const providerName = String(provider.name ?? "").trim();
+  const lead = providerName ? t("leadWithProvider", { providerName }) : t("leadDefault");
+
   return (
     <div className="ds-container">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">{PROVIDER_CUSTOMERS_COPY.eyebrow}</p>
-          <h1 className="ds-h2">{PROVIDER_CUSTOMERS_COPY.heading}</h1>
-          <p className="ds-lead">{providerCustomersSubheading(provider.name)}</p>
+          <p className="ds-eyebrow">{t("eyebrow")}</p>
+          <h1 className="ds-h2">{t("heading")}</h1>
+          <p className="ds-lead">{lead}</p>
         </div>
       </header>
       <CustomerList initial={list} locale={settings.locale} canManage={canManage} />

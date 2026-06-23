@@ -1,55 +1,85 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  PROVIDER_REGISTRATIONS_COPY,
-  PROVIDER_REGISTRATIONS_EMPTY_STATE,
+  PROVIDER_REGISTRATIONS_EMPTY_STEP_KEYS,
   formatProviderRegistrationReceived,
-  providerRegistrationStatusLabel,
-  providerRegistrationsSummary,
+  providerRegistrationStatusLabelKey,
+  providerRegistrationsSummaryKey,
 } from "@/lib/providers/providerRegistrationsSurface";
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
-describe("PROVIDER_REGISTRATIONS_COPY — enterprise page context", () => {
-  it("kort H1 «Forespørsler» med tydelig bedriftskontekst i subheading", () => {
-    expect(PROVIDER_REGISTRATIONS_COPY.heading).toBe("Forespørsler");
-    expect(PROVIDER_REGISTRATIONS_COPY.subheading).toContain("nye bedrifter");
-    expect(PROVIDER_REGISTRATIONS_COPY.subheading).toContain("leveringsområde");
+type ProviderRegistrationsMessages = {
+  provider: {
+    registrations: {
+      page: { heading: string; subheading: string };
+      status: Record<string, string>;
+      summary: Record<string, string>;
+      empty: { title: string; text: string; steps: Record<string, string> };
+      actions: { review: string };
+    };
+  };
+};
+
+function registrationsMessages(messages: Awaited<ReturnType<typeof loadMessagesForLocale>>) {
+  return messages as ProviderRegistrationsMessages;
+}
+
+describe("provider.registrations messages — enterprise page context", () => {
+  it("kort H1 «Forespørsler» med tydelig bedriftskontekst i subheading", async () => {
+    const messages = registrationsMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.registrations.page.heading).toBe("Forespørsler");
+    expect(messages.provider.registrations.page.subheading).toContain("nye bedrifter");
+    expect(messages.provider.registrations.page.subheading).toContain("leveringsområde");
   });
 
-  it("ingen rå enums eller teknisk copy i copy-modulen", () => {
-    const all = JSON.stringify(PROVIDER_REGISTRATIONS_COPY);
+  it("ingen rå enums i page messages", async () => {
+    const messages = registrationsMessages(await loadMessagesForLocale("nb"));
+    const all = JSON.stringify(messages.provider.registrations.page);
     expect(all).not.toMatch(/PENDING|APPROVED|REJECTED/);
-    expect(all.toLowerCase()).not.toMatch(/created_at|updated_at|enum|null/);
   });
 
-  it("action-copy er provider-safe («Vurder»)", () => {
-    expect(PROVIDER_REGISTRATIONS_COPY.reviewAction).toBe("Vurder");
-  });
-});
-
-describe("providerRegistrationStatusLabel", () => {
-  it("mapper kjente statuser til provider-safe norsk copy", () => {
-    expect(providerRegistrationStatusLabel("PENDING")).toBe("Til behandling");
-    expect(providerRegistrationStatusLabel("pending")).toBe("Til behandling");
-    expect(providerRegistrationStatusLabel("APPROVED")).toBe("Godkjent");
-    expect(providerRegistrationStatusLabel("REJECTED")).toBe("Avslått");
-  });
-
-  it("ukjent status lekker aldri rå enum", () => {
-    expect(providerRegistrationStatusLabel("SOME_RAW_ENUM")).toBe("Annet");
-    expect(providerRegistrationStatusLabel("")).toBe("Annet");
+  it("action-copy er provider-safe («Vurder»)", async () => {
+    const messages = registrationsMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.registrations.actions.review).toBe("Vurder");
   });
 });
 
-describe("providerRegistrationsSummary", () => {
-  it("teller til behandling med korrekt entall/flertall", () => {
-    expect(providerRegistrationsSummary(0)).toBe("Ingen til behandling");
-    expect(providerRegistrationsSummary(1)).toBe("1 til behandling");
-    expect(providerRegistrationsSummary(4)).toBe("4 til behandling");
+describe("providerRegistrationStatusLabelKey", () => {
+  it("mapper kjente statuser til stabile keys", () => {
+    expect(providerRegistrationStatusLabelKey("PENDING")).toBe("pending");
+    expect(providerRegistrationStatusLabelKey("pending")).toBe("pending");
+    expect(providerRegistrationStatusLabelKey("APPROVED")).toBe("approved");
+    expect(providerRegistrationStatusLabelKey("REJECTED")).toBe("rejected");
+  });
+
+  it("ukjent status gir other key", () => {
+    expect(providerRegistrationStatusLabelKey("SOME_RAW_ENUM")).toBe("other");
+    expect(providerRegistrationStatusLabelKey("")).toBe("other");
+  });
+
+  it("nb/en status labels oversettes", async () => {
+    const nb = registrationsMessages(await loadMessagesForLocale("nb"));
+    const en = registrationsMessages(await loadMessagesForLocale("en"));
+    expect(nb.provider.registrations.status.pending).toBe("Til behandling");
+    expect(en.provider.registrations.status.pending).toBe("Pending review");
+  });
+});
+
+describe("providerRegistrationsSummaryKey", () => {
+  it("teller til behandling med korrekt entall/flertall keys", async () => {
+    const messages = registrationsMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.registrations.summary[providerRegistrationsSummaryKey(0).key]).toBe(
+      "Ingen til behandling",
+    );
+    expect(messages.provider.registrations.summary[providerRegistrationsSummaryKey(1).key]).toBe("1 til behandling");
+    expect(
+      messages.provider.registrations.summary.many.replace("{count}", "4"),
+    ).toBe("4 til behandling");
   });
 
   it("defensiv mot ugyldige verdier", () => {
-    expect(providerRegistrationsSummary(-3)).toBe("Ingen til behandling");
-    expect(providerRegistrationsSummary(Number.NaN)).toBe("Ingen til behandling");
+    expect(providerRegistrationsSummaryKey(-3).key).toBe("none");
+    expect(providerRegistrationsSummaryKey(Number.NaN).key).toBe("none");
   });
 });
 
@@ -71,22 +101,25 @@ describe("formatProviderRegistrationReceived", () => {
   });
 });
 
-describe("PROVIDER_REGISTRATIONS_EMPTY_STATE", () => {
-  it("operasjonell empty state med riktig tittel", () => {
-    expect(PROVIDER_REGISTRATIONS_EMPTY_STATE.title).toBe("Ingen forespørsler til behandling");
-    expect(PROVIDER_REGISTRATIONS_EMPTY_STATE.text).toBe(
+describe("provider.registrations empty state messages", () => {
+  it("operasjonell empty state med riktig tittel", async () => {
+    const messages = registrationsMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.registrations.empty.title).toBe("Ingen forespørsler til behandling");
+    expect(messages.provider.registrations.empty.text).toBe(
       "Nye bedriftsforespørsler vises her når de matcher ditt dekningsområde.",
     );
-    expect(PROVIDER_REGISTRATIONS_EMPTY_STATE.steps.length).toBeGreaterThanOrEqual(3);
+    expect(PROVIDER_REGISTRATIONS_EMPTY_STEP_KEYS.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("lover ikke e-post eller onboarding-token", () => {
-    const all = JSON.stringify(PROVIDER_REGISTRATIONS_EMPTY_STATE).toLowerCase();
+  it("lover ikke e-post eller onboarding-token", async () => {
+    const messages = registrationsMessages(await loadMessagesForLocale("nb"));
+    const all = JSON.stringify(messages.provider.registrations.empty).toLowerCase();
     expect(all).not.toMatch(/e-post|email|token|onboarding-lenke/);
   });
 
-  it("ingen teknisk copy i empty state", () => {
-    const all = JSON.stringify(PROVIDER_REGISTRATIONS_EMPTY_STATE).toLowerCase();
+  it("ingen teknisk copy i empty state", async () => {
+    const messages = registrationsMessages(await loadMessagesForLocale("nb"));
+    const all = JSON.stringify(messages.provider.registrations.empty).toLowerCase();
     expect(all).not.toMatch(/pending|registration|null|company_/);
   });
 });

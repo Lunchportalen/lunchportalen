@@ -203,6 +203,137 @@
         "unknown": "Noe gikk galt."
       }
     },
+    "customers": {
+      "page": {
+        "eyebrow": "Leverandør",
+        "heading": "Bedrifter",
+        "leadWithProvider": "Administrer bedriftskunder, avtaler og leveringsoppsett for {providerName}.",
+        "leadDefault": "Administrer bedriftskunder, avtaler og leveringsoppsett."
+      },
+      "filters": {
+        "searchLabel": "Søk",
+        "searchPlaceholder": "Søk etter bedriftsnavn",
+        "statusGroupAria": "Statusfilter",
+        "all": "Alle",
+        "active": "Aktive",
+        "paused": "Pauset",
+        "suspended": "Suspendert",
+        "deleted": "Slettet"
+      },
+      "status": {
+        "active": "Aktiv",
+        "paused": "Pauset",
+        "suspended": "Suspendert",
+        "deleted": "Slettet"
+      },
+      "table": {
+        "name": "Bedrift",
+        "orgnr": "Org.nr",
+        "status": "Status",
+        "employees": "Ansatte",
+        "ordersThisWeek": "Ordre denne uken",
+        "historicalOrders": "Historikk",
+        "invoice": "Faktura",
+        "lastUpdated": "Sist oppdatert",
+        "actions": "Handlinger"
+      },
+      "actions": {
+        "newCustomer": "Ny bedriftskunde",
+        "newCustomerTitle": "Nye bedriftskunder kommer inn via kontrollert registrering.",
+        "openCustomer": "Åpne kunde",
+        "removeCustomer": "Fjern kunde",
+        "restoreCustomer": "Gjenopprett kunde"
+      },
+      "empty": {
+        "noResults": {
+          "title": "Ingen treff",
+          "text": "Prøv et annet bedriftsnavn eller fjern filteret."
+        },
+        "noStatusMatch": {
+          "title": "Ingen bedrifter med valgt status",
+          "text": "Endre statusfilteret for å se flere bedriftskunder."
+        },
+        "noneYet": {
+          "title": "Ingen bedrifter ennå",
+          "text": "Når bedriftskunder er registrert og godkjent, vises de her med status, avtaler og ordregrunnlag."
+        }
+      },
+      "card": {
+        "mobileMeta": "{employees} ansatte · {orders} ordre denne uken · {history} i historikk · Faktura: {invoice}",
+        "mobileUpdatedPrefix": "Sist oppdatert",
+        "orgNrPrefix": "Org.nr: {orgnr}"
+      },
+      "pagination": {
+        "aria": "Paginering",
+        "prev": "Forrige",
+        "next": "Neste",
+        "oneCompany": "1 bedrift",
+        "companies": "{count} bedrifter",
+        "page": "Side {current} av {total} ({count} totalt)"
+      },
+      "create": {
+        "heading": "Ny bedriftskunde",
+        "lead": "Direkte opprettelse av bedriftskunder er ikke tilgjengelig ennå. Nye bedrifter i ditt dekningsområde kommer inn via Registreringer når de melder interesse, og vises under Bedrifter etter godkjenning.",
+        "backToCustomers": "Tilbake til bedrifter"
+      }
+    },
+    "registrations": {
+      "page": {
+        "eyebrow": "Leverandør",
+        "heading": "Forespørsler",
+        "subheading": "Se nye bedrifter som ønsker lunsjordning, og vurder leveringsområde, kontaktinformasjon og ønsket avtale før behandling."
+      },
+      "table": {
+        "company": "Bedrift",
+        "area": "Område",
+        "contact": "Kontakt",
+        "employees": "Ansatte",
+        "received": "Mottatt",
+        "status": "Status"
+      },
+      "status": {
+        "pending": "Til behandling",
+        "approved": "Godkjent",
+        "rejected": "Avslått",
+        "other": "Annet"
+      },
+      "summary": {
+        "none": "Ingen til behandling",
+        "one": "1 til behandling",
+        "many": "{count} til behandling"
+      },
+      "actions": {
+        "review": "Vurder"
+      },
+      "empty": {
+        "title": "Ingen forespørsler til behandling",
+        "text": "Nye bedriftsforespørsler vises her når de matcher ditt dekningsområde.",
+        "steps": {
+          "reviewRequest": "Kontroller leveringssted, kontaktinformasjon og ønsket lunsjordning når en forespørsel kommer inn.",
+          "approvedFlow": "Godkjente bedrifter flyttes videre til kunde- og avtaleflyt.",
+          "rejectedFlow": "Avslåtte forespørsler håndteres kontrollert med tydelig status."
+        }
+      },
+      "dialogs": {
+        "closeAria": "Lukk",
+        "approveTitle": "Godkjenn registrering",
+        "rejectTitle": "Avvis registrering",
+        "contactLabel": "Kontakt",
+        "phoneLabel": "Telefon",
+        "employeesLabel": "Ansatte (ca.)",
+        "tierLabel": "Avtale-nivå",
+        "rejectReasonLabel": "Begrunnelse",
+        "rejectInstead": "Avvis i stedet",
+        "approveInstead": "Godkjenn i stedet",
+        "cancel": "Avbryt",
+        "approve": "Godkjenn",
+        "reject": "Avvis",
+        "saving": "Behandler…"
+      },
+      "errors": {
+        "actionFailed": "Handlingen feilet."
+      }
+    },
     "menu": {
       "page": {
         "readOnlyTitle": "Kun visning",

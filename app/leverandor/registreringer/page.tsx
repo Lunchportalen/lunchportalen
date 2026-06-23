@@ -6,13 +6,14 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
+import { getTranslations } from "next-intl/server";
+
 import ProviderRegistrationsQueue from "@/components/providers/ProviderRegistrationsQueue";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadProviderRegistrations } from "@/lib/providers/loadProviderRegistrations";
 import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
-import { PROVIDER_REGISTRATIONS_COPY } from "@/lib/providers/providerRegistrationsSurface";
 
 export default async function LeverandorRegistreringerPage() {
   const auth = await getAuthContext();
@@ -30,13 +31,15 @@ export default async function LeverandorRegistreringerPage() {
     loadProviderOperationalSettings(provider.id),
   ]);
 
+  const t = await getTranslations("provider.registrations.page");
+
   return (
     <div className="ds-container">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">{PROVIDER_REGISTRATIONS_COPY.eyebrow}</p>
-          <h1 className="ds-h2">{PROVIDER_REGISTRATIONS_COPY.heading}</h1>
-          <p className="ds-lead">{PROVIDER_REGISTRATIONS_COPY.subheading}</p>
+          <p className="ds-eyebrow">{t("eyebrow")}</p>
+          <h1 className="ds-h2">{t("heading")}</h1>
+          <p className="ds-lead">{t("subheading")}</p>
         </div>
       </header>
       <ProviderRegistrationsQueue providerId={provider.id} rows={rows} locale={settings.locale} />

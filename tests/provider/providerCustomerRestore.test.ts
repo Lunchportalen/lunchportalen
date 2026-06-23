@@ -158,7 +158,7 @@ describe("provider customer restore", () => {
     const route = readFileSync(join(ROOT, "app/api/provider/customers/[companyId]/restore/route.ts"), "utf8");
     const loader = readFileSync(join(ROOT, "lib/providers/loadProviderCustomers.ts"), "utf8");
 
-    expect(list).toContain("Gjenopprett kunde");
+    expect(list).toContain('tActions("restoreCustomer")');
     expect(list).toContain("ProviderCustomerRestoreDialog");
     expect(loader).toContain("isProviderSelfCustomer");
     expect(route).not.toContain("lp_order_set");
