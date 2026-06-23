@@ -15,10 +15,15 @@ import {
 import { buildProviderTripletexWebhookUrl } from "@/lib/integrations/tripletex/providerWebhookUrl";
 import { resolveTripletexProviderEnv } from "@/lib/integrations/tripletex/resolveTripletexProviderEnv";
 import { syncWebhookSubscriptions } from "@/lib/integrations/tripletex/webhookSubscriptions";
+import {
+  mapFinalizeRpcErrorKey,
+  tripletexActionFailure,
+  type TripletexActionFailure,
+} from "@/lib/integrations/tripletex/tripletexActionErrors";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export type WizardActionError = { ok: false; error: string; code?: string };
+export type WizardActionError = TripletexActionFailure;
 export type WizardActionOk<T> = { ok: true; data: T };
 
 export type ConnectionHealthSummary = {
@@ -42,12 +47,12 @@ function maskTokenForLog(token: string): string {
 async function requireProviderAdmin(providerId: string): Promise<WizardActionError | null> {
   const auth = await getAuthContext();
   if (!auth.ok || !auth.user?.id) {
-    return { ok: false as const, error: "Ikke innlogget.", code: "UNAUTHENTICATED" };
+    return tripletexActionFailure("notAuthenticated", "UNAUTHENTICATED");
   }
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
   if (!allowed) {
-    return { ok: false as const, error: "Kun provider-admin kan koble til Tripletex.", code: "FORBIDDEN" };
+    return tripletexActionFailure("providerAdminRequired", "FORBIDDEN");
   }
 
   return null;
@@ -70,12 +75,12 @@ export async function verifyTokenAction(input: {
 
   const companyId = parseCompanyId(input.tripletexCompanyId);
   if (!companyId) {
-    return { ok: false as const, error: "Company ID må være 6–12 siffer.", code: "INVALID_COMPANY_ID" };
+    return tripletexActionFailure("invalidCompanyId", "INVALID_COMPANY_ID");
   }
 
   const employeeToken = safeStr(input.employeeToken);
   if (!employeeToken) {
-    return { ok: false as const, error: "Employee Token er påkrevd.", code: "INVALID_TOKEN" };
+    return tripletexActionFailure("missingToken", "INVALID_TOKEN");
   }
 
   const env = resolveTripletexProviderEnv();
@@ -104,11 +109,8 @@ export async function verifyTokenAction(input: {
 
     return { ok: true as const, data: result };
   } catch (error: unknown) {
-    return {
-      ok: false as const,
-      error: safeStr((error as Error)?.message ?? error) || "Verifisering feilet.",
-      code: "VERIFY_FAILED",
-    };
+    void error;
+    return tripletexActionFailure("tokenVerificationFailed", "VERIFY_FAILED");
   }
 }
 
@@ -122,12 +124,12 @@ export async function completeConnectionAction(input: {
 
   const companyId = parseCompanyId(input.tripletexCompanyId);
   if (!companyId) {
-    return { ok: false as const, error: "Company ID må være 6–12 siffer.", code: "INVALID_COMPANY_ID" };
+    return tripletexActionFailure("invalidCompanyId", "INVALID_COMPANY_ID");
   }
 
   const employeeToken = safeStr(input.employeeToken);
   if (!employeeToken) {
-    return { ok: false as const, error: "Employee Token er påkrevd.", code: "INVALID_TOKEN" };
+    return tripletexActionFailure("missingToken", "INVALID_TOKEN");
   }
 
   const env = resolveTripletexProviderEnv();
@@ -139,11 +141,7 @@ export async function completeConnectionAction(input: {
     });
 
     if (!verificationResult.all_passed) {
-      return {
-        ok: false as const,
-        error: "Verifisering feilet. Token eller tilganger er ikke gyldige.",
-        code: "VERIFICATION_FAILED",
-      };
+      return tripletexActionFailure("verificationFailed", "VERIFICATION_FAILED");
     }
 
     const admin = supabaseAdmin();
@@ -164,11 +162,8 @@ export async function completeConnectionAction(input: {
       },
     };
   } catch (error: unknown) {
-    return {
-      ok: false as const,
-      error: safeStr((error as Error)?.message ?? error) || "Kunne ikke lagre tilkoblingen.",
-      code: "COMPLETE_FAILED",
-    };
+    void error;
+    return tripletexActionFailure("completeFailed", "COMPLETE_FAILED");
   }
 }
 
@@ -188,16 +183,12 @@ export async function rotateWebhookSecretAction(input: {
   });
 
   if (error) {
-    return {
-      ok: false as const,
-      error: safeStr(error.message) || "Kunne ikke generere webhook-secret.",
-      code: "ROTATE_FAILED",
-    };
+    return tripletexActionFailure("rotateFailed", "ROTATE_FAILED");
   }
 
   const secret = safeStr((data as { webhook_secret?: string })?.webhook_secret);
   if (!secret) {
-    return { ok: false as const, error: "Webhook-secret mangler i svar.", code: "ROTATE_EMPTY" };
+    return tripletexActionFailure("rotateFailed", "ROTATE_EMPTY");
   }
 
   return {
@@ -225,16 +216,12 @@ export async function finalizeConnectionAction(input: {
   });
 
   if (secretError) {
-    return {
-      ok: false as const,
-      error: "Webhook-secret må genereres først.",
-      code: "WEBHOOK_REQUIRED",
-    };
+    return tripletexActionFailure("webhookSecretRequired", "WEBHOOK_REQUIRED");
   }
 
   const webhookSecret = safeStr((secretRow as { webhook_secret?: string })?.webhook_secret);
   if (!webhookSecret) {
-    return { ok: false as const, error: "Webhook-secret må genereres først.", code: "WEBHOOK_REQUIRED" };
+    return tripletexActionFailure("webhookSecretRequired", "WEBHOOK_REQUIRED");
   }
 
   const targetUrl = buildProviderTripletexWebhookUrl(input.providerId);
@@ -263,7 +250,7 @@ export async function finalizeConnectionAction(input: {
       },
     });
   } catch (error: unknown) {
-    const message = safeStr((error as Error)?.message ?? error) || "Webhook-registrering feilet.";
+    void error;
 
     await admin
       .from("provider_tripletex_credentials")
@@ -271,11 +258,7 @@ export async function finalizeConnectionAction(input: {
       .eq("provider_id", input.providerId)
       .eq("env", env);
 
-    return {
-      ok: false as const,
-      error: `Kunne ikke registrere webhook i Tripletex: ${message}`,
-      code: "WEBHOOK_SYNC_FAILED",
-    };
+    return tripletexActionFailure("webhookSyncFailed", "WEBHOOK_SYNC_FAILED");
   }
 
   const { data, error } = await sb.rpc("lp_provider_finalize_tripletex_connection", {
@@ -286,12 +269,12 @@ export async function finalizeConnectionAction(input: {
   if (error) {
     const msg = safeStr(error.message);
     if (msg.includes("PROVISIONING_NOT_COMPLETE")) {
-      return { ok: false as const, error: "Oppsettet er ikke ferdig ennå.", code: "PROVISIONING_NOT_COMPLETE" };
+      return tripletexActionFailure("provisioningNotComplete", "PROVISIONING_NOT_COMPLETE");
     }
     if (msg.includes("WEBHOOK_SECRET_REQUIRED")) {
-      return { ok: false as const, error: "Webhook-secret må genereres først.", code: "WEBHOOK_REQUIRED" };
+      return tripletexActionFailure("webhookSecretRequired", "WEBHOOK_REQUIRED");
     }
-    return { ok: false as const, error: msg || "Kunne ikke fullføre tilkoblingen.", code: "FINALIZE_FAILED" };
+    return tripletexActionFailure(mapFinalizeRpcErrorKey(msg), "FINALIZE_FAILED");
   }
 
   revalidatePath("/leverandor/innstillinger/tripletex/koble-til");
@@ -310,12 +293,12 @@ export async function getHealthAction(input: {
 }): Promise<WizardActionOk<ConnectionHealthSummary> | WizardActionError> {
   const auth = await getAuthContext();
   if (!auth.ok || !auth.user?.id) {
-    return { ok: false as const, error: "Ikke innlogget.", code: "UNAUTHENTICATED" };
+    return tripletexActionFailure("notAuthenticated", "UNAUTHENTICATED");
   }
 
   const allowed = await hasProviderRole(auth.user.id, input.providerId, "provider_admin");
   if (!allowed) {
-    return { ok: false as const, error: "Kun provider-admin har tilgang.", code: "FORBIDDEN" };
+    return tripletexActionFailure("providerAdminRequired", "FORBIDDEN");
   }
 
   const env = resolveTripletexProviderEnv();
@@ -327,11 +310,7 @@ export async function getHealthAction(input: {
   });
 
   if (error) {
-    return {
-      ok: false as const,
-      error: safeStr(error.message) || "Kunne ikke hente tilkoblingsstatus.",
-      code: "HEALTH_FAILED",
-    };
+    return tripletexActionFailure("healthLoadFailed", "HEALTH_FAILED");
   }
 
   const admin = supabaseAdmin();

@@ -1135,6 +1135,29 @@
           "companyOk": "Correct company",
           "scopeOk": "Access OK"
         }
+      },
+      "errors": {
+        "notAuthenticated": "Not signed in.",
+        "providerAdminRequired": "Only a provider admin can perform this action.",
+        "forbidden": "You do not have access to this provider.",
+        "invalidCompanyId": "Company ID must be 6–12 digits.",
+        "missingToken": "Employee Token is required.",
+        "tokenVerificationFailed": "Verification failed.",
+        "verificationFailed": "Verification failed. Token or permissions are not valid.",
+        "credentialsLoadFailed": "Could not load credentials.",
+        "configurationMissing": "Tripletex credentials are not configured.",
+        "connectionTestFailed": "Connection test failed.",
+        "healthLoadFailed": "Could not load connection status.",
+        "disconnectFailed": "Could not disconnect Tripletex.",
+        "invalidState": "The connection cannot be disconnected in its current state.",
+        "rotateFailed": "Could not generate webhook secret.",
+        "webhookSecretRequired": "Webhook secret must be generated first.",
+        "webhookSyncFailed": "Could not register webhook in Tripletex.",
+        "provisioningNotComplete": "Setup is not complete yet.",
+        "completeFailed": "Could not save the connection.",
+        "finalizeFailed": "Could not complete the connection.",
+        "saveFailed": "The action failed.",
+        "unknown": "Something went wrong. Please try again."
       }
     },
     "registrations": {

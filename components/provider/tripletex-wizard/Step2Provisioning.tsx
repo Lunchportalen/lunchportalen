@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { getHealthAction } from "@/app/leverandor/innstillinger/tripletex/koble-til/actions";
+import { resolveTripletexActionError } from "@/lib/integrations/tripletex/tripletexActionErrors";
 
 type Props = {
   providerId: string;
@@ -16,6 +17,7 @@ const MAX_BACKOFF_MS = 30_000;
 
 export default function Step2Provisioning({ providerId, onComplete }: Props) {
   const t = useTranslations("provider.tripletex.wizard.steps.provisioning");
+  const tErrors = useTranslations("provider.tripletex.errors");
   const [statusText, setStatusText] = useState(() => t("starting"));
   const [timedOut, setTimedOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export default function Step2Provisioning({ providerId, onComplete }: Props) {
         if (is5xx) {
           backoffRef.current = Math.min(backoffRef.current * 2, MAX_BACKOFF_MS);
         }
-        setError(res.error);
+        setError(resolveTripletexActionError((key) => tErrors(key), res, "healthLoadFailed"));
         setStatusText(t("waiting"));
         return;
       }

@@ -18,6 +18,7 @@ describe("provider.tripletex i18n wiring (PR 7)", () => {
             state: Record<string, string>;
             activity: Record<string, string>;
             wizard: { heading: string; steps: { token: { title: string } } };
+            errors: Record<string, string>;
           };
         };
       };
@@ -26,21 +27,33 @@ describe("provider.tripletex i18n wiring (PR 7)", () => {
       expect(messages.provider.tripletex.wizard.heading).toBeTruthy();
       expect(messages.provider.tripletex.wizard.steps.token.title).toBeTruthy();
       expect(messages.provider.tripletex.state.CONNECTED).toBeTruthy();
+      expect(messages.provider.tripletex.errors.notAuthenticated).toBeTruthy();
       for (const activityKey of Object.values(TRIPLETEX_ACTIVITY_ACTION_KEYS)) {
         expect(messages.provider.tripletex.activity[activityKey]).toBeTruthy();
       }
     }
   });
 
-  it("tripletex action contracts unchanged", () => {
+  it("tripletex action contracts expose stable errorKey", () => {
     const statusSrc = readFileSync(STATUS_ACTIONS, "utf8");
     const connectSrc = readFileSync(CONNECT_ACTIONS, "utf8");
     expect(statusSrc).toContain("getDashboardDataAction");
     expect(statusSrc).toContain("testConnectionAction");
     expect(statusSrc).toContain("disconnectTripletexAction");
+    expect(statusSrc).toContain("tripletexActionFailure");
+    expect(statusSrc).toContain("TripletexActionFailure");
     expect(connectSrc).toContain("verifyTokenAction");
     expect(connectSrc).toContain("completeConnectionAction");
-    expect(connectSrc).not.toContain("errorKey");
+    expect(connectSrc).toContain("tripletexActionFailure");
+  });
+
+  it("tripletex clients resolve action errors via i18n", () => {
+    const statusActions = readFileSync(
+      join(process.cwd(), "components/provider/tripletex-status/StatusActions.tsx"),
+      "utf8",
+    );
+    expect(statusActions).toContain("resolveTripletexActionError");
+    expect(statusActions).not.toContain("setError(res.error");
   });
 
   it("components use i18n not raw Norwegian chrome strings", () => {

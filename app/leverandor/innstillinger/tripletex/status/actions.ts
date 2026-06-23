@@ -15,10 +15,15 @@ import {
 import { buildProviderTripletexWebhookUrl } from "@/lib/integrations/tripletex/providerWebhookUrl";
 import { resolveTripletexProviderEnv } from "@/lib/integrations/tripletex/resolveTripletexProviderEnv";
 import { deleteProviderTripletexWebhookSubscriptions } from "@/lib/integrations/tripletex/webhookSubscriptions";
+import {
+  mapDisconnectRpcErrorKey,
+  tripletexActionFailure,
+  type TripletexActionFailure,
+} from "@/lib/integrations/tripletex/tripletexActionErrors";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export type StatusActionError = { ok: false; error: string; code?: string };
+export type StatusActionError = TripletexActionFailure;
 export type StatusActionOk<T> = { ok: true; data: T };
 
 export type DashboardWarning = { code: string; message: string };
@@ -73,12 +78,12 @@ function safeNum(value: unknown): number | null {
 async function requireProviderRead(providerId: string): Promise<StatusActionError | null> {
   const auth = await getAuthContext();
   if (!auth.ok || !auth.user?.id) {
-    return { ok: false as const, error: "Ikke innlogget.", code: "UNAUTHENTICATED" };
+    return tripletexActionFailure("notAuthenticated", "UNAUTHENTICATED");
   }
 
   const allowed = await canAccessProvider(auth.user.id, providerId);
   if (!allowed) {
-    return { ok: false as const, error: "Ingen tilgang til denne leverandøren.", code: "FORBIDDEN" };
+    return tripletexActionFailure("forbidden", "FORBIDDEN");
   }
 
   return null;
@@ -87,18 +92,14 @@ async function requireProviderRead(providerId: string): Promise<StatusActionErro
 async function requireProviderAdminOrSuperadmin(providerId: string): Promise<StatusActionError | null> {
   const auth = await getAuthContext();
   if (!auth.ok || !auth.user?.id) {
-    return { ok: false as const, error: "Ikke innlogget.", code: "UNAUTHENTICATED" };
+    return tripletexActionFailure("notAuthenticated", "UNAUTHENTICATED");
   }
 
   if (await isSuperadminProfile(auth.user.id)) return null;
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
   if (!allowed) {
-    return {
-      ok: false as const,
-      error: "Kun provider-admin kan utføre denne handlingen.",
-      code: "FORBIDDEN",
-    };
+    return tripletexActionFailure("providerAdminRequired", "FORBIDDEN");
   }
 
   return null;
@@ -162,11 +163,7 @@ export async function getDashboardDataAction(input: {
   });
 
   if (error) {
-    return {
-      ok: false as const,
-      error: safeStr(error.message) || "Kunne ikke hente tilkoblingsstatus.",
-      code: "HEALTH_FAILED",
-    };
+    return tripletexActionFailure("healthLoadFailed", "HEALTH_FAILED");
   }
 
   const base = parseHealthPayload(health);
@@ -278,11 +275,7 @@ export async function testConnectionAction(input: {
   });
 
   if (loadError) {
-    return {
-      ok: false as const,
-      error: safeStr(loadError.message) || "Kunne ikke laste credentials.",
-      code: "CREDENTIALS_LOAD_FAILED",
-    };
+    return tripletexActionFailure("credentialsLoadFailed", "CREDENTIALS_LOAD_FAILED");
   }
 
   const row = (creds ?? {}) as Record<string, unknown>;
@@ -290,11 +283,7 @@ export async function testConnectionAction(input: {
   const companyId = safeNum(row.company_id_external);
 
   if (!employeeToken || !companyId) {
-    return {
-      ok: false as const,
-      error: "Tripletex-credentials er ikke konfigurert.",
-      code: "CREDENTIALS_MISSING",
-    };
+    return tripletexActionFailure("configurationMissing", "CREDENTIALS_MISSING");
   }
 
   try {
@@ -314,11 +303,8 @@ export async function testConnectionAction(input: {
 
     return { ok: true as const, data: result };
   } catch (error: unknown) {
-    return {
-      ok: false as const,
-      error: safeStr((error as Error)?.message ?? error) || "Tilkoblingstest feilet.",
-      code: "TEST_FAILED",
-    };
+    void error;
+    return tripletexActionFailure("connectionTestFailed", "TEST_FAILED");
   }
 }
 
@@ -350,17 +336,9 @@ export async function disconnectTripletexAction(input: {
   if (error) {
     const msg = safeStr(error.message);
     if (msg.includes("INVALID_STATE_FOR_DISCONNECT")) {
-      return {
-        ok: false as const,
-        error: "Tilkoblingen kan ikke frakobles i nåværende tilstand.",
-        code: "INVALID_STATE",
-      };
+      return tripletexActionFailure("invalidState", "INVALID_STATE");
     }
-    return {
-      ok: false as const,
-      error: msg || "Kunne ikke koble fra Tripletex.",
-      code: "DISCONNECT_FAILED",
-    };
+    return tripletexActionFailure(mapDisconnectRpcErrorKey(msg), "DISCONNECT_FAILED");
   }
 
   const row = (data ?? {}) as Record<string, unknown>;

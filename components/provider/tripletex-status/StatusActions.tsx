@@ -9,6 +9,7 @@ import {
   testConnectionAction,
 } from "@/app/leverandor/innstillinger/tripletex/status/actions";
 import type { TripletexTokenVerificationResult } from "@/lib/integrations/tripletex/onboardingVerify";
+import { resolveTripletexActionError } from "@/lib/integrations/tripletex/tripletexActionErrors";
 
 type Props = {
   providerId: string;
@@ -29,6 +30,7 @@ function stepLabel(
 export default function StatusActions({ providerId, connectionState, onChanged }: Props) {
   const tActions = useTranslations("provider.tripletex.status.actions");
   const tModals = useTranslations("provider.tripletex.status.modals");
+  const tErrors = useTranslations("provider.tripletex.errors");
   const [modal, setModal] = useState<ModalKind>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
     const res = await testConnectionAction({ providerId });
     setBusy(false);
     if (res.ok === false) {
-      setError(res.error);
+      setError(resolveTripletexActionError((key) => tErrors(key), res, "connectionTestFailed"));
       return;
     }
     setTestResult(res.data);
@@ -68,7 +70,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
     const res = await rotateWebhookSecretAction({ providerId });
     setBusy(false);
     if (res.ok === false) {
-      setError(res.error);
+      setError(resolveTripletexActionError((key) => tErrors(key), res, "rotateFailed"));
       return;
     }
     setRotatedSecret(res.data.webhook_secret);
@@ -81,7 +83,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
     const res = await disconnectTripletexAction({ providerId });
     setBusy(false);
     if (res.ok === false) {
-      setError(res.error);
+      setError(resolveTripletexActionError((key) => tErrors(key), res, "disconnectFailed"));
       return;
     }
     closeModal();

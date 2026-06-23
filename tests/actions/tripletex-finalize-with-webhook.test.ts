@@ -134,7 +134,8 @@ describe("finalizeConnectionAction with webhook sync (polish-9)", () => {
     expect(res.ok).toBe(false);
     if (res.ok === false) {
       expect(res.code).toBe("WEBHOOK_SYNC_FAILED");
-      expect(res.error).toContain("Kunne ikke registrere webhook");
+      expect(res.errorKey).toBe("webhookSyncFailed");
+      expect(res).not.toHaveProperty("error");
     }
 
     expect(mockAdminUpdate).toHaveBeenCalled();
