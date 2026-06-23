@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { formatMoneyDisplay } from "@/lib/commercial/moneyDisplay";
 import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
 import { formatDateNO } from "@/lib/date/oslo";
 
@@ -18,9 +19,16 @@ function num(v: any) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function formatNok(v: number | null) {
-  if (v === null || v === undefined) return "n/a";
-  return `${Math.round(v).toLocaleString("no-NO")} kr`;
+/** NO-only CFO money display — ADR-017 R3D read-only wiring. */
+export function formatCfoMoneyDisplay(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "n/a";
+  return formatMoneyDisplay({
+    amountMinor: Math.round(num(value) * 100),
+    currency: "NOK",
+    locale: "nb-NO",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).formatted;
 }
 
 export default function CfoClient() {
@@ -137,7 +145,7 @@ export default function CfoClient() {
         </div>
         <div className="rounded-2xl bg-white p-4 ring-1 ring-[rgb(var(--lp-border))]">
           <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">OMSETNING (NOK)</div>
-          <div className="mt-2 text-2xl font-semibold">{formatNok(totals.revenue_nok ?? null)}</div>
+          <div className="mt-2 text-2xl font-semibold">{formatCfoMoneyDisplay(totals.revenue_nok ?? null)}</div>
           <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
             Mangler pris: {num(totals.revenue_missing?.missing)} / {num(totals.revenue_missing?.total)}
           </div>
@@ -218,7 +226,7 @@ export default function CfoClient() {
                     <td className="py-2 pr-3 text-xs">{c.status || "-"}</td>
                     <td className="py-2 pr-3">{num(c.orders)}</td>
                     <td className="py-2 pr-3">{num(c.cancelled)}</td>
-                    <td className="py-2 pr-3">{formatNok(c.revenue_sum ?? null)}</td>
+                    <td className="py-2 pr-3">{formatCfoMoneyDisplay(c.revenue_sum ?? null)}</td>
                   </tr>
                 ))
               ) : (
