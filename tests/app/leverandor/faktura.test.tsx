@@ -123,6 +123,15 @@ describe("BillingContactForm", () => {
     expect(en.provider.billing.contact.emailLabel).toBe("Invoice email");
     expect(en.provider.billing.contact.save).toBe("Save");
   });
+
+  test("billing error keys translate in en without leaking raw RPC text", async () => {
+    const messages = await loadMessagesForLocale("en");
+    const errors = (messages as { provider: { billing: { errors: Record<string, string> } } }).provider
+      .billing.errors;
+    expect(errors.invalidEmail).toBe("Invalid invoice email.");
+    expect(errors.activeSubscriptionNotFound).toBe("No active subscription to update.");
+    expect(errors.saveFailed).not.toContain("INVALID_BILLING_EMAIL");
+  });
 });
 
 describe("faktura page module", () => {

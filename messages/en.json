@@ -910,6 +910,15 @@
         "saving": "Saving…",
         "saved": "Billing contact updated.",
         "saveFailed": "Could not save."
+      },
+      "errors": {
+        "notAuthenticated": "Not signed in.",
+        "providerAdminRequired": "Only a provider admin can change billing contact.",
+        "forbidden": "You do not have access.",
+        "invalidEmail": "Invalid invoice email.",
+        "activeSubscriptionNotFound": "No active subscription to update.",
+        "saveFailed": "Could not save billing contact.",
+        "unknown": "Something went wrong. Please try again."
       }
     },
     "registrations": {

@@ -910,6 +910,15 @@
         "saving": "Lagrer…",
         "saved": "Fakturakontakt oppdatert.",
         "saveFailed": "Kunne ikke lagre."
+      },
+      "errors": {
+        "notAuthenticated": "Ikke innlogget.",
+        "providerAdminRequired": "Kun provider-admin kan endre fakturakontakt.",
+        "forbidden": "Du har ikke tilgang.",
+        "invalidEmail": "Ugyldig faktura-e-post.",
+        "activeSubscriptionNotFound": "Ingen aktiv lisens å oppdatere.",
+        "saveFailed": "Kunne ikke lagre fakturakontakt.",
+        "unknown": "Noe gikk galt. Prøv igjen."
       }
     },
     "registrations": {

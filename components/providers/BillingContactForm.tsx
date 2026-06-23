@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
 import { updateBillingContact } from "@/app/leverandor/faktura/actions";
+import { resolveProviderBillingActionError } from "@/lib/providers/providerBillingActionErrors";
 import type { ProviderSubscriptionRow } from "@/lib/providers/providerBillingShared";
 
 export default function BillingContactForm({
@@ -14,6 +15,7 @@ export default function BillingContactForm({
   subscription: ProviderSubscriptionRow;
 }) {
   const t = useTranslations("provider.billing.contact");
+  const tErrors = useTranslations("provider.billing.errors");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(subscription.billing_email);
   const [orgNumber, setOrgNumber] = useState(subscription.billing_org_number ?? "");
@@ -36,8 +38,8 @@ export default function BillingContactForm({
     setMessage(null);
     startTransition(async () => {
       const res = await updateBillingContact(providerId, email, orgNumber, address);
-      if (!res.success) {
-        setError("error" in res ? res.error : t("saveFailed"));
+      if (res.success === false) {
+        setError(resolveProviderBillingActionError((key) => tErrors(key), res, "saveFailed"));
         return;
       }
       setMessage(t("saved"));
