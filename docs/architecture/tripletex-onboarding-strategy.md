@@ -18,6 +18,8 @@ Levere enterprise-grade Tripletex-onboarding for provider-administratorer som er
 
 ### 1.2 Strategisk kontekst
 
+**Accounting adapter-modell (fremtidig):** Tripletex er en **norsk regnskapsadapter**, ikke global billing-sannhet. Core billing/settlement-data i Lunchportalen forblir nøytral; providere velger regnskapsintegrasjon per marked. Andre land kan senere få egne adapters (Fiken, Fortnox, e-conomic, osv.). Denne PR/arkitektur-notatet dokumenterer retningen — ingen adapter-runtime implementeres her.
+
 Tripletex tilbyr to onboarding-modeller for tredjeparts-integrasjoner:
 
 1. **Integration Marketplace** — provider initierer "Aktivér" inne i Tripletex, Tripletex POSTer tokens til vår redirect-URL. Krever Tripletex Partner-godkjenning, som igjen krever eksisterende produksjonskunder. Ikke tilgjengelig for oss før 3-5 fornøyde providere er onboarded.

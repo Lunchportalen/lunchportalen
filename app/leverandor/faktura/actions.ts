@@ -6,15 +6,15 @@ import { revalidatePath } from "next/cache";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { hasProviderRole } from "@/lib/auth/provider";
+import {
+  billingContactActionFailure,
+  mapBillingContactRpcErrorKey,
+  type ProviderBillingActionErrorKey,
+} from "@/lib/providers/providerBillingActionErrors";
 
-export type BillingContactResult = { success: true } | { success: false; error: string };
-
-function mapRpcError(message: string): string {
-  if (message.includes("PERMISSION_DENIED")) return "Du har ikke tilgang.";
-  if (message.includes("INVALID_BILLING_EMAIL")) return "Ugyldig faktura-e-post.";
-  if (message.includes("ACTIVE_SUBSCRIPTION_NOT_FOUND")) return "Ingen aktiv lisens å oppdatere.";
-  return "Kunne ikke lagre fakturakontakt.";
-}
+export type BillingContactResult =
+  | { success: true }
+  | { success: false; errorKey: ProviderBillingActionErrorKey };
 
 export async function updateBillingContact(
   providerId: string,
@@ -23,10 +23,10 @@ export async function updateBillingContact(
   billingAddress: string,
 ): Promise<BillingContactResult> {
   const auth = await getAuthContext();
-  if (!auth.ok || !auth.user?.id) return { success: false, error: "Ikke innlogget." };
+  if (!auth.ok || !auth.user?.id) return billingContactActionFailure("notAuthenticated");
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
-  if (!allowed) return { success: false, error: "Kun provider-admin kan endre fakturakontakt." };
+  if (!allowed) return billingContactActionFailure("providerAdminRequired");
 
   const { supabaseServer } = await import("@/lib/supabase/server");
   const sb = await supabaseServer();
@@ -37,7 +37,7 @@ export async function updateBillingContact(
     p_billing_address: billingAddress.trim() || null,
   });
 
-  if (error) return { success: false, error: mapRpcError(error.message) };
+  if (error) return billingContactActionFailure(mapBillingContactRpcErrorKey(error.message));
 
   revalidatePath("/leverandor/faktura");
   return { success: true };
