@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 
 type ApiErr = {
   ok: false;
@@ -25,7 +26,11 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function parseApiMessage(body: ApiErr | null, fallback: string, httpStatus?: number) {
+function parseApiMessage(
+  body: ApiErr | null,
+  fallback: string,
+  httpStatus?: number,
+) {
   const message = safeStr(body?.message);
   if (message) {
     const rid = safeStr(body?.rid);
@@ -48,6 +53,8 @@ export default function ProviderCustomerRestoreDialog(props: {
 }) {
   const { open, companyId, companyName, orgnr, onClose, onDone } = props;
   const apiUrl = `/api/provider/customers/${encodeURIComponent(companyId)}/restore`;
+  const tRestore = useTranslations("provider.customers.dialogs.restore");
+  const tDialog = useTranslations("provider.customers.dialogs");
   const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -77,12 +84,17 @@ export default function ProviderCustomerRestoreDialog(props: {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ confirmation: confirm.trim() }),
       });
-      const body = (await readJsonSafe(res)) as { ok?: boolean; message?: string; rid?: string; data?: { message?: string } } | null;
+      const body = (await readJsonSafe(res)) as {
+        ok?: boolean;
+        message?: string;
+        rid?: string;
+        data?: { message?: string };
+      } | null;
       if (!res.ok || body?.ok !== true) {
-        setErr(parseApiMessage(body as ApiErr, "Kunne ikke gjenopprette kunde.", res.status));
+        setErr(parseApiMessage(body as ApiErr, tRestore("actionFailed"), res.status));
         return;
       }
-      const message = safeStr(body?.data?.message) || "Kunden er gjenopprettet.";
+      const message = safeStr(body?.data?.message) || tRestore("successDefault");
       setSuccess(message);
       onDone();
       onClose();
@@ -93,26 +105,37 @@ export default function ProviderCustomerRestoreDialog(props: {
 
   return createPortal(
     <div className="fixed inset-0 z-[60] grid place-items-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} aria-label="Lukk" disabled={pending} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label={tDialog("closeAria")}
+        disabled={pending}
+      />
       <div className="relative w-[min(92vw,560px)] rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
-        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">Kundeadministrasjon</p>
-        <h2 className="mt-1 text-lg font-semibold text-neutral-950">Gjenopprett kunde</h2>
+        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">{tDialog("adminEyebrow")}</p>
+        <h2 className="mt-1 text-lg font-semibold text-neutral-950">{tRestore("title")}</h2>
         <p className="mt-2 text-sm text-neutral-700">
           <span className="font-semibold">{companyName}</span>
           {orgnr ? <span className="text-neutral-500"> · {orgnr}</span> : null}
         </p>
-        <p className="mt-2 text-sm text-neutral-600">
-          Dette aktiverer kundeforholdet igjen uten å slette historikk.
-        </p>
+        <p className="mt-2 text-sm text-neutral-600">{tRestore("lead")}</p>
         <label className="mt-4 block text-xs font-semibold text-neutral-600">
-          Bekreftelse {confirmHint ? `(skriv nøyaktig: ${confirmHint})` : ""}
-          <input value={confirm} onChange={(e) => setConfirm(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 text-sm" autoComplete="off" disabled={pending} />
+          {tRestore("confirmLabel")}{" "}
+          {confirmHint ? tRestore("confirmHint", { hint: confirmHint }) : ""}
+          <input
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+            autoComplete="off"
+            disabled={pending}
+          />
         </label>
         {err ? <p className="mt-3 text-sm font-semibold text-red-700">{err}</p> : null}
         {success ? <p className="mt-3 text-sm font-semibold text-emerald-800">{success}</p> : null}
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" className="rounded-full border px-4 py-2 text-sm hover:bg-neutral-50" onClick={onClose} disabled={pending}>
-            Avbryt
+            {tDialog("cancel")}
           </button>
           <button
             type="button"
@@ -120,11 +143,11 @@ export default function ProviderCustomerRestoreDialog(props: {
             onClick={submit}
             disabled={pending || !confirmMatches}
           >
-            {pending ? "Utfører…" : "Gjenopprett kunde"}
+            {pending ? tDialog("working") : tRestore("restoreCustomer")}
           </button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

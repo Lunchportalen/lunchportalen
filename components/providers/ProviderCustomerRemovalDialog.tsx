@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 
 type Eligibility = {
   canArchive: boolean;
@@ -26,10 +27,10 @@ type ApiErr = {
 };
 
 async function readJsonSafe(res: Response) {
-  const t = await res.text();
-  if (!t) return null;
+  const text = await res.text();
+  if (!text) return null;
   try {
-    return JSON.parse(t);
+    return JSON.parse(text);
   } catch {
     return null;
   }
@@ -68,6 +69,8 @@ export default function ProviderCustomerRemovalDialog(props: {
 }) {
   const { open, companyId, companyName, orgnr, onClose, onDone } = props;
   const apiUrl = `/api/provider/customers/${encodeURIComponent(companyId)}/remove`;
+  const tRemoval = useTranslations("provider.customers.dialogs.removal");
+  const tDialog = useTranslations("provider.customers.dialogs");
   const [mode, setMode] = useState<"archive" | "hard_delete">("archive");
   const [confirm, setConfirm] = useState("");
   const [reason, setReason] = useState("");
@@ -91,7 +94,13 @@ export default function ProviderCustomerRemovalDialog(props: {
         const body = (await readJsonSafe(res)) as ApiOk | ApiErr | null;
         if (!res.ok || !body || body.ok !== true) {
           setEligibility(null);
-          setErr(parseApiMessage(body as ApiErr, `Kunne ikke laste fjerningsregler (HTTP ${res.status}).`, res.status));
+          setErr(
+            parseApiMessage(
+              body as ApiErr,
+              tRemoval("loadRulesFailedHttp", { status: res.status }),
+              res.status,
+            ),
+          );
           setBlockers(parseBlockers(body as ApiErr));
           return;
         }
@@ -113,10 +122,10 @@ export default function ProviderCustomerRemovalDialog(props: {
       })
       .catch(() => {
         setEligibility(null);
-        setErr("Kunne ikke laste fjerningsregler.");
+        setErr(tRemoval("loadRulesFailed"));
       })
       .finally(() => setLoadingEligibility(false));
-  }, [open, companyId, companyName, orgnr, apiUrl]);
+  }, [open, companyId, companyName, orgnr, apiUrl, tRemoval]);
 
   const confirmHint = useMemo(() => {
     if (mode === "hard_delete") return eligibility?.hardDeleteConfirmHint ?? companyName;
@@ -124,23 +133,19 @@ export default function ProviderCustomerRemovalDialog(props: {
   }, [mode, eligibility, companyName, orgnr]);
 
   const dialogTitle = useMemo(() => {
-    if (loadingEligibility) return "Laster fjerningsregler…";
-    if (mode === "hard_delete" && eligibility?.canHardDelete) return "Slett kunde permanent";
-    if (eligibility && !eligibility.canHardDelete) return "Kunden kan ikke slettes permanent";
-    if (eligibility?.canArchive) return "Arkiver kunde";
-    return "Fjern kunde";
-  }, [loadingEligibility, eligibility, mode]);
+    if (loadingEligibility) return tRemoval("loadingRules");
+    if (mode === "hard_delete" && eligibility?.canHardDelete) return tRemoval("hardDeleteTitle");
+    if (eligibility && !eligibility.canHardDelete) return tRemoval("hardDeleteBlockedTitle");
+    if (eligibility?.canArchive) return tRemoval("archiveTitle");
+    return tRemoval("removeTitle");
+  }, [loadingEligibility, eligibility, mode, tRemoval]);
 
   const dialogLead = useMemo(() => {
     if (loadingEligibility || !eligibility) return null;
-    if (mode === "hard_delete" && eligibility.canHardDelete) {
-      return "Kunden har ingen operativ historikk og kan slettes permanent etter bekreftelse.";
-    }
-    if (!eligibility.canHardDelete) {
-      return "Denne kunden har operativ historikk som må bevares.";
-    }
-    return "Velg om kunden skal arkiveres eller slettes permanent.";
-  }, [loadingEligibility, eligibility, mode]);
+    if (mode === "hard_delete" && eligibility.canHardDelete) return tRemoval("hardDeleteLead");
+    if (!eligibility.canHardDelete) return tRemoval("hardDeleteBlockedLead");
+    return tRemoval("chooseModeLead");
+  }, [loadingEligibility, eligibility, mode, tRemoval]);
 
   const confirmMatches = useMemo(() => {
     const v = confirm.trim();
@@ -149,7 +154,7 @@ export default function ProviderCustomerRemovalDialog(props: {
       const targets = eligibility?.confirmationTargets?.length
         ? eligibility.confirmationTargets
         : [companyName, orgnr].filter(Boolean);
-      return targets.some((t) => v === t);
+      return targets.some((target) => v === target);
     }
     if (!orgnr) return false;
     return v === `${orgnr} ARKIVER` || v === `${orgnr} SLETT`;
@@ -167,7 +172,7 @@ export default function ProviderCustomerRemovalDialog(props: {
       });
       const body = (await readJsonSafe(res)) as { ok?: boolean; message?: string; rid?: string; data?: { mode?: string } } | null;
       if (!res.ok || body?.ok !== true) {
-        setErr(parseApiMessage(body as ApiErr, "Handlingen feilet.", res.status));
+        setErr(parseApiMessage(body as ApiErr, tRemoval("actionFailed"), res.status));
         setBlockers(parseBlockers(body as ApiErr));
         return;
       }
@@ -183,16 +188,22 @@ export default function ProviderCustomerRemovalDialog(props: {
 
   return createPortal(
     <div className="fixed inset-0 z-[60] grid place-items-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} aria-label="Lukk" disabled={pending} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label={tDialog("closeAria")}
+        disabled={pending}
+      />
       <div className="relative w-[min(92vw,560px)] rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
-        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">Kundeadministrasjon</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">{tDialog("adminEyebrow")}</p>
         <h2 className="mt-1 text-lg font-semibold text-neutral-950">{dialogTitle}</h2>
         <p className="mt-2 text-sm text-neutral-700">
           <span className="font-semibold">{companyName}</span>
           {orgnr ? <span className="text-neutral-500"> · {orgnr}</span> : null}
         </p>
         {dialogLead ? <p className="mt-2 text-sm text-neutral-600">{dialogLead}</p> : null}
-        {loadingEligibility ? <p className="mt-4 text-sm text-neutral-500">Henter avhengigheter…</p> : null}
+        {loadingEligibility ? <p className="mt-4 text-sm text-neutral-500">{tRemoval("loadingDependencies")}</p> : null}
         {hardDeleteBlocked && eligibility && eligibility.blockers.length > 0 ? (
           <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-neutral-800">
             {eligibility.blockers.map((b) => (
@@ -208,7 +219,7 @@ export default function ProviderCustomerRemovalDialog(props: {
               onClick={() => setMode("archive")}
               disabled={!eligibility?.canArchive || pending}
             >
-              Arkiver kunde
+              {tRemoval("archiveCustomer")}
             </button>
             <button
               type="button"
@@ -216,7 +227,7 @@ export default function ProviderCustomerRemovalDialog(props: {
               onClick={() => setMode("hard_delete")}
               disabled={!eligibility?.canHardDelete || pending}
             >
-              Slett permanent
+              {tRemoval("hardDelete")}
             </button>
           </div>
         ) : null}
@@ -224,11 +235,12 @@ export default function ProviderCustomerRemovalDialog(props: {
           !loadingEligibility ? (
             <>
               <label className="mt-4 block text-xs font-semibold text-neutral-600">
-                Bekreftelse {confirmHint ? `(skriv nøyaktig: ${confirmHint})` : ""}
+                {tRemoval("confirmLabel")}{" "}
+                {confirmHint ? tRemoval("confirmHint", { hint: confirmHint }) : ""}
                 <input value={confirm} onChange={(e) => setConfirm(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 text-sm" autoComplete="off" disabled={pending} />
               </label>
               <label className="mt-3 block text-xs font-semibold text-neutral-600">
-                Begrunnelse (valgfritt)
+                {tRemoval("reasonOptional")}
                 <input value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 text-sm" disabled={pending} />
               </label>
             </>
@@ -244,7 +256,7 @@ export default function ProviderCustomerRemovalDialog(props: {
         ) : null}
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" className="rounded-full border px-4 py-2 text-sm hover:bg-neutral-50" onClick={onClose} disabled={pending}>
-            Avbryt
+            {tDialog("cancel")}
           </button>
           {(eligibility?.canArchive && mode === "archive") || (eligibility?.canHardDelete && mode === "hard_delete") ? (
             <button
@@ -253,12 +265,16 @@ export default function ProviderCustomerRemovalDialog(props: {
               onClick={submit}
               disabled={pending || !confirmMatches || loadingEligibility}
             >
-              {pending ? "Utfører…" : mode === "archive" ? "Arkiver kunde" : "Slett permanent"}
+              {pending
+                ? tDialog("working")
+                : mode === "archive"
+                  ? tRemoval("archiveAction")
+                  : tRemoval("hardDelete")}
             </button>
           ) : null}
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

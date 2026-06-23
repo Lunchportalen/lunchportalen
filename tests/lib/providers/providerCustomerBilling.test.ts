@@ -17,7 +17,7 @@ import {
   buildBillingBasisStatusLabel,
   buildCustomerIdentityDisplay,
 } from "@/lib/providers/providerCustomerDetailSurface";
-import { PROVIDER_AGREEMENT_COPY } from "@/lib/providers/providerCustomerAgreementSurface";
+import { loadDetailTranslators, loadProviderCustomerMessages } from "./providerCustomerI18nTestHelpers";
 
 describe("providerCustomerBilling", () => {
   it("resolver orgnr fra orgnr eller organization_number", () => {
@@ -79,19 +79,26 @@ describe("providerCustomerBilling", () => {
 });
 
 describe("providerCustomerDetailSurface", () => {
-  it("viser org.nr ikke registrert når mangler", () => {
-    const identity = buildCustomerIdentityDisplay({
-      companyName: "Pettersen&Co",
-      orgnr: null,
-      status: "ACTIVE",
-    });
+  it("viser org.nr ikke registrert når mangler", async () => {
+    const translators = await loadDetailTranslators("nb");
+    const identity = buildCustomerIdentityDisplay(
+      {
+        companyName: "Pettersen&Co",
+        orgnr: null,
+        status: "ACTIVE",
+      },
+      translators,
+    );
     expect(identity.orgnrLabel).toBe("Org.nr ikke registrert");
+    expect(identity.companyName).toBe("Pettersen&Co");
   });
 
-  it("viser fakturagrunnlag ikke komplett uten ordregrunnlag", () => {
+  it("viser fakturagrunnlag ikke komplett uten ordregrunnlag", async () => {
+    const { tDetail } = await loadDetailTranslators("nb");
     const display = buildBillingBasisDisplay(
       computeBillingBasis({ ordersThisMonth: 0, revenueIncVatNok: 0 }),
       buildProviderInvoiceSettings({ ehfEnabled: true, ehfEndpoint: "0192:928038777", orgnr: "928038777" }),
+      tDetail,
     );
     expect(display.confidence).toBe("incomplete");
     expect(display.revenueIncVatLabel).toBe("Fakturagrunnlag ikke komplett");
@@ -99,7 +106,8 @@ describe("providerCustomerDetailSurface", () => {
     expect(display.periodLabel).toBe("Siste 30 dager");
   });
 
-  it("viser klar status og complete-note når mva-splitt finnes", () => {
+  it("viser klar status og complete-note når mva-splitt finnes", async () => {
+    const { tDetail } = await loadDetailTranslators("nb");
     const basis = computeBillingBasis({
       ordersThisMonth: 2,
       revenueExVatNok: 200,
@@ -107,23 +115,31 @@ describe("providerCustomerDetailSurface", () => {
       revenueIncVatNok: 250,
     });
     const invoice = buildProviderInvoiceSettings({ billingEmail: "faktura@test.no" });
-    const display = buildBillingBasisDisplay(basis, invoice);
+    const display = buildBillingBasisDisplay(basis, invoice, tDetail);
     expect(display.statusLabel).toBe("Klar til fakturagrunnlag");
     expect(display.note).toBe("Provisjon beregnes av omsetning eks. mva.");
-    expect(buildBillingBasisBadges(basis).ordersBadge).toBe("2 ordre denne måneden");
+    expect(buildBillingBasisBadges(basis, tDetail).ordersBadge).toBe("2 ordre denne måneden");
   });
 
-  it("viser gross-only forklaring kun når confidence er gross_only", () => {
+  it("viser gross-only forklaring kun når confidence er gross_only", async () => {
+    const { tDetail } = await loadDetailTranslators("nb");
     const basis = computeBillingBasis({ ordersThisMonth: 1, revenueIncVatNok: 103.5 });
-    const display = buildBillingBasisDisplay(basis, buildProviderInvoiceSettings({}));
+    const display = buildBillingBasisDisplay(basis, buildProviderInvoiceSettings({}), tDetail);
     expect(display.note).toContain("inkl. mva");
-    expect(buildBillingBasisStatusLabel(basis, buildProviderInvoiceSettings({}))).toBe("Mangler fakturamottaker");
+    expect(buildBillingBasisStatusLabel(basis, buildProviderInvoiceSettings({}), tDetail)).toBe(
+      "Mangler fakturamottaker",
+    );
   });
 });
 
-describe("agreement surface copy", () => {
-  it("bruker Leveringsadresse, ikke Lokasjon", () => {
-    expect(PROVIDER_AGREEMENT_COPY.labels.location).toBe("Leveringsadresse");
-    expect(PROVIDER_AGREEMENT_COPY.locationMissing).toBe("Leveringsadresse ikke satt");
+describe("agreement surface labels", () => {
+  it("bruker Leveringsadresse via i18n", async () => {
+    const messages = await loadProviderCustomerMessages("nb");
+    const ns = messages.provider.customers.agreement as {
+      labels: { location: string };
+      locationMissing: string;
+    };
+    expect(ns.labels.location).toBe("Leveringsadresse");
+    expect(ns.locationMissing).toBe("Leveringsadresse ikke satt");
   });
 });

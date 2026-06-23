@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 
 import type { DayKey, Tier } from "@/lib/agreements/normalize";
 import type { InvoiceMethod } from "@/lib/providers/providerCustomerBilling";
@@ -15,13 +16,7 @@ type ApiErr = {
   rid?: string;
 };
 
-const WEEKDAYS: Array<{ key: DayKey; label: string }> = [
-  { key: "mon", label: "Mandag" },
-  { key: "tue", label: "Tirsdag" },
-  { key: "wed", label: "Onsdag" },
-  { key: "thu", label: "Torsdag" },
-  { key: "fri", label: "Fredag" },
-];
+const WEEKDAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
 
 const PLANS: Array<{ value: Tier; label: string }> = [
   { value: "BASIS", label: "Basis" },
@@ -45,7 +40,7 @@ function dayStateFromAgreement(data: ProviderAgreementReadModel): DayEditorState
   const fallback = data.defaultPlan ?? "BASIS";
   const state = defaultDayState(fallback);
   const active = new Set(data.deliveryDays);
-  for (const key of WEEKDAYS.map((d) => d.key)) {
+  for (const key of WEEKDAY_KEYS) {
     state[key].enabled = active.has(key);
   }
   for (const menu of data.dayMenus) {
@@ -91,6 +86,9 @@ export default function ProviderCustomerAgreementEditDialog(props: {
 }) {
   const { open, companyId, companyName, onClose, onDone } = props;
   const apiUrl = `/api/provider/customers/${encodeURIComponent(companyId)}/agreement`;
+  const tEdit = useTranslations("provider.customers.dialogs.agreementEdit");
+  const tAgreement = useTranslations("provider.customers.agreement");
+  const tDialog = useTranslations("provider.customers.dialogs");
 
   const [loading, setLoading] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -138,7 +136,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
       } | null;
       setLoading(false);
       if (!res.ok || body?.ok !== true || !body.data) {
-        setErr(parseApiMessage(body as ApiErr, "Kunne ikke laste avtale."));
+        setErr(parseApiMessage(body as ApiErr, tEdit("loadFailed")));
         return;
       }
       const data = body.data;
@@ -163,10 +161,10 @@ export default function ProviderCustomerAgreementEditDialog(props: {
       setBillingContactEmail(billing.contact.email ?? "");
       setBillingContactPhone(billing.contact.phone ?? "");
     })();
-  }, [open, companyId, apiUrl]);
+  }, [open, companyId, apiUrl, tEdit]);
 
   const activeDays = useMemo(
-    () => WEEKDAYS.map((d) => d.key).filter((key) => dayState[key].enabled),
+    () => WEEKDAY_KEYS.filter((key) => dayState[key].enabled),
     [dayState],
   );
 
@@ -177,7 +175,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
   function setDayEnabled(key: DayKey, enabled: boolean) {
     setDayState((prev) => {
       const next = { ...prev };
-      const enabledCount = WEEKDAYS.filter((d) => (d.key === key ? enabled : next[d.key].enabled)).length;
+      const enabledCount = WEEKDAY_KEYS.filter((k) => (k === key ? enabled : next[k].enabled)).length;
       if (!enabled && enabledCount === 0) return prev;
       next[key] = { ...next[key], enabled };
       return next;
@@ -191,26 +189,28 @@ export default function ProviderCustomerAgreementEditDialog(props: {
   }
 
   function validateLocal(): string | null {
-    if (activeDays.length === 0) return "Velg minst én leveringsdag.";
+    if (activeDays.length === 0) return tEdit("validation.pickDeliveryDay");
     for (const key of activeDays) {
-      if (!dayState[key].plan) return `Velg meny for ${WEEKDAYS.find((d) => d.key === key)?.label ?? key}.`;
+      if (!dayState[key].plan) {
+        return tEdit("validation.pickMenuForDay", { day: tAgreement(`weekdays.${key}`) });
+      }
     }
     if (contactEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail.trim())) {
-      return "Ugyldig e-postadresse.";
+      return tEdit("validation.invalidEmail");
     }
     if (invoiceMethod === "EMAIL") {
       if (!invoiceEmail.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(invoiceEmail.trim())) {
-        return "Faktura e-post må være en gyldig e-postadresse.";
+        return tEdit("validation.invoiceEmailRequired");
       }
     }
     if (invoiceMethod === "EHF") {
       const orgDigits = billingOrgnr.replace(/\D/g, "");
       const endpoint = ehfEndpoint.trim() || suggestEhfEndpoint(orgDigits) || "";
-      if (!endpoint) return "EHF-endepunkt må angis.";
-      if (orgDigits && orgDigits.length !== 9) return "Organisasjonsnummer må være 9 siffer.";
+      if (!endpoint) return tEdit("validation.ehfEndpointRequired");
+      if (orgDigits && orgDigits.length !== 9) return tEdit("validation.orgnrLength");
     }
     if (billingContactEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(billingContactEmail.trim())) {
-      return "Ugyldig e-post for fakturakontakt.";
+      return tEdit("validation.invalidBillingEmail");
     }
     return null;
   }
@@ -282,14 +282,14 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         data?: { agreement?: ProviderAgreementReadModel; message?: string; warnings?: string[] };
       } | null;
       if (!res.ok || body?.ok !== true) {
-        setErr(parseApiMessage(body as ApiErr, "Kunne ikke lagre avtale."));
+        setErr(parseApiMessage(body as ApiErr, tEdit("saveFailed")));
         return;
       }
       const warnings = body?.data?.warnings ?? body?.data?.agreement?.warnings ?? [];
       const message =
         warnings.length > 0
-          ? `Avtalen er oppdatert. ${warnings.join(" ")}`
-          : body?.data?.message ?? "Avtalen er oppdatert.";
+          ? tEdit("updatedWithWarnings", { warnings: warnings.join(" ") })
+          : body?.data?.message ?? tEdit("updated");
       onDone(message);
       onClose();
     });
@@ -303,7 +303,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         type="button"
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="Lukk"
+        aria-label={tDialog("closeAria")}
         disabled={pending || loading}
       />
       <div
@@ -312,44 +312,44 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         aria-modal="true"
         aria-labelledby="provider-agreement-edit-title"
       >
-        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">Kundeadministrasjon</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">{tDialog("adminEyebrow")}</p>
         <h2 id="provider-agreement-edit-title" className="mt-1 text-lg font-semibold text-neutral-950">
-          Endre kundeavtale
+          {tEdit("title")}
         </h2>
         <p className="mt-1 text-sm text-neutral-600">
           <span className="font-semibold text-neutral-800">{companyName}</span>
         </p>
 
-        {loading ? <p className="mt-6 text-sm text-neutral-600">Laster avtale…</p> : null}
+        {loading ? <p className="mt-6 text-sm text-neutral-600">{tEdit("loading")}</p> : null}
 
         {!loading && loaded ? (
           <div className="mt-5 space-y-6">
             <fieldset className="space-y-3">
-              <legend className="text-sm font-semibold text-neutral-800">Meny per leveringsdag</legend>
-              <p className="text-xs text-neutral-500">Velg hvilken meny kunden skal ha per leveringsdag.</p>
+              <legend className="text-sm font-semibold text-neutral-800">{tEdit("dayMenusLegend")}</legend>
+              <p className="text-xs text-neutral-500">{tEdit("dayMenusLead")}</p>
               <div className="space-y-2">
-                {WEEKDAYS.map((d) => {
-                  const row = dayState[d.key];
+                {WEEKDAY_KEYS.map((dayKey) => {
+                  const row = dayState[dayKey];
                   return (
-                    <div key={d.key} className="ds-provider-day-menu-row grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border px-3 py-2">
+                    <div key={dayKey} className="ds-provider-day-menu-row grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border px-3 py-2">
                       <label className="inline-flex items-center gap-2 text-sm font-medium text-neutral-800">
                         <input
                           type="checkbox"
                           checked={row.enabled}
-                          onChange={(e) => setDayEnabled(d.key, e.target.checked)}
+                          onChange={(e) => setDayEnabled(dayKey, e.target.checked)}
                           disabled={pending}
                         />
-                        {d.label}
+                        {tAgreement(`weekdays.${dayKey}`)}
                       </label>
                       <div className={`flex flex-wrap gap-1 ${row.enabled ? "" : "opacity-40 pointer-events-none"}`}>
                         {PLANS.map((p) => (
                           <label key={p.value} className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs">
                             <input
                               type="radio"
-                              name={`plan-${d.key}`}
+                              name={`plan-${dayKey}`}
                               value={p.value}
                               checked={row.plan === p.value}
-                              onChange={() => setDayPlan(d.key, p.value)}
+                              onChange={() => setDayPlan(dayKey, p.value)}
                               disabled={pending || !row.enabled}
                             />
                             {p.label}
@@ -360,13 +360,13 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                   );
                 })}
               </div>
-              <p className="text-xs text-neutral-500">Lunsjlevering mandag–fredag. Helg støttes ikke.</p>
+              <p className="text-xs text-neutral-500">{tEdit("weekdaysOnlyNote")}</p>
             </fieldset>
 
             <fieldset className="space-y-3">
-              <legend className="text-sm font-semibold text-neutral-800">Leveringsadresse</legend>
+              <legend className="text-sm font-semibold text-neutral-800">{tEdit("locationLegend")}</legend>
               <label className="block text-xs font-semibold text-neutral-600">
-                Navn på lokasjon
+                {tEdit("locationName")}
                 <input
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
@@ -375,7 +375,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                 />
               </label>
               <label className="block text-xs font-semibold text-neutral-600">
-                Adresse
+                {tEdit("address")}
                 <input
                   value={locationAddress}
                   onChange={(e) => setLocationAddress(e.target.value)}
@@ -386,9 +386,9 @@ export default function ProviderCustomerAgreementEditDialog(props: {
             </fieldset>
 
             <fieldset className="space-y-3">
-              <legend className="text-sm font-semibold text-neutral-800">Kontaktperson</legend>
+              <legend className="text-sm font-semibold text-neutral-800">{tEdit("contactLegend")}</legend>
               <label className="block text-xs font-semibold text-neutral-600">
-                Navn
+                {tEdit("name")}
                 <input
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
@@ -397,7 +397,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                 />
               </label>
               <label className="block text-xs font-semibold text-neutral-600">
-                E-post
+                {tEdit("email")}
                 <input
                   type="email"
                   value={contactEmail}
@@ -407,7 +407,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                 />
               </label>
               <label className="block text-xs font-semibold text-neutral-600">
-                Telefon
+                {tEdit("phone")}
                 <input
                   inputMode="numeric"
                   value={contactPhone}
@@ -419,10 +419,10 @@ export default function ProviderCustomerAgreementEditDialog(props: {
             </fieldset>
 
             <fieldset className="space-y-3">
-              <legend className="text-sm font-semibold text-neutral-800">Leveringsvindu</legend>
+              <legend className="text-sm font-semibold text-neutral-800">{tEdit("deliveryWindowLegend")}</legend>
               <div className="grid grid-cols-2 gap-3">
                 <label className="block text-xs font-semibold text-neutral-600">
-                  Fra
+                  {tEdit("from")}
                   <input
                     type="time"
                     value={windowFrom}
@@ -432,7 +432,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                   />
                 </label>
                 <label className="block text-xs font-semibold text-neutral-600">
-                  Til
+                  {tEdit("to")}
                   <input
                     type="time"
                     value={windowTo}
@@ -445,7 +445,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
             </fieldset>
 
             <fieldset className="space-y-3">
-              <legend className="text-sm font-semibold text-neutral-800">Fakturering</legend>
+              <legend className="text-sm font-semibold text-neutral-800">{tEdit("billingLegend")}</legend>
               <div className="flex flex-wrap gap-2">
                 <label className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
                   <input
@@ -456,7 +456,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                     onChange={() => setInvoiceMethod("EMAIL")}
                     disabled={pending}
                   />
-                  E-post
+                  {tEdit("invoiceEmail")}
                 </label>
                 <label className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
                   <input
@@ -467,12 +467,12 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                     onChange={() => setInvoiceMethod("EHF")}
                     disabled={pending}
                   />
-                  EHF
+                  {tEdit("ehf")}
                 </label>
               </div>
               {invoiceMethod === "EMAIL" ? (
                 <label className="block text-xs font-semibold text-neutral-600">
-                  Faktura e-post
+                  {tEdit("invoiceEmailField")}
                   <input
                     type="email"
                     value={invoiceEmail}
@@ -484,7 +484,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
               ) : (
                 <>
                   <label className="block text-xs font-semibold text-neutral-600">
-                    Organisasjonsnummer
+                    {tEdit("orgnr")}
                     <input
                       inputMode="numeric"
                       value={billingOrgnr}
@@ -494,7 +494,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                     />
                   </label>
                   <label className="block text-xs font-semibold text-neutral-600">
-                    EHF-endepunkt
+                    {tEdit("ehfEndpoint")}
                     <input
                       value={ehfEndpoint}
                       onChange={(e) => setEhfEndpoint(e.target.value)}
@@ -505,9 +505,9 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                   </label>
                 </>
               )}
-              <p className="text-xs font-semibold text-neutral-700">Fakturakontakt</p>
+              <p className="text-xs font-semibold text-neutral-700">{tEdit("billingContact")}</p>
               <label className="block text-xs font-semibold text-neutral-600">
-                Navn
+                {tEdit("name")}
                 <input
                   value={billingContactName}
                   onChange={(e) => setBillingContactName(e.target.value)}
@@ -516,7 +516,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                 />
               </label>
               <label className="block text-xs font-semibold text-neutral-600">
-                E-post
+                {tEdit("email")}
                 <input
                   type="email"
                   value={billingContactEmail}
@@ -526,7 +526,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                 />
               </label>
               <label className="block text-xs font-semibold text-neutral-600">
-                Telefon
+                {tEdit("phone")}
                 <input
                   inputMode="numeric"
                   value={billingContactPhone}
@@ -538,7 +538,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
             </fieldset>
 
             <fieldset className="space-y-2">
-              <legend className="text-sm font-semibold text-neutral-800">Status</legend>
+              <legend className="text-sm font-semibold text-neutral-800">{tEdit("statusLegend")}</legend>
               <div className="flex flex-wrap gap-2">
                 <label className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
                   <input
@@ -549,7 +549,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                     onChange={() => setStatus("ACTIVE")}
                     disabled={pending}
                   />
-                  Aktiv
+                  {tEdit("statusActive")}
                 </label>
                 <label className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm">
                   <input
@@ -560,13 +560,13 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                     onChange={() => setStatus("PAUSED")}
                     disabled={pending}
                   />
-                  Pauset
+                  {tEdit("statusPaused")}
                 </label>
               </div>
             </fieldset>
 
             <label className="block text-xs font-semibold text-neutral-600">
-              Instruks for levering
+              {tEdit("deliveryNote")}
               <textarea
                 value={deliveryNote}
                 onChange={(e) => setDeliveryNote(e.target.value)}
@@ -577,7 +577,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
             </label>
 
             <label className="block text-xs font-semibold text-neutral-600">
-              Begrunnelse (valgfritt, lagres i revisjonslogg)
+              {tEdit("reasonOptional")}
               <input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
@@ -598,7 +598,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
             onClick={onClose}
             disabled={pending}
           >
-            Avbryt
+            {tDialog("cancel")}
           </button>
           <button
             type="button"
@@ -606,7 +606,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
             onClick={submit}
             disabled={!canSubmit}
           >
-            {pending ? "Lagrer…" : "Lagre endringer"}
+            {pending ? tEdit("saving") : tEdit("save")}
           </button>
         </div>
       </div>
