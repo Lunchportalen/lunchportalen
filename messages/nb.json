@@ -275,6 +275,17 @@
         "heading": "Ny bedriftskunde",
         "lead": "Direkte opprettelse av bedriftskunder er ikke tilgjengelig ennå. Nye bedrifter i ditt dekningsområde kommer inn via Registreringer når de melder interesse, og vises under Bedrifter etter godkjenning.",
         "backToCustomers": "Tilbake til bedrifter"
+      },
+      "errors": {
+        "notAuthenticated": "Ikke innlogget.",
+        "providerAdminRequired": "Kun provider-admin kan utføre denne handlingen.",
+        "customerNotFound": "Kunde ikke funnet.",
+        "invalidCustomer": "Mangler kunde-id.",
+        "reasonTooShort": "Begrunnelse må være minst 20 tegn.",
+        "updateFailed": "Kunne ikke oppdatere kunde.",
+        "removeFailed": "Kunne ikke slette kunde.",
+        "restoreFailed": "Kunne ikke gjenopprette kunde.",
+        "unknown": "Noe gikk galt."
       }
     },
     "registrations": {
@@ -331,7 +342,16 @@
         "saving": "Behandler…"
       },
       "errors": {
-        "actionFailed": "Handlingen feilet."
+        "notAuthenticated": "Ikke innlogget.",
+        "providerAdminRequired": "Kun provider-admin kan utføre denne handlingen.",
+        "registrationNotFound": "Registrering ikke funnet.",
+        "registrationAlreadyProcessed": "Registreringen er allerede behandlet.",
+        "invalidTier": "Ugyldig avtale-nivå.",
+        "rejectReasonRequired": "Oppgi en kort begrunnelse.",
+        "approveFailed": "Kunne ikke godkjenne registrering.",
+        "rejectFailed": "Kunne ikke avvise registrering.",
+        "actionFailed": "Handlingen feilet.",
+        "unknown": "Noe gikk galt."
       }
     },
     "menu": {

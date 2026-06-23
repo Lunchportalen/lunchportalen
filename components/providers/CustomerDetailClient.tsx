@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   deleteCustomer,
@@ -26,6 +27,7 @@ import {
   buildBillingBasisDisplay,
   buildCustomerIdentityDisplay,
 } from "@/lib/providers/providerCustomerDetailSurface";
+import { resolveProviderCustomerActionError } from "@/lib/providers/providerCustomerActionErrors";
 import { PROVIDER_CUSTOMER_ACTIVITY_EMPTY } from "@/lib/providers/providerCustomerDetailActivity";
 import ProviderCustomerAgreementEditDialog from "@/components/providers/ProviderCustomerAgreementEditDialog";
 import ProviderDetailAccordionSection from "@/components/providers/ProviderDetailAccordionSection";
@@ -58,6 +60,7 @@ export default function CustomerDetailClient({
   canManage: boolean;
 }) {
   const router = useRouter();
+  const tErrors = useTranslations("provider.customers.errors");
   const [pending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<DialogState>({ open: false, variant: "suspend" });
   const [agreementEditOpen, setAgreementEditOpen] = useState(false);
@@ -128,9 +131,9 @@ export default function CustomerDetailClient({
 
     startTransition(async () => {
       const res = await runAction(variant, reason);
-      if (!res.success) {
+      if (res.success === false) {
         setOptimisticStatus(prev);
-        setError("error" in res ? res.error : "Handlingen feilet.");
+        setError(resolveProviderCustomerActionError((key) => tErrors(key), res));
         return;
       }
       setDialog({ open: false, variant });
