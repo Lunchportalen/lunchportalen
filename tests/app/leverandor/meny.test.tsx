@@ -57,6 +57,7 @@ describe("ProviderMenuBuilder workspace layout", () => {
     expect(html).toContain("lp-editor-command-header");
     expect(html).toContain("lp-editor-tier-lens");
     expect(html).toContain("lp-editor-status-strip");
+    expect(html).not.toContain("lp-editor-preview-strip");
     expect(html).toContain("Meny-editor");
     expect(html).toContain("Planlegg uke, sett dagens felles varmrett");
   });
@@ -245,6 +246,97 @@ describe("LeverandorMenyPage full-width frame", () => {
     expect(source).toContain('getTranslations("provider.menu.page")');
     expect(source).toContain('t("readOnlyTitle")');
     expect(source).not.toContain("Kun visning");
+  });
+});
+
+const PREVIEW_PAYLOAD = {
+  preview: true as const,
+  resolverVersion: "r4d-preview-v1" as const,
+  marketCode: "NO" as const,
+  aggregateSource: "provider_price_rules_market" as const,
+  tiers: {
+    BASIS: {
+      amountExVat: 95,
+      priceIncVatNok: 109.25,
+      currency: "NOK",
+      vatRate: 0.15,
+      taxBasis: "ex_tax",
+      taxCategory: "food_catering",
+      source: "provider_price_rules_market" as const,
+      rowSource: "seed",
+      differsFromProduction: true,
+    },
+    LUXUS: {
+      amountExVat: 130,
+      priceIncVatNok: 149.5,
+      currency: "NOK",
+      vatRate: 0.15,
+      taxBasis: "ex_tax",
+      taxCategory: "food_catering",
+      source: "provider_price_rules_market" as const,
+      rowSource: "seed",
+      differsFromProduction: false,
+    },
+    ENTERPRISE: {
+      amountExVat: 170,
+      priceIncVatNok: 195.5,
+      currency: "NOK",
+      vatRate: 0.15,
+      taxBasis: "ex_tax",
+      taxCategory: "food_catering",
+      source: "provider_price_rules_market" as const,
+      rowSource: "seed",
+      differsFromProduction: false,
+    },
+  },
+};
+
+describe("ProviderMenuPricePreviewStrip", () => {
+  async function renderPreviewStrip(
+    pricePreview: typeof PREVIEW_PAYLOAD | null,
+    tier: "BASIS" | "LUXUS" | "ENTERPRISE" = "BASIS",
+  ) {
+    const messages = await loadMessagesForLocale("nb");
+    const ProviderMenuPricePreviewStrip = (
+      await import("@/components/providers/ProviderMenuPricePreviewStrip")
+    ).default;
+    return renderToStaticMarkup(
+      <NextIntlClientProvider locale="nb" messages={messages}>
+        <ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />
+      </NextIntlClientProvider>,
+    );
+  }
+
+  test("does not render when pricePreview is absent", async () => {
+    const html = await renderPreviewStrip(null);
+    expect(html).toBe("");
+  });
+
+  test("renders preview strip with disclaimer when pricePreview is present", async () => {
+    const html = await renderPreviewStrip(PREVIEW_PAYLOAD);
+    expect(html).toContain("lp-editor-preview-strip");
+    expect(html).toContain("Pris-preview");
+    expect(html).toContain("Kun diagnose — brukes ikke til ordre, margin eller publisering.");
+    expect(html).toContain("95");
+    expect(html).toContain("Avviker fra produksjonspris");
+    expect(html).toContain("NO · NOK · eks. mva · seed");
+  });
+
+  test("shows differs badge only for active tier when flagged", async () => {
+    const htmlBasis = await renderPreviewStrip(PREVIEW_PAYLOAD, "BASIS");
+    expect(htmlBasis).toContain("Avviker fra produksjonspris");
+
+    const htmlLuxus = await renderPreviewStrip(PREVIEW_PAYLOAD, "LUXUS");
+    expect(htmlLuxus).not.toContain("Avviker fra produksjonspris");
+  });
+
+  test("builder keeps tierPrice sourced from prices not preview", () => {
+    const builder = readFileSync(resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"), "utf8");
+    expect(builder).toContain("const tierPrice = prices?.[tier]");
+    expect(builder).not.toMatch(/tierPrice\s*=\s*pricePreview/);
+    expect(builder).not.toContain("setPrices(json.data.pricePreview");
+    expect(builder).toContain("setPricePreview(json.data.pricePreview ?? null)");
+    expect(builder).toContain("<ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />");
   });
 });
 

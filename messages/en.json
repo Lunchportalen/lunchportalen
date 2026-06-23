@@ -118,6 +118,19 @@
         "autoRolloutChip": "Auto-rollout active",
         "daysPublished": "{count, plural, one {# day published} other {# days published}}"
       },
+      "preview": {
+        "ariaLabel": "Price preview diagnostics",
+        "title": "Price preview",
+        "subtitle": "Diagnostics only — not used for orders, margin or publishing.",
+        "differs": "Differs from production price",
+        "sourceMarket": "From price rules",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Mixed",
+        "taxEx": "ex VAT",
+        "taxInc": "inc VAT",
+        "amountExSuffix": "NOK ex VAT",
+        "amountIncSuffix": "NOK inc VAT"
+      },
       "week": {
         "plannerTitle": "Week plan",
         "plannerLead": "Shared hot meal per day — generated default you can override.",
