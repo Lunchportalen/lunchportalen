@@ -491,6 +491,67 @@ Menu culture profile følger **egen ADR/roadmap** — ikke blandet inn i commerc
 
 ---
 
+# ADR-018 – Provider Menu Price Resolver Cutover (R4G)
+
+**Status:** Proposed (R4F — gated; **no runtime cutover**)
+
+## Context
+
+After R4E-2, provider menu has:
+
+- **Production `prices`** from legacy `loadProviderMenuPrices()` (no `market_code` filter)
+- **Diagnostics `pricePreview`** from market-aware `loadProviderMenuPricesPreview()` when `LP_PROVIDER_PRICE_PREVIEW_DISPLAY=true`
+- **Server publish** still uses `fallbackProviderMenuPrices()` in `menuDayPayload` — independent of both resolvers
+- **Golden Path** still uses `TIER_PRICE_CENTS` — independent of provider menu display
+
+R4F locked this state in docs and tests. Runtime cutover must not happen implicitly.
+
+## Decision
+
+### D1 — R4G is flag-gated resolver cutover only
+
+- Introduce **`LP_PROVIDER_PRICE_MARKET_RESOLVER`** (default `false`) for staging/production cutover of **`prices`** only.
+- **`LP_PROVIDER_PRICE_PREVIEW_DISPLAY`** remains diagnostics-only and must never change `prices`.
+
+### D2 — R4G scope boundary
+
+**In scope (R4G):** `loadProviderMenuPrices()` → market-aware v2 for `GET /api/provider/menu-days` → `prices` → provider UI tier/margin display.
+
+**Out of scope (separate phases):**
+
+- `menuDayPayload` / server publish validation → **R4G-publish**
+- Billing, Tripletex, agreements → **R4G-billing**
+- MSDI, `lp_order_set`, order write-path → **R4H** (Golden Path)
+- Employee `/week`, employee APIs → **never**
+
+### D3 — Preconditions before R4G GO
+
+See [r4-provider-price-cutover-runbook.md](./r4-provider-price-cutover-runbook.md):
+
+- R4F parity tests green
+- Staging preview observation complete
+- `differsFromProduction` understood or zero for pilots
+- Employee price-free contract tests green
+- Publish dual-truth explicitly accepted or R4G-publish scheduled
+- `npm run test:golden-path` green (no Golden Path change in R4G, but regression gate)
+
+### D4 — Fail-closed
+
+- Flag off → identical to today (legacy resolver)
+- Zero NO tier-default rows → fallback `tierPricing.ts` (unchanged semantics)
+- No silent fallback from preview resolver into production without flag
+
+## Consequences
+
++ Clear separation: diagnostics (R4E) vs cutover (R4G) vs publish alignment (R4G-publish) vs orders (R4H)
++ Staging can prove parity before production flag
+− Dual truth (display vs publish) remains until R4G-publish unless bundled
+− Multi-market production still requires explicit market selection beyond NO-only v2
+
+**Relates to:** ADR-016, ADR-017, [r4-provider-price-plan.md](./r4-provider-price-plan.md), [r4-provider-price-cutover-runbook.md](./r4-provider-price-cutover-runbook.md)
+
+---
+
 # KONKLUSJON
 
 Lunchportalen sin arkitektur er basert på:

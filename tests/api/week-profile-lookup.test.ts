@@ -256,6 +256,8 @@ describe("GET /api/week profile lookup", () => {
     expect(agreement.end_date).toBeNull();
 
     const forbidden = [
+      "prices",
+      "pricePreview",
       "price_per_cuvert_nok",
       "price_per_meal_nok",
       "price_per_employee",
@@ -277,6 +279,11 @@ describe("GET /api/week profile lookup", () => {
     ];
     for (const key of forbidden) {
       expect(agreement).not.toHaveProperty(key);
+    }
+
+    const body = JSON.stringify(json);
+    for (const key of ["prices", "pricePreview", "priceExVat", "amountExVat"]) {
+      expect(body).not.toContain(`"${key}"`);
     }
   });
 
