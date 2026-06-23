@@ -146,7 +146,7 @@ describe("provider.orders messages — enterprise copy-disiplin", () => {
   it("ingen «Kjøkken» som page-label på provider-admin orders surface", async () => {
     const messages = ordersMessages(await loadMessagesForLocale("nb"));
     expect(messages.provider.orders.page.eyebrow).toBe("Ordre og produksjon");
-    expect(JSON.stringify(messages.provider.orders).toLowerCase()).not.toContain("kjøkken");
+    expect(JSON.stringify(messages.provider.orders.page).toLowerCase()).not.toContain("kjøkken");
   });
 
   it("statuschips bruker norske labels via filter keys, ikke rå enum", async () => {

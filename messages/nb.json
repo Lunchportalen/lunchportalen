@@ -196,7 +196,11 @@
         "readOnlyNote": "Kun visning — du har lesetilgang til ordrene."
       },
       "errors": {
-        "updateFailed": "Kunne ikke oppdatere status."
+        "notAuthenticated": "Ikke innlogget.",
+        "orderNotFound": "Ordre ikke funnet.",
+        "kitchenRoleRequired": "Kun kjøkken-rolle kan oppdatere status.",
+        "updateFailed": "Kunne ikke oppdatere status.",
+        "unknown": "Noe gikk galt."
       }
     },
     "menu": {

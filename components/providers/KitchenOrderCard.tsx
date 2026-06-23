@@ -14,6 +14,7 @@ import {
   targetActionLabelKey,
   type KitchenOrderStatus,
 } from "@/lib/providers/kitchenOrderStatus";
+import { resolveProviderOrdersActionError } from "@/lib/providers/providerOrdersActionErrors";
 import type { KitchenOrderRow } from "@/lib/providers/loadKitchenOrders";
 
 export default function KitchenOrderCard({
@@ -46,9 +47,9 @@ export default function KitchenOrderCard({
 
     startTransition(async () => {
       const res = await advanceKitchenOrder(row.id, target);
-      if (!res.success) {
+      if (res.success === false) {
         setOptimisticStatus(prev);
-        setError("error" in res ? res.error : tErrors("updateFailed"));
+        setError(resolveProviderOrdersActionError(tErrors, res));
         return;
       }
       router.refresh();
