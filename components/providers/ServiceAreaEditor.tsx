@@ -4,6 +4,7 @@ import { useEffect, useId, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
 import { saveServiceArea } from "@/app/leverandor/omrader/actions";
+import { resolveProviderCoverageActionError } from "@/lib/providers/providerCoverageActionErrors";
 import {
   WEEKDAY_KEYS,
   type ServiceAreaRow,
@@ -63,6 +64,7 @@ export default function ServiceAreaEditor({
   onSaved,
 }: ServiceAreaEditorProps) {
   const t = useTranslations("provider.coverage");
+  const tErrors = useTranslations("provider.coverage.errors");
   const titleId = useId();
   const listId = useId();
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -118,8 +120,8 @@ export default function ServiceAreaEditor({
         available_days: form.available_days,
         active: form.active,
       });
-      if (!res.success) {
-        setError("error" in res ? res.error : t("errors.saveFailed"));
+      if (res.success === false) {
+        setError(resolveProviderCoverageActionError((key) => tErrors(key), res, "saveFailed"));
         return;
       }
       onSaved();

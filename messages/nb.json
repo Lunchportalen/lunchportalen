@@ -678,8 +678,24 @@
         "activeToggle": "Aktivt område (brukes i registreringsmatching)"
       },
       "errors": {
+        "notAuthenticated": "Ikke innlogget.",
+        "providerAdminRequired": "Kun provider-admin kan endre områder.",
+        "forbidden": "Du har ikke tilgang til å endre dette området.",
+        "validationFailed": "Ugyldig skjema.",
+        "cityRequired": "Poststed er påkrevd.",
+        "invalidPostalFrom": "Fra-postnummer må være 4 siffer.",
+        "invalidPostalTo": "Til-postnummer må være 4 siffer.",
+        "invalidPostalRange": "Fra-postnummer kan ikke være høyere enn til-postnummer.",
+        "deliveryDaysRequired": "Velg minst én dag.",
+        "invalidEmployeeRange": "Min ansatte kan ikke være høyere enn maks.",
+        "invalidPostalCode": "Postnummer må være 4 siffer.",
+        "postalRangeInvalid": "Fra-postnummer kan ikke være høyere enn til.",
+        "employeeRangeInvalid": "Ugyldig ansatt-intervall.",
+        "postalOverlap": "Postnummer-intervallet overlapper et eksisterende aktivt område.",
+        "serviceAreaNotFound": "Området ble ikke funnet.",
+        "saveFailed": "Kunne ikke lagre området. Prøv igjen.",
         "toggleFailed": "Kunne ikke oppdatere status.",
-        "saveFailed": "Kunne ikke lagre."
+        "unknown": "Noe gikk galt. Prøv igjen."
       }
     },
     "settings": {
@@ -710,7 +726,15 @@
         "save": "Lagre innstillinger",
         "saving": "Lagrer…",
         "saved": "Innstillinger lagret.",
-        "saveFailed": "Kunne ikke lagre."
+        "errors": {
+          "notAuthenticated": "Ikke innlogget.",
+          "providerNotFound": "Mangler provider.",
+          "forbidden": "Ingen tilgang.",
+          "nameRequired": "Navn er påkrevd.",
+          "emailRequired": "Gyldig e-post er påkrevd.",
+          "saveFailed": "Kunne ikke lagre innstillinger.",
+          "unknown": "Uventet feil ved lagring."
+        }
       },
       "operations": {
         "operationsEmailLabel": "Ordre- og driftsepost",
@@ -724,12 +748,21 @@
         "save": "Lagre driftsinnstillinger",
         "saving": "Lagrer…",
         "saved": "Driftsinnstillinger lagret.",
-        "saveFailed": "Kunne ikke lagre driftsinnstillingene akkurat nå.",
         "locales": {
           "nb-NO": "Norsk (bokmål)",
           "en-GB": "English",
           "sv-SE": "Svenska",
           "da-DK": "Dansk"
+        },
+        "errors": {
+          "notAuthenticated": "Ikke innlogget.",
+          "providerNotFound": "Mangler provider.",
+          "forbidden": "Ingen tilgang.",
+          "invalidEmail": "Ugyldig e-postadresse.",
+          "emailTooLong": "E-postadressen er for lang.",
+          "invalidLocale": "Ugyldig språkvalg.",
+          "saveFailed": "Kunne ikke lagre driftsinnstillingene akkurat nå.",
+          "unknown": "Kunne ikke lagre driftsinnstillingene akkurat nå."
         }
       },
       "logo": {
@@ -743,10 +776,20 @@
         "removing": "Fjerner…",
         "updated": "Logo oppdatert.",
         "removed": "Logo fjernet.",
-        "uploadFailed": "Kunne ikke laste opp.",
-        "removeFailed": "Kunne ikke fjerne.",
-        "invalidType": "Logoen må være PNG eller WebP. Bruk helst logo med transparent bakgrunn.",
-        "tooLarge": "Logoen er for stor. Maks størrelse er 2 MB."
+        "errors": {
+          "notAuthenticated": "Ikke innlogget.",
+          "invalidProvider": "Ugyldig provider.",
+          "forbidden": "Ingen tilgang.",
+          "noFileSelected": "Velg en logofil.",
+          "unsupportedFileType": "Logoen må være PNG eller WebP. Bruk helst logo med transparent bakgrunn.",
+          "fileTooLarge": "Logoen er for stor. Maks størrelse er 2 MB.",
+          "uploadUnavailable": "Opplasting er ikke tilgjengelig akkurat nå.",
+          "uploadFailed": "Kunne ikke laste opp logoen.",
+          "removeFailed": "Kunne ikke fjerne logoen.",
+          "saveFailed": "Kunne ikke lagre logoen.",
+          "urlFailed": "Kunne ikke hente logo-URL.",
+          "unknown": "Uventet feil ved opplasting."
+        }
       },
       "brand": {
         "hexLabel": "HEX-kode",
@@ -754,10 +797,17 @@
         "saving": "Lagrer…",
         "sampleHint": "Slik brukes fargen: som liten aksent i menyen og detaljer.",
         "formatHint": "Bruk HEX-format, for eksempel #F5C518. Ved dårlig kontrast brukes standardfarge.",
-        "invalidHex": "Bruk HEX-format, for eksempel #F5C518.",
         "saved": "Farge lagret.",
         "restoredDefault": "Standardfarge gjenopprettet.",
-        "saveFailed": "Kunne ikke lagre fargen."
+        "errors": {
+          "notAuthenticated": "Ikke innlogget.",
+          "invalidProvider": "Ugyldig provider.",
+          "forbidden": "Ingen tilgang.",
+          "invalidHex": "Bruk HEX-format, for eksempel #F5C518.",
+          "contrastTooWeak": "Fargen har for svak kontrast og kan ikke brukes. Velg en mørkere farge.",
+          "saveFailed": "Kunne ikke lagre fargen.",
+          "unknown": "Uventet feil ved lagring."
+        }
       }
     },
     "banner": {
