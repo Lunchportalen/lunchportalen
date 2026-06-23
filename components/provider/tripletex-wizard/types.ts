@@ -4,13 +4,9 @@ export type VerifyItemState = "idle" | "pending" | "success" | "error" | "skippe
 
 export type VerifyItemKey = "auth" | "company_match" | "scope";
 
-export const WIZARD_PROGRESS_LABELS = [
-  "Token",
-  "Verifiser",
-  "Oppsett",
-  "Webhook",
-  "Ferdig",
-] as const;
+export const WIZARD_PROGRESS_KEYS = ["token", "verify", "setup", "webhook", "done"] as const;
+
+export type WizardProgressKey = (typeof WIZARD_PROGRESS_KEYS)[number];
 
 export function progressIndexForScreen(
   screen: WizardScreen,

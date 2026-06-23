@@ -921,6 +921,222 @@
         "unknown": "Something went wrong. Please try again."
       }
     },
+    "tripletex": {
+      "brand": "Tripletex",
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "status": {
+          "eyebrow": "Tripletex",
+          "heading": "Connection status",
+          "subheading": "Overview of connection, webhook and recent activity.",
+          "fallbackHeading": "Tripletex status",
+          "noAccess": "You do not have access to this provider."
+        },
+        "connect": {
+          "heading": "Connect Tripletex",
+          "adminRequired": "Only a provider admin can connect Tripletex.",
+          "degraded": {
+            "heading": "Tripletex needs attention",
+            "body": "The connection is degraded. Re-configuration flow coming in TPT-B-7b-edge.",
+            "badge": "Needs attention"
+          },
+          "disconnected": {
+            "heading": "Tripletex is disconnected",
+            "body": "Restore flow without a new token coming in TPT-B-7b-edge.",
+            "badge": "Disconnected"
+          }
+        }
+      },
+      "state": {
+        "CONNECTED": "Connected",
+        "CONFIGURING": "Configuring…",
+        "DEGRADED": "Needs attention",
+        "DISCONNECTED": "Disconnected",
+        "NOT_CONNECTED": "Not connected"
+      },
+      "activity": {
+        "onboarding_connection_started": "Connection started",
+        "onboarding_provisioning_completed": "Setup completed",
+        "onboarding_customer_skipped": "Customer skipped",
+        "onboarding_finalized": "Connection completed",
+        "onboarding_disconnected": "Tripletex disconnected",
+        "onboarding_reconnect_initiated": "Restore started",
+        "onboarding_test_token": "Connection tested",
+        "onboarding_vault_purged": "Credentials deleted",
+        "state_change_connected": "Status changed to connected",
+        "state_change_degraded": "Status changed to needs attention",
+        "state_change_disconnected": "Status changed to disconnected",
+        "state_change_configuring": "Status changed to configuring",
+        "state_change_generic": "Connection status changed"
+      },
+      "status": {
+        "sections": {
+          "resources": "Resources in Tripletex",
+          "webhook": "Webhook",
+          "activity": "Activity last 30 days",
+          "actions": "Actions"
+        },
+        "hero": {
+          "configureWebhook": "Configure webhook →",
+          "continueSetup": "Continue setup →",
+          "reconnect": "Connect again →",
+          "reconfigure": "Re-configure →",
+          "since": "Since {datetime}",
+          "lastHealthCheck": "Last health check: {relative}",
+          "credentialsPurge": "Credentials will be deleted {datetime}",
+          "daysUntilPurge": "in {days} days"
+        },
+        "cards": {
+          "products": "Products",
+          "productsMeta": "Mapped meal products",
+          "customers": "Customers",
+          "customersMeta": "Company links in Tripletex",
+          "vatCodes": "VAT codes",
+          "vatCodesMeta": "Unique tax codes in use"
+        },
+        "webhook": {
+          "subscriptions": "Registered subscriptions",
+          "activeCount": "{count} active in Tripletex",
+          "noneRegistered": "None registered yet",
+          "eventTypes": "Event types",
+          "lastReceived": "Last received",
+          "noEventsYet": "No events yet",
+          "last30Days": "Last 30 days",
+          "eventsCount": "{count} events",
+          "secretRotated": "Secret rotated",
+          "notRotated": "Not rotated",
+          "copy": "Copy",
+          "copied": "Copied",
+          "copyFailed": "Could not copy"
+        },
+        "activityStats": {
+          "invoicesSent": "Invoices sent",
+          "invoicesPaid": "Invoices paid",
+          "workerFailures": "Failed pushes",
+          "webhookEvents": "Webhooks",
+          "recentHeading": "Recent events",
+          "empty": "No events recorded yet."
+        },
+        "actions": {
+          "adminNote": "Only a provider admin can perform these actions.",
+          "testConnection": "Test connection",
+          "rotateSecret": "Rotate webhook secret",
+          "disconnect": "Disconnect →"
+        },
+        "modals": {
+          "close": "Close",
+          "copy": "Copy",
+          "copied": "Copied",
+          "copyFailed": "Could not copy",
+          "ok": "OK",
+          "failed": "Failed",
+          "test": {
+            "title": "Test connection",
+            "body": "Runs full 3-step verification against Tripletex using stored credentials.",
+            "stepAuth": "Authentication",
+            "stepCompany": "Company",
+            "stepScope": "Access",
+            "run": "Run test",
+            "running": "Testing…"
+          },
+          "rotate": {
+            "title": "Rotate webhook secret",
+            "body": "Generates a new secret and updates the Tripletex subscription when setup completes.",
+            "generate": "Generate new secret",
+            "generating": "Generating…"
+          },
+          "disconnect": {
+            "title": "Disconnect Tripletex",
+            "body": "The connection is set to disconnected. Credentials are kept for 30 days so you can reconnect without a new token. After that they are permanently deleted.",
+            "confirm": "Confirm disconnect",
+            "confirming": "Disconnecting…"
+          }
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Connect Tripletex",
+        "leadForProvider": "For {providerName}",
+        "progress": {
+          "token": "Token",
+          "verify": "Verify",
+          "setup": "Setup",
+          "webhook": "Webhook",
+          "done": "Done",
+          "ariaLabel": "Step {current} of {total}: {label}"
+        },
+        "steps": {
+          "token": {
+            "eyebrow": "Step 1 of 5",
+            "title": "Paste and verify",
+            "intro": "Generate an Employee Token in Tripletex under Company → API access. Paste the Company ID from the URL (contextId) and the token below.",
+            "companyIdLabel": "Tripletex Company ID",
+            "companyIdHelp": "Format: 6–12 digits. Find it in the URL: contextId=…",
+            "companyIdInvalid": "Company ID must be 6–12 digits.",
+            "tokenLabel": "Employee Token",
+            "tokenHintPending": "The token is only sent to the server during verification and storage.",
+            "tokenHintVerified": "Token verified and ready for storage.",
+            "tokenMissing": "Paste the Employee Token from Tripletex.",
+            "verify": "Verify",
+            "verifying": "Verifying…",
+            "retry": "Try again",
+            "continue": "Continue",
+            "connecting": "Connecting…",
+            "checksFailed": "One or more checks failed. Fix and try again.",
+            "tokenMissingOnContinue": "Token missing. Verify again.",
+            "notRun": "Not run"
+          },
+          "provisioning": {
+            "eyebrow": "Step 3 of 5",
+            "title": "Setting up Tripletex",
+            "intro": "This usually takes 10–30 seconds.",
+            "starting": "Starting setup…",
+            "waiting": "Waiting for Tripletex setup…",
+            "complete": "Setup completed.",
+            "syncing": "Syncing VAT codes, products and customers…",
+            "timeout": "Something took longer than expected.",
+            "timeoutHint": "Setup continues in the background. You can close this page and return later.",
+            "contactSupport": "Contact support",
+            "vatSync": "VAT codes syncing",
+            "productsCreate": "Products being created",
+            "customersSync": "Customers syncing"
+          },
+          "webhook": {
+            "eyebrow": "Step 4 of 5",
+            "title": "Webhook registration",
+            "intro": "Lunchportalen registers webhook subscriptions in Tripletex automatically. You do not need to paste URL or secret manually.",
+            "preparing": "Preparing webhook secret…",
+            "ready": "Ready. Click «Complete setup» to register the webhook and finish the connection.",
+            "prepareFailed": "Could not prepare webhook secret.",
+            "registering": "Registering webhook in Tripletex…",
+            "finalize": "Complete setup",
+            "finalizing": "Completing…"
+          },
+          "success": {
+            "eyebrow": "Step 5 of 5",
+            "title": "✓ Tripletex is connected",
+            "companyPrefix": "Company:",
+            "canNow": "You can now:",
+            "bulletInvoices": "Send invoices automatically to Tripletex",
+            "bulletPayments": "Receive payment status via webhook",
+            "bulletStatus": "View connection status and history",
+            "viewInvoices": "View invoice history",
+            "viewStatus": "View connection status",
+            "backToSettings": "Back to overview"
+          }
+        },
+        "verify": {
+          "auth": "Testing authentication",
+          "companyMatch": "Verifying Company ID match",
+          "scope": "Testing permissions",
+          "authOk": "Connection OK",
+          "companyOk": "Correct company",
+          "scopeOk": "Access OK"
+        }
+      }
+    },
     "registrations": {
       "page": {
         "eyebrow": "Provider",

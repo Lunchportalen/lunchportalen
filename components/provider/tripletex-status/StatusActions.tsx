@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { rotateWebhookSecretAction } from "@/app/leverandor/innstillinger/tripletex/koble-til/actions";
 import {
@@ -17,11 +18,17 @@ type Props = {
 
 type ModalKind = "test" | "rotate" | "disconnect" | null;
 
-function stepLabel(step: TripletexTokenVerificationResult["auth"]): string {
-  return step.ok ? "OK" : step.error ?? "Feilet";
+function stepLabel(
+  step: TripletexTokenVerificationResult["auth"],
+  tOk: string,
+  tFailed: string,
+): string {
+  return step.ok ? tOk : step.error ?? tFailed;
 }
 
 export default function StatusActions({ providerId, connectionState, onChanged }: Props) {
+  const tActions = useTranslations("provider.tripletex.status.actions");
+  const tModals = useTranslations("provider.tripletex.status.modals");
   const [modal, setModal] = useState<ModalKind>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,18 +92,16 @@ export default function StatusActions({ providerId, connectionState, onChanged }
     if (!rotatedSecret) return;
     try {
       await navigator.clipboard.writeText(rotatedSecret);
-      setCopySecretMsg("Kopiert");
+      setCopySecretMsg(tModals("copied"));
       window.setTimeout(() => setCopySecretMsg(null), 2000);
     } catch {
-      setCopySecretMsg("Kunne ikke kopiere");
+      setCopySecretMsg(tModals("copyFailed"));
     }
   };
 
   return (
     <div className="ds-tripletex-status__actions">
-      <p className="ds-body-sm ds-tripletex-status__text-soft">
-        Kun provider-admin kan utføre disse handlingene.
-      </p>
+      <p className="ds-body-sm ds-tripletex-status__text-soft">{tActions("adminNote")}</p>
 
       <div className="ds-tripletex-status__action-buttons">
         <button
@@ -108,7 +113,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
             setTestResult(null);
           }}
         >
-          Test tilkobling
+          {tActions("testConnection")}
         </button>
         <button
           type="button"
@@ -119,7 +124,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
             setRotatedSecret(null);
           }}
         >
-          Roter webhook-secret
+          {tActions("rotateSecret")}
         </button>
         {canDisconnect ? (
           <button
@@ -130,7 +135,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
               setError(null);
             }}
           >
-            Koble fra →
+            {tActions("disconnect")}
           </button>
         ) : null}
       </div>
@@ -147,16 +152,23 @@ export default function StatusActions({ providerId, connectionState, onChanged }
             {modal === "test" ? (
               <>
                 <h3 id="tpt-modal-title" className="ds-h3">
-                  Test tilkobling
+                  {tModals("test.title")}
                 </h3>
-                <p className="ds-body-sm">
-                  Kjører full 3-stegs verifisering mot Tripletex via lagrede credentials.
-                </p>
+                <p className="ds-body-sm">{tModals("test.body")}</p>
                 {testResult ? (
                   <ul className="ds-tripletex-status__test-steps">
-                    <li className="ds-body-sm">Autentisering: {stepLabel(testResult.auth)}</li>
-                    <li className="ds-body-sm">Selskap: {stepLabel(testResult.company_match)}</li>
-                    <li className="ds-body-sm">Tilgang: {stepLabel(testResult.scope)}</li>
+                    <li className="ds-body-sm">
+                      {tModals("test.stepAuth")}:{" "}
+                      {stepLabel(testResult.auth, tModals("ok"), tModals("failed"))}
+                    </li>
+                    <li className="ds-body-sm">
+                      {tModals("test.stepCompany")}:{" "}
+                      {stepLabel(testResult.company_match, tModals("ok"), tModals("failed"))}
+                    </li>
+                    <li className="ds-body-sm">
+                      {tModals("test.stepScope")}:{" "}
+                      {stepLabel(testResult.scope, tModals("ok"), tModals("failed"))}
+                    </li>
                   </ul>
                 ) : null}
               </>
@@ -165,16 +177,14 @@ export default function StatusActions({ providerId, connectionState, onChanged }
             {modal === "rotate" ? (
               <>
                 <h3 id="tpt-modal-title" className="ds-h3">
-                  Roter webhook-secret
+                  {tModals("rotate.title")}
                 </h3>
-                <p className="ds-body-sm">
-                  Genererer nytt secret og oppdaterer Tripletex-abonnement ved neste fullføring av oppsett.
-                </p>
+                <p className="ds-body-sm">{tModals("rotate.body")}</p>
                 {rotatedSecret ? (
                   <div className="ds-tripletex-status__copy-field">
                     <code className="ds-tripletex-status__copy-field-value">{rotatedSecret}</code>
                     <button type="button" className="ds-tripletex-status__copy-field-btn" onClick={() => void copySecret()}>
-                      {copySecretMsg ?? "Kopier"}
+                      {copySecretMsg ?? tModals("copy")}
                     </button>
                   </div>
                 ) : null}
@@ -184,12 +194,9 @@ export default function StatusActions({ providerId, connectionState, onChanged }
             {modal === "disconnect" ? (
               <>
                 <h3 id="tpt-modal-title" className="ds-h3">
-                  Koble fra Tripletex
+                  {tModals("disconnect.title")}
                 </h3>
-                <p className="ds-body-sm ds-secret-warning">
-                  Tilkoblingen settes til frakoblet. Credentials beholdes i 30 dager slik at du kan koble til
-                  igjen uten nytt token. Etter det slettes de permanent.
-                </p>
+                <p className="ds-body-sm ds-secret-warning">{tModals("disconnect.body")}</p>
               </>
             ) : null}
 
@@ -197,16 +204,16 @@ export default function StatusActions({ providerId, connectionState, onChanged }
 
             <div className="ds-tripletex-status__modal-actions">
               <button type="button" className="ds-btn ds-btn--secondary" disabled={busy} onClick={closeModal}>
-                Lukk
+                {tModals("close")}
               </button>
               {modal === "test" && !testResult ? (
                 <button type="button" className="ds-btn ds-btn--primary" disabled={busy} onClick={() => void runTest()}>
-                  {busy ? "Tester…" : "Kjør test"}
+                  {busy ? tModals("test.running") : tModals("test.run")}
                 </button>
               ) : null}
               {modal === "rotate" && !rotatedSecret ? (
                 <button type="button" className="ds-btn ds-btn--primary" disabled={busy} onClick={() => void runRotate()}>
-                  {busy ? "Genererer…" : "Generer nytt secret"}
+                  {busy ? tModals("rotate.generating") : tModals("rotate.generate")}
                 </button>
               ) : null}
               {modal === "disconnect" ? (
@@ -216,7 +223,7 @@ export default function StatusActions({ providerId, connectionState, onChanged }
                   disabled={busy}
                   onClick={() => void runDisconnect()}
                 >
-                  {busy ? "Kobler fra…" : "Bekreft frakobling"}
+                  {busy ? tModals("disconnect.confirming") : tModals("disconnect.confirm")}
                 </button>
               ) : null}
             </div>

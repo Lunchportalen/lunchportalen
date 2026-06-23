@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { getHealthAction } from "@/app/leverandor/innstillinger/tripletex/koble-til/actions";
 
@@ -14,7 +15,8 @@ const MAX_MS = 5 * 60 * 1000;
 const MAX_BACKOFF_MS = 30_000;
 
 export default function Step2Provisioning({ providerId, onComplete }: Props) {
-  const [statusText, setStatusText] = useState("Starter oppsett…");
+  const t = useTranslations("provider.tripletex.wizard.steps.provisioning");
+  const [statusText, setStatusText] = useState(() => t("starting"));
   const [timedOut, setTimedOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<number | null>(null);
@@ -32,7 +34,7 @@ export default function Step2Provisioning({ providerId, onComplete }: Props) {
 
       if (Date.now() - startedRef.current > MAX_MS) {
         setTimedOut(true);
-        setStatusText("Noe tok lengre tid enn forventet.");
+        setStatusText(t("timeout"));
         if (intervalRef.current) window.clearInterval(intervalRef.current);
         return;
       }
@@ -47,7 +49,7 @@ export default function Step2Provisioning({ providerId, onComplete }: Props) {
           backoffRef.current = Math.min(backoffRef.current * 2, MAX_BACKOFF_MS);
         }
         setError(res.error);
-        setStatusText("Venter på Tripletex-oppsett…");
+        setStatusText(t("waiting"));
         return;
       }
 
@@ -59,11 +61,11 @@ export default function Step2Provisioning({ providerId, onComplete }: Props) {
       );
 
       if (provisioningEvent) {
-        setStatusText("Oppsett fullført.");
+        setStatusText(t("complete"));
       } else if (res.data.provisioningComplete) {
-        setStatusText("Oppsett fullført.");
+        setStatusText(t("complete"));
       } else {
-        setStatusText("Synkroniserer MVA-koder, produkter og kunder…");
+        setStatusText(t("syncing"));
       }
 
       if (res.data.provisioningComplete) {
@@ -85,11 +87,11 @@ export default function Step2Provisioning({ providerId, onComplete }: Props) {
 
   return (
     <section className="ds-surface" aria-labelledby="tpt-step2-title">
-      <p className="ds-eyebrow">Steg 3 av 5</p>
+      <p className="ds-eyebrow">{t("eyebrow")}</p>
       <h2 id="tpt-step2-title" className="ds-h3">
-        Setter opp Tripletex
+        {t("title")}
       </h2>
-      <p className="ds-body ds-text-limit">Dette tar vanligvis 10–30 sekunder.</p>
+      <p className="ds-body ds-text-limit">{t("intro")}</p>
 
       <div aria-live="polite" aria-atomic="true" className="ds-verify-list">
         <div className="ds-verify-item ds-verify-item--pending">
@@ -102,19 +104,19 @@ export default function Step2Provisioning({ providerId, onComplete }: Props) {
           <span className="ds-verify-item__icon" aria-hidden="true">
             ✓
           </span>
-          <span className="ds-body-sm">MVA-koder synkroniseres</span>
+          <span className="ds-body-sm">{t("vatSync")}</span>
         </div>
         <div className="ds-verify-item ds-verify-item--success">
           <span className="ds-verify-item__icon" aria-hidden="true">
             ✓
           </span>
-          <span className="ds-body-sm">Produkter opprettes</span>
+          <span className="ds-body-sm">{t("productsCreate")}</span>
         </div>
         <div className="ds-verify-item ds-verify-item--pending">
           <span className="ds-verify-item__icon" aria-hidden="true">
             …
           </span>
-          <span className="ds-body-sm">Kunder synkroniseres</span>
+          <span className="ds-body-sm">{t("customersSync")}</span>
         </div>
       </div>
 
@@ -126,11 +128,9 @@ export default function Step2Provisioning({ providerId, onComplete }: Props) {
 
       {timedOut ? (
         <div className="ds-wizard__actions">
-          <p className="ds-body-sm">
-            Oppsettet fortsetter i bakgrunnen. Du kan lukke siden og komme tilbake senere.
-          </p>
+          <p className="ds-body-sm">{t("timeoutHint")}</p>
           <a className="ds-btn ds-btn--secondary" href="mailto:support@lunchportalen.no">
-            Kontakt support
+            {t("contactSupport")}
           </a>
         </div>
       ) : null}

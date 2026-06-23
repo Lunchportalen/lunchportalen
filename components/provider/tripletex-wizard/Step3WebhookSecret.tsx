@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   finalizeConnectionAction,
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export default function Step3WebhookSecret({ providerId, onComplete }: Props) {
+  const t = useTranslations("provider.tripletex.wizard.steps.webhook");
   const [secretReady, setSecretReady] = useState(false);
   const [loadingSecret, setLoadingSecret] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,32 +61,29 @@ export default function Step3WebhookSecret({ providerId, onComplete }: Props) {
 
   return (
     <section className="ds-surface" aria-labelledby="tpt-step3-title">
-      <p className="ds-eyebrow">Steg 4 av 5</p>
+      <p className="ds-eyebrow">{t("eyebrow")}</p>
       <h2 id="tpt-step3-title" className="ds-h3">
-        Webhook-registrering
+        {t("title")}
       </h2>
-      <p className="ds-body ds-text-limit">
-        Lunchportalen registrerer webhook-abonnement i Tripletex automatisk. Du trenger ikke lime inn
-        URL eller secret manuelt.
-      </p>
+      <p className="ds-body ds-text-limit">{t("intro")}</p>
 
       {loadingSecret ? (
         <p className="ds-body-sm" aria-live="polite">
-          Forbereder webhook-secret…
+          {t("preparing")}
         </p>
       ) : secretReady ? (
         <p className="ds-body-sm" aria-live="polite">
-          Klar. Trykk «Fullfør oppsett» for å registrere webhook og fullføre tilkoblingen.
+          {t("ready")}
         </p>
       ) : (
         <p className="ds-body-sm" role="alert">
-          Kunne ikke forberede webhook-secret.
+          {t("prepareFailed")}
         </p>
       )}
 
       {submitting ? (
         <p className="ds-body-sm" aria-live="polite">
-          Registrerer webhook i Tripletex…
+          {t("registering")}
         </p>
       ) : null}
 
@@ -101,7 +100,7 @@ export default function Step3WebhookSecret({ providerId, onComplete }: Props) {
           onClick={() => void handleFinalize()}
           disabled={!secretReady || submitting || loadingSecret}
         >
-          {submitting ? "Fullfører…" : "Fullfør oppsett"}
+          {submitting ? t("finalizing") : t("finalize")}
         </button>
       </div>
     </section>

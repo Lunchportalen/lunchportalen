@@ -6,6 +6,9 @@
 import React, { act } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { createRoot } from "react-dom/client";
+import { NextIntlClientProvider } from "next-intl";
+
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -39,12 +42,17 @@ function setInputValue(el: HTMLInputElement, value: string) {
   el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-async function renderUi(node: React.ReactNode) {
+async function renderUi(node: React.ReactNode, locale: "nb" | "en" = "nb") {
+  const messages = await loadMessagesForLocale(locale);
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
   await act(async () => {
-    root.render(node);
+    root.render(
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        {node}
+      </NextIntlClientProvider>,
+    );
     await Promise.resolve();
   });
   return { container, root };

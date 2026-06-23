@@ -1,7 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { WizardScreen } from "./types";
-import { WIZARD_PROGRESS_LABELS, progressIndexForScreen } from "./types";
+import { WIZARD_PROGRESS_KEYS, progressIndexForScreen } from "./types";
 
 type Props = {
   screen: WizardScreen;
@@ -9,6 +11,8 @@ type Props = {
 };
 
 export default function WizardProgress({ screen, verifying }: Props) {
+  const t = useTranslations("provider.tripletex.wizard.progress");
+  const labels = WIZARD_PROGRESS_KEYS.map((key) => t(key));
   const current = progressIndexForScreen(screen, verifying);
 
   return (
@@ -16,11 +20,15 @@ export default function WizardProgress({ screen, verifying }: Props) {
       className="ds-wizard__progress"
       role="progressbar"
       aria-valuemin={0}
-      aria-valuemax={WIZARD_PROGRESS_LABELS.length - 1}
+      aria-valuemax={labels.length - 1}
       aria-valuenow={current}
-      aria-label={`Steg ${current + 1} av ${WIZARD_PROGRESS_LABELS.length}: ${WIZARD_PROGRESS_LABELS[current]}`}
+      aria-label={t("ariaLabel", {
+        current: current + 1,
+        total: labels.length,
+        label: labels[current],
+      })}
     >
-      {WIZARD_PROGRESS_LABELS.map((label, index) => {
+      {labels.map((label, index) => {
         const complete = index < current;
         const isCurrent = index === current;
         const className = [
@@ -33,7 +41,7 @@ export default function WizardProgress({ screen, verifying }: Props) {
 
         return (
           <span
-            key={label}
+            key={WIZARD_PROGRESS_KEYS[index]}
             className={className}
             aria-current={isCurrent ? "step" : undefined}
             title={label}
