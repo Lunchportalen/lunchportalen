@@ -242,6 +242,44 @@ describe("GET /api/week profile lookup", () => {
     expect(json.data.days.length).toBe(5);
   });
 
+  test("agreement response excludes commercial/price fields (employee security contract)", async () => {
+    const { GET } = await import("@/app/api/week/route");
+    const res = await GET(mkWeekReq());
+    expect(res.status).toBe(200);
+    const json = await readJson(res);
+    const agreement = json.data?.agreement ?? {};
+
+    expect(agreement.companyId).toBe(COMPANY_A);
+    expect(agreement.plan_tier).toBeTruthy();
+    expect(Array.isArray(agreement.delivery_days)).toBe(true);
+    expect(agreement.start_date).toBe("2026-01-01");
+    expect(agreement.end_date).toBeNull();
+
+    const forbidden = [
+      "price_per_cuvert_nok",
+      "price_per_meal_nok",
+      "price_per_employee",
+      "unit_price",
+      "amount",
+      "amount_ex_vat",
+      "amount_inc_vat",
+      "subtotal",
+      "gross",
+      "net",
+      "vat",
+      "mva",
+      "tax",
+      "commission",
+      "provisjon",
+      "invoice",
+      "billing",
+      "currency",
+    ];
+    for (const key of forbidden) {
+      expect(agreement).not.toHaveProperty(key);
+    }
+  });
+
   test("resolveProviderMenuScopeForCompany called with employee company only", async () => {
     const { GET } = await import("@/app/api/week/route");
     await GET(mkWeekReq());
