@@ -678,8 +678,24 @@
         "activeToggle": "Active area (used in registration matching)"
       },
       "errors": {
+        "notAuthenticated": "Not signed in.",
+        "providerAdminRequired": "Only a provider admin can change coverage areas.",
+        "forbidden": "You do not have access to change this area.",
+        "validationFailed": "Invalid form.",
+        "cityRequired": "City is required.",
+        "invalidPostalFrom": "From postal code must be 4 digits.",
+        "invalidPostalTo": "To postal code must be 4 digits.",
+        "invalidPostalRange": "From postal code cannot be higher than to.",
+        "deliveryDaysRequired": "Select at least one day.",
+        "invalidEmployeeRange": "Min employees cannot be higher than max.",
+        "invalidPostalCode": "Postal code must be 4 digits.",
+        "postalRangeInvalid": "From postal code cannot be higher than to.",
+        "employeeRangeInvalid": "Invalid employee range.",
+        "postalOverlap": "The postal code range overlaps an existing active area.",
+        "serviceAreaNotFound": "Area was not found.",
+        "saveFailed": "Could not save the area. Try again.",
         "toggleFailed": "Could not update status.",
-        "saveFailed": "Could not save."
+        "unknown": "Something went wrong. Try again."
       }
     },
     "settings": {
@@ -710,7 +726,15 @@
         "save": "Save settings",
         "saving": "Saving…",
         "saved": "Settings saved.",
-        "saveFailed": "Could not save."
+        "errors": {
+          "notAuthenticated": "Not signed in.",
+          "providerNotFound": "Provider missing.",
+          "forbidden": "No access.",
+          "nameRequired": "Name is required.",
+          "emailRequired": "A valid email is required.",
+          "saveFailed": "Could not save settings.",
+          "unknown": "Unexpected error while saving."
+        }
       },
       "operations": {
         "operationsEmailLabel": "Orders and operations email",
@@ -724,12 +748,21 @@
         "save": "Save operational settings",
         "saving": "Saving…",
         "saved": "Operational settings saved.",
-        "saveFailed": "Could not save operational settings right now.",
         "locales": {
           "nb-NO": "Norwegian (bokmål)",
           "en-GB": "English",
           "sv-SE": "Swedish",
           "da-DK": "Danish"
+        },
+        "errors": {
+          "notAuthenticated": "Not signed in.",
+          "providerNotFound": "Provider missing.",
+          "forbidden": "No access.",
+          "invalidEmail": "Invalid email address.",
+          "emailTooLong": "Email address is too long.",
+          "invalidLocale": "Invalid language selection.",
+          "saveFailed": "Could not save operational settings right now.",
+          "unknown": "Could not save operational settings right now."
         }
       },
       "logo": {
@@ -743,10 +776,20 @@
         "removing": "Removing…",
         "updated": "Logo updated.",
         "removed": "Logo removed.",
-        "uploadFailed": "Could not upload.",
-        "removeFailed": "Could not remove.",
-        "invalidType": "Logo must be PNG or WebP. Prefer a logo with transparent background.",
-        "tooLarge": "Logo is too large. Maximum size is 2 MB."
+        "errors": {
+          "notAuthenticated": "Not signed in.",
+          "invalidProvider": "Invalid provider.",
+          "forbidden": "No access.",
+          "noFileSelected": "Choose a logo file.",
+          "unsupportedFileType": "Logo must be PNG or WebP. Prefer a logo with transparent background.",
+          "fileTooLarge": "Logo is too large. Maximum size is 2 MB.",
+          "uploadUnavailable": "Upload is not available right now.",
+          "uploadFailed": "Could not upload the logo.",
+          "removeFailed": "Could not remove the logo.",
+          "saveFailed": "Could not save the logo.",
+          "urlFailed": "Could not resolve logo URL.",
+          "unknown": "Unexpected error during upload."
+        }
       },
       "brand": {
         "hexLabel": "HEX code",
@@ -754,10 +797,17 @@
         "saving": "Saving…",
         "sampleHint": "How the colour is used: as a small accent in the menu and details.",
         "formatHint": "Use HEX format, for example #F5C518. If contrast is poor, the default colour is used.",
-        "invalidHex": "Use HEX format, for example #F5C518.",
         "saved": "Colour saved.",
         "restoredDefault": "Default colour restored.",
-        "saveFailed": "Could not save colour."
+        "errors": {
+          "notAuthenticated": "Not signed in.",
+          "invalidProvider": "Invalid provider.",
+          "forbidden": "No access.",
+          "invalidHex": "Use HEX format, for example #F5C518.",
+          "contrastTooWeak": "The colour has too little contrast and cannot be used. Choose a darker colour.",
+          "saveFailed": "Could not save colour.",
+          "unknown": "Unexpected error while saving."
+        }
       }
     },
     "banner": {

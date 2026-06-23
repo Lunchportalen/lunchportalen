@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
 import { removeProviderLogo, saveProviderLogo } from "@/lib/providers/saveProviderLogo";
+import { resolveProviderSettingsLogoError } from "@/lib/providers/providerSettingsActionErrors";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const ACCEPT = "image/png,image/webp";
@@ -23,6 +24,7 @@ export type ProviderLogoUploaderProps = {
 
 export default function ProviderLogoUploader({ providerId, providerName, logoUrl }: ProviderLogoUploaderProps) {
   const t = useTranslations("provider.settings.logo");
+  const tErrors = useTranslations("provider.settings.logo.errors");
   const inputRef = useRef<HTMLInputElement>(null);
   const [currentLogo, setCurrentLogo] = useState<string | null>(logoUrl);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -42,11 +44,11 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
     if (!file) return;
 
     if (!ALLOWED_TYPES.has(file.type)) {
-      setStatus({ kind: "error", label: t("invalidType") });
+      setStatus({ kind: "error", label: tErrors("unsupportedFileType") });
       return;
     }
     if (file.size > MAX_LOGO_BYTES) {
-      setStatus({ kind: "error", label: t("tooLarge") });
+      setStatus({ kind: "error", label: tErrors("fileTooLarge") });
       return;
     }
 
@@ -62,7 +64,13 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
         setStatus({ kind: "success", label: t("updated") });
         return;
       }
-      setStatus({ kind: "error", label: "error" in res ? res.error : t("uploadFailed") });
+      if (res.ok === false) {
+        setStatus({
+          kind: "error",
+          label: resolveProviderSettingsLogoError((key) => tErrors(key), res, "uploadFailed"),
+        });
+        return;
+      }
     });
   }
 
@@ -76,7 +84,13 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
         setStatus({ kind: "success", label: t("removed") });
         return;
       }
-      setStatus({ kind: "error", label: "error" in res ? res.error : t("removeFailed") });
+      if (res.ok === false) {
+        setStatus({
+          kind: "error",
+          label: resolveProviderSettingsLogoError((key) => tErrors(key), res, "removeFailed"),
+        });
+        return;
+      }
     });
   }
 

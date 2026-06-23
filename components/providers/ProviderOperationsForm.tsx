@@ -11,6 +11,7 @@ import {
   saveProviderOperationalSettings,
   type ProviderOperationalSettingsInput,
 } from "@/lib/providers/saveProviderOperationalSettings";
+import { resolveProviderSettingsOperationsError } from "@/lib/providers/providerSettingsActionErrors";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
@@ -22,6 +23,7 @@ export default function ProviderOperationsForm({
   initial: ProviderOperationalSettings;
 }) {
   const t = useTranslations("provider.settings.operations");
+  const tErrors = useTranslations("provider.settings.operations.errors");
   const [state, setState] = useState<FormState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -47,8 +49,11 @@ export default function ProviderOperationsForm({
         setMessage(t("saved"));
         return;
       }
-      setState("error");
-      setMessage("error" in res ? res.error : t("saveFailed"));
+      if (res.ok === false) {
+        setState("error");
+        setMessage(resolveProviderSettingsOperationsError((key) => tErrors(key), res));
+        return;
+      }
     });
   }
 

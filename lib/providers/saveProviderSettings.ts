@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
+import {
+  settingsProfileFailure,
+  type ProviderSettingsProfileErrorKey,
+} from "@/lib/providers/providerSettingsActionErrors";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type ProviderSettingsInput = {
@@ -14,9 +18,7 @@ export type ProviderSettingsInput = {
   contactPhone: string | null;
 };
 
-export type ProviderSettingsResult =
-  | { ok: true }
-  | { ok: false; error: string; field?: string };
+export type ProviderSettingsResult = { ok: true } | { ok: false; errorKey: ProviderSettingsProfileErrorKey; field?: string };
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
@@ -28,20 +30,20 @@ function safeStr(v: unknown) {
 export async function saveProviderSettings(input: ProviderSettingsInput): Promise<ProviderSettingsResult> {
   const auth = await getAuthContext();
   if (!auth.ok || !auth.user?.id) {
-    return { ok: false, error: "Ikke innlogget." };
+    return settingsProfileFailure("notAuthenticated");
   }
 
   const providerId = safeStr(input.providerId);
-  if (!providerId) return { ok: false, error: "Mangler provider.", field: "providerId" };
+  if (!providerId) return { ok: false, errorKey: "providerNotFound", field: "providerId" };
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
-  if (!allowed) return { ok: false, error: "Ingen tilgang." };
+  if (!allowed) return settingsProfileFailure("forbidden");
 
   const name = safeStr(input.name);
   const contactEmail = safeStr(input.contactEmail);
-  if (!name) return { ok: false, error: "Navn er påkrevd.", field: "name" };
+  if (!name) return { ok: false, errorKey: "nameRequired", field: "name" };
   if (!contactEmail || !contactEmail.includes("@")) {
-    return { ok: false, error: "Gyldig e-post er påkrevd.", field: "contactEmail" };
+    return { ok: false, errorKey: "emailRequired", field: "contactEmail" };
   }
 
   try {
@@ -56,12 +58,12 @@ export async function saveProviderSettings(input: ProviderSettingsInput): Promis
       })
       .eq("id", providerId);
 
-    if (error) return { ok: false, error: "Kunne ikke lagre innstillinger." };
+    if (error) return settingsProfileFailure("saveFailed");
 
     revalidatePath("/leverandor");
     revalidatePath("/leverandor/innstillinger");
     return { ok: true };
   } catch {
-    return { ok: false, error: "Uventet feil ved lagring." };
+    return settingsProfileFailure("unknown");
   }
 }

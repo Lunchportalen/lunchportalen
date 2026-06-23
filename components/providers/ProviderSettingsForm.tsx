@@ -4,12 +4,14 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
 import { saveProviderSettings, type ProviderSettingsInput } from "@/lib/providers/saveProviderSettings";
+import { resolveProviderSettingsProfileError } from "@/lib/providers/providerSettingsActionErrors";
 import type { Provider } from "@/lib/providers/types";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
 export default function ProviderSettingsForm({ provider }: { provider: Provider }) {
   const t = useTranslations("provider.settings.profile");
+  const tErrors = useTranslations("provider.settings.profile.errors");
   const [state, setState] = useState<FormState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -34,8 +36,11 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
         setMessage(t("saved"));
         return;
       }
-      setState("error");
-      setMessage("error" in res ? res.error : t("saveFailed"));
+      if (res.ok === false) {
+        setState("error");
+        setMessage(resolveProviderSettingsProfileError((key) => tErrors(key), res));
+        return;
+      }
     });
   }
 
