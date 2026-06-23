@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   formatTripletexDateTime,
   formatTripletexRelative,
-  tripletexConnectionStateLabel,
+  resolveTripletexConnectionStateLabel,
 } from "@/lib/integrations/tripletex/tripletexStatusPresentation";
 
 import type { DashboardData } from "@/app/leverandor/innstillinger/tripletex/status/actions";
@@ -19,68 +22,56 @@ function badgeClass(state: string): string {
   return "ds-status-badge--disconnected";
 }
 
-function heroCta(state: string, provisioningComplete: boolean): { href: string; label: string; primary: boolean } | null {
-  if (state === "CONFIGURING" && provisioningComplete) {
-    return {
-      href: "/leverandor/innstillinger/tripletex/koble-til",
-      label: "Konfigurer webhook →",
-      primary: true,
-    };
-  }
-  if (state === "CONFIGURING") {
-    return {
-      href: "/leverandor/innstillinger/tripletex/koble-til",
-      label: "Fortsett oppsett →",
-      primary: true,
-    };
-  }
-  if (state === "DISCONNECTED") {
-    return {
-      href: "/leverandor/innstillinger/tripletex/koble-til",
-      label: "Koble til igjen →",
-      primary: true,
-    };
-  }
-  if (state === "DEGRADED") {
-    return {
-      href: "/leverandor/innstillinger/tripletex/koble-til",
-      label: "Re-konfigurer →",
-      primary: false,
-    };
-  }
+type HeroCtaKey = "configureWebhook" | "continueSetup" | "reconnect" | "reconfigure";
+
+function heroCtaKey(state: string, provisioningComplete: boolean): HeroCtaKey | null {
+  if (state === "CONFIGURING" && provisioningComplete) return "configureWebhook";
+  if (state === "CONFIGURING") return "continueSetup";
+  if (state === "DISCONNECTED") return "reconnect";
+  if (state === "DEGRADED") return "reconfigure";
   return null;
 }
 
 export default function StatusHero({ data }: Props) {
+  const locale = useLocale();
+  const tHero = useTranslations("provider.tripletex.status.hero");
+  const tState = useTranslations("provider.tripletex.state");
+  const tFormat = useTranslations("provider.tripletex.format");
+  const emDash = tFormat("emDash");
+
   const { state } = data;
   const companyLine =
     data.tripletexCompanyName && data.tripletexCompanyId
       ? `${data.tripletexCompanyName} (${data.tripletexCompanyId})`
-      : data.tripletexCompanyName ?? null;
+      : (data.tripletexCompanyName ?? null);
 
-  const cta = heroCta(state, data.provisioningComplete);
+  const ctaKey = heroCtaKey(state, data.provisioningComplete);
 
   const metaParts: string[] = [];
-  if (data.stateSince) metaParts.push(`Siden ${formatTripletexDateTime(data.stateSince)}`);
+  if (data.stateSince) {
+    metaParts.push(
+      tHero("since", { datetime: formatTripletexDateTime(data.stateSince, locale, emDash) }),
+    );
+  }
   if (companyLine) metaParts.push(companyLine);
 
   return (
     <div className="ds-tripletex-status__hero">
       <div className="ds-tripletex-status__hero-strip">
         <span className={`ds-status-badge ${badgeClass(state)}`}>
-          {tripletexConnectionStateLabel(state)}
+          {resolveTripletexConnectionStateLabel((key) => tState(key), state)}
         </span>
 
         {metaParts.length > 0 ? (
           <p className="ds-body-sm ds-tripletex-status__hero-meta">{metaParts.join(" · ")}</p>
         ) : null}
 
-        {cta ? (
+        {ctaKey ? (
           <Link
-            className={`ds-btn ${cta.primary ? "ds-btn--primary" : "ds-btn--secondary"} ds-tripletex-status__hero-cta`}
-            href={cta.href}
+            className={`ds-btn ${ctaKey === "reconfigure" ? "ds-btn--secondary" : "ds-btn--primary"} ds-tripletex-status__hero-cta`}
+            href="/leverandor/innstillinger/tripletex/koble-til"
           >
-            {cta.label}
+            {tHero(ctaKey)}
           </Link>
         ) : null}
       </div>
@@ -97,14 +88,18 @@ export default function StatusHero({ data }: Props) {
 
       {data.lastHealthCheck && (state === "CONNECTED" || state === "DEGRADED") ? (
         <p className="ds-body-sm ds-tripletex-status__text-soft">
-          Siste helse-sjekk: {formatTripletexRelative(data.lastHealthCheck)}
+          {tHero("lastHealthCheck", {
+            relative: formatTripletexRelative(data.lastHealthCheck, locale, emDash),
+          })}
         </p>
       ) : null}
 
       {state === "DISCONNECTED" && data.vaultPurgeAt ? (
         <p className="ds-body-sm ds-tripletex-status__text-soft">
-          Credentials slettes {formatTripletexDateTime(data.vaultPurgeAt)}
-          {data.daysUntilPurge != null ? ` (om ${data.daysUntilPurge} dager)` : null}.
+          {tHero("credentialsPurge", {
+            datetime: formatTripletexDateTime(data.vaultPurgeAt, locale, emDash),
+          })}
+          {data.daysUntilPurge != null ? ` (${tHero("daysUntilPurge", { days: data.daysUntilPurge })})` : null}.
         </p>
       ) : null}
     </div>

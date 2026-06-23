@@ -5,6 +5,7 @@ export const revalidate = 0;
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import StatusDashboardClient from "@/components/provider/tripletex-status/StatusDashboardClient";
 import { getDashboardDataAction } from "@/app/leverandor/innstillinger/tripletex/status/actions";
@@ -19,6 +20,8 @@ export default async function TripletexStatusPage() {
     redirect("/login?next=%2Fleverandor%2Finnstillinger%2Ftripletex%2Fstatus");
   }
 
+  const t = await getTranslations("provider.tripletex.page.status");
+
   const ctx = await getProviderAdminContext(auth.user.id);
   const provider = ctx.primaryProvider;
   if (!provider) redirect("/leverandor");
@@ -27,8 +30,8 @@ export default async function TripletexStatusPage() {
   if (!canView) {
     return (
       <div className="ds-container">
-        <h1 className="ds-h2">Tripletex-status</h1>
-        <p className="ds-body">Ingen tilgang til denne leverandøren.</p>
+        <h1 className="ds-h2">{t("fallbackHeading")}</h1>
+        <p className="ds-body">{t("noAccess")}</p>
       </div>
     );
   }
@@ -37,7 +40,7 @@ export default async function TripletexStatusPage() {
   if (dashboardRes.ok === false) {
     return (
       <div className="ds-container">
-        <h1 className="ds-h2">Tripletex-status</h1>
+        <h1 className="ds-h2">{t("fallbackHeading")}</h1>
         <p className="ds-body">{dashboardRes.error}</p>
       </div>
     );
@@ -57,9 +60,9 @@ export default async function TripletexStatusPage() {
     <div className="ds-page">
       <div className="ds-container">
         <header className="ds-section">
-          <p className="ds-eyebrow">Tripletex</p>
-          <h1 className="ds-h2">Tilkoblingsstatus</h1>
-          <p className="ds-lead">Oversikt over tilkobling, webhook og nylig aktivitet.</p>
+          <p className="ds-eyebrow">{t("eyebrow")}</p>
+          <h1 className="ds-h2">{t("heading")}</h1>
+          <p className="ds-lead">{t("subheading")}</p>
         </header>
 
         <StatusDashboardClient

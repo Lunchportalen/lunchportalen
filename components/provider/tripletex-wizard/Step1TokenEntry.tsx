@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   completeConnectionAction,
@@ -18,18 +19,6 @@ type Props = {
 
 type VerifyDisplay = Record<VerifyItemKey, { state: VerifyItemState; message: string }>;
 
-const VERIFY_LABELS: Record<VerifyItemKey, string> = {
-  auth: "Tester autentisering",
-  company_match: "Verifiserer Company ID-match",
-  scope: "Tester rettigheter",
-};
-
-const VERIFY_SUCCESS: Record<VerifyItemKey, string> = {
-  auth: "Tilkobling OK",
-  company_match: "Riktig firma",
-  scope: "Tilgang OK",
-};
-
 function initialVerifyDisplay(): VerifyDisplay {
   return {
     auth: { state: "idle", message: "" },
@@ -40,9 +29,26 @@ function initialVerifyDisplay(): VerifyDisplay {
 
 const VERIFY_KEYS: VerifyItemKey[] = ["auth", "company_match", "scope"];
 
+function verifyLabelKey(key: VerifyItemKey): "auth" | "companyMatch" | "scope" {
+  if (key === "company_match") return "companyMatch";
+  if (key === "scope") return "scope";
+  return "auth";
+}
+
+function verifySuccessKey(key: VerifyItemKey): "authOk" | "companyOk" | "scopeOk" {
+  if (key === "company_match") return "companyOk";
+  if (key === "scope") return "scopeOk";
+  return "authOk";
+}
+
 function staggerApplyResult(
   result: TripletexTokenVerificationResult,
   apply: (key: VerifyItemKey, state: VerifyItemState, message: string) => void,
+  labels: {
+    success: (key: VerifyItemKey) => string;
+    skipped: string;
+    failed: string;
+  },
 ): Promise<void> {
   const delays = [0, 120, 240];
 
@@ -53,11 +59,11 @@ function staggerApplyResult(
         const priorFailed = VERIFY_KEYS.slice(0, index).some((priorKey) => !result[priorKey].ok);
 
         if (step.ok) {
-          apply(key, "success", VERIFY_SUCCESS[key]);
+          apply(key, "success", labels.success(key));
         } else if (priorFailed) {
-          apply(key, "skipped", "Ikke kjørt");
+          apply(key, "skipped", labels.skipped);
         } else {
-          apply(key, "error", step.error || "Feilet");
+          apply(key, "error", step.error || labels.failed);
         }
 
         if (index === VERIFY_KEYS.length - 1) resolve();
@@ -99,6 +105,10 @@ function VerifyIcon({ state }: { state: VerifyItemState }) {
 }
 
 export default function Step1TokenEntry({ providerId, onComplete, onVerifyingChange }: Props) {
+  const t = useTranslations("provider.tripletex.wizard.steps.token");
+  const tVerify = useTranslations("provider.tripletex.wizard.verify");
+  const tModals = useTranslations("provider.tripletex.status.modals");
+
   const [companyId, setCompanyId] = useState("");
   const [companyIdError, setCompanyIdError] = useState<string | null>(null);
   const [verifyDisplay, setVerifyDisplay] = useState<VerifyDisplay>(initialVerifyDisplay);
@@ -127,20 +137,20 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
     const digits = companyId.replace(/\s+/g, "");
 
     if (!/^\d{6,12}$/.test(digits)) {
-      setCompanyIdError("Company ID må bestå av 6–12 siffer.");
+      setCompanyIdError(t("companyIdInvalid"));
       return;
     }
     if (!token) {
-      setFormError("Lim inn Employee Token fra Tripletex.");
+      setFormError(t("tokenMissing"));
       return;
     }
 
     setVerifying(true);
     onVerifyingChange?.(true);
     setVerifyDisplay({
-      auth: { state: "pending", message: VERIFY_LABELS.auth },
-      company_match: { state: "pending", message: VERIFY_LABELS.company_match },
-      scope: { state: "pending", message: VERIFY_LABELS.scope },
+      auth: { state: "pending", message: tVerify("auth") },
+      company_match: { state: "pending", message: tVerify("companyMatch") },
+      scope: { state: "pending", message: tVerify("scope") },
     });
 
     const res = await verifyTokenAction({
@@ -157,7 +167,11 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
       return;
     }
 
-    await staggerApplyResult(res.data, applyVerifyItem);
+    await staggerApplyResult(res.data, applyVerifyItem, {
+      success: (key) => tVerify(verifySuccessKey(key)),
+      skipped: t("notRun"),
+      failed: tModals("failed"),
+    });
     setVerifying(false);
     onVerifyingChange?.(false);
 
@@ -165,7 +179,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
       setVerified(true);
       setTokenLocked(true);
     } else {
-      setFormError("Én eller flere sjekker feilet. Rett opp og prøv igjen.");
+      setFormError(t("checksFailed"));
     }
 
     verifyStatusRef.current?.focus();
@@ -178,7 +192,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
     const digits = companyId.replace(/\s+/g, "");
 
     if (!token) {
-      setFormError("Token mangler. Verifiser på nytt.");
+      setFormError(t("tokenMissingOnContinue"));
       setVerified(false);
       setTokenLocked(false);
       return;
@@ -224,17 +238,14 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
 
   return (
     <section className="ds-surface" aria-labelledby="tpt-step1-title">
-      <p className="ds-eyebrow">Steg 1 av 5</p>
+      <p className="ds-eyebrow">{t("eyebrow")}</p>
       <h2 id="tpt-step1-title" className="ds-h3">
-        Lim inn og verifiser
+        {t("title")}
       </h2>
-      <p className="ds-body ds-text-limit">
-        Generér Employee Token i Tripletex under Selskap → API-tilgang. Lim inn Company ID fra
-        URL-en (contextId) og tokenet nedenfor.
-      </p>
+      <p className="ds-body ds-text-limit">{t("intro")}</p>
 
       <form className="lp-demo-form" onSubmit={(e) => e.preventDefault()} noValidate>
-        <label htmlFor="tpt-company-id">Tripletex Company ID</label>
+        <label htmlFor="tpt-company-id">{t("companyIdLabel")}</label>
         <input
           id="tpt-company-id"
           inputMode="numeric"
@@ -251,11 +262,11 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
           </p>
         ) : (
           <p id="tpt-company-id-help" className="ds-body-sm">
-            Format: 6–12 siffer. Finn det i URL-en: contextId=…
+            {t("companyIdHelp")}
           </p>
         )}
 
-        <label htmlFor="tpt-employee-token">Employee Token</label>
+        <label htmlFor="tpt-employee-token">{t("tokenLabel")}</label>
         <input
           ref={tokenRef}
           id="tpt-employee-token"
@@ -265,9 +276,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
           disabled={verifying || submitting || tokenLocked}
         />
         <p id="tpt-token-hint" className="ds-body-sm">
-          {tokenLocked
-            ? "Token verifisert og klargjort for lagring."
-            : "Tokenet sendes kun til server ved verifisering og lagring."}
+          {tokenLocked ? t("tokenHintVerified") : t("tokenHintPending")}
         </p>
 
         {!allSuccess ? (
@@ -277,7 +286,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
             onClick={handleVerify}
             disabled={verifying || submitting}
           >
-            {verifying ? "Verifiserer…" : "Verifiser"}
+            {verifying ? t("verifying") : t("verify")}
           </button>
         ) : null}
       </form>
@@ -291,7 +300,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
           aria-atomic="true"
         >
           <ul className="ds-verify-list">
-            {(["auth", "company_match", "scope"] as VerifyItemKey[]).map((key) => {
+            {VERIFY_KEYS.map((key) => {
               const item = verifyDisplay[key];
               if (item.state === "idle") return null;
               const modifier =
@@ -307,10 +316,8 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
                   <VerifyIcon state={item.state} />
                   <span className="ds-body-sm">
                     {item.state === "pending"
-                      ? VERIFY_LABELS[key]
-                      : item.state === "skipped"
-                        ? "Ikke kjørt"
-                        : item.message}
+                      ? tVerify(verifyLabelKey(key))
+                      : item.message}
                   </span>
                 </li>
               );
@@ -328,7 +335,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
       {allSuccess ? (
         <div className="ds-wizard__actions">
           <button type="button" className="ds-btn ds-btn--secondary" onClick={handleRetry}>
-            Prøv igjen
+            {t("retry")}
           </button>
           <button
             type="button"
@@ -336,13 +343,13 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
             onClick={handleContinue}
             disabled={submitting}
           >
-            {submitting ? "Kobler til…" : "Fortsett"}
+            {submitting ? t("connecting") : t("continue")}
           </button>
         </div>
       ) : hasVerifyError ? (
         <div className="ds-wizard__actions">
           <button type="button" className="ds-btn ds-btn--secondary" onClick={handleRetry}>
-            Prøv igjen
+            {t("retry")}
           </button>
         </div>
       ) : null}

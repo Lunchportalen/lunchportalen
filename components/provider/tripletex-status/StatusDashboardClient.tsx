@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-
-import {
-  getDashboardDataAction,
-  type DashboardData,
-} from "@/app/leverandor/innstillinger/tripletex/status/actions";
+import { useTranslations } from "next-intl";
 
 import ActivityFeed from "./ActivityFeed";
 import ActivityStats from "./ActivityStats";
@@ -13,6 +9,11 @@ import ResourceSummary from "./ResourceSummary";
 import StatusActions from "./StatusActions";
 import StatusHero from "./StatusHero";
 import WebhookHealth from "./WebhookHealth";
+
+import {
+  getDashboardDataAction,
+  type DashboardData,
+} from "@/app/leverandor/innstillinger/tripletex/status/actions";
 
 type Props = {
   providerId: string;
@@ -28,6 +29,7 @@ type Props = {
 const POLL_INTERVAL_MS = 15_000;
 
 export default function StatusDashboardClient({ providerId, isAdmin, initialData }: Props) {
+  const t = useTranslations("provider.tripletex.status.sections");
   const [data, setData] = useState<DashboardData>(initialData);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -93,21 +95,21 @@ export default function StatusDashboardClient({ providerId, isAdmin, initialData
 
       <section className="ds-tripletex-status__section" aria-labelledby="tpt-resource-title">
         <h2 id="tpt-resource-title" className="ds-h3">
-          Ressurser i Tripletex
+          {t("resources")}
         </h2>
         <ResourceSummary counts={data.resourceCounts} />
       </section>
 
       <section className="ds-tripletex-status__section" aria-labelledby="tpt-webhook-title">
         <h2 id="tpt-webhook-title" className="ds-h3">
-          Webhook
+          {t("webhook")}
         </h2>
         <WebhookHealth webhook={data.webhook} />
       </section>
 
       <section className="ds-tripletex-status__section" aria-labelledby="tpt-activity-title">
         <h2 id="tpt-activity-title" className="ds-h3">
-          Aktivitet siste 30 dager
+          {t("activity")}
         </h2>
         <ActivityStats stats30d={data.stats30d} />
         <ActivityFeed events={data.recentEvents} />
@@ -116,7 +118,7 @@ export default function StatusDashboardClient({ providerId, isAdmin, initialData
       {isAdmin ? (
         <section className="ds-tripletex-status__section" aria-labelledby="tpt-actions-title">
           <h2 id="tpt-actions-title" className="ds-h3">
-            Handlinger
+            {t("actions")}
           </h2>
           <StatusActions providerId={providerId} connectionState={data.state} onChanged={() => void refresh()} />
         </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import Step1TokenEntry from "./Step1TokenEntry";
 import Step2Provisioning from "./Step2Provisioning";
@@ -24,6 +25,7 @@ export default function DirectWizard({
   initialStep,
   initialCompanyName = null,
 }: Props) {
+  const t = useTranslations("provider.tripletex.wizard");
   const [screen, setScreen] = useState<WizardScreen>(initialStep);
   const [verifying, setVerifying] = useState(false);
   const [companyName, setCompanyName] = useState<string | null>(initialCompanyName);
@@ -44,9 +46,9 @@ export default function DirectWizard({
   return (
     <div className="ds-wizard">
       <header className="ds-section">
-        <p className="ds-eyebrow">Tripletex</p>
-        <h1 className="ds-h2">Koble til Tripletex</h1>
-        <p className="ds-lead">For {providerName}</p>
+        <p className="ds-eyebrow">{t("eyebrow")}</p>
+        <h1 className="ds-h2">{t("heading")}</h1>
+        <p className="ds-lead">{t("leadForProvider", { providerName })}</p>
       </header>
 
       <WizardProgress screen={screen} verifying={verifying} />

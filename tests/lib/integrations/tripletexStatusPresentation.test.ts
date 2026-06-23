@@ -1,32 +1,58 @@
 import { describe, expect, test } from "vitest";
 
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 import {
+  TRIPLETEX_CONNECTION_STATES,
   formatTripletexRelative,
-  tripletexActivityLabel,
-  tripletexConnectionStateLabel,
+  resolveTripletexActivityLabel,
+  resolveTripletexConnectionStateLabel,
 } from "@/lib/integrations/tripletex/tripletexStatusPresentation";
 
-describe("tripletexStatusPresentation (TPT-B-7c)", () => {
-  test("connection state labels in Norwegian", () => {
-    expect(tripletexConnectionStateLabel("CONNECTED")).toBe("Tilkoblet");
-    expect(tripletexConnectionStateLabel("CONFIGURING")).toBe("Konfigurerer…");
-    expect(tripletexConnectionStateLabel("DEGRADED")).toBe("Trenger oppmerksomhet");
+describe("tripletexStatusPresentation (TPT-B-7c i18n)", () => {
+  test("connection state labels resolve via nb messages", async () => {
+    const messages = (await loadMessagesForLocale("nb")) as {
+      provider: { tripletex: { state: Record<string, string> } };
+    };
+    const t = (key: string) => messages.provider.tripletex.state[key] ?? key;
+    expect(resolveTripletexConnectionStateLabel(t, "CONNECTED")).toBe("Tilkoblet");
+    expect(resolveTripletexConnectionStateLabel(t, "CONFIGURING")).toBe("Konfigurerer…");
+    expect(resolveTripletexConnectionStateLabel(t, "DEGRADED")).toBe("Trenger oppmerksomhet");
   });
 
-  test("activity labels for known audit actions", () => {
-    expect(tripletexActivityLabel("tripletex_onboarding_finalized")).toBe("Tilkobling fullført");
-    expect(tripletexActivityLabel("tripletex_onboarding_test_token")).toBe("Tilkobling testet");
+  test("activity labels resolve for known audit actions", async () => {
+    const messages = (await loadMessagesForLocale("nb")) as {
+      provider: { tripletex: { activity: Record<string, string> } };
+    };
+    const t = (key: string) => messages.provider.tripletex.activity[key] ?? key;
+    expect(resolveTripletexActivityLabel(t, "tripletex_onboarding_finalized")).toBe("Tilkobling fullført");
+    expect(resolveTripletexActivityLabel(t, "tripletex_onboarding_test_token")).toBe("Tilkobling testet");
   });
 
-  test("connection_state_change uses metadata new_state", () => {
+  test("connection_state_change uses metadata new_state", async () => {
+    const messages = (await loadMessagesForLocale("nb")) as {
+      provider: { tripletex: { activity: Record<string, string> } };
+    };
+    const t = (key: string) => messages.provider.tripletex.activity[key] ?? key;
     expect(
-      tripletexActivityLabel("tripletex_connection_state_change", { new_state: "DISCONNECTED" }),
+      resolveTripletexActivityLabel(t, "tripletex_connection_state_change", { new_state: "DISCONNECTED" }),
     ).toBe("Status endret til frakoblet");
   });
 
-  test("formatTripletexRelative returns human-readable nb", () => {
+  test("formatTripletexRelative uses locale-aware output", () => {
     const recent = new Date(Date.now() - 5 * 60_000).toISOString();
-    expect(formatTripletexRelative(recent)).toMatch(/min siden/);
-    expect(formatTripletexRelative(null)).toBe("—");
+    expect(formatTripletexRelative(recent, "nb")).toBeTruthy();
+    expect(formatTripletexRelative(recent, "en")).toBeTruthy();
+    expect(formatTripletexRelative(null, "nb", "—")).toBe("—");
+  });
+
+  test("nb/en define all connection state keys", async () => {
+    for (const locale of ["nb", "en"] as const) {
+      const messages = (await loadMessagesForLocale(locale)) as {
+        provider: { tripletex: { state: Record<string, string> } };
+      };
+      for (const key of TRIPLETEX_CONNECTION_STATES) {
+        expect(messages.provider.tripletex.state[key]).toBeTruthy();
+      }
+    }
   });
 });

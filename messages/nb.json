@@ -921,6 +921,222 @@
         "unknown": "Noe gikk galt. Prøv igjen."
       }
     },
+    "tripletex": {
+      "brand": "Tripletex",
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "status": {
+          "eyebrow": "Tripletex",
+          "heading": "Tilkoblingsstatus",
+          "subheading": "Oversikt over tilkobling, webhook og nylig aktivitet.",
+          "fallbackHeading": "Tripletex-status",
+          "noAccess": "Ingen tilgang til denne leverandøren."
+        },
+        "connect": {
+          "heading": "Koble til Tripletex",
+          "adminRequired": "Kun provider-admin kan koble til Tripletex.",
+          "degraded": {
+            "heading": "Tripletex trenger oppmerksomhet",
+            "body": "Tilkoblingen er degradert. Re-konfigureringsflyt kommer i TPT-B-7b-edge.",
+            "badge": "Trenger oppmerksomhet"
+          },
+          "disconnected": {
+            "heading": "Tripletex er frakoblet",
+            "body": "Gjenopprettingsflyt uten nytt token kommer i TPT-B-7b-edge.",
+            "badge": "Frakoblet"
+          }
+        }
+      },
+      "state": {
+        "CONNECTED": "Tilkoblet",
+        "CONFIGURING": "Konfigurerer…",
+        "DEGRADED": "Trenger oppmerksomhet",
+        "DISCONNECTED": "Frakoblet",
+        "NOT_CONNECTED": "Ikke tilkoblet"
+      },
+      "activity": {
+        "onboarding_connection_started": "Tilkobling startet",
+        "onboarding_provisioning_completed": "Oppsett fullført",
+        "onboarding_customer_skipped": "Kunde hoppet over",
+        "onboarding_finalized": "Tilkobling fullført",
+        "onboarding_disconnected": "Tripletex frakoblet",
+        "onboarding_reconnect_initiated": "Gjenoppretting startet",
+        "onboarding_test_token": "Tilkobling testet",
+        "onboarding_vault_purged": "Credentials slettet",
+        "state_change_connected": "Status endret til tilkoblet",
+        "state_change_degraded": "Status endret til trenger oppmerksomhet",
+        "state_change_disconnected": "Status endret til frakoblet",
+        "state_change_configuring": "Status endret til konfigurerer",
+        "state_change_generic": "Tilkoblingsstatus endret"
+      },
+      "status": {
+        "sections": {
+          "resources": "Ressurser i Tripletex",
+          "webhook": "Webhook",
+          "activity": "Aktivitet siste 30 dager",
+          "actions": "Handlinger"
+        },
+        "hero": {
+          "configureWebhook": "Konfigurer webhook →",
+          "continueSetup": "Fortsett oppsett →",
+          "reconnect": "Koble til igjen →",
+          "reconfigure": "Re-konfigurer →",
+          "since": "Siden {datetime}",
+          "lastHealthCheck": "Siste helse-sjekk: {relative}",
+          "credentialsPurge": "Credentials slettes {datetime}",
+          "daysUntilPurge": "om {days} dager"
+        },
+        "cards": {
+          "products": "Produkter",
+          "productsMeta": "Mappede måltidsprodukter",
+          "customers": "Kunder",
+          "customersMeta": "Firma-koblinger i Tripletex",
+          "vatCodes": "MVA-koder",
+          "vatCodesMeta": "Unike avgiftskoder i bruk"
+        },
+        "webhook": {
+          "subscriptions": "Registrerte abonnement",
+          "activeCount": "{count} aktive i Tripletex",
+          "noneRegistered": "Ingen registrert ennå",
+          "eventTypes": "Event-typer",
+          "lastReceived": "Siste mottatt",
+          "noEventsYet": "Ingen hendelser ennå",
+          "last30Days": "Siste 30 dager",
+          "eventsCount": "{count} hendelser",
+          "secretRotated": "Secret rotert",
+          "notRotated": "Ikke rotert",
+          "copy": "Kopier",
+          "copied": "Kopiert",
+          "copyFailed": "Kunne ikke kopiere"
+        },
+        "activityStats": {
+          "invoicesSent": "Fakturaer sendt",
+          "invoicesPaid": "Fakturaer betalt",
+          "workerFailures": "Feilede pushes",
+          "webhookEvents": "Webhooks",
+          "recentHeading": "Siste hendelser",
+          "empty": "Ingen hendelser registrert ennå."
+        },
+        "actions": {
+          "adminNote": "Kun provider-admin kan utføre disse handlingene.",
+          "testConnection": "Test tilkobling",
+          "rotateSecret": "Roter webhook-secret",
+          "disconnect": "Koble fra →"
+        },
+        "modals": {
+          "close": "Lukk",
+          "copy": "Kopier",
+          "copied": "Kopiert",
+          "copyFailed": "Kunne ikke kopiere",
+          "ok": "OK",
+          "failed": "Feilet",
+          "test": {
+            "title": "Test tilkobling",
+            "body": "Kjører full 3-stegs verifisering mot Tripletex via lagrede credentials.",
+            "stepAuth": "Autentisering",
+            "stepCompany": "Selskap",
+            "stepScope": "Tilgang",
+            "run": "Kjør test",
+            "running": "Tester…"
+          },
+          "rotate": {
+            "title": "Roter webhook-secret",
+            "body": "Genererer nytt secret og oppdaterer Tripletex-abonnement ved neste fullføring av oppsett.",
+            "generate": "Generer nytt secret",
+            "generating": "Genererer…"
+          },
+          "disconnect": {
+            "title": "Koble fra Tripletex",
+            "body": "Tilkoblingen settes til frakoblet. Credentials beholdes i 30 dager slik at du kan koble til igjen uten nytt token. Etter det slettes de permanent.",
+            "confirm": "Bekreft frakobling",
+            "confirming": "Kobler fra…"
+          }
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Koble til Tripletex",
+        "leadForProvider": "For {providerName}",
+        "progress": {
+          "token": "Token",
+          "verify": "Verifiser",
+          "setup": "Oppsett",
+          "webhook": "Webhook",
+          "done": "Ferdig",
+          "ariaLabel": "Steg {current} av {total}: {label}"
+        },
+        "steps": {
+          "token": {
+            "eyebrow": "Steg 1 av 5",
+            "title": "Lim inn og verifiser",
+            "intro": "Generér Employee Token i Tripletex under Selskap → API-tilgang. Lim inn Company ID fra URL-en (contextId) og tokenet nedenfor.",
+            "companyIdLabel": "Tripletex Company ID",
+            "companyIdHelp": "Format: 6–12 siffer. Finn det i URL-en: contextId=…",
+            "companyIdInvalid": "Company ID må bestå av 6–12 siffer.",
+            "tokenLabel": "Employee Token",
+            "tokenHintPending": "Tokenet sendes kun til server ved verifisering og lagring.",
+            "tokenHintVerified": "Token verifisert og klargjort for lagring.",
+            "tokenMissing": "Lim inn Employee Token fra Tripletex.",
+            "verify": "Verifiser",
+            "verifying": "Verifiserer…",
+            "retry": "Prøv igjen",
+            "continue": "Fortsett",
+            "connecting": "Kobler til…",
+            "checksFailed": "Én eller flere sjekker feilet. Rett opp og prøv igjen.",
+            "tokenMissingOnContinue": "Token mangler. Verifiser på nytt.",
+            "notRun": "Ikke kjørt"
+          },
+          "provisioning": {
+            "eyebrow": "Steg 3 av 5",
+            "title": "Setter opp Tripletex",
+            "intro": "Dette tar vanligvis 10–30 sekunder.",
+            "starting": "Starter oppsett…",
+            "waiting": "Venter på Tripletex-oppsett…",
+            "complete": "Oppsett fullført.",
+            "syncing": "Synkroniserer MVA-koder, produkter og kunder…",
+            "timeout": "Noe tok lengre tid enn forventet.",
+            "timeoutHint": "Oppsettet fortsetter i bakgrunnen. Du kan lukke siden og komme tilbake senere.",
+            "contactSupport": "Kontakt support",
+            "vatSync": "MVA-koder synkroniseres",
+            "productsCreate": "Produkter opprettes",
+            "customersSync": "Kunder synkroniseres"
+          },
+          "webhook": {
+            "eyebrow": "Steg 4 av 5",
+            "title": "Webhook-registrering",
+            "intro": "Lunchportalen registrerer webhook-abonnement i Tripletex automatisk. Du trenger ikke lime inn URL eller secret manuelt.",
+            "preparing": "Forbereder webhook-secret…",
+            "ready": "Klar. Trykk «Fullfør oppsett» for å registrere webhook og fullføre tilkoblingen.",
+            "prepareFailed": "Kunne ikke forberede webhook-secret.",
+            "registering": "Registrerer webhook i Tripletex…",
+            "finalize": "Fullfør oppsett",
+            "finalizing": "Fullfører…"
+          },
+          "success": {
+            "eyebrow": "Steg 5 av 5",
+            "title": "✓ Tripletex er koblet til",
+            "companyPrefix": "Selskap:",
+            "canNow": "Du kan nå:",
+            "bulletInvoices": "Sende fakturaer automatisk til Tripletex",
+            "bulletPayments": "Motta betalingsstatus via webhook",
+            "bulletStatus": "Se tilkoblingsstatus og historikk",
+            "viewInvoices": "Se faktura-historikk",
+            "viewStatus": "Se tilkoblingsstatus",
+            "backToSettings": "Tilbake til oversikt"
+          }
+        },
+        "verify": {
+          "auth": "Tester autentisering",
+          "companyMatch": "Verifiserer Company ID-match",
+          "scope": "Tester rettigheter",
+          "authOk": "Tilkobling OK",
+          "companyOk": "Riktig firma",
+          "scopeOk": "Tilgang OK"
+        }
+      }
+    },
     "registrations": {
       "page": {
         "eyebrow": "Leverandør",
