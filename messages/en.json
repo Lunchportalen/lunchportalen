@@ -286,6 +286,304 @@
         "removeFailed": "Could not delete customer.",
         "restoreFailed": "Could not restore customer.",
         "unknown": "Something went wrong."
+      },
+      "detail": {
+        "eyebrow": "Customer",
+        "orgnrMissing": "Org. no. not registered",
+        "contactMissing": "—",
+        "agreementStatusMissing": "No active agreement",
+        "billingIncomplete": "Billing basis incomplete",
+        "vatNotSpecified": "Not specified",
+        "billingPeriodLabel": "Last 30 days",
+        "grossOnlyNote": "Figures are shown incl. VAT because order basis lacks separate VAT split.",
+        "completeCommissionNote": "Commission is calculated from revenue ex. VAT.",
+        "identityTitle": "Customer information",
+        "billingBasisTitle": "Billing basis",
+        "meta": {
+          "orgnr": "Org. no.",
+          "invoiceMethod": "Invoice method",
+          "agreementLevel": "Agreement tier",
+          "status": "Status"
+        },
+        "kpis": {
+          "employees": "Employees",
+          "activeOrders": "Active orders",
+          "orderHistory": "Order history",
+          "revenue30Days": "Revenue 30 days",
+          "commission5": "Commission 5%"
+        },
+        "actions": {
+          "editAgreement": "Edit agreement",
+          "pause": "Pause",
+          "suspend": "Suspend",
+          "removeCustomer": "Remove customer",
+          "restore": "Restore",
+          "agreementUpdated": "Agreement updated."
+        },
+        "statusBanner": {
+          "suspendedDefault": "Customer is suspended.",
+          "pausedDefault": "Customer is paused."
+        },
+        "readOnly": "You have read-only access. Changes require administrator access.",
+        "labels": {
+          "orgnr": "Org. no.",
+          "contact": "Contact",
+          "email": "Email",
+          "phone": "Phone",
+          "deliveryAddress": "Delivery address",
+          "agreementStatus": "Agreement status",
+          "period": "Period",
+          "ordersThisMonth": "Order basis",
+          "revenueExVat": "Revenue ex. VAT",
+          "vat": "VAT",
+          "revenueIncVat": "Revenue incl. VAT",
+          "commissionBase": "Commission basis",
+          "commission": "Commission 5%",
+          "commissionRateValue": "5%",
+          "invoiceMethod": "Invoice method",
+          "invoiceRecipient": "Invoice recipient",
+          "billingStatus": "Status"
+        },
+        "billingStatus": {
+          "ready": "Ready for billing basis",
+          "missingVat": "Missing VAT split",
+          "missingRecipient": "Missing invoice recipient",
+          "missingOrders": "Missing order basis"
+        },
+        "badges": {
+          "oneOrderThisMonth": "1 order this month",
+          "ordersThisMonth": "{count} orders this month",
+          "commissionNotReady": "Commission not ready",
+          "commissionAmount": "{amount} commission",
+          "oneHistorical": "1 historical",
+          "historical": "{count} historical",
+          "ordersSuffix": "orders"
+        },
+        "sections": {
+          "employees": "Employees",
+          "orders": "Orders",
+          "activity": "Activity",
+          "employeesEmpty": "No employees registered for this customer yet.",
+          "ordersEmpty": "No orders registered for this customer yet."
+        },
+        "employeesTable": {
+          "name": "Name",
+          "email": "Email",
+          "role": "Role"
+        }
+      },
+      "agreement": {
+        "sectionTitle": "Agreement",
+        "activeTitle": "Active customer agreement",
+        "inactiveTitle": "Customer agreement",
+        "deliveryDaysWarning": "Agreement includes delivery days outside regular lunch delivery.",
+        "multipleActiveWarning": "Multiple active agreements are registered for this customer.",
+        "packageMissing": "Not specified in agreement view yet",
+        "packageMix": "Mix",
+        "locationMissing": "Delivery address not set",
+        "notSpecified": "Not specified",
+        "weekdaysRange": "Monday–Friday",
+        "weekdays": {
+          "mon": "Monday",
+          "tue": "Tuesday",
+          "wed": "Wednesday",
+          "thu": "Thursday",
+          "fri": "Friday"
+        },
+        "periodFromTo": "From {from} to {to}",
+        "periodFromOpen": "From {from} · No end date",
+        "createdAt": "Created {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusWeekdaysTier": "Monday–Friday · {tier}",
+        "dayMenusWeekdaysTierLine": "Monday–Friday: {tier}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "status": {
+          "active": "Active",
+          "pending": "Pending review",
+          "paused": "Paused",
+          "rejected": "Rejected",
+          "closed": "Closed",
+          "unknown": "Unknown"
+        },
+        "labels": {
+          "status": "Status",
+          "created": "Created",
+          "period": "Agreement period",
+          "deliveryDays": "Delivery days",
+          "dayMenus": "Delivery days and menu",
+          "location": "Delivery address",
+          "package": "Agreement tier"
+        },
+        "empty": {
+          "title": "No agreement registered",
+          "text": "When a customer agreement is approved, delivery days, location and agreement content appear here."
+        }
+      },
+      "activity": {
+        "empty": {
+          "title": "No relevant customer activity to show yet.",
+          "text": "When the customer registers, orders or is restored, it appears here."
+        },
+        "events": {
+          "company_registration_submitted": {
+            "title": "Customer registration received",
+            "summary": "Company submitted agreement request."
+          },
+          "company_registration_approved": {
+            "title": "Customer approved",
+            "summary": "Customer registration approved and activated."
+          },
+          "agreement_activated": {
+            "title": "Agreement activated",
+            "summary": "Delivery agreement activated."
+          },
+          "agreement_updated": {
+            "title": "Agreement updated",
+            "summary": "Delivery agreement changed."
+          },
+          "order_created": {
+            "title": "Order registered",
+            "summary": "New order registered."
+          },
+          "order_received": {
+            "title": "Order registered",
+            "summary": "New order registered."
+          },
+          "order_canceled": {
+            "title": "Order cancelled",
+            "summary": "An order was cancelled."
+          },
+          "order_cancelled": {
+            "title": "Order cancelled",
+            "summary": "An order was cancelled."
+          },
+          "provider.customer.restore.success": {
+            "title": "Customer restored",
+            "summary": "Customer relationship reactivated."
+          },
+          "provider.customer.restore.attempt": {
+            "title": "Restore started",
+            "summary": "Customer restore attempted."
+          },
+          "provider.customer.archive.success": {
+            "title": "Customer archived",
+            "summary": "Customer archived with provider."
+          },
+          "provider.customer.hard_delete.success": {
+            "title": "Customer removed",
+            "summary": "Customer removed from provider list."
+          }
+        }
+      },
+      "lifecycle": {
+        "dialog": {
+          "closeAria": "Close dialog",
+          "reasonLabel": "Reason",
+          "reasonHint": "{current}/{min} characters",
+          "reasonNeedMore": " — need more characters",
+          "cancel": "Cancel",
+          "working": "Working…",
+          "suspend": {
+            "title": "Suspend {name}?",
+            "confirm": "Suspend",
+            "description": "Provide a clear reason (at least 20 characters)."
+          },
+          "pause": {
+            "title": "Pause {name}?",
+            "confirm": "Pause",
+            "description": "Provide a clear reason (at least 20 characters)."
+          },
+          "delete": {
+            "title": "Delete {name}?",
+            "confirm": "Delete",
+            "description": "This soft-deletes the customer. Orders may be affected."
+          },
+          "resume": {
+            "title": "Restore {name}?",
+            "confirm": "Restore",
+            "description": "Customer and related orders are restored where possible."
+          }
+        }
+      },
+      "dialogs": {
+        "adminEyebrow": "Customer administration",
+        "closeAria": "Close",
+        "cancel": "Cancel",
+        "working": "Working…",
+        "removal": {
+          "loadingRules": "Loading removal rules…",
+          "loadingDependencies": "Loading dependencies…",
+          "hardDeleteTitle": "Permanently delete customer",
+          "hardDeleteBlockedTitle": "Customer cannot be permanently deleted",
+          "archiveTitle": "Archive customer",
+          "removeTitle": "Remove customer",
+          "hardDeleteLead": "Customer has no operational history and can be permanently deleted after confirmation.",
+          "hardDeleteBlockedLead": "This customer has operational history that must be preserved.",
+          "chooseModeLead": "Choose whether to archive or permanently delete the customer.",
+          "loadRulesFailed": "Could not load removal rules.",
+          "loadRulesFailedHttp": "Could not load removal rules (HTTP {status}).",
+          "actionFailed": "Action failed.",
+          "confirmLabel": "Confirmation",
+          "confirmHint": "(type exactly: {hint})",
+          "reasonOptional": "Reason (optional)",
+          "archiveCustomer": "Archive customer",
+          "hardDelete": "Delete permanently",
+          "archiveAction": "Archive customer"
+        },
+        "restore": {
+          "title": "Restore customer",
+          "lead": "This reactivates the customer relationship without deleting history.",
+          "confirmLabel": "Confirmation",
+          "confirmHint": "(type exactly: {hint})",
+          "actionFailed": "Could not restore customer.",
+          "successDefault": "Customer restored.",
+          "restoreCustomer": "Restore customer"
+        },
+        "agreementEdit": {
+          "title": "Edit customer agreement",
+          "loading": "Loading agreement…",
+          "loadFailed": "Could not load agreement.",
+          "saveFailed": "Could not save agreement.",
+          "save": "Save changes",
+          "saving": "Saving…",
+          "updated": "Agreement updated.",
+          "updatedWithWarnings": "Agreement updated. {warnings}",
+          "dayMenusLegend": "Menu per delivery day",
+          "dayMenusLead": "Choose which menu the customer has per delivery day.",
+          "weekdaysOnlyNote": "Lunch delivery Monday–Friday. Weekends not supported.",
+          "locationLegend": "Delivery address",
+          "locationName": "Location name",
+          "address": "Address",
+          "contactLegend": "Contact person",
+          "name": "Name",
+          "email": "Email",
+          "phone": "Phone",
+          "deliveryWindowLegend": "Delivery window",
+          "from": "From",
+          "to": "To",
+          "billingLegend": "Billing",
+          "invoiceEmail": "Email",
+          "invoiceEmailField": "Invoice email",
+          "ehf": "EHF",
+          "orgnr": "Organisation number",
+          "ehfEndpoint": "EHF endpoint",
+          "billingContact": "Billing contact",
+          "statusLegend": "Status",
+          "statusActive": "Active",
+          "statusPaused": "Paused",
+          "deliveryNote": "Delivery instructions",
+          "reasonOptional": "Reason (optional, stored in audit log)",
+          "validation": {
+            "pickDeliveryDay": "Select at least one delivery day.",
+            "pickMenuForDay": "Select menu for {day}.",
+            "invalidEmail": "Invalid email address.",
+            "invoiceEmailRequired": "Invoice email must be a valid email address.",
+            "ehfEndpointRequired": "EHF endpoint is required.",
+            "orgnrLength": "Organisation number must be 9 digits.",
+            "invalidBillingEmail": "Invalid email for billing contact."
+          }
+        }
       }
     },
     "registrations": {

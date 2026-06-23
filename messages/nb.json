@@ -286,6 +286,304 @@
         "removeFailed": "Kunne ikke slette kunde.",
         "restoreFailed": "Kunne ikke gjenopprette kunde.",
         "unknown": "Noe gikk galt."
+      },
+      "detail": {
+        "eyebrow": "Kunde",
+        "orgnrMissing": "Org.nr ikke registrert",
+        "contactMissing": "—",
+        "agreementStatusMissing": "Ingen aktiv avtale",
+        "billingIncomplete": "Fakturagrunnlag ikke komplett",
+        "vatNotSpecified": "Ikke spesifisert",
+        "billingPeriodLabel": "Siste 30 dager",
+        "grossOnlyNote": "Tallene vises inkl. mva fordi ordregrunnlaget mangler separat mva-splitt.",
+        "completeCommissionNote": "Provisjon beregnes av omsetning eks. mva.",
+        "identityTitle": "Kundeinformasjon",
+        "billingBasisTitle": "Fakturagrunnlag",
+        "meta": {
+          "orgnr": "Org.nr",
+          "invoiceMethod": "Fakturametode",
+          "agreementLevel": "Avtalenivå",
+          "status": "Status"
+        },
+        "kpis": {
+          "employees": "Ansatte",
+          "activeOrders": "Aktive ordre",
+          "orderHistory": "Ordrehistorikk",
+          "revenue30Days": "Omsetning 30 dager",
+          "commission5": "Provisjon 5 %"
+        },
+        "actions": {
+          "editAgreement": "Endre avtale",
+          "pause": "Pause",
+          "suspend": "Suspender",
+          "removeCustomer": "Fjern kunde",
+          "restore": "Gjenopprett",
+          "agreementUpdated": "Avtalen er oppdatert."
+        },
+        "statusBanner": {
+          "suspendedDefault": "Kunden er suspendert.",
+          "pausedDefault": "Kunden er pauset."
+        },
+        "readOnly": "Du har lesetilgang. Endringer krever administratortilgang.",
+        "labels": {
+          "orgnr": "Org.nr",
+          "contact": "Kontakt",
+          "email": "E-post",
+          "phone": "Telefon",
+          "deliveryAddress": "Leveringsadresse",
+          "agreementStatus": "Avtalestatus",
+          "period": "Periode",
+          "ordersThisMonth": "Ordregrunnlag",
+          "revenueExVat": "Omsetning eks. mva",
+          "vat": "Mva",
+          "revenueIncVat": "Omsetning inkl. mva",
+          "commissionBase": "Provisjonsgrunnlag",
+          "commission": "Provisjon 5 %",
+          "commissionRateValue": "5 %",
+          "invoiceMethod": "Fakturametode",
+          "invoiceRecipient": "Fakturamottaker",
+          "billingStatus": "Status"
+        },
+        "billingStatus": {
+          "ready": "Klar til fakturagrunnlag",
+          "missingVat": "Mangler mva-splitt",
+          "missingRecipient": "Mangler fakturamottaker",
+          "missingOrders": "Mangler ordregrunnlag"
+        },
+        "badges": {
+          "oneOrderThisMonth": "1 ordre denne måneden",
+          "ordersThisMonth": "{count} ordre denne måneden",
+          "commissionNotReady": "Provisjon ikke klar",
+          "commissionAmount": "{amount} provisjon",
+          "oneHistorical": "1 historisk",
+          "historical": "{count} historiske",
+          "ordersSuffix": "ordre"
+        },
+        "sections": {
+          "employees": "Ansatte",
+          "orders": "Ordrer",
+          "activity": "Aktivitet",
+          "employeesEmpty": "Ingen ansatte registrert for denne kunden ennå.",
+          "ordersEmpty": "Ingen ordre registrert for denne kunden ennå."
+        },
+        "employeesTable": {
+          "name": "Navn",
+          "email": "E-post",
+          "role": "Rolle"
+        }
+      },
+      "agreement": {
+        "sectionTitle": "Avtale",
+        "activeTitle": "Aktiv kundeavtale",
+        "inactiveTitle": "Kundeavtale",
+        "deliveryDaysWarning": "Avtalen inneholder leveringsdager utenfor ordinær lunsjlevering.",
+        "multipleActiveWarning": "Flere aktive avtaler er registrert for denne kunden.",
+        "packageMissing": "Ikke spesifisert i avtalevisningen ennå",
+        "packageMix": "Mix",
+        "locationMissing": "Leveringsadresse ikke satt",
+        "notSpecified": "Ikke spesifisert",
+        "weekdaysRange": "Mandag–fredag",
+        "weekdays": {
+          "mon": "Mandag",
+          "tue": "Tirsdag",
+          "wed": "Onsdag",
+          "thu": "Torsdag",
+          "fri": "Fredag"
+        },
+        "periodFromTo": "Fra {from} til {to}",
+        "periodFromOpen": "Fra {from} · Ingen sluttdato",
+        "createdAt": "Opprettet {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusWeekdaysTier": "Mandag–fredag · {tier}",
+        "dayMenusWeekdaysTierLine": "Mandag–fredag: {tier}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "status": {
+          "active": "Aktiv",
+          "pending": "Til behandling",
+          "paused": "Pauset",
+          "rejected": "Avslått",
+          "closed": "Avsluttet",
+          "unknown": "Ukjent"
+        },
+        "labels": {
+          "status": "Status",
+          "created": "Opprettet",
+          "period": "Avtaleperiode",
+          "deliveryDays": "Leveringsdager",
+          "dayMenus": "Leveringsdager og meny",
+          "location": "Leveringsadresse",
+          "package": "Avtalenivå"
+        },
+        "empty": {
+          "title": "Ingen avtale registrert",
+          "text": "Når en kundeavtale er godkjent, vises leveringsdager, lokasjon og avtaleinnhold her."
+        }
+      },
+      "activity": {
+        "empty": {
+          "title": "Ingen relevante kundeaktiviteter å vise ennå.",
+          "text": "Når kunden registreres, bestiller eller gjenopprettes, vises det her."
+        },
+        "events": {
+          "company_registration_submitted": {
+            "title": "Kunderegistrering mottatt",
+            "summary": "Bedriften registrerte avtaleforespørsel."
+          },
+          "company_registration_approved": {
+            "title": "Kunde godkjent",
+            "summary": "Kunderegistrering er godkjent og aktivert."
+          },
+          "agreement_activated": {
+            "title": "Avtale aktivert",
+            "summary": "Leveranseavtale er aktivert."
+          },
+          "agreement_updated": {
+            "title": "Avtale oppdatert",
+            "summary": "Leveranseavtale er endret."
+          },
+          "order_created": {
+            "title": "Ordre registrert",
+            "summary": "Ny bestilling er registrert."
+          },
+          "order_received": {
+            "title": "Ordre registrert",
+            "summary": "Ny bestilling er registrert."
+          },
+          "order_canceled": {
+            "title": "Ordre kansellert",
+            "summary": "En bestilling er kansellert."
+          },
+          "order_cancelled": {
+            "title": "Ordre kansellert",
+            "summary": "En bestilling er kansellert."
+          },
+          "provider.customer.restore.success": {
+            "title": "Kunde gjenopprettet",
+            "summary": "Kundeforholdet er aktivert igjen."
+          },
+          "provider.customer.restore.attempt": {
+            "title": "Gjenoppretting startet",
+            "summary": "Gjenoppretting av kunde ble forsøkt."
+          },
+          "provider.customer.archive.success": {
+            "title": "Kunde arkivert",
+            "summary": "Kunden er arkivert hos leverandør."
+          },
+          "provider.customer.hard_delete.success": {
+            "title": "Kunde fjernet",
+            "summary": "Kunden er fjernet fra leverandørlisten."
+          }
+        }
+      },
+      "lifecycle": {
+        "dialog": {
+          "closeAria": "Lukk dialog",
+          "reasonLabel": "Begrunnelse",
+          "reasonHint": "{current}/{min} tegn",
+          "reasonNeedMore": " — trenger flere tegn",
+          "cancel": "Avbryt",
+          "working": "Jobber…",
+          "suspend": {
+            "title": "Suspendere {name}?",
+            "confirm": "Suspendér",
+            "description": "Oppgi en tydelig begrunnelse (minst 20 tegn)."
+          },
+          "pause": {
+            "title": "Pause {name}?",
+            "confirm": "Pause",
+            "description": "Oppgi en tydelig begrunnelse (minst 20 tegn)."
+          },
+          "delete": {
+            "title": "Slette {name}?",
+            "confirm": "Slett",
+            "description": "Handlingen soft-sletter kunden. Ordrer kan påvirkes."
+          },
+          "resume": {
+            "title": "Gjenopprett {name}?",
+            "confirm": "Gjenopprett",
+            "description": "Kunden og tilhørende ordrer gjenopprettes der det er mulig."
+          }
+        }
+      },
+      "dialogs": {
+        "adminEyebrow": "Kundeadministrasjon",
+        "closeAria": "Lukk",
+        "cancel": "Avbryt",
+        "working": "Utfører…",
+        "removal": {
+          "loadingRules": "Laster fjerningsregler…",
+          "loadingDependencies": "Henter avhengigheter…",
+          "hardDeleteTitle": "Slett kunde permanent",
+          "hardDeleteBlockedTitle": "Kunden kan ikke slettes permanent",
+          "archiveTitle": "Arkiver kunde",
+          "removeTitle": "Fjern kunde",
+          "hardDeleteLead": "Kunden har ingen operativ historikk og kan slettes permanent etter bekreftelse.",
+          "hardDeleteBlockedLead": "Denne kunden har operativ historikk som må bevares.",
+          "chooseModeLead": "Velg om kunden skal arkiveres eller slettes permanent.",
+          "loadRulesFailed": "Kunne ikke laste fjerningsregler.",
+          "loadRulesFailedHttp": "Kunne ikke laste fjerningsregler (HTTP {status}).",
+          "actionFailed": "Handlingen feilet.",
+          "confirmLabel": "Bekreftelse",
+          "confirmHint": "(skriv nøyaktig: {hint})",
+          "reasonOptional": "Begrunnelse (valgfritt)",
+          "archiveCustomer": "Arkiver kunde",
+          "hardDelete": "Slett permanent",
+          "archiveAction": "Arkiver kunde"
+        },
+        "restore": {
+          "title": "Gjenopprett kunde",
+          "lead": "Dette aktiverer kundeforholdet igjen uten å slette historikk.",
+          "confirmLabel": "Bekreftelse",
+          "confirmHint": "(skriv nøyaktig: {hint})",
+          "actionFailed": "Kunne ikke gjenopprette kunde.",
+          "successDefault": "Kunden er gjenopprettet.",
+          "restoreCustomer": "Gjenopprett kunde"
+        },
+        "agreementEdit": {
+          "title": "Endre kundeavtale",
+          "loading": "Laster avtale…",
+          "loadFailed": "Kunne ikke laste avtale.",
+          "saveFailed": "Kunne ikke lagre avtale.",
+          "save": "Lagre endringer",
+          "saving": "Lagrer…",
+          "updated": "Avtalen er oppdatert.",
+          "updatedWithWarnings": "Avtalen er oppdatert. {warnings}",
+          "dayMenusLegend": "Meny per leveringsdag",
+          "dayMenusLead": "Velg hvilken meny kunden skal ha per leveringsdag.",
+          "weekdaysOnlyNote": "Lunsjlevering mandag–fredag. Helg støttes ikke.",
+          "locationLegend": "Leveringsadresse",
+          "locationName": "Navn på lokasjon",
+          "address": "Adresse",
+          "contactLegend": "Kontaktperson",
+          "name": "Navn",
+          "email": "E-post",
+          "phone": "Telefon",
+          "deliveryWindowLegend": "Leveringsvindu",
+          "from": "Fra",
+          "to": "Til",
+          "billingLegend": "Fakturering",
+          "invoiceEmail": "E-post",
+          "invoiceEmailField": "Faktura e-post",
+          "ehf": "EHF",
+          "orgnr": "Organisasjonsnummer",
+          "ehfEndpoint": "EHF-endepunkt",
+          "billingContact": "Fakturakontakt",
+          "statusLegend": "Status",
+          "statusActive": "Aktiv",
+          "statusPaused": "Pauset",
+          "deliveryNote": "Instruks for levering",
+          "reasonOptional": "Begrunnelse (valgfritt, lagres i revisjonslogg)",
+          "validation": {
+            "pickDeliveryDay": "Velg minst én leveringsdag.",
+            "pickMenuForDay": "Velg meny for {day}.",
+            "invalidEmail": "Ugyldig e-postadresse.",
+            "invoiceEmailRequired": "Faktura e-post må være en gyldig e-postadresse.",
+            "ehfEndpointRequired": "EHF-endepunkt må angis.",
+            "orgnrLength": "Organisasjonsnummer må være 9 siffer.",
+            "invalidBillingEmail": "Ugyldig e-post for fakturakontakt."
+          }
+        }
       }
     },
     "registrations": {

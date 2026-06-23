@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { LIFECYCLE_REASON_MIN_LENGTH } from "@/lib/providers/lifecycleReason";
 
@@ -16,13 +17,6 @@ export type SuspendDialogProps = {
   onConfirm: (reason?: string) => void | Promise<void>;
 };
 
-function variantCopy(variant: SuspendDialogVariant, name: string) {
-  if (variant === "suspend") return { title: `Suspendere ${name}?`, confirm: "Suspendér", needsReason: true };
-  if (variant === "pause") return { title: `Pause ${name}?`, confirm: "Pause", needsReason: true };
-  if (variant === "delete") return { title: `Slette ${name}?`, confirm: "Slett", needsReason: true };
-  return { title: `Gjenopprett ${name}?`, confirm: "Gjenopprett", needsReason: false };
-}
-
 export default function SuspendDialog({
   open,
   variant,
@@ -36,9 +30,10 @@ export default function SuspendDialog({
   const descId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [reason, setReason] = useState("");
-  const copy = variantCopy(variant, entityName);
+  const t = useTranslations("provider.customers.lifecycle.dialog");
+  const needsReason = variant !== "resume";
   const reasonLen = reason.trim().length;
-  const reasonOk = !copy.needsReason || reasonLen >= LIFECYCLE_REASON_MIN_LENGTH;
+  const reasonOk = !needsReason || reasonLen >= LIFECYCLE_REASON_MIN_LENGTH;
 
   useEffect(() => {
     if (!open) {
@@ -65,7 +60,7 @@ export default function SuspendDialog({
       <button
         type="button"
         className="ds-provider-drawer-backdrop"
-        aria-label="Lukk dialog"
+        aria-label={t("closeAria")}
         disabled={loading}
         onClick={onCancel}
       />
@@ -79,19 +74,15 @@ export default function SuspendDialog({
         className="ds-provider-dialog"
       >
         <h2 id={titleId} className="ds-h2">
-          {copy.title}
+          {t(`${variant}.title`, { name: entityName })}
         </h2>
         <p id={descId} className="ds-body">
-          {variant === "delete"
-            ? "Handlingen soft-sletter kunden. Ordrer kan påvirkes."
-            : variant === "resume"
-              ? "Kunden og tilhørende ordrer gjenopprettes der det er mulig."
-              : "Oppgi en tydelig begrunnelse (minst 20 tegn)."}
+          {t(`${variant}.description`)}
         </p>
 
-        {copy.needsReason ? (
+        {needsReason ? (
           <div className="lp-demo-form">
-            <label htmlFor={`${titleId}-reason`}>Begrunnelse</label>
+            <label htmlFor={`${titleId}-reason`}>{t("reasonLabel")}</label>
             <textarea
               id={`${titleId}-reason`}
               name="reason"
@@ -103,8 +94,8 @@ export default function SuspendDialog({
               aria-describedby={`${titleId}-reason-hint`}
             />
             <p id={`${titleId}-reason-hint`} className="ds-provider-activity__meta">
-              {reasonLen}/{LIFECYCLE_REASON_MIN_LENGTH} tegn
-              {reasonLen > 0 && !reasonOk ? " — trenger flere tegn" : ""}
+              {t("reasonHint", { current: reasonLen, min: LIFECYCLE_REASON_MIN_LENGTH })}
+              {reasonLen > 0 && !reasonOk ? t("reasonNeedMore") : ""}
             </p>
           </div>
         ) : null}
@@ -117,15 +108,15 @@ export default function SuspendDialog({
 
         <div className="ds-provider-dialog__actions">
           <button type="button" className="ds-btn ds-btn--secondary" disabled={loading} onClick={onCancel}>
-            Avbryt
+            {t("cancel")}
           </button>
           <button
             type="button"
             className="ds-btn ds-btn--primary"
             disabled={loading || !reasonOk}
-            onClick={() => void onConfirm(copy.needsReason ? reason.trim() : undefined)}
+            onClick={() => void onConfirm(needsReason ? reason.trim() : undefined)}
           >
-            {loading ? "Jobber…" : copy.confirm}
+            {loading ? t("working") : t(`${variant}.confirm`)}
           </button>
         </div>
       </div>

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  PROVIDER_CUSTOMER_ACTIVITY_EMPTY,
+  PROVIDER_CUSTOMER_ACTIVITY_EMPTY_KEYS,
   mapProviderCustomerDetailActivity,
 } from "@/lib/providers/providerCustomerDetailActivity";
+import { loadProviderCustomerMessages } from "./providerCustomerI18nTestHelpers";
 
 describe("mapProviderCustomerDetailActivity", () => {
   it("filtrerer bort rå delete/test-events", () => {
@@ -14,7 +15,7 @@ describe("mapProviderCustomerDetailActivity", () => {
     expect(out).toEqual([]);
   });
 
-  it("mapper provider restore og registrering til trygg copy", () => {
+  it("mapper provider restore og registrering til eventKey (i18n i UI)", () => {
     const out = mapProviderCustomerDetailActivity([
       {
         id: "a",
@@ -29,11 +30,17 @@ describe("mapProviderCustomerDetailActivity", () => {
         summary: "Firma registrerte avtaleforespørsel.",
       },
     ]);
-    expect(out.map((r) => r.title)).toEqual(["Kunde gjenopprettet", "Kunderegistrering mottatt"]);
+    expect(out.map((r) => r.eventKey)).toEqual([
+      "provider.customer.restore.success",
+      "company_registration_submitted",
+    ]);
     expect(JSON.stringify(out)).not.toContain("delete");
   });
 
-  it("empty state er definert", () => {
-    expect(PROVIDER_CUSTOMER_ACTIVITY_EMPTY.title).toContain("Ingen relevante kundeaktiviteter");
+  it("empty state keys er definert i messages", async () => {
+    const messages = await loadProviderCustomerMessages("nb");
+    const empty = messages.provider.customers.activity.empty as { title: string; text: string };
+    expect(PROVIDER_CUSTOMER_ACTIVITY_EMPTY_KEYS).toEqual(["title", "text"]);
+    expect(empty.title).toContain("Ingen relevante kundeaktiviteter");
   });
 });

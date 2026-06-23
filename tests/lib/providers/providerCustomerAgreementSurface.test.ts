@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
-  PROVIDER_AGREEMENT_COPY,
   agreementDeliveryDaysDisplay,
   agreementStatusLabel,
+  agreementStatusLabelKey,
   agreementStatusTone,
   agreementTierLabel,
   agreementPackageLabel,
@@ -12,22 +15,31 @@ import {
   formatAgreementDate,
   hasMultipleActiveAgreements,
   sortAgreementsForDisplay,
+  PROVIDER_AGREEMENT_EMPTY_KEYS,
 } from "@/lib/providers/providerCustomerAgreementSurface";
+import { loadAgreementTranslator, loadProviderCustomerMessages } from "./providerCustomerI18nTestHelpers";
 
 describe("agreementStatusLabel — provider-safe statuser", () => {
-  it("mapper kjente statuser", () => {
-    expect(agreementStatusLabel("ACTIVE")).toBe("Aktiv");
-    expect(agreementStatusLabel("PENDING")).toBe("Til behandling");
-    expect(agreementStatusLabel("PAUSED")).toBe("Pauset");
-    expect(agreementStatusLabel("REJECTED")).toBe("Avslått");
-    expect(agreementStatusLabel("CLOSED")).toBe("Avsluttet");
-    expect(agreementStatusLabel("active")).toBe("Aktiv");
+  it("mapper kjente statuser via i18n", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementStatusLabel("ACTIVE", t)).toBe("Aktiv");
+    expect(agreementStatusLabel("PENDING", t)).toBe("Til behandling");
+    expect(agreementStatusLabel("PAUSED", t)).toBe("Pauset");
+    expect(agreementStatusLabel("REJECTED", t)).toBe("Avslått");
+    expect(agreementStatusLabel("CLOSED", t)).toBe("Avsluttet");
+    expect(agreementStatusLabel("active", t)).toBe("Aktiv");
   });
 
-  it("ukjent status gir «Ukjent», aldri rå enum", () => {
-    expect(agreementStatusLabel("SOME_RAW_ENUM")).toBe("Ukjent");
-    expect(agreementStatusLabel(null)).toBe("Ukjent");
-    expect(agreementStatusLabel("")).toBe("Ukjent");
+  it("status keys mapper til i18n-nøkler", () => {
+    expect(agreementStatusLabelKey("ACTIVE")).toBe("active");
+    expect(agreementStatusLabelKey("SOME_RAW_ENUM")).toBe("unknown");
+  });
+
+  it("ukjent status gir «Ukjent», aldri rå enum", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementStatusLabel("SOME_RAW_ENUM", t)).toBe("Ukjent");
+    expect(agreementStatusLabel(null, t)).toBe("Ukjent");
+    expect(agreementStatusLabel("", t)).toBe("Ukjent");
   });
 
   it("toner: aktiv=success, pauset=warning, ellers neutral", () => {
@@ -52,50 +64,58 @@ describe("formatAgreementDate — aldri rå ISO", () => {
 });
 
 describe("agreementDeliveryDaysDisplay — mandag–fredag-domenet", () => {
-  it("mon–fri vises som «Mandag–fredag»", () => {
-    expect(agreementDeliveryDaysDisplay(["mon", "tue", "wed", "thu", "fri"])).toEqual({
+  it("mon–fri vises som «Mandag–fredag»", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementDeliveryDaysDisplay(["mon", "tue", "wed", "thu", "fri"], t)).toEqual({
       label: "Mandag–fredag",
       warning: null,
     });
   });
 
-  it("enkeltdager vises som provider-safe hverdager", () => {
-    expect(agreementDeliveryDaysDisplay(["mon", "wed", "fri"])).toEqual({
+  it("enkeltdager vises som provider-safe hverdager", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementDeliveryDaysDisplay(["mon", "wed", "fri"], t)).toEqual({
       label: "Mandag, Onsdag, Fredag",
       warning: null,
     });
   });
 
-  it("manglende dager gir «Ikke spesifisert»", () => {
-    expect(agreementDeliveryDaysDisplay([])).toEqual({ label: "Ikke spesifisert", warning: null });
-    expect(agreementDeliveryDaysDisplay(null)).toEqual({ label: "Ikke spesifisert", warning: null });
+  it("manglende dager gir «Ikke spesifisert»", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementDeliveryDaysDisplay([], t)).toEqual({ label: "Ikke spesifisert", warning: null });
+    expect(agreementDeliveryDaysDisplay(null, t)).toEqual({ label: "Ikke spesifisert", warning: null });
   });
 
-  it("lørdag/søndag vises aldri som ordinær leveringsdag og gir kontrollert avvik", () => {
-    const res = agreementDeliveryDaysDisplay(["mon", "tue", "sat", "sun"]);
+  it("lørdag/søndag vises aldri som ordinær leveringsdag og gir kontrollert avvik", async () => {
+    const t = await loadAgreementTranslator("nb");
+    const res = agreementDeliveryDaysDisplay(["mon", "tue", "sat", "sun"], t);
     expect(res.label).toBe("Mandag, Tirsdag");
     expect(res.label).not.toMatch(/lør|søn|sat|sun/i);
     expect(res.warning).toBe("Avtalen inneholder leveringsdager utenfor ordinær lunsjlevering.");
   });
 
-  it("kun helgedager gir «Ikke spesifisert» + avvik", () => {
-    const res = agreementDeliveryDaysDisplay(["sat", "sun"]);
+  it("kun helgedager gir «Ikke spesifisert» + avvik", async () => {
+    const t = await loadAgreementTranslator("nb");
+    const messages = await loadProviderCustomerMessages("nb");
+    const res = agreementDeliveryDaysDisplay(["sat", "sun"], t);
     expect(res.label).toBe("Ikke spesifisert");
-    expect(res.warning).toBe(PROVIDER_AGREEMENT_COPY.deliveryDaysWarning);
+    expect(res.warning).toBe(messages.provider.customers.agreement.deliveryDaysWarning);
   });
 });
 
-describe("agreementTierLabel — aldri fake nivå", () => {
-  it("mapper kjente nivåer fra data", () => {
-    expect(agreementTierLabel("BASIS")).toBe("Basis");
-    expect(agreementTierLabel("LUXUS")).toBe("Luxus");
-    expect(agreementTierLabel("ENTERPRISE")).toBe("Enterprise");
+describe("agreementTierLabel — kontraktnavn, ikke UI-oversettelse", () => {
+  it("mapper kjente nivåer fra data", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementTierLabel("BASIS", t)).toBe("Basis");
+    expect(agreementTierLabel("LUXUS", t)).toBe("Luxus");
+    expect(agreementTierLabel("ENTERPRISE", t)).toBe("Enterprise");
   });
 
-  it("manglende/ukjent nivå gir ærlig fallback", () => {
-    expect(agreementTierLabel(null)).toBe("Ikke spesifisert i avtalevisningen ennå");
-    expect(agreementTierLabel("")).toBe("Ikke spesifisert i avtalevisningen ennå");
-    expect(agreementTierLabel("GOLD")).toBe("Ikke spesifisert i avtalevisningen ennå");
+  it("manglende/ukjent nivå gir ærlig fallback", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementTierLabel(null, t)).toBe("Ikke spesifisert i avtalevisningen ennå");
+    expect(agreementTierLabel("", t)).toBe("Ikke spesifisert i avtalevisningen ennå");
+    expect(agreementTierLabel("GOLD", t)).toBe("Ikke spesifisert i avtalevisningen ennå");
   });
 });
 
@@ -112,8 +132,9 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
   };
   const locations = [{ id: "loc-1", name: "Hovedkontor", address: "Melhusvegen 1" }];
 
-  it("aktiv avtale gir korrekt kort uten rå enum/ISO", () => {
-    const d = buildAgreementDisplay(melhusRow, locations);
+  it("aktiv avtale gir korrekt kort uten rå enum/ISO", async () => {
+    const t = await loadAgreementTranslator("nb");
+    const d = buildAgreementDisplay(melhusRow, locations, t);
     expect(d.title).toBe("Aktiv kundeavtale");
     expect(d.statusLabel).toBe("Aktiv");
     expect(d.statusTone).toBe("success");
@@ -129,7 +150,8 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
     expect(all).not.toMatch(/\d{4}-\d{2}-\d{2}T/);
   });
 
-  it("per-dag meny vises når dayMenus finnes", () => {
+  it("per-dag meny vises når dayMenus finnes", async () => {
+    const t = await loadAgreementTranslator("nb");
     const d = buildAgreementDisplay(
       {
         ...melhusRow,
@@ -139,16 +161,19 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
         ],
       },
       locations,
+      t,
     );
     expect(d.dayMenusLines).toEqual(["Mandag · Basis", "Tirsdag · Luxus"]);
     expect(d.dayMenusLabel).toContain("Mandag · Basis");
     expect(d.packageLabel).toBe("Mix");
   });
 
-  it("manglende data gir trygge fallbacks", () => {
+  it("manglende data gir trygge fallbacks", async () => {
+    const t = await loadAgreementTranslator("nb");
     const d = buildAgreementDisplay(
       { id: "agr-2", status: "PENDING", createdAt: null, deliveryDays: [], locationId: null, tier: null },
       [],
+      t,
     );
     expect(d.title).toBe("Kundeavtale");
     expect(d.statusLabel).toBe("Til behandling");
@@ -159,13 +184,15 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
     expect(d.packageLabel).toBe("Ikke spesifisert i avtalevisningen ennå");
   });
 
-  it("ukjent location_id gir «Leveringsadresse ikke satt», aldri feil lokasjon", () => {
-    const d = buildAgreementDisplay({ ...melhusRow, locationId: "loc-unknown" }, locations);
+  it("ukjent location_id gir «Leveringsadresse ikke satt», aldri feil lokasjon", async () => {
+    const t = await loadAgreementTranslator("nb");
+    const d = buildAgreementDisplay({ ...melhusRow, locationId: "loc-unknown" }, locations, t);
     expect(d.locationLabel).toBe("Leveringsadresse ikke satt");
   });
 
-  it("viser leveringsadresse når location_id matcher company_locations", () => {
-    const d = buildAgreementDisplay(melhusRow, locations);
+  it("viser leveringsadresse når location_id matcher company_locations", async () => {
+    const t = await loadAgreementTranslator("nb");
+    const d = buildAgreementDisplay(melhusRow, locations, t);
     expect(d.locationLabel).toBe("Hovedkontor\nMelhusvegen 1");
   });
 });
@@ -175,33 +202,39 @@ describe("agreementLocationLabel — leveringsadresse-sannhet", () => {
     { id: "loc-1", name: "Hovedlokasjon", address: "Sluppenvegen 25, 7037 Trondheim" },
   ];
 
-  it("viser navn + adresse når begge finnes", () => {
-    expect(agreementLocationLabel("loc-1", locations)).toBe(
+  it("viser navn + adresse når begge finnes", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementLocationLabel("loc-1", locations, t)).toBe(
       "Hovedlokasjon\nSluppenvegen 25, 7037 Trondheim",
     );
   });
 
-  it("viser bare adresse når navn mangler", () => {
-    expect(agreementLocationLabel("loc-2", [{ id: "loc-2", name: "", address: "Gate 1" }])).toBe("Gate 1");
+  it("viser bare adresse når navn mangler", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementLocationLabel("loc-2", [{ id: "loc-2", name: "", address: "Gate 1" }], t)).toBe("Gate 1");
   });
 
-  it("viser bare navn når adresse mangler", () => {
-    expect(agreementLocationLabel("loc-3", [{ id: "loc-3", name: "Hovedlokasjon", address: null }])).toBe(
+  it("viser bare navn når adresse mangler", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementLocationLabel("loc-3", [{ id: "loc-3", name: "Hovedlokasjon", address: null }], t)).toBe(
       "Hovedlokasjon",
     );
   });
 
-  it("fallback til eneste lokasjon når agreement.location_id mangler", () => {
-    expect(agreementLocationLabel(null, locations)).toBe("Hovedlokasjon\nSluppenvegen 25, 7037 Trondheim");
+  it("fallback til eneste lokasjon når agreement.location_id mangler", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementLocationLabel(null, locations, t)).toBe("Hovedlokasjon\nSluppenvegen 25, 7037 Trondheim");
   });
 
-  it("viser Leveringsadresse ikke satt når ingen data finnes", () => {
-    expect(agreementLocationLabel(null, [])).toBe("Leveringsadresse ikke satt");
+  it("viser Leveringsadresse ikke satt når ingen data finnes", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementLocationLabel(null, [], t)).toBe("Leveringsadresse ikke satt");
   });
 });
 
 describe("agreementPackageLabel — per-dag nivå i avtalekort", () => {
-  it("kun Basis viser Avtalenivå: Basis", () => {
+  it("kun Basis viser Avtalenivå: Basis", async () => {
+    const t = await loadAgreementTranslator("nb");
     expect(
       agreementPackageLabel(
         [
@@ -209,19 +242,23 @@ describe("agreementPackageLabel — per-dag nivå i avtalekort", () => {
           { day: "tue", plan: "BASIS" },
         ],
         "LUXUS",
+        t,
       ),
     ).toBe("Basis");
   });
 
-  it("kun Luxus viser Avtalenivå: Luxus", () => {
-    expect(agreementPackageLabel([{ day: "wed", plan: "LUXUS" }], "BASIS")).toBe("Luxus");
+  it("kun Luxus viser Avtalenivå: Luxus", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementPackageLabel([{ day: "wed", plan: "LUXUS" }], "BASIS", t)).toBe("Luxus");
   });
 
-  it("kun Enterprise viser Avtalenivå: Enterprise", () => {
-    expect(agreementPackageLabel([{ day: "fri", plan: "ENTERPRISE" }], "BASIS")).toBe("Enterprise");
+  it("kun Enterprise viser Avtalenivå: Enterprise", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementPackageLabel([{ day: "fri", plan: "ENTERPRISE" }], "BASIS", t)).toBe("Enterprise");
   });
 
-  it("flere nivå viser Mix", () => {
+  it("flere nivå viser Mix", async () => {
+    const t = await loadAgreementTranslator("nb");
     expect(
       agreementPackageLabel(
         [
@@ -232,11 +269,13 @@ describe("agreementPackageLabel — per-dag nivå i avtalekort", () => {
           { day: "fri", plan: "ENTERPRISE" },
         ],
         "BASIS",
+        t,
       ),
     ).toBe("Mix");
   });
 
-  it("Basis/Luxus/Enterprise-kombinasjon viser Mix, ikke global fallback", () => {
+  it("Basis/Luxus/Enterprise-kombinasjon viser Mix, ikke global fallback", async () => {
+    const t = await loadAgreementTranslator("nb");
     const d = buildAgreementDisplay(
       {
         id: "agr-mix",
@@ -253,14 +292,16 @@ describe("agreementPackageLabel — per-dag nivå i avtalekort", () => {
         tier: "BASIS",
       },
       [],
+      t,
     );
     expect(d.packageLabel).toBe("Mix");
     expect(JSON.stringify(d)).not.toContain("(standard)");
   });
 
-  it("uten dayMenus bruker agreements.tier fallback", () => {
-    expect(agreementPackageLabel(null, "LUXUS")).toBe("Luxus");
-    expect(agreementPackageLabel([], "ENTERPRISE")).toBe("Enterprise");
+  it("uten dayMenus bruker agreements.tier fallback", async () => {
+    const t = await loadAgreementTranslator("nb");
+    expect(agreementPackageLabel(null, "LUXUS", t)).toBe("Luxus");
+    expect(agreementPackageLabel([], "ENTERPRISE", t)).toBe("Enterprise");
   });
 });
 
@@ -282,8 +323,56 @@ describe("sortering og flere aktive avtaler", () => {
 });
 
 describe("empty state — provider-safe", () => {
-  it("fallback uten avtale lover ikke funksjonalitet som ikke finnes", () => {
-    expect(PROVIDER_AGREEMENT_COPY.empty.title).toBe("Ingen avtale registrert");
-    expect(PROVIDER_AGREEMENT_COPY.empty.text).toContain("leveringsdager, lokasjon og avtaleinnhold");
+  it("fallback uten avtale lover ikke funksjonalitet som ikke finnes", async () => {
+    const messages = await loadProviderCustomerMessages("nb");
+    const empty = messages.provider.customers.agreement.empty as { title: string; text: string };
+    expect(PROVIDER_AGREEMENT_EMPTY_KEYS).toEqual(["title", "text"]);
+    expect(empty.title).toBe("Ingen avtale registrert");
+    expect(empty.text).toContain("leveringsdager, lokasjon og avtaleinnhold");
+  });
+});
+
+describe("customer detail i18n wiring", () => {
+  const DETAIL_CLIENT = join(process.cwd(), "components/providers/CustomerDetailClient.tsx");
+  const AGREEMENT_EDIT = join(process.cwd(), "components/providers/ProviderCustomerAgreementEditDialog.tsx");
+  const REMOVAL = join(process.cwd(), "components/providers/ProviderCustomerRemovalDialog.tsx");
+  const RESTORE = join(process.cwd(), "components/providers/ProviderCustomerRestoreDialog.tsx");
+  const SUSPEND = join(process.cwd(), "components/providers/SuspendDialog.tsx");
+
+  it("CustomerDetailClient bruker i18n namespaces", () => {
+    const src = readFileSync(DETAIL_CLIENT, "utf8");
+    expect(src).toContain('useTranslations("provider.customers.detail")');
+    expect(src).toContain('useTranslations("provider.customers.agreement")');
+    expect(src).toContain('useTranslations("provider.customers.activity")');
+    expect(src).not.toContain("Ingen ordrer.");
+  });
+
+  it("lifecycle dialogs bruker i18n uten endret submit payload", () => {
+    const removal = readFileSync(REMOVAL, "utf8");
+    const restore = readFileSync(RESTORE, "utf8");
+    const suspend = readFileSync(SUSPEND, "utf8");
+    const agreementEdit = readFileSync(AGREEMENT_EDIT, "utf8");
+
+    expect(removal).toContain('useTranslations("provider.customers.dialogs');
+    expect(restore).toContain('useTranslations("provider.customers.dialogs');
+    expect(suspend).toContain('useTranslations("provider.customers.lifecycle.dialog")');
+    expect(agreementEdit).toContain('useTranslations("provider.customers.dialogs.agreementEdit")');
+
+    expect(agreementEdit).toContain('method: "PATCH"');
+    expect(agreementEdit).toContain("JSON.stringify(payload)");
+    expect(removal).not.toContain("lp_order_set");
+    expect(restore).not.toContain("lp_order_advance_status");
+  });
+
+  it("nb/en detail labels oversettes, company data beholdes via props", async () => {
+    const nb = await loadProviderCustomerMessages("nb");
+    const en = await loadProviderCustomerMessages("en");
+    const nbDetail = nb.provider.customers.detail as Record<string, unknown>;
+    const enDetail = en.provider.customers.detail as Record<string, unknown>;
+
+    expect(nbDetail.identityTitle).toBe("Kundeinformasjon");
+    expect(enDetail.identityTitle).toBe("Customer information");
+    expect(nb.provider.customers.status.active).toBe("Aktiv");
+    expect(en.provider.customers.status.active).toBe("Active");
   });
 });

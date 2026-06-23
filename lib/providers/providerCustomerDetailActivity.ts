@@ -1,5 +1,5 @@
 // lib/providers/providerCustomerDetailActivity.ts
-// Provider-safe aktivitet for kunde-detalj — ingen rå lifecycle_audit_log-tekst.
+// Provider-safe aktivitet for kunde-detalj — eventKey for i18n, ingen rå lifecycle_audit_log-tekst.
 
 export type ProviderCustomerActivityRow = {
   id: string;
@@ -8,82 +8,57 @@ export type ProviderCustomerActivityRow = {
   summary: string | null;
 };
 
+export const PROVIDER_CUSTOMER_ACTIVITY_EVENT_KEYS = [
+  "company_registration_submitted",
+  "company_registration_approved",
+  "agreement_activated",
+  "agreement_updated",
+  "order_created",
+  "order_received",
+  "order_canceled",
+  "order_cancelled",
+  "provider.customer.restore.success",
+  "provider.customer.restore.attempt",
+  "provider.customer.archive.success",
+  "provider.customer.hard_delete.success",
+] as const;
+
+export type ProviderCustomerActivityEventKey = (typeof PROVIDER_CUSTOMER_ACTIVITY_EVENT_KEYS)[number];
+
 export type ProviderCustomerActivityItem = {
   id: string;
   timestamp: string;
-  title: string;
-  summary: string | null;
+  eventKey: ProviderCustomerActivityEventKey;
+  /** Rå summary fra audit når trygg UI-copy ikke finnes — vises som data, oversettes ikke. */
+  dataSummary: string | null;
   tone: "neutral" | "success" | "warning";
 };
 
-type SafeCopy = {
-  title: string;
-  summary: string | null;
-  tone: ProviderCustomerActivityItem["tone"];
+export type ProviderCustomerActivityEmptyKey = "title" | "text";
+
+export const PROVIDER_CUSTOMER_ACTIVITY_EMPTY_KEYS: readonly ProviderCustomerActivityEmptyKey[] = [
+  "title",
+  "text",
+];
+
+const ACTIVITY_TONES: Record<ProviderCustomerActivityEventKey, ProviderCustomerActivityItem["tone"]> = {
+  company_registration_submitted: "neutral",
+  company_registration_approved: "success",
+  agreement_activated: "success",
+  agreement_updated: "neutral",
+  order_created: "success",
+  order_received: "success",
+  order_canceled: "warning",
+  order_cancelled: "warning",
+  "provider.customer.restore.success": "success",
+  "provider.customer.restore.attempt": "neutral",
+  "provider.customer.archive.success": "warning",
+  "provider.customer.hard_delete.success": "warning",
 };
 
-const SAFE_CUSTOMER_ACTIVITY: Record<string, SafeCopy> = {
-  company_registration_submitted: {
-    title: "Kunderegistrering mottatt",
-    summary: "Bedriften registrerte avtaleforespørsel.",
-    tone: "neutral",
-  },
-  company_registration_approved: {
-    title: "Kunde godkjent",
-    summary: "Kunderegistrering er godkjent og aktivert.",
-    tone: "success",
-  },
-  agreement_activated: {
-    title: "Avtale aktivert",
-    summary: "Leveranseavtale er aktivert.",
-    tone: "success",
-  },
-  agreement_updated: {
-    title: "Avtale oppdatert",
-    summary: "Leveranseavtale er endret.",
-    tone: "neutral",
-  },
-  order_created: {
-    title: "Ordre registrert",
-    summary: "Ny bestilling er registrert.",
-    tone: "success",
-  },
-  order_received: {
-    title: "Ordre registrert",
-    summary: "Ny bestilling er registrert.",
-    tone: "success",
-  },
-  order_canceled: {
-    title: "Ordre kansellert",
-    summary: "En bestilling er kansellert.",
-    tone: "warning",
-  },
-  order_cancelled: {
-    title: "Ordre kansellert",
-    summary: "En bestilling er kansellert.",
-    tone: "warning",
-  },
-  "provider.customer.restore.success": {
-    title: "Kunde gjenopprettet",
-    summary: "Kundeforholdet er aktivert igjen.",
-    tone: "success",
-  },
-  "provider.customer.restore.attempt": {
-    title: "Gjenoppretting startet",
-    summary: "Gjenoppretting av kunde ble forsøkt.",
-    tone: "neutral",
-  },
-  "provider.customer.archive.success": {
-    title: "Kunde arkivert",
-    summary: "Kunden er arkivert hos leverandør.",
-    tone: "warning",
-  },
-  "provider.customer.hard_delete.success": {
-    title: "Kunde fjernet",
-    summary: "Kunden er fjernet fra leverandørlisten.",
-    tone: "warning",
-  },
-};
+function isActivityEventKey(action: string): action is ProviderCustomerActivityEventKey {
+  return (PROVIDER_CUSTOMER_ACTIVITY_EVENT_KEYS as readonly string[]).includes(action);
+}
 
 function formatTime(iso: string): string {
   const v = String(iso ?? "").trim();
@@ -100,15 +75,14 @@ function formatTime(iso: string): string {
 }
 
 /**
- * Maps audit_events rows to provider-safe customer activity.
+ * Maps audit_events rows to provider-safe customer activity event keys.
  * Unknown or internal/test actions are filtered out (fail-closed presentation).
  */
 export function mapProviderCustomerDetailActivity(rows: ProviderCustomerActivityRow[]): ProviderCustomerActivityItem[] {
   const out: ProviderCustomerActivityItem[] = [];
   for (const row of Array.isArray(rows) ? rows : []) {
     const action = String(row?.action ?? "").trim().toLowerCase();
-    const copy = SAFE_CUSTOMER_ACTIVITY[action];
-    if (!copy) continue;
+    if (!isActivityEventKey(action)) continue;
 
     const id = String(row?.id ?? "").trim();
     if (!id) continue;
@@ -116,15 +90,10 @@ export function mapProviderCustomerDetailActivity(rows: ProviderCustomerActivity
     out.push({
       id,
       timestamp: formatTime(row.createdAt),
-      title: copy.title,
-      summary: copy.summary ?? (row.summary ? String(row.summary).trim() : null),
-      tone: copy.tone,
+      eventKey: action,
+      dataSummary: row.summary ? String(row.summary).trim() || null : null,
+      tone: ACTIVITY_TONES[action],
     });
   }
   return out;
 }
-
-export const PROVIDER_CUSTOMER_ACTIVITY_EMPTY = {
-  title: "Ingen relevante kundeaktiviteter å vise ennå.",
-  text: "Når kunden registreres, bestiller eller gjenopprettes, vises det her.",
-} as const;

@@ -5,6 +5,7 @@ import {
   sumOrderRevenueCents,
 } from "@/lib/providers/providerCustomerBilling";
 import { buildBillingBasisDisplay } from "@/lib/providers/providerCustomerDetailSurface";
+import { loadDetailTranslators } from "./providerCustomerI18nTestHelpers";
 import { formatProviderCustomerCount } from "@/lib/providers/providerCustomersSurface";
 import {
   PROVIDER_LOCALE_READINESS,
@@ -36,7 +37,8 @@ describe("billing basis VAT labels", () => {
     expect(basis.commissionNok).toBeCloseTo(4.14, 2);
   });
 
-  it("bruker gross_only når bare inkl. mva finnes", () => {
+  it("bruker gross_only når bare inkl. mva finnes", async () => {
+    const { tDetail } = await loadDetailTranslators("nb");
     const totals = sumOrderRevenueCents([{ gross_cents_inc_vat: 10350 }]);
     const basis = computeBillingBasis({
       ordersThisMonth: 1,
@@ -55,7 +57,7 @@ describe("billing basis VAT labels", () => {
       ehfEnabled: true,
       billingContact: { name: null, email: null, phone: null },
       recipientLabel: "0192:928038777",
-    });
+    }, tDetail);
     expect(display.revenueIncVatLabel).toContain("103");
     expect(display.revenueExVatLabel).toBe("Ikke spesifisert");
     expect(display.vatLabel).toBe("Ikke spesifisert");
@@ -63,7 +65,8 @@ describe("billing basis VAT labels", () => {
     expect(display.note).toContain("inkl. mva");
   });
 
-  it("merker ikke gross som eks. mva", () => {
+  it("merker ikke gross som eks. mva", async () => {
+    const { tDetail } = await loadDetailTranslators("nb");
     const basis = computeBillingBasis({ ordersThisMonth: 0, revenueIncVatNok: 0 });
     const display = buildBillingBasisDisplay(basis, {
       method: null,
@@ -74,7 +77,7 @@ describe("billing basis VAT labels", () => {
       ehfEnabled: false,
       billingContact: { name: null, email: null, phone: null },
       recipientLabel: "Ikke valgt",
-    });
+    }, tDetail);
     expect(display.revenueExVatLabel).toBe("Fakturagrunnlag ikke komplett");
     expect(display.confidence).toBe("incomplete");
   });

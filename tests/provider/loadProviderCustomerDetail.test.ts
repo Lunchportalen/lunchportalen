@@ -250,7 +250,7 @@ describe("loadProviderCustomerDetail", () => {
     expect(detail.orders).toHaveLength(1);
     expect(detail.orders[0]?.status).toBe("DELIVERED");
     expect(detail.orders[0]?.lines[0]?.productName).toBe("Paasmurt");
-    expect(detail.activity[0]?.title).toBe("Kunderegistrering mottatt");
+    expect(detail.activity[0]?.eventKey).toBe("company_registration_submitted");
     expect(detail.agreements).toHaveLength(1);
     expect(detail.locations).toHaveLength(1);
     expect(detail.locations[0]?.name).toBe("Hovedlokasjon");
