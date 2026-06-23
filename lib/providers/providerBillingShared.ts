@@ -35,12 +35,14 @@ export type ProviderBillingBundle = {
   invoices: ProviderInvoiceRow[];
 };
 
+/** Legacy Norwegian labels — superadmin/backoffice only; provider UI uses provider.billing.plan.* */
 export const PLAN_LABELS: Record<string, string> = {
   SAAS_FIXED: "Fast månedspris",
   SAAS_PER_COMPANY: "Pris per bedrift",
   CUSTOM: "Tilpasset avtale",
 };
 
+/** Legacy Norwegian labels — superadmin/backoffice only; provider UI uses provider.billing.status.invoice.* */
 export const INVOICE_STATUS_LABELS: Record<string, string> = {
   DRAFT: "Utkast",
   SENT: "Sendt",
@@ -48,3 +50,33 @@ export const INVOICE_STATUS_LABELS: Record<string, string> = {
   OVERDUE: "Forfalt",
   VOID: "Annullert",
 };
+
+export type ProviderPlanKey = "SAAS_FIXED" | "SAAS_PER_COMPANY" | "CUSTOM";
+
+export type InvoiceStatusKey = "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "VOID" | "unknown";
+
+const PROVIDER_PLAN_KEYS = new Set<ProviderPlanKey>(["SAAS_FIXED", "SAAS_PER_COMPANY", "CUSTOM"]);
+
+const INVOICE_STATUS_KEYS = new Set<Exclude<InvoiceStatusKey, "unknown">>([
+  "DRAFT",
+  "SENT",
+  "PAID",
+  "OVERDUE",
+  "VOID",
+]);
+
+/** Maps backend plan code to i18n key id — raw plan string returned when unknown. */
+export function providerPlanKey(plan: unknown): ProviderPlanKey | null {
+  const s = String(plan ?? "").trim().toUpperCase();
+  if (PROVIDER_PLAN_KEYS.has(s as ProviderPlanKey)) return s as ProviderPlanKey;
+  return null;
+}
+
+/** Maps backend invoice status to i18n key id — never leaks raw enum in UI. */
+export function invoiceStatusKey(status: unknown): InvoiceStatusKey {
+  const s = String(status ?? "").trim().toUpperCase();
+  if (INVOICE_STATUS_KEYS.has(s as Exclude<InvoiceStatusKey, "unknown">)) {
+    return s as Exclude<InvoiceStatusKey, "unknown">;
+  }
+  return "unknown";
+}
