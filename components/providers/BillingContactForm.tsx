@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import { updateBillingContact } from "@/app/leverandor/faktura/actions";
 import type { ProviderSubscriptionRow } from "@/lib/providers/providerBillingShared";
@@ -12,6 +13,7 @@ export default function BillingContactForm({
   providerId: string;
   subscription: ProviderSubscriptionRow;
 }) {
+  const t = useTranslations("provider.billing.contact");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(subscription.billing_email);
   const [orgNumber, setOrgNumber] = useState(subscription.billing_org_number ?? "");
@@ -23,7 +25,7 @@ export default function BillingContactForm({
   if (!open) {
     return (
       <button type="button" className="ds-btn ds-btn--secondary" onClick={() => setOpen(true)}>
-        Endre fakturakontakt
+        {t("editButton")}
       </button>
     );
   }
@@ -35,19 +37,19 @@ export default function BillingContactForm({
     startTransition(async () => {
       const res = await updateBillingContact(providerId, email, orgNumber, address);
       if (!res.success) {
-        setError("error" in res ? res.error : "Kunne ikke lagre.");
+        setError("error" in res ? res.error : t("saveFailed"));
         return;
       }
-      setMessage("Fakturakontakt oppdatert.");
+      setMessage(t("saved"));
       setOpen(false);
     });
   }
 
   return (
     <form className="lp-demo-form ds-provider-billing-contact-form" onSubmit={onSubmit} noValidate>
-      <h2 className="ds-h4">Fakturakontakt</h2>
+      <h2 className="ds-h4">{t("title")}</h2>
       <label htmlFor="bill-email">
-        Faktura e-post
+        {t("emailLabel")}
         <input
           id="bill-email"
           type="email"
@@ -57,7 +59,7 @@ export default function BillingContactForm({
         />
       </label>
       <label htmlFor="bill-org">
-        Org.nr (valgfritt)
+        {t("orgLabel")}
         <input
           id="bill-org"
           inputMode="numeric"
@@ -66,7 +68,7 @@ export default function BillingContactForm({
         />
       </label>
       <label htmlFor="bill-address">
-        Fakturaadresse (valgfritt)
+        {t("addressLabel")}
         <textarea
           id="bill-address"
           rows={2}
@@ -86,10 +88,10 @@ export default function BillingContactForm({
       ) : null}
       <div className="ds-provider-dialog__actions">
         <button type="button" className="ds-btn ds-btn--secondary" onClick={() => setOpen(false)}>
-          Avbryt
+          {t("cancel")}
         </button>
         <button type="submit" className="ds-btn ds-btn--primary" disabled={pending}>
-          {pending ? "Lagrer…" : "Lagre"}
+          {pending ? t("saving") : t("save")}
         </button>
       </div>
     </form>

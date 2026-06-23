@@ -822,6 +822,96 @@
       "contactPrefix": "Kontakt",
       "contactSuffix": "for å løse opp."
     },
+    "billing": {
+      "page": {
+        "eyebrow": "Leverandør",
+        "heading": "Faktura og oppgjør",
+        "subheading": "Oversikt over fakturagrunnlag, provisjon og oppgjør mellom leverandøren og Lunchportalen."
+      },
+      "summary": {
+        "settlementStatus": "Oppgjørsstatus",
+        "commission": "Provisjon",
+        "nextSettlement": "Neste oppgjør",
+        "activateHint": "Kontakt Lunchportalen for å aktivere.",
+        "commissionPending": "Vises når oppgjør er aktivert",
+        "nextSettlementNone": "Ikke planlagt"
+      },
+      "notActivated": {
+        "title": "Oppgjør er ikke aktivert",
+        "text": "Oppgjør er ikke aktivert for denne leverandøren ennå. Kontakt Lunchportalen for å aktivere oppgjørsavtale og fakturagrunnlag."
+      },
+      "commissionNote": "Lunchportalen beregner 5 % provisjon per solgte porsjon når oppgjør er aktivert.",
+      "agreement": {
+        "activeEyebrow": "Aktiv oppgjørsavtale",
+        "netPerMonth": "Netto / mnd",
+        "vatLabel": "MVA ({rate}%)",
+        "totalPerMonth": "Totalt / mnd",
+        "invoiceSentTo": "Faktura sendes til",
+        "orgNrSuffix": " · org.nr {orgNumber}"
+      },
+      "history": {
+        "title": "Fakturagrunnlag og oppgjør",
+        "emptyTitle": "Ingen fakturagrunnlag er generert ennå",
+        "emptyText": "Når oppgjør er aktivert og grunnlaget er klart, vises fakturagrunnlag, provisjon, beløp, status og forfall her."
+      },
+      "invoice": {
+        "table": {
+          "period": "Periode",
+          "amount": "Beløp",
+          "status": "Status",
+          "dueDate": "Forfall"
+        },
+        "noNumber": "Uten nummer",
+        "drawerTitle": "Faktura {number}",
+        "net": "Netto",
+        "vat": "MVA",
+        "total": "Totalt",
+        "status": "Status",
+        "sent": "Sendt",
+        "paid": "Betalt",
+        "downloadPdfSoon": "Last ned PDF (kommer snart)",
+        "downloadPdfIntegrationTitle": "Kommer med Tripletex"
+      },
+      "status": {
+        "settlement": {
+          "active": "Aktiv",
+          "notActivated": "Ikke aktivert"
+        },
+        "invoice": {
+          "DRAFT": "Utkast",
+          "SENT": "Sendt",
+          "PAID": "Betalt",
+          "OVERDUE": "Forfalt",
+          "VOID": "Annullert",
+          "unknown": "Ukjent"
+        }
+      },
+      "plan": {
+        "SAAS_FIXED": "Fast månedspris",
+        "SAAS_PER_COMPANY": "Pris per bedrift",
+        "CUSTOM": "Tilpasset avtale"
+      },
+      "actions": {
+        "details": "Detaljer",
+        "close": "Lukk",
+        "closeDrawer": "Lukk"
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "contact": {
+        "editButton": "Endre fakturakontakt",
+        "title": "Fakturakontakt",
+        "emailLabel": "Faktura e-post",
+        "orgLabel": "Org.nr (valgfritt)",
+        "addressLabel": "Fakturaadresse (valgfritt)",
+        "cancel": "Avbryt",
+        "save": "Lagre",
+        "saving": "Lagrer…",
+        "saved": "Fakturakontakt oppdatert.",
+        "saveFailed": "Kunne ikke lagre."
+      }
+    },
     "registrations": {
       "page": {
         "eyebrow": "Leverandør",

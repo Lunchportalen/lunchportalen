@@ -822,6 +822,96 @@
       "contactPrefix": "Contact",
       "contactSuffix": "to resolve."
     },
+    "billing": {
+      "page": {
+        "eyebrow": "Provider",
+        "heading": "Invoices and settlement",
+        "subheading": "Overview of invoice basis, commission and settlement between the provider and Lunchportalen."
+      },
+      "summary": {
+        "settlementStatus": "Settlement status",
+        "commission": "Commission",
+        "nextSettlement": "Next settlement",
+        "activateHint": "Contact Lunchportalen to activate.",
+        "commissionPending": "Shown when settlement is activated",
+        "nextSettlementNone": "Not scheduled"
+      },
+      "notActivated": {
+        "title": "Settlement is not activated",
+        "text": "Settlement is not activated for this provider yet. Contact Lunchportalen to activate settlement agreement and invoice basis."
+      },
+      "commissionNote": "Lunchportalen calculates 5% commission per sold portion when settlement is activated.",
+      "agreement": {
+        "activeEyebrow": "Active settlement agreement",
+        "netPerMonth": "Net / month",
+        "vatLabel": "VAT ({rate}%)",
+        "totalPerMonth": "Total / month",
+        "invoiceSentTo": "Invoice sent to",
+        "orgNrSuffix": " · org.no {orgNumber}"
+      },
+      "history": {
+        "title": "Invoice basis and settlement",
+        "emptyTitle": "No invoice basis generated yet",
+        "emptyText": "When settlement is activated and the basis is ready, invoice basis, commission, amounts, status and due dates appear here."
+      },
+      "invoice": {
+        "table": {
+          "period": "Period",
+          "amount": "Amount",
+          "status": "Status",
+          "dueDate": "Due date"
+        },
+        "noNumber": "No number",
+        "drawerTitle": "Invoice {number}",
+        "net": "Net",
+        "vat": "VAT",
+        "total": "Total",
+        "status": "Status",
+        "sent": "Sent",
+        "paid": "Paid",
+        "downloadPdfSoon": "Download PDF (coming soon)",
+        "downloadPdfIntegrationTitle": "Coming with Tripletex"
+      },
+      "status": {
+        "settlement": {
+          "active": "Active",
+          "notActivated": "Not activated"
+        },
+        "invoice": {
+          "DRAFT": "Draft",
+          "SENT": "Sent",
+          "PAID": "Paid",
+          "OVERDUE": "Overdue",
+          "VOID": "Void",
+          "unknown": "Unknown"
+        }
+      },
+      "plan": {
+        "SAAS_FIXED": "Fixed monthly price",
+        "SAAS_PER_COMPANY": "Price per company",
+        "CUSTOM": "Custom agreement"
+      },
+      "actions": {
+        "details": "Details",
+        "close": "Close",
+        "closeDrawer": "Close"
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "contact": {
+        "editButton": "Edit billing contact",
+        "title": "Billing contact",
+        "emailLabel": "Invoice email",
+        "orgLabel": "Org.no (optional)",
+        "addressLabel": "Invoice address (optional)",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Billing contact updated.",
+        "saveFailed": "Could not save."
+      }
+    },
     "registrations": {
       "page": {
         "eyebrow": "Provider",
