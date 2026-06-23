@@ -604,6 +604,174 @@
         }
       }
     },
+    "coverage": {
+      "page": {
+        "eyebrow": "Provider",
+        "heading": "Coverage areas",
+        "leadWithProvider": "Coverage areas control which companies can send a request to {providerName}. Use them to define postal codes, minimum employee count and delivery days.",
+        "leadNoProvider": "Coverage areas control which companies can send a request to the provider. Use them to define postal codes, minimum employee count and delivery days."
+      },
+      "actions": {
+        "newArea": "New coverage area",
+        "newAreaTitle": "Add a new coverage area for the provider.",
+        "readOnlyNote": "You have read-only access. Changes require administrator access.",
+        "edit": "Edit",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
+        "deactivateTitle": "New companies in this area cannot select the provider while the area is deactivated. Existing agreements are not changed automatically.",
+        "activateTitle": "Make the area available for new company requests again.",
+        "cancel": "Cancel",
+        "closeDrawer": "Close",
+        "createArea": "Create area",
+        "saveChanges": "Save changes",
+        "saving": "Saving…"
+      },
+      "table": {
+        "area": "Area",
+        "postalCodes": "Postal codes",
+        "minEmployees": "Min. employees",
+        "deliveryDays": "Delivery days",
+        "status": "Status"
+      },
+      "summary": {
+        "noneActive": "No active coverage areas",
+        "oneActive": "1 active coverage area",
+        "manyActive": "{count} active coverage areas",
+        "inactiveSuffix": " · {count} inactive"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "paused": "Paused",
+        "unknown": "Unknown"
+      },
+      "weekdays": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "weekdaysRange": "Monday–Friday"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesRange": "{min}–{max}",
+        "employeesMin": "{min}+",
+        "employeesMax": "≤{max}"
+      },
+      "empty": {
+        "title": "No coverage areas yet",
+        "text": "Add a coverage area to control which companies can send a request to the provider.",
+        "step1": "Define postal codes or area.",
+        "step2": "Set minimum employee count.",
+        "step3": "Select delivery days for the area."
+      },
+      "form": {
+        "editTitle": "Edit area",
+        "createTitle": "Add area",
+        "cityLabel": "City / area",
+        "postalFrom": "Postal code from",
+        "postalTo": "Postal code to",
+        "minEmployees": "Min employees",
+        "maxEmployees": "Max employees (optional)",
+        "deliveryDaysLegend": "Delivery days",
+        "activeToggle": "Active area (used in registration matching)"
+      },
+      "errors": {
+        "toggleFailed": "Could not update status.",
+        "saveFailed": "Could not save."
+      }
+    },
+    "settings": {
+      "page": {
+        "eyebrow": "Provider",
+        "heading": "Settings",
+        "leadWithProvider": "Profile and contact information for {providerName}.",
+        "readOnly": "You have read-only access. Settings can only be changed by an administrator.",
+        "brandSection": "Logo and brand",
+        "brandIntro": "Upload a logo and choose a controlled accent colour. Lunchportalen keeps layout, typography and product expression.",
+        "logoHeading": "Logo",
+        "logoIntro": "Use a clean logo with transparent background. The logo is shown in a controlled way in the provider menu.",
+        "logoNote": "Logos that do not follow the platform visual standard may be rejected.",
+        "colorHeading": "Primary colour",
+        "colorIntro": "Choose the provider accent colour. The colour is used only in controlled details.",
+        "operationsSection": "Operations and notifications",
+        "operationsIntro": "Enter the email addresses that should receive orders, kitchen lists and delivery notifications for this provider. These settings apply only to this catering company.",
+        "operationsNote": "The catering company must enter the email addresses that should receive orders, kitchen lists and delivery notifications. Lunchportalen does not send the provider's operational emails to the platform by default — missing email must be filled in here.",
+        "accountingSection": "Accounting",
+        "accountingIntro": "Connect Tripletex for automatic invoicing and payment status.",
+        "tripletexSetup": "Tripletex setup"
+      },
+      "profile": {
+        "leadWithProvider": "Profile for {providerName}",
+        "nameLabel": "Name",
+        "emailLabel": "Contact email",
+        "phoneLabel": "Contact phone",
+        "save": "Save settings",
+        "saving": "Saving…",
+        "saved": "Settings saved.",
+        "saveFailed": "Could not save."
+      },
+      "operations": {
+        "operationsEmailLabel": "Orders and operations email",
+        "operationsEmailHint": "Used as the main recipient for order alerts and operational messages.",
+        "kitchenEmailLabel": "Kitchen email",
+        "kitchenEmailHint": "Used for production basis and kitchen alerts.",
+        "deliveryEmailLabel": "Delivery email",
+        "deliveryEmailHint": "Used for delivery-related alerts and messages when orders are ready for delivery.",
+        "localeLabel": "Language",
+        "localeHint": "Controls the default language for the provider's own operational surfaces when language support is available.",
+        "save": "Save operational settings",
+        "saving": "Saving…",
+        "saved": "Operational settings saved.",
+        "saveFailed": "Could not save operational settings right now.",
+        "locales": {
+          "nb-NO": "Norwegian (bokmål)",
+          "en-GB": "English",
+          "sv-SE": "Swedish",
+          "da-DK": "Danish"
+        }
+      },
+      "logo": {
+        "hint": "Recommended: PNG or WebP logo with transparent background. Max 2 MB. Do not use food photos, banners, screenshots, advertising graphics or logos on busy/coloured backgrounds.",
+        "upload": "Upload logo",
+        "replace": "Replace logo",
+        "remove": "Remove logo",
+        "pickFile": "Choose logo file",
+        "altWithProvider": "Logo for {providerName}",
+        "uploading": "Uploading…",
+        "removing": "Removing…",
+        "updated": "Logo updated.",
+        "removed": "Logo removed.",
+        "uploadFailed": "Could not upload.",
+        "removeFailed": "Could not remove.",
+        "invalidType": "Logo must be PNG or WebP. Prefer a logo with transparent background.",
+        "tooLarge": "Logo is too large. Maximum size is 2 MB."
+      },
+      "brand": {
+        "hexLabel": "HEX code",
+        "save": "Save colour",
+        "saving": "Saving…",
+        "sampleHint": "How the colour is used: as a small accent in the menu and details.",
+        "formatHint": "Use HEX format, for example #F5C518. If contrast is poor, the default colour is used.",
+        "invalidHex": "Use HEX format, for example #F5C518.",
+        "saved": "Colour saved.",
+        "restoredDefault": "Default colour restored.",
+        "saveFailed": "Could not save colour."
+      }
+    },
+    "banner": {
+      "paused": {
+        "title": "Provider is paused",
+        "defaultReason": "Temporary pause"
+      },
+      "suspended": {
+        "title": "Provider is suspended",
+        "defaultReason": "Suspended"
+      },
+      "contactPrefix": "Contact",
+      "contactSuffix": "to resolve."
+    },
     "registrations": {
       "page": {
         "eyebrow": "Provider",

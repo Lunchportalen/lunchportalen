@@ -2,13 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { toggleServiceArea } from "@/app/leverandor/omrader/actions";
 import ServiceAreaEditor from "@/components/providers/ServiceAreaEditor";
 import type { ServiceAreaRow } from "@/lib/providers/serviceAreaShared";
 import {
-  PROVIDER_COVERAGE_COPY,
-  PROVIDER_COVERAGE_EMPTY_STATE,
+  PROVIDER_COVERAGE_EMPTY_STEP_KEYS,
   coverageStatusLabel,
   formatCoverageDays,
   formatCoverageEmployees,
@@ -25,12 +25,11 @@ export default function ServiceAreasManager({
   canEdit: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("provider.coverage");
   const [editorOpen, setEditorOpen] = useState(false);
   const [selected, setSelected] = useState<ServiceAreaRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const copy = PROVIDER_COVERAGE_COPY;
 
   const citySuggestions = useMemo(
     () => [...new Set(rows.map((r) => r.city).filter(Boolean))].sort(),
@@ -55,7 +54,7 @@ export default function ServiceAreasManager({
     startTransition(async () => {
       const res = await toggleServiceArea(providerId, row.id, !row.active);
       if (!res.success) {
-        setActionError("error" in res ? res.error : "Kunne ikke oppdatere status.");
+        setActionError("error" in res ? res.error : t("errors.toggleFailed"));
         return;
       }
       router.refresh();
@@ -68,10 +67,10 @@ export default function ServiceAreasManager({
         type="button"
         className="ds-btn ds-btn--secondary"
         disabled={pending}
-        title={row.active ? copy.actions.deactivateTitle : copy.actions.activateTitle}
+        title={row.active ? t("actions.deactivateTitle") : t("actions.activateTitle")}
         onClick={() => onToggle(row)}
       >
-        {row.active ? copy.actions.deactivate : copy.actions.activate}
+        {row.active ? t("actions.deactivate") : t("actions.activate")}
       </button>
     );
   }
@@ -79,13 +78,13 @@ export default function ServiceAreasManager({
   return (
     <>
       <div className="ds-provider-service-areas-toolbar">
-        <p className="ds-provider-reg-summary">{providerCoverageSummary(rows)}</p>
+        <p className="ds-provider-reg-summary">{providerCoverageSummary(rows, (key, values) => t(key, values))}</p>
         {canEdit ? (
-          <button type="button" className="ds-btn ds-btn--primary" title={copy.ctaTitle} onClick={openCreate}>
-            {copy.cta}
+          <button type="button" className="ds-btn ds-btn--primary" title={t("actions.newAreaTitle")} onClick={openCreate}>
+            {t("actions.newArea")}
           </button>
         ) : (
-          <p className="ds-body">{copy.readOnlyNote}</p>
+          <p className="ds-body">{t("actions.readOnlyNote")}</p>
         )}
       </div>
 
@@ -97,11 +96,11 @@ export default function ServiceAreasManager({
 
       {rows.length === 0 ? (
         <div className="ds-provider-empty">
-          <p className="ds-provider-empty__title">{PROVIDER_COVERAGE_EMPTY_STATE.title}</p>
-          <p className="ds-provider-empty__text">{PROVIDER_COVERAGE_EMPTY_STATE.text}</p>
+          <p className="ds-provider-empty__title">{t("empty.title")}</p>
+          <p className="ds-provider-empty__text">{t("empty.text")}</p>
           <ul className="ds-provider-empty__steps">
-            {PROVIDER_COVERAGE_EMPTY_STATE.steps.map((step) => (
-              <li key={step}>{step}</li>
+            {PROVIDER_COVERAGE_EMPTY_STEP_KEYS.map((stepKey) => (
+              <li key={stepKey}>{t(`empty.${stepKey}`)}</li>
             ))}
           </ul>
         </div>
@@ -117,19 +116,21 @@ export default function ServiceAreasManager({
                   <h2 className="ds-h4">{row.city}</h2>
                   <p className="ds-provider-reg-meta">
                     {row.postal_code_from}–{row.postal_code_to} ·{" "}
-                    {formatCoverageEmployees(row.min_employees, row.max_employees)}
+                    {formatCoverageEmployees(row.min_employees, row.max_employees, (key, values) => t(key, values))}
                   </p>
-                  <p className="ds-provider-reg-meta">{formatCoverageDays(row.available_days)}</p>
+                  <p className="ds-provider-reg-meta">
+                    {formatCoverageDays(row.available_days, (key, values) => t(key, values))}
+                  </p>
                 </div>
                 <div className="ds-provider-service-area-row__meta">
                   <span className={`ds-provider-status-pill${row.active ? " is-active" : ""}`}>
-                    {coverageStatusLabel(row.active)}
+                    {coverageStatusLabel(row.active, (key, values) => t(key, values))}
                   </span>
                 </div>
                 {canEdit ? (
                   <div className="ds-provider-service-area-row__actions">
                     <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openEdit(row)}>
-                      {copy.actions.edit}
+                      {t("actions.edit")}
                     </button>
                     {toggleButton(row)}
                   </div>
@@ -142,11 +143,11 @@ export default function ServiceAreasManager({
             <table className="ds-provider-reg-table">
               <thead>
                 <tr>
-                  <th>{copy.tableHeaders.area}</th>
-                  <th>{copy.tableHeaders.postalCodes}</th>
-                  <th>{copy.tableHeaders.minEmployees}</th>
-                  <th>{copy.tableHeaders.deliveryDays}</th>
-                  <th>{copy.tableHeaders.status}</th>
+                  <th>{t("table.area")}</th>
+                  <th>{t("table.postalCodes")}</th>
+                  <th>{t("table.minEmployees")}</th>
+                  <th>{t("table.deliveryDays")}</th>
+                  <th>{t("table.status")}</th>
                   {canEdit ? <th /> : null}
                 </tr>
               </thead>
@@ -157,17 +158,17 @@ export default function ServiceAreasManager({
                     <td>
                       {row.postal_code_from}–{row.postal_code_to}
                     </td>
-                    <td>{formatCoverageEmployees(row.min_employees, row.max_employees)}</td>
-                    <td>{formatCoverageDays(row.available_days)}</td>
+                    <td>{formatCoverageEmployees(row.min_employees, row.max_employees, (key, values) => t(key, values))}</td>
+                    <td>{formatCoverageDays(row.available_days, (key, values) => t(key, values))}</td>
                     <td>
                       <span className={`ds-provider-status-pill${row.active ? " is-active" : ""}`}>
-                        {coverageStatusLabel(row.active)}
+                        {coverageStatusLabel(row.active, (key, values) => t(key, values))}
                       </span>
                     </td>
                     {canEdit ? (
                       <td className="ds-provider-service-area-row__actions-inline">
                         <button type="button" className="ds-btn ds-btn--secondary" onClick={() => openEdit(row)}>
-                          {copy.actions.edit}
+                          {t("actions.edit")}
                         </button>
                         {toggleButton(row)}
                       </td>

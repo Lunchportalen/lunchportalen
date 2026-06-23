@@ -7,6 +7,7 @@ import "server-only";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import ProviderBrandColor from "@/components/providers/ProviderBrandColor";
 import ProviderLogoUploader from "@/components/providers/ProviderLogoUploader";
@@ -16,7 +17,6 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
-import { PROVIDER_EMAIL_OWNERSHIP_NOTE } from "@/lib/providers/operationalSettingsShared";
 
 export default async function LeverandorInnstillingerPage() {
   const auth = await getAuthContext();
@@ -26,13 +26,15 @@ export default async function LeverandorInnstillingerPage() {
   const provider = ctx.primaryProvider;
   if (!provider) redirect("/leverandor");
 
+  const t = await getTranslations("provider.settings.page");
+
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
   const operationalSettings = canEdit ? await loadProviderOperationalSettings(provider.id) : null;
   if (!canEdit) {
     return (
       <div className="ds-container">
-        <h1 className="ds-h2">Innstillinger</h1>
-        <p className="ds-body">Du har lesetilgang. Innstillinger kan kun endres av administrator.</p>
+        <h1 className="ds-h2">{t("heading")}</h1>
+        <p className="ds-body">{t("readOnly")}</p>
       </div>
     );
   }
@@ -41,29 +43,22 @@ export default async function LeverandorInnstillingerPage() {
     <div className="ds-container">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">Leverandør</p>
-          <h1 className="ds-h2">Innstillinger</h1>
-          <p className="ds-lead">Profil og kontaktinformasjon for {provider.name}.</p>
+          <p className="ds-eyebrow">{t("eyebrow")}</p>
+          <h1 className="ds-h2">{t("heading")}</h1>
+          <p className="ds-lead">{t("leadWithProvider", { providerName: provider.name })}</p>
         </div>
       </header>
       <section className="ds-section">
-        <h2 className="ds-h3">Logo og merkevare</h2>
-        <p className="ds-body">
-          Last opp logo og velg en kontrollert aksentfarge. Lunchportalen beholder layout, typografi og
-          produktuttrykk.
-        </p>
+        <h2 className="ds-h3">{t("brandSection")}</h2>
+        <p className="ds-body">{t("brandIntro")}</p>
 
-        <h3 className="ds-provider-brand-heading">Logo</h3>
-        <p className="ds-body">
-          Bruk en ren logo med transparent bakgrunn. Logoen vises kontrollert i leverandørmenyen.
-        </p>
+        <h3 className="ds-provider-brand-heading">{t("logoHeading")}</h3>
+        <p className="ds-body">{t("logoIntro")}</p>
         <ProviderLogoUploader providerId={provider.id} providerName={provider.name} logoUrl={provider.logoUrl} />
-        <p className="ds-provider-brand-note">
-          Logoer som ikke følger plattformens visuelle standard kan bli avvist.
-        </p>
+        <p className="ds-provider-brand-note">{t("logoNote")}</p>
 
-        <h3 className="ds-provider-brand-heading">Primærfarge</h3>
-        <p className="ds-body">Velg leverandørens aksentfarge. Fargen brukes kun i kontrollerte detaljer.</p>
+        <h3 className="ds-provider-brand-heading">{t("colorHeading")}</h3>
+        <p className="ds-body">{t("colorIntro")}</p>
         <ProviderBrandColor providerId={provider.id} primaryColor={provider.primaryColor} />
       </section>
       <section className="ds-section">
@@ -71,20 +66,17 @@ export default async function LeverandorInnstillingerPage() {
       </section>
       {operationalSettings ? (
         <section className="ds-section">
-          <h2 className="ds-h3">Drift og varsling</h2>
-          <p className="ds-body">
-            Legg inn e-postadressene som skal motta ordre, kjøkkenlister og leveringsvarsler for denne
-            leverandøren. Disse innstillingene gjelder kun for dette cateringfirmaet.
-          </p>
-          <p className="ds-body">{PROVIDER_EMAIL_OWNERSHIP_NOTE}</p>
+          <h2 className="ds-h3">{t("operationsSection")}</h2>
+          <p className="ds-body">{t("operationsIntro")}</p>
+          <p className="ds-body">{t("operationsNote")}</p>
           <ProviderOperationsForm providerId={provider.id} initial={operationalSettings} />
         </section>
       ) : null}
       <section className="ds-section">
-        <h2 className="ds-h3">Regnskap</h2>
-        <p className="ds-body">Koble Tripletex for automatisk fakturering og betalingsstatus.</p>
+        <h2 className="ds-h3">{t("accountingSection")}</h2>
+        <p className="ds-body">{t("accountingIntro")}</p>
         <Link className="ds-btn ds-btn--primary" href="/leverandor/innstillinger/tripletex/koble-til">
-          Tripletex-oppsett
+          {t("tripletexSetup")}
         </Link>
       </section>
     </div>
