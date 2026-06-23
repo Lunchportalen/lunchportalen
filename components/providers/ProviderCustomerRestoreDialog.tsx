@@ -4,13 +4,10 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 
-type ApiErr = {
-  ok: false;
-  message?: string;
-  error?: string;
-  rid?: string;
-  detail?: { blockers?: string[]; code?: string };
-};
+import {
+  resolveProviderCustomerApiError,
+  type ProviderCustomerApiErrBody,
+} from "@/lib/providers/providerCustomerActionErrors";
 
 async function readJsonSafe(res: Response) {
   const t = await res.text();
@@ -26,23 +23,6 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function parseApiMessage(
-  body: ApiErr | null,
-  fallback: string,
-  httpStatus?: number,
-) {
-  const message = safeStr(body?.message);
-  if (message) {
-    const rid = safeStr(body?.rid);
-    return rid ? `${message} (RID: ${rid})` : message;
-  }
-  if (httpStatus && httpStatus >= 500) {
-    const rid = safeStr(body?.rid);
-    return rid ? `${fallback} (RID: ${rid})` : fallback;
-  }
-  return fallback;
-}
-
 export default function ProviderCustomerRestoreDialog(props: {
   open: boolean;
   companyId: string;
@@ -55,6 +35,7 @@ export default function ProviderCustomerRestoreDialog(props: {
   const apiUrl = `/api/provider/customers/${encodeURIComponent(companyId)}/restore`;
   const tRestore = useTranslations("provider.customers.dialogs.restore");
   const tDialog = useTranslations("provider.customers.dialogs");
+  const tErrors = useTranslations("provider.customers.errors");
   const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -91,7 +72,14 @@ export default function ProviderCustomerRestoreDialog(props: {
         data?: { message?: string };
       } | null;
       if (!res.ok || body?.ok !== true) {
-        setErr(parseApiMessage(body as ApiErr, tRestore("actionFailed"), res.status));
+        setErr(
+          resolveProviderCustomerApiError(
+            (key) => tErrors(key),
+            body as ProviderCustomerApiErrBody,
+            "restoreAction",
+            res.status,
+          ),
+        );
         return;
       }
       const message = safeStr(body?.data?.message) || tRestore("successDefault");
