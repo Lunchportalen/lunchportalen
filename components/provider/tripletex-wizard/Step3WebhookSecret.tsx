@@ -7,6 +7,7 @@ import {
   finalizeConnectionAction,
   rotateWebhookSecretAction,
 } from "@/app/leverandor/innstillinger/tripletex/koble-til/actions";
+import { resolveTripletexActionError } from "@/lib/integrations/tripletex/tripletexActionErrors";
 
 type Props = {
   providerId: string;
@@ -15,6 +16,7 @@ type Props = {
 
 export default function Step3WebhookSecret({ providerId, onComplete }: Props) {
   const t = useTranslations("provider.tripletex.wizard.steps.webhook");
+  const tErrors = useTranslations("provider.tripletex.errors");
   const [secretReady, setSecretReady] = useState(false);
   const [loadingSecret, setLoadingSecret] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -28,7 +30,7 @@ export default function Step3WebhookSecret({ providerId, onComplete }: Props) {
       const res = await rotateWebhookSecretAction({ providerId });
       if (cancelled) return;
       if (res.ok === false) {
-        setError(res.error);
+        setError(resolveTripletexActionError((key) => tErrors(key), res, "rotateFailed"));
         setSecretReady(false);
         setLoadingSecret(false);
         return;
@@ -52,7 +54,7 @@ export default function Step3WebhookSecret({ providerId, onComplete }: Props) {
     setSubmitting(false);
 
     if (res.ok === false) {
-      setError(res.error);
+      setError(resolveTripletexActionError((key) => tErrors(key), res, "finalizeFailed"));
       return;
     }
 

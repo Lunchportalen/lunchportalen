@@ -1135,6 +1135,29 @@
           "companyOk": "Riktig firma",
           "scopeOk": "Tilgang OK"
         }
+      },
+      "errors": {
+        "notAuthenticated": "Ikke innlogget.",
+        "providerAdminRequired": "Kun provider-admin kan utføre denne handlingen.",
+        "forbidden": "Ingen tilgang til denne leverandøren.",
+        "invalidCompanyId": "Company ID må være 6–12 siffer.",
+        "missingToken": "Employee Token er påkrevd.",
+        "tokenVerificationFailed": "Verifisering feilet.",
+        "verificationFailed": "Verifisering feilet. Token eller tilganger er ikke gyldige.",
+        "credentialsLoadFailed": "Kunne ikke laste credentials.",
+        "configurationMissing": "Tripletex-credentials er ikke konfigurert.",
+        "connectionTestFailed": "Tilkoblingstest feilet.",
+        "healthLoadFailed": "Kunne ikke hente tilkoblingsstatus.",
+        "disconnectFailed": "Kunne ikke koble fra Tripletex.",
+        "invalidState": "Tilkoblingen kan ikke frakobles i nåværende tilstand.",
+        "rotateFailed": "Kunne ikke generere webhook-secret.",
+        "webhookSecretRequired": "Webhook-secret må genereres først.",
+        "webhookSyncFailed": "Kunne ikke registrere webhook i Tripletex.",
+        "provisioningNotComplete": "Oppsettet er ikke ferdig ennå.",
+        "completeFailed": "Kunne ikke lagre tilkoblingen.",
+        "finalizeFailed": "Kunne ikke fullføre tilkoblingen.",
+        "saveFailed": "Handlingen feilet.",
+        "unknown": "Noe gikk galt. Prøv igjen."
       }
     },
     "registrations": {

@@ -113,7 +113,11 @@ describe("tripletex wizard actions (TPT-B-7b)", () => {
       employeeToken: "secret",
     });
     expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("FORBIDDEN");
+    if (res.ok === false) {
+      expect(res.code).toBe("FORBIDDEN");
+      expect(res.errorKey).toBe("providerAdminRequired");
+      expect(res).not.toHaveProperty("error");
+    }
   });
 
   test("completeConnectionAction happy → CONFIGURING", async () => {
@@ -139,7 +143,10 @@ describe("tripletex wizard actions (TPT-B-7b)", () => {
       employeeToken: "secret-token",
     });
     expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("VERIFICATION_FAILED");
+    if (res.ok === false) {
+      expect(res.code).toBe("VERIFICATION_FAILED");
+      expect(res.errorKey).toBe("verificationFailed");
+    }
     expect(mockCompleteAfterVerify).not.toHaveBeenCalled();
   });
 
@@ -184,7 +191,10 @@ describe("tripletex wizard actions (TPT-B-7b)", () => {
 
     const res = await finalizeConnectionAction({ providerId: PROVIDER_ID });
     expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("PROVISIONING_NOT_COMPLETE");
+    if (res.ok === false) {
+      expect(res.code).toBe("PROVISIONING_NOT_COMPLETE");
+      expect(res.errorKey).toBe("provisioningNotComplete");
+    }
   });
 
   test("getHealthAction returns expected shape", async () => {

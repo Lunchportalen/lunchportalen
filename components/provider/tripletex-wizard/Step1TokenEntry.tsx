@@ -8,6 +8,7 @@ import {
   verifyTokenAction,
 } from "@/app/leverandor/innstillinger/tripletex/koble-til/actions";
 import type { TripletexTokenVerificationResult } from "@/lib/integrations/tripletex/onboardingVerify";
+import { resolveTripletexActionError } from "@/lib/integrations/tripletex/tripletexActionErrors";
 
 import type { VerifyItemKey, VerifyItemState } from "./types";
 
@@ -108,6 +109,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
   const t = useTranslations("provider.tripletex.wizard.steps.token");
   const tVerify = useTranslations("provider.tripletex.wizard.verify");
   const tModals = useTranslations("provider.tripletex.status.modals");
+  const tErrors = useTranslations("provider.tripletex.errors");
 
   const [companyId, setCompanyId] = useState("");
   const [companyIdError, setCompanyIdError] = useState<string | null>(null);
@@ -163,7 +165,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
       setVerifying(false);
       onVerifyingChange?.(false);
       setVerifyDisplay(initialVerifyDisplay());
-      setFormError(res.error);
+      setFormError(resolveTripletexActionError((key) => tErrors(key), res, "tokenVerificationFailed"));
       return;
     }
 
@@ -210,7 +212,7 @@ export default function Step1TokenEntry({ providerId, onComplete, onVerifyingCha
     setSubmitting(false);
 
     if (res.ok === false) {
-      setFormError(res.error);
+      setFormError(resolveTripletexActionError((key) => tErrors(key), res, "completeFailed"));
       return;
     }
 

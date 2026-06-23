@@ -9,6 +9,7 @@ import { getTranslations } from "next-intl/server";
 
 import StatusDashboardClient from "@/components/provider/tripletex-status/StatusDashboardClient";
 import { getDashboardDataAction } from "@/app/leverandor/innstillinger/tripletex/status/actions";
+import { resolveTripletexActionError } from "@/lib/integrations/tripletex/tripletexActionErrors";
 import { canAccessProvider, hasProviderRole } from "@/lib/auth/provider";
 import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
@@ -21,6 +22,7 @@ export default async function TripletexStatusPage() {
   }
 
   const t = await getTranslations("provider.tripletex.page.status");
+  const tErrors = await getTranslations("provider.tripletex.errors");
 
   const ctx = await getProviderAdminContext(auth.user.id);
   const provider = ctx.primaryProvider;
@@ -41,7 +43,9 @@ export default async function TripletexStatusPage() {
     return (
       <div className="ds-container">
         <h1 className="ds-h2">{t("fallbackHeading")}</h1>
-        <p className="ds-body">{dashboardRes.error}</p>
+        <p className="ds-body">
+          {resolveTripletexActionError((key) => tErrors(key), dashboardRes, "healthLoadFailed")}
+        </p>
       </div>
     );
   }

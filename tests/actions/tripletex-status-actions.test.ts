@@ -221,13 +221,20 @@ describe("tripletex status actions (TPT-B-7c)", () => {
     mockCanAccessProvider.mockResolvedValue(false);
     const res = await getDashboardDataAction({ providerId: PROVIDER_ID });
     expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("FORBIDDEN");
+    if (res.ok === false) {
+      expect(res.code).toBe("FORBIDDEN");
+      expect(res.errorKey).toBe("forbidden");
+      expect(res).not.toHaveProperty("error");
+    }
   });
 
   test("testConnectionAction requires provider_admin", async () => {
     const res = await testConnectionAction({ providerId: PROVIDER_ID });
     expect(res.ok).toBe(false);
-    if (res.ok === false) expect(res.code).toBe("FORBIDDEN");
+    if (res.ok === false) {
+      expect(res.code).toBe("FORBIDDEN");
+      expect(res.errorKey).toBe("providerAdminRequired");
+    }
   });
 
   test("testConnectionAction happy path for admin", async () => {
