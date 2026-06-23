@@ -1,6 +1,6 @@
 # R4 — Provider price settings market-ready (plan)
 
-**Status:** R4A done · R4B done · **R4C done** (market-scoped unique index + supplement seed; no runtime). **Next: R4D** (preview resolver / test only).  
+**Status:** R4A done · R4B done · R4C done · **R4D done** (preview resolver `loadProviderMenuPricesPreview` — test/diagnostics only; no runtime import). **Next: R4E** (provider menu display behind flag; not automatic cutover).  
 **Relates to:** [architecture-decisions.md](./architecture-decisions.md) ADR-016, ADR-017 · [commercial-inventory.md](./commercial-inventory.md)
 
 This document formalizes how `provider_price_rules` can become market/currency/tax_basis-ready **without breaking today's NO production flow**. It is **not** operational truth until explicit cutover ADRs and phased gates pass.
@@ -177,7 +177,7 @@ order write → materialized cents on MSDI + lp_order_set (Golden Path)
 | **R4A** | This plan + roadmap update | **None** |
 | **R4B** | Additive migration: `market_code`, `tax_basis`, audit fields; compatibility view | **None** (defaults; resolver unchanged) |
 | **R4C** | Market-scoped unique index + supplement seed `ON CONFLICT (provider_id, market_code, tier)` | **None** (same numbers; DO NOTHING) |
-| **R4D** | `resolveProviderMenuPricesPreview()` parallel to production reader | **Test/diagnostics only** |
+| **R4D** | `loadProviderMenuPricesPreview()` in `lib/providers/providerMenuPricePreview.ts` | **Done — test/diagnostics only; no runtime import** |
 | **R4E** | Provider menu display uses preview resolver **behind flag** | Display-only |
 | **R4F** | Agreement/onboarding alignment (not frozen onboarding) | Agreement seed path |
 | **R4G** | Billing dry-run: compare agreement vs tier resolver vs invoice lines | Dry-run only |
@@ -240,4 +240,6 @@ Existing CI contracts (no R4A change):
 
 ## First safe PR after R4A
 
-**R4D next:** `resolveProviderMenuPricesPreview()` parallel to production reader — **test/diagnostics only**; no `loadProviderMenuPrices()` cutover.
+**R4D (done):** `loadProviderMenuPricesPreview()` — reads `provider_price_rules` base table with `market_code='NO'` and full metadata (`currency`, `tax_basis`, `tax_category`, `source`). Tests: `tests/lib/providers/providerMenuPricePreview.test.ts`, import guard `providerMenuPricePreview.guard.test.ts`. **No runtime import**; `loadProviderMenuPrices()` unchanged.
+
+**R4E next:** Provider menu read-only display may use preview resolver **behind explicit feature flag** — not automatic cutover from R4D.
