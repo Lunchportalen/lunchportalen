@@ -6,6 +6,9 @@
 import React, { act } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { createRoot } from "react-dom/client";
+import { NextIntlClientProvider } from "next-intl";
+
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -85,15 +88,18 @@ describe("tripletex onboarding happy path (TPT-B-7b)", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
+    const messages = await loadMessagesForLocale("nb");
 
     await act(async () => {
       root.render(
-        <DirectWizard
-          providerId={PROVIDER_ID}
-          providerName="Test Provider"
-          webhookUrl="https://app.example/webhook"
-          initialStep="token"
-        />,
+        <NextIntlClientProvider locale="nb" messages={messages}>
+          <DirectWizard
+            providerId={PROVIDER_ID}
+            providerName="Test Provider"
+            webhookUrl="https://app.example/webhook"
+            initialStep="token"
+          />
+        </NextIntlClientProvider>,
       );
       await Promise.resolve();
     });
