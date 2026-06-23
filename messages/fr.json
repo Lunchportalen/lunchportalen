@@ -118,6 +118,19 @@
         "autoRolloutChip": "Déploiement auto actif",
         "daysPublished": "{count, plural, one {# jour publié} other {# jours publiés}}"
       },
+      "preview": {
+        "ariaLabel": "Diagnostic de l'aperçu des prix",
+        "title": "Aperçu des prix",
+        "subtitle": "Diagnostic uniquement — non utilisé pour les commandes, la marge ou la publication.",
+        "differs": "Diffère du prix de production",
+        "sourceMarket": "Depuis les règles de prix",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Mixte",
+        "taxEx": "HT",
+        "taxInc": "TTC",
+        "amountExSuffix": "kr HT",
+        "amountIncSuffix": "kr TTC"
+      },
       "week": {
         "plannerTitle": "Plan hebdomadaire",
         "plannerLead": "Plat chaud commun par jour — standard généré que vous pouvez modifier.",

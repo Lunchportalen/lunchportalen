@@ -43,6 +43,22 @@ describe("LeverandorDashboardPage i18n", () => {
     expect(dashboard.dashboard.activeCustomers).toBe("Active customers");
     expect(dashboard.dashboard.quickActionsSection).toBe("Quick actions");
   });
+
+  test("dashboard page translates activity feed via provider.dashboard.activity", () => {
+    const source = readFileSync(resolve(process.cwd(), "app/leverandor/page.tsx"), "utf8");
+    expect(source).toContain("translateActivity");
+    expect(source).toContain('t(`activity.${item.messageId}.title`)');
+    expect(source).toContain(".map((item) => translateActivity(item, t))");
+  });
+
+  test("en activity messages include English dashboard activity copy", async () => {
+    const messages = await loadMessagesForLocale("en");
+    const activity = (
+      messages.provider as { dashboard: { activity: Record<string, { title: string; description: string }> } }
+    ).dashboard.activity;
+    expect(activity.orderReceived.title).toBe("Order received");
+    expect(activity.menuPublished.description).toContain("visible to customers");
+  });
 });
 
 describe("ProviderNav i18n", () => {

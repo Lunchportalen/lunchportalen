@@ -5,17 +5,28 @@
 // - lifecycle_audit_log er intern systemsannhet. Provider-facing UI skal ALDRI
 //   vise rå tekniske labels (`delete · company`), tabellnavn, cron-/hook-events
 //   eller fritekst-reason (kan inneholde intern/testtekst).
-// - Kun en eksplisitt allowlist av hendelser mappes til trygg norsk copy.
+// - Kun en eksplisitt allowlist av hendelser mappes til trygg copy (i18n-nøkler).
 //   Alt annet filtreres bort. Ingen data slettes — kun presentasjon.
 // - Rene funksjoner uten I/O slik at de kan testes deterministisk.
 
 import type { ProviderActivityItem } from "@/lib/providers/loadProviderDashboard";
 
+export type DashboardActivityMessageId =
+  | "registrationReceived"
+  | "registrationApproved"
+  | "registrationRejected"
+  | "agreementActivated"
+  | "agreementUpdated"
+  | "invoiceGenerated"
+  | "orderReceived"
+  | "orderCancelled"
+  | "menuPublished"
+  | "settingsUpdated";
+
 export type ProviderDashboardActivityItem = {
   id: string;
   timeLabel: string;
-  title: string;
-  description: string | null;
+  messageId: DashboardActivityMessageId;
   tone: "neutral" | "success" | "warning";
 };
 
@@ -28,88 +39,31 @@ export type ProviderFollowUpItem = {
   tone: "neutral" | "warning";
 };
 
-type SafeActivityCopy = {
-  title: string;
-  description: string | null;
+type SafeActivityDefinition = {
+  messageId: DashboardActivityMessageId;
   tone: ProviderDashboardActivityItem["tone"];
 };
 
 /**
- * Allowlist: kjente provider-relevante hendelser → trygg norsk copy.
+ * Allowlist: kjente provider-relevante hendelser → i18n messageId.
  * Nøkkel = `action` i lifecycle_audit_log (lowercase).
  * Hendelser som ikke står her vises ALDRI på provider-dashboardet.
  */
-const SAFE_ACTIVITY_COPY: Record<string, SafeActivityCopy> = {
-  company_registration_received: {
-    title: "Ny kunderegistrering mottatt",
-    description: "En bedrift har registrert seg og venter på behandling.",
-    tone: "neutral",
-  },
-  company_registration_submitted: {
-    title: "Ny kunderegistrering mottatt",
-    description: "En bedrift har registrert seg og venter på behandling.",
-    tone: "neutral",
-  },
-  company_registration_approved: {
-    title: "Kunde godkjent",
-    description: "En kunderegistrering er godkjent og aktivert.",
-    tone: "success",
-  },
-  company_registration_rejected: {
-    title: "Kunderegistrering avvist",
-    description: "En kunderegistrering er behandlet og avvist.",
-    tone: "neutral",
-  },
-  agreement_activated: {
-    title: "Avtale aktivert",
-    description: "En leveranseavtale er aktivert.",
-    tone: "success",
-  },
-  agreement_updated: {
-    title: "Avtale oppdatert",
-    description: "En leveranseavtale er endret.",
-    tone: "neutral",
-  },
-  agreement_invoice_generated: {
-    title: "Fakturagrunnlag generert",
-    description: "Nytt fakturagrunnlag er klart for gjennomgang.",
-    tone: "neutral",
-  },
-  order_received: {
-    title: "Ordre mottatt",
-    description: "En ny bestilling er registrert.",
-    tone: "success",
-  },
-  order_created: {
-    title: "Ordre mottatt",
-    description: "En ny bestilling er registrert.",
-    tone: "success",
-  },
-  order_canceled: {
-    title: "Ordre kansellert",
-    description: "En bestilling er kansellert.",
-    tone: "warning",
-  },
-  order_cancelled: {
-    title: "Ordre kansellert",
-    description: "En bestilling er kansellert.",
-    tone: "warning",
-  },
-  menu_published: {
-    title: "Meny publisert",
-    description: "Menyinnhold er publisert og synlig for kundene.",
-    tone: "success",
-  },
-  settings_updated: {
-    title: "Innstillinger oppdatert",
-    description: "Leverandørinnstillinger er endret.",
-    tone: "neutral",
-  },
-  provider_settings_updated: {
-    title: "Innstillinger oppdatert",
-    description: "Leverandørinnstillinger er endret.",
-    tone: "neutral",
-  },
+const SAFE_ACTIVITY_DEFINITIONS: Record<string, SafeActivityDefinition> = {
+  company_registration_received: { messageId: "registrationReceived", tone: "neutral" },
+  company_registration_submitted: { messageId: "registrationReceived", tone: "neutral" },
+  company_registration_approved: { messageId: "registrationApproved", tone: "success" },
+  company_registration_rejected: { messageId: "registrationRejected", tone: "neutral" },
+  agreement_activated: { messageId: "agreementActivated", tone: "success" },
+  agreement_updated: { messageId: "agreementUpdated", tone: "neutral" },
+  agreement_invoice_generated: { messageId: "invoiceGenerated", tone: "neutral" },
+  order_received: { messageId: "orderReceived", tone: "success" },
+  order_created: { messageId: "orderReceived", tone: "success" },
+  order_canceled: { messageId: "orderCancelled", tone: "warning" },
+  order_cancelled: { messageId: "orderCancelled", tone: "warning" },
+  menu_published: { messageId: "menuPublished", tone: "success" },
+  settings_updated: { messageId: "settingsUpdated", tone: "neutral" },
+  provider_settings_updated: { messageId: "settingsUpdated", tone: "neutral" },
 };
 
 function formatActivityTime(iso: string): string {
@@ -135,8 +89,8 @@ export function mapProviderDashboardActivity(rows: ProviderActivityItem[]): Prov
   const out: ProviderDashboardActivityItem[] = [];
   for (const row of Array.isArray(rows) ? rows : []) {
     const action = String(row?.action ?? "").trim().toLowerCase();
-    const copy = SAFE_ACTIVITY_COPY[action];
-    if (!copy) continue;
+    const definition = SAFE_ACTIVITY_DEFINITIONS[action];
+    if (!definition) continue;
 
     const id = String(row?.id ?? "").trim();
     if (!id) continue;
@@ -144,23 +98,12 @@ export function mapProviderDashboardActivity(rows: ProviderActivityItem[]): Prov
     out.push({
       id,
       timeLabel: formatActivityTime(row.createdAt),
-      title: copy.title,
-      description: copy.description,
-      tone: copy.tone,
+      messageId: definition.messageId,
+      tone: definition.tone,
     });
   }
   return out;
 }
-
-export const PROVIDER_ACTIVITY_EMPTY_STATE = {
-  title: "Ingen relevant aktivitet ennå.",
-  text: "Når kunder registreres, avtaler godkjennes eller ordre kommer inn, vises det her.",
-} as const;
-
-export const PROVIDER_FOLLOW_UP_ALL_CLEAR = {
-  title: "Alt ser ryddig ut",
-  text: "Ingen kritiske oppfølgingspunkter akkurat nå.",
-} as const;
 
 export type ProviderFollowUpInput = {
   menuEditingEnabled: boolean;

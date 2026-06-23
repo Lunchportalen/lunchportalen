@@ -118,6 +118,19 @@
         "autoRolloutChip": "Auto-Rollout aktiv",
         "daysPublished": "{count, plural, one {# Tag veröffentlicht} other {# Tage veröffentlicht}}"
       },
+      "preview": {
+        "ariaLabel": "Preisvorschau-Diagnose",
+        "title": "Preisvorschau",
+        "subtitle": "Nur Diagnose — nicht für Bestellungen, Marge oder Veröffentlichung.",
+        "differs": "Weicht vom Produktionspreis ab",
+        "sourceMarket": "Aus Preisregeln",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Gemischt",
+        "taxEx": "exkl. MwSt.",
+        "taxInc": "inkl. MwSt.",
+        "amountExSuffix": "kr exkl. MwSt.",
+        "amountIncSuffix": "kr inkl. MwSt."
+      },
       "week": {
         "plannerTitle": "Wochenplan",
         "plannerLead": "Gemeinsames Tagesgericht pro Tag — generierte Standardvorgabe, die Sie überschreiben können.",

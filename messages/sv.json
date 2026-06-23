@@ -118,6 +118,19 @@
         "autoRolloutChip": "Auto-rollout aktiv",
         "daysPublished": "{count, plural, one {# dag publicerad} other {# dagar publicerade}}"
       },
+      "preview": {
+        "ariaLabel": "Pris-preview-diagnos",
+        "title": "Pris-preview",
+        "subtitle": "Endast diagnos — används inte för order, marginal eller publicering.",
+        "differs": "Avviker från produktionspris",
+        "sourceMarket": "Från prisregler",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Blandat",
+        "taxEx": "exkl. moms",
+        "taxInc": "inkl. moms",
+        "amountExSuffix": "kr exkl. moms",
+        "amountIncSuffix": "kr inkl. moms"
+      },
       "week": {
         "plannerTitle": "Veckoplan",
         "plannerLead": "Gemensam varmrätt per dag — genererad standard du kan åsidosätta.",

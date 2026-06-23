@@ -390,6 +390,21 @@ describe("ProviderMenuBuilder i18n", () => {
     expect(editorPanel).toContain('useTranslations("provider.menu")');
     expect(catalogView).toContain('useTranslations("provider.menu")');
   });
+
+  test("ProviderMenuBuilder uses i18n for error and success fallbacks", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"),
+      "utf8",
+    );
+    expect(source).toContain('t("errors.copySourceEmpty"');
+    expect(source).toContain('t("success.copiedFromTier"');
+    expect(source).toContain('t("errors.saveFailed")');
+    expect(source).toContain('t("errors.publishConfirmRequired"');
+    expect(source).toContain('t("errors.resetVarmrettFailed")');
+    expect(source).not.toContain("Kunne ikke lagre meny.");
+    expect(source).not.toContain("Kunne ikke tilbakestille varmrett.");
+    expect(source).not.toContain("Bekreft for å publisere likevel.");
+  });
 });
 
 describe("Provider menu editor and catalog i18n", () => {

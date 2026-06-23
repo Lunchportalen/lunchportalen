@@ -299,7 +299,7 @@ export default function ProviderMenuBuilder() {
     if (!form || !selected) return;
     const sourceSlot = resolveProviderMenuSlot(slots, selected.date, source, selected.category);
     if (!menuSlotHasContent(sourceSlot) && sourceSlot.status === "empty") {
-      setError(`Ingen ${TIER_LABELS[source]}-meny å kopiere for denne dagen/kategorien.`);
+      setError(t("errors.copySourceEmpty", { tier: TIER_LABELS[source] }));
       return;
     }
     setForm({
@@ -314,7 +314,7 @@ export default function ProviderMenuBuilder() {
       status: "draft",
       contentSource: "draft",
     });
-    setMessage(`Kopiert fra ${TIER_LABELS[source]}. Legg til Enterprise-upgrade før publisering.`);
+    setMessage(t("success.copiedFromTier", { tier: TIER_LABELS[source] }));
   }
 
   async function save(status: "draft" | "published") {
@@ -369,13 +369,13 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      setError(json.message ?? "Kunne ikke lagre meny.");
+      setError(json.message ?? t("errors.saveFailed"));
       return;
     }
 
     const warnings = (json.data as { warnings?: string[] } | undefined)?.warnings ?? [];
     if (warnings.length > 0 && status === "published" && !confirmWarnings) {
-      setError(`${warnings[0]} Bekreft for å publisere likevel.`);
+      setError(t("errors.publishConfirmRequired", { warning: warnings[0] }));
       return;
     }
 
@@ -399,7 +399,7 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      setError(json.message ?? "Kunne ikke tilbakestille varmrett.");
+      setError(json.message ?? t("errors.resetVarmrettFailed"));
       return;
     }
 

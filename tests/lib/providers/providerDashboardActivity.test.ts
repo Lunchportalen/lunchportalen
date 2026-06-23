@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { ProviderActivityItem } from "@/lib/providers/loadProviderDashboard";
-import {
-  PROVIDER_ACTIVITY_EMPTY_STATE,
-  PROVIDER_FOLLOW_UP_ALL_CLEAR,
-  buildProviderFollowUps,
-  mapProviderDashboardActivity,
-} from "@/lib/providers/providerDashboardActivity";
+import { buildProviderFollowUps, mapProviderDashboardActivity } from "@/lib/providers/providerDashboardActivity";
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 function row(overrides: Partial<ProviderActivityItem>): ProviderActivityItem {
   return {
@@ -40,7 +36,7 @@ describe("mapProviderDashboardActivity", () => {
     expect(out).toEqual([]);
   });
 
-  it("mapper kjente events til provider-safe norsk copy", () => {
+  it("mapper kjente events til provider-safe i18n messageIds", () => {
     const out = mapProviderDashboardActivity([
       row({ id: "a", action: "company_registration_approved" }),
       row({ id: "b", action: "agreement_invoice_generated" }),
@@ -49,23 +45,24 @@ describe("mapProviderDashboardActivity", () => {
       row({ id: "e", action: "menu_published" }),
     ]);
 
-    expect(out.map((i) => i.title)).toEqual([
-      "Kunde godkjent",
-      "Fakturagrunnlag generert",
-      "Ordre mottatt",
-      "Ordre kansellert",
-      "Meny publisert",
+    expect(out.map((i) => i.messageId)).toEqual([
+      "registrationApproved",
+      "invoiceGenerated",
+      "orderReceived",
+      "orderCancelled",
+      "menuPublished",
     ]);
     expect(out.map((i) => i.tone)).toEqual(["success", "neutral", "success", "warning", "success"]);
   });
 
-  it("rendrer aldri rå reason-fritekst — beskrivelse kommer kun fra allowlist", () => {
+  it("rendrer aldri rå reason-fritekst — kun messageId returneres", () => {
     const out = mapProviderDashboardActivity([
       row({ id: "a", action: "company_registration_approved", reason: "test test test intern debug" }),
     ]);
     expect(out).toHaveLength(1);
-    expect(out[0]!.description).toBe("En kunderegistrering er godkjent og aktivert.");
+    expect(out[0]!.messageId).toBe("registrationApproved");
     expect(JSON.stringify(out)).not.toContain("test test test");
+    expect(JSON.stringify(out)).not.toContain("description");
   });
 
   it("ingen rå 'delete · company' kan rendres gjennom mapperen", () => {
@@ -76,6 +73,8 @@ describe("mapProviderDashboardActivity", () => {
     const rendered = JSON.stringify(out);
     expect(rendered).not.toContain("delete");
     expect(rendered).not.toMatch(/\bcompany\b/);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.messageId).toBe("registrationRejected");
   });
 
   it("rad uten id hoppes over", () => {
@@ -83,9 +82,13 @@ describe("mapProviderDashboardActivity", () => {
     expect(out).toEqual([]);
   });
 
-  it("empty state-copy er definert for «ingen relevant aktivitet»", () => {
-    expect(PROVIDER_ACTIVITY_EMPTY_STATE.title).toBe("Ingen relevant aktivitet ennå.");
-    expect(PROVIDER_ACTIVITY_EMPTY_STATE.text).toContain("Når kunder registreres");
+  it("nb activity messages matcher forventet norsk copy", async () => {
+    const messages = await loadMessagesForLocale("nb");
+    const activity = (messages.provider as { dashboard: { activity: Record<string, { title: string; description: string }> } })
+      .dashboard.activity;
+
+    expect(activity.registrationApproved.title).toBe("Kunde godkjent");
+    expect(activity.registrationApproved.description).toBe("En kunderegistrering er godkjent og aktivert.");
   });
 });
 
@@ -97,9 +100,8 @@ describe("buildProviderFollowUps", () => {
     revenueLast30DaysNok: 12500,
   };
 
-  it("ingen follow-ups når alt er normalt → all clear-copy brukes", () => {
+  it("ingen follow-ups når alt er normalt", () => {
     expect(buildProviderFollowUps(base)).toEqual([]);
-    expect(PROVIDER_FOLLOW_UP_ALL_CLEAR.title).toBe("Alt ser ryddig ut");
   });
 
   it("menyeditor deaktivert → menystatus-kort", () => {
