@@ -66,6 +66,17 @@ vi.mock("@/lib/providers/providerMenuPriceConfig", async (importOriginal) => {
   };
 });
 
+const mockLoadPreview = vi.hoisted(() => vi.fn());
+const mockIsPreviewEnabled = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/providers/providerMenuPricePreviewFlag", () => ({
+  isProviderMenuPricePreviewDisplayEnabled: () => mockIsPreviewEnabled(),
+}));
+
+vi.mock("@/lib/providers/providerMenuPricePreview", () => ({
+  loadProviderMenuPricesPreview: (...args: unknown[]) => mockLoadPreview(...args),
+}));
+
 function mkReq(body: Record<string, unknown>) {
   return new Request("http://localhost/api/provider/menu-days", {
     method: "POST",
@@ -258,13 +269,16 @@ describe("GET /api/provider/menu-days", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLoadMenuDaySlot.mockResolvedValue(null);
+    mockIsPreviewEnabled.mockReturnValue(false);
   });
 
   test("unauthenticated request rejected", async () => {
     mockGetAuthContext.mockResolvedValue({ ok: false, user: null });
+    mockIsPreviewEnabled.mockReturnValue(true);
     const { GET } = await import("@/app/api/provider/menu-days/route");
     const res = await GET(mkGetReq("2026-06-15") as any);
     expect(res.status).toBe(401);
+    expect(mockLoadPreview).not.toHaveBeenCalled();
   });
 
   test("returns week items and prices for scoped provider", async () => {
@@ -297,11 +311,106 @@ describe("GET /api/provider/menu-days", () => {
     expect(json.data.providerId).toBe(PROVIDER_ID);
     expect(json.data.prices.BASIS.priceExVatNok).toBe(90);
     expect(json.data.prices.ENTERPRISE.priceIncVatNok).toBe(195.5);
+    expect(json.data.pricePreview).toBeUndefined();
     expect(mockLoadMenuDays).toHaveBeenCalledWith(PROVIDER_ID, expect.any(Array), {
       providerSlug: "provider-b",
     });
     expect(mockLoadPrices).toHaveBeenCalledWith(PROVIDER_ID);
+    expect(mockLoadPreview).not.toHaveBeenCalled();
     expect(mockFetchLunchCategories).toHaveBeenCalled();
     expect(json.data.catalog).toMatchObject({ rows: expect.any(Array) });
+  });
+
+  test("flag off: no pricePreview in response", async () => {
+    authedViewer();
+    mockIsPreviewEnabled.mockReturnValue(false);
+
+    const { GET } = await import("@/app/api/provider/menu-days/route");
+    const res = await GET(mkGetReq("2026-06-15") as any);
+    const json = await readJson(res);
+
+    expect(res.status).toBe(200);
+    expect(json.data.prices.BASIS.priceExVatNok).toBe(90);
+    expect(json.data.pricePreview).toBeUndefined();
+    expect(mockLoadPreview).not.toHaveBeenCalled();
+  });
+
+  test("flag on: returns pricePreview while prices remain production", async () => {
+    authedViewer();
+    mockIsPreviewEnabled.mockReturnValue(true);
+    mockLoadPreview.mockResolvedValue({
+      tiers: {
+        BASIS: {
+          tier: "BASIS",
+          amountExVat: 95,
+          priceIncVatNok: 109.25,
+          currency: "NOK",
+          vatRate: 0.15,
+          taxBasis: "ex_tax",
+          taxCategory: "food_catering",
+          marketCode: "NO",
+          source: "provider_price_rules_market",
+          validFrom: null,
+          validTo: null,
+          rowSource: "seed",
+        },
+        LUXUS: {
+          tier: "LUXUS",
+          amountExVat: 130,
+          priceIncVatNok: 149.5,
+          currency: "NOK",
+          vatRate: 0.15,
+          taxBasis: "ex_tax",
+          taxCategory: "food_catering",
+          marketCode: "NO",
+          source: "provider_price_rules_market",
+          validFrom: null,
+          validTo: null,
+          rowSource: "seed",
+        },
+        ENTERPRISE: {
+          tier: "ENTERPRISE",
+          amountExVat: 170,
+          priceIncVatNok: 195.5,
+          currency: "NOK",
+          vatRate: 0.15,
+          taxBasis: "ex_tax",
+          taxCategory: "food_catering",
+          marketCode: "NO",
+          source: "provider_price_rules_market",
+          validFrom: null,
+          validTo: null,
+          rowSource: "seed",
+        },
+      },
+      diagnostics: {
+        preview: true,
+        resolverVersion: "r4d-preview-v1",
+        providerId: PROVIDER_ID,
+        marketCode: "NO",
+        aggregateSource: "provider_price_rules_market",
+        dbRowCount: 3,
+        tiersFromMarket: 3,
+        tiersFromFallback: 0,
+        skippedInvalidRows: 0,
+      },
+    });
+
+    const { GET } = await import("@/app/api/provider/menu-days/route");
+    const res = await GET(mkGetReq("2026-06-15") as any);
+    const json = await readJson(res);
+
+    expect(res.status).toBe(200);
+    expect(mockLoadPreview).toHaveBeenCalledTimes(1);
+    expect(mockLoadPreview).toHaveBeenCalledWith(PROVIDER_ID);
+    expect(json.data.prices.BASIS.priceExVatNok).toBe(90);
+    expect(json.data.prices.ENTERPRISE.priceIncVatNok).toBe(195.5);
+    expect(json.data.pricePreview.preview).toBe(true);
+    expect(json.data.pricePreview.marketCode).toBe("NO");
+    expect(json.data.pricePreview.tiers.BASIS.amountExVat).toBe(95);
+    expect(json.data.pricePreview.tiers.BASIS.taxBasis).toBe("ex_tax");
+    expect(json.data.pricePreview.tiers.BASIS.differsFromProduction).toBe(true);
+    expect(json.data.pricePreview.tiers.LUXUS.differsFromProduction).toBe(false);
+    expect(json.data.pricePreview.tiers.ENTERPRISE.differsFromProduction).toBe(false);
   });
 });

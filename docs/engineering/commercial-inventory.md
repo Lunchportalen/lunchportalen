@@ -120,7 +120,8 @@ Update intentionally: `node scripts/ci/commercial-hardcodes-guard.mjs --update-a
 | R4B — Provider price market metadata + compatibility view | Done (migration + db-contracts; no runtime) |
 | R4C — Market-scoped unique index + supplement seed | Done (migration + db-contracts; no runtime) |
 | R4D — Provider menu price preview resolver (`providerMenuPricePreview.ts`) | Done (test/diagnostics only; no runtime import) |
-| R4E — Provider menu display preview behind flag | Planned |
+| R4E-1 — Provider menu API `pricePreview` behind `LP_PROVIDER_PRICE_PREVIEW_DISPLAY` | Done (optional diagnostics; `prices` unchanged; no UI) |
+| R4E-2 — Provider menu read-only preview UI strip | Planned |
 | R4 — Provider price settings market-ready (R4F–R4H) | Planned |
 | R5 — Commission policy skeleton (inert) | Planned |
 | R6 — Commission ledger dry-run | Planned |
