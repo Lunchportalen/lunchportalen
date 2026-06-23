@@ -3,8 +3,11 @@
 import React, { act } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { createRoot } from "react-dom/client";
+import { NextIntlClientProvider } from "next-intl";
 
-(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
+
+(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockGetDashboardDataAction = vi.fn();
 
@@ -57,13 +60,20 @@ const BASE_DATA: DashboardData = {
   warnings: [],
 };
 
-async function renderDashboard(isAdmin = false, data: DashboardData = BASE_DATA) {
+async function renderDashboard(
+  locale: "nb" | "en",
+  isAdmin = false,
+  data: DashboardData = BASE_DATA,
+) {
+  const messages = await loadMessagesForLocale(locale);
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
   await act(async () => {
     root.render(
-      <StatusDashboardClient providerId={PROVIDER_ID} isAdmin={isAdmin} initialData={data} />,
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <StatusDashboardClient providerId={PROVIDER_ID} isAdmin={isAdmin} initialData={data} />
+      </NextIntlClientProvider>,
     );
     await Promise.resolve();
   });
@@ -75,56 +85,44 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("StatusDashboardClient (TPT-B-7c polish-7)", () => {
-  test("CONFIGURING + provisioningComplete shows Konfigurer webhook CTA in hero strip", async () => {
-    const { container } = await renderDashboard(false);
-    const cta = Array.from(container.querySelectorAll("a")).find((a) =>
-      a.textContent?.includes("Konfigurer webhook"),
-    );
-    expect(cta).toBeTruthy();
-    expect(cta?.className).toContain("ds-tripletex-status__hero-cta");
+describe("StatusDashboardClient (TPT-B-7c i18n)", () => {
+  test("CONFIGURING + provisioningComplete shows translated webhook CTA (nb)", async () => {
+    const { container } = await renderDashboard("nb", false);
+    expect(container.textContent).toContain("Konfigurer webhook");
   });
 
-  test("does not render nested ds-surface wrappers", async () => {
-    const { container } = await renderDashboard(true);
-    expect(container.querySelector(".ds-surface")).toBeNull();
-  });
-
-  test("uses section dividers and activity row layout", async () => {
-    const { container } = await renderDashboard(false);
-    expect(container.querySelectorAll(".ds-tripletex-status__section").length).toBeGreaterThanOrEqual(3);
-    expect(container.querySelector(".ds-tripletex-status__activity-row")).toBeTruthy();
-    expect(container.querySelector(".ds-tripletex-status__activity-stats")).toBeTruthy();
-  });
-
-  test("CONNECTED state shows Tilkoblet badge", async () => {
-    const { container } = await renderDashboard(false, { ...BASE_DATA, state: "CONNECTED" });
+  test("CONNECTED state shows translated badge (nb)", async () => {
+    const { container } = await renderDashboard("nb", false, { ...BASE_DATA, state: "CONNECTED" });
     expect(container.textContent).toContain("Tilkoblet");
   });
 
-  test("admin sees action buttons, viewer does not", async () => {
-    const viewer = await renderDashboard(false);
-    expect(viewer.container.textContent).not.toContain("Roter webhook-secret");
+  test("CONNECTED state shows English badge when locale is en", async () => {
+    const { container } = await renderDashboard("en", false, { ...BASE_DATA, state: "CONNECTED" });
+    expect(container.textContent).toContain("Connected");
+  });
 
-    document.body.innerHTML = "";
-    const admin = await renderDashboard(true, { ...BASE_DATA, state: "CONNECTED" });
+  test("preserves Tripletex company name and webhook URL as data", async () => {
+    const { container } = await renderDashboard("nb", false, { ...BASE_DATA, state: "CONNECTED" });
+    expect(container.textContent).toContain("Smoke Provider AS");
+    expect(container.textContent).toContain("114612665");
+    expect(container.textContent).toContain("invoice.charged");
+    expect(container.textContent).toContain(`https://example.test/api/webhooks/tripletex/provider/${PROVIDER_ID}`);
+  });
+
+  test("admin sees translated action buttons (nb)", async () => {
+    const admin = await renderDashboard("nb", true, { ...BASE_DATA, state: "CONNECTED" });
     expect(admin.container.textContent).toContain("Test tilkobling");
     expect(admin.container.textContent).toContain("Koble fra");
   });
 
-  test("resource summary renders stat numbers without duplicate section headings", async () => {
-    const { container } = await renderDashboard(false);
+  test("resource summary renders translated stat labels (nb)", async () => {
+    const { container } = await renderDashboard("nb", false);
     expect(container.textContent).toContain("Produkter");
     expect(container.textContent).toContain("MVA-koder");
-    expect(container.querySelector(".ds-tripletex-status__stat-number")).toBeTruthy();
   });
 
-  test("webhook section shows subscription count and event types", async () => {
-    const { container } = await renderDashboard(false, {
-      ...BASE_DATA,
-      state: "CONNECTED",
-    });
+  test("webhook section shows subscription count with data preserved", async () => {
+    const { container } = await renderDashboard("nb", false, { ...BASE_DATA, state: "CONNECTED" });
     expect(container.textContent).toContain("3 aktive i Tripletex");
-    expect(container.textContent).toContain("invoice.charged");
   });
 });

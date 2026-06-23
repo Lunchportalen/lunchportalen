@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   formatTripletexDateTime,
@@ -14,51 +15,55 @@ type Props = {
 };
 
 export default function WebhookHealth({ webhook }: Props) {
+  const locale = useLocale();
+  const t = useTranslations("provider.tripletex.status.webhook");
+  const tFormat = useTranslations("provider.tripletex.format");
+  const emDash = tFormat("emDash");
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
 
   const copyUrl = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(webhook.url);
-      setCopyMsg("Kopiert");
+      setCopyMsg(t("copied"));
       window.setTimeout(() => setCopyMsg(null), 2000);
     } catch {
-      setCopyMsg("Kunne ikke kopiere");
+      setCopyMsg(t("copyFailed"));
     }
-  }, [webhook.url]);
+  }, [t, webhook.url]);
 
   return (
     <div className="ds-tripletex-status__webhook">
       <dl className="ds-tripletex-status__def-list">
         <div className="ds-tripletex-status__def-row">
-          <dt className="ds-body-sm ds-tripletex-status__text-soft">Registrerte abonnement</dt>
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">{t("subscriptions")}</dt>
           <dd className="ds-body">
             {webhook.subscriptionCount > 0
-              ? `${webhook.subscriptionCount} aktive i Tripletex`
-              : "Ingen registrert ennå"}
+              ? t("activeCount", { count: webhook.subscriptionCount })
+              : t("noneRegistered")}
           </dd>
         </div>
         {webhook.eventTypes.length > 0 ? (
           <div className="ds-tripletex-status__def-row">
-            <dt className="ds-body-sm ds-tripletex-status__text-soft">Event-typer</dt>
+            <dt className="ds-body-sm ds-tripletex-status__text-soft">{t("eventTypes")}</dt>
             <dd className="ds-body">{webhook.eventTypes.join(", ")}</dd>
           </div>
         ) : null}
         <div className="ds-tripletex-status__def-row">
-          <dt className="ds-body-sm ds-tripletex-status__text-soft">Siste mottatt</dt>
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">{t("lastReceived")}</dt>
           <dd className="ds-body">
             {webhook.lastReceivedAt
-              ? `${formatTripletexRelative(webhook.lastReceivedAt)} (${formatTripletexDateTime(webhook.lastReceivedAt)})`
-              : "Ingen hendelser ennå"}
+              ? `${formatTripletexRelative(webhook.lastReceivedAt, locale, emDash)} (${formatTripletexDateTime(webhook.lastReceivedAt, locale, emDash)})`
+              : t("noEventsYet")}
           </dd>
         </div>
         <div className="ds-tripletex-status__def-row">
-          <dt className="ds-body-sm ds-tripletex-status__text-soft">Siste 30 dager</dt>
-          <dd className="ds-body">{webhook.events30d} hendelser</dd>
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">{t("last30Days")}</dt>
+          <dd className="ds-body">{t("eventsCount", { count: webhook.events30d })}</dd>
         </div>
         <div className="ds-tripletex-status__def-row">
-          <dt className="ds-body-sm ds-tripletex-status__text-soft">Secret rotert</dt>
+          <dt className="ds-body-sm ds-tripletex-status__text-soft">{t("secretRotated")}</dt>
           <dd className="ds-body">
-            {webhook.lastRotatedAt ? formatTripletexDateTime(webhook.lastRotatedAt) : "Ikke rotert"}
+            {webhook.lastRotatedAt ? formatTripletexDateTime(webhook.lastRotatedAt, locale, emDash) : t("notRotated")}
           </dd>
         </div>
       </dl>
@@ -66,7 +71,7 @@ export default function WebhookHealth({ webhook }: Props) {
       <div className="ds-tripletex-status__copy-field">
         <code className="ds-tripletex-status__copy-field-value">{webhook.url}</code>
         <button type="button" className="ds-tripletex-status__copy-field-btn" onClick={() => void copyUrl()}>
-          {copyMsg ?? "Kopier"}
+          {copyMsg ?? t("copy")}
         </button>
       </div>
     </div>

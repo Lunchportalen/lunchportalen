@@ -3,6 +3,9 @@
 import React, { act } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { createRoot } from "react-dom/client";
+import { NextIntlClientProvider } from "next-intl";
+
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -30,11 +33,16 @@ function setInputValue(el: HTMLInputElement, value: string) {
 }
 
 async function renderStep1() {
+  const messages = await loadMessagesForLocale("nb");
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
   await act(async () => {
-    root.render(<Step1TokenEntry providerId={PROVIDER_ID} onComplete={() => {}} />);
+    root.render(
+      <NextIntlClientProvider locale="nb" messages={messages}>
+        <Step1TokenEntry providerId={PROVIDER_ID} onComplete={() => {}} />
+      </NextIntlClientProvider>,
+    );
     await Promise.resolve();
   });
   return { container, root };
