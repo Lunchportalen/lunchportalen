@@ -117,7 +117,8 @@ Update intentionally: `node scripts/ci/commercial-hardcodes-guard.mjs --update-a
 | R3D — CFO read-only money display (`CfoClient`) | Done (NO-only display) |
 | R3 — Money/tax display helpers wired (broader) | Planned |
 | R4A — Provider price plan (`r4-provider-price-plan.md`) | Done (docs only) |
-| R4 — Provider price settings market-ready (R4B–R4H) | Planned |
+| R4B — Provider price market metadata + compatibility view | Done (migration + db-contracts; no runtime) |
+| R4 — Provider price settings market-ready (R4C–R4H) | Planned |
 | R5 — Commission policy skeleton (inert) | Planned |
 | R6 — Commission ledger dry-run | Planned |
 | R7 — Billing integration per market | Planned |

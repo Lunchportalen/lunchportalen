@@ -172,6 +172,44 @@ async function assertTrigger(table, triggerName) {
   console.log(`OK: trigger public.${table}.${triggerName}`);
 }
 
+async function assertIndex(indexName, tableName) {
+  const { rowCount } = await client.query(
+    `SELECT 1
+     FROM pg_indexes
+     WHERE schemaname = 'public'
+       AND tablename = $1
+       AND indexname = $2`,
+    [tableName, indexName],
+  );
+  if (!rowCount) {
+    throw new Error(`missing index public.${tableName}.${indexName}`);
+  }
+  console.log(`OK: index public.${tableName}.${indexName}`);
+}
+
+async function assertView(name) {
+  const ok = await toRegclass(name);
+  if (!ok) {
+    throw new Error(`missing view public.${name}`);
+  }
+  console.log(`OK: view public.${name}`);
+}
+
+async function assertViewColumn(viewName, columnName) {
+  const { rowCount } = await client.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND table_name = $1
+       AND column_name = $2`,
+    [viewName, columnName],
+  );
+  if (!rowCount) {
+    throw new Error(`missing column public.${viewName}.${columnName}`);
+  }
+  console.log(`OK: view column public.${viewName}.${columnName}`);
+}
+
 async function assertMapStatusNoRevokedToSuspended() {
   const { rows } = await client.query(
     `SELECT pg_get_functiondef(p.oid) AS def
@@ -331,13 +369,59 @@ async function verifyProviderConfigFoundation() {
        AND customer_id IS NULL
        AND agreement_id IS NULL
        AND is_active = true
-       AND tier IN ('BASIS', 'LUXUS', 'ENTERPRISE')`,
+       AND tier IN ('BASIS', 'LUXUS', 'ENTERPRISE')
+       AND market_code = 'NO'
+       AND tax_basis = 'ex_tax'
+       AND currency = 'NOK'
+       AND source = 'seed'`,
     [melhusId],
   );
   if (Number(priceCount[0]?.c) < 3) {
-    throw new Error("provider_price_rules Melhus seed expected 3 active tier rows");
+    throw new Error(
+      "provider_price_rules Melhus seed expected >=3 active NO tier rows (market_code/tax_basis/source)",
+    );
   }
-  console.log("OK: provider_price_rules Melhus tier seed (>=3 rows)");
+  console.log("OK: provider_price_rules Melhus tier seed (>=3 NO rows, R4B metadata)");
+
+  for (const col of [
+    "market_code",
+    "tax_basis",
+    "tax_category",
+    "source",
+    "created_by",
+    "updated_by",
+  ]) {
+    await assertColumn("provider_price_rules", col);
+  }
+
+  await assertIndex("provider_price_rules_provider_tier_default_uniq", "provider_price_rules");
+
+  await assertView("provider_price_rules_tier_defaults_v1");
+  for (const col of [
+    "provider_id",
+    "tier",
+    "amount_ex_vat",
+    "currency",
+    "vat_rate",
+    "is_active",
+    "valid_from",
+    "valid_to",
+  ]) {
+    await assertViewColumn("provider_price_rules_tier_defaults_v1", col);
+  }
+
+  const { rows: viewCount } = await client.query(
+    `SELECT COUNT(*)::int AS c
+     FROM public.provider_price_rules_tier_defaults_v1
+     WHERE provider_id = $1`,
+    [melhusId],
+  );
+  if (Number(viewCount[0]?.c) < 3) {
+    throw new Error(
+      "provider_price_rules_tier_defaults_v1 expected >=3 Melhus tier-default rows when seed present",
+    );
+  }
+  console.log("OK: provider_price_rules_tier_defaults_v1 Melhus tier defaults (>=3 rows)");
 
   const { rows: entCount } = await client.query(
     `SELECT package_key, COUNT(*)::int AS c
