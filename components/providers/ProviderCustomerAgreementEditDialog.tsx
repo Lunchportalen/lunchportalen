@@ -7,14 +7,12 @@ import { useTranslations } from "next-intl";
 import type { DayKey, Tier } from "@/lib/agreements/normalize";
 import type { InvoiceMethod } from "@/lib/providers/providerCustomerBilling";
 import { suggestEhfEndpoint } from "@/lib/providers/providerCustomerBilling";
-import type { ProviderAgreementReadModel } from "@/lib/providers/providerCustomerAgreementTypes";
+import {
+  resolveProviderCustomerApiError,
+  type ProviderCustomerApiErrBody,
+} from "@/lib/providers/providerCustomerActionErrors";
 
-type ApiErr = {
-  ok: false;
-  message?: string;
-  error?: string;
-  rid?: string;
-};
+import type { ProviderAgreementReadModel } from "@/lib/providers/providerCustomerAgreementTypes";
 
 const WEEKDAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
 
@@ -67,16 +65,6 @@ function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function parseApiMessage(body: ApiErr | null, fallback: string) {
-  const message = safeStr(body?.message);
-  if (message) {
-    const rid = safeStr(body?.rid);
-    return rid ? `${message} (RID: ${rid})` : message;
-  }
-  const rid = safeStr(body?.rid);
-  return rid ? `${fallback} (RID: ${rid})` : fallback;
-}
-
 export default function ProviderCustomerAgreementEditDialog(props: {
   open: boolean;
   companyId: string;
@@ -89,6 +77,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
   const tEdit = useTranslations("provider.customers.dialogs.agreementEdit");
   const tAgreement = useTranslations("provider.customers.agreement");
   const tDialog = useTranslations("provider.customers.dialogs");
+  const tErrors = useTranslations("provider.customers.errors");
 
   const [loading, setLoading] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -136,7 +125,14 @@ export default function ProviderCustomerAgreementEditDialog(props: {
       } | null;
       setLoading(false);
       if (!res.ok || body?.ok !== true || !body.data) {
-        setErr(parseApiMessage(body as ApiErr, tEdit("loadFailed")));
+        setErr(
+          resolveProviderCustomerApiError(
+            (key) => tErrors(key),
+            body as ProviderCustomerApiErrBody,
+            "agreementLoad",
+            res.status,
+          ),
+        );
         return;
       }
       const data = body.data;
@@ -161,7 +157,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
       setBillingContactEmail(billing.contact.email ?? "");
       setBillingContactPhone(billing.contact.phone ?? "");
     })();
-  }, [open, companyId, apiUrl, tEdit]);
+  }, [open, companyId, apiUrl, tErrors]);
 
   const activeDays = useMemo(
     () => WEEKDAY_KEYS.filter((key) => dayState[key].enabled),
@@ -282,7 +278,14 @@ export default function ProviderCustomerAgreementEditDialog(props: {
         data?: { agreement?: ProviderAgreementReadModel; message?: string; warnings?: string[] };
       } | null;
       if (!res.ok || body?.ok !== true) {
-        setErr(parseApiMessage(body as ApiErr, tEdit("saveFailed")));
+        setErr(
+          resolveProviderCustomerApiError(
+            (key) => tErrors(key),
+            body as ProviderCustomerApiErrBody,
+            "agreementSave",
+            res.status,
+          ),
+        );
         return;
       }
       const warnings = body?.data?.warnings ?? body?.data?.agreement?.warnings ?? [];

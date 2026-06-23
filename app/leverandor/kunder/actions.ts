@@ -82,7 +82,7 @@ export async function suspendCustomer(companyId: string, reason: string): Promis
     revalidateCustomer(companyId);
     return { success: true, cascade_orders_paused: rpcCascade(result) };
   } catch (e) {
-    if (e instanceof SuspendError) return customerActionFailure("updateFailed");
+    if (e instanceof SuspendError) return customerActionFailure("suspendFailed");
     return customerActionFailure("unknown");
   }
 }
@@ -99,7 +99,7 @@ export async function pauseCustomer(companyId: string, reason: string): Promise<
     revalidateCustomer(companyId);
     return { success: true, cascade_orders_paused: rpcCascade(result) };
   } catch (e) {
-    if (e instanceof SuspendError) return customerActionFailure("updateFailed");
+    if (e instanceof SuspendError) return customerActionFailure("pauseFailed");
     return customerActionFailure("unknown");
   }
 }

@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 
+import {
+  resolveProviderCustomerApiError,
+  type ProviderCustomerApiErrBody,
+} from "@/lib/providers/providerCustomerActionErrors";
+
 type Eligibility = {
   canArchive: boolean;
   canHardDelete: boolean;
@@ -18,13 +23,6 @@ type Eligibility = {
 };
 
 type ApiOk = { ok: true; data: Eligibility & { companyName?: string | null; orgnr?: string | null } };
-type ApiErr = {
-  ok: false;
-  message?: string;
-  error?: string;
-  rid?: string;
-  detail?: { blockers?: string[]; code?: string };
-};
 
 async function readJsonSafe(res: Response) {
   const text = await res.text();
@@ -36,27 +34,10 @@ async function readJsonSafe(res: Response) {
   }
 }
 
-function safeStr(v: unknown) {
-  return String(v ?? "").trim();
-}
-
-function parseBlockers(body: ApiErr | null): string[] {
+function parseBlockers(body: ProviderCustomerApiErrBody | null): string[] {
   if (!body?.detail) return [];
   const d = body.detail as { blockers?: string[] };
   return Array.isArray(d.blockers) ? d.blockers : [];
-}
-
-function parseApiMessage(body: ApiErr | null, fallback: string, httpStatus?: number) {
-  const message = safeStr(body?.message);
-  if (message) {
-    const rid = safeStr(body?.rid);
-    return rid ? `${message} (RID: ${rid})` : message;
-  }
-  if (httpStatus && httpStatus >= 500) {
-    const rid = safeStr(body?.rid);
-    return rid ? `${fallback} (RID: ${rid})` : fallback;
-  }
-  return fallback;
 }
 
 export default function ProviderCustomerRemovalDialog(props: {
@@ -71,6 +52,7 @@ export default function ProviderCustomerRemovalDialog(props: {
   const apiUrl = `/api/provider/customers/${encodeURIComponent(companyId)}/remove`;
   const tRemoval = useTranslations("provider.customers.dialogs.removal");
   const tDialog = useTranslations("provider.customers.dialogs");
+  const tErrors = useTranslations("provider.customers.errors");
   const [mode, setMode] = useState<"archive" | "hard_delete">("archive");
   const [confirm, setConfirm] = useState("");
   const [reason, setReason] = useState("");
@@ -91,17 +73,18 @@ export default function ProviderCustomerRemovalDialog(props: {
 
     fetch(apiUrl, { cache: "no-store", credentials: "same-origin", headers: { Accept: "application/json" } })
       .then(async (res) => {
-        const body = (await readJsonSafe(res)) as ApiOk | ApiErr | null;
+        const body = (await readJsonSafe(res)) as ApiOk | ProviderCustomerApiErrBody | null;
         if (!res.ok || !body || body.ok !== true) {
           setEligibility(null);
           setErr(
-            parseApiMessage(
-              body as ApiErr,
-              tRemoval("loadRulesFailedHttp", { status: res.status }),
+            resolveProviderCustomerApiError(
+              (key) => tErrors(key),
+              body as ProviderCustomerApiErrBody,
+              "removalLoad",
               res.status,
             ),
           );
-          setBlockers(parseBlockers(body as ApiErr));
+          setBlockers(parseBlockers(body as ProviderCustomerApiErrBody));
           return;
         }
         const d = body.data;
@@ -122,10 +105,10 @@ export default function ProviderCustomerRemovalDialog(props: {
       })
       .catch(() => {
         setEligibility(null);
-        setErr(tRemoval("loadRulesFailed"));
+        setErr(tErrors("loadRulesFailed"));
       })
       .finally(() => setLoadingEligibility(false));
-  }, [open, companyId, companyName, orgnr, apiUrl, tRemoval]);
+  }, [open, companyId, companyName, orgnr, apiUrl, tErrors]);
 
   const confirmHint = useMemo(() => {
     if (mode === "hard_delete") return eligibility?.hardDeleteConfirmHint ?? companyName;
@@ -172,8 +155,15 @@ export default function ProviderCustomerRemovalDialog(props: {
       });
       const body = (await readJsonSafe(res)) as { ok?: boolean; message?: string; rid?: string; data?: { mode?: string } } | null;
       if (!res.ok || body?.ok !== true) {
-        setErr(parseApiMessage(body as ApiErr, tRemoval("actionFailed"), res.status));
-        setBlockers(parseBlockers(body as ApiErr));
+        setErr(
+          resolveProviderCustomerApiError(
+            (key) => tErrors(key),
+            body as ProviderCustomerApiErrBody,
+            "removalAction",
+            res.status,
+          ),
+        );
+        setBlockers(parseBlockers(body as ProviderCustomerApiErrBody));
         return;
       }
       const doneMode = body?.data?.mode === "hard_delete" ? "hard_delete" : "archive";
