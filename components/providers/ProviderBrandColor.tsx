@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { DEFAULT_BRAND_ACCENT, normalizeBrandHex } from "@/lib/providers/brandColor";
 import { saveProviderBrandColor } from "@/lib/providers/saveProviderLogo";
+import { resolveProviderSettingsBrandError } from "@/lib/providers/providerSettingsActionErrors";
 
 type Status =
   | { kind: "idle" }
@@ -19,6 +20,7 @@ export type ProviderBrandColorProps = {
 
 export default function ProviderBrandColor({ providerId, primaryColor }: ProviderBrandColorProps) {
   const t = useTranslations("provider.settings.brand");
+  const tErrors = useTranslations("provider.settings.brand.errors");
   const [value, setValue] = useState(primaryColor ?? "");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [pending, startTransition] = useTransition();
@@ -30,7 +32,7 @@ export default function ProviderBrandColor({ providerId, primaryColor }: Provide
     if (busy) return;
     const trimmed = value.trim();
     if (trimmed && !normalizeBrandHex(trimmed)) {
-      setStatus({ kind: "error", label: t("invalidHex") });
+      setStatus({ kind: "error", label: tErrors("invalidHex") });
       return;
     }
 
@@ -42,7 +44,10 @@ export default function ProviderBrandColor({ providerId, primaryColor }: Provide
         setStatus({ kind: "success", label: res.primaryColor ? t("saved") : t("restoredDefault") });
         return;
       }
-      setStatus({ kind: "error", label: "error" in res ? res.error : t("saveFailed") });
+      if (res.ok === false) {
+        setStatus({ kind: "error", label: resolveProviderSettingsBrandError((key) => tErrors(key), res) });
+        return;
+      }
     });
   }
 

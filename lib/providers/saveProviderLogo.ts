@@ -6,6 +6,12 @@ import { revalidatePath } from "next/cache";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { brandHexHasReadableContrast, normalizeBrandHex } from "@/lib/providers/brandColor";
+import {
+  settingsBrandFailure,
+  settingsLogoFailure,
+  type ProviderSettingsBrandErrorKey,
+  type ProviderSettingsLogoErrorKey,
+} from "@/lib/providers/providerSettingsActionErrors";
 import { hasSupabaseAdminConfig, supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -22,9 +28,7 @@ const ALLOWED_LOGO_TYPES: Record<string, string> = {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type ProviderLogoResult =
-  | { ok: true; logoUrl: string | null }
-  | { ok: false; error: string };
+export type ProviderLogoResult = { ok: true; logoUrl: string | null } | { ok: false; errorKey: ProviderSettingsLogoErrorKey };
 
 function storagePathFromPublicUrl(url: string): string | null {
   const marker = `/storage/v1/object/public/${LOGO_BUCKET}/`;
@@ -36,16 +40,16 @@ function storagePathFromPublicUrl(url: string): string | null {
 
 async function requireProviderAdmin(providerIdRaw: unknown): Promise<
   | { ok: true; providerId: string; userId: string }
-  | { ok: false; error: string }
+  | { ok: false; errorKey: ProviderSettingsLogoErrorKey }
 > {
   const auth = await getAuthContext();
-  if (!auth.ok || !auth.user?.id) return { ok: false, error: "Ikke innlogget." };
+  if (!auth.ok || !auth.user?.id) return { ok: false, errorKey: "notAuthenticated" };
 
   const providerId = String(providerIdRaw ?? "").trim();
-  if (!UUID_RE.test(providerId)) return { ok: false, error: "Ugyldig provider." };
+  if (!UUID_RE.test(providerId)) return { ok: false, errorKey: "invalidProvider" };
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
-  if (!allowed) return { ok: false, error: "Ingen tilgang." };
+  if (!allowed) return { ok: false, errorKey: "forbidden" };
 
   return { ok: true, providerId, userId: auth.user.id };
 }
@@ -87,19 +91,19 @@ async function deleteLogoObject(previousUrl: string | null): Promise<void> {
  */
 export async function saveProviderLogo(formData: FormData): Promise<ProviderLogoResult> {
   const guard = await requireProviderAdmin(formData.get("providerId"));
-  if (guard.ok === false) return { ok: false, error: guard.error };
+  if (guard.ok === false) return settingsLogoFailure(guard.errorKey);
 
   const file = formData.get("file");
   if (!file || !(file instanceof Blob) || file.size === 0) {
-    return { ok: false, error: "Velg en logofil." };
+    return settingsLogoFailure("noFileSelected");
   }
 
   const contentType = String((file as File).type ?? "").toLowerCase();
   const ext = ALLOWED_LOGO_TYPES[contentType];
-  if (!ext) return { ok: false, error: "Logoen må være PNG eller WebP. Bruk helst logo med transparent bakgrunn." };
-  if (file.size > MAX_LOGO_BYTES) return { ok: false, error: "Logoen er for stor. Maks størrelse er 2 MB." };
+  if (!ext) return settingsLogoFailure("unsupportedFileType");
+  if (file.size > MAX_LOGO_BYTES) return settingsLogoFailure("fileTooLarge");
 
-  if (!hasSupabaseAdminConfig()) return { ok: false, error: "Opplasting er ikke tilgjengelig akkurat nå." };
+  if (!hasSupabaseAdminConfig()) return settingsLogoFailure("uploadUnavailable");
 
   const previousUrl = await readCurrentLogoUrl(guard.providerId);
   const objectPath = `providers/${guard.providerId}/logo-${crypto.randomUUID()}.${ext}`;
@@ -111,13 +115,13 @@ export async function saveProviderLogo(formData: FormData): Promise<ProviderLogo
       contentType,
       upsert: false,
     });
-    if (uploadError) return { ok: false, error: "Kunne ikke laste opp logoen." };
+    if (uploadError) return settingsLogoFailure("uploadFailed");
 
     const { data: urlData } = admin.storage.from(LOGO_BUCKET).getPublicUrl(objectPath);
     const publicUrl = String(urlData?.publicUrl ?? "").trim();
     if (!publicUrl) {
       await deleteLogoObject(publicUrl || null);
-      return { ok: false, error: "Kunne ikke hente logo-URL." };
+      return settingsLogoFailure("urlFailed");
     }
 
     const sb = await supabaseServer();
@@ -128,7 +132,7 @@ export async function saveProviderLogo(formData: FormData): Promise<ProviderLogo
 
     if (updateError) {
       await admin.storage.from(LOGO_BUCKET).remove([objectPath]);
-      return { ok: false, error: "Kunne ikke lagre logoen." };
+      return settingsLogoFailure("saveFailed");
     }
 
     await deleteLogoObject(previousUrl);
@@ -137,13 +141,29 @@ export async function saveProviderLogo(formData: FormData): Promise<ProviderLogo
     revalidatePath("/leverandor/innstillinger");
     return { ok: true, logoUrl: publicUrl };
   } catch {
-    return { ok: false, error: "Uventet feil ved opplasting." };
+    return settingsLogoFailure("unknown");
   }
 }
 
 export type ProviderBrandColorResult =
   | { ok: true; primaryColor: string | null }
-  | { ok: false; error: string };
+  | { ok: false; errorKey: ProviderSettingsBrandErrorKey };
+
+async function requireProviderAdminBrand(providerIdRaw: unknown): Promise<
+  | { ok: true; providerId: string }
+  | { ok: false; errorKey: ProviderSettingsBrandErrorKey }
+> {
+  const auth = await getAuthContext();
+  if (!auth.ok || !auth.user?.id) return { ok: false, errorKey: "notAuthenticated" };
+
+  const providerId = String(providerIdRaw ?? "").trim();
+  if (!UUID_RE.test(providerId)) return { ok: false, errorKey: "invalidProvider" };
+
+  const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
+  if (!allowed) return { ok: false, errorKey: "forbidden" };
+
+  return { ok: true, providerId };
+}
 
 /**
  * Save the provider accent color (provider_admin only).
@@ -155,17 +175,17 @@ export async function saveProviderBrandColor(
   providerIdRaw: string,
   colorRaw: string | null,
 ): Promise<ProviderBrandColorResult> {
-  const guard = await requireProviderAdmin(providerIdRaw);
-  if (guard.ok === false) return { ok: false, error: guard.error };
+  const guard = await requireProviderAdminBrand(providerIdRaw);
+  if (guard.ok === false) return settingsBrandFailure(guard.errorKey);
 
   const raw = String(colorRaw ?? "").trim();
   let primaryColor: string | null = null;
 
   if (raw) {
     const hex = normalizeBrandHex(raw);
-    if (!hex) return { ok: false, error: "Bruk HEX-format, for eksempel #F5C518." };
+    if (!hex) return settingsBrandFailure("invalidHex");
     if (!brandHexHasReadableContrast(hex)) {
-      return { ok: false, error: "Fargen har for svak kontrast og kan ikke brukes. Velg en mørkere farge." };
+      return settingsBrandFailure("contrastTooWeak");
     }
     primaryColor = hex;
   }
@@ -177,20 +197,20 @@ export async function saveProviderBrandColor(
       .update({ primary_color: primaryColor, updated_at: new Date().toISOString() })
       .eq("id", guard.providerId);
 
-    if (error) return { ok: false, error: "Kunne ikke lagre fargen." };
+    if (error) return settingsBrandFailure("saveFailed");
 
     revalidatePath("/leverandor");
     revalidatePath("/leverandor/innstillinger");
     return { ok: true, primaryColor };
   } catch {
-    return { ok: false, error: "Uventet feil ved lagring." };
+    return settingsBrandFailure("unknown");
   }
 }
 
 /** Remove the provider logo (provider_admin only). */
 export async function removeProviderLogo(providerIdRaw: string): Promise<ProviderLogoResult> {
   const guard = await requireProviderAdmin(providerIdRaw);
-  if (guard.ok === false) return { ok: false, error: guard.error };
+  if (guard.ok === false) return settingsLogoFailure(guard.errorKey);
 
   const previousUrl = await readCurrentLogoUrl(guard.providerId);
 
@@ -201,7 +221,7 @@ export async function removeProviderLogo(providerIdRaw: string): Promise<Provide
       .update({ logo_url: null, updated_at: new Date().toISOString() })
       .eq("id", guard.providerId);
 
-    if (updateError) return { ok: false, error: "Kunne ikke fjerne logoen." };
+    if (updateError) return settingsLogoFailure("removeFailed");
 
     await deleteLogoObject(previousUrl);
 
@@ -209,6 +229,6 @@ export async function removeProviderLogo(providerIdRaw: string): Promise<Provide
     revalidatePath("/leverandor/innstillinger");
     return { ok: true, logoUrl: null };
   } catch {
-    return { ok: false, error: "Uventet feil ved fjerning." };
+    return settingsLogoFailure("unknown");
   }
 }

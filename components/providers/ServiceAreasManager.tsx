@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { toggleServiceArea } from "@/app/leverandor/omrader/actions";
 import ServiceAreaEditor from "@/components/providers/ServiceAreaEditor";
 import type { ServiceAreaRow } from "@/lib/providers/serviceAreaShared";
+import { resolveProviderCoverageActionError } from "@/lib/providers/providerCoverageActionErrors";
 import {
   PROVIDER_COVERAGE_EMPTY_STEP_KEYS,
   coverageStatusLabel,
@@ -26,6 +27,7 @@ export default function ServiceAreasManager({
 }) {
   const router = useRouter();
   const t = useTranslations("provider.coverage");
+  const tErrors = useTranslations("provider.coverage.errors");
   const [editorOpen, setEditorOpen] = useState(false);
   const [selected, setSelected] = useState<ServiceAreaRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -53,8 +55,8 @@ export default function ServiceAreasManager({
     setActionError(null);
     startTransition(async () => {
       const res = await toggleServiceArea(providerId, row.id, !row.active);
-      if (!res.success) {
-        setActionError("error" in res ? res.error : t("errors.toggleFailed"));
+      if (res.success === false) {
+        setActionError(resolveProviderCoverageActionError((key) => tErrors(key), res, "toggleFailed"));
         return;
       }
       router.refresh();

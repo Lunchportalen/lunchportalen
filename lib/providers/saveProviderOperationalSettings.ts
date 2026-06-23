@@ -9,6 +9,11 @@ import {
   isSupportedProviderLocale,
   normalizeOperationalEmail,
 } from "@/lib/providers/operationalSettingsShared";
+import {
+  mapOperationalEmailErrorKey,
+  settingsOperationsFailure,
+  type ProviderSettingsOperationsErrorKey,
+} from "@/lib/providers/providerSettingsActionErrors";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export type ProviderOperationalSettingsInput = {
@@ -21,7 +26,7 @@ export type ProviderOperationalSettingsInput = {
 
 export type ProviderOperationalSettingsResult =
   | { ok: true }
-  | { ok: false; error: string; field?: string };
+  | { ok: false; errorKey: ProviderSettingsOperationsErrorKey; field?: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -40,31 +45,35 @@ export async function saveProviderOperationalSettings(
 ): Promise<ProviderOperationalSettingsResult> {
   const auth = await getAuthContext();
   if (!auth.ok || !auth.user?.id) {
-    return { ok: false, error: "Ikke innlogget." };
+    return settingsOperationsFailure("notAuthenticated");
   }
 
   const providerId = String(input.providerId ?? "").trim();
   if (!UUID_RE.test(providerId)) {
-    return { ok: false, error: "Mangler provider.", field: "providerId" };
+    return { ok: false, errorKey: "providerNotFound", field: "providerId" };
   }
 
   const allowed = await hasProviderRole(auth.user.id, providerId, "provider_admin");
-  if (!allowed) return { ok: false, error: "Ingen tilgang." };
+  if (!allowed) return settingsOperationsFailure("forbidden");
 
-  // NB: "error" in res brukes for narrowing fordi tsconfig kjører uten strict
-  // (samme mønster som ProviderLogoResult).
   const operations = normalizeOperationalEmail(input.operationsEmail);
-  if ("error" in operations) return { ok: false, error: operations.error, field: "operationsEmail" };
+  if ("error" in operations) {
+    return { ok: false, errorKey: mapOperationalEmailErrorKey(operations.error), field: "operationsEmail" };
+  }
 
   const kitchen = normalizeOperationalEmail(input.kitchenEmail);
-  if ("error" in kitchen) return { ok: false, error: kitchen.error, field: "kitchenEmail" };
+  if ("error" in kitchen) {
+    return { ok: false, errorKey: mapOperationalEmailErrorKey(kitchen.error), field: "kitchenEmail" };
+  }
 
   const delivery = normalizeOperationalEmail(input.deliveryEmail);
-  if ("error" in delivery) return { ok: false, error: delivery.error, field: "deliveryEmail" };
+  if ("error" in delivery) {
+    return { ok: false, errorKey: mapOperationalEmailErrorKey(delivery.error), field: "deliveryEmail" };
+  }
 
   const locale = String(input.locale ?? "").trim();
   if (!isSupportedProviderLocale(locale)) {
-    return { ok: false, error: "Ugyldig språkvalg.", field: "locale" };
+    return { ok: false, errorKey: "invalidLocale", field: "locale" };
   }
 
   try {
@@ -84,12 +93,12 @@ export async function saveProviderOperationalSettings(
       );
 
     if (error) {
-      return { ok: false, error: "Kunne ikke lagre driftsinnstillingene akkurat nå." };
+      return settingsOperationsFailure("saveFailed");
     }
 
     revalidatePath("/leverandor/innstillinger");
     return { ok: true };
   } catch {
-    return { ok: false, error: "Kunne ikke lagre driftsinnstillingene akkurat nå." };
+    return settingsOperationsFailure("saveFailed");
   }
 }
