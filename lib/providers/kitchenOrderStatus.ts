@@ -12,6 +12,17 @@ export type KitchenOrderStatus =
 
 export type KitchenStatusTarget = "PREPARED" | "DISPATCHED" | "DELIVERED";
 
+export type KitchenStatusLabelKey =
+  | "received"
+  | "inProduction"
+  | "readyForDelivery"
+  | "delivered"
+  | "paused"
+  | "cancelled"
+  | "other";
+
+export type KitchenActionLabelKey = "startProduction" | "readyForDelivery" | "markDelivered";
+
 export function normalizeKitchenOrderStatus(raw: unknown): KitchenOrderStatus {
   const s = String(raw ?? "").trim().toUpperCase();
   if (s === "ACTIVE" || s === "LOCKED" || s === "PREPARED" || s === "DISPATCHED" || s === "DELIVERED") {
@@ -21,14 +32,15 @@ export function normalizeKitchenOrderStatus(raw: unknown): KitchenOrderStatus {
   return "OTHER";
 }
 
-export function kitchenStatusLabel(status: KitchenOrderStatus): string {
-  if (status === "ACTIVE" || status === "LOCKED") return "Mottatt";
-  if (status === "PREPARED") return "I produksjon";
-  if (status === "DISPATCHED") return "Klar for levering";
-  if (status === "DELIVERED") return "Levert";
-  if (status === "PAUSED") return "Pauset";
-  if (status === "CANCELLED") return "Avbestilt";
-  return "Annet";
+/** i18n key under provider.orders.status.* — enum values unchanged. */
+export function kitchenStatusLabelKey(status: KitchenOrderStatus): KitchenStatusLabelKey {
+  if (status === "ACTIVE" || status === "LOCKED") return "received";
+  if (status === "PREPARED") return "inProduction";
+  if (status === "DISPATCHED") return "readyForDelivery";
+  if (status === "DELIVERED") return "delivered";
+  if (status === "PAUSED") return "paused";
+  if (status === "CANCELLED") return "cancelled";
+  return "other";
 }
 
 export function kitchenStatusPillClass(status: KitchenOrderStatus): string {
@@ -48,8 +60,9 @@ export function nextKitchenTarget(status: KitchenOrderStatus): KitchenStatusTarg
   return null;
 }
 
-export function targetActionLabel(target: KitchenStatusTarget): string {
-  if (target === "PREPARED") return "Start produksjon";
-  if (target === "DISPATCHED") return "Klar for levering";
-  return "Marker levert";
+/** i18n key under provider.orders.actions.* — target enum unchanged. */
+export function targetActionLabelKey(target: KitchenStatusTarget): KitchenActionLabelKey {
+  if (target === "PREPARED") return "startProduction";
+  if (target === "DISPATCHED") return "readyForDelivery";
+  return "markDelivered";
 }

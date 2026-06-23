@@ -7,6 +7,8 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
+import { getTranslations } from "next-intl/server";
+
 import KitchenOrdersView from "@/components/providers/KitchenOrdersView";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
@@ -14,7 +16,6 @@ import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadKitchenOrders } from "@/lib/providers/loadKitchenOrders";
 import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
 import {
-  PROVIDER_ORDERS_COPY,
   formatProviderOrdersDateRange,
   type ProviderOrdersDateMode,
 } from "@/lib/providers/providerOrdersSurface";
@@ -49,13 +50,14 @@ export default async function LeverandorOrdrerPage({
   ]);
 
   const dateLabel = formatProviderOrdersDateRange(bundle.dateFrom, bundle.dateTo, settings.locale);
+  const t = await getTranslations("provider.orders.page");
 
   return (
     <div className="ds-container ds-provider-kitchen-page">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">{PROVIDER_ORDERS_COPY.eyebrow}</p>
-          <h1 className="ds-h2">{PROVIDER_ORDERS_COPY.heading}</h1>
+          <p className="ds-eyebrow">{t("eyebrow")}</p>
+          <h1 className="ds-h2">{t("heading")}</h1>
           <p className="ds-lead">
             {provider.name}
             {dateLabel ? ` · ${dateLabel}` : ""}

@@ -9,10 +9,11 @@ import {
   formatProviderOrderItemLine,
 } from "@/lib/providers/kitchenOrderDisplay";
 import {
-  kitchenStatusLabel,
+  kitchenStatusLabelKey,
   nextKitchenTarget,
-  targetActionLabel,
+  targetActionLabelKey,
 } from "@/lib/providers/kitchenOrderStatus";
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
@@ -95,26 +96,37 @@ describe("provider production status flow (proven Pettersen/Melhus pilot)", () =
   });
 
   it.each([
-    ["ACTIVE", "Mottatt", "PREPARED", "Start produksjon"],
-    ["PREPARED", "I produksjon", "DISPATCHED", "Klar for levering"],
-    ["DISPATCHED", "Klar for levering", "DELIVERED", "Marker levert"],
+    ["ACTIVE", "received", "PREPARED", "startProduction"],
+    ["PREPARED", "inProduction", "DISPATCHED", "readyForDelivery"],
+    ["DISPATCHED", "readyForDelivery", "DELIVERED", "markDelivered"],
   ] as const)(
-    "2–4. status %s → label %s → next %s (%s)",
-    (status, label, next, action) => {
-      expect(kitchenStatusLabel(status)).toBe(label);
+    "2–4. status %s → label key %s → next %s (%s)",
+    async (status, labelKey, next, actionKey) => {
+      const messages = (await loadMessagesForLocale("nb")) as {
+        provider: { orders: { status: Record<string, string>; actions: Record<string, string> } };
+      };
+      expect(kitchenStatusLabelKey(status)).toBe(labelKey);
       expect(nextKitchenTarget(status)).toBe(next);
-      expect(targetActionLabel(next)).toBe(action);
+      expect(targetActionLabelKey(next)).toBe(actionKey);
+      expect(messages.provider.orders.status[labelKey]).toBeTruthy();
+      expect(messages.provider.orders.actions[actionKey]).toBeTruthy();
     },
   );
 
   it("5. order line remains visible after each kitchen status", async () => {
     const KitchenOrderCard = (await import("@/components/providers/KitchenOrderCard")).default;
+    const messages = await loadMessagesForLocale("nb");
+    const { NextIntlClientProvider } = await import("next-intl");
 
     for (const status of ["ACTIVE", "PREPARED", "DISPATCHED", "DELIVERED"] as const) {
       const html = renderToStaticMarkup(
-        React.createElement(KitchenOrderCard, {
-          order: { ...pilotOrderBase, status },
-          canAdvance: status !== "DELIVERED",
+        React.createElement(NextIntlClientProvider, {
+          locale: "nb",
+          messages,
+          children: React.createElement(KitchenOrderCard, {
+            order: { ...pilotOrderBase, status },
+            canAdvance: status !== "DELIVERED",
+          }),
         }),
       );
       expect(html).toContain("Pettersen&amp;Co");

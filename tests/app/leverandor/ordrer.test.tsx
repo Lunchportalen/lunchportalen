@@ -1,12 +1,40 @@
 import { describe, expect, test, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
+import { NextIntlClientProvider } from "next-intl";
 
 import {
-  kitchenStatusLabel,
+  kitchenStatusLabelKey,
   nextKitchenTarget,
-  targetActionLabel,
+  targetActionLabelKey,
 } from "@/lib/providers/kitchenOrderStatus";
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
+
+type ProviderOrdersMessages = {
+  provider: {
+    orders: {
+      status: Record<string, string>;
+      actions: Record<string, string>;
+      filters: {
+        status: Record<string, string>;
+        date: Record<string, string>;
+        companyLabel: string;
+        companyAll: string;
+        groupByCompany: string;
+      };
+      page: { eyebrow: string };
+      empty: {
+        title: Record<string, string>;
+        text: Record<string, string>;
+        steps: Record<string, string>;
+      };
+    };
+  };
+};
+
+function ordersMessages(messages: Awaited<ReturnType<typeof loadMessagesForLocale>>) {
+  return messages as ProviderOrdersMessages;
+}
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
@@ -42,19 +70,28 @@ const sampleOrder = {
 
 describe("kitchenOrderStatus", () => {
   test.each([
-    ["ACTIVE", "Mottatt", "PREPARED"],
-    ["PREPARED", "I produksjon", "DISPATCHED"],
-    ["DISPATCHED", "Klar for levering", "DELIVERED"],
-    ["DELIVERED", "Levert", null],
-  ] as const)("maps %s label and next step", (status, label, next) => {
-    expect(kitchenStatusLabel(status)).toBe(label);
+    ["ACTIVE", "received", "PREPARED"],
+    ["PREPARED", "inProduction", "DISPATCHED"],
+    ["DISPATCHED", "readyForDelivery", "DELIVERED"],
+    ["DELIVERED", "delivered", null],
+  ] as const)("maps %s label key and next step", (status, labelKey, next) => {
+    expect(kitchenStatusLabelKey(status)).toBe(labelKey);
     expect(nextKitchenTarget(status)).toBe(next);
   });
 
-  test("targetActionLabel for progression", () => {
-    expect(targetActionLabel("PREPARED")).toBe("Start produksjon");
-    expect(targetActionLabel("DISPATCHED")).toBe("Klar for levering");
-    expect(targetActionLabel("DELIVERED")).toBe("Marker levert");
+  test("targetActionLabelKey for progression", () => {
+    expect(targetActionLabelKey("PREPARED")).toBe("startProduction");
+    expect(targetActionLabelKey("DISPATCHED")).toBe("readyForDelivery");
+    expect(targetActionLabelKey("DELIVERED")).toBe("markDelivered");
+  });
+
+  test("status labels translate via UI language (nb vs en)", async () => {
+    const nb = ordersMessages(await loadMessagesForLocale("nb"));
+    const en = ordersMessages(await loadMessagesForLocale("en"));
+    expect(nb.provider.orders.status.received).toBe("Mottatt");
+    expect(en.provider.orders.status.received).toBe("Received");
+    expect(nb.provider.orders.actions.startProduction).toBe("Start produksjon");
+    expect(en.provider.orders.actions.startProduction).toBe("Start production");
   });
 });
 
@@ -66,10 +103,13 @@ describe("advanceKitchenOrder action", () => {
 });
 
 describe("KitchenOrderCard", () => {
-  test("renders status pill and advance button when canAdvance", async () => {
+  test("renders translated status pill and advance button when canAdvance (nb)", async () => {
     const KitchenOrderCard = (await import("@/components/providers/KitchenOrderCard")).default;
+    const messages = await loadMessagesForLocale("nb");
     const html = renderToStaticMarkup(
-      React.createElement(KitchenOrderCard, { order: sampleOrder, canAdvance: true }),
+      <NextIntlClientProvider locale="nb" messages={messages}>
+        <KitchenOrderCard order={sampleOrder} canAdvance={true} />
+      </NextIntlClientProvider>,
     );
     expect(html).toContain("Mottatt");
     expect(html).toContain("Start produksjon");
@@ -80,10 +120,27 @@ describe("KitchenOrderCard", () => {
     expect(html).toContain("Uten løk");
   });
 
+  test("renders English UI labels when locale is en", async () => {
+    const KitchenOrderCard = (await import("@/components/providers/KitchenOrderCard")).default;
+    const messages = await loadMessagesForLocale("en");
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <KitchenOrderCard order={sampleOrder} canAdvance={true} />
+      </NextIntlClientProvider>,
+    );
+    expect(html).toContain("Received");
+    expect(html).toContain("Start production");
+    expect(html).toContain("Påsmurt · Laks &amp; Eggerøre");
+    expect(html).toContain("Uten løk");
+  });
+
   test("hides advance button for viewer-only", async () => {
     const KitchenOrderCard = (await import("@/components/providers/KitchenOrderCard")).default;
+    const messages = await loadMessagesForLocale("nb");
     const html = renderToStaticMarkup(
-      React.createElement(KitchenOrderCard, { order: sampleOrder, canAdvance: false }),
+      <NextIntlClientProvider locale="nb" messages={messages}>
+        <KitchenOrderCard order={sampleOrder} canAdvance={false} />
+      </NextIntlClientProvider>,
     );
     expect(html).not.toContain("Start produksjon");
     expect(html).toContain("Kun visning");

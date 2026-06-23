@@ -2,11 +2,12 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import {
-  PROVIDER_ORDERS_COPY,
   PROVIDER_ORDERS_DATE_MODES,
   PROVIDER_ORDERS_STATUS_FILTERS,
+  ordersStatusFilterKey,
   type KitchenStatusCounts,
 } from "@/lib/providers/providerOrdersSurface";
 
@@ -23,6 +24,7 @@ export default function KitchenFilters({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("provider.orders.filters");
 
   const dateMode = searchParams.get("date") ?? "today";
   const status = searchParams.get("status") ?? "";
@@ -43,7 +45,7 @@ export default function KitchenFilters({
 
   return (
     <div className="ds-provider-kitchen-filters" aria-busy={pending}>
-      <div className="ds-provider-kitchen-filters__row" role="group" aria-label={PROVIDER_ORDERS_COPY.dateGroupAria}>
+      <div className="ds-provider-kitchen-filters__row" role="group" aria-label={t("dateGroupAria")}>
         {PROVIDER_ORDERS_DATE_MODES.map((d) => (
           <button
             key={d.id}
@@ -52,12 +54,12 @@ export default function KitchenFilters({
             aria-pressed={dateMode === d.id}
             onClick={() => push({ date: d.id })}
           >
-            {d.label}
+            {t(`date.${d.id}`)}
           </button>
         ))}
       </div>
 
-      <div className="ds-provider-kitchen-filters__row" role="group" aria-label={PROVIDER_ORDERS_COPY.statusGroupAria}>
+      <div className="ds-provider-kitchen-filters__row" role="group" aria-label={t("statusGroupAria")}>
         {PROVIDER_ORDERS_STATUS_FILTERS.map((s) => (
           <button
             key={s.id || "all"}
@@ -66,7 +68,7 @@ export default function KitchenFilters({
             aria-pressed={status === s.id}
             onClick={() => push({ status: s.id })}
           >
-            {s.label}
+            {t(`status.${ordersStatusFilterKey(s.id)}`)}
             {statusCounts ? (
               <span className="ds-provider-status-pill__count">{statusCounts[s.id] ?? 0}</span>
             ) : null}
@@ -76,14 +78,14 @@ export default function KitchenFilters({
 
       <div className="ds-provider-kitchen-filters__row">
         <label className="ds-provider-kitchen-filters__select">
-          <span className="ds-eyebrow">{PROVIDER_ORDERS_COPY.companyFilterLabel}</span>
+          <span className="ds-eyebrow">{t("companyLabel")}</span>
           <select
             className="ds-admin-search"
             value={companyId}
             onChange={(e) => push({ company: e.target.value })}
-            aria-label={PROVIDER_ORDERS_COPY.companyFilterAria}
+            aria-label={t("companyAria")}
           >
-            <option value="">{PROVIDER_ORDERS_COPY.companyFilterAll}</option>
+            <option value="">{t("companyAll")}</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -92,14 +94,14 @@ export default function KitchenFilters({
           </select>
         </label>
 
-        <div role="group" aria-label={PROVIDER_ORDERS_COPY.groupingAria} className="ds-provider-kitchen-filters__row">
+        <div role="group" aria-label={t("groupingAria")} className="ds-provider-kitchen-filters__row">
           <button
             type="button"
             className={`ds-btn ds-btn--ghost ds-btn--sm${group === "company" ? " is-active" : ""}`}
             aria-pressed={group === "company"}
             onClick={() => push({ group: "company" })}
           >
-            {PROVIDER_ORDERS_COPY.groupByCompany}
+            {t("groupByCompany")}
           </button>
           <button
             type="button"
@@ -107,7 +109,7 @@ export default function KitchenFilters({
             aria-pressed={group === "slot"}
             onClick={() => push({ group: "slot" })}
           >
-            {PROVIDER_ORDERS_COPY.groupByTime}
+            {t("groupByTime")}
           </button>
         </div>
       </div>

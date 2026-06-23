@@ -128,6 +128,77 @@
         }
       }
     },
+    "orders": {
+      "page": {
+        "eyebrow": "Orders and production",
+        "heading": "Orders"
+      },
+      "filters": {
+        "dateGroupAria": "Period",
+        "statusGroupAria": "Status",
+        "groupingAria": "Grouping",
+        "companyLabel": "Company",
+        "companyAll": "All companies",
+        "companyAria": "Filter by company",
+        "groupByCompany": "By company",
+        "groupByTime": "By time",
+        "date": {
+          "today": "Today",
+          "tomorrow": "Tomorrow",
+          "week": "Full week"
+        },
+        "status": {
+          "all": "All",
+          "received": "Received",
+          "production": "In production",
+          "ready": "Ready",
+          "delivered": "Delivered"
+        }
+      },
+      "status": {
+        "received": "Received",
+        "inProduction": "In production",
+        "readyForDelivery": "Ready for delivery",
+        "delivered": "Delivered",
+        "paused": "Paused",
+        "cancelled": "Cancelled",
+        "other": "Other"
+      },
+      "actions": {
+        "startProduction": "Start production",
+        "readyForDelivery": "Ready for delivery",
+        "markDelivered": "Mark delivered",
+        "saving": "Saving…"
+      },
+      "empty": {
+        "title": {
+          "today": "No orders for today",
+          "tomorrow": "No orders for tomorrow",
+          "week": "No orders this week",
+          "filtered": "No orders with selected status"
+        },
+        "text": {
+          "default": "There are no active orders for the selected period.",
+          "filtered": "There are no orders with the selected status in this period. Select «All» to see every order in the period."
+        },
+        "steps": {
+          "checkMenu": "Check that the menu is published for the relevant days.",
+          "checkWeek": "View the full week if you want to review upcoming deliveries.",
+          "ordersAppear": "New orders appear here as production input as they come in."
+        }
+      },
+      "card": {
+        "deliveryGroupPrefix": "Delivery",
+        "noLines": "No line items registered",
+        "lineQuantity": "{quantity} pcs · {displayLine}",
+        "allergensPrefix": "Allergens: {list}",
+        "noteLabel": "Note:",
+        "readOnlyNote": "View only — you have read access to orders."
+      },
+      "errors": {
+        "updateFailed": "Could not update status."
+      }
+    },
     "menu": {
       "page": {
         "readOnlyTitle": "View only",

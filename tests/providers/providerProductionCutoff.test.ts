@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
+
 const MIGRATION_PATH = join(
   process.cwd(),
   "supabase",
@@ -42,9 +44,12 @@ describe("provider production after employee cutoff", () => {
     expect(orderStatus).not.toContain("lp_order_set");
   });
 
-  it("status label maps ACTIVE to Mottatt and PREPARED to I produksjon", async () => {
-    const { kitchenStatusLabel } = await import("@/lib/providers/kitchenOrderStatus");
-    expect(kitchenStatusLabel("ACTIVE")).toBe("Mottatt");
-    expect(kitchenStatusLabel("PREPARED")).toBe("I produksjon");
+  it("status label maps ACTIVE to received and PREPARED to inProduction (nb messages)", async () => {
+    const { kitchenStatusLabelKey } = await import("@/lib/providers/kitchenOrderStatus");
+    const messages = (await loadMessagesForLocale("nb")) as {
+      provider: { orders: { status: Record<string, string> } };
+    };
+    expect(messages.provider.orders.status[kitchenStatusLabelKey("ACTIVE")]).toBe("Mottatt");
+    expect(messages.provider.orders.status[kitchenStatusLabelKey("PREPARED")]).toBe("I produksjon");
   });
 });

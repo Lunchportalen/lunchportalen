@@ -3,18 +3,18 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import { advanceKitchenOrder } from "@/app/leverandor/ordrer/actions";
 import { formatDateNO } from "@/lib/date/format";
 import {
-  kitchenStatusLabel,
+  kitchenStatusLabelKey,
   kitchenStatusPillClass,
   nextKitchenTarget,
-  targetActionLabel,
+  targetActionLabelKey,
   type KitchenOrderStatus,
 } from "@/lib/providers/kitchenOrderStatus";
 import type { KitchenOrderRow } from "@/lib/providers/loadKitchenOrders";
-import { PROVIDER_ORDERS_COPY } from "@/lib/providers/providerOrdersSurface";
 
 export default function KitchenOrderCard({
   order,
@@ -27,6 +27,10 @@ export default function KitchenOrderCard({
   const [pending, startTransition] = useTransition();
   const [optimisticStatus, setOptimisticStatus] = useState<KitchenOrderStatus>(order.status);
   const [error, setError] = useState<string | null>(null);
+  const tStatus = useTranslations("provider.orders.status");
+  const tActions = useTranslations("provider.orders.actions");
+  const tCard = useTranslations("provider.orders.card");
+  const tErrors = useTranslations("provider.orders.errors");
 
   const row = order;
   const target = nextKitchenTarget(optimisticStatus);
@@ -44,7 +48,7 @@ export default function KitchenOrderCard({
       const res = await advanceKitchenOrder(row.id, target);
       if (!res.success) {
         setOptimisticStatus(prev);
-        setError("error" in res ? res.error : "Kunne ikke oppdatere status.");
+        setError("error" in res ? res.error : tErrors("updateFailed"));
         return;
       }
       router.refresh();
@@ -69,20 +73,22 @@ export default function KitchenOrderCard({
             {row.employeeEmail ? ` · ${row.employeeEmail}` : ""}
           </p>
         </div>
-        <span className={kitchenStatusPillClass(optimisticStatus)}>{kitchenStatusLabel(optimisticStatus)}</span>
+        <span className={kitchenStatusPillClass(optimisticStatus)}>{tStatus(kitchenStatusLabelKey(optimisticStatus))}</span>
       </header>
 
       <ul className="ds-provider-order-card__items">
         {row.items.length === 0 ? (
-          <li className="ds-body">Ingen linjer registrert</li>
+          <li className="ds-body">{tCard("noLines")}</li>
         ) : (
           row.items.map((item, idx) => (
             <li key={`${row.id}-${idx}`}>
               <div>
-                {item.quantity} stk · {item.displayLine}
+                {tCard("lineQuantity", { quantity: item.quantity, displayLine: item.displayLine })}
               </div>
               {item.allergens.length ? (
-                <div className="ds-body text-[rgb(var(--lp-muted))]">Allergener: {item.allergens.join(", ")}</div>
+                <div className="ds-body text-[rgb(var(--lp-muted))]">
+                  {tCard("allergensPrefix", { list: item.allergens.join(", ") })}
+                </div>
               ) : null}
             </li>
           ))
@@ -91,7 +97,7 @@ export default function KitchenOrderCard({
 
       {row.note ? (
         <p className="ds-provider-order-card__note">
-          <strong>Merknad:</strong> {row.note}
+          <strong>{tCard("noteLabel")}</strong> {row.note}
         </p>
       ) : null}
 
@@ -103,11 +109,11 @@ export default function KitchenOrderCard({
 
       {target && canAdvance ? (
         <button type="button" className="ds-btn ds-btn--primary ds-provider-order-card__action" disabled={pending} onClick={onAdvance}>
-          {pending ? "Lagrer…" : targetActionLabel(target)}
+          {pending ? tActions("saving") : tActions(targetActionLabelKey(target))}
         </button>
       ) : null}
 
-      {!canAdvance ? <p className="ds-provider-activity__meta">{PROVIDER_ORDERS_COPY.readOnlyNote}</p> : null}
+      {!canAdvance ? <p className="ds-provider-activity__meta">{tCard("readOnlyNote")}</p> : null}
     </article>
   );
 }

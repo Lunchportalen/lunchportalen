@@ -162,14 +162,27 @@ describe("Protected Golden Path — contract locks (no runtime changes)", () => 
     expect(sql).not.toContain("lp_order_set");
   });
 
-  it("14. provider production status labels cover full proven flow", () => {
+  it("14. provider production status labels cover full proven flow", async () => {
     const src = readSource("lib/providers/kitchenOrderStatus.ts");
-    expect(src).toContain('"Start produksjon"');
-    expect(src).toContain('"Klar for levering"');
-    expect(src).toContain('"Marker levert"');
-    expect(src).toContain('"I produksjon"');
-    expect(src).toContain('"Mottatt"');
-    expect(src).toContain('"Levert"');
+    expect(src).toContain("kitchenStatusLabelKey");
+    expect(src).toContain("targetActionLabelKey");
+    expect(src).toContain('"startProduction"');
+    expect(src).toContain('"readyForDelivery"');
+    expect(src).toContain('"markDelivered"');
+    expect(src).toContain('"received"');
+    expect(src).toContain('"inProduction"');
+    expect(src).toContain('"delivered"');
+
+    const nb = JSON.parse(fs.readFileSync("messages/nb.json", "utf8")) as {
+      provider: { orders: { status: Record<string, string>; actions: Record<string, string> } };
+    };
+    expect(nb.provider.orders.status.received).toBe("Mottatt");
+    expect(nb.provider.orders.status.inProduction).toBe("I produksjon");
+    expect(nb.provider.orders.status.readyForDelivery).toBe("Klar for levering");
+    expect(nb.provider.orders.status.delivered).toBe("Levert");
+    expect(nb.provider.orders.actions.startProduction).toBe("Start produksjon");
+    expect(nb.provider.orders.actions.readyForDelivery).toBe("Klar for levering");
+    expect(nb.provider.orders.actions.markDelivered).toBe("Marker levert");
   });
 
   it("15. provider order enrichment module scopes rows to provider-visible orders", () => {
