@@ -2,14 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import KitchenFilters from "@/components/providers/KitchenFilters";
 import KitchenOrderCard from "@/components/providers/KitchenOrderCard";
 import { formatDateNO } from "@/lib/date/format";
 import type { KitchenOrdersBundle } from "@/lib/providers/loadKitchenOrders";
 import {
-  PROVIDER_ORDERS_COPY,
-  providerOrdersEmptyState,
+  providerOrdersEmptyStateKeys,
   type ProviderOrdersDateMode,
 } from "@/lib/providers/providerOrdersSurface";
 
@@ -39,7 +39,9 @@ export default function KitchenOrdersView({
 }) {
   const router = useRouter();
   const groups = groupOrders(bundle, groupMode);
-  const emptyState = providerOrdersEmptyState(dateMode, statusFilterActive);
+  const emptyKeys = providerOrdersEmptyStateKeys(dateMode, statusFilterActive);
+  const tCard = useTranslations("provider.orders.card");
+  const tEmpty = useTranslations("provider.orders.empty");
 
   useEffect(() => {
     const timer = window.setInterval(() => router.refresh(), 30_000);
@@ -52,11 +54,11 @@ export default function KitchenOrdersView({
 
       {bundle.orders.length === 0 ? (
         <div className="ds-provider-empty">
-          <p className="ds-provider-empty__title">{emptyState.title}</p>
-          <p className="ds-provider-empty__text">{emptyState.text}</p>
+          <p className="ds-provider-empty__title">{tEmpty(`title.${emptyKeys.titleKey}`)}</p>
+          <p className="ds-provider-empty__text">{tEmpty(`text.${emptyKeys.textKey}`)}</p>
           <ul className="ds-provider-empty__steps">
-            {emptyState.steps.map((step) => (
-              <li key={step}>{step}</li>
+            {emptyKeys.stepKeys.map((step) => (
+              <li key={step}>{tEmpty(`steps.${step}`)}</li>
             ))}
           </ul>
         </div>
@@ -66,7 +68,7 @@ export default function KitchenOrdersView({
             <section key={key} className="ds-provider-kitchen-group">
               <h2 className="ds-h2">
                 {groupMode === "slot"
-                  ? `${PROVIDER_ORDERS_COPY.deliveryGroupPrefix} ${orders[0]?.slot ?? "—"} · ${
+                  ? `${tCard("deliveryGroupPrefix")} ${orders[0]?.slot ?? "—"} · ${
                       formatDateNO(orders[0]?.date ?? "") || ""
                     }`
                   : orders[0]?.companyName ?? key}

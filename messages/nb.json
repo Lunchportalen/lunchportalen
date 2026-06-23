@@ -128,6 +128,77 @@
         }
       }
     },
+    "orders": {
+      "page": {
+        "eyebrow": "Ordre og produksjon",
+        "heading": "Ordrer"
+      },
+      "filters": {
+        "dateGroupAria": "Periode",
+        "statusGroupAria": "Status",
+        "groupingAria": "Gruppering",
+        "companyLabel": "Bedrift",
+        "companyAll": "Alle bedrifter",
+        "companyAria": "Filtrer på bedrift",
+        "groupByCompany": "Per bedrift",
+        "groupByTime": "Per tid",
+        "date": {
+          "today": "I dag",
+          "tomorrow": "I morgen",
+          "week": "Hele uken"
+        },
+        "status": {
+          "all": "Alle",
+          "received": "Mottatt",
+          "production": "Produksjon",
+          "ready": "Klar",
+          "delivered": "Levert"
+        }
+      },
+      "status": {
+        "received": "Mottatt",
+        "inProduction": "I produksjon",
+        "readyForDelivery": "Klar for levering",
+        "delivered": "Levert",
+        "paused": "Pauset",
+        "cancelled": "Avbestilt",
+        "other": "Annet"
+      },
+      "actions": {
+        "startProduction": "Start produksjon",
+        "readyForDelivery": "Klar for levering",
+        "markDelivered": "Marker levert",
+        "saving": "Lagrer…"
+      },
+      "empty": {
+        "title": {
+          "today": "Ingen ordre for i dag",
+          "tomorrow": "Ingen ordre for i morgen",
+          "week": "Ingen ordre denne uken",
+          "filtered": "Ingen ordre med valgt status"
+        },
+        "text": {
+          "default": "Det finnes ingen aktive bestillinger for valgt periode.",
+          "filtered": "Det finnes ingen ordre med valgt status i valgt periode. Velg «Alle» for å se alle ordre i perioden."
+        },
+        "steps": {
+          "checkMenu": "Kontroller at menyen er publisert for aktuelle dager.",
+          "checkWeek": "Se hele uken hvis du vil kontrollere kommende leveranser.",
+          "ordersAppear": "Nye bestillinger vises her som produksjonsgrunnlag etter hvert som de kommer inn."
+        }
+      },
+      "card": {
+        "deliveryGroupPrefix": "Levering",
+        "noLines": "Ingen linjer registrert",
+        "lineQuantity": "{quantity} stk · {displayLine}",
+        "allergensPrefix": "Allergener: {list}",
+        "noteLabel": "Merknad:",
+        "readOnlyNote": "Kun visning — du har lesetilgang til ordrene."
+      },
+      "errors": {
+        "updateFailed": "Kunne ikke oppdatere status."
+      }
+    },
     "menu": {
       "page": {
         "readOnlyTitle": "Kun visning",

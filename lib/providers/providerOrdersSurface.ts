@@ -1,8 +1,8 @@
 // lib/providers/providerOrdersSurface.ts
-// Provider-facing copy og rene presentasjonshelpers for /leverandor/ordrer.
+// Provider-facing helpers for /leverandor/ordrer (i18n keys + locale formatting).
 //
 // Prinsipp:
-// - All ny copy samles her (én kilde, klar for senere i18n) — ingen spredte strenger.
+// - UI-copy lives in messages/provider.orders.* — this module exposes ids and keys only.
 // - Datoer i brukerrettet UI er locale-formatert (provider_settings.locale når satt),
 //   aldri rå ISO. Backend/URL-params beholder ISO.
 // - Ingen server-avhengigheter: brukes av både server page og client components.
@@ -11,37 +11,33 @@ import { DEFAULT_PROVIDER_LOCALE } from "@/lib/providers/operationalSettingsShar
 
 export type ProviderOrdersDateMode = "today" | "tomorrow" | "week";
 
-export const PROVIDER_ORDERS_COPY = {
-  eyebrow: "Ordre og produksjon",
-  heading: "Ordrer",
-  dateGroupAria: "Periode",
-  statusGroupAria: "Status",
-  groupingAria: "Gruppering",
-  companyFilterLabel: "Bedrift",
-  companyFilterAll: "Alle bedrifter",
-  companyFilterAria: "Filtrer på bedrift",
-  groupByCompany: "Per bedrift",
-  groupByTime: "Per tid",
-  deliveryGroupPrefix: "Levering",
-  readOnlyNote: "Kun visning — du har lesetilgang til ordrene.",
-} as const;
-
-export const PROVIDER_ORDERS_DATE_MODES: ReadonlyArray<{ id: ProviderOrdersDateMode; label: string }> = [
-  { id: "today", label: "I dag" },
-  { id: "tomorrow", label: "I morgen" },
-  { id: "week", label: "Hele uken" },
+export const PROVIDER_ORDERS_DATE_MODES: ReadonlyArray<{ id: ProviderOrdersDateMode }> = [
+  { id: "today" },
+  { id: "tomorrow" },
+  { id: "week" },
 ];
 
 export type KitchenStatusFilterId = "" | "ACTIVE" | "PREPARED" | "DISPATCHED" | "DELIVERED";
 
 /** Statuschips — samme id-semantikk som tidligere DB-filter (raw uppercase equality). */
-export const PROVIDER_ORDERS_STATUS_FILTERS: ReadonlyArray<{ id: KitchenStatusFilterId; label: string }> = [
-  { id: "", label: "Alle" },
-  { id: "ACTIVE", label: "Mottatt" },
-  { id: "PREPARED", label: "Produksjon" },
-  { id: "DISPATCHED", label: "Klar" },
-  { id: "DELIVERED", label: "Levert" },
+export const PROVIDER_ORDERS_STATUS_FILTERS: ReadonlyArray<{ id: KitchenStatusFilterId }> = [
+  { id: "" },
+  { id: "ACTIVE" },
+  { id: "PREPARED" },
+  { id: "DISPATCHED" },
+  { id: "DELIVERED" },
 ];
+
+export type OrdersStatusFilterKey = "all" | "received" | "production" | "ready" | "delivered";
+
+export function ordersStatusFilterKey(id: KitchenStatusFilterId): OrdersStatusFilterKey {
+  if (id === "") return "all";
+  if (id === "ACTIVE") return "received";
+  if (id === "PREPARED") return "production";
+  if (id === "DISPATCHED") return "ready";
+  if (id === "DELIVERED") return "delivered";
+  return "all";
+}
 
 export type KitchenStatusCounts = Record<KitchenStatusFilterId, number>;
 
@@ -94,42 +90,34 @@ export function formatProviderOrdersDateRange(fromIso: string, toIso: string, lo
   return to ? `${from} – ${to}` : from;
 }
 
-export type ProviderOrdersEmptyState = {
-  title: string;
-  text: string;
-  steps: ReadonlyArray<string>;
+export type ProviderOrdersEmptyStepKey = "checkMenu" | "checkWeek" | "ordersAppear";
+
+export type ProviderOrdersEmptyStateKeys = {
+  titleKey: ProviderOrdersDateMode | "filtered";
+  textKey: "default" | "filtered";
+  stepKeys: readonly ProviderOrdersEmptyStepKey[];
 };
 
-const EMPTY_TITLES: Record<ProviderOrdersDateMode, string> = {
-  today: "Ingen ordre for i dag",
-  tomorrow: "Ingen ordre for i morgen",
-  week: "Ingen ordre denne uken",
-};
-
-const EMPTY_STEPS: ReadonlyArray<string> = [
-  "Kontroller at menyen er publisert for aktuelle dager.",
-  "Se hele uken hvis du vil kontrollere kommende leveranser.",
-  "Nye bestillinger vises her som produksjonsgrunnlag etter hvert som de kommer inn.",
-];
+const EMPTY_STEP_KEYS: readonly ProviderOrdersEmptyStepKey[] = ["checkMenu", "checkWeek", "ordersAppear"];
 
 /**
- * Operasjonell empty state — rolig og hjelpsom, ingen alarm.
+ * Operasjonell empty state keys — rolig og hjelpsom, ingen alarm.
  * Aktivt statusfilter prioriteres (forklarer hvorfor listen kan være tom).
  */
-export function providerOrdersEmptyState(
+export function providerOrdersEmptyStateKeys(
   dateMode: ProviderOrdersDateMode,
   hasStatusFilter: boolean,
-): ProviderOrdersEmptyState {
+): ProviderOrdersEmptyStateKeys {
   if (hasStatusFilter) {
     return {
-      title: "Ingen ordre med valgt status",
-      text: "Det finnes ingen ordre med valgt status i valgt periode. Velg «Alle» for å se alle ordre i perioden.",
-      steps: EMPTY_STEPS,
+      titleKey: "filtered",
+      textKey: "filtered",
+      stepKeys: EMPTY_STEP_KEYS,
     };
   }
   return {
-    title: EMPTY_TITLES[dateMode] ?? EMPTY_TITLES.today,
-    text: "Det finnes ingen aktive bestillinger for valgt periode.",
-    steps: EMPTY_STEPS,
+    titleKey: dateMode,
+    textKey: "default",
+    stepKeys: EMPTY_STEP_KEYS,
   };
 }

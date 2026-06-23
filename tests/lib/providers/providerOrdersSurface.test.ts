@@ -1,14 +1,39 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  PROVIDER_ORDERS_COPY,
   PROVIDER_ORDERS_DATE_MODES,
   PROVIDER_ORDERS_STATUS_FILTERS,
   buildKitchenStatusCounts,
   formatProviderOrdersDate,
   formatProviderOrdersDateRange,
-  providerOrdersEmptyState,
+  ordersStatusFilterKey,
+  providerOrdersEmptyStateKeys,
 } from "@/lib/providers/providerOrdersSurface";
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
+
+type ProviderOrdersMessages = {
+  provider: {
+    orders: {
+      filters: {
+        status: Record<string, string>;
+        date: Record<string, string>;
+        companyLabel: string;
+        companyAll: string;
+        groupByCompany: string;
+      };
+      page: { eyebrow: string };
+      empty: {
+        title: Record<string, string>;
+        text: Record<string, string>;
+        steps: Record<string, string>;
+      };
+    };
+  };
+};
+
+function ordersMessages(messages: Awaited<ReturnType<typeof loadMessagesForLocale>>) {
+  return messages as ProviderOrdersMessages;
+}
 
 describe("formatProviderOrdersDate", () => {
   it("bruker locale-format, ikke ISO (nb-NO)", () => {
@@ -64,54 +89,80 @@ describe("buildKitchenStatusCounts", () => {
   });
 });
 
-describe("providerOrdersEmptyState", () => {
-  it("i dag", () => {
-    const s = providerOrdersEmptyState("today", false);
-    expect(s.title).toBe("Ingen ordre for i dag");
-    expect(s.text).toBe("Det finnes ingen aktive bestillinger for valgt periode.");
-    expect(s.steps.length).toBeGreaterThanOrEqual(3);
+describe("providerOrdersEmptyStateKeys", () => {
+  it("i dag", async () => {
+    const keys = providerOrdersEmptyStateKeys("today", false);
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.orders.empty.title[keys.titleKey]).toBe("Ingen ordre for i dag");
+    expect(messages.provider.orders.empty.text[keys.textKey]).toBe(
+      "Det finnes ingen aktive bestillinger for valgt periode.",
+    );
+    expect(keys.stepKeys.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("i morgen", () => {
-    expect(providerOrdersEmptyState("tomorrow", false).title).toBe("Ingen ordre for i morgen");
+  it("i morgen", async () => {
+    const keys = providerOrdersEmptyStateKeys("tomorrow", false);
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.orders.empty.title[keys.titleKey]).toBe("Ingen ordre for i morgen");
   });
 
-  it("hele uken", () => {
-    expect(providerOrdersEmptyState("week", false).title).toBe("Ingen ordre denne uken");
+  it("hele uken", async () => {
+    const keys = providerOrdersEmptyStateKeys("week", false);
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.orders.empty.title[keys.titleKey]).toBe("Ingen ordre denne uken");
   });
 
-  it("aktivt statusfilter prioriteres", () => {
-    expect(providerOrdersEmptyState("today", true).title).toBe("Ingen ordre med valgt status");
+  it("aktivt statusfilter prioriteres", async () => {
+    const keys = providerOrdersEmptyStateKeys("today", true);
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.orders.empty.title[keys.titleKey]).toBe("Ingen ordre med valgt status");
   });
 
-  it("lover ikke cutoff-klokkeslett", () => {
+  it("lover ikke cutoff-klokkeslett", async () => {
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
     for (const mode of ["today", "tomorrow", "week"] as const) {
-      const s = providerOrdersEmptyState(mode, false);
-      expect(`${s.title} ${s.text} ${s.steps.join(" ")}`).not.toMatch(/08:00|kl\./);
+      const keys = providerOrdersEmptyStateKeys(mode, false);
+      const copy = [
+        messages.provider.orders.empty.title[keys.titleKey],
+        messages.provider.orders.empty.text[keys.textKey],
+        ...keys.stepKeys.map((k) => messages.provider.orders.empty.steps[k]),
+      ].join(" ");
+      expect(copy).not.toMatch(/08:00|kl\./);
     }
   });
 });
 
-describe("PROVIDER_ORDERS_COPY — enterprise copy-disiplin", () => {
-  it("bruker «Bedrift» / «Alle bedrifter», ikke «firma»", () => {
-    expect(PROVIDER_ORDERS_COPY.companyFilterLabel).toBe("Bedrift");
-    expect(PROVIDER_ORDERS_COPY.companyFilterAll).toBe("Alle bedrifter");
-    expect(PROVIDER_ORDERS_COPY.groupByCompany).toBe("Per bedrift");
-    const all = JSON.stringify(PROVIDER_ORDERS_COPY).toLowerCase();
+describe("provider.orders messages — enterprise copy-disiplin", () => {
+  it("bruker «Bedrift» / «Alle bedrifter», ikke «firma»", async () => {
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    const filters = messages.provider.orders.filters;
+    expect(filters.companyLabel).toBe("Bedrift");
+    expect(filters.companyAll).toBe("Alle bedrifter");
+    expect(filters.groupByCompany).toBe("Per bedrift");
+    const all = JSON.stringify(messages.provider.orders).toLowerCase();
     expect(all).not.toContain("firma");
   });
 
-  it("ingen «Kjøkken» som page-label på provider-admin orders surface", () => {
-    expect(PROVIDER_ORDERS_COPY.eyebrow).toBe("Ordre og produksjon");
-    expect(JSON.stringify(PROVIDER_ORDERS_COPY).toLowerCase()).not.toContain("kjøkken");
+  it("ingen «Kjøkken» som page-label på provider-admin orders surface", async () => {
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    expect(messages.provider.orders.page.eyebrow).toBe("Ordre og produksjon");
+    expect(JSON.stringify(messages.provider.orders).toLowerCase()).not.toContain("kjøkken");
   });
 
-  it("statuschips bruker norske labels, ikke rå enum", () => {
-    const labels = PROVIDER_ORDERS_STATUS_FILTERS.map((s) => s.label);
+  it("statuschips bruker norske labels via filter keys, ikke rå enum", async () => {
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    const labels = PROVIDER_ORDERS_STATUS_FILTERS.map((s) =>
+      messages.provider.orders.filters.status[ordersStatusFilterKey(s.id)],
+    );
     expect(labels).toEqual(["Alle", "Mottatt", "Produksjon", "Klar", "Levert"]);
   });
 
-  it("periodechips beholdes uendret", () => {
-    expect(PROVIDER_ORDERS_DATE_MODES.map((d) => d.label)).toEqual(["I dag", "I morgen", "Hele uken"]);
+  it("periodechips beholdes uendret", async () => {
+    const messages = ordersMessages(await loadMessagesForLocale("nb"));
+    expect(PROVIDER_ORDERS_DATE_MODES.map((d) => messages.provider.orders.filters.date[d.id])).toEqual([
+      "I dag",
+      "I morgen",
+      "Hele uken",
+    ]);
   });
 });
