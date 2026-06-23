@@ -7,16 +7,19 @@ const IMPORT_NEEDLE = "providerMenuPricePreview";
 
 const ALLOWED_IMPORTERS = new Set([
   path.normalize("lib/providers/providerMenuPricePreview.ts"),
+  path.normalize("lib/providers/providerMenuPricePreviewApi.ts"),
+  path.normalize("lib/providers/providerMenuPricePreviewFlag.ts"),
+  path.normalize("app/api/provider/menu-days/route.ts"),
   path.normalize("tests/lib/providers/providerMenuPricePreview.test.ts"),
   path.normalize("tests/lib/providers/providerMenuPricePreview.guard.test.ts"),
+  path.normalize("tests/api/provider-menu-days.test.ts"),
 ]);
 
 const FORBIDDEN_PREFIXES = [
-  "app",
   "components",
   path.join("lib", "provider-menu"),
-  path.join("app", "api"),
   path.join("app", "(app)", "week"),
+  path.join("app", "api", "week"),
   path.join("lib", "billing"),
   path.join("lib", "tripletex"),
 ];
@@ -39,19 +42,22 @@ function rel(p: string): string {
   return path.normalize(path.relative(ROOT, p));
 }
 
+function isAllowedImporter(filePath: string): boolean {
+  return ALLOWED_IMPORTERS.has(rel(filePath));
+}
+
 describe("providerMenuPricePreview import boundary", () => {
-  it("is only imported from allowed preview/test files", () => {
+  it("is only imported from allowed preview/API/test files", () => {
     const offenders: string[] = [];
 
     for (const file of walkDir(ROOT)) {
       const content = fs.readFileSync(file, "utf8");
       if (!content.includes(IMPORT_NEEDLE)) continue;
 
-      const r = rel(file);
-      if (ALLOWED_IMPORTERS.has(r)) continue;
-      if (r.startsWith(`docs${path.sep}`)) continue;
+      if (isAllowedImporter(file)) continue;
+      if (rel(file).startsWith(`docs${path.sep}`)) continue;
 
-      offenders.push(r);
+      offenders.push(rel(file));
     }
 
     expect(offenders).toEqual([]);
@@ -64,10 +70,27 @@ describe("providerMenuPricePreview import boundary", () => {
       const abs = path.join(ROOT, prefix);
       if (!fs.existsSync(abs)) continue;
       for (const file of walkDir(abs)) {
+        if (isAllowedImporter(file)) continue;
         const content = fs.readFileSync(file, "utf8");
         if (content.includes(IMPORT_NEEDLE)) {
           offenders.push(rel(file));
         }
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("other app/api routes do not import preview", () => {
+    const offenders: string[] = [];
+    const apiRoot = path.join(ROOT, "app", "api");
+    if (!fs.existsSync(apiRoot)) return;
+
+    for (const file of walkDir(apiRoot)) {
+      if (isAllowedImporter(file)) continue;
+      const content = fs.readFileSync(file, "utf8");
+      if (content.includes(IMPORT_NEEDLE)) {
+        offenders.push(rel(file));
       }
     }
 

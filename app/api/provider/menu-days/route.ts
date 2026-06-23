@@ -32,6 +32,10 @@ import {
 } from "@/lib/provider-menu/providerMenuOrderLock";
 import { weekDatesFromStart } from "@/lib/providers/providerMenuPackageSurface";
 import { loadProviderMenuPrices } from "@/lib/providers/providerMenuPriceConfig";
+import { toProviderMenuPricePreviewApiPayload } from "@/lib/providers/providerMenuPricePreviewApi";
+import type { ProviderMenuPricePreviewApiPayload } from "@/lib/providers/providerMenuPricePreviewApi";
+import { isProviderMenuPricePreviewDisplayEnabled } from "@/lib/providers/providerMenuPricePreviewFlag";
+import { loadProviderMenuPricesPreview } from "@/lib/providers/providerMenuPricePreview";
 import { requireSanityWrite } from "@/lib/sanity/client";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -256,6 +260,12 @@ export async function GET(req: NextRequest) {
     orderCountsByDate[date] = count;
   }
 
+  let pricePreview: ProviderMenuPricePreviewApiPayload | undefined;
+  if (isProviderMenuPricePreviewDisplayEnabled()) {
+    const preview = await loadProviderMenuPricesPreview(provider.id);
+    pricePreview = toProviderMenuPricePreviewApiPayload(preview, prices);
+  }
+
   return jsonOk(
     rid,
     {
@@ -263,6 +273,7 @@ export async function GET(req: NextRequest) {
       dates,
       items: lockedItems,
       prices,
+      ...(pricePreview ? { pricePreview } : {}),
       catalog,
       varmrettLockedDates,
       orderCountsByDate,

@@ -1,6 +1,6 @@
 # R4 — Provider price settings market-ready (plan)
 
-**Status:** R4A done · R4B done · R4C done · **R4D done** (preview resolver `loadProviderMenuPricesPreview` — test/diagnostics only; no runtime import). **Next: R4E** (provider menu display behind flag; not automatic cutover).  
+**Status:** R4A done · R4B done · R4C done · R4D done · **R4E-1 done** (optional `pricePreview` on GET `/api/provider/menu-days` behind `LP_PROVIDER_PRICE_PREVIEW_DISPLAY`; `prices` unchanged). **Next: R4E-2** (read-only UI strip; not started).  
 **Relates to:** [architecture-decisions.md](./architecture-decisions.md) ADR-016, ADR-017 · [commercial-inventory.md](./commercial-inventory.md)
 
 This document formalizes how `provider_price_rules` can become market/currency/tax_basis-ready **without breaking today's NO production flow**. It is **not** operational truth until explicit cutover ADRs and phased gates pass.
@@ -178,7 +178,7 @@ order write → materialized cents on MSDI + lp_order_set (Golden Path)
 | **R4B** | Additive migration: `market_code`, `tax_basis`, audit fields; compatibility view | **None** (defaults; resolver unchanged) |
 | **R4C** | Market-scoped unique index + supplement seed `ON CONFLICT (provider_id, market_code, tier)` | **None** (same numbers; DO NOTHING) |
 | **R4D** | `loadProviderMenuPricesPreview()` in `lib/providers/providerMenuPricePreview.ts` | **Done — test/diagnostics only; no runtime import** |
-| **R4E** | Provider menu display uses preview resolver **behind flag** | Display-only |
+| **R4E** | Provider menu display uses preview resolver **behind flag** | **R4E-1 done** (API `pricePreview` optional; no UI). **R4E-2** UI strip planned |
 | **R4F** | Agreement/onboarding alignment (not frozen onboarding) | Agreement seed path |
 | **R4G** | Billing dry-run: compare agreement vs tier resolver vs invoice lines | Dry-run only |
 | **R4H** | MSDI sync + `lp_order_set` alignment **behind flag** | **Golden Path** — requires `test:golden-path`, protected-path guard, rollback plan |
@@ -242,4 +242,6 @@ Existing CI contracts (no R4A change):
 
 **R4D (done):** `loadProviderMenuPricesPreview()` — reads `provider_price_rules` base table with `market_code='NO'` and full metadata (`currency`, `tax_basis`, `tax_category`, `source`). Tests: `tests/lib/providers/providerMenuPricePreview.test.ts`, import guard `providerMenuPricePreview.guard.test.ts`. **No runtime import**; `loadProviderMenuPrices()` unchanged.
 
-**R4E next:** Provider menu read-only display may use preview resolver **behind explicit feature flag** — not automatic cutover from R4D.
+**R4E-1 (done):** `GET /api/provider/menu-days` returns optional `pricePreview` when `LP_PROVIDER_PRICE_PREVIEW_DISPLAY=true` (server env, default false). `prices` remains production truth from `loadProviderMenuPrices()`. Mapper: `toProviderMenuPricePreviewApiPayload()` in `providerMenuPricePreviewApi.ts`. No UI; no `queryError` exposed to client.
+
+**R4E-2 next:** Read-only provider menu UI strip when `pricePreview` present — explicit label; never replaces `prices` for margin/publish.
