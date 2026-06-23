@@ -5,8 +5,8 @@ import {
   DEFAULT_PROVIDER_LOCALE,
   isSupportedProviderLocale,
   normalizeOperationalEmail,
-  PROVIDER_EMAIL_OWNERSHIP_NOTE,
 } from "@/lib/providers/operationalSettingsShared";
+import { loadMessagesForLocale } from "@/lib/i18n/messages";
 import { resolveProviderNotificationRecipients } from "@/lib/providers/providerNotificationRecipients";
 import { ORDER_EMAIL } from "@/lib/system/emailAddresses";
 
@@ -161,10 +161,14 @@ describe("resolveProviderNotificationRecipients", () => {
   });
 });
 
-describe("PROVIDER_EMAIL_OWNERSHIP_NOTE — provider-eid e-postansvar", () => {
-  it("settings-copy sier at cateringfirmaet selv må legge inn e-postene", () => {
-    expect(PROVIDER_EMAIL_OWNERSHIP_NOTE).toContain("Cateringfirmaet må selv legge inn");
-    expect(PROVIDER_EMAIL_OWNERSHIP_NOTE).toContain(
+describe("provider.settings.page.operationsNote — provider-eid e-postansvar", () => {
+  it("settings-copy sier at cateringfirmaet selv må legge inn e-postene", async () => {
+    const messages = (await loadMessagesForLocale("nb")) as {
+      provider: { settings: { page: { operationsNote: string } } };
+    };
+    const note = messages.provider.settings.page.operationsNote;
+    expect(note).toContain("Cateringfirmaet må selv legge inn");
+    expect(note).toContain(
       "Lunchportalen sender ikke leverandørens operative e-poster til plattformen som standard",
     );
   });

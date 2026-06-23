@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useId, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import { saveServiceArea } from "@/app/leverandor/omrader/actions";
 import {
   WEEKDAY_KEYS,
-  WEEKDAY_LABELS,
   type ServiceAreaRow,
   type WeekdayKey,
 } from "@/lib/providers/serviceAreaShared";
@@ -62,6 +62,7 @@ export default function ServiceAreaEditor({
   onClose,
   onSaved,
 }: ServiceAreaEditorProps) {
+  const t = useTranslations("provider.coverage");
   const titleId = useId();
   const listId = useId();
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -118,7 +119,7 @@ export default function ServiceAreaEditor({
         active: form.active,
       });
       if (!res.success) {
-        setError("error" in res ? res.error : "Kunne ikke lagre.");
+        setError("error" in res ? res.error : t("errors.saveFailed"));
         return;
       }
       onSaved();
@@ -128,15 +129,20 @@ export default function ServiceAreaEditor({
 
   return (
     <>
-      <button type="button" className="ds-provider-drawer-backdrop" aria-label="Lukk" onClick={onClose} />
+      <button
+        type="button"
+        className="ds-provider-drawer-backdrop"
+        aria-label={t("actions.closeDrawer")}
+        onClick={onClose}
+      />
       <div className="ds-provider-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <h2 id={titleId} className="ds-h3">
-          {area ? "Rediger område" : "Legg til område"}
+          {area ? t("form.editTitle") : t("form.createTitle")}
         </h2>
 
         <form className="lp-demo-form" onSubmit={onSubmit} noValidate>
           <label htmlFor="sa-city">
-            Poststed / område
+            {t("form.cityLabel")}
             <input
               id="sa-city"
               name="city"
@@ -154,7 +160,7 @@ export default function ServiceAreaEditor({
 
           <div className="lp-registrer-form__row">
             <label htmlFor="sa-from">
-              Postnr fra
+              {t("form.postalFrom")}
               <input
                 id="sa-from"
                 inputMode="numeric"
@@ -166,7 +172,7 @@ export default function ServiceAreaEditor({
               />
             </label>
             <label htmlFor="sa-to">
-              Postnr til
+              {t("form.postalTo")}
               <input
                 id="sa-to"
                 inputMode="numeric"
@@ -181,7 +187,7 @@ export default function ServiceAreaEditor({
 
           <div className="lp-registrer-form__row">
             <label htmlFor="sa-min">
-              Min ansatte
+              {t("form.minEmployees")}
               <input
                 id="sa-min"
                 type="number"
@@ -191,7 +197,7 @@ export default function ServiceAreaEditor({
               />
             </label>
             <label htmlFor="sa-max">
-              Maks ansatte (valgfritt)
+              {t("form.maxEmployees")}
               <input
                 id="sa-max"
                 type="number"
@@ -203,7 +209,7 @@ export default function ServiceAreaEditor({
           </div>
 
           <fieldset className="ds-provider-day-fieldset">
-            <legend>Leveringsdager</legend>
+            <legend>{t("form.deliveryDaysLegend")}</legend>
             <div className="ds-provider-day-grid">
               {WEEKDAY_KEYS.map((day) => (
                 <label key={day} className="ds-provider-day-chip">
@@ -212,7 +218,7 @@ export default function ServiceAreaEditor({
                     checked={form.available_days.includes(day)}
                     onChange={() => toggleDay(day)}
                   />
-                  <span>{WEEKDAY_LABELS[day]}</span>
+                  <span>{t(`weekdays.${day}`)}</span>
                 </label>
               ))}
             </div>
@@ -224,7 +230,7 @@ export default function ServiceAreaEditor({
               checked={form.active}
               onChange={(e) => setForm((p) => ({ ...p, active: e.target.checked }))}
             />
-            <span>Aktivt område (brukes i registreringsmatching)</span>
+            <span>{t("form.activeToggle")}</span>
           </label>
 
           {error ? (
@@ -235,10 +241,10 @@ export default function ServiceAreaEditor({
 
           <div className="ds-provider-dialog__actions">
             <button type="button" className="ds-btn ds-btn--secondary" onClick={onClose} disabled={pending}>
-              Avbryt
+              {t("actions.cancel")}
             </button>
             <button type="submit" className="ds-btn ds-btn--primary" disabled={pending}>
-              {pending ? "Lagrer…" : area ? "Lagre endringer" : "Opprett område"}
+              {pending ? t("actions.saving") : area ? t("actions.saveChanges") : t("actions.createArea")}
             </button>
           </div>
         </form>

@@ -604,6 +604,174 @@
         }
       }
     },
+    "coverage": {
+      "page": {
+        "eyebrow": "Leverandør",
+        "heading": "Dekningsområder",
+        "leadWithProvider": "Dekningsområder styrer hvilke bedrifter som kan sende forespørsel til {providerName}. Bruk områdene til å avgrense postnummer, minimum antall ansatte og leveringsdager.",
+        "leadNoProvider": "Dekningsområder styrer hvilke bedrifter som kan sende forespørsel til leverandøren. Bruk områdene til å avgrense postnummer, minimum antall ansatte og leveringsdager."
+      },
+      "actions": {
+        "newArea": "Nytt dekningsområde",
+        "newAreaTitle": "Legg til nytt dekningsområde for leverandøren.",
+        "readOnlyNote": "Du har lesetilgang. Endringer krever administratortilgang.",
+        "edit": "Rediger",
+        "activate": "Aktiver",
+        "deactivate": "Deaktiver",
+        "deactivateTitle": "Nye bedrifter i dette området kan ikke velge leverandøren så lenge området er deaktivert. Eksisterende avtaler endres ikke automatisk.",
+        "activateTitle": "Gjør området tilgjengelig for nye bedriftsforespørsler igjen.",
+        "cancel": "Avbryt",
+        "closeDrawer": "Lukk",
+        "createArea": "Opprett område",
+        "saveChanges": "Lagre endringer",
+        "saving": "Lagrer…"
+      },
+      "table": {
+        "area": "Område",
+        "postalCodes": "Postnummer",
+        "minEmployees": "Min. ansatte",
+        "deliveryDays": "Leveringsdager",
+        "status": "Status"
+      },
+      "summary": {
+        "noneActive": "Ingen aktive dekningsområder",
+        "oneActive": "1 aktivt dekningsområde",
+        "manyActive": "{count} aktive dekningsområder",
+        "inactiveSuffix": " · {count} inaktive"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "paused": "Pauset",
+        "unknown": "Ukjent"
+      },
+      "weekdays": {
+        "mon": "Man",
+        "tue": "Tir",
+        "wed": "Ons",
+        "thu": "Tor",
+        "fri": "Fre",
+        "weekdaysRange": "Mandag–fredag"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesRange": "{min}–{max}",
+        "employeesMin": "{min}+",
+        "employeesMax": "≤{max}"
+      },
+      "empty": {
+        "title": "Ingen dekningsområder ennå",
+        "text": "Legg til et dekningsområde for å styre hvilke bedrifter som kan sende forespørsel til leverandøren.",
+        "step1": "Definer postnummer eller område.",
+        "step2": "Sett minimum antall ansatte.",
+        "step3": "Velg leveringsdager for området."
+      },
+      "form": {
+        "editTitle": "Rediger område",
+        "createTitle": "Legg til område",
+        "cityLabel": "Poststed / område",
+        "postalFrom": "Postnr fra",
+        "postalTo": "Postnr til",
+        "minEmployees": "Min ansatte",
+        "maxEmployees": "Maks ansatte (valgfritt)",
+        "deliveryDaysLegend": "Leveringsdager",
+        "activeToggle": "Aktivt område (brukes i registreringsmatching)"
+      },
+      "errors": {
+        "toggleFailed": "Kunne ikke oppdatere status.",
+        "saveFailed": "Kunne ikke lagre."
+      }
+    },
+    "settings": {
+      "page": {
+        "eyebrow": "Leverandør",
+        "heading": "Innstillinger",
+        "leadWithProvider": "Profil og kontaktinformasjon for {providerName}.",
+        "readOnly": "Du har lesetilgang. Innstillinger kan kun endres av administrator.",
+        "brandSection": "Logo og merkevare",
+        "brandIntro": "Last opp logo og velg en kontrollert aksentfarge. Lunchportalen beholder layout, typografi og produktuttrykk.",
+        "logoHeading": "Logo",
+        "logoIntro": "Bruk en ren logo med transparent bakgrunn. Logoen vises kontrollert i leverandørmenyen.",
+        "logoNote": "Logoer som ikke følger plattformens visuelle standard kan bli avvist.",
+        "colorHeading": "Primærfarge",
+        "colorIntro": "Velg leverandørens aksentfarge. Fargen brukes kun i kontrollerte detaljer.",
+        "operationsSection": "Drift og varsling",
+        "operationsIntro": "Legg inn e-postadressene som skal motta ordre, kjøkkenlister og leveringsvarsler for denne leverandøren. Disse innstillingene gjelder kun for dette cateringfirmaet.",
+        "operationsNote": "Cateringfirmaet må selv legge inn e-postadressene som skal motta ordre, kjøkkenlister og leveringsvarsler. Lunchportalen sender ikke leverandørens operative e-poster til plattformen som standard — manglende e-post må fylles ut her.",
+        "accountingSection": "Regnskap",
+        "accountingIntro": "Koble Tripletex for automatisk fakturering og betalingsstatus.",
+        "tripletexSetup": "Tripletex-oppsett"
+      },
+      "profile": {
+        "leadWithProvider": "Profil for {providerName}",
+        "nameLabel": "Navn",
+        "emailLabel": "Kontakt e-post",
+        "phoneLabel": "Kontakt telefon",
+        "save": "Lagre innstillinger",
+        "saving": "Lagrer…",
+        "saved": "Innstillinger lagret.",
+        "saveFailed": "Kunne ikke lagre."
+      },
+      "operations": {
+        "operationsEmailLabel": "Ordre- og driftsepost",
+        "operationsEmailHint": "Brukes som hovedmottaker for ordrevarsler og driftsbeskjeder.",
+        "kitchenEmailLabel": "Kjøkkenepost",
+        "kitchenEmailHint": "Brukes for produksjonsgrunnlag og kjøkkenvarsler.",
+        "deliveryEmailLabel": "Leveringsepost",
+        "deliveryEmailHint": "Brukes for leveringsrelaterte varsler og meldinger når ordre er klare for levering.",
+        "localeLabel": "Språk",
+        "localeHint": "Styrer standard språk for leverandørens egne driftsflater når språkstøtte er tilgjengelig.",
+        "save": "Lagre driftsinnstillinger",
+        "saving": "Lagrer…",
+        "saved": "Driftsinnstillinger lagret.",
+        "saveFailed": "Kunne ikke lagre driftsinnstillingene akkurat nå.",
+        "locales": {
+          "nb-NO": "Norsk (bokmål)",
+          "en-GB": "English",
+          "sv-SE": "Svenska",
+          "da-DK": "Dansk"
+        }
+      },
+      "logo": {
+        "hint": "Anbefalt: logo i PNG eller WebP med transparent bakgrunn. Maks 2 MB. Ikke bruk matbilder, bannere, skjermbilder, reklamegrafikk eller logo på rotete/farget bakgrunn.",
+        "upload": "Last opp logo",
+        "replace": "Bytt logo",
+        "remove": "Fjern logo",
+        "pickFile": "Velg logofil",
+        "altWithProvider": "Logo for {providerName}",
+        "uploading": "Laster opp…",
+        "removing": "Fjerner…",
+        "updated": "Logo oppdatert.",
+        "removed": "Logo fjernet.",
+        "uploadFailed": "Kunne ikke laste opp.",
+        "removeFailed": "Kunne ikke fjerne.",
+        "invalidType": "Logoen må være PNG eller WebP. Bruk helst logo med transparent bakgrunn.",
+        "tooLarge": "Logoen er for stor. Maks størrelse er 2 MB."
+      },
+      "brand": {
+        "hexLabel": "HEX-kode",
+        "save": "Lagre farge",
+        "saving": "Lagrer…",
+        "sampleHint": "Slik brukes fargen: som liten aksent i menyen og detaljer.",
+        "formatHint": "Bruk HEX-format, for eksempel #F5C518. Ved dårlig kontrast brukes standardfarge.",
+        "invalidHex": "Bruk HEX-format, for eksempel #F5C518.",
+        "saved": "Farge lagret.",
+        "restoredDefault": "Standardfarge gjenopprettet.",
+        "saveFailed": "Kunne ikke lagre fargen."
+      }
+    },
+    "banner": {
+      "paused": {
+        "title": "Leverandøren er pauset",
+        "defaultReason": "Midlertidig pause"
+      },
+      "suspended": {
+        "title": "Leverandøren er suspendert",
+        "defaultReason": "Suspendert"
+      },
+      "contactPrefix": "Kontakt",
+      "contactSuffix": "for å løse opp."
+    },
     "registrations": {
       "page": {
         "eyebrow": "Leverandør",
