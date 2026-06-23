@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   PROVIDER_LOCALE_OPTIONS,
@@ -20,6 +21,7 @@ export default function ProviderOperationsForm({
   providerId: string;
   initial: ProviderOperationalSettings;
 }) {
+  const t = useTranslations("provider.settings.operations");
   const [state, setState] = useState<FormState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -42,11 +44,11 @@ export default function ProviderOperationsForm({
       const res = await saveProviderOperationalSettings(payload);
       if (res.ok) {
         setState("success");
-        setMessage("Driftsinnstillinger lagret.");
+        setMessage(t("saved"));
         return;
       }
       setState("error");
-      setMessage("error" in res ? res.error : "Kunne ikke lagre driftsinnstillingene akkurat nå.");
+      setMessage("error" in res ? res.error : t("saveFailed"));
     });
   }
 
@@ -56,7 +58,7 @@ export default function ProviderOperationsForm({
     <form className="lp-demo-form ds-provider-ops" onSubmit={onSubmit} noValidate>
       <div className="ds-provider-ops__grid">
         <div className="ds-provider-ops__field">
-          <label htmlFor="ops-operations-email">Ordre- og driftsepost</label>
+          <label htmlFor="ops-operations-email">{t("operationsEmailLabel")}</label>
           <input
             id="ops-operations-email"
             name="operationsEmail"
@@ -65,11 +67,11 @@ export default function ProviderOperationsForm({
             autoComplete="off"
             inputMode="email"
           />
-          <p className="ds-provider-ops__hint">Brukes som hovedmottaker for ordrevarsler og driftsbeskjeder.</p>
+          <p className="ds-provider-ops__hint">{t("operationsEmailHint")}</p>
         </div>
 
         <div className="ds-provider-ops__field">
-          <label htmlFor="ops-kitchen-email">Kjøkkenepost</label>
+          <label htmlFor="ops-kitchen-email">{t("kitchenEmailLabel")}</label>
           <input
             id="ops-kitchen-email"
             name="kitchenEmail"
@@ -78,11 +80,11 @@ export default function ProviderOperationsForm({
             autoComplete="off"
             inputMode="email"
           />
-          <p className="ds-provider-ops__hint">Brukes for produksjonsgrunnlag og kjøkkenvarsler.</p>
+          <p className="ds-provider-ops__hint">{t("kitchenEmailHint")}</p>
         </div>
 
         <div className="ds-provider-ops__field">
-          <label htmlFor="ops-delivery-email">Leveringsepost</label>
+          <label htmlFor="ops-delivery-email">{t("deliveryEmailLabel")}</label>
           <input
             id="ops-delivery-email"
             name="deliveryEmail"
@@ -91,23 +93,19 @@ export default function ProviderOperationsForm({
             autoComplete="off"
             inputMode="email"
           />
-          <p className="ds-provider-ops__hint">
-            Brukes for leveringsrelaterte varsler og meldinger når ordre er klare for levering.
-          </p>
+          <p className="ds-provider-ops__hint">{t("deliveryEmailHint")}</p>
         </div>
 
         <div className="ds-provider-ops__field">
-          <label htmlFor="ops-locale">Språk</label>
+          <label htmlFor="ops-locale">{t("localeLabel")}</label>
           <select id="ops-locale" name="locale" defaultValue={initial.locale}>
             {PROVIDER_LOCALE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
-                {o.label}
+                {t(`locales.${o.value}`)}
               </option>
             ))}
           </select>
-          <p className="ds-provider-ops__hint">
-            Styrer standard språk for leverandørens egne driftsflater når språkstøtte er tilgjengelig.
-          </p>
+          <p className="ds-provider-ops__hint">{t("localeHint")}</p>
         </div>
       </div>
 
@@ -118,7 +116,7 @@ export default function ProviderOperationsForm({
       ) : null}
 
       <button type="submit" className="ds-btn ds-btn--primary" disabled={pending || state === "loading"}>
-        {pending || state === "loading" ? "Lagrer…" : "Lagre driftsinnstillinger"}
+        {pending || state === "loading" ? t("saving") : t("save")}
       </button>
     </form>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import { removeProviderLogo, saveProviderLogo } from "@/lib/providers/saveProviderLogo";
 
@@ -21,6 +22,7 @@ export type ProviderLogoUploaderProps = {
 };
 
 export default function ProviderLogoUploader({ providerId, providerName, logoUrl }: ProviderLogoUploaderProps) {
+  const t = useTranslations("provider.settings.logo");
   const inputRef = useRef<HTMLInputElement>(null);
   const [currentLogo, setCurrentLogo] = useState<string | null>(logoUrl);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -40,11 +42,11 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
     if (!file) return;
 
     if (!ALLOWED_TYPES.has(file.type)) {
-      setStatus({ kind: "error", label: "Logoen må være PNG eller WebP. Bruk helst logo med transparent bakgrunn." });
+      setStatus({ kind: "error", label: t("invalidType") });
       return;
     }
     if (file.size > MAX_LOGO_BYTES) {
-      setStatus({ kind: "error", label: "Logoen er for stor. Maks størrelse er 2 MB." });
+      setStatus({ kind: "error", label: t("tooLarge") });
       return;
     }
 
@@ -52,29 +54,29 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
     fd.set("providerId", providerId);
     fd.set("file", file);
 
-    setStatus({ kind: "loading", label: "Laster opp…" });
+    setStatus({ kind: "loading", label: t("uploading") });
     startTransition(async () => {
       const res = await saveProviderLogo(fd);
       if (res.ok) {
         setCurrentLogo(res.logoUrl);
-        setStatus({ kind: "success", label: "Logo oppdatert." });
+        setStatus({ kind: "success", label: t("updated") });
         return;
       }
-      setStatus({ kind: "error", label: "error" in res ? res.error : "Kunne ikke laste opp." });
+      setStatus({ kind: "error", label: "error" in res ? res.error : t("uploadFailed") });
     });
   }
 
   function onRemove() {
     if (busy) return;
-    setStatus({ kind: "loading", label: "Fjerner…" });
+    setStatus({ kind: "loading", label: t("removing") });
     startTransition(async () => {
       const res = await removeProviderLogo(providerId);
       if (res.ok) {
         setCurrentLogo(null);
-        setStatus({ kind: "success", label: "Logo fjernet." });
+        setStatus({ kind: "success", label: t("removed") });
         return;
       }
-      setStatus({ kind: "error", label: "error" in res ? res.error : "Kunne ikke fjerne." });
+      setStatus({ kind: "error", label: "error" in res ? res.error : t("removeFailed") });
     });
   }
 
@@ -83,7 +85,7 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
       <div className="ds-provider-logo__preview" aria-hidden={currentLogo ? undefined : "true"}>
         {currentLogo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={currentLogo} alt={`Logo for ${providerName}`} />
+          <img src={currentLogo} alt={t("altWithProvider", { providerName })} />
         ) : (
           <span className="ds-provider-logo__initials" aria-hidden="true">
             {initials}
@@ -92,10 +94,7 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
       </div>
 
       <div className="ds-provider-logo__body">
-        <p className="ds-provider-logo__hint">
-          Anbefalt: logo i PNG eller WebP med transparent bakgrunn. Maks 2 MB. Ikke bruk matbilder, bannere,
-          skjermbilder, reklamegrafikk eller logo på rotete/farget bakgrunn.
-        </p>
+        <p className="ds-provider-logo__hint">{t("hint")}</p>
         <div className="ds-provider-logo__actions">
           <button
             type="button"
@@ -103,15 +102,15 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
             onClick={onPickFile}
             disabled={busy}
           >
-            {busy && status.kind === "loading" && status.label === "Laster opp…"
-              ? "Laster opp…"
+            {busy && status.kind === "loading" && status.label === t("uploading")
+              ? t("uploading")
               : currentLogo
-                ? "Bytt logo"
-                : "Last opp logo"}
+                ? t("replace")
+                : t("upload")}
           </button>
           {currentLogo ? (
             <button type="button" className="ds-provider-logo__remove" onClick={onRemove} disabled={busy}>
-              Fjern logo
+              {t("remove")}
             </button>
           ) : null}
         </div>
@@ -130,7 +129,7 @@ export default function ProviderLogoUploader({ providerId, providerName, logoUrl
         accept={ACCEPT}
         className="ds-provider-logo__input"
         onChange={onFileChange}
-        aria-label="Velg logofil"
+        aria-label={t("pickFile")}
         tabIndex={-1}
       />
     </div>

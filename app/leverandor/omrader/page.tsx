@@ -5,13 +5,14 @@ export const revalidate = 0;
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import ServiceAreasManager from "@/components/providers/ServiceAreasManager";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadServiceAreas } from "@/lib/providers/loadServiceAreas";
-import { PROVIDER_COVERAGE_COPY, providerCoverageSubheading } from "@/lib/providers/providerCoverageSurface";
+import { providerCoverageSubheading } from "@/lib/providers/providerCoverageSurface";
 
 export default async function LeverandorOmraderPage() {
   const auth = await getAuthContext();
@@ -26,14 +27,15 @@ export default async function LeverandorOmraderPage() {
 
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
   const rows = await loadServiceAreas(provider.id);
+  const t = await getTranslations("provider.coverage");
 
   return (
     <div className="ds-container ds-provider-service-areas-page">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">{PROVIDER_COVERAGE_COPY.eyebrow}</p>
-          <h1 className="ds-h2">{PROVIDER_COVERAGE_COPY.heading}</h1>
-          <p className="ds-lead">{providerCoverageSubheading(provider.name)}</p>
+          <p className="ds-eyebrow">{t("page.eyebrow")}</p>
+          <h1 className="ds-h2">{t("page.heading")}</h1>
+          <p className="ds-lead">{providerCoverageSubheading(provider.name, (key, values) => t(key, values))}</p>
         </div>
       </header>
       <ServiceAreasManager providerId={provider.id} rows={rows} canEdit={canEdit} />

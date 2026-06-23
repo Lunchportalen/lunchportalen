@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import { saveProviderSettings, type ProviderSettingsInput } from "@/lib/providers/saveProviderSettings";
 import type { Provider } from "@/lib/providers/types";
@@ -8,6 +9,7 @@ import type { Provider } from "@/lib/providers/types";
 type FormState = "idle" | "loading" | "success" | "error";
 
 export default function ProviderSettingsForm({ provider }: { provider: Provider }) {
+  const t = useTranslations("provider.settings.profile");
   const [state, setState] = useState<FormState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -29,11 +31,11 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
       const res = await saveProviderSettings(payload);
       if (res.ok) {
         setState("success");
-        setMessage("Innstillinger lagret.");
+        setMessage(t("saved"));
         return;
       }
       setState("error");
-      setMessage("error" in res ? res.error : "Kunne ikke lagre.");
+      setMessage("error" in res ? res.error : t("saveFailed"));
     });
   }
 
@@ -42,12 +44,12 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
 
   return (
     <form className="lp-demo-form" onSubmit={onSubmit} noValidate>
-      <p className="ds-lead">Profil for {provider.name}</p>
+      <p className="ds-lead">{t("leadWithProvider", { providerName: provider.name })}</p>
 
-      <label htmlFor="provider-name">Navn</label>
+      <label htmlFor="provider-name">{t("nameLabel")}</label>
       <input id="provider-name" name="name" defaultValue={provider.name} required autoComplete="organization" />
 
-      <label htmlFor="provider-email">Kontakt e-post</label>
+      <label htmlFor="provider-email">{t("emailLabel")}</label>
       <input
         id="provider-email"
         name="contactEmail"
@@ -57,7 +59,7 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
         autoComplete="email"
       />
 
-      <label htmlFor="provider-phone">Kontakt telefon</label>
+      <label htmlFor="provider-phone">{t("phoneLabel")}</label>
       <input id="provider-phone" name="contactPhone" type="tel" defaultValue={provider.contactPhone ?? ""} />
 
       {message ? (
@@ -67,7 +69,7 @@ export default function ProviderSettingsForm({ provider }: { provider: Provider 
       ) : null}
 
       <button type="submit" className="ds-btn ds-btn--primary" disabled={pending || state === "loading"}>
-        {pending || state === "loading" ? "Lagrer…" : "Lagre innstillinger"}
+        {pending || state === "loading" ? t("saving") : t("save")}
       </button>
     </form>
   );
