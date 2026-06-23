@@ -3,7 +3,13 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = process.cwd();
-const IMPORT_NEEDLE = "providerMenuPricePreview";
+/** Server-only resolver module — not client-safe Display/Api/Flag siblings. */
+const SERVER_PREVIEW_IMPORT =
+  /(?:from|import)\s*(?:\(\s*)?["'][^"']*\/providerMenuPricePreview["']/;
+
+function referencesServerPreviewModule(content: string): boolean {
+  return SERVER_PREVIEW_IMPORT.test(content);
+}
 
 const ALLOWED_IMPORTERS = new Set([
   path.normalize("lib/providers/providerMenuPricePreview.ts"),
@@ -52,7 +58,7 @@ describe("providerMenuPricePreview import boundary", () => {
 
     for (const file of walkDir(ROOT)) {
       const content = fs.readFileSync(file, "utf8");
-      if (!content.includes(IMPORT_NEEDLE)) continue;
+      if (!referencesServerPreviewModule(content)) continue;
 
       if (isAllowedImporter(file)) continue;
       if (rel(file).startsWith(`docs${path.sep}`)) continue;
@@ -72,7 +78,7 @@ describe("providerMenuPricePreview import boundary", () => {
       for (const file of walkDir(abs)) {
         if (isAllowedImporter(file)) continue;
         const content = fs.readFileSync(file, "utf8");
-        if (content.includes(IMPORT_NEEDLE)) {
+        if (referencesServerPreviewModule(content)) {
           offenders.push(rel(file));
         }
       }
@@ -89,7 +95,7 @@ describe("providerMenuPricePreview import boundary", () => {
     for (const file of walkDir(apiRoot)) {
       if (isAllowedImporter(file)) continue;
       const content = fs.readFileSync(file, "utf8");
-      if (content.includes(IMPORT_NEEDLE)) {
+      if (referencesServerPreviewModule(content)) {
         offenders.push(rel(file));
       }
     }
@@ -102,6 +108,6 @@ describe("providerMenuPricePreview import boundary", () => {
       path.join(ROOT, "lib/providers/providerMenuPriceConfig.ts"),
       "utf8",
     );
-    expect(src).not.toContain(IMPORT_NEEDLE);
+    expect(referencesServerPreviewModule(src)).toBe(false);
   });
 });

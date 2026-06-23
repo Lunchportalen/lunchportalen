@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 import ProviderMenuCatalogView from "@/components/providers/ProviderMenuCatalogView";
 import ProviderMenuCommandHeader from "@/components/providers/ProviderMenuCommandHeader";
+import ProviderMenuPricePreviewStrip from "@/components/providers/ProviderMenuPricePreviewStrip";
 import ProviderMenuEditorPanel from "@/components/providers/ProviderMenuEditorPanel";
 import ProviderMenuStatusRow from "@/components/providers/ProviderMenuStatusRow";
 import ProviderMenuWeekPlanner, {
@@ -51,6 +52,7 @@ import {
   validateEnterprisePublish,
   weekDatesFromStart,
 } from "@/lib/providers/providerMenuPackageSurface";
+import type { ProviderMenuPricePreviewDisplayPayload } from "@/lib/providers/providerMenuPricePreviewDisplay";
 import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
 
 import "@/app/styles/ds/provider-menu-editor.css";
@@ -80,6 +82,7 @@ type MenuWeekResponse = {
       providerOverride?: boolean;
     }>;
     prices: Record<PlanTier, ProviderMenuPriceView>;
+    pricePreview?: ProviderMenuPricePreviewDisplayPayload;
     catalog?: ProviderMenuCatalogSnapshot;
     orderCountsByDate?: Record<string, number>;
   };
@@ -131,6 +134,7 @@ export default function ProviderMenuBuilder() {
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
   const [selected, setSelected] = useState<WeekSelection | null>(null);
   const [prices, setPrices] = useState<Record<PlanTier, ProviderMenuPriceView> | null>(null);
+  const [pricePreview, setPricePreview] = useState<ProviderMenuPricePreviewDisplayPayload | null>(null);
   const [catalog, setCatalog] = useState<ProviderMenuCatalogSnapshot>(EMPTY_PROVIDER_MENU_CATALOG);
   const [slots, setSlots] = useState<Record<string, ResolvedProviderMenuSlot>>({});
   const [orderCountsByDate, setOrderCountsByDate] = useState<Record<string, number>>({});
@@ -181,6 +185,7 @@ export default function ProviderMenuBuilder() {
         return;
       }
       setPrices(json.data.prices);
+      setPricePreview(json.data.pricePreview ?? null);
       setCatalog(json.data.catalog ?? EMPTY_PROVIDER_MENU_CATALOG);
       setOrderCountsByDate(json.data.orderCountsByDate ?? {});
       const merged = mergeProviderMenuRowsIntoSlots(
@@ -501,6 +506,8 @@ export default function ProviderMenuBuilder() {
         workspaceView={workspaceView}
         onWorkspaceViewChange={setWorkspaceView}
       />
+
+      <ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />
 
       <ProviderMenuStatusRow
         weekStart={weekStart}

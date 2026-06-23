@@ -118,6 +118,19 @@
         "autoRolloutChip": "Auto-rollout aktiv",
         "daysPublished": "{count} dag(er) publisert"
       },
+      "preview": {
+        "ariaLabel": "Pris-preview diagnose",
+        "title": "Pris-preview",
+        "subtitle": "Kun diagnose — brukes ikke til ordre, margin eller publisering.",
+        "differs": "Avviker fra produksjonspris",
+        "sourceMarket": "Fra prisregler",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Blandet",
+        "taxEx": "eks. mva",
+        "taxInc": "inkl. mva",
+        "amountExSuffix": "kr eks. mva",
+        "amountIncSuffix": "kr inkl. mva"
+      },
       "week": {
         "plannerTitle": "Ukeplan",
         "plannerLead": "Felles varmrett per dag — generert standard du kan overstyre.",
