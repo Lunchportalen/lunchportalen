@@ -84,6 +84,48 @@
           "text": "Kun tilauksia saapuu, kokonaistilausarvo näkyy täällä.",
           "action": "Katso laskut"
         }
+      },
+      "activity": {
+        "registrationReceived": {
+          "title": "Uusi asiakasrekisteröinti vastaanotettu",
+          "description": "Yritys on rekisteröitynyt ja odottaa käsittelyä."
+        },
+        "registrationApproved": {
+          "title": "Asiakas hyväksytty",
+          "description": "Asiakasrekisteröinti on hyväksytty ja aktivoitu."
+        },
+        "registrationRejected": {
+          "title": "Asiakasrekisteröinti hylätty",
+          "description": "Asiakasrekisteröinti on käsitelty ja hylätty."
+        },
+        "agreementActivated": {
+          "title": "Sopimus aktivoitu",
+          "description": "Toimitussopimus on aktivoitu."
+        },
+        "agreementUpdated": {
+          "title": "Sopimus päivitetty",
+          "description": "Toimitussopimusta on muutettu."
+        },
+        "invoiceGenerated": {
+          "title": "Laskuperusta luotu",
+          "description": "Uusi laskuperusta on valmis tarkistettavaksi."
+        },
+        "orderReceived": {
+          "title": "Tilaus vastaanotettu",
+          "description": "Uusi tilaus on rekisteröity."
+        },
+        "orderCancelled": {
+          "title": "Tilaus peruutettu",
+          "description": "Tilaus on peruutettu."
+        },
+        "menuPublished": {
+          "title": "Menu julkaistu",
+          "description": "Menusisältö on julkaistu ja näkyy asiakkaille."
+        },
+        "settingsUpdated": {
+          "title": "Asetukset päivitetty",
+          "description": "Toimittajan asetuksia on muutettu."
+        }
       }
     },
     "menu": {
@@ -178,12 +220,16 @@
       },
       "errors": {
         "loadFailed": "Menua ei voitu ladata.",
-        "saveFailed": "Menua ei voitu tallentaa."
+        "saveFailed": "Menua ei voitu tallentaa.",
+        "copySourceEmpty": "Ei {tier}-menua kopioitavaksi tälle päivälle/kategorialle.",
+        "resetVarmrettFailed": "Lämmintä ateriaa ei voitu palauttaa.",
+        "publishConfirmRequired": "{warning} Vahvista julkaistaksesi silti."
       },
       "success": {
         "published": "Menu julkaistu.",
         "draftSaved": "Luonnos tallennettu.",
-        "resetVarmrett": "Lämmin ateria palautettu luotuun."
+        "resetVarmrett": "Lämmin ateria palautettu luotuun.",
+        "copiedFromTier": "Kopioitu tasosta {tier}. Lisää Enterprise-päivitys ennen julkaisua."
       },
       "price": {
         "exVatSuffix": "kr ilman ALV",
@@ -342,12 +388,30 @@
           "note": "Lisäproteiinia ja jälkiruoka/hedelmä premium-lisänä päivän lämpimään ateriaan"
         },
         "quickChoices": {
-          "protein": { "label": "Lisäproteiini", "note": "Lisäproteiinia päivän lämpimään ateriaan" },
-          "portion": { "label": "Suurempi annos", "note": "Suurempi annos päivän lämmintä ateriaa" },
-          "dessert": { "label": "Jälkiruoka/hedelmä", "note": "Jälkiruoka tai hedelmä premium-lisänä" },
-          "topping": { "label": "Premium-täyte", "note": "Premium-täyte päivän lämpimään ateriaan" },
-          "side": { "label": "Lisälisuke", "note": "Lisälisuke päivän lämpimään ateriaan" },
-          "season": { "label": "Kausipäivitys", "note": "Kausipohjainen Enterprise-päivitys päivän lämpimään ateriaan" }
+          "protein": {
+            "label": "Lisäproteiini",
+            "note": "Lisäproteiinia päivän lämpimään ateriaan"
+          },
+          "portion": {
+            "label": "Suurempi annos",
+            "note": "Suurempi annos päivän lämmintä ateriaa"
+          },
+          "dessert": {
+            "label": "Jälkiruoka/hedelmä",
+            "note": "Jälkiruoka tai hedelmä premium-lisänä"
+          },
+          "topping": {
+            "label": "Premium-täyte",
+            "note": "Premium-täyte päivän lämpimään ateriaan"
+          },
+          "side": {
+            "label": "Lisälisuke",
+            "note": "Lisälisuke päivän lämpimään ateriaan"
+          },
+          "season": {
+            "label": "Kausipäivitys",
+            "note": "Kausipohjainen Enterprise-päivitys päivän lämpimään ateriaan"
+          }
         },
         "upgradeTypes": {
           "PREMIUM_PROTEIN": "Premium-proteiini",
@@ -363,6 +427,1114 @@
           "basedOnLuxus": "Perustuu Luxus-tasoon",
           "ownEnterprise": "Oma Enterprise"
         }
+      }
+    },
+    "orders": {
+      "page": {
+        "eyebrow": "Tilaukset ja tuotanto",
+        "heading": "Tilaukset"
+      },
+      "filters": {
+        "dateGroupAria": "Jakso",
+        "statusGroupAria": "Status",
+        "groupingAria": "Ryhmittely",
+        "companyLabel": "Yritys",
+        "companyAll": "Kaikki yritykset",
+        "companyAria": "Suodata yrityksen mukaan",
+        "groupByCompany": "Yrityksen mukaan",
+        "groupByTime": "Ajan mukaan",
+        "date": {
+          "today": "Tänään",
+          "tomorrow": "Huomenna",
+          "week": "Koko viikko"
+        },
+        "status": {
+          "all": "Kaikki",
+          "received": "Vastaanotettu",
+          "production": "Tuotannossa",
+          "ready": "Valmis",
+          "delivered": "Toimitettu"
+        }
+      },
+      "status": {
+        "received": "Vastaanotettu",
+        "inProduction": "Tuotannossa",
+        "readyForDelivery": "Valmis toimitukseen",
+        "delivered": "Toimitettu",
+        "paused": "Tauolla",
+        "cancelled": "Peruutettu",
+        "other": "Muu"
+      },
+      "actions": {
+        "startProduction": "Aloita tuotanto",
+        "readyForDelivery": "Valmis toimitukseen",
+        "markDelivered": "Merkitse toimitetuksi",
+        "saving": "Tallennetaan…"
+      },
+      "empty": {
+        "title": {
+          "today": "Ei tilauksia tänään",
+          "tomorrow": "Ei tilauksia huomenna",
+          "week": "Ei tilauksia tällä viikolla",
+          "filtered": "Ei tilauksia valitulla statuksella"
+        },
+        "text": {
+          "default": "Valitulla jaksolla ei ole aktiivisia tilauksia.",
+          "filtered": "Valitulla statuksella ei ole tilauksia tällä jaksolla. Valitse «Kaikki» nähdäksesi kaikki tilaukset jaksolla."
+        },
+        "steps": {
+          "checkMenu": "Tarkista, että menu on julkaistu kyseisille päiville.",
+          "checkWeek": "Katso koko viikko, jos haluat tarkistaa tulevat toimitukset.",
+          "ordersAppear": "Uudet tilaukset näkyvät täällä tuotantopohjana sitä mukaa kun ne saapuvat."
+        }
+      },
+      "card": {
+        "deliveryGroupPrefix": "Toimitus",
+        "noLines": "Ei riviä rekisteröity",
+        "lineQuantity": "{quantity} kpl · {displayLine}",
+        "allergensPrefix": "Allergeenit: {list}",
+        "noteLabel": "Huomautus:",
+        "readOnlyNote": "Vain katselu — sinulla on lukuoikeus tilauksiin."
+      },
+      "errors": {
+        "notAuthenticated": "Et ole kirjautunut sisään.",
+        "orderNotFound": "Tilausta ei löytynyt.",
+        "kitchenRoleRequired": "Vain keittiörooli voi päivittää statusta.",
+        "updateFailed": "Statusta ei voitu päivittää.",
+        "unknown": "Jokin meni pieleen."
+      }
+    },
+    "customers": {
+      "page": {
+        "eyebrow": "Toimittaja",
+        "heading": "Yritykset",
+        "leadWithProvider": "Hallitse asiakasyrityksiä, sopimuksia ja toimitusasetuksia toimittajalle {providerName}.",
+        "leadDefault": "Hallitse asiakasyrityksiä, sopimuksia ja toimitusasetuksia."
+      },
+      "filters": {
+        "searchLabel": "Hae",
+        "searchPlaceholder": "Hae yrityksen nimellä",
+        "statusGroupAria": "Statussuodatin",
+        "all": "Kaikki",
+        "active": "Aktiivinen",
+        "paused": "Tauolla",
+        "suspended": "Suspendoitu",
+        "deleted": "Poistettu"
+      },
+      "status": {
+        "active": "Aktiivinen",
+        "paused": "Tauolla",
+        "suspended": "Suspendoitu",
+        "deleted": "Poistettu"
+      },
+      "table": {
+        "name": "Yritys",
+        "orgnr": "Y-tunnus",
+        "status": "Status",
+        "employees": "Työntekijät",
+        "ordersThisWeek": "Tilaukset tällä viikolla",
+        "historicalOrders": "Historia",
+        "invoice": "Lasku",
+        "lastUpdated": "Viimeksi päivitetty",
+        "actions": "Toiminnot"
+      },
+      "actions": {
+        "newCustomer": "Uusi asiakasyritys",
+        "newCustomerTitle": "Uudet asiakasyritykset tulevat hallitun rekisteröinnin kautta.",
+        "openCustomer": "Avaa asiakas",
+        "removeCustomer": "Poista asiakas",
+        "restoreCustomer": "Palauta asiakas"
+      },
+      "empty": {
+        "noResults": {
+          "title": "Ei osumia",
+          "text": "Kokeile toista yrityksen nimeä tai tyhjennä suodatin."
+        },
+        "noStatusMatch": {
+          "title": "Ei yrityksiä valitulla statuksella",
+          "text": "Vaihda statussuodatinta nähdäksesi enemmän asiakasyrityksiä."
+        },
+        "noneYet": {
+          "title": "Ei yrityksiä vielä",
+          "text": "Kun asiakasyritykset rekisteröidään ja hyväksytään, ne näkyvät täällä statuksineen, sopimuksineen ja tilauspohjineen."
+        }
+      },
+      "card": {
+        "mobileMeta": "{employees} työntekijää · {orders} tilausta tällä viikolla · {history} historiassa · Lasku: {invoice}",
+        "mobileUpdatedPrefix": "Viimeksi päivitetty",
+        "orgNrPrefix": "Y-tunnus: {orgnr}"
+      },
+      "pagination": {
+        "aria": "Sivutus",
+        "prev": "Edellinen",
+        "next": "Seuraava",
+        "oneCompany": "1 yritys",
+        "companies": "{count} yritystä",
+        "page": "Sivu {current}/{total} ({count} yhteensä)"
+      },
+      "create": {
+        "heading": "Uusi asiakasyritys",
+        "lead": "Asiakasyritysten suora luonti ei ole vielä käytettävissä. Uudet yritykset toimitusalueellasi saapuvat Rekisteröinnit-kohdasta kiinnostuksen ilmoitettuaan, ja näkyvät Yritykset-kohdassa hyväksynnän jälkeen.",
+        "backToCustomers": "Takaisin yrityksiin"
+      },
+      "errors": {
+        "notAuthenticated": "Et ole kirjautunut sisään.",
+        "providerAdminRequired": "Vain toimittajan ylläpitäjä voi suorittaa tämän toiminnon.",
+        "providerContextMissing": "Kirjautuneelle käyttäjälle ei löytynyt toimittajajäsenyyttä.",
+        "customerNotFound": "Asiakasta ei löytynyt.",
+        "invalidCustomer": "Asiakastunnus puuttuu.",
+        "reasonTooShort": "Syyn on oltava vähintään 20 merkkiä.",
+        "forbidden": "Sinulla ei ole käyttöoikeutta tähän asiakkaaseen.",
+        "outOfScope": "Asiakas ei kuulu toimittajaasi.",
+        "confirmMismatch": "Vahvistus ei täsmää.",
+        "hardDeleteBlocked": "Asiakasta ei voi poistaa pysyvästi.",
+        "alreadyArchived": "Asiakas on jo arkistoitu.",
+        "alreadyActive": "Asiakas on jo aktiivinen.",
+        "protectedSystem": "Järjestelmäorganisaatiota ei voi muuttaa täällä.",
+        "selfCustomer": "Toimittaja ei voi olla oma asiakkaansa.",
+        "validationFailed": "Virheellinen pyyntö.",
+        "invalidAgreement": "Sopimustiedot ovat virheelliset.",
+        "invalidPayload": "Kelvollisia muutoksia ei annettu.",
+        "noActiveAgreement": "Yrityksellä ei ole aktiivista sopimusta.",
+        "updateFailed": "Asiakasta ei voitu päivittää.",
+        "suspendFailed": "Asiakasta ei voitu suspendoida.",
+        "pauseFailed": "Asiakasta ei voitu keskeyttää.",
+        "removeFailed": "Asiakasta ei voitu poistaa.",
+        "restoreFailed": "Asiakasta ei voitu palauttaa.",
+        "loadRulesFailed": "Poistosääntöjä ei voitu ladata.",
+        "agreementLoadFailed": "Sopimusta ei voitu ladata.",
+        "agreementUpdateFailed": "Sopimusta ei voitu tallentaa.",
+        "unknown": "Jokin meni pieleen."
+      },
+      "detail": {
+        "eyebrow": "Asiakas",
+        "orgnrMissing": "Y-tunnusta ei rekisteröity",
+        "contactMissing": "—",
+        "agreementStatusMissing": "Ei aktiivista sopimusta",
+        "billingIncomplete": "Laskuperusta puutteellinen",
+        "vatNotSpecified": "Ei määritelty",
+        "billingPeriodLabel": "Viimeiset 30 päivää",
+        "grossOnlyNote": "Luvut näytetään ALV:n kanssa, koska tilauspohjasta puuttuu erillinen ALV-jako.",
+        "completeCommissionNote": "Provisio lasketaan liikevaihdosta ilman ALV:ta.",
+        "identityTitle": "Asiakastiedot",
+        "billingBasisTitle": "Laskuperusta",
+        "meta": {
+          "orgnr": "Y-tunnus",
+          "invoiceMethod": "Laskutustapa",
+          "agreementLevel": "Sopimustaso",
+          "status": "Status"
+        },
+        "kpis": {
+          "employees": "Työntekijät",
+          "activeOrders": "Aktiiviset tilaukset",
+          "orderHistory": "Tilaushistoria",
+          "revenue30Days": "Liikevaihto 30 päivää",
+          "commission5": "Provisio 5 %"
+        },
+        "actions": {
+          "editAgreement": "Muokkaa sopimusta",
+          "pause": "Keskeytä",
+          "suspend": "Suspendoi",
+          "removeCustomer": "Poista asiakas",
+          "restore": "Palauta",
+          "agreementUpdated": "Sopimus päivitetty."
+        },
+        "statusBanner": {
+          "suspendedDefault": "Asiakas on suspendoitu.",
+          "pausedDefault": "Asiakas on tauolla."
+        },
+        "readOnly": "Sinulla on vain lukuoikeus. Muutokset vaativat ylläpitäjän oikeudet.",
+        "labels": {
+          "orgnr": "Y-tunnus",
+          "contact": "Yhteystiedot",
+          "email": "Sähköposti",
+          "phone": "Puhelin",
+          "deliveryAddress": "Toimitusosoite",
+          "agreementStatus": "Sopimuksen status",
+          "period": "Jakso",
+          "ordersThisMonth": "Tilauspohja",
+          "revenueExVat": "Liikevaihto ilman ALV:ta",
+          "vat": "ALV",
+          "revenueIncVat": "Liikevaihto ALV:n kanssa",
+          "commissionBase": "Provisiopohja",
+          "commission": "Provisio 5 %",
+          "commissionRateValue": "5 %",
+          "invoiceMethod": "Laskutustapa",
+          "invoiceRecipient": "Laskun vastaanottaja",
+          "billingStatus": "Status"
+        },
+        "billingStatus": {
+          "ready": "Valmis laskuperustaa varten",
+          "missingVat": "ALV-jako puuttuu",
+          "missingRecipient": "Laskun vastaanottaja puuttuu",
+          "missingOrders": "Tilauspohja puuttuu"
+        },
+        "badges": {
+          "oneOrderThisMonth": "1 tilaus tässä kuussa",
+          "ordersThisMonth": "{count} tilausta tässä kuussa",
+          "commissionNotReady": "Provisio ei valmis",
+          "commissionAmount": "{amount} provisio",
+          "oneHistorical": "1 historiallinen",
+          "historical": "{count} historiallista",
+          "ordersSuffix": "tilausta"
+        },
+        "sections": {
+          "employees": "Työntekijät",
+          "orders": "Tilaukset",
+          "activity": "Toiminta",
+          "employeesEmpty": "Tälle asiakkaalle ei ole vielä rekisteröity työntekijöitä.",
+          "ordersEmpty": "Tälle asiakkaalle ei ole vielä rekisteröity tilauksia."
+        },
+        "employeesTable": {
+          "name": "Nimi",
+          "email": "Sähköposti",
+          "role": "Rooli"
+        }
+      },
+      "agreement": {
+        "sectionTitle": "Sopimus",
+        "activeTitle": "Aktiivinen asiakassopimus",
+        "inactiveTitle": "Asiakassopimus",
+        "deliveryDaysWarning": "Sopimus sisältää toimituspäiviä tavanomaisen lounastoimituksen ulkopuolella.",
+        "multipleActiveWarning": "Tälle asiakkaalle on rekisteröity useita aktiivisia sopimuksia.",
+        "packageMissing": "Ei vielä määritelty sopimusnäkymässä",
+        "packageMix": "Mix",
+        "locationMissing": "Toimitusosoitetta ei ole asetettu",
+        "notSpecified": "Ei määritelty",
+        "weekdaysRange": "Maanantai–perjantai",
+        "weekdays": {
+          "mon": "Maanantai",
+          "tue": "Tiistai",
+          "wed": "Keskiviikko",
+          "thu": "Torstai",
+          "fri": "Perjantai"
+        },
+        "periodFromTo": "Alkaen {from} päättyen {to}",
+        "periodFromOpen": "Alkaen {from} · Ei päättymispäivää",
+        "createdAt": "Luotu {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusWeekdaysTier": "Maanantai–perjantai · {tier}",
+        "dayMenusWeekdaysTierLine": "Maanantai–perjantai: {tier}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "status": {
+          "active": "Aktiivinen",
+          "pending": "Käsittelyssä",
+          "paused": "Tauolla",
+          "rejected": "Hylätty",
+          "closed": "Suljettu",
+          "unknown": "Tuntematon"
+        },
+        "labels": {
+          "status": "Status",
+          "created": "Luotu",
+          "period": "Sopimuskausi",
+          "deliveryDays": "Toimituspäivät",
+          "dayMenus": "Toimituspäivät ja menu",
+          "location": "Toimitusosoite",
+          "package": "Sopimustaso"
+        },
+        "empty": {
+          "title": "Ei sopimusta rekisteröity",
+          "text": "Kun asiakassopimus hyväksytään, toimituspäivät, sijainti ja sopimuksen sisältö näkyvät täällä."
+        }
+      },
+      "activity": {
+        "empty": {
+          "title": "Ei relevanttia asiakastoimintaa vielä näytettäväksi.",
+          "text": "Kun asiakas rekisteröityy, tilaa tai palautetaan, se näkyy täällä."
+        },
+        "events": {
+          "company_registration_submitted": {
+            "title": "Asiakasrekisteröinti vastaanotettu",
+            "summary": "Yritys lähetti sopimuspyynnön."
+          },
+          "company_registration_approved": {
+            "title": "Asiakas hyväksytty",
+            "summary": "Asiakasrekisteröinti hyväksytty ja aktivoitu."
+          },
+          "agreement_activated": {
+            "title": "Sopimus aktivoitu",
+            "summary": "Toimitussopimus aktivoitu."
+          },
+          "agreement_updated": {
+            "title": "Sopimus päivitetty",
+            "summary": "Toimitussopimusta muutettu."
+          },
+          "order_created": {
+            "title": "Tilaus rekisteröity",
+            "summary": "Uusi tilaus rekisteröity."
+          },
+          "order_received": {
+            "title": "Tilaus rekisteröity",
+            "summary": "Uusi tilaus rekisteröity."
+          },
+          "order_canceled": {
+            "title": "Tilaus peruutettu",
+            "summary": "Tilaus peruutettiin."
+          },
+          "order_cancelled": {
+            "title": "Tilaus peruutettu",
+            "summary": "Tilaus peruutettiin."
+          },
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Asiakas palautettu",
+                  "summary": "Asiakassuhde aktivoitu uudelleen."
+                },
+                "attempt": {
+                  "title": "Palautus aloitettu",
+                  "summary": "Asiakkaan palautusta yritettiin."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Asiakas arkistoitu",
+                  "summary": "Asiakas arkistoitu toimittajalla."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Asiakas poistettu",
+                  "summary": "Asiakas poistettu toimittajan listalta."
+                }
+              }
+            }
+          }
+        }
+      },
+      "lifecycle": {
+        "dialog": {
+          "closeAria": "Sulje valintaikkuna",
+          "reasonLabel": "Syy",
+          "reasonHint": "{current}/{min} merkkiä",
+          "reasonNeedMore": " — tarvitaan lisää merkkejä",
+          "cancel": "Peruuta",
+          "working": "Käsitellään…",
+          "suspend": {
+            "title": "Suspendoidaanko {name}?",
+            "confirm": "Suspendoi",
+            "description": "Anna selkeä syy (vähintään 20 merkkiä)."
+          },
+          "pause": {
+            "title": "Keskeytetäänkö {name}?",
+            "confirm": "Keskeytä",
+            "description": "Anna selkeä syy (vähintään 20 merkkiä)."
+          },
+          "delete": {
+            "title": "Poistetaanko {name}?",
+            "confirm": "Poista",
+            "description": "Tämä soft-poistaa asiakkaan. Tilaukset voivat vaikuttaa."
+          },
+          "resume": {
+            "title": "Palautetaanko {name}?",
+            "confirm": "Palauta",
+            "description": "Asiakas ja liittyvät tilaukset palautetaan mahdollisuuksien mukaan."
+          }
+        }
+      },
+      "dialogs": {
+        "adminEyebrow": "Asiakashallinta",
+        "closeAria": "Sulje",
+        "cancel": "Peruuta",
+        "working": "Käsitellään…",
+        "removal": {
+          "loadingRules": "Ladataan poistosääntöjä…",
+          "loadingDependencies": "Ladataan riippuvuuksia…",
+          "hardDeleteTitle": "Poista asiakas pysyvästi",
+          "hardDeleteBlockedTitle": "Asiakasta ei voi poistaa pysyvästi",
+          "archiveTitle": "Arkistoi asiakas",
+          "removeTitle": "Poista asiakas",
+          "hardDeleteLead": "Asiakkaalla ei ole operatiivista historiaa, ja se voidaan poistaa pysyvästi vahvistuksen jälkeen.",
+          "hardDeleteBlockedLead": "Tällä asiakkaalla on operatiivista historiaa, joka on säilytettävä.",
+          "chooseModeLead": "Valitse, arkistoidaanko asiakas vai poistetaanko pysyvästi.",
+          "loadRulesFailed": "Poistosääntöjä ei voitu ladata.",
+          "loadRulesFailedHttp": "Poistosääntöjä ei voitu ladata (HTTP {status}).",
+          "actionFailed": "Toiminto epäonnistui.",
+          "confirmLabel": "Vahvistus",
+          "confirmHint": "(kirjoita tarkalleen: {hint})",
+          "reasonOptional": "Syy (valinnainen)",
+          "archiveCustomer": "Arkistoi asiakas",
+          "hardDelete": "Poista pysyvästi",
+          "archiveAction": "Arkistoi asiakas"
+        },
+        "restore": {
+          "title": "Palauta asiakas",
+          "lead": "Tämä aktivoi asiakassuhteen uudelleen poistamatta historiaa.",
+          "confirmLabel": "Vahvistus",
+          "confirmHint": "(kirjoita tarkalleen: {hint})",
+          "actionFailed": "Asiakasta ei voitu palauttaa.",
+          "successDefault": "Asiakas palautettu.",
+          "restoreCustomer": "Palauta asiakas"
+        },
+        "agreementEdit": {
+          "title": "Muokkaa asiakassopimusta",
+          "loading": "Ladataan sopimusta…",
+          "loadFailed": "Sopimusta ei voitu ladata.",
+          "saveFailed": "Sopimusta ei voitu tallentaa.",
+          "save": "Tallenna muutokset",
+          "saving": "Tallennetaan…",
+          "updated": "Sopimus päivitetty.",
+          "updatedWithWarnings": "Sopimus päivitetty. {warnings}",
+          "dayMenusLegend": "Menu toimituspäivää kohti",
+          "dayMenusLead": "Valitse, mikä menu asiakkaalla on kullekin toimituspäivälle.",
+          "weekdaysOnlyNote": "Lounastoimitus maanantai–perjantai. Viikonloppuja ei tueta.",
+          "locationLegend": "Toimitusosoite",
+          "locationName": "Toimipaikan nimi",
+          "address": "Osoite",
+          "contactLegend": "Yhteyshenkilö",
+          "name": "Nimi",
+          "email": "Sähköposti",
+          "phone": "Puhelin",
+          "deliveryWindowLegend": "Toimitusikkuna",
+          "from": "Alkaen",
+          "to": "Päättyen",
+          "billingLegend": "Laskutus",
+          "invoiceEmail": "Sähköposti",
+          "invoiceEmailField": "Laskusähköposti",
+          "ehf": "EHF",
+          "orgnr": "Y-tunnus",
+          "ehfEndpoint": "EHF-päätepiste (sähköinen lasku)",
+          "billingContact": "Laskutusyhteystiedot",
+          "statusLegend": "Status",
+          "statusActive": "Aktiivinen",
+          "statusPaused": "Tauolla",
+          "deliveryNote": "Toimitusohje",
+          "reasonOptional": "Syy (valinnainen, tallennetaan audit-lokiin)",
+          "validation": {
+            "pickDeliveryDay": "Valitse vähintään yksi toimituspäivä.",
+            "pickMenuForDay": "Valitse menu päivälle {day}.",
+            "invalidEmail": "Virheellinen sähköpostiosoite.",
+            "invoiceEmailRequired": "Laskusähköpostin on oltava kelvollinen sähköpostiosoite.",
+            "ehfEndpointRequired": "EHF-päätepiste on pakollinen.",
+            "orgnrLength": "Y-tunnuksen on oltava 9 numeroa.",
+            "invalidBillingEmail": "Virheellinen sähköposti laskutusyhteystiedoille."
+          }
+        }
+      }
+    },
+    "coverage": {
+      "page": {
+        "eyebrow": "Toimittaja",
+        "heading": "Toimitusalueet",
+        "leadWithProvider": "Toimitusalueet määrittävät, mitkä yritykset voivat lähettää pyynnön toimittajalle {providerName}. Käytä niitä postinumeroiden, vähimmäistyöntekijämäärän ja toimituspäivien määrittelyyn.",
+        "leadNoProvider": "Toimitusalueet määrittävät, mitkä yritykset voivat lähettää pyynnön toimittajalle. Käytä niitä postinumeroiden, vähimmäistyöntekijämäärän ja toimituspäivien määrittelyyn."
+      },
+      "actions": {
+        "newArea": "Uusi toimitusalue",
+        "newAreaTitle": "Lisää uusi toimitusalue toimittajalle.",
+        "readOnlyNote": "Sinulla on vain lukuoikeus. Muutokset vaativat ylläpitäjän oikeudet.",
+        "edit": "Muokkaa",
+        "activate": "Aktivoi",
+        "deactivate": "Deaktivoi",
+        "deactivateTitle": "Uudet yritykset tällä alueella eivät voi valita toimittajaa, kun alue on deaktivoitu. Olemassa olevia sopimuksia ei muuteta automaattisesti.",
+        "activateTitle": "Tee alueesta jälleen saatavilla uusille yrityspyynnöille.",
+        "cancel": "Peruuta",
+        "closeDrawer": "Sulje",
+        "createArea": "Luo alue",
+        "saveChanges": "Tallenna muutokset",
+        "saving": "Tallennetaan…"
+      },
+      "table": {
+        "area": "Alue",
+        "postalCodes": "Postinumerot",
+        "minEmployees": "Min. työntekijät",
+        "deliveryDays": "Toimituspäivät",
+        "status": "Status"
+      },
+      "summary": {
+        "noneActive": "Ei aktiivisia toimitusalueita",
+        "oneActive": "1 aktiivinen toimitusalue",
+        "manyActive": "{count} aktiivista toimitusaluetta",
+        "inactiveSuffix": " · {count} ei aktiivinen"
+      },
+      "status": {
+        "active": "Aktiivinen",
+        "inactive": "Ei aktiivinen",
+        "paused": "Tauolla",
+        "unknown": "Tuntematon"
+      },
+      "weekdays": {
+        "mon": "Ma",
+        "tue": "Ti",
+        "wed": "Ke",
+        "thu": "To",
+        "fri": "Pe",
+        "weekdaysRange": "Maanantai–perjantai"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesRange": "{min}–{max}",
+        "employeesMin": "{min}+",
+        "employeesMax": "≤{max}"
+      },
+      "empty": {
+        "title": "Ei toimitusalueita vielä",
+        "text": "Lisää toimitusalue hallitaksesi, mitkä yritykset voivat lähettää pyynnön toimittajalle.",
+        "step1": "Määritä postinumerot tai alue.",
+        "step2": "Aseta vähimmäistyöntekijämäärä.",
+        "step3": "Valitse toimituspäivät alueelle."
+      },
+      "form": {
+        "editTitle": "Muokkaa aluetta",
+        "createTitle": "Lisää alue",
+        "cityLabel": "Paikkakunta / alue",
+        "postalFrom": "Postinumero alkaen",
+        "postalTo": "Postinumero päättyen",
+        "minEmployees": "Min. työntekijät",
+        "maxEmployees": "Maks. työntekijät (valinnainen)",
+        "deliveryDaysLegend": "Toimituspäivät",
+        "activeToggle": "Aktiivinen alue (käytetään rekisteröintiosumissa)"
+      },
+      "errors": {
+        "notAuthenticated": "Et ole kirjautunut sisään.",
+        "providerAdminRequired": "Vain toimittajan ylläpitäjä voi muuttaa toimitusalueita.",
+        "forbidden": "Sinulla ei ole oikeutta muuttaa tätä aluetta.",
+        "validationFailed": "Virheellinen lomake.",
+        "cityRequired": "Paikkakunta on pakollinen.",
+        "invalidPostalFrom": "Alkupostinumeron on oltava 4 numeroa.",
+        "invalidPostalTo": "Loppupostinumeron on oltava 4 numeroa.",
+        "invalidPostalRange": "Alkupostinumero ei voi olla suurempi kuin loppupostinumero.",
+        "deliveryDaysRequired": "Valitse vähintään yksi päivä.",
+        "invalidEmployeeRange": "Minimi ei voi olla suurempi kuin maksimi.",
+        "invalidPostalCode": "Postinumeron on oltava 4 numeroa.",
+        "postalRangeInvalid": "Alkupostinumero ei voi olla suurempi kuin loppupostinumero.",
+        "employeeRangeInvalid": "Virheellinen työntekijäväli.",
+        "postalOverlap": "Postinumeroalue päällekkäin olemassa olevan aktiivisen alueen kanssa.",
+        "serviceAreaNotFound": "Aluetta ei löytynyt.",
+        "saveFailed": "Aluetta ei voitu tallentaa. Yritä uudelleen.",
+        "toggleFailed": "Statusta ei voitu päivittää.",
+        "unknown": "Jokin meni pieleen. Yritä uudelleen."
+      }
+    },
+    "settings": {
+      "page": {
+        "eyebrow": "Toimittaja",
+        "heading": "Asetukset",
+        "leadWithProvider": "Profiili ja yhteystiedot: {providerName}.",
+        "readOnly": "Sinulla on vain lukuoikeus. Asetuksia voi muuttaa vain ylläpitäjä.",
+        "brandSection": "Logo ja brändi",
+        "brandIntro": "Lataa logo ja valitse hallittu korostusväri. Lunchportalen säilyttää asettelun, typografian ja tuotteen ilmeen.",
+        "logoHeading": "Logo",
+        "logoIntro": "Käytä selkeää logoa läpinäkyvällä taustalla. Logo näytetään hallitusti toimittajavalikossa.",
+        "logoNote": "Logot, jotka eivät noudata alustan visuaalista standardia, voidaan hylätä.",
+        "colorHeading": "Pääväri",
+        "colorIntro": "Valitse toimittajan korostusväri. Väriä käytetään vain hallituissa yksityiskohdissa.",
+        "operationsSection": "Toiminta ja ilmoitukset",
+        "operationsIntro": "Syötä sähköpostiosoitteet, joihin tämän toimittajan tilaukset, keittiölistat ja toimitusilmoitukset lähetetään. Nämä asetukset koskevat vain tätä cateringyritystä.",
+        "operationsNote": "Cateringyrityksen on itse syötettävä sähköpostiosoitteet, joihin tilaukset, keittiölistat ja toimitusilmoitukset lähetetään. Lunchportalen ei lähetä toimittajan operatiivisia sähköposteja alustalle oletuksena — puuttuva sähköposti on täytettävä tähän.",
+        "accountingSection": "Kirjanpito",
+        "accountingIntro": "Yhdistä Tripletex automaattista laskutusta ja maksustatusta varten norjalaisen kirjanpitointegraation kautta.",
+        "tripletexSetup": "Tripletex-asetus"
+      },
+      "profile": {
+        "leadWithProvider": "Profiili: {providerName}",
+        "nameLabel": "Nimi",
+        "emailLabel": "Yhteys-sähköposti",
+        "phoneLabel": "Yhteys-puhelin",
+        "save": "Tallenna asetukset",
+        "saving": "Tallennetaan…",
+        "saved": "Asetukset tallennettu.",
+        "errors": {
+          "notAuthenticated": "Et ole kirjautunut sisään.",
+          "providerNotFound": "Toimittaja puuttuu.",
+          "forbidden": "Ei käyttöoikeutta.",
+          "nameRequired": "Nimi on pakollinen.",
+          "emailRequired": "Kelvollinen sähköposti on pakollinen.",
+          "saveFailed": "Asetuksia ei voitu tallentaa.",
+          "unknown": "Odottamaton virhe tallennuksessa."
+        }
+      },
+      "operations": {
+        "operationsEmailLabel": "Tilaus- ja toimintasähköposti",
+        "operationsEmailHint": "Käytetään päävastaanottajana tilausilmoituksille ja toimintaviestille.",
+        "kitchenEmailLabel": "Keittiösähköposti",
+        "kitchenEmailHint": "Käytetään tuotantopohjaan ja keittiöilmoituksiin.",
+        "deliveryEmailLabel": "Toimitussähköposti",
+        "deliveryEmailHint": "Käytetään toimitukseen liittyviin ilmoituksiin ja viesteihin, kun tilaukset ovat valmiina toimitukseen.",
+        "localeLabel": "Kieli",
+        "localeHint": "Määrittää oletuskielen toimittajan omille toimintanäkymille, kun kielituki on käytettävissä.",
+        "save": "Tallenna toiminta-asetukset",
+        "saving": "Tallennetaan…",
+        "saved": "Toiminta-asetukset tallennettu.",
+        "locales": {
+          "nb-NO": "Norja (bokmål)",
+          "en-GB": "English",
+          "sv-SE": "Ruotsi",
+          "da-DK": "Tanska"
+        },
+        "errors": {
+          "notAuthenticated": "Et ole kirjautunut sisään.",
+          "providerNotFound": "Toimittaja puuttuu.",
+          "forbidden": "Ei käyttöoikeutta.",
+          "invalidEmail": "Virheellinen sähköpostiosoite.",
+          "emailTooLong": "Sähköpostiosoite on liian pitkä.",
+          "invalidLocale": "Virheellinen kielivalinta.",
+          "saveFailed": "Toiminta-asetuksia ei voitu tallentaa juuri nyt.",
+          "unknown": "Toiminta-asetuksia ei voitu tallentaa juuri nyt."
+        }
+      },
+      "logo": {
+        "hint": "Suositeltu: PNG- tai WebP-logo läpinäkyvällä taustalla. Enintään 2 MB. Älä käytä ruokakuvia, bannereita, kuvakaappauksia, mainosgrafiikkaa tai logoa sekavalla/värikkäällä taustalla.",
+        "upload": "Lataa logo",
+        "replace": "Vaihda logo",
+        "remove": "Poista logo",
+        "pickFile": "Valitse logotiedosto",
+        "altWithProvider": "Logo: {providerName}",
+        "uploading": "Ladataan…",
+        "removing": "Poistetaan…",
+        "updated": "Logo päivitetty.",
+        "removed": "Logo poistettu.",
+        "errors": {
+          "notAuthenticated": "Et ole kirjautunut sisään.",
+          "invalidProvider": "Virheellinen toimittaja.",
+          "forbidden": "Ei käyttöoikeutta.",
+          "noFileSelected": "Valitse logotiedosto.",
+          "unsupportedFileType": "Logon on oltava PNG tai WebP. Suosi logoa läpinäkyvällä taustalla.",
+          "fileTooLarge": "Logo on liian suuri. Enimmäiskoko on 2 MB.",
+          "uploadUnavailable": "Lataus ei ole juuri nyt käytettävissä.",
+          "uploadFailed": "Logoa ei voitu ladata.",
+          "removeFailed": "Logoa ei voitu poistaa.",
+          "saveFailed": "Logoa ei voitu tallentaa.",
+          "urlFailed": "Logo-URL:ia ei voitu hakea.",
+          "unknown": "Odottamaton virhe latauksessa."
+        }
+      },
+      "brand": {
+        "hexLabel": "HEX-koodi",
+        "save": "Tallenna väri",
+        "saving": "Tallennetaan…",
+        "sampleHint": "Näin väriä käytetään: pienenä korostuksena menussa ja yksityiskohdissa.",
+        "formatHint": "Käytä HEX-muotoa, esimerkiksi #F5C518. Heikolla kontrastilla käytetään oletusväriä.",
+        "saved": "Väri tallennettu.",
+        "restoredDefault": "Oletusväri palautettu.",
+        "errors": {
+          "notAuthenticated": "Et ole kirjautunut sisään.",
+          "invalidProvider": "Virheellinen toimittaja.",
+          "forbidden": "Ei käyttöoikeutta.",
+          "invalidHex": "Käytä HEX-muotoa, esimerkiksi #F5C518.",
+          "contrastTooWeak": "Värillä on liian heikko kontrasti eikä sitä voi käyttää. Valitse tummempi väri.",
+          "saveFailed": "Väriä ei voitu tallentaa.",
+          "unknown": "Odottamaton virhe tallennuksessa."
+        }
+      }
+    },
+    "banner": {
+      "paused": {
+        "title": "Toimittaja on tauolla",
+        "defaultReason": "Väliaikainen tauko"
+      },
+      "suspended": {
+        "title": "Toimittaja on keskeytetty",
+        "defaultReason": "Keskeytetty"
+      },
+      "contactPrefix": "Ota yhteyttä",
+      "contactSuffix": "ratkaistaksesi asian."
+    },
+    "billing": {
+      "page": {
+        "eyebrow": "Toimittaja",
+        "heading": "Laskut ja tilitys",
+        "subheading": "Yleiskatsaus laskuperustaan, provisioon ja tilitykseen toimittajan ja Lunchportalenin välillä."
+      },
+      "summary": {
+        "settlementStatus": "Tilitysstatus",
+        "commission": "Provisio",
+        "nextSettlement": "Seuraava tilitys",
+        "activateHint": "Ota yhteyttä Lunchportaleniin aktivoidaksesi.",
+        "commissionPending": "Näytetään, kun tilitys on aktivoitu",
+        "nextSettlementNone": "Ei aikataulutettu"
+      },
+      "notActivated": {
+        "title": "Tilitys ei ole aktivoitu",
+        "text": "Tilitys ei ole vielä aktivoitu tälle toimittajalle. Ota yhteyttä Lunchportaleniin aktivoidaksesi tilityssopimuksen ja laskuperustan."
+      },
+      "commissionNote": "Lunchportalen laskee 5 % provision myydystä annoksesta, kun tilitys on aktivoitu.",
+      "agreement": {
+        "activeEyebrow": "Aktiivinen tilityssopimus",
+        "netPerMonth": "Netto / kk",
+        "vatLabel": "ALV ({rate} %)",
+        "totalPerMonth": "Yhteensä / kk",
+        "invoiceSentTo": "Lasku lähetetään",
+        "orgNrSuffix": " · y-tunnus {orgNumber}"
+      },
+      "history": {
+        "title": "Laskuperusta ja tilitys",
+        "emptyTitle": "Laskuperustaa ei ole vielä luotu",
+        "emptyText": "Kun tilitys on aktivoitu ja perusta valmis, laskuperusta, provisio, summat, status ja eräpäivät näkyvät täällä."
+      },
+      "invoice": {
+        "table": {
+          "period": "Jakso",
+          "amount": "Summa",
+          "status": "Status",
+          "dueDate": "Eräpäivä"
+        },
+        "noNumber": "Ei numeroa",
+        "drawerTitle": "Lasku {number}",
+        "net": "Netto",
+        "vat": "ALV",
+        "total": "Yhteensä",
+        "status": "Status",
+        "sent": "Lähetetty",
+        "paid": "Maksettu",
+        "downloadPdfSoon": "Lataa PDF (tulossa)",
+        "downloadPdfIntegrationTitle": "Tulossa Tripletexin kanssa (norjalainen kirjanpitointegraatio)"
+      },
+      "status": {
+        "settlement": {
+          "active": "Aktiivinen",
+          "notActivated": "Ei aktivoitu"
+        },
+        "invoice": {
+          "DRAFT": "Luonnos",
+          "SENT": "Lähetetty",
+          "PAID": "Maksettu",
+          "OVERDUE": "Erääntynyt",
+          "VOID": "Mitätöity",
+          "unknown": "Tuntematon"
+        }
+      },
+      "plan": {
+        "SAAS_FIXED": "Kiinteä kuukausihinta",
+        "SAAS_PER_COMPANY": "Hinta yritystä kohti",
+        "CUSTOM": "Mukautettu sopimus"
+      },
+      "actions": {
+        "details": "Tiedot",
+        "close": "Sulje",
+        "closeDrawer": "Sulje"
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "contact": {
+        "editButton": "Muokkaa laskutusyhteystietoa",
+        "title": "Laskutusyhteystiedot",
+        "emailLabel": "Laskusähköposti",
+        "orgLabel": "Y-tunnus (valinnainen)",
+        "addressLabel": "Laskutusosoite (valinnainen)",
+        "cancel": "Peruuta",
+        "save": "Tallenna",
+        "saving": "Tallennetaan…",
+        "saved": "Laskutusyhteystiedot päivitetty.",
+        "saveFailed": "Tallennus epäonnistui."
+      },
+      "errors": {
+        "notAuthenticated": "Et ole kirjautunut sisään.",
+        "providerAdminRequired": "Vain toimittajan ylläpitäjä voi muuttaa laskutusyhteystietoja.",
+        "forbidden": "Sinulla ei ole käyttöoikeutta.",
+        "invalidEmail": "Virheellinen laskusähköposti.",
+        "activeSubscriptionNotFound": "Ei aktiivista tilausta päivitettäväksi.",
+        "saveFailed": "Laskutusyhteystietoja ei voitu tallentaa.",
+        "unknown": "Jokin meni pieleen. Yritä uudelleen."
+      }
+    },
+    "tripletex": {
+      "brand": "Tripletex",
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "status": {
+          "eyebrow": "Tripletex",
+          "heading": "Yhteystila",
+          "subheading": "Yleiskatsaus yhteydestä, webhookista ja viimeaikaisesta toiminnasta.",
+          "fallbackHeading": "Tripletex-status",
+          "noAccess": "Sinulla ei ole käyttöoikeutta tähän toimittajaan."
+        },
+        "connect": {
+          "heading": "Yhdistä Tripletex",
+          "adminRequired": "Vain toimittajan ylläpitäjä voi yhdistää Tripletexin.",
+          "degraded": {
+            "heading": "Tripletex vaatii huomiota",
+            "body": "Yhteys on heikentynyt. Uudelleenmääritysprosessi tulossa TPT-B-7b-edge -vaiheessa.",
+            "badge": "Vaatii huomiota"
+          },
+          "disconnected": {
+            "heading": "Tripletex on irrotettu",
+            "body": "Palautusprosessi ilman uutta tokenia tulossa TPT-B-7b-edge -vaiheessa.",
+            "badge": "Irrotettu"
+          }
+        }
+      },
+      "state": {
+        "CONNECTED": "Yhdistetty",
+        "CONFIGURING": "Määrittää…",
+        "DEGRADED": "Vaatii huomiota",
+        "DISCONNECTED": "Irrotettu",
+        "NOT_CONNECTED": "Ei yhdistetty"
+      },
+      "activity": {
+        "onboarding_connection_started": "Yhteys aloitettu",
+        "onboarding_provisioning_completed": "Asennus valmis",
+        "onboarding_customer_skipped": "Asiakas ohitettu",
+        "onboarding_finalized": "Yhteys valmis",
+        "onboarding_disconnected": "Tripletex irrotettu",
+        "onboarding_reconnect_initiated": "Palautus aloitettu",
+        "onboarding_test_token": "Yhteys testattu",
+        "onboarding_vault_purged": "Tunnistetiedot poistettu",
+        "state_change_connected": "Status muutettu: yhdistetty",
+        "state_change_degraded": "Status muutettu: vaatii huomiota",
+        "state_change_disconnected": "Status muutettu: irrotettu",
+        "state_change_configuring": "Status muutettu: määrittää",
+        "state_change_generic": "Yhteystila muutettu"
+      },
+      "status": {
+        "sections": {
+          "resources": "Resurssit Tripletexissä",
+          "webhook": "Webhook",
+          "activity": "Toiminta viimeiset 30 päivää",
+          "actions": "Toiminnot"
+        },
+        "hero": {
+          "configureWebhook": "Määritä webhook →",
+          "continueSetup": "Jatka asennusta →",
+          "reconnect": "Yhdistä uudelleen →",
+          "reconfigure": "Määritä uudelleen →",
+          "since": "Alkaen {datetime}",
+          "lastHealthCheck": "Viimeisin terveystarkistus: {relative}",
+          "credentialsPurge": "Tunnistetiedot poistetaan {datetime}",
+          "daysUntilPurge": "{days} päivän kuluttua"
+        },
+        "cards": {
+          "products": "Tuotteet",
+          "productsMeta": "Yhdistetyt ateriatuotteet",
+          "customers": "Asiakkaat",
+          "customersMeta": "Yrityslinkit Tripletexissä",
+          "vatCodes": "ALV-koodit",
+          "vatCodesMeta": "Käytössä olevat verokoodit"
+        },
+        "webhook": {
+          "subscriptions": "Rekisteröidyt tilaukset",
+          "activeCount": "{count} aktiivista Tripletexissä",
+          "noneRegistered": "Ei vielä rekisteröity",
+          "eventTypes": "Tapahtumatyypit",
+          "lastReceived": "Viimeksi vastaanotettu",
+          "noEventsYet": "Ei tapahtumia vielä",
+          "last30Days": "Viimeiset 30 päivää",
+          "eventsCount": "{count} tapahtumaa",
+          "secretRotated": "Salaisuus kierrätetty",
+          "notRotated": "Ei kierrätetty",
+          "copy": "Kopioi",
+          "copied": "Kopioitu",
+          "copyFailed": "Kopiointi epäonnistui"
+        },
+        "activityStats": {
+          "invoicesSent": "Lähetetyt laskut",
+          "invoicesPaid": "Maksetut laskut",
+          "workerFailures": "Epäonnistuneet pushit",
+          "webhookEvents": "Webhookit",
+          "recentHeading": "Viimeisimmät tapahtumat",
+          "empty": "Ei tapahtumia vielä rekisteröity."
+        },
+        "actions": {
+          "adminNote": "Vain toimittajan ylläpitäjä voi suorittaa nämä toiminnot.",
+          "testConnection": "Testaa yhteys",
+          "rotateSecret": "Kierrätä webhook-salaisuus",
+          "disconnect": "Irrota →"
+        },
+        "modals": {
+          "close": "Sulje",
+          "copy": "Kopioi",
+          "copied": "Kopioitu",
+          "copyFailed": "Kopiointi epäonnistui",
+          "ok": "OK",
+          "failed": "Epäonnistui",
+          "test": {
+            "title": "Testaa yhteys",
+            "body": "Suorittaa täyden 3-vaiheisen vahvistuksen Tripletexiä vastaan tallennetuilla tunnistetiedoilla.",
+            "stepAuth": "Todennus",
+            "stepCompany": "Yritys",
+            "stepScope": "Käyttöoikeus",
+            "run": "Suorita testi",
+            "running": "Testataan…"
+          },
+          "rotate": {
+            "title": "Kierrätä webhook-salaisuus",
+            "body": "Luo uuden salaisuuden ja päivittää Tripletex-tilauksen, kun asennus valmistuu.",
+            "generate": "Luo uusi salaisuus",
+            "generating": "Luodaan…"
+          },
+          "disconnect": {
+            "title": "Irrota Tripletex",
+            "body": "Yhteys asetetaan irrotetuksi. Tunnistetiedot säilytetään 30 päivää, jotta voit yhdistää uudelleen ilman uutta tokenia. Sen jälkeen ne poistetaan pysyvästi.",
+            "confirm": "Vahvista irrottaminen",
+            "confirming": "Irrotetaan…"
+          }
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Yhdistä Tripletex",
+        "leadForProvider": "Toimittajalle {providerName}",
+        "progress": {
+          "token": "Token",
+          "verify": "Vahvista",
+          "setup": "Asennus",
+          "webhook": "Webhook",
+          "done": "Valmis",
+          "ariaLabel": "Vaihe {current}/{total}: {label}"
+        },
+        "steps": {
+          "token": {
+            "eyebrow": "Vaihe 1/5",
+            "title": "Liitä ja vahvista",
+            "intro": "Luo Employee Token Tripletexissä kohdassa Yritys → API-käyttöoikeus. Liitä Company ID URL:sta (contextId) ja token alle.",
+            "companyIdLabel": "Tripletex Company ID",
+            "companyIdHelp": "Muoto: 6–12 numeroa. Löydät sen URL:sta: contextId=…",
+            "companyIdInvalid": "Company ID:n on oltava 6–12 numeroa.",
+            "tokenLabel": "Employee Token",
+            "tokenHintPending": "Token lähetetään palvelimelle vain vahvistuksen ja tallennuksen yhteydessä.",
+            "tokenHintVerified": "Token vahvistettu ja valmis tallennettavaksi.",
+            "tokenMissing": "Liitä Employee Token Tripletexistä.",
+            "verify": "Vahvista",
+            "verifying": "Vahvistetaan…",
+            "retry": "Yritä uudelleen",
+            "continue": "Jatka",
+            "connecting": "Yhdistetään…",
+            "checksFailed": "Yksi tai useampi tarkistus epäonnistui. Korjaa ja yritä uudelleen.",
+            "tokenMissingOnContinue": "Token puuttuu. Vahvista uudelleen.",
+            "notRun": "Ei suoritettu"
+          },
+          "provisioning": {
+            "eyebrow": "Vaihe 3/5",
+            "title": "Tripletex-asennus käynnissä",
+            "intro": "Tämä kestää yleensä 10–30 sekuntia.",
+            "starting": "Aloitetaan asennus…",
+            "waiting": "Odotetaan Tripletex-asennusta…",
+            "complete": "Asennus valmis.",
+            "syncing": "Synkronoidaan ALV-koodeja, tuotteita ja asiakkaita…",
+            "timeout": "Jokin kesti odotettua kauemmin.",
+            "timeoutHint": "Asennus jatkuu taustalla. Voit sulkea sivun ja palata myöhemmin.",
+            "contactSupport": "Ota yhteyttä tukeen",
+            "vatSync": "ALV-koodeja synkronoidaan",
+            "productsCreate": "Tuotteita luodaan",
+            "customersSync": "Asiakkaita synkronoidaan"
+          },
+          "webhook": {
+            "eyebrow": "Vaihe 4/5",
+            "title": "Webhook-rekisteröinti",
+            "intro": "Lunchportalen rekisteröi webhook-tilaukset Tripletexiin automaattisesti. Sinun ei tarvitse liittää URL:ia tai salaisuutta manuaalisesti.",
+            "preparing": "Valmistellaan webhook-salaisuutta…",
+            "ready": "Valmis. Napsauta «Viimeistele asennus» rekisteröidäksesi webhookin ja viimeistelläksesi yhteyden.",
+            "prepareFailed": "Webhook-salaisuutta ei voitu valmistella.",
+            "registering": "Rekisteröidään webhook Tripletexiin…",
+            "finalize": "Viimeistele asennus",
+            "finalizing": "Viimeistellään…"
+          },
+          "success": {
+            "eyebrow": "Vaihe 5/5",
+            "title": "✓ Tripletex on yhdistetty",
+            "companyPrefix": "Yritys:",
+            "canNow": "Voit nyt:",
+            "bulletInvoices": "Lähetä laskut automaattisesti Tripletexiin",
+            "bulletPayments": "Vastaanota maksustatus webhookin kautta",
+            "bulletStatus": "Näytä yhteystila ja historia",
+            "viewInvoices": "Näytä laskuhistoria",
+            "viewStatus": "Näytä yhteystila",
+            "backToSettings": "Takaisin yleiskatsaukseen"
+          }
+        },
+        "verify": {
+          "auth": "Testataan todennusta",
+          "companyMatch": "Vahvistetaan Company ID -vastaavuus",
+          "scope": "Testataan oikeuksia",
+          "authOk": "Yhteys OK",
+          "companyOk": "Oikea yritys",
+          "scopeOk": "Käyttöoikeus OK"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Et ole kirjautunut sisään.",
+        "providerAdminRequired": "Vain toimittajan ylläpitäjä voi suorittaa tämän toiminnon.",
+        "forbidden": "Sinulla ei ole käyttöoikeutta tähän toimittajaan.",
+        "invalidCompanyId": "Company ID:n on oltava 6–12 numeroa.",
+        "missingToken": "Employee Token on pakollinen.",
+        "tokenVerificationFailed": "Vahvistus epäonnistui.",
+        "verificationFailed": "Vahvistus epäonnistui. Token tai oikeudet eivät ole kelvollisia.",
+        "credentialsLoadFailed": "Tunnistetietoja ei voitu ladata.",
+        "configurationMissing": "Tripletex-tunnistetiedot eivät ole määritetty.",
+        "connectionTestFailed": "Yhteystesti epäonnistui.",
+        "healthLoadFailed": "Yhteystilaa ei voitu ladata.",
+        "disconnectFailed": "Tripletexia ei voitu irrottaa.",
+        "invalidState": "Yhteyttä ei voi irrottaa nykyisessä tilassa.",
+        "rotateFailed": "Webhook-salaisuutta ei voitu luoda.",
+        "webhookSecretRequired": "Webhook-salaisuus on luotava ensin.",
+        "webhookSyncFailed": "Webhookia ei voitu rekisteröidä Tripletexiin.",
+        "provisioningNotComplete": "Asennus ei ole vielä valmis.",
+        "completeFailed": "Yhteyttä ei voitu tallentaa.",
+        "finalizeFailed": "Yhteyttä ei voitu viimeistellä.",
+        "saveFailed": "Toiminto epäonnistui.",
+        "unknown": "Jokin meni pieleen. Yritä uudelleen."
+      }
+    },
+    "registrations": {
+      "page": {
+        "eyebrow": "Toimittaja",
+        "heading": "Pyynnöt",
+        "subheading": "Käsittele uudet yritykset, jotka haluavat lounasjärjestelyn, ja arvioi toimitusalue, yhteystiedot ja toivottu sopimus ennen käsittelyä."
+      },
+      "table": {
+        "company": "Yritys",
+        "area": "Alue",
+        "contact": "Yhteystiedot",
+        "employees": "Työntekijät",
+        "received": "Vastaanotettu",
+        "status": "Status"
+      },
+      "status": {
+        "pending": "Käsittelyssä",
+        "approved": "Hyväksytty",
+        "rejected": "Hylätty",
+        "other": "Muu"
+      },
+      "summary": {
+        "none": "Ei käsittelyssä",
+        "one": "1 käsittelyssä",
+        "many": "{count} käsittelyssä"
+      },
+      "actions": {
+        "review": "Käsittele"
+      },
+      "empty": {
+        "title": "Ei pyyntöjä käsiteltävänä",
+        "text": "Uudet yrityspyynnöt näkyvät täällä, kun ne vastaavat toimitusaluettasi.",
+        "steps": {
+          "reviewRequest": "Tarkista toimituspaikka, yhteystiedot ja toivottu lounasjärjestely, kun pyyntö saapuu.",
+          "approvedFlow": "Hyväksytyt yritykset siirtyvät asiakas- ja sopimusprosessiin.",
+          "rejectedFlow": "Hylätyt pyynnöt käsitellään hallitusti selkeällä statuksella."
+        }
+      },
+      "dialogs": {
+        "closeAria": "Sulje",
+        "approveTitle": "Hyväksy rekisteröinti",
+        "rejectTitle": "Hylkää rekisteröinti",
+        "contactLabel": "Yhteystiedot",
+        "phoneLabel": "Puhelin",
+        "employeesLabel": "Työntekijät (n.)",
+        "tierLabel": "Sopimustaso",
+        "rejectReasonLabel": "Syy",
+        "rejectInstead": "Hylkää sen sijaan",
+        "approveInstead": "Hyväksy sen sijaan",
+        "cancel": "Peruuta",
+        "approve": "Hyväksy",
+        "reject": "Hylkää",
+        "saving": "Käsitellään…"
+      },
+      "errors": {
+        "notAuthenticated": "Et ole kirjautunut sisään.",
+        "providerAdminRequired": "Vain toimittajan ylläpitäjä voi suorittaa tämän toiminnon.",
+        "registrationNotFound": "Rekisteröintiä ei löytynyt.",
+        "registrationAlreadyProcessed": "Rekisteröinti on jo käsitelty.",
+        "invalidTier": "Virheellinen sopimustaso.",
+        "rejectReasonRequired": "Anna lyhyt syy.",
+        "approveFailed": "Rekisteröintiä ei voitu hyväksyä.",
+        "rejectFailed": "Rekisteröintiä ei voitu hylätä.",
+        "actionFailed": "Toiminto epäonnistui.",
+        "unknown": "Jokin meni pieleen."
       }
     }
   }
