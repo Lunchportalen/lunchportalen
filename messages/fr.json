@@ -84,6 +84,48 @@
           "text": "Lorsque des commandes arrivent, la valeur totale s'affichera ici.",
           "action": "Voir les factures"
         }
+      },
+      "activity": {
+        "agreementActivated": {
+          "description": "Un contrat de livraison a été activé.",
+          "title": "Contrat activé"
+        },
+        "agreementUpdated": {
+          "description": "Un contrat de livraison a été modifié.",
+          "title": "Contrat mis à jour"
+        },
+        "invoiceGenerated": {
+          "description": "Une nouvelle base de facturation est prête pour examen.",
+          "title": "Base de facturation générée"
+        },
+        "menuPublished": {
+          "description": "Le contenu du menu a été publié et est visible pour les clients.",
+          "title": "Menu publié"
+        },
+        "orderCancelled": {
+          "description": "Une commande a été annulée.",
+          "title": "Commande annulée"
+        },
+        "orderReceived": {
+          "description": "Une nouvelle commande a été enregistrée.",
+          "title": "Commande reçue"
+        },
+        "registrationApproved": {
+          "description": "Une inscription client a été approuvée et activée.",
+          "title": "Client approuvé"
+        },
+        "registrationReceived": {
+          "description": "Une entreprise s'est inscrite et attend un examen.",
+          "title": "Nouvelle inscription client reçue"
+        },
+        "registrationRejected": {
+          "description": "Une inscription client a été traitée et rejetée.",
+          "title": "Inscription client rejetée"
+        },
+        "settingsUpdated": {
+          "description": "Les paramètres fournisseur ont été modifiés.",
+          "title": "Paramètres mis à jour"
+        }
       }
     },
     "menu": {
@@ -178,12 +220,16 @@
       },
       "errors": {
         "loadFailed": "Impossible de charger le menu.",
-        "saveFailed": "Impossible d'enregistrer le menu."
+        "saveFailed": "Impossible d'enregistrer le menu.",
+        "copySourceEmpty": "Aucun menu {tier} à copier pour ce jour/cette catégorie.",
+        "publishConfirmRequired": "{warning} Confirmez pour publier quand même.",
+        "resetVarmrettFailed": "Impossible de réinitialiser le plat chaud."
       },
       "success": {
         "published": "Menu publié.",
         "draftSaved": "Brouillon enregistré.",
-        "resetVarmrett": "Plat chaud réinitialisé au contenu généré."
+        "resetVarmrett": "Plat chaud réinitialisé au contenu généré.",
+        "copiedFromTier": "Copié depuis {tier}. Ajoutez l'upgrade Enterprise avant de publier."
       },
       "price": {
         "exVatSuffix": "kr HT",
@@ -342,12 +388,30 @@
           "note": "Protéine supplémentaire et dessert/fruit comme supplément premium du plat chaud du jour"
         },
         "quickChoices": {
-          "protein": { "label": "Protéine supplémentaire", "note": "Protéine supplémentaire pour le plat chaud du jour" },
-          "portion": { "label": "Portion plus grande", "note": "Portion plus grande du plat chaud du jour" },
-          "dessert": { "label": "Dessert/fruit", "note": "Dessert ou fruit comme supplément premium" },
-          "topping": { "label": "Garniture premium", "note": "Garniture premium pour le plat chaud du jour" },
-          "side": { "label": "Accompagnement supplémentaire", "note": "Accompagnement supplémentaire pour le plat chaud du jour" },
-          "season": { "label": "Upgrade saisonnier", "note": "Upgrade Enterprise saisonnier pour le plat chaud du jour" }
+          "protein": {
+            "label": "Protéine supplémentaire",
+            "note": "Protéine supplémentaire pour le plat chaud du jour"
+          },
+          "portion": {
+            "label": "Portion plus grande",
+            "note": "Portion plus grande du plat chaud du jour"
+          },
+          "dessert": {
+            "label": "Dessert/fruit",
+            "note": "Dessert ou fruit comme supplément premium"
+          },
+          "topping": {
+            "label": "Garniture premium",
+            "note": "Garniture premium pour le plat chaud du jour"
+          },
+          "side": {
+            "label": "Accompagnement supplémentaire",
+            "note": "Accompagnement supplémentaire pour le plat chaud du jour"
+          },
+          "season": {
+            "label": "Upgrade saisonnier",
+            "note": "Upgrade Enterprise saisonnier pour le plat chaud du jour"
+          }
         },
         "upgradeTypes": {
           "PREMIUM_PROTEIN": "Protéine premium",
@@ -362,6 +426,1114 @@
           "basedOnBasis": "Basé sur Basis",
           "basedOnLuxus": "Basé sur Luxus",
           "ownEnterprise": "Enterprise propre"
+        }
+      }
+    },
+    "banner": {
+      "contactPrefix": "Contactez",
+      "contactSuffix": "pour résoudre la situation.",
+      "paused": {
+        "defaultReason": "Pause temporaire",
+        "title": "Le fournisseur est en pause"
+      },
+      "suspended": {
+        "defaultReason": "Suspendu",
+        "title": "Le fournisseur est suspendu"
+      }
+    },
+    "billing": {
+      "actions": {
+        "close": "Fermer",
+        "closeDrawer": "Fermer",
+        "details": "Détails"
+      },
+      "agreement": {
+        "activeEyebrow": "Contrat de règlement actif",
+        "invoiceSentTo": "Facture envoyée à",
+        "netPerMonth": "Net / mois",
+        "orgNrSuffix": " · n° org. {orgNumber}",
+        "totalPerMonth": "Total / mois",
+        "vatLabel": "TVA ({rate} %)"
+      },
+      "commissionNote": "Lunchportalen calcule une commission de 5 % par portion vendue lorsque le règlement est activé.",
+      "contact": {
+        "addressLabel": "Adresse de facturation (facultatif)",
+        "cancel": "Annuler",
+        "editButton": "Modifier le contact de facturation",
+        "emailLabel": "E-mail de facturation",
+        "orgLabel": "N° org. (facultatif)",
+        "save": "Enregistrer",
+        "saveFailed": "Impossible d'enregistrer.",
+        "saved": "Contact de facturation mis à jour.",
+        "saving": "Enregistrement…",
+        "title": "Contact de facturation"
+      },
+      "errors": {
+        "activeSubscriptionNotFound": "Aucun abonnement actif à mettre à jour.",
+        "forbidden": "Vous n'avez pas accès.",
+        "invalidEmail": "E-mail de facturation invalide.",
+        "notAuthenticated": "Non connecté.",
+        "providerAdminRequired": "Seul un administrateur fournisseur peut modifier le contact de facturation.",
+        "saveFailed": "Impossible d'enregistrer le contact de facturation.",
+        "unknown": "Une erreur s'est produite. Veuillez réessayer."
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "history": {
+        "emptyText": "Lorsque le règlement est activé et que la base est prête, la base de facturation, la commission, les montants, le statut et les échéances apparaissent ici.",
+        "emptyTitle": "Aucune base de facturation générée pour l'instant",
+        "title": "Base de facturation et règlement"
+      },
+      "invoice": {
+        "downloadPdfIntegrationTitle": "Bientôt disponible avec Tripletex",
+        "downloadPdfSoon": "Télécharger le PDF (bientôt disponible)",
+        "drawerTitle": "Facture {number}",
+        "net": "Net",
+        "noNumber": "Sans numéro",
+        "paid": "Payée",
+        "sent": "Envoyée",
+        "status": "Statut",
+        "table": {
+          "amount": "Montant",
+          "dueDate": "Échéance",
+          "period": "Période",
+          "status": "Statut"
+        },
+        "total": "Total",
+        "vat": "TVA"
+      },
+      "notActivated": {
+        "text": "Le règlement n'est pas encore activé pour ce fournisseur. Contactez Lunchportalen pour activer le contrat de règlement et la base de facturation.",
+        "title": "Le règlement n'est pas activé"
+      },
+      "page": {
+        "eyebrow": "Fournisseur",
+        "heading": "Factures et règlement",
+        "subheading": "Vue d'ensemble de la base de facturation, de la commission et du règlement entre le fournisseur et Lunchportalen."
+      },
+      "plan": {
+        "CUSTOM": "Contrat personnalisé",
+        "SAAS_FIXED": "Prix mensuel fixe",
+        "SAAS_PER_COMPANY": "Prix par entreprise"
+      },
+      "status": {
+        "invoice": {
+          "DRAFT": "Brouillon",
+          "OVERDUE": "En retard",
+          "PAID": "Payée",
+          "SENT": "Envoyée",
+          "VOID": "Annulée",
+          "unknown": "Inconnu"
+        },
+        "settlement": {
+          "active": "Actif",
+          "notActivated": "Non activé"
+        }
+      },
+      "summary": {
+        "activateHint": "Contactez Lunchportalen pour activer.",
+        "commission": "Commission",
+        "commissionPending": "Affiché lorsque le règlement est activé",
+        "nextSettlement": "Prochain règlement",
+        "nextSettlementNone": "Non planifié",
+        "settlementStatus": "Statut du règlement"
+      }
+    },
+    "coverage": {
+      "actions": {
+        "activate": "Activer",
+        "activateTitle": "Rendre la zone à nouveau disponible pour les nouvelles demandes d'entreprises.",
+        "cancel": "Annuler",
+        "closeDrawer": "Fermer",
+        "createArea": "Créer une zone",
+        "deactivate": "Désactiver",
+        "deactivateTitle": "Les nouvelles entreprises de cette zone ne peuvent pas sélectionner le fournisseur tant que la zone est désactivée. Les contrats existants ne sont pas modifiés automatiquement.",
+        "edit": "Modifier",
+        "newArea": "Nouvelle zone de livraison",
+        "newAreaTitle": "Ajouter une nouvelle zone de livraison pour le fournisseur.",
+        "readOnlyNote": "Vous avez un accès en lecture seule. Les modifications nécessitent un accès administrateur.",
+        "saveChanges": "Enregistrer les modifications",
+        "saving": "Enregistrement…"
+      },
+      "empty": {
+        "step1": "Définissez les codes postaux ou la zone.",
+        "step2": "Définissez le nombre minimum d'employés.",
+        "step3": "Sélectionnez les jours de livraison pour la zone.",
+        "text": "Ajoutez une zone de livraison pour contrôler quelles entreprises peuvent envoyer une demande au fournisseur.",
+        "title": "Aucune zone de livraison pour l'instant"
+      },
+      "errors": {
+        "cityRequired": "La ville est obligatoire.",
+        "deliveryDaysRequired": "Sélectionnez au moins un jour.",
+        "employeeRangeInvalid": "Plage d'employés invalide.",
+        "forbidden": "Vous n'avez pas accès pour modifier cette zone.",
+        "invalidEmployeeRange": "Le minimum d'employés ne peut pas être supérieur au maximum.",
+        "invalidPostalCode": "Le code postal doit comporter 4 chiffres.",
+        "invalidPostalFrom": "Le code postal de début doit comporter 4 chiffres.",
+        "invalidPostalRange": "Le code postal de début ne peut pas être supérieur à celui de fin.",
+        "invalidPostalTo": "Le code postal de fin doit comporter 4 chiffres.",
+        "notAuthenticated": "Non connecté.",
+        "postalOverlap": "La plage de codes postaux chevauche une zone active existante.",
+        "postalRangeInvalid": "Le code postal de début ne peut pas être supérieur à celui de fin.",
+        "providerAdminRequired": "Seul un administrateur fournisseur peut modifier les zones de livraison.",
+        "saveFailed": "Impossible d'enregistrer la zone. Réessayez.",
+        "serviceAreaNotFound": "Zone introuvable.",
+        "toggleFailed": "Impossible de mettre à jour le statut.",
+        "unknown": "Une erreur s'est produite. Réessayez.",
+        "validationFailed": "Formulaire invalide."
+      },
+      "form": {
+        "activeToggle": "Zone active (utilisée pour l'appariement des inscriptions)",
+        "cityLabel": "Ville / zone",
+        "createTitle": "Ajouter une zone",
+        "deliveryDaysLegend": "Jours de livraison",
+        "editTitle": "Modifier la zone",
+        "maxEmployees": "Employés max. (facultatif)",
+        "minEmployees": "Employés min.",
+        "postalFrom": "Code postal de",
+        "postalTo": "Code postal à"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesMax": "≤{max}",
+        "employeesMin": "{min}+",
+        "employeesRange": "{min}–{max}"
+      },
+      "page": {
+        "eyebrow": "Fournisseur",
+        "heading": "Zones de livraison",
+        "leadNoProvider": "Les zones de livraison contrôlent quelles entreprises peuvent envoyer une demande au fournisseur. Utilisez-les pour définir les codes postaux, le nombre minimum d'employés et les jours de livraison.",
+        "leadWithProvider": "Les zones de livraison contrôlent quelles entreprises peuvent envoyer une demande à {providerName}. Utilisez-les pour définir les codes postaux, le nombre minimum d'employés et les jours de livraison."
+      },
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "paused": "En pause",
+        "unknown": "Inconnu"
+      },
+      "summary": {
+        "inactiveSuffix": " · {count} inactives",
+        "manyActive": "{count} zones de livraison actives",
+        "noneActive": "Aucune zone de livraison active",
+        "oneActive": "1 zone de livraison active"
+      },
+      "table": {
+        "area": "Zone",
+        "deliveryDays": "Jours de livraison",
+        "minEmployees": "Employés min.",
+        "postalCodes": "Codes postaux",
+        "status": "Statut"
+      },
+      "weekdays": {
+        "fri": "Ven",
+        "mon": "Lun",
+        "thu": "Jeu",
+        "tue": "Mar",
+        "wed": "Mer",
+        "weekdaysRange": "Lundi–vendredi"
+      }
+    },
+    "customers": {
+      "actions": {
+        "newCustomer": "Nouvelle entreprise cliente",
+        "newCustomerTitle": "Les nouvelles entreprises clientes arrivent via une inscription contrôlée.",
+        "openCustomer": "Ouvrir le client",
+        "removeCustomer": "Retirer le client",
+        "restoreCustomer": "Restaurer le client"
+      },
+      "activity": {
+        "empty": {
+          "text": "Lorsque le client s'inscrit, commande ou est restauré, cela apparaît ici.",
+          "title": "Aucune activité client pertinente à afficher pour l'instant."
+        },
+        "events": {
+          "agreement_activated": {
+            "summary": "Contrat de livraison activé.",
+            "title": "Contrat activé"
+          },
+          "agreement_updated": {
+            "summary": "Contrat de livraison modifié.",
+            "title": "Contrat mis à jour"
+          },
+          "company_registration_approved": {
+            "summary": "Inscription client approuvée et activée.",
+            "title": "Client approuvé"
+          },
+          "company_registration_submitted": {
+            "summary": "L'entreprise a soumis une demande de contrat.",
+            "title": "Inscription client reçue"
+          },
+          "order_canceled": {
+            "summary": "Une commande a été annulée.",
+            "title": "Commande annulée"
+          },
+          "order_cancelled": {
+            "summary": "Une commande a été annulée.",
+            "title": "Commande annulée"
+          },
+          "order_created": {
+            "summary": "Nouvelle commande enregistrée.",
+            "title": "Commande enregistrée"
+          },
+          "order_received": {
+            "summary": "Nouvelle commande enregistrée.",
+            "title": "Commande enregistrée"
+          },
+          "provider": {
+            "customer": {
+              "archive": {
+                "success": {
+                  "summary": "Client archivé chez le fournisseur.",
+                  "title": "Client archivé"
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "summary": "Client retiré de la liste fournisseur.",
+                  "title": "Client retiré"
+                }
+              },
+              "restore": {
+                "attempt": {
+                  "summary": "Tentative de restauration du client.",
+                  "title": "Restauration démarrée"
+                },
+                "success": {
+                  "summary": "Relation client réactivée.",
+                  "title": "Client restauré"
+                }
+              }
+            }
+          }
+        }
+      },
+      "agreement": {
+        "activeTitle": "Contrat client actif",
+        "createdAt": "Créé le {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days} : {tier}",
+        "dayMenusWeekdaysTier": "Lundi–vendredi · {tier}",
+        "dayMenusWeekdaysTierLine": "Lundi–vendredi : {tier}",
+        "deliveryDaysWarning": "Le contrat inclut des jours de livraison en dehors de la livraison de déjeuner habituelle.",
+        "empty": {
+          "text": "Lorsqu'un contrat client est approuvé, les jours de livraison, le lieu et le contenu du contrat apparaissent ici.",
+          "title": "Aucun contrat enregistré"
+        },
+        "inactiveTitle": "Contrat client",
+        "labels": {
+          "created": "Créé",
+          "dayMenus": "Jours de livraison et menu",
+          "deliveryDays": "Jours de livraison",
+          "location": "Adresse de livraison",
+          "package": "Niveau de contrat",
+          "period": "Période du contrat",
+          "status": "Statut"
+        },
+        "locationMissing": "Adresse de livraison non définie",
+        "multipleActiveWarning": "Plusieurs contrats actifs sont enregistrés pour ce client.",
+        "notSpecified": "Non spécifié",
+        "packageMissing": "Non spécifié dans la vue contrat pour l'instant",
+        "packageMix": "Mix",
+        "periodFromOpen": "À partir du {from} · Sans date de fin",
+        "periodFromTo": "Du {from} au {to}",
+        "sectionTitle": "Contrat",
+        "status": {
+          "active": "Actif",
+          "closed": "Clôturé",
+          "paused": "En pause",
+          "pending": "En attente d'examen",
+          "rejected": "Rejeté",
+          "unknown": "Inconnu"
+        },
+        "weekdays": {
+          "fri": "Vendredi",
+          "mon": "Lundi",
+          "thu": "Jeudi",
+          "tue": "Mardi",
+          "wed": "Mercredi"
+        },
+        "weekdaysRange": "Lundi–vendredi"
+      },
+      "card": {
+        "mobileMeta": "{employees} employés · {orders} commandes cette semaine · {history} dans l'historique · Facture : {invoice}",
+        "mobileUpdatedPrefix": "Dernière mise à jour",
+        "orgNrPrefix": "N° org. : {orgnr}"
+      },
+      "create": {
+        "backToCustomers": "Retour aux entreprises",
+        "heading": "Nouvelle entreprise cliente",
+        "lead": "La création directe d'entreprises clientes n'est pas encore disponible. Les nouvelles entreprises de votre zone de livraison arrivent via Inscriptions lorsqu'elles manifestent leur intérêt, et apparaissent sous Entreprises après approbation."
+      },
+      "detail": {
+        "actions": {
+          "agreementUpdated": "Contrat mis à jour.",
+          "editAgreement": "Modifier le contrat",
+          "pause": "Mettre en pause",
+          "removeCustomer": "Retirer le client",
+          "restore": "Restaurer",
+          "suspend": "Suspendre"
+        },
+        "agreementStatusMissing": "Aucun contrat actif",
+        "badges": {
+          "commissionAmount": "{amount} de commission",
+          "commissionNotReady": "Commission non prête",
+          "historical": "{count} historiques",
+          "oneHistorical": "1 historique",
+          "oneOrderThisMonth": "1 commande ce mois-ci",
+          "ordersSuffix": "commandes",
+          "ordersThisMonth": "{count} commandes ce mois-ci"
+        },
+        "billingBasisTitle": "Base de facturation",
+        "billingIncomplete": "Base de facturation incomplète",
+        "billingPeriodLabel": "30 derniers jours",
+        "billingStatus": {
+          "missingOrders": "Base de commandes manquante",
+          "missingRecipient": "Destinataire de facture manquant",
+          "missingVat": "Répartition TVA manquante",
+          "ready": "Prêt pour la base de facturation"
+        },
+        "completeCommissionNote": "La commission est calculée à partir du chiffre d'affaires HT.",
+        "contactMissing": "—",
+        "employeesTable": {
+          "email": "E-mail",
+          "name": "Nom",
+          "role": "Rôle"
+        },
+        "eyebrow": "Client",
+        "grossOnlyNote": "Les chiffres sont affichés TTC car la base de commandes ne comporte pas de répartition TVA séparée.",
+        "identityTitle": "Informations client",
+        "kpis": {
+          "activeOrders": "Commandes actives",
+          "commission5": "Commission 5 %",
+          "employees": "Employés",
+          "orderHistory": "Historique des commandes",
+          "revenue30Days": "Chiffre d'affaires 30 jours"
+        },
+        "labels": {
+          "agreementStatus": "Statut du contrat",
+          "billingStatus": "Statut",
+          "commission": "Commission 5 %",
+          "commissionBase": "Base de commission",
+          "commissionRateValue": "5 %",
+          "contact": "Contact",
+          "deliveryAddress": "Adresse de livraison",
+          "email": "E-mail",
+          "invoiceMethod": "Mode de facturation",
+          "invoiceRecipient": "Destinataire de facture",
+          "ordersThisMonth": "Base de commandes",
+          "orgnr": "N° org.",
+          "period": "Période",
+          "phone": "Téléphone",
+          "revenueExVat": "Chiffre d'affaires HT",
+          "revenueIncVat": "Chiffre d'affaires TTC",
+          "vat": "TVA"
+        },
+        "meta": {
+          "agreementLevel": "Niveau de contrat",
+          "invoiceMethod": "Mode de facturation",
+          "orgnr": "N° org.",
+          "status": "Statut"
+        },
+        "orgnrMissing": "N° org. non enregistré",
+        "readOnly": "Vous avez un accès en lecture seule. Les modifications nécessitent un accès administrateur.",
+        "sections": {
+          "activity": "Activité",
+          "employees": "Employés",
+          "employeesEmpty": "Aucun employé enregistré pour ce client pour l'instant.",
+          "orders": "Commandes",
+          "ordersEmpty": "Aucune commande enregistrée pour ce client pour l'instant."
+        },
+        "statusBanner": {
+          "pausedDefault": "Le client est en pause.",
+          "suspendedDefault": "Le client est suspendu."
+        },
+        "vatNotSpecified": "Non spécifié"
+      },
+      "dialogs": {
+        "adminEyebrow": "Administration client",
+        "agreementEdit": {
+          "address": "Adresse",
+          "billingContact": "Contact de facturation",
+          "billingLegend": "Facturation",
+          "contactLegend": "Personne de contact",
+          "dayMenusLead": "Choisissez le menu du client pour chaque jour de livraison.",
+          "dayMenusLegend": "Menu par jour de livraison",
+          "deliveryNote": "Instructions de livraison",
+          "deliveryWindowLegend": "Créneau de livraison",
+          "ehf": "EHF",
+          "ehfEndpoint": "Point de terminaison EHF",
+          "email": "E-mail",
+          "from": "De",
+          "invoiceEmail": "E-mail",
+          "invoiceEmailField": "E-mail de facturation",
+          "loadFailed": "Impossible de charger le contrat.",
+          "loading": "Chargement du contrat…",
+          "locationLegend": "Adresse de livraison",
+          "locationName": "Nom du site",
+          "name": "Nom",
+          "orgnr": "Numéro d'organisation",
+          "phone": "Téléphone",
+          "reasonOptional": "Motif (facultatif, enregistré dans le journal d'audit)",
+          "save": "Enregistrer les modifications",
+          "saveFailed": "Impossible d'enregistrer le contrat.",
+          "saving": "Enregistrement…",
+          "statusActive": "Actif",
+          "statusLegend": "Statut",
+          "statusPaused": "En pause",
+          "title": "Modifier le contrat client",
+          "to": "À",
+          "updated": "Contrat mis à jour.",
+          "updatedWithWarnings": "Contrat mis à jour. {warnings}",
+          "validation": {
+            "ehfEndpointRequired": "Le point de terminaison EHF est obligatoire.",
+            "invalidBillingEmail": "E-mail invalide pour le contact de facturation.",
+            "invalidEmail": "Adresse e-mail invalide.",
+            "invoiceEmailRequired": "L'e-mail de facturation doit être une adresse e-mail valide.",
+            "orgnrLength": "Le numéro d'organisation doit comporter 9 chiffres.",
+            "pickDeliveryDay": "Sélectionnez au moins un jour de livraison.",
+            "pickMenuForDay": "Sélectionnez le menu pour {day}."
+          },
+          "weekdaysOnlyNote": "Livraison de déjeuner du lundi au vendredi. Week-ends non pris en charge."
+        },
+        "cancel": "Annuler",
+        "closeAria": "Fermer",
+        "removal": {
+          "actionFailed": "L'action a échoué.",
+          "archiveAction": "Archiver le client",
+          "archiveCustomer": "Archiver le client",
+          "archiveTitle": "Archiver le client",
+          "chooseModeLead": "Choisissez d'archiver ou de supprimer définitivement le client.",
+          "confirmHint": "(saisissez exactement : {hint})",
+          "confirmLabel": "Confirmation",
+          "hardDelete": "Supprimer définitivement",
+          "hardDeleteBlockedLead": "Ce client possède un historique opérationnel qui doit être conservé.",
+          "hardDeleteBlockedTitle": "Le client ne peut pas être supprimé définitivement",
+          "hardDeleteLead": "Le client n'a pas d'historique opérationnel et peut être supprimé définitivement après confirmation.",
+          "hardDeleteTitle": "Supprimer définitivement le client",
+          "loadRulesFailed": "Impossible de charger les règles de suppression.",
+          "loadRulesFailedHttp": "Impossible de charger les règles de suppression (HTTP {status}).",
+          "loadingDependencies": "Chargement des dépendances…",
+          "loadingRules": "Chargement des règles de suppression…",
+          "reasonOptional": "Motif (facultatif)",
+          "removeTitle": "Retirer le client"
+        },
+        "restore": {
+          "actionFailed": "Impossible de restaurer le client.",
+          "confirmHint": "(saisissez exactement : {hint})",
+          "confirmLabel": "Confirmation",
+          "lead": "Cela réactive la relation client sans supprimer l'historique.",
+          "restoreCustomer": "Restaurer le client",
+          "successDefault": "Client restauré.",
+          "title": "Restaurer le client"
+        },
+        "working": "Traitement…"
+      },
+      "empty": {
+        "noResults": {
+          "text": "Essayez un autre nom d'entreprise ou effacez le filtre.",
+          "title": "Aucun résultat"
+        },
+        "noStatusMatch": {
+          "text": "Modifiez le filtre de statut pour voir plus d'entreprises clientes.",
+          "title": "Aucune entreprise avec le statut sélectionné"
+        },
+        "noneYet": {
+          "text": "Lorsque des entreprises clientes sont inscrites et approuvées, elles apparaissent ici avec le statut, les contrats et la base de commandes.",
+          "title": "Aucune entreprise pour l'instant"
+        }
+      },
+      "errors": {
+        "agreementLoadFailed": "Impossible de charger le contrat.",
+        "agreementUpdateFailed": "Impossible d'enregistrer le contrat.",
+        "alreadyActive": "Ce client est déjà actif.",
+        "alreadyArchived": "Ce client est déjà archivé.",
+        "confirmMismatch": "La confirmation ne correspond pas.",
+        "customerNotFound": "Client introuvable.",
+        "forbidden": "Vous n'avez pas accès à ce client.",
+        "hardDeleteBlocked": "Ce client ne peut pas être supprimé définitivement.",
+        "invalidAgreement": "Les données du contrat sont invalides.",
+        "invalidCustomer": "Identifiant client manquant.",
+        "invalidPayload": "Aucune modification valide n'a été fournie.",
+        "loadRulesFailed": "Impossible de charger les règles de suppression.",
+        "noActiveAgreement": "L'entreprise n'a pas de contrat actif.",
+        "notAuthenticated": "Non connecté.",
+        "outOfScope": "Ce client n'appartient pas à votre fournisseur.",
+        "pauseFailed": "Impossible de mettre le client en pause.",
+        "protectedSystem": "L'organisation système ne peut pas être modifiée ici.",
+        "providerAdminRequired": "Seuls les administrateurs fournisseur peuvent effectuer cette action.",
+        "providerContextMissing": "Aucune appartenance fournisseur trouvée pour l'utilisateur connecté.",
+        "reasonTooShort": "Le motif doit comporter au moins 20 caractères.",
+        "removeFailed": "Impossible de retirer le client.",
+        "restoreFailed": "Impossible de restaurer le client.",
+        "selfCustomer": "Un fournisseur ne peut pas être son propre client.",
+        "suspendFailed": "Impossible de suspendre le client.",
+        "unknown": "Une erreur s'est produite.",
+        "updateFailed": "Impossible de mettre à jour le client.",
+        "validationFailed": "Requête invalide."
+      },
+      "filters": {
+        "active": "Actifs",
+        "all": "Tous",
+        "deleted": "Supprimés",
+        "paused": "En pause",
+        "searchLabel": "Rechercher",
+        "searchPlaceholder": "Rechercher par nom d'entreprise",
+        "statusGroupAria": "Filtre de statut",
+        "suspended": "Suspendus"
+      },
+      "lifecycle": {
+        "dialog": {
+          "cancel": "Annuler",
+          "closeAria": "Fermer la boîte de dialogue",
+          "delete": {
+            "confirm": "Supprimer",
+            "description": "Cela supprime le client de façon réversible. Les commandes peuvent être affectées.",
+            "title": "Supprimer {name} ?"
+          },
+          "pause": {
+            "confirm": "Mettre en pause",
+            "description": "Indiquez un motif clair (au moins 20 caractères).",
+            "title": "Mettre {name} en pause ?"
+          },
+          "reasonHint": "{current}/{min} caractères",
+          "reasonLabel": "Motif",
+          "reasonNeedMore": " — caractères supplémentaires requis",
+          "resume": {
+            "confirm": "Restaurer",
+            "description": "Le client et les commandes associées sont restaurés lorsque c'est possible.",
+            "title": "Restaurer {name} ?"
+          },
+          "suspend": {
+            "confirm": "Suspendre",
+            "description": "Indiquez un motif clair (au moins 20 caractères).",
+            "title": "Suspendre {name} ?"
+          },
+          "working": "Traitement…"
+        }
+      },
+      "page": {
+        "eyebrow": "Fournisseur",
+        "heading": "Entreprises",
+        "leadDefault": "Gérez les entreprises clientes, les contrats et la configuration de livraison.",
+        "leadWithProvider": "Gérez les entreprises clientes, les contrats et la configuration de livraison pour {providerName}."
+      },
+      "pagination": {
+        "aria": "Pagination",
+        "companies": "{count} entreprises",
+        "next": "Suivant",
+        "oneCompany": "1 entreprise",
+        "page": "Page {current} sur {total} ({count} au total)",
+        "prev": "Précédent"
+      },
+      "status": {
+        "active": "Actif",
+        "deleted": "Supprimé",
+        "paused": "En pause",
+        "suspended": "Suspendu"
+      },
+      "table": {
+        "actions": "Actions",
+        "employees": "Employés",
+        "historicalOrders": "Historique",
+        "invoice": "Facture",
+        "lastUpdated": "Dernière mise à jour",
+        "name": "Entreprise",
+        "ordersThisWeek": "Commandes cette semaine",
+        "orgnr": "N° org.",
+        "status": "Statut"
+      }
+    },
+    "orders": {
+      "actions": {
+        "markDelivered": "Marquer comme livré",
+        "readyForDelivery": "Prêt pour livraison",
+        "saving": "Enregistrement…",
+        "startProduction": "Démarrer la production"
+      },
+      "card": {
+        "allergensPrefix": "Allergènes : {list}",
+        "deliveryGroupPrefix": "Livraison",
+        "lineQuantity": "{quantity} pcs · {displayLine}",
+        "noLines": "Aucune ligne enregistrée",
+        "noteLabel": "Note :",
+        "readOnlyNote": "Lecture seule — vous avez un accès en lecture aux commandes."
+      },
+      "empty": {
+        "steps": {
+          "checkMenu": "Vérifiez que le menu est publié pour les jours concernés.",
+          "checkWeek": "Consultez la semaine complète si vous souhaitez examiner les livraisons à venir.",
+          "ordersAppear": "Les nouvelles commandes apparaissent ici comme base de production au fur et à mesure."
+        },
+        "text": {
+          "default": "Il n'y a aucune commande active pour la période sélectionnée.",
+          "filtered": "Il n'y a aucune commande avec le statut sélectionné sur cette période. Sélectionnez « Tous » pour voir toutes les commandes de la période."
+        },
+        "title": {
+          "filtered": "Aucune commande avec le statut sélectionné",
+          "today": "Aucune commande pour aujourd'hui",
+          "tomorrow": "Aucune commande pour demain",
+          "week": "Aucune commande cette semaine"
+        }
+      },
+      "errors": {
+        "kitchenRoleRequired": "Seuls les rôles cuisine peuvent mettre à jour le statut.",
+        "notAuthenticated": "Non connecté.",
+        "orderNotFound": "Commande introuvable.",
+        "unknown": "Une erreur s'est produite.",
+        "updateFailed": "Impossible de mettre à jour le statut."
+      },
+      "filters": {
+        "companyAll": "Toutes les entreprises",
+        "companyAria": "Filtrer par entreprise",
+        "companyLabel": "Entreprise",
+        "date": {
+          "today": "Aujourd'hui",
+          "tomorrow": "Demain",
+          "week": "Semaine complète"
+        },
+        "dateGroupAria": "Période",
+        "groupByCompany": "Par entreprise",
+        "groupByTime": "Par horaire",
+        "groupingAria": "Regroupement",
+        "status": {
+          "all": "Tous",
+          "delivered": "Livrées",
+          "production": "En production",
+          "ready": "Prêtes",
+          "received": "Reçues"
+        },
+        "statusGroupAria": "Statut"
+      },
+      "page": {
+        "eyebrow": "Commandes et production",
+        "heading": "Commandes"
+      },
+      "status": {
+        "cancelled": "Annulée",
+        "delivered": "Livrée",
+        "inProduction": "En production",
+        "other": "Autre",
+        "paused": "En pause",
+        "readyForDelivery": "Prête pour livraison",
+        "received": "Reçue"
+      }
+    },
+    "registrations": {
+      "actions": {
+        "review": "Examiner"
+      },
+      "dialogs": {
+        "approve": "Approuver",
+        "approveInstead": "Approuver à la place",
+        "approveTitle": "Approuver l'inscription",
+        "cancel": "Annuler",
+        "closeAria": "Fermer",
+        "contactLabel": "Contact",
+        "employeesLabel": "Employés (env.)",
+        "phoneLabel": "Téléphone",
+        "reject": "Rejeter",
+        "rejectInstead": "Rejeter à la place",
+        "rejectReasonLabel": "Motif",
+        "rejectTitle": "Rejeter l'inscription",
+        "saving": "Traitement…",
+        "tierLabel": "Niveau de contrat"
+      },
+      "empty": {
+        "steps": {
+          "approvedFlow": "Les entreprises approuvées passent au flux client et contrat.",
+          "rejectedFlow": "Les demandes rejetées sont traitées de manière contrôlée avec un statut clair.",
+          "reviewRequest": "Vérifiez le lieu de livraison, les coordonnées et l'organisation de déjeuner souhaitée lorsqu'une demande arrive."
+        },
+        "text": "Les nouvelles demandes d'entreprises apparaissent ici lorsqu'elles correspondent à votre zone de livraison.",
+        "title": "Aucune demande en attente d'examen"
+      },
+      "errors": {
+        "actionFailed": "L'action a échoué.",
+        "approveFailed": "Impossible d'approuver l'inscription.",
+        "invalidTier": "Niveau de contrat invalide.",
+        "notAuthenticated": "Non connecté.",
+        "providerAdminRequired": "Seuls les administrateurs fournisseur peuvent effectuer cette action.",
+        "registrationAlreadyProcessed": "Cette inscription a déjà été traitée.",
+        "registrationNotFound": "Inscription introuvable.",
+        "rejectFailed": "Impossible de rejeter l'inscription.",
+        "rejectReasonRequired": "Indiquez un motif court.",
+        "unknown": "Une erreur s'est produite."
+      },
+      "page": {
+        "eyebrow": "Fournisseur",
+        "heading": "Demandes",
+        "subheading": "Examinez les nouvelles entreprises intéressées par une organisation de déjeuner, et évaluez la zone de livraison, les coordonnées et le contrat souhaité avant traitement."
+      },
+      "status": {
+        "approved": "Approuvée",
+        "other": "Autre",
+        "pending": "En attente d'examen",
+        "rejected": "Rejetée"
+      },
+      "summary": {
+        "many": "{count} en attente",
+        "none": "Aucune en attente",
+        "one": "1 en attente"
+      },
+      "table": {
+        "area": "Zone",
+        "company": "Entreprise",
+        "contact": "Contact",
+        "employees": "Employés",
+        "received": "Reçue",
+        "status": "Statut"
+      }
+    },
+    "settings": {
+      "brand": {
+        "errors": {
+          "contrastTooWeak": "La couleur a un contraste insuffisant et ne peut pas être utilisée. Choisissez une couleur plus foncée.",
+          "forbidden": "Pas d'accès.",
+          "invalidHex": "Utilisez le format HEX, par exemple #F5C518.",
+          "invalidProvider": "Fournisseur invalide.",
+          "notAuthenticated": "Non connecté.",
+          "saveFailed": "Impossible d'enregistrer la couleur.",
+          "unknown": "Erreur inattendue lors de l'enregistrement."
+        },
+        "formatHint": "Utilisez le format HEX, par exemple #F5C518. Si le contraste est faible, la couleur par défaut est utilisée.",
+        "hexLabel": "Code HEX",
+        "restoredDefault": "Couleur par défaut restaurée.",
+        "sampleHint": "Utilisation de la couleur : comme petit accent dans le menu et les détails.",
+        "save": "Enregistrer la couleur",
+        "saved": "Couleur enregistrée.",
+        "saving": "Enregistrement…"
+      },
+      "logo": {
+        "altWithProvider": "Logo de {providerName}",
+        "errors": {
+          "fileTooLarge": "Le logo est trop volumineux. Taille maximale : 2 Mo.",
+          "forbidden": "Pas d'accès.",
+          "invalidProvider": "Fournisseur invalide.",
+          "noFileSelected": "Choisissez un fichier logo.",
+          "notAuthenticated": "Non connecté.",
+          "removeFailed": "Impossible de retirer le logo.",
+          "saveFailed": "Impossible d'enregistrer le logo.",
+          "unknown": "Erreur inattendue lors du téléversement.",
+          "unsupportedFileType": "Le logo doit être au format PNG ou WebP. Préférez un logo avec arrière-plan transparent.",
+          "uploadFailed": "Impossible de téléverser le logo.",
+          "uploadUnavailable": "Le téléversement n'est pas disponible pour le moment.",
+          "urlFailed": "Impossible de résoudre l'URL du logo."
+        },
+        "hint": "Recommandé : logo PNG ou WebP avec arrière-plan transparent. Max. 2 Mo. N'utilisez pas de photos de nourriture, bannières, captures d'écran, graphiques publicitaires ou logos sur fond chargé/coloré.",
+        "pickFile": "Choisir un fichier logo",
+        "remove": "Retirer le logo",
+        "removed": "Logo retiré.",
+        "removing": "Suppression…",
+        "replace": "Remplacer le logo",
+        "updated": "Logo mis à jour.",
+        "upload": "Téléverser le logo",
+        "uploading": "Téléversement…"
+      },
+      "operations": {
+        "deliveryEmailHint": "Utilisé pour les alertes et messages liés à la livraison lorsque les commandes sont prêtes.",
+        "deliveryEmailLabel": "E-mail livraison",
+        "errors": {
+          "emailTooLong": "L'adresse e-mail est trop longue.",
+          "forbidden": "Pas d'accès.",
+          "invalidEmail": "Adresse e-mail invalide.",
+          "invalidLocale": "Sélection de langue invalide.",
+          "notAuthenticated": "Non connecté.",
+          "providerNotFound": "Fournisseur manquant.",
+          "saveFailed": "Impossible d'enregistrer les paramètres opérationnels pour le moment.",
+          "unknown": "Impossible d'enregistrer les paramètres opérationnels pour le moment."
+        },
+        "kitchenEmailHint": "Utilisé pour la base de production et les alertes cuisine.",
+        "kitchenEmailLabel": "E-mail cuisine",
+        "localeHint": "Contrôle la langue par défaut des interfaces opérationnelles du fournisseur lorsque le support linguistique est disponible.",
+        "localeLabel": "Langue",
+        "locales": {
+          "da-DK": "Danois",
+          "en-GB": "Anglais",
+          "nb-NO": "Norvégien (bokmål)",
+          "sv-SE": "Suédois"
+        },
+        "operationsEmailHint": "Utilisé comme destinataire principal des alertes de commandes et messages opérationnels.",
+        "operationsEmailLabel": "E-mail commandes et opérations",
+        "save": "Enregistrer les paramètres opérationnels",
+        "saved": "Paramètres opérationnels enregistrés.",
+        "saving": "Enregistrement…"
+      },
+      "page": {
+        "accountingIntro": "Connectez Tripletex pour la facturation automatique et le statut de paiement via l'intégration comptable norvégienne.",
+        "accountingSection": "Comptabilité",
+        "brandIntro": "Téléversez un logo et choisissez une couleur d'accent contrôlée. Lunchportalen conserve la mise en page, la typographie et l'expression produit.",
+        "brandSection": "Logo et marque",
+        "colorHeading": "Couleur principale",
+        "colorIntro": "Choisissez la couleur d'accent du fournisseur. La couleur n'est utilisée que dans des détails contrôlés.",
+        "eyebrow": "Fournisseur",
+        "heading": "Paramètres",
+        "leadWithProvider": "Profil et coordonnées pour {providerName}.",
+        "logoHeading": "Logo",
+        "logoIntro": "Utilisez un logo épuré avec arrière-plan transparent. Le logo est affiché de manière contrôlée dans le menu fournisseur.",
+        "logoNote": "Les logos qui ne respectent pas la norme visuelle de la plateforme peuvent être refusés.",
+        "operationsIntro": "Saisissez les adresses e-mail qui doivent recevoir les commandes, listes cuisine et notifications de livraison pour ce fournisseur. Ces paramètres s'appliquent uniquement à cette entreprise de restauration.",
+        "operationsNote": "L'entreprise de restauration doit saisir les adresses e-mail qui doivent recevoir les commandes, listes cuisine et notifications de livraison. Lunchportalen n'envoie pas par défaut les e-mails opérationnels du fournisseur à la plateforme — les e-mails manquants doivent être renseignés ici.",
+        "operationsSection": "Opérations et notifications",
+        "readOnly": "Vous avez un accès en lecture seule. Les paramètres ne peuvent être modifiés que par un administrateur.",
+        "tripletexSetup": "Configuration Tripletex"
+      },
+      "profile": {
+        "emailLabel": "E-mail de contact",
+        "errors": {
+          "emailRequired": "Une adresse e-mail valide est obligatoire.",
+          "forbidden": "Pas d'accès.",
+          "nameRequired": "Le nom est obligatoire.",
+          "notAuthenticated": "Non connecté.",
+          "providerNotFound": "Fournisseur manquant.",
+          "saveFailed": "Impossible d'enregistrer les paramètres.",
+          "unknown": "Erreur inattendue lors de l'enregistrement."
+        },
+        "leadWithProvider": "Profil de {providerName}",
+        "nameLabel": "Nom",
+        "phoneLabel": "Téléphone de contact",
+        "save": "Enregistrer les paramètres",
+        "saved": "Paramètres enregistrés.",
+        "saving": "Enregistrement…"
+      }
+    },
+    "tripletex": {
+      "activity": {
+        "onboarding_connection_started": "Connexion démarrée",
+        "onboarding_customer_skipped": "Client ignoré",
+        "onboarding_disconnected": "Tripletex déconnecté",
+        "onboarding_finalized": "Connexion terminée",
+        "onboarding_provisioning_completed": "Configuration terminée",
+        "onboarding_reconnect_initiated": "Restauration démarrée",
+        "onboarding_test_token": "Connexion testée",
+        "onboarding_vault_purged": "Identifiants supprimés",
+        "state_change_configuring": "Statut passé à configuration",
+        "state_change_connected": "Statut passé à connecté",
+        "state_change_degraded": "Statut passé à attention requise",
+        "state_change_disconnected": "Statut passé à déconnecté",
+        "state_change_generic": "Statut de connexion modifié"
+      },
+      "brand": "Tripletex",
+      "errors": {
+        "completeFailed": "Impossible d'enregistrer la connexion.",
+        "configurationMissing": "Les identifiants Tripletex ne sont pas configurés.",
+        "connectionTestFailed": "Le test de connexion a échoué.",
+        "credentialsLoadFailed": "Impossible de charger les identifiants.",
+        "disconnectFailed": "Impossible de déconnecter Tripletex.",
+        "finalizeFailed": "Impossible de terminer la connexion.",
+        "forbidden": "Vous n'avez pas accès à ce fournisseur.",
+        "healthLoadFailed": "Impossible de charger le statut de connexion.",
+        "invalidCompanyId": "L'identifiant entreprise doit comporter 6 à 12 chiffres.",
+        "invalidState": "La connexion ne peut pas être déconnectée dans son état actuel.",
+        "missingToken": "Le jeton employé (Employee Token) est obligatoire.",
+        "notAuthenticated": "Non connecté.",
+        "providerAdminRequired": "Seul un administrateur fournisseur peut effectuer cette action.",
+        "provisioningNotComplete": "La configuration n'est pas encore terminée.",
+        "rotateFailed": "Impossible de générer le secret webhook.",
+        "saveFailed": "L'action a échoué.",
+        "tokenVerificationFailed": "La vérification a échoué.",
+        "unknown": "Une erreur s'est produite. Veuillez réessayer.",
+        "verificationFailed": "La vérification a échoué. Le jeton ou les autorisations ne sont pas valides.",
+        "webhookSecretRequired": "Le secret webhook doit d'abord être généré.",
+        "webhookSyncFailed": "Impossible d'enregistrer le webhook dans Tripletex."
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "connect": {
+          "adminRequired": "Seul un administrateur fournisseur peut connecter Tripletex.",
+          "degraded": {
+            "badge": "Attention requise",
+            "body": "La connexion est dégradée. Flux de reconfiguration prévu dans TPT-B-7b-edge.",
+            "heading": "Tripletex nécessite une attention"
+          },
+          "disconnected": {
+            "badge": "Déconnecté",
+            "body": "Flux de restauration sans nouveau jeton prévu dans TPT-B-7b-edge.",
+            "heading": "Tripletex est déconnecté"
+          },
+          "heading": "Connecter Tripletex"
+        },
+        "status": {
+          "eyebrow": "Tripletex",
+          "fallbackHeading": "Statut Tripletex",
+          "heading": "Statut de connexion",
+          "noAccess": "Vous n'avez pas accès à ce fournisseur.",
+          "subheading": "Vue d'ensemble de la connexion, du webhook et de l'activité récente."
+        }
+      },
+      "state": {
+        "CONFIGURING": "Configuration…",
+        "CONNECTED": "Connecté",
+        "DEGRADED": "Attention requise",
+        "DISCONNECTED": "Déconnecté",
+        "NOT_CONNECTED": "Non connecté"
+      },
+      "status": {
+        "actions": {
+          "adminNote": "Seul un administrateur fournisseur peut effectuer ces actions.",
+          "disconnect": "Déconnecter →",
+          "rotateSecret": "Renouveler le secret webhook",
+          "testConnection": "Tester la connexion"
+        },
+        "activityStats": {
+          "empty": "Aucun événement enregistré pour l'instant.",
+          "invoicesPaid": "Factures payées",
+          "invoicesSent": "Factures envoyées",
+          "recentHeading": "Événements récents",
+          "webhookEvents": "Webhooks",
+          "workerFailures": "Envois échoués"
+        },
+        "cards": {
+          "customers": "Clients",
+          "customersMeta": "Liens entreprise dans Tripletex",
+          "products": "Produits",
+          "productsMeta": "Produits repas mappés",
+          "vatCodes": "Codes TVA",
+          "vatCodesMeta": "Codes fiscaux uniques utilisés"
+        },
+        "hero": {
+          "configureWebhook": "Configurer le webhook →",
+          "continueSetup": "Poursuivre la configuration →",
+          "credentialsPurge": "Les identifiants seront supprimés le {datetime}",
+          "daysUntilPurge": "dans {days} jours",
+          "lastHealthCheck": "Dernier contrôle : {relative}",
+          "reconfigure": "Reconfigurer →",
+          "reconnect": "Reconnecter →",
+          "since": "Depuis le {datetime}"
+        },
+        "modals": {
+          "close": "Fermer",
+          "copied": "Copié",
+          "copy": "Copier",
+          "copyFailed": "Impossible de copier",
+          "disconnect": {
+            "body": "La connexion est définie sur déconnectée. Les identifiants sont conservés 30 jours pour vous permettre de vous reconnecter sans nouveau jeton. Ensuite, ils sont supprimés définitivement.",
+            "confirm": "Confirmer la déconnexion",
+            "confirming": "Déconnexion…",
+            "title": "Déconnecter Tripletex"
+          },
+          "failed": "Échec",
+          "ok": "OK",
+          "rotate": {
+            "body": "Génère un nouveau secret et met à jour l'abonnement Tripletex lorsque la configuration est terminée.",
+            "generate": "Générer un nouveau secret",
+            "generating": "Génération…",
+            "title": "Renouveler le secret webhook"
+          },
+          "test": {
+            "body": "Exécute une vérification complète en 3 étapes contre Tripletex avec les identifiants stockés.",
+            "run": "Lancer le test",
+            "running": "Test en cours…",
+            "stepAuth": "Authentification",
+            "stepCompany": "Entreprise",
+            "stepScope": "Accès",
+            "title": "Tester la connexion"
+          }
+        },
+        "sections": {
+          "actions": "Actions",
+          "activity": "Activité des 30 derniers jours",
+          "resources": "Ressources dans Tripletex",
+          "webhook": "Webhook"
+        },
+        "webhook": {
+          "activeCount": "{count} actifs dans Tripletex",
+          "copied": "Copié",
+          "copy": "Copier",
+          "copyFailed": "Impossible de copier",
+          "eventTypes": "Types d'événements",
+          "eventsCount": "{count} événements",
+          "last30Days": "30 derniers jours",
+          "lastReceived": "Dernière réception",
+          "noEventsYet": "Aucun événement pour l'instant",
+          "noneRegistered": "Aucun enregistré pour l'instant",
+          "notRotated": "Non renouvelé",
+          "secretRotated": "Secret renouvelé",
+          "subscriptions": "Abonnements enregistrés"
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Connecter Tripletex",
+        "leadForProvider": "Pour {providerName}",
+        "progress": {
+          "ariaLabel": "Étape {current} sur {total} : {label}",
+          "done": "Terminé",
+          "setup": "Configuration",
+          "token": "Jeton",
+          "verify": "Vérifier",
+          "webhook": "Webhook"
+        },
+        "steps": {
+          "provisioning": {
+            "complete": "Configuration terminée.",
+            "contactSupport": "Contacter le support",
+            "customersSync": "Synchronisation des clients",
+            "eyebrow": "Étape 3 sur 5",
+            "intro": "Cela prend généralement 10 à 30 secondes.",
+            "productsCreate": "Création des produits",
+            "starting": "Démarrage de la configuration…",
+            "syncing": "Synchronisation des codes TVA, produits et clients…",
+            "timeout": "Une opération a pris plus de temps que prévu.",
+            "timeoutHint": "La configuration se poursuit en arrière-plan. Vous pouvez fermer cette page et revenir plus tard.",
+            "title": "Configuration de Tripletex",
+            "vatSync": "Synchronisation des codes TVA",
+            "waiting": "En attente de la configuration Tripletex…"
+          },
+          "success": {
+            "backToSettings": "Retour à l'aperçu",
+            "bulletInvoices": "Envoyer les factures automatiquement vers Tripletex",
+            "bulletPayments": "Recevoir le statut de paiement via webhook",
+            "bulletStatus": "Voir le statut de connexion et l'historique",
+            "canNow": "Vous pouvez maintenant :",
+            "companyPrefix": "Entreprise :",
+            "eyebrow": "Étape 5 sur 5",
+            "title": "✓ Tripletex est connecté",
+            "viewInvoices": "Voir l'historique des factures",
+            "viewStatus": "Voir le statut de connexion"
+          },
+          "token": {
+            "checksFailed": "Une ou plusieurs vérifications ont échoué. Corrigez et réessayez.",
+            "companyIdHelp": "Format : 6 à 12 chiffres. Trouvez-le dans l'URL : contextId=…",
+            "companyIdInvalid": "L'identifiant entreprise doit comporter 6 à 12 chiffres.",
+            "companyIdLabel": "Identifiant entreprise Tripletex",
+            "connecting": "Connexion…",
+            "continue": "Continuer",
+            "eyebrow": "Étape 1 sur 5",
+            "intro": "Générez un jeton employé (Employee Token) dans Tripletex sous Entreprise → Accès API. Collez l'identifiant entreprise de l'URL (contextId) et le jeton ci-dessous.",
+            "notRun": "Non exécuté",
+            "retry": "Réessayer",
+            "title": "Coller et vérifier",
+            "tokenHintPending": "Le jeton n'est envoyé au serveur que lors de la vérification et du stockage.",
+            "tokenHintVerified": "Jeton vérifié et prêt pour le stockage.",
+            "tokenLabel": "Employee Token",
+            "tokenMissing": "Collez le jeton employé (Employee Token) depuis Tripletex.",
+            "tokenMissingOnContinue": "Jeton manquant. Vérifiez à nouveau.",
+            "verify": "Vérifier",
+            "verifying": "Vérification…"
+          },
+          "webhook": {
+            "eyebrow": "Étape 4 sur 5",
+            "finalize": "Terminer la configuration",
+            "finalizing": "Finalisation…",
+            "intro": "Lunchportalen enregistre automatiquement les abonnements webhook dans Tripletex. Vous n'avez pas besoin de coller l'URL ou le secret manuellement.",
+            "prepareFailed": "Impossible de préparer le secret webhook.",
+            "preparing": "Préparation du secret webhook…",
+            "ready": "Prêt. Cliquez sur « Terminer la configuration » pour enregistrer le webhook et finaliser la connexion.",
+            "registering": "Enregistrement du webhook dans Tripletex…",
+            "title": "Enregistrement du webhook"
+          }
+        },
+        "verify": {
+          "auth": "Test d'authentification",
+          "authOk": "Connexion OK",
+          "companyMatch": "Vérification de la correspondance de l'identifiant entreprise",
+          "companyOk": "Entreprise correcte",
+          "scope": "Test des autorisations",
+          "scopeOk": "Accès OK"
         }
       }
     }
