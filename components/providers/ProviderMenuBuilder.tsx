@@ -43,14 +43,15 @@ import {
   summarizeSharedVarmrettDay,
   resolveSharedVarmrettSlot,
   resolveNextStepAction,
+  type NextStepAction,
 } from "@/lib/provider-menu/providerMenuWorkspace";
 import {
   WEEKDAY_KEYS,
-  WEEKDAY_LABELS,
   computeMarginEstimate,
   slotKey,
   validateEnterprisePublish,
   weekDatesFromStart,
+  type WeekdayKey,
 } from "@/lib/providers/providerMenuPackageSurface";
 import type { ProviderMenuPricePreviewDisplayPayload } from "@/lib/providers/providerMenuPricePreviewDisplay";
 import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
@@ -121,10 +122,32 @@ function emptySlot(date: string, tier: PlanTier, category: Category): ResolvedPr
   };
 }
 
-function weekdayLabelForDate(date: string, weekDates: string[]): string {
+function weekdayKeyForDate(date: string, weekDates: string[]): WeekdayKey | null {
   const idx = weekDates.indexOf(date);
-  if (idx < 0) return date;
-  return WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? date;
+  if (idx < 0) return null;
+  return WEEKDAY_KEYS[idx] ?? null;
+}
+
+function weekdayLabelForDate(
+  date: string,
+  weekDates: string[],
+  translate: (key: string) => string,
+): string {
+  const key = weekdayKeyForDate(date, weekDates);
+  if (!key) return date;
+  return translate(`weekdays.${key}`);
+}
+
+function translateNextStepAction(
+  action: NextStepAction,
+  translate: (key: string, values?: Record<string, string>) => string,
+): string {
+  if (action.key === "fill_warm_dish_for_day") {
+    return translate("workspace.nextStep.fill_warm_dish_for_day", {
+      weekdayPossessive: translate(`workspace.weekdaysPossessive.${action.weekdayKey}`),
+    });
+  }
+  return translate(`workspace.nextStep.${action.key}`);
 }
 
 export default function ProviderMenuBuilder() {
@@ -166,9 +189,10 @@ export default function ProviderMenuBuilder() {
   }, [slots, weekDates]);
 
   const nextStepHint = useMemo(() => {
-    const labels = weekDates.map((_, idx) => WEEKDAY_LABELS[WEEKDAY_KEYS[idx]!] ?? "");
-    return resolveNextStepAction(slots, weekDates, tier, weekMetrics, labels, catalog);
-  }, [slots, weekDates, tier, weekMetrics, catalog]);
+    const weekdayKeys = weekDates.map((_, idx) => WEEKDAY_KEYS[idx]!).filter(Boolean);
+    const action = resolveNextStepAction(slots, weekDates, tier, weekMetrics, weekdayKeys, catalog);
+    return translateNextStepAction(action, t);
+  }, [slots, weekDates, tier, weekMetrics, catalog, t]);
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -180,7 +204,7 @@ export default function ProviderMenuBuilder() {
       });
       const json = (await res.json()) as MenuWeekResponse;
       if (!res.ok || !json.ok || !json.data) {
-        setError(json.message ?? t("errors.loadFailed"));
+        setError(t("errors.loadFailed"));
         setLoading(false);
         return;
       }
@@ -369,13 +393,13 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      setError(json.message ?? t("errors.saveFailed"));
+      setError(t("errors.saveFailed"));
       return;
     }
 
     const warnings = (json.data as { warnings?: string[] } | undefined)?.warnings ?? [];
     if (warnings.length > 0 && status === "published" && !confirmWarnings) {
-      setError(t("errors.publishConfirmRequired", { warning: warnings[0] }));
+      setError(t("errors.publishConfirmRequired", { warning: warnings[0] ?? "" }));
       return;
     }
 
@@ -399,7 +423,7 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      setError(json.message ?? t("errors.resetVarmrettFailed"));
+      setError(t("errors.resetVarmrettFailed"));
       return;
     }
 
@@ -430,7 +454,8 @@ export default function ProviderMenuBuilder() {
       ? buildEditorContext({
           tier,
           tierLabel: TIER_LABELS[tier],
-          weekdayLabel: weekdayLabelForDate(selected.date, weekDates),
+          weekdayLabel: weekdayLabelForDate(selected.date, weekDates, t),
+          weekdayKey: weekdayKeyForDate(selected.date, weekDates),
           date: selected.date,
           category: selected.category,
           variantLabel: selected.variantLabel ?? null,

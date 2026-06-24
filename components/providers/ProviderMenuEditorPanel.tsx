@@ -141,7 +141,7 @@ export default function ProviderMenuEditorPanel({
   const isVarmrettMode = isSanityDrivenCategory(form.category) && !isEnterpriseUpgradeMode;
   const isCatalogMode = !isVarmrettMode && !isEnterpriseUpgradeMode && (context.mode === "catalog" || categoryOnly);
 
-  const isFriday = context.weekdayLabel.toLowerCase().startsWith("fredag");
+  const isFriday = context.weekdayKey === "fri";
 
   const enterpriseDelta = ENTERPRISE_PRICE_EX_VAT - LUXUS_PRICE_EX_VAT;
   const luxusMargin =
@@ -619,8 +619,7 @@ export default function ProviderMenuEditorPanel({
                   type="button"
                   className={`lp-editor-inspector__enterprise-chip${
                     form.upgradeType === choice.upgradeType &&
-                    (form.upgradeNote.trim() === t(`enterprise.quickChoices.${choice.id}.note`) ||
-                      form.upgradeNote.trim() === choice.upgradeNote)
+                    form.upgradeNote.trim() === t(`enterprise.quickChoices.${choice.id}.note`)
                       ? " is-active"
                       : ""
                   }`}
@@ -709,7 +708,7 @@ export default function ProviderMenuEditorPanel({
               className={w.blocking ? "lp-editor-inspector__error" : "lp-editor-inspector__warn"}
               role="status"
             >
-              {w.message}
+              {t(`validation.enterprise.${w.messageKey}`)}
             </p>
           ))}
         </section>

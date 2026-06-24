@@ -427,6 +427,77 @@
           "basedOnLuxus": "Basé sur Luxus",
           "ownEnterprise": "Enterprise propre"
         }
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise réutilisant Basis/Luxus doit avoir un type ou une description d'upgrade avant publication.",
+          "weakValue": "Enterprise doit offrir une valeur ajoutée claire par rapport à Luxus.",
+          "lowMargin": "Ce plat Enterprise peut donner une marge inférieure à Luxus. Vérifiez le coût matière."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Publié",
+          "draft": "Brouillon",
+          "fixed": "Choix fixe",
+          "missing": "Manquant",
+          "suggestion": "Suggestion"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Choix fixe",
+          "published": "Publié",
+          "draft": "Brouillon",
+          "existing": "Existant",
+          "missing_publish": "Publication manquante",
+          "missing_warm_dish": "Plat chaud manquant depuis Sanity/banque"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Ajouter le plat chaud du {weekdayPossessive}",
+          "fill_missing_warm_dishes": "Ajouter les plats chauds manquants",
+          "check_enterprise_upgrade": "Vérifier l'upgrade Enterprise",
+          "publish_week": "Publier la semaine",
+          "ready_for_orders": "Prêt pour les commandes",
+          "preview_week": "Aperçu de la semaine"
+        },
+        "weekdaysPossessive": {
+          "mon": "lundi",
+          "tue": "mardi",
+          "wed": "mercredi",
+          "thu": "jeudi",
+          "fri": "vendredi"
+        },
+        "readiness": {
+          "not_ready": "Pas prêt à publier",
+          "has_draft": "A des brouillons",
+          "ready_for_orders": "Prêt pour les commandes",
+          "ready_to_publish": "Prêt à publier"
+        },
+        "weekSummary": {
+          "missing": "Jours manquants",
+          "ready": "Prêt à publier",
+          "published": "Publié",
+          "draft": "Brouillon",
+          "has_draft": "A des brouillons"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade planifié",
+          "upgrade_missing": "Upgrade manquant"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · commun à tous les forfaits",
+          "enterpriseUpgrade": "{weekday} · upgrade Enterprise"
+        },
+        "allergens": {
+          "none": "Aucun allergène indiqué",
+          "prefix": "Allergènes : {list}"
+        },
+        "packageCard": {
+          "basisIncludes": "Tartine · Salade · Plat chaud du jour",
+          "luxusIncludes": "Basis + Sushi · Poké · Thai",
+          "enterpriseIncludes": "Même plat chaud + valeur ajoutée",
+          "notSeparateProduction": "Pas un plat de production séparé",
+          "sharedWarmDishHint": "Un plat chaud commun"
+        }
       }
     },
     "banner": {

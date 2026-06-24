@@ -59,7 +59,7 @@ describe("providerMenuTierContract", () => {
     expect(isSanityDrivenCategory("varmrett")).toBe(true);
     expect(fixedVariantsForCategory("varmrett")).toHaveLength(0);
     const rows = resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "varmrett", CATALOG);
-    expect(rows[0]?.status).toBe("Mangler varmmat fra Sanity/bank");
+    expect(rows[0]?.status).toBe("missing_warm_dish");
   });
 
   it("Luxus includes all six categories from Sanity", () => {
@@ -158,9 +158,9 @@ describe("providerMenuTierContract", () => {
     };
     const luxusRows = resolveVariantRowsForDay(slots, "2026-06-16", "LUXUS", "pokebowl", CATALOG);
     const enterpriseRows = resolveVariantRowsForDay(slots, "2026-06-16", "ENTERPRISE", "pokebowl", CATALOG);
-    expect(luxusRows.every((r) => r.status === "Publisert")).toBe(true);
-    expect(enterpriseRows[0]?.enterpriseSourceLabel).toBe("Basert på Luxus");
-    expect(enterpriseRows[0]?.enterpriseUpgradeLabel).toBe("Premium protein");
+    expect(luxusRows.every((r) => r.status === "published")).toBe(true);
+    expect(enterpriseRows[0]?.enterpriseSourceKey).toBe("basedOnLuxus");
+    expect(enterpriseRows[0]?.enterpriseUpgradeType).toBe("PREMIUM_PROTEIN");
   });
 
   it("published menuDay overrides contract placeholder", () => {
@@ -181,13 +181,13 @@ describe("providerMenuTierContract", () => {
       },
     };
     const rows = resolveVariantRowsForDay(slots, "2026-06-16", "BASIS", "paasmurt", CATALOG);
-    expect(rows.every((r) => r.status === "Publisert")).toBe(true);
+    expect(rows.every((r) => r.status === "published")).toBe(true);
   });
 
-  it("fixed variants render as Fast valg when no menuDay override", () => {
+  it("fixed variants render as fixed_choice when no menuDay override", () => {
     const rows = resolveVariantRowsForDay({}, "2026-06-16", "BASIS", "paasmurt", CATALOG);
     expect(rows).toHaveLength(4);
-    expect(rows.every((r) => r.status === "Fast valg")).toBe(true);
+    expect(rows.every((r) => r.status === "fixed_choice")).toBe(true);
   });
 
   it("package switch keeps tier-specific categories (contract fallback)", () => {

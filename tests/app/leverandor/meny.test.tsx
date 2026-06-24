@@ -460,6 +460,7 @@ describe("Provider menu editor and catalog i18n", () => {
           context={{
             tierLabel: "Luxus",
             weekdayLabel: "Monday",
+            weekdayKey: "tue",
             date: "2026-06-16",
             categoryLabel: "Varmrett",
             variantLabel: null,

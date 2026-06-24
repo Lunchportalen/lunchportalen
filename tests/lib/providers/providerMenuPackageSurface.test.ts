@@ -148,6 +148,7 @@ describe("providerMenuPackageSurface enterprise validation", () => {
       priceExVatNok: 170,
     });
     expect(warnings.some((w) => w.code === "UPGRADE_REQUIRED" && w.blocking)).toBe(true);
+    expect(warnings[0]?.messageKey).toBe("upgradeRequired");
   });
 
   it("Enterprise warns on weak value proposition without source", () => {

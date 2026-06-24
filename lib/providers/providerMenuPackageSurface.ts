@@ -9,34 +9,8 @@ import {
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
 
-export const PROVIDER_MENU_BUILDER_COPY = {
-  title: "Meny",
-  lead: "Planlegg, vedlikehold og publiser menyer for Basis, Luxus og Enterprise.",
-  status: {
-    draft: "Utkast",
-    published: "Publisert",
-    missing: "Mangler dager",
-    ready: "Klar til publisering",
-  },
-  allergensNone: "Ingen allergener oppgitt",
-  allergensPrefix: "Allergener:",
-  enterpriseWeakValue:
-    "Enterprise bør ha tydelig merverdi sammenlignet med Luxus.",
-  enterpriseLowMargin: "Denne Enterprise-retten kan gi lavere margin enn Luxus. Kontroller råvarekost.",
-  enterpriseUpgradeRequired:
-    "Enterprise som gjenbruker Basis/Luxus må ha upgrade-type eller upgrade-beskrivelse ved publisering.",
-} as const;
-
 export const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri"] as const;
 export type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
-
-export const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
-  mon: "Mandag",
-  tue: "Tirsdag",
-  wed: "Onsdag",
-  thu: "Torsdag",
-  fri: "Fredag",
-};
 
 export const ENTERPRISE_UPGRADE_TYPES = [
   "PREMIUM_PROTEIN",
@@ -49,16 +23,6 @@ export const ENTERPRISE_UPGRADE_TYPES = [
 ] as const;
 
 export type EnterpriseUpgradeType = (typeof ENTERPRISE_UPGRADE_TYPES)[number];
-
-export const ENTERPRISE_UPGRADE_LABELS: Record<EnterpriseUpgradeType, string> = {
-  PREMIUM_PROTEIN: "Premium protein",
-  EXTRA_SIDE: "Ekstra tilbehør",
-  DESSERT_FRUIT: "Dessert/frukt/snack",
-  LARGER_PORTION: "Større porsjon",
-  PREMIUM_LABELING: "Premium merking/kontroll",
-  PRIORITY_DELIVERY: "Prioritert leveringsvindu",
-  OTHER: "Egen/annet",
-};
 
 export type ProviderMenuSlotKey = `${string}:${PlanTier}:${Category}`;
 
@@ -90,16 +54,20 @@ export type MarginEstimate = {
   marginPercent: number | null;
 };
 
+export type WeekPublishSummaryKey = "missing" | "ready" | "published" | "draft";
+
+export type EnterpriseValidationMessageKey = "upgradeRequired" | "weakValue" | "lowMargin";
+
+export type EnterpriseValidationWarning = {
+  code: "WEAK_VALUE" | "LOW_MARGIN" | "UPGRADE_REQUIRED";
+  messageKey: EnterpriseValidationMessageKey;
+  /** Server/API nb fallback — provider UI uses messageKey + i18n. */
+  message: string;
+  blocking: boolean;
+};
+
 export function slotKey(date: string, tier: PlanTier, category: Category): ProviderMenuSlotKey {
   return `${date}:${tier}:${category}`;
-}
-
-export function parseAllergensDisplay(allergens: string[] | null | undefined, allergensText?: string): string {
-  const fromText = String(allergensText ?? "").trim();
-  if (fromText) return `${PROVIDER_MENU_BUILDER_COPY.allergensPrefix} ${fromText}`;
-  const list = Array.isArray(allergens) ? allergens.filter(Boolean) : [];
-  if (list.length === 0) return PROVIDER_MENU_BUILDER_COPY.allergensNone;
-  return `${PROVIDER_MENU_BUILDER_COPY.allergensPrefix} ${list.join(", ")}`;
 }
 
 export function computeMarginEstimate(
@@ -118,12 +86,6 @@ export function computeMarginEstimate(
   const marginPercent = priceExVatNok > 0 ? Math.round((grossMarginNok / priceExVatNok) * 1000) / 10 : null;
   return { priceExVatNok, estimatedCostNok: cost, grossMarginNok, marginPercent };
 }
-
-export type EnterpriseValidationWarning = {
-  code: "WEAK_VALUE" | "LOW_MARGIN" | "UPGRADE_REQUIRED";
-  message: string;
-  blocking: boolean;
-};
 
 export function validateEnterprisePublish(input: {
   tier: PlanTier;
@@ -145,7 +107,9 @@ export function validateEnterprisePublish(input: {
   if (input.sourcePackage && !hasUpgrade) {
     warnings.push({
       code: "UPGRADE_REQUIRED",
-      message: PROVIDER_MENU_BUILDER_COPY.enterpriseUpgradeRequired,
+      messageKey: "upgradeRequired",
+      message:
+        "Enterprise som gjenbruker Basis/Luxus må ha upgrade-type eller upgrade-beskrivelse ved publisering.",
       blocking: true,
     });
   }
@@ -153,7 +117,8 @@ export function validateEnterprisePublish(input: {
   if (!input.sourcePackage && !hasUpgrade && input.mealTitle.trim()) {
     warnings.push({
       code: "WEAK_VALUE",
-      message: PROVIDER_MENU_BUILDER_COPY.enterpriseWeakValue,
+      messageKey: "weakValue",
+      message: "Enterprise bør ha tydelig merverdi sammenlignet med Luxus.",
       blocking: false,
     });
   }
@@ -165,11 +130,11 @@ export function validateEnterprisePublish(input: {
     input.priceExVatNok > 0
   ) {
     const margin = computeMarginEstimate(
-      { priceExVatNok: input.priceExVatNok, vatRate: 0.15, priceIncVatNok: 0 },
+      { priceExVatNok: input.priceExVatNok, vatRate: 0, priceIncVatNok: 0 },
       input.estimatedCostPerPortion,
     );
     const luxusMargin = computeMarginEstimate(
-      { priceExVatNok: 130, vatRate: 0.15, priceIncVatNok: 0 },
+      { priceExVatNok: 130, vatRate: 0, priceIncVatNok: 0 },
       input.luxusEstimatedCost,
     );
     if (
@@ -179,7 +144,8 @@ export function validateEnterprisePublish(input: {
     ) {
       warnings.push({
         code: "LOW_MARGIN",
-        message: PROVIDER_MENU_BUILDER_COPY.enterpriseLowMargin,
+        messageKey: "lowMargin",
+        message: "Denne Enterprise-retten kan gi lavere margin enn Luxus. Kontroller råvarekost.",
         blocking: false,
       });
     }
@@ -211,15 +177,36 @@ export function weekDatesFromStart(weekStartIso: string): string[] {
   });
 }
 
-export function summarizeWeekStatus(slots: ReadonlyArray<ProviderMenuSlotState>): string {
+export function summarizeWeekStatusKey(slots: ReadonlyArray<ProviderMenuSlotState>): WeekPublishSummaryKey {
   const filled = slots.filter((s) => s.status !== "empty");
-  if (filled.length === 0) return PROVIDER_MENU_BUILDER_COPY.status.missing;
+  if (filled.length === 0) return "missing";
   const published = filled.filter((s) => s.status === "published").length;
-  if (published === filled.length && filled.length > 0) return PROVIDER_MENU_BUILDER_COPY.status.ready;
-  if (published > 0) return PROVIDER_MENU_BUILDER_COPY.status.published;
-  return PROVIDER_MENU_BUILDER_COPY.status.draft;
+  if (published === filled.length && filled.length > 0) return "ready";
+  if (published > 0) return "published";
+  return "draft";
 }
 
 export function categoryLabel(category: Category): string {
   return CATEGORY_LABELS[category] ?? category;
+}
+
+export type AllergensDisplayInput = {
+  allergens: string[] | null | undefined;
+  allergensText?: string;
+};
+
+export type AllergensDisplayResult =
+  | { kind: "none" }
+  | { kind: "list"; list: string }
+  | { kind: "text"; text: string };
+
+export function resolveAllergensDisplay(
+  allergens: string[] | null | undefined,
+  allergensText?: string,
+): AllergensDisplayResult {
+  const fromText = String(allergensText ?? "").trim();
+  if (fromText) return { kind: "text", text: fromText };
+  const list = Array.isArray(allergens) ? allergens.filter(Boolean) : [];
+  if (list.length === 0) return { kind: "none" };
+  return { kind: "list", list: list.join(", ") };
 }

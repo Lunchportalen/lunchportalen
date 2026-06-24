@@ -427,6 +427,77 @@
           "basedOnLuxus": "Basado en Luxus",
           "ownEnterprise": "Enterprise propio"
         }
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise que reutiliza Basis/Luxus debe tener tipo o descripción de upgrade antes de publicar.",
+          "weakValue": "Enterprise debe tener valor añadido claro frente a Luxus.",
+          "lowMargin": "Este plato Enterprise puede dar menor margen que Luxus. Revise el coste de materias primas."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Publicado",
+          "draft": "Borrador",
+          "fixed": "Opción fija",
+          "missing": "Falta",
+          "suggestion": "Sugerencia"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Opción fija",
+          "published": "Publicado",
+          "draft": "Borrador",
+          "existing": "Existente",
+          "missing_publish": "Falta publicación",
+          "missing_warm_dish": "Falta plato caliente de Sanity/banco"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Añadir plato caliente del {weekdayPossessive}",
+          "fill_missing_warm_dishes": "Añadir platos calientes faltantes",
+          "check_enterprise_upgrade": "Revisar upgrade Enterprise",
+          "publish_week": "Publicar semana",
+          "ready_for_orders": "Listo para pedidos",
+          "preview_week": "Vista previa de la semana"
+        },
+        "weekdaysPossessive": {
+          "mon": "lunes",
+          "tue": "martes",
+          "wed": "miércoles",
+          "thu": "jueves",
+          "fri": "viernes"
+        },
+        "readiness": {
+          "not_ready": "No listo para publicar",
+          "has_draft": "Tiene borradores",
+          "ready_for_orders": "Listo para pedidos",
+          "ready_to_publish": "Listo para publicar"
+        },
+        "weekSummary": {
+          "missing": "Faltan días",
+          "ready": "Listo para publicar",
+          "published": "Publicado",
+          "draft": "Borrador",
+          "has_draft": "Tiene borradores"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade planificado",
+          "upgrade_missing": "Falta upgrade"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · común para todos los paquetes",
+          "enterpriseUpgrade": "{weekday} · upgrade Enterprise"
+        },
+        "allergens": {
+          "none": "Sin alérgenos indicados",
+          "prefix": "Alérgenos: {list}"
+        },
+        "packageCard": {
+          "basisIncludes": "Bocadillo · Ensalada · Plato caliente del día",
+          "luxusIncludes": "Basis + Sushi · Poké · Thai",
+          "enterpriseIncludes": "Mismo plato caliente + valor añadido",
+          "notSeparateProduction": "No es plato de producción separado",
+          "sharedWarmDishHint": "Un plato caliente común"
+        }
       }
     },
     "banner": {
