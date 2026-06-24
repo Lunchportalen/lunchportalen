@@ -148,7 +148,7 @@
       },
       "tabs": {
         "weekPlan": "Wochenplan",
-        "catalog": "Menükatalog"
+        "catalog": "Feste Auswahl"
       },
       "status": {
         "ariaLabel": "Wochenstatus",
@@ -387,6 +387,40 @@
         "messages": {
           "saveFailed": "Katalog konnte nicht gespeichert werden.",
           "saved": "Katalog gespeichert."
+        }
+      },
+      "catalogModel": {
+        "title": "Feste Auswahl",
+        "lead": "Das sind die festen Optionen Ihres Anbieters. Der Wochenplan nutzt sie, wenn Sie das Mittagessen für konkrete Tage veröffentlichen.",
+        "fixedChoicesTitle": "Feste Auswahl bearbeiten",
+        "weekPlanHint": "Änderungen gelten ab der nächsten Wochenveröffentlichung. Das Tagesgericht und Enterprise-Upgrade werden im Wochenplan geplant.",
+        "packageMatrix": {
+          "title": "Menüpakete",
+          "basis": {
+            "title": "Basis",
+            "text": "Belegtes Brot, Salatbox und Tagesgericht."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Alles in Basis + Sushi, Poké Bowl und Thai."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Gleiches Tagesgericht + Enterprise-Upgrade im Wochenplan."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis zeigt feste Auswahl für Belegtes Brot und Salatbox.",
+          "luxus": "Luxus umfasst Basis-Auswahl und Premium-Kategorien Sushi, Poké Bowl und Thai.",
+          "enterprise": "Enterprise nutzt denselben festen Katalog wie Luxus. Upgrades werden im Wochenplan zum Tagesgericht hinzugefügt — nicht hier."
+        },
+        "sharedWarmDish": {
+          "title": "Tagesgericht",
+          "text": "Wird im Wochenplan verwaltet — ein gemeinsames Gericht pro Tag für Basis, Luxus und Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Enterprise-Upgrade",
+          "text": "Gleiches Tagesgericht wie Luxus, mit Zusätzen/Upgrade pro Tag im Wochenplan — kein separates Tagesgericht."
         }
       },
       "enterprise": {

@@ -265,7 +265,7 @@ describe("ProviderMenuCatalogEditor accordion", () => {
   });
 });
 
-describe("ProviderMenuCatalogView Menykatalog tab", () => {
+describe("ProviderMenuCatalogView fixed choices tab", () => {
   const CATALOG_FIXTURE = {
     rows: [
       {
@@ -286,6 +286,12 @@ describe("ProviderMenuCatalogView Menykatalog tab", () => {
         allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
         items: [{ key: "sushi-pakke", title: "Sushi-pakke", allergens: ["fisk"], isVegetarian: false }],
       },
+      {
+        key: "varmrett",
+        title: "Varmrett",
+        allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        items: [],
+      },
     ],
   };
 
@@ -297,8 +303,12 @@ describe("ProviderMenuCatalogView Menykatalog tab", () => {
     expect(source).toContain("panelMode");
     expect(source).toContain("filterByTier");
     expect(source).toContain("hidePageHeader");
+    expect(source).toContain("catalogModel");
     expect(source).not.toContain("panelMode={false}");
     expect(source).not.toContain("catalog.legacyTitle");
+    expect(source).not.toContain("lp-editor-catalog__groups");
+    expect(source).not.toContain("onSelectVariant");
+    expect(source).not.toContain("catalogVariantsForTier");
   });
 
   async function renderCatalogView(tier: "BASIS" | "LUXUS" | "ENTERPRISE" = "BASIS") {
@@ -306,35 +316,52 @@ describe("ProviderMenuCatalogView Menykatalog tab", () => {
     const ProviderMenuCatalogView = (await import("@/components/providers/ProviderMenuCatalogView")).default;
     return renderToStaticMarkup(
       <NextIntlClientProvider locale="nb" messages={messages}>
-        <ProviderMenuCatalogView
-          tier={tier}
-          catalog={CATALOG_FIXTURE}
-          onSelectVariant={() => {}}
-          onCatalogSaved={() => {}}
-        />
+        <ProviderMenuCatalogView tier={tier} catalog={CATALOG_FIXTURE} onCatalogSaved={() => {}} />
       </NextIntlClientProvider>,
     );
   }
 
-  test("catalog tab renders accordion cards and isolate banner", async () => {
+  test("catalog tab renders package model and accordion editor", async () => {
     const html = await renderCatalogView("BASIS");
+    expect(html).toContain("lp-editor-catalog-model");
+    expect(html).toContain("Faste valg");
+    expect(html).toContain("Menypakker");
     expect(html).toContain("lp-editor-catalog-editor--accordion");
     expect(html).toContain("lp-editor-catalog-isolate");
     expect(html).toContain("lp-editor-catalog-acc");
+    expect(html).toContain("Rediger faste valg");
+    expect(html).toContain("Styres i Ukeplan");
+    expect(html).toContain("Enterprise upgrade");
+    expect(html).not.toContain("lp-editor-catalog__groups");
     expect(html).not.toContain("lp-editor-catalog-editor__checkbox");
     expect(html).not.toContain("lp-editor-catalog-editor__allergens");
     expect(html).not.toContain("Din menykatalog");
+  });
+
+  test("catalog tab does not show synthetic warm dish as catalog choice", async () => {
+    const html = await renderCatalogView("BASIS");
+    expect(html).not.toContain("lp-editor-catalog__item");
+    expect(html).not.toContain("Sanity/bank");
+    expect(html).not.toContain("lp-editor-catalog-acc__name\">Varmrett");
   });
 
   test("catalog tab BASIS tier filter hides Sushi accordion", async () => {
     const html = await renderCatalogView("BASIS");
     expect(html).toContain("Påsmurt");
     expect(html).not.toContain("lp-editor-catalog-acc__name\">Sushi");
+    expect(html).toContain("Basis viser faste valg");
   });
 
-  test("catalog tab keeps provider-owned item titles untranslated", async () => {
+  test("catalog tab ENTERPRISE explains upgrade on week plan", async () => {
+    const html = await renderCatalogView("ENTERPRISE");
+    expect(html).toContain("Enterprise bruker samme faste katalog");
+    expect(html).toContain("ikke en egen varmrett");
+  });
+
+  test("catalog tab keeps provider-owned catalog labels untranslated", async () => {
     const html = await renderCatalogView("BASIS");
-    expect(html).toContain("Ost &amp; Skinke");
+    expect(html).toContain("Påsmurt");
+    expect(html).toContain("Salatboks");
   });
 });
 
@@ -452,19 +479,21 @@ describe("ProviderMenuPricePreviewStrip", () => {
 });
 
 describe("ProviderMenuBuilder i18n", () => {
-  test("nb default shows Meny-editor and Ukeplan", async () => {
+  test("nb default shows Meny-editor, Ukeplan and Faste valg", async () => {
     const html = await renderProviderMenuBuilder("nb");
     expect(html).toContain("Meny-editor");
     expect(html).toContain("Ukeplan");
+    expect(html).toContain("Faste valg");
     expect(html).toContain("Basis");
     expect(html).toContain("Luxus");
     expect(html).toContain("Enterprise");
   });
 
-  test("en locale shows Menu editor and Week plan", async () => {
+  test("en locale shows Menu editor, Week plan and Fixed choices", async () => {
     const html = await renderProviderMenuBuilder("en");
     expect(html).toContain("Menu editor");
     expect(html).toContain("Week plan");
+    expect(html).toContain("Fixed choices");
     expect(html).toContain("Basis");
     expect(html).toContain("Luxus");
     expect(html).toContain("Enterprise");
@@ -500,6 +529,16 @@ describe("ProviderMenuBuilder i18n", () => {
     expect(planner).toContain('useTranslations("provider.menu")');
     expect(editorPanel).toContain('useTranslations("provider.menu")');
     expect(catalogView).toContain('useTranslations("provider.menu")');
+  });
+
+  test("builder hides week status strip on catalog workspace in source", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuBuilder.tsx"),
+      "utf8",
+    );
+    expect(source).toContain('workspaceView === "week"');
+    expect(source).toContain("ProviderMenuStatusRow");
+    expect(source).toContain("lp-editor-workspace--catalog");
   });
 
   test("ProviderMenuBuilder uses i18n for error and success fallbacks", () => {

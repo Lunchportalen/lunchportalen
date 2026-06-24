@@ -148,7 +148,7 @@
       },
       "tabs": {
         "weekPlan": "Plan semanal",
-        "catalog": "Catálogo de menú"
+        "catalog": "Opciones fijas"
       },
       "status": {
         "ariaLabel": "Estado de la semana",
@@ -387,6 +387,40 @@
         "messages": {
           "saveFailed": "No se pudo guardar el catálogo.",
           "saved": "Catálogo guardado."
+        }
+      },
+      "catalogModel": {
+        "title": "Opciones fijas",
+        "lead": "Estas son las opciones fijas de tu proveedor. El plan semanal las usa cuando publicas el almuerzo para días concretos.",
+        "fixedChoicesTitle": "Editar opciones fijas",
+        "weekPlanHint": "Los cambios se aplican desde la próxima publicación semanal. El plato caliente del día y el upgrade Enterprise se planifican en el plan semanal.",
+        "packageMatrix": {
+          "title": "Paquetes de menú",
+          "basis": {
+            "title": "Basis",
+            "text": "Bocadillo, ensalada en caja y plato caliente del día."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Todo en Basis + sushi, poké bowl y tailandés."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Mismo plato caliente del día + upgrade Enterprise en el plan semanal."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis muestra opciones fijas para bocadillo y ensalada en caja.",
+          "luxus": "Luxus incluye opciones Basis y las categorías premium sushi, poké bowl y tailandés.",
+          "enterprise": "Enterprise usa el mismo catálogo fijo que Luxus. El upgrade se añade al plato caliente del día en el plan semanal — no aquí."
+        },
+        "sharedWarmDish": {
+          "title": "Plato caliente del día",
+          "text": "Se gestiona en el plan semanal — un plato común por día para Basis, Luxus y Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Upgrade Enterprise",
+          "text": "Mismo plato caliente del día que Luxus, con complementos/upgrade planificados por día en el plan semanal — no un plato caliente separado."
         }
       },
       "enterprise": {

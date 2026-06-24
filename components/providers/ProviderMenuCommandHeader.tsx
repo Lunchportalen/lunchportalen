@@ -45,24 +45,37 @@ export default function ProviderMenuCommandHeader({
   const week = isoWeekNumberFromMondayStart(weekStart);
   const year = weekStart.slice(0, 4);
 
+  const isCatalogView = workspaceView === "catalog";
+
   return (
-    <header className="lp-editor-command-header">
+    <header className={`lp-editor-command-header${isCatalogView ? " lp-editor-command-header--catalog" : ""}`}>
       <div className="lp-editor-page-head">
         <div className="lp-editor-page-head__main">
           <p className="lp-editor-page-head__eyebrow">{t("header.eyebrow")}</p>
-          <h1 className="lp-editor-page-head__title">{t("header.weekTitle", { week, year })}</h1>
-          <p className="lp-editor-page-head__lead">{t("header.lead")}</p>
+          {isCatalogView ? (
+            <>
+              <h1 className="lp-editor-page-head__title">{t("catalogModel.title")}</h1>
+              <p className="lp-editor-page-head__lead">{t("catalogModel.lead")}</p>
+            </>
+          ) : (
+            <>
+              <h1 className="lp-editor-page-head__title">{t("header.weekTitle", { week, year })}</h1>
+              <p className="lp-editor-page-head__lead">{t("header.lead")}</p>
+            </>
+          )}
         </div>
 
-        <div className="lp-editor-page-head__week-nav-pill" aria-label={t("header.weekNavAria")}>
-          <button type="button" className="ds-btn ds-btn--ghost" onClick={onPrevWeek}>
-            {t("header.prevWeek")}
-          </button>
-          <span className="lp-editor-page-head__week-label">{t("header.weekFrom", { date: weekStart })}</span>
-          <button type="button" className="ds-btn ds-btn--ghost" onClick={onNextWeek}>
-            {t("header.nextWeek")}
-          </button>
-        </div>
+        {isCatalogView ? null : (
+          <div className="lp-editor-page-head__week-nav-pill" aria-label={t("header.weekNavAria")}>
+            <button type="button" className="ds-btn ds-btn--ghost" onClick={onPrevWeek}>
+              {t("header.prevWeek")}
+            </button>
+            <span className="lp-editor-page-head__week-label">{t("header.weekFrom", { date: weekStart })}</span>
+            <button type="button" className="ds-btn ds-btn--ghost" onClick={onNextWeek}>
+              {t("header.nextWeek")}
+            </button>
+          </div>
+        )}
 
         <div className="lp-editor-tier-lens" role="tablist" aria-label={t("header.tierTabsAria")}>
           {PLAN_TIERS.map((planTier) => {
@@ -85,7 +98,7 @@ export default function ProviderMenuCommandHeader({
         </div>
       </div>
 
-      {tierPrice ? (
+      {tierPrice && !isCatalogView ? (
         <p className="lp-editor-priceline-compact" aria-label={t("header.priceLineAria")}>
           <strong>{TIER_LABELS[tier]}</strong>
           {" · "}

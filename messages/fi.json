@@ -148,7 +148,7 @@
       },
       "tabs": {
         "weekPlan": "Viikkosuunnitelma",
-        "catalog": "Menukatalogi"
+        "catalog": "Kiinteät valinnat"
       },
       "status": {
         "ariaLabel": "Viikon tila",
@@ -387,6 +387,40 @@
         "messages": {
           "saveFailed": "Katalogin tallennus epäonnistui.",
           "saved": "Katalogi tallennettu."
+        }
+      },
+      "catalogModel": {
+        "title": "Kiinteät valinnat",
+        "lead": "Nämä ovat toimittajasi kiinteät vaihtoehdot. Viikkosuunnitelma käyttää niitä, kun julkaiset lounaan tietyille päiville.",
+        "fixedChoicesTitle": "Muokkaa kiinteitä valintoja",
+        "weekPlanHint": "Muutokset astuvat voimaan seuraavasta viikkojulkaisusta. Päivän lämmin ruoka ja Enterprise-upgrade suunnitellaan Viikkosuunnitelmassa.",
+        "packageMatrix": {
+          "title": "Menu-paketit",
+          "basis": {
+            "title": "Basis",
+            "text": "Voileipä, salaattilaatikko ja päivän lämmin ruoka."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Kaikki Basisissa + sushi, poké bowl ja thai."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Sama päivän lämmin ruoka + Enterprise upgrade Viikkosuunnitelmassa."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis näyttää kiinteät valinnat voileipään ja salaattilaatikkoon.",
+          "luxus": "Luxus sisältää Basis-valinnat ja premium-kategoriat sushi, poké bowl ja thai.",
+          "enterprise": "Enterprise käyttää samaa kiinteää katalogia kuin Luxus. Upgrade lisätään päivän lämpimään ruokaan Viikkosuunnitelmassa — ei täällä."
+        },
+        "sharedWarmDish": {
+          "title": "Päivän lämmin ruoka",
+          "text": "Hallitaan Viikkosuunnitelmassa — yksi yhteinen ruoka päivää kohti Basis-, Luxus- ja Enterprise-tasoilla."
+        },
+        "enterpriseUpgrade": {
+          "title": "Enterprise upgrade",
+          "text": "Sama päivän lämmin ruoka kuin Luxus, lisäosilla/upgradella suunniteltuna päivittäin Viikkosuunnitelmassa — ei erillinen lämmin ruoka."
         }
       },
       "enterprise": {
