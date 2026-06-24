@@ -427,6 +427,77 @@
           "basedOnLuxus": "Basiert auf Luxus",
           "ownEnterprise": "Eigenes Enterprise"
         }
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise mit Basis/Luxus-Wiederverwendung braucht Upgrade-Typ oder Beschreibung vor Veröffentlichung.",
+          "weakValue": "Enterprise sollte gegenüber Luxus einen klaren Mehrwert bieten.",
+          "lowMargin": "Dieses Enterprise-Gericht kann geringere Marge als Luxus ergeben. Rohstoffkosten prüfen."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Veröffentlicht",
+          "draft": "Entwurf",
+          "fixed": "Feste Wahl",
+          "missing": "Fehlt",
+          "suggestion": "Vorschlag"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Feste Wahl",
+          "published": "Veröffentlicht",
+          "draft": "Entwurf",
+          "existing": "Vorhanden",
+          "missing_publish": "Veröffentlichung fehlt",
+          "missing_warm_dish": "Warmes Gericht aus Sanity/Bank fehlt"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "{weekdayPossessive} warmes Gericht hinzufügen",
+          "fill_missing_warm_dishes": "Fehlende warme Gerichte hinzufügen",
+          "check_enterprise_upgrade": "Enterprise-Upgrade prüfen",
+          "publish_week": "Woche veröffentlichen",
+          "ready_for_orders": "Bereit für Bestellungen",
+          "preview_week": "Woche vorschauen"
+        },
+        "weekdaysPossessive": {
+          "mon": "Montags",
+          "tue": "Dienstags",
+          "wed": "Mittwochs",
+          "thu": "Donnerstags",
+          "fri": "Freitags"
+        },
+        "readiness": {
+          "not_ready": "Nicht veröffentlichungsbereit",
+          "has_draft": "Hat Entwürfe",
+          "ready_for_orders": "Bereit für Bestellungen",
+          "ready_to_publish": "Bereit zur Veröffentlichung"
+        },
+        "weekSummary": {
+          "missing": "Tage fehlen",
+          "ready": "Bereit zur Veröffentlichung",
+          "published": "Veröffentlicht",
+          "draft": "Entwurf",
+          "has_draft": "Hat Entwürfe"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade geplant",
+          "upgrade_missing": "Upgrade fehlt"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · gemeinsam für alle Pakete",
+          "enterpriseUpgrade": "{weekday} · Enterprise-Upgrade"
+        },
+        "allergens": {
+          "none": "Keine Allergene angegeben",
+          "prefix": "Allergene: {list}"
+        },
+        "packageCard": {
+          "basisIncludes": "Belegtes Brot · Salatbox · Tageswarmgericht",
+          "luxusIncludes": "Basis + Sushi · Poké · Thai",
+          "enterpriseIncludes": "Gleiches Warmgericht + Mehrwert",
+          "notSeparateProduction": "Kein eigenes Produktionsgericht",
+          "sharedWarmDishHint": "Ein gemeinsames Warmgericht"
+        }
       }
     },
     "orders": {

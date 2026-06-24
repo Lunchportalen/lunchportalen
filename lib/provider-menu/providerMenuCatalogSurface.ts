@@ -15,25 +15,31 @@ import {
 import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 import { catalogSupportsPersistentEdit } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import type { EnterpriseUpgradeType } from "@/lib/providers/providerMenuPackageSurface";
-import { ENTERPRISE_UPGRADE_LABELS } from "@/lib/providers/providerMenuPackageSurface";
 
-export type VariantDisplayStatus =
-  | "Fast valg"
-  | "Publisert"
-  | "Utkast"
-  | "Eksisterende"
-  | "Mangler publisering"
-  | "Mangler varmmat fra Sanity/bank";
+export type VariantDisplayStatusKey =
+  | "fixed_choice"
+  | "published"
+  | "draft"
+  | "existing"
+  | "missing_publish"
+  | "missing_warm_dish";
+
+/** @deprecated Use VariantDisplayStatusKey — kept as alias for internal comparisons. */
+export type VariantDisplayStatus = VariantDisplayStatusKey;
+
+export type EnterpriseSourceKey = "basedOnBasis" | "basedOnLuxus" | "ownEnterprise";
+
+export type WorkspaceWeekSummaryKey = "missing" | "ready" | "published" | "has_draft";
 
 export type ProviderVariantDisplayRow = {
   category: Category;
   variant: CatalogFixedVariant | null;
   title: string;
-  status: VariantDisplayStatus;
+  status: VariantDisplayStatusKey;
   editable: boolean;
   sanityDriven: boolean;
-  enterpriseSourceLabel?: string | null;
-  enterpriseUpgradeLabel?: string | null;
+  enterpriseSourceKey?: EnterpriseSourceKey | null;
+  enterpriseUpgradeType?: EnterpriseUpgradeType | null;
   enterpriseUpgradeNote?: string | null;
   enterpriseWeakValue?: boolean;
 };
@@ -45,16 +51,11 @@ export function providerWorkspaceCategories(
   return workspaceCategoriesFromCatalog(catalog, tier);
 }
 
-function enterpriseSourceLabel(sourcePackage: PlanTier | null | undefined): string | null {
-  if (sourcePackage === "BASIS") return "Basert på Basis";
-  if (sourcePackage === "LUXUS") return "Basert på Luxus";
-  if (sourcePackage === "ENTERPRISE") return "Egen Enterprise";
+function enterpriseSourceKey(sourcePackage: PlanTier | null | undefined): EnterpriseSourceKey | null {
+  if (sourcePackage === "BASIS") return "basedOnBasis";
+  if (sourcePackage === "LUXUS") return "basedOnLuxus";
+  if (sourcePackage === "ENTERPRISE") return "ownEnterprise";
   return null;
-}
-
-function enterpriseUpgradeLabel(upgradeType: EnterpriseUpgradeType | null | undefined): string | null {
-  if (!upgradeType) return null;
-  return ENTERPRISE_UPGRADE_LABELS[upgradeType] ?? upgradeType;
 }
 
 function enterpriseWeakValue(
@@ -80,8 +81,8 @@ export function resolveVariantRowsForDay(
   const enterpriseMeta =
     tier === "ENTERPRISE"
       ? {
-          enterpriseSourceLabel: enterpriseSourceLabel(menuSlot.sourcePackage),
-          enterpriseUpgradeLabel: enterpriseUpgradeLabel(menuSlot.upgradeType),
+          enterpriseSourceKey: enterpriseSourceKey(menuSlot.sourcePackage),
+          enterpriseUpgradeType: menuSlot.upgradeType,
           enterpriseUpgradeNote: menuSlot.upgradeNote?.trim() || null,
           enterpriseWeakValue: enterpriseWeakValue(tier, menuSlot, hasUpgrade),
         }
@@ -89,10 +90,10 @@ export function resolveVariantRowsForDay(
 
   if (sanityDriven) {
     const hasContent = menuSlotHasContent(menuSlot);
-    let status: VariantDisplayStatus = "Mangler varmmat fra Sanity/bank";
-    if (menuSlot.status === "published") status = "Publisert";
-    else if (menuSlot.status === "draft" && hasContent) status = "Utkast";
-    else if (hasContent) status = "Eksisterende";
+    let status: VariantDisplayStatusKey = "missing_warm_dish";
+    if (menuSlot.status === "published") status = "published";
+    else if (menuSlot.status === "draft" && hasContent) status = "draft";
+    else if (hasContent) status = "existing";
 
     return [
       {
@@ -112,10 +113,10 @@ export function resolveVariantRowsForDay(
   const categoryDraft = menuSlot.status === "draft" && menuSlotHasContent(menuSlot);
 
   return variants.map((variant) => {
-    let status: VariantDisplayStatus = "Fast valg";
-    if (categoryPublished) status = "Publisert";
-    else if (categoryDraft) status = "Utkast";
-    else if (menuSlotHasContent(menuSlot)) status = "Eksisterende";
+    let status: VariantDisplayStatusKey = "fixed_choice";
+    if (categoryPublished) status = "published";
+    else if (categoryDraft) status = "draft";
+    else if (menuSlotHasContent(menuSlot)) status = "existing";
 
     return {
       category,
@@ -129,12 +130,12 @@ export function resolveVariantRowsForDay(
   });
 }
 
-export function summarizeWorkspaceWeekStatus(
+export function summarizeWorkspaceWeekStatusKey(
   slots: Record<string, ResolvedProviderMenuSlot>,
   dates: string[],
   tier: PlanTier,
   catalog: ProviderMenuCatalogSnapshot,
-): string {
+): WorkspaceWeekSummaryKey {
   const categories = providerWorkspaceCategories(catalog, tier);
   let filled = 0;
   let total = 0;
@@ -145,16 +146,26 @@ export function summarizeWorkspaceWeekStatus(
       const rows = resolveVariantRowsForDay(slots, date, tier, category, catalog);
       for (const row of rows) {
         total += 1;
-        if (row.status !== "Mangler varmmat fra Sanity/bank" && row.status !== "Mangler publisering") {
+        if (row.status !== "missing_warm_dish" && row.status !== "missing_publish") {
           filled += 1;
         }
-        if (row.status === "Publisert") published += 1;
+        if (row.status === "published") published += 1;
       }
     }
   }
 
-  if (filled === 0) return "Mangler dager";
-  if (published === total && total > 0) return "Klar til publisering";
-  if (published > 0) return "Publisert";
-  return "Har utkast";
+  if (filled === 0) return "missing";
+  if (published === total && total > 0) return "ready";
+  if (published > 0) return "published";
+  return "has_draft";
+}
+
+/** @deprecated Use summarizeWorkspaceWeekStatusKey — returns i18n key id only. */
+export function summarizeWorkspaceWeekStatus(
+  slots: Record<string, ResolvedProviderMenuSlot>,
+  dates: string[],
+  tier: PlanTier,
+  catalog: ProviderMenuCatalogSnapshot,
+): WorkspaceWeekSummaryKey {
+  return summarizeWorkspaceWeekStatusKey(slots, dates, tier, catalog);
 }

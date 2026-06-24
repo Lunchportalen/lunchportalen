@@ -1329,6 +1329,77 @@
         "resetVarmrett": "Varmrett tilbakestilt til generert.",
         "copiedFromTier": "Kopiert fra {tier}. Legg til Enterprise-upgrade før publisering."
       },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise som gjenbruker Basis/Luxus må ha upgrade-type eller upgrade-beskrivelse ved publisering.",
+          "weakValue": "Enterprise bør ha tydelig merverdi sammenlignet med Luxus.",
+          "lowMargin": "Denne Enterprise-retten kan gi lavere margin enn Luxus. Kontroller råvarekost."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Publisert",
+          "draft": "Utkast",
+          "fixed": "Fast valg",
+          "missing": "Mangler",
+          "suggestion": "Forslag"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Fast valg",
+          "published": "Publisert",
+          "draft": "Utkast",
+          "existing": "Eksisterende",
+          "missing_publish": "Mangler publisering",
+          "missing_warm_dish": "Mangler varmmat fra Sanity/bank"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Legg inn {weekdayPossessive} varmrett",
+          "fill_missing_warm_dishes": "Legg inn manglende varmretter",
+          "check_enterprise_upgrade": "Kontroller Enterprise-upgrade",
+          "publish_week": "Publiser uke",
+          "ready_for_orders": "Klar for bestilling",
+          "preview_week": "Forhåndsvis uke"
+        },
+        "weekdaysPossessive": {
+          "mon": "mandagens",
+          "tue": "tirsdagens",
+          "wed": "onsdagens",
+          "thu": "torsdagens",
+          "fri": "fredagens"
+        },
+        "readiness": {
+          "not_ready": "Ikke klar for publisering",
+          "has_draft": "Har utkast",
+          "ready_for_orders": "Klar for bestilling",
+          "ready_to_publish": "Klar for publisering"
+        },
+        "weekSummary": {
+          "missing": "Mangler dager",
+          "ready": "Klar til publisering",
+          "published": "Publisert",
+          "draft": "Utkast",
+          "has_draft": "Har utkast"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade planlagt",
+          "upgrade_missing": "Upgrade mangler"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · felles for alle pakker",
+          "enterpriseUpgrade": "{weekday} · Enterprise-upgrade"
+        },
+        "allergens": {
+          "none": "Ingen allergener oppgitt",
+          "prefix": "Allergener: {list}"
+        },
+        "packageCard": {
+          "basisIncludes": "Påsmurt · Salatboks · Dagens varmrett",
+          "luxusIncludes": "Basis + Sushi · Poké · Thai",
+          "enterpriseIncludes": "Samme varmrett + ekstra verdi",
+          "notSeparateProduction": "Ikke egen produksjonsrett",
+          "sharedWarmDishHint": "Én felles varmrett"
+        }
+      },
       "price": {
         "exVatSuffix": "kr eks. mva",
         "incVatSuffix": "kr inkl. mva",

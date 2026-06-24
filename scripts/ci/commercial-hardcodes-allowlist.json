@@ -961,8 +961,6 @@
     "lib/providers/providerCustomerDetailSurface.ts:166:gross_only",
     "lib/providers/providerCustomerDetailSurface.ts:7:formatNok",
     "lib/providers/providerLocaleReadiness.ts:44:EHF",
-    "lib/providers/providerMenuPackageSurface.ts:168:vat_0_15",
-    "lib/providers/providerMenuPackageSurface.ts:172:vat_0_15",
     "lib/providers/providerMenuPriceConfig.ts:33:VAT_RATE",
     "lib/providers/providerMenuPriceConfig.ts:34:VAT_RATE",
     "lib/providers/providerMenuPriceConfig.ts:76:VAT_RATE",

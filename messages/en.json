@@ -1329,6 +1329,77 @@
         "resetVarmrett": "Hot meal reset to generated.",
         "copiedFromTier": "Copied from {tier}. Add Enterprise upgrade before publishing."
       },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise reusing Basis/Luxus must have an upgrade type or description before publishing.",
+          "weakValue": "Enterprise should have clear added value compared with Luxus.",
+          "lowMargin": "This Enterprise dish may yield lower margin than Luxus. Check ingredient cost."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Published",
+          "draft": "Draft",
+          "fixed": "Fixed choice",
+          "missing": "Missing",
+          "suggestion": "Suggestion"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Fixed choice",
+          "published": "Published",
+          "draft": "Draft",
+          "existing": "Existing",
+          "missing_publish": "Missing publication",
+          "missing_warm_dish": "Missing warm dish from Sanity/bank"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Add {weekdayPossessive} warm dish",
+          "fill_missing_warm_dishes": "Add missing warm dishes",
+          "check_enterprise_upgrade": "Review Enterprise upgrade",
+          "publish_week": "Publish week",
+          "ready_for_orders": "Ready for orders",
+          "preview_week": "Preview week"
+        },
+        "weekdaysPossessive": {
+          "mon": "Monday's",
+          "tue": "Tuesday's",
+          "wed": "Wednesday's",
+          "thu": "Thursday's",
+          "fri": "Friday's"
+        },
+        "readiness": {
+          "not_ready": "Not ready to publish",
+          "has_draft": "Has drafts",
+          "ready_for_orders": "Ready for orders",
+          "ready_to_publish": "Ready to publish"
+        },
+        "weekSummary": {
+          "missing": "Missing days",
+          "ready": "Ready to publish",
+          "published": "Published",
+          "draft": "Draft",
+          "has_draft": "Has drafts"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade planned",
+          "upgrade_missing": "Upgrade missing"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · shared across all packages",
+          "enterpriseUpgrade": "{weekday} · Enterprise upgrade"
+        },
+        "allergens": {
+          "none": "No allergens listed",
+          "prefix": "Allergens: {list}"
+        },
+        "packageCard": {
+          "basisIncludes": "Open sandwich · Salad box · Today's warm dish",
+          "luxusIncludes": "Basis + Sushi · Poké · Thai",
+          "enterpriseIncludes": "Same warm dish + added value",
+          "notSeparateProduction": "Not a separate production dish",
+          "sharedWarmDishHint": "One shared warm dish"
+        }
+      },
       "price": {
         "exVatSuffix": "kr ex. VAT",
         "incVatSuffix": "kr incl. VAT",

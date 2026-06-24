@@ -13,10 +13,10 @@ import {
 import {
   resolveVariantRowsForDay,
   type ProviderVariantDisplayRow,
-  type VariantDisplayStatus,
+  type VariantDisplayStatusKey,
 } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
-import type { EnterpriseUpgradeType } from "@/lib/providers/providerMenuPackageSurface";
+import type { EnterpriseUpgradeType, WeekdayKey } from "@/lib/providers/providerMenuPackageSurface";
 
 export type WorkspaceStatusChip = "published" | "draft" | "fixed" | "missing" | "suggestion";
 
@@ -24,33 +24,27 @@ export type CategoryDaySummary = {
   category: Category;
   categoryLabel: string;
   statusChip: WorkspaceStatusChip;
-  statusLabel: string;
+  statusLabelKey: WorkspaceStatusChip;
   rows: ProviderVariantDisplayRow[];
   isSanityDriven: boolean;
   slot: ResolvedProviderMenuSlot;
 };
 
-export function statusChipFromRowStatus(status: VariantDisplayStatus): WorkspaceStatusChip {
-  if (status === "Publisert") return "published";
-  if (status === "Utkast" || status === "Eksisterende") return "draft";
-  if (status === "Fast valg") return "fixed";
-  if (status === "Mangler varmmat fra Sanity/bank" || status === "Mangler publisering") return "missing";
+export function statusChipFromRowStatus(status: VariantDisplayStatusKey): WorkspaceStatusChip {
+  if (status === "published") return "published";
+  if (status === "draft" || status === "existing") return "draft";
+  if (status === "fixed_choice") return "fixed";
+  if (status === "missing_warm_dish" || status === "missing_publish") return "missing";
   return "suggestion";
 }
 
-export function statusChipLabel(chip: WorkspaceStatusChip): string {
-  switch (chip) {
-    case "published":
-      return "Publisert";
-    case "draft":
-      return "Utkast";
-    case "fixed":
-      return "Fast valg";
-    case "missing":
-      return "Mangler";
-    case "suggestion":
-      return "Forslag";
-  }
+export function statusChipLabelKey(chip: WorkspaceStatusChip): WorkspaceStatusChip {
+  return chip;
+}
+
+/** @deprecated Use statusChipLabelKey — returns stable i18n key id (same as chip). */
+export function statusChipLabel(chip: WorkspaceStatusChip): WorkspaceStatusChip {
+  return statusChipLabelKey(chip);
 }
 
 export function summarizeCategoryDay(
@@ -64,14 +58,14 @@ export function summarizeCategoryDay(
   const slot = resolveProviderMenuSlot(slots, date, tier, category);
 
   let statusChip: WorkspaceStatusChip = "fixed";
-  if (slot.status === "published" || rows.some((r) => r.status === "Publisert")) {
+  if (slot.status === "published" || rows.some((r) => r.status === "published")) {
     statusChip = "published";
   } else if (
     (slot.status === "draft" && menuSlotHasContent(slot)) ||
-    rows.some((r) => r.status === "Utkast" || r.status === "Eksisterende")
+    rows.some((r) => r.status === "draft" || r.status === "existing")
   ) {
     statusChip = "draft";
-  } else if (rows.some((r) => r.status === "Mangler varmmat fra Sanity/bank")) {
+  } else if (rows.some((r) => r.status === "missing_warm_dish")) {
     statusChip = "missing";
   } else if (isSanityDrivenCategory(category) && !menuSlotHasContent(slot)) {
     statusChip = "missing";
@@ -81,7 +75,7 @@ export function summarizeCategoryDay(
     category,
     categoryLabel: categoryLabelFromCatalog(catalog, category),
     statusChip,
-    statusLabel: statusChipLabel(statusChip),
+    statusLabelKey: statusChipLabelKey(statusChip),
     rows,
     isSanityDriven: isSanityDrivenCategory(category),
     slot,
@@ -95,6 +89,7 @@ export const ENTERPRISE_UPGRADE_SELECTION_KEY = "enterprise-upgrade";
 export type EditorContext = {
   tierLabel: string;
   weekdayLabel: string;
+  weekdayKey: WeekdayKey | null;
   date: string;
   categoryLabel: string;
   variantLabel: string | null;
@@ -102,10 +97,18 @@ export type EditorContext = {
   mode: "catalog" | "varmrett" | "enterprise";
 };
 
+export type EditorContextLineKey = "shared_warm_meal" | "enterprise_upgrade" | "category";
+
+export type EditorContextLine =
+  | { key: "shared_warm_meal"; weekday: string }
+  | { key: "enterprise_upgrade"; weekday: string }
+  | { key: "category"; parts: string[] };
+
 export function buildEditorContext(input: {
   tier: PlanTier;
   tierLabel: string;
   weekdayLabel: string;
+  weekdayKey?: WeekdayKey | null;
   date: string;
   category: Category;
   variantLabel?: string | null;
@@ -123,6 +126,7 @@ export function buildEditorContext(input: {
   return {
     tierLabel: input.tierLabel,
     weekdayLabel: input.weekdayLabel,
+    weekdayKey: input.weekdayKey ?? null,
     date: input.date,
     categoryLabel: input.catalog
       ? categoryLabelFromCatalog(input.catalog, input.category)
@@ -133,60 +137,38 @@ export function buildEditorContext(input: {
   };
 }
 
-export function editorContextLine(ctx: EditorContext): string {
+export function resolveEditorContextLine(ctx: EditorContext): EditorContextLine {
   if (ctx.editorFocus === "varmrett") {
-    return `${ctx.weekdayLabel} · felles for alle pakker`;
+    return { key: "shared_warm_meal", weekday: ctx.weekdayLabel };
   }
   if (ctx.editorFocus === "enterprise-upgrade") {
-    return `${ctx.weekdayLabel} · Enterprise-upgrade`;
+    return { key: "enterprise_upgrade", weekday: ctx.weekdayLabel };
   }
   const parts = [ctx.tierLabel];
   if (ctx.weekdayLabel) parts.push(ctx.weekdayLabel);
   parts.push(ctx.categoryLabel);
   if (ctx.variantLabel) parts.push(ctx.variantLabel);
-  return parts.join(" · ");
+  return { key: "category", parts };
 }
 
-/** One warm dish per delivery day — shared across all packages. */
-export const SHARED_WARM_DISH_HINT = "Én felles varmrett";
+/** @deprecated Use resolveEditorContextLine — kept for tests migrating to i18n keys. */
+export function editorContextLine(ctx: EditorContext): string {
+  const line = resolveEditorContextLine(ctx);
+  if (line.key === "shared_warm_meal") return `${line.weekday} · felles for alle pakker`;
+  if (line.key === "enterprise_upgrade") return `${line.weekday} · Enterprise-upgrade`;
+  return line.parts.join(" · ");
+}
 
-export const PRODUCTION_RULE_TITLE = "Én felles varmrett per dag";
+export type PackageCardKey = {
+  tier: PlanTier;
+  includesKey: "basis" | "luxus" | "enterprise";
+  badgeKey?: "notSeparateProduction";
+};
 
-export const PRODUCTION_RULE_TEXT =
-  "Samme varmrett for Basis, Luxus og Enterprise. Enterprise gir ekstra verdi — ikke ny kjøkkenrett.";
-
-export const PACKAGE_WARM_DISH_HELPER = PRODUCTION_RULE_TEXT;
-
-export const DAY_PACKAGE_INCLUDES = {
-  basis: "Påsmurt · Salatboks",
-  luxus: "Basis + Sushi · Poké · Thai",
-  enterprise: "Samme varmrett + ekstra verdi",
-} as const;
-
-/** Package card copy for command header — contract-aligned, not invented. */
-export const PACKAGE_CARD_COPY: Record<
-  PlanTier,
-  { title: string; role: string; includes: string; priceHint: string; badge?: string }
-> = {
-  BASIS: {
-    title: "Basis",
-    role: "Standard lunsjvalg",
-    includes: "Påsmurt · Salatboks · Dagens varmrett",
-    priceHint: "90 kr eks. mva",
-  },
-  LUXUS: {
-    title: "Luxus",
-    role: "Flere valg for ansatte",
-    includes: "Basis + Sushi · Poké · Thai",
-    priceHint: "130 kr eks. mva",
-  },
-  ENTERPRISE: {
-    title: "Enterprise",
-    role: "Premium upgrade",
-    includes: "Samme varmrett + ekstra verdi",
-    priceHint: "170 kr eks. mva",
-    badge: "Ikke egen produksjonsrett",
-  },
+export const PACKAGE_CARD_KEYS: Record<PlanTier, PackageCardKey> = {
+  BASIS: { tier: "BASIS", includesKey: "basis" },
+  LUXUS: { tier: "LUXUS", includesKey: "luxus" },
+  ENTERPRISE: { tier: "ENTERPRISE", includesKey: "enterprise", badgeKey: "notSeparateProduction" },
 };
 
 const VARMRETT_TIER_PRIORITY: Record<PlanTier, number> = {
@@ -240,18 +222,18 @@ export function summarizeSharedVarmrettDay(
     category: "varmrett",
     categoryLabel: categoryLabelFromCatalog(catalog, "varmrett"),
     statusChip,
-    statusLabel: statusChipLabel(statusChip),
+    statusLabelKey: statusChipLabelKey(statusChip),
     rows: [
       {
         category: "varmrett",
         variant: null,
-        title: hasContent ? slot.mealTitle.trim() : "Varmrett",
+        title: hasContent ? slot.mealTitle.trim() : categoryLabelFromCatalog(catalog, "varmrett"),
         status:
           slot.status === "published"
-            ? "Publisert"
+            ? "published"
             : hasContent
-              ? "Utkast"
-              : "Mangler varmmat fra Sanity/bank",
+              ? "draft"
+              : "missing_warm_dish",
         editable: true,
         sanityDriven: true,
       },
@@ -261,10 +243,13 @@ export function summarizeSharedVarmrettDay(
   };
 }
 
+export type EnterpriseUpgradeSummaryKey = "upgrade_planned" | "upgrade_missing";
+
 export type EnterpriseUpgradeDaySummary = {
   statusChip: WorkspaceStatusChip;
-  statusLabel: string;
-  summaryLine: string;
+  statusLabelKey: WorkspaceStatusChip;
+  summaryKey: EnterpriseUpgradeSummaryKey;
+  summaryNote: string | null;
   slot: ResolvedProviderMenuSlot;
 };
 
@@ -281,14 +266,11 @@ export function summarizeEnterpriseUpgradeDay(
   else if (slot.status === "draft" && hasUpgrade) statusChip = "draft";
   else if (hasUpgrade) statusChip = "draft";
 
-  const summaryLine = hasUpgrade
-    ? slot.upgradeNote?.trim() || "Upgrade planlagt"
-    : "Upgrade mangler";
-
   return {
     statusChip,
-    statusLabel: statusChipLabel(statusChip),
-    summaryLine,
+    statusLabelKey: statusChipLabelKey(statusChip),
+    summaryKey: hasUpgrade ? "upgrade_planned" : "upgrade_missing",
+    summaryNote: hasUpgrade ? slot.upgradeNote?.trim() || null : null,
     slot,
   };
 }
@@ -342,25 +324,52 @@ export function summarizeWeekMetrics(
   };
 }
 
-const WEEKDAY_POSSESSIVE: Record<string, string> = {
-  Mandag: "mandagens",
-  Tirsdag: "tirsdagens",
-  Onsdag: "onsdagens",
-  Torsdag: "torsdagens",
-  Fredag: "fredagens",
-};
+export type WeekReadinessKey = "not_ready" | "has_draft" | "ready_for_orders" | "ready_to_publish";
 
-export function weekReadinessLabel(metrics: WeekWorkspaceMetrics): string {
-  if (metrics.varmrettMissing > 0) return "Ikke klar for publisering";
-  if (metrics.draftSlots > 0) return "Har utkast";
-  if (metrics.publishedSlots > 0) return "Klar for bestilling";
-  return "Klar for publisering";
+export function weekReadinessKey(metrics: WeekWorkspaceMetrics): WeekReadinessKey {
+  if (metrics.varmrettMissing > 0) return "not_ready";
+  if (metrics.draftSlots > 0) return "has_draft";
+  if (metrics.publishedSlots > 0) return "ready_for_orders";
+  return "ready_to_publish";
 }
 
-export function buildWeekCockpitSummary(
-  weekStart: string,
-  metrics: WeekWorkspaceMetrics,
-): string {
+/** @deprecated Use weekReadinessKey */
+export function weekReadinessLabel(metrics: WeekWorkspaceMetrics): WeekReadinessKey {
+  return weekReadinessKey(metrics);
+}
+
+export type WeekCockpitPart =
+  | { key: "week_from"; weekStart: string }
+  | { key: "days"; count: number }
+  | { key: "warm_dishes_missing"; count: number }
+  | { key: "warm_dishes_filled"; count: number }
+  | { key: "published_slots"; count: number }
+  | { key: "draft_slots"; count: number }
+  | { key: "readiness"; readiness: WeekReadinessKey };
+
+export function buildWeekCockpitParts(weekStart: string, metrics: WeekWorkspaceMetrics): WeekCockpitPart[] {
+  const parts: WeekCockpitPart[] = [
+    { key: "week_from", weekStart },
+    { key: "days", count: metrics.daysPlanned },
+    metrics.varmrettMissing > 0
+      ? { key: "warm_dishes_missing", count: metrics.varmrettMissing }
+      : { key: "warm_dishes_filled", count: metrics.varmrettFilled },
+  ];
+  if (metrics.publishedSlots > 0) parts.push({ key: "published_slots", count: metrics.publishedSlots });
+  if (metrics.draftSlots > 0) parts.push({ key: "draft_slots", count: metrics.draftSlots });
+  parts.push({ key: "readiness", readiness: weekReadinessKey(metrics) });
+  return parts;
+}
+
+/** @deprecated Use buildWeekCockpitParts — Norwegian string assembly for legacy tests only. */
+export function buildWeekCockpitSummary(weekStart: string, metrics: WeekWorkspaceMetrics): string {
+  const readiness = weekReadinessKey(metrics);
+  const readinessLabels: Record<WeekReadinessKey, string> = {
+    not_ready: "Ikke klar for publisering",
+    has_draft: "Har utkast",
+    ready_for_orders: "Klar for bestilling",
+    ready_to_publish: "Klar for publisering",
+  };
   const parts = [
     `Uke fra ${weekStart}`,
     `${metrics.daysPlanned} dager`,
@@ -370,28 +379,39 @@ export function buildWeekCockpitSummary(
   ];
   if (metrics.publishedSlots > 0) parts.push(`${metrics.publishedSlots} publisert`);
   if (metrics.draftSlots > 0) parts.push(`${metrics.draftSlots} utkast`);
-  parts.push(weekReadinessLabel(metrics));
+  parts.push(readinessLabels[readiness]);
   return parts.join(" · ");
 }
+
+export type NextStepActionKey =
+  | "fill_warm_dish_for_day"
+  | "fill_missing_warm_dishes"
+  | "check_enterprise_upgrade"
+  | "publish_week"
+  | "ready_for_orders"
+  | "preview_week";
+
+export type NextStepAction =
+  | { key: "fill_warm_dish_for_day"; weekdayKey: WeekdayKey }
+  | { key: Exclude<NextStepActionKey, "fill_warm_dish_for_day"> };
 
 export function resolveNextStepAction(
   slots: Record<string, ResolvedProviderMenuSlot>,
   dates: string[],
   tier: PlanTier,
   metrics: WeekWorkspaceMetrics,
-  weekdayLabels: string[],
+  weekdayKeys: WeekdayKey[],
   catalog: ProviderMenuCatalogSnapshot,
-): string {
+): NextStepAction {
   if (metrics.varmrettMissing > 0) {
     for (let i = 0; i < dates.length; i++) {
       const shared = summarizeSharedVarmrettDay(slots, dates[i]!, catalog);
       if (shared.statusChip === "missing") {
-        const label = weekdayLabels[i] ?? "dagen";
-        const possessive = WEEKDAY_POSSESSIVE[label] ?? `${label.toLowerCase()}s`;
-        return `Legg inn ${possessive} varmrett`;
+        const weekdayKey = weekdayKeys[i] ?? "mon";
+        return { key: "fill_warm_dish_for_day", weekdayKey };
       }
     }
-    return "Legg inn manglende varmretter";
+    return { key: "fill_missing_warm_dishes" };
   }
 
   if (tier === "ENTERPRISE") {
@@ -400,12 +420,12 @@ export function resolveNextStepAction(
       const upgrade = summarizeEnterpriseUpgradeDay(slots, date);
       if (upgrade.statusChip === "missing") upgradeMissing += 1;
     }
-    if (upgradeMissing > 0) return "Kontroller Enterprise-upgrade";
+    if (upgradeMissing > 0) return { key: "check_enterprise_upgrade" };
   }
 
-  if (metrics.draftSlots > 0) return "Publiser uke";
-  if (metrics.publishedSlots > 0) return "Klar for bestilling";
-  return "Forhåndsvis uke";
+  if (metrics.draftSlots > 0) return { key: "publish_week" };
+  if (metrics.publishedSlots > 0) return { key: "ready_for_orders" };
+  return { key: "preview_week" };
 }
 
 export type CategoryGroupRow = {
@@ -414,7 +434,7 @@ export type CategoryGroupRow = {
   variantCount: number;
   summaryLine: string;
   statusChip: WorkspaceStatusChip;
-  statusLabel: string;
+  statusLabelKey: WorkspaceStatusChip;
   isPremium: boolean;
 };
 
@@ -422,7 +442,7 @@ export type DayCardSummary = {
   date: string;
   weekdayLabel: string;
   dayStatus: WorkspaceStatusChip;
-  dayStatusLabel: string;
+  dayStatusLabelKey: WorkspaceStatusChip;
   varmrett: CategoryDaySummary;
   enterpriseUpgrade: EnterpriseUpgradeDaySummary | null;
   fixedGroups: CategoryGroupRow[];
@@ -431,8 +451,8 @@ export type DayCardSummary = {
 
 function categorySummaryLine(summary: CategoryDaySummary): string {
   const count = summary.rows.length;
-  if (summary.category === "sushi") return "fast pakke";
-  if (count <= 1) return summary.rows[0]?.title ?? "1 valg";
+  if (summary.category === "sushi") return "fixed_package";
+  if (count <= 1) return summary.rows[0]?.title ?? "one_choice";
   const first = summary.rows[0]?.title ?? "";
   return `${first} +${count - 1}`;
 }
@@ -470,7 +490,7 @@ export function summarizeDayCard(
     variantCount: s.rows.length,
     summaryLine: categorySummaryLine(s),
     statusChip: s.statusChip,
-    statusLabel: s.statusLabel,
+    statusLabelKey: s.statusLabelKey,
     isPremium: PREMIUM_CATEGORIES.includes(s.category),
   });
 
@@ -485,7 +505,7 @@ export function summarizeDayCard(
     date,
     weekdayLabel,
     dayStatus,
-    dayStatusLabel: statusChipLabel(dayStatus),
+    dayStatusLabelKey: statusChipLabelKey(dayStatus),
     varmrett,
     enterpriseUpgrade,
     fixedGroups,
@@ -493,63 +513,37 @@ export function summarizeDayCard(
   };
 }
 
+export type EnterpriseUpgradeQuickChoiceId =
+  | "protein"
+  | "portion"
+  | "dessert"
+  | "topping"
+  | "side"
+  | "season";
+
 export type EnterpriseUpgradeQuickChoice = {
-  id: string;
-  label: string;
+  id: EnterpriseUpgradeQuickChoiceId;
   upgradeType: EnterpriseUpgradeType;
-  upgradeNote: string;
 };
 
 export const ENTERPRISE_DEFAULT_SUGGESTION = {
-  title: "Ekstra protein + dessert/frukt",
-  explanation: "Gir kunden mer verdi uten å lage en ny kjøkkenrett.",
   upgradeType: "PREMIUM_PROTEIN" as EnterpriseUpgradeType,
-  upgradeNote: "Ekstra protein og dessert/frukt som premium tillegg til dagens Varmrett",
   sourcePackage: "LUXUS" as PlanTier,
 };
 
 export const ENTERPRISE_UPGRADE_QUICK_CHOICES: EnterpriseUpgradeQuickChoice[] = [
-  {
-    id: "protein",
-    label: "Ekstra protein",
-    upgradeType: "PREMIUM_PROTEIN",
-    upgradeNote: "Ekstra protein til dagens Varmrett",
-  },
-  {
-    id: "portion",
-    label: "Større porsjon",
-    upgradeType: "LARGER_PORTION",
-    upgradeNote: "Større porsjon av dagens Varmrett",
-  },
-  {
-    id: "dessert",
-    label: "Dessert/frukt",
-    upgradeType: "DESSERT_FRUIT",
-    upgradeNote: "Dessert eller frukt som premium tillegg",
-  },
-  {
-    id: "topping",
-    label: "Premium topping",
-    upgradeType: "OTHER",
-    upgradeNote: "Premium topping til dagens Varmrett",
-  },
-  {
-    id: "side",
-    label: "Ekstra tilbehør",
-    upgradeType: "EXTRA_SIDE",
-    upgradeNote: "Ekstra tilbehør til dagens Varmrett",
-  },
-  {
-    id: "season",
-    label: "Sesongupgrade",
-    upgradeType: "OTHER",
-    upgradeNote: "Sesongbasert Enterprise-upgrade til dagens Varmrett",
-  },
+  { id: "protein", upgradeType: "PREMIUM_PROTEIN" },
+  { id: "portion", upgradeType: "LARGER_PORTION" },
+  { id: "dessert", upgradeType: "DESSERT_FRUIT" },
+  { id: "topping", upgradeType: "OTHER" },
+  { id: "side", upgradeType: "EXTRA_SIDE" },
+  { id: "season", upgradeType: "OTHER" },
 ];
 
 export function applyEnterpriseUpgradePreset(
   form: ResolvedProviderMenuSlot,
-  preset: Pick<EnterpriseUpgradeQuickChoice, "upgradeType" | "upgradeNote"> & {
+  preset: Pick<EnterpriseUpgradeQuickChoice, "upgradeType"> & {
+    upgradeNote: string;
     sourcePackage?: PlanTier | null;
   },
 ): ResolvedProviderMenuSlot {

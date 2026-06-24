@@ -427,6 +427,77 @@
           "basedOnLuxus": "Perustuu Luxus-tasoon",
           "ownEnterprise": "Oma Enterprise"
         }
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Basis/Luxus-uudelleenkäyttävällä Enterprisella on oltava päivitystyyppi tai kuvaus ennen julkaisua.",
+          "weakValue": "Enterprisen tulisi tarjota selkeä lisäarvo verrattuna Luxukseen.",
+          "lowMargin": "Tämä Enterprise-annos voi tuottaa pienemmän katteen kuin Luxus. Tarkista raaka-ainekustannus."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Julkaistu",
+          "draft": "Luonnos",
+          "fixed": "Kiinteä valinta",
+          "missing": "Puuttuu",
+          "suggestion": "Ehdotus"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Kiinteä valinta",
+          "published": "Julkaistu",
+          "draft": "Luonnos",
+          "existing": "Olemassa oleva",
+          "missing_publish": "Julkaisu puuttuu",
+          "missing_warm_dish": "Lämmin ruoka puuttuu Sanity/pankista"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Lisää {weekdayPossessive} lämmin ruoka",
+          "fill_missing_warm_dishes": "Lisää puuttuvat lämpimät ruoat",
+          "check_enterprise_upgrade": "Tarkista Enterprise-päivitys",
+          "publish_week": "Julkaise viikko",
+          "ready_for_orders": "Valmis tilauksiin",
+          "preview_week": "Esikatsele viikko"
+        },
+        "weekdaysPossessive": {
+          "mon": "maanantain",
+          "tue": "tiistain",
+          "wed": "keskiviikon",
+          "thu": "torstain",
+          "fri": "perjantain"
+        },
+        "readiness": {
+          "not_ready": "Ei valmis julkaisuun",
+          "has_draft": "Luonnoksia",
+          "ready_for_orders": "Valmis tilauksiin",
+          "ready_to_publish": "Valmis julkaisuun"
+        },
+        "weekSummary": {
+          "missing": "Päiviä puuttuu",
+          "ready": "Valmis julkaisuun",
+          "published": "Julkaistu",
+          "draft": "Luonnos",
+          "has_draft": "Luonnoksia"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Päivitys suunniteltu",
+          "upgrade_missing": "Päivitys puuttuu"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · yhteinen kaikille paketeille",
+          "enterpriseUpgrade": "{weekday} · Enterprise-päivitys"
+        },
+        "allergens": {
+          "none": "Ei allergeneita ilmoitettu",
+          "prefix": "Allergeenit: {list}"
+        },
+        "packageCard": {
+          "basisIncludes": "Voileipä · Salaatirasia · Päivän lämmin ruoka",
+          "luxusIncludes": "Basis + Sushi · Poké · Thai",
+          "enterpriseIncludes": "Sama lämmin ruoka + lisäarvo",
+          "notSeparateProduction": "Ei erillinen tuotantoannos",
+          "sharedWarmDishHint": "Yksi yhteinen lämmin ruoka"
+        }
       }
     },
     "orders": {

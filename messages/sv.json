@@ -427,6 +427,77 @@
           "basedOnLuxus": "Baserad på Luxus",
           "ownEnterprise": "Egen Enterprise"
         }
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise som återanvänder Basis/Luxus måste ha uppgraderingstyp eller beskrivning vid publicering.",
+          "weakValue": "Enterprise bör ha tydligt mervärde jämfört med Luxus.",
+          "lowMargin": "Denna Enterprise-rätt kan ge lägre marginal än Luxus. Kontrollera råvarukostnad."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Publicerad",
+          "draft": "Utkast",
+          "fixed": "Fast val",
+          "missing": "Saknas",
+          "suggestion": "Förslag"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Fast val",
+          "published": "Publicerad",
+          "draft": "Utkast",
+          "existing": "Befintlig",
+          "missing_publish": "Saknar publicering",
+          "missing_warm_dish": "Saknar varmrätt från Sanity/bank"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Lägg in {weekdayPossessive} varmrätt",
+          "fill_missing_warm_dishes": "Lägg in saknade varmrätter",
+          "check_enterprise_upgrade": "Kontrollera Enterprise-uppgradering",
+          "publish_week": "Publicera vecka",
+          "ready_for_orders": "Klar för beställning",
+          "preview_week": "Förhandsgranska vecka"
+        },
+        "weekdaysPossessive": {
+          "mon": "måndagens",
+          "tue": "tisdagens",
+          "wed": "onsdagens",
+          "thu": "torsdagens",
+          "fri": "fredagens"
+        },
+        "readiness": {
+          "not_ready": "Inte klar för publicering",
+          "has_draft": "Har utkast",
+          "ready_for_orders": "Klar för beställning",
+          "ready_to_publish": "Klar för publicering"
+        },
+        "weekSummary": {
+          "missing": "Saknar dagar",
+          "ready": "Klar för publicering",
+          "published": "Publicerad",
+          "draft": "Utkast",
+          "has_draft": "Har utkast"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Uppgradering planerad",
+          "upgrade_missing": "Uppgradering saknas"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · gemensam för alla paket",
+          "enterpriseUpgrade": "{weekday} · Enterprise-uppgradering"
+        },
+        "allergens": {
+          "none": "Inga allergener angivna",
+          "prefix": "Allergener: {list}"
+        },
+        "packageCard": {
+          "basisIncludes": "Påsmörgås · Salladslåda · Dagens varmrätt",
+          "luxusIncludes": "Basis + Sushi · Poké · Thai",
+          "enterpriseIncludes": "Samma varmrätt + extra värde",
+          "notSeparateProduction": "Inte egen produktionsrätt",
+          "sharedWarmDishHint": "En gemensam varmrätt"
+        }
       }
     },
     "banner": {

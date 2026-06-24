@@ -17,9 +17,8 @@ import {
   resolveSharedVarmrettSlot,
   buildWeekCockpitSummary,
   resolveNextStepAction,
-  weekReadinessLabel,
-  PACKAGE_CARD_COPY,
-  SHARED_WARM_DISH_HINT,
+  weekReadinessKey,
+  PACKAGE_CARD_KEYS,
   ENTERPRISE_DEFAULT_SUGGESTION,
   ENTERPRISE_UPGRADE_QUICK_CHOICES,
   applyEnterpriseUpgradePreset,
@@ -27,6 +26,7 @@ import {
 } from "@/lib/provider-menu/providerMenuWorkspace";
 import { providerWorkspaceCategories } from "@/lib/provider-menu/providerMenuCatalogSurface";
 import type { ResolvedProviderMenuSlot } from "@/lib/provider-menu/mergeProviderMenuSlots";
+import { WEEKDAY_KEYS } from "@/lib/providers/providerMenuPackageSurface";
 import { PROD_LUNCH_CATEGORY_FIXTURE } from "./lunchCategoryCatalogFixtures";
 
 const CATALOG = PROD_LUNCH_CATEGORY_FIXTURE;
@@ -77,6 +77,7 @@ describe("providerMenuWorkspace", () => {
       tier: "LUXUS",
       tierLabel: "Luxus",
       weekdayLabel: "Tirsdag",
+      weekdayKey: "tue",
       date: "2026-06-16",
       category: "varmrett",
       variantLabel: null,
@@ -91,6 +92,7 @@ describe("providerMenuWorkspace", () => {
       tier: "ENTERPRISE",
       tierLabel: "Enterprise",
       weekdayLabel: "Mandag",
+      weekdayKey: "mon",
       date: "2026-06-15",
       category: "varmrett",
       variantLabel: null,
@@ -105,6 +107,7 @@ describe("providerMenuWorkspace", () => {
       tier: "ENTERPRISE",
       tierLabel: "Enterprise",
       weekdayLabel: "Mandag",
+      weekdayKey: "mon",
       date: "2026-06-15",
       category: "pokebowl",
       variantLabel: "Laks",
@@ -141,11 +144,11 @@ describe("providerMenuWorkspace", () => {
     expect(summary.rows[0]?.title).toBe("Kjøttkaker");
   });
 
-  it("package card copy describes shared warm dish model", () => {
-    expect(PACKAGE_CARD_COPY.BASIS.includes).toContain("Dagens varmrett");
-    expect(PACKAGE_CARD_COPY.LUXUS.includes).toContain("Basis + Sushi");
-    expect(PACKAGE_CARD_COPY.ENTERPRISE.includes).toContain("Samme varmrett + ekstra verdi");
-    expect(PACKAGE_CARD_COPY.ENTERPRISE.badge).toBe("Ikke egen produksjonsrett");
+  it("package card keys describe shared warm dish model", () => {
+    expect(PACKAGE_CARD_KEYS.BASIS.includesKey).toBe("basis");
+    expect(PACKAGE_CARD_KEYS.LUXUS.includesKey).toBe("luxus");
+    expect(PACKAGE_CARD_KEYS.ENTERPRISE.includesKey).toBe("enterprise");
+    expect(PACKAGE_CARD_KEYS.ENTERPRISE.badgeKey).toBe("notSeparateProduction");
   });
 
   it("resolveSharedVarmrettSlot prefers published content across tiers", () => {
@@ -187,7 +190,6 @@ describe("providerMenuWorkspace", () => {
     const categories = providerWorkspaceCategories(CATALOG, "LUXUS");
     const card = summarizeDayCard({}, "2026-06-15", "LUXUS", "Mandag", categories, CATALOG);
     expect(card.varmrett.isSanityDriven).toBe(true);
-    expect(SHARED_WARM_DISH_HINT).toBe("Én felles varmrett");
     const shared = summarizeSharedVarmrettDay({}, "2026-06-15", CATALOG);
     expect(shared.statusChip).toBe("missing");
   });
@@ -218,24 +220,24 @@ describe("providerMenuWorkspace", () => {
     expect(line).toContain("Uke fra 2026-06-15");
     expect(line).toContain("2 dager");
     expect(line).toContain("2 varmretter mangler");
-    expect(weekReadinessLabel(metrics)).toBe("Ikke klar for publisering");
+    expect(weekReadinessKey(metrics)).toBe("not_ready");
   });
 
-  it("resolveNextStepAction names first missing weekday", () => {
+  it("resolveNextStepAction returns first missing weekday key", () => {
     const dates = ["2026-06-15", "2026-06-16"];
     const categories = providerWorkspaceCategories(CATALOG, "BASIS");
     const metrics = summarizeWeekMetrics({}, dates, "BASIS", categories, CATALOG);
-    const step = resolveNextStepAction({}, dates, "BASIS", metrics, ["Mandag", "Tirsdag"], CATALOG);
-    expect(step).toBe("Legg inn mandagens varmrett");
+    const step = resolveNextStepAction({}, dates, "BASIS", metrics, [WEEKDAY_KEYS[0]!, WEEKDAY_KEYS[1]!], CATALOG);
+    expect(step).toEqual({ key: "fill_warm_dish_for_day", weekdayKey: "mon" });
   });
 
   it("enterprise upgrade presets use existing enum values only", () => {
     expect(ENTERPRISE_UPGRADE_QUICK_CHOICES).toHaveLength(6);
     expect(ENTERPRISE_DEFAULT_SUGGESTION.upgradeType).toBe("PREMIUM_PROTEIN");
     for (const choice of ENTERPRISE_UPGRADE_QUICK_CHOICES) {
-      expect(choice.upgradeNote).not.toMatch(/varmmrett/i);
+      expect(choice.id).toBeTruthy();
+      expect(choice.upgradeType).toBeTruthy();
     }
-    expect(ENTERPRISE_DEFAULT_SUGGESTION.upgradeNote).toContain("Varmrett");
   });
 
   it("applyEnterpriseUpgradePreset fills form without API changes", () => {
@@ -253,7 +255,10 @@ describe("providerMenuWorkspace", () => {
       status: "empty",
       contentSource: "empty",
     };
-    const next = applyEnterpriseUpgradePreset(base, ENTERPRISE_DEFAULT_SUGGESTION);
+    const next = applyEnterpriseUpgradePreset(base, {
+      ...ENTERPRISE_DEFAULT_SUGGESTION,
+      upgradeNote: "Ekstra protein og dessert/frukt som premium tillegg til dagens Varmrett",
+    });
     expect(next.upgradeType).toBe("PREMIUM_PROTEIN");
     expect(next.sourcePackage).toBe("LUXUS");
     expect(enterpriseUpgradeHasContent(next)).toBe(true);
