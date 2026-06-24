@@ -117,3 +117,35 @@ export type MarketDefaults = {
   defaultCurrency: CurrencyCode;
   defaultLocale: string;
 };
+
+export type ResolveMenuProfileForProviderInput = {
+  providerId?: string;
+  market?: MarketCode | null;
+  locale?: string | null;
+  menuProfileId?: string | null;
+  /** Env bag for flag read. Omit or empty = resolver disabled (default OFF). Runtime wiring passes host env later. */
+  env?: Readonly<Record<string, string | undefined>>;
+};
+
+export type MenuProfileResolveSource =
+  | "legacy_disabled"
+  | "provider_setting"
+  | "market_default"
+  | "fallback_no_market";
+
+export type MenuProfileResolverSuccess = {
+  ok: true;
+  enabled: boolean;
+  source: MenuProfileResolveSource;
+  profile: MenuProfile;
+  warning?: string;
+};
+
+export type MenuProfileResolverError = {
+  ok: false;
+  enabled: true;
+  reason: "unsupported_menu_profile";
+  message: string;
+};
+
+export type MenuProfileResolverResult = MenuProfileResolverSuccess | MenuProfileResolverError;
