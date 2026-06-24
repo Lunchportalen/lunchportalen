@@ -117,8 +117,17 @@ describe("tripletex onboarding happy path (TPT-B-7b)", () => {
 
     await act(async () => {
       verifyBtn?.click();
-      await new Promise((r) => setTimeout(r, 300));
     });
+
+    await vi.waitFor(
+      () => {
+        const btn = Array.from(container.querySelectorAll("button")).find((b) =>
+          b.textContent?.includes("Fortsett"),
+        );
+        expect(btn).toBeTruthy();
+      },
+      { timeout: 3000 },
+    );
 
     const continueBtn = Array.from(container.querySelectorAll("button")).find((b) =>
       b.textContent?.includes("Fortsett"),
@@ -126,10 +135,21 @@ describe("tripletex onboarding happy path (TPT-B-7b)", () => {
 
     await act(async () => {
       continueBtn?.click();
-      await Promise.resolve();
     });
 
-    expect(container.textContent).toContain("Setter opp Tripletex");
+    await vi.waitFor(
+      () => {
+        const provisioningTitle = container.querySelector("#tpt-step2-title");
+        expect(provisioningTitle?.textContent).toContain("Setter opp Tripletex");
+      },
+      { timeout: 3000 },
+    );
+
+    expect(mockCompleteConnectionAction).toHaveBeenCalledWith({
+      providerId: PROVIDER_ID,
+      tripletexCompanyId: "114612665",
+      employeeToken: "employee-token",
+    });
 
     await act(async () => {
       await new Promise((r) => setTimeout(r, 3500));
