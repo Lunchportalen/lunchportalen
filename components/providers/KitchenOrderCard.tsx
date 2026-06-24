@@ -31,6 +31,7 @@ export default function KitchenOrderCard({
   const tStatus = useTranslations("provider.orders.status");
   const tActions = useTranslations("provider.orders.actions");
   const tCard = useTranslations("provider.orders.card");
+  const tFallbacks = useTranslations("provider.orders.fallbacks");
   const tErrors = useTranslations("provider.orders.errors");
 
   const row = order;
@@ -70,7 +71,7 @@ export default function KitchenOrderCard({
             {row.slot ? ` · ${row.slot}` : ""}
           </p>
           <p className="ds-provider-order-card__meta">
-            {row.employeeDisplayName}
+            {row.employeeDisplayName ?? tFallbacks("unknownProfile")}
             {row.employeeEmail ? ` · ${row.employeeEmail}` : ""}
           </p>
         </div>
@@ -84,7 +85,10 @@ export default function KitchenOrderCard({
           row.items.map((item, idx) => (
             <li key={`${row.id}-${idx}`}>
               <div>
-                {tCard("lineQuantity", { quantity: item.quantity, displayLine: item.displayLine })}
+                {tCard("lineQuantity", {
+                  quantity: item.quantity,
+                  displayLine: item.displayLine ?? tFallbacks("unknownProduct"),
+                })}
               </div>
               {item.allergens.length ? (
                 <div className="ds-body text-[rgb(var(--lp-muted))]">

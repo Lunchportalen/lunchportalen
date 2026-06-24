@@ -195,6 +195,10 @@
         "noteLabel": "Merknad:",
         "readOnlyNote": "Kun visning — du har lesetilgang til ordrene."
       },
+      "fallbacks": {
+        "unknownProfile": "Ukjent",
+        "unknownProduct": "Retten"
+      },
       "errors": {
         "notAuthenticated": "Ikke innlogget.",
         "orderNotFound": "Ordre ikke funnet.",
@@ -324,6 +328,7 @@
         "eyebrow": "Kunde",
         "orgnrMissing": "Org.nr ikke registrert",
         "contactMissing": "—",
+        "locationMissing": "Leveringsadresse ikke satt",
         "agreementStatusMissing": "Ingen aktiv avtale",
         "billingIncomplete": "Fakturagrunnlag ikke komplett",
         "vatNotSpecified": "Ikke spesifisert",

@@ -893,6 +893,7 @@
         },
         "completeCommissionNote": "Provision beräknas av omsättning exkl. moms.",
         "contactMissing": "—",
+        "locationMissing": "Leveransadress inte angiven",
         "employeesTable": {
           "email": "E-post",
           "name": "Namn",
@@ -1156,6 +1157,10 @@
         "noLines": "Inga rader registrerade",
         "noteLabel": "Anteckning:",
         "readOnlyNote": "Endast visning — du har läsbehörighet till beställningarna."
+      },
+      "fallbacks": {
+        "unknownProfile": "Okänd",
+        "unknownProduct": "Rätt"
       },
       "empty": {
         "steps": {

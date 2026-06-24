@@ -538,6 +538,10 @@
         "noteLabel": "Nota:",
         "readOnlyNote": "Solo lectura — tiene acceso de lectura a los pedidos."
       },
+      "fallbacks": {
+        "unknownProfile": "Desconocido",
+        "unknownProduct": "Plato"
+      },
       "empty": {
         "steps": {
           "checkMenu": "Compruebe que el menú está publicado para los días correspondientes.",
@@ -968,6 +972,7 @@
         },
         "completeCommissionNote": "La comisión se calcula sobre los ingresos sin IVA.",
         "contactMissing": "—",
+        "locationMissing": "Dirección de entrega no establecida",
         "employeesTable": {
           "email": "Correo",
           "name": "Nombre",

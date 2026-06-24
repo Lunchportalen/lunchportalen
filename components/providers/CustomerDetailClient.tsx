@@ -65,6 +65,7 @@ export default function CustomerDetailClient({
   const tActivity = useTranslations("provider.customers.activity");
   const tErrors = useTranslations("provider.customers.errors");
   const tBilling = useTranslations("provider.customers.billing");
+  const tOrderFallbacks = useTranslations("provider.orders.fallbacks");
   const [pending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<DialogState>({ open: false, variant: "suspend" });
   const [agreementEditOpen, setAgreementEditOpen] = useState(false);
@@ -481,7 +482,7 @@ export default function CustomerDetailClient({
               <tbody>
                 {employeePreview.map((employee) => (
                   <tr key={employee.id}>
-                    <td>{employee.name}</td>
+                    <td>{employee.name ?? tOrderFallbacks("unknownProfile")}</td>
                     <td>{employee.email ?? "—"}</td>
                     <td>{employee.role ?? "—"}</td>
                   </tr>
@@ -502,9 +503,9 @@ export default function CustomerDetailClient({
                 <div className="ds-provider-order-history__head">
                   <span className="ds-provider-order-history__date">{order.date}</span>
                   <span className="ds-provider-order-history__status">{order.status}</span>
-                  {order.employeeName ? (
-                    <span className="ds-provider-order-history__meta">{order.employeeName}</span>
-                  ) : null}
+                  <span className="ds-provider-order-history__meta">
+                    {order.employeeName ?? tOrderFallbacks("unknownProfile")}
+                  </span>
                   {order.totalNok != null ? (
                     <span className="ds-provider-order-history__total">
                       {new Intl.NumberFormat(dateLocale, { style: "currency", currency: "NOK" }).format(order.totalNok)}
@@ -514,7 +515,9 @@ export default function CustomerDetailClient({
                 {order.lines.length > 0 ? (
                   <ul className="ds-provider-order-history__lines">
                     {order.lines.map((line, idx) => (
-                      <li key={`${order.id}-${idx}`}>{line.displayLine}</li>
+                      <li key={`${order.id}-${idx}`}>
+                        {line.displayLine ?? tOrderFallbacks("unknownProduct")}
+                      </li>
                     ))}
                   </ul>
                 ) : null}

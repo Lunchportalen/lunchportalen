@@ -893,6 +893,7 @@
         },
         "completeCommissionNote": "Provision beregnes af omsætning ekskl. moms.",
         "contactMissing": "—",
+        "locationMissing": "Leveringsadresse ikke angivet",
         "employeesTable": {
           "email": "E-mail",
           "name": "Navn",
@@ -1156,6 +1157,10 @@
         "noLines": "Ingen linjer registreret",
         "noteLabel": "Note:",
         "readOnlyNote": "Kun visning — du har læseadgang til ordrene."
+      },
+      "fallbacks": {
+        "unknownProfile": "Ukendt",
+        "unknownProduct": "Ret"
       },
       "empty": {
         "steps": {

@@ -24,7 +24,7 @@ export type KitchenOrderItem = {
   quantity: number;
   choiceLabel: string | null;
   variantTitle: string | null;
-  displayLine: string;
+  displayLine: string | null;
   allergens: string[];
 };
 
@@ -38,7 +38,7 @@ export type KitchenOrderRow = {
   companyName: string;
   locationId: string | null;
   locationName: string | null;
-  employeeDisplayName: string;
+  employeeDisplayName: string | null;
   employeeEmail: string | null;
   items: KitchenOrderItem[];
 };

@@ -893,6 +893,7 @@
         },
         "completeCommissionNote": "La commission est calculée à partir du chiffre d'affaires HT.",
         "contactMissing": "—",
+        "locationMissing": "Adresse de livraison non définie",
         "employeesTable": {
           "email": "E-mail",
           "name": "Nom",
@@ -1156,6 +1157,10 @@
         "noLines": "Aucune ligne enregistrée",
         "noteLabel": "Note :",
         "readOnlyNote": "Lecture seule — vous avez un accès en lecture aux commandes."
+      },
+      "fallbacks": {
+        "unknownProfile": "Inconnu",
+        "unknownProduct": "Plat"
       },
       "empty": {
         "steps": {
