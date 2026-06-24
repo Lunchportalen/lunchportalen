@@ -1266,7 +1266,7 @@
       },
       "tabs": {
         "weekPlan": "Ukeplan",
-        "catalog": "Menykatalog"
+        "catalog": "Faste valg"
       },
       "status": {
         "ariaLabel": "Ukestatus",
@@ -1579,6 +1579,40 @@
         "messages": {
           "saveFailed": "Kunne ikke lagre katalog.",
           "saved": "Katalog lagret."
+        }
+      },
+      "catalogModel": {
+        "title": "Faste valg",
+        "lead": "Dette er leverandørens faste alternativer. Ukeplanen bruker disse når du publiserer lunsj for konkrete dager.",
+        "fixedChoicesTitle": "Rediger faste valg",
+        "weekPlanHint": "Endringer gjelder fra neste ukespublisering. Dagens varmrett og Enterprise-upgrade planlegges i Ukeplan.",
+        "packageMatrix": {
+          "title": "Menypakker",
+          "basis": {
+            "title": "Basis",
+            "text": "Påsmurt, Salatboks og Dagens varmrett."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Alt i Basis + Sushi, Pokébowl og Thai."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Samme Dagens varmrett + Enterprise upgrade i Ukeplan."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis viser faste valg for Påsmurt og Salatboks.",
+          "luxus": "Luxus inkluderer Basis-valg og premium-kategoriene Sushi, Pokébowl og Thai.",
+          "enterprise": "Enterprise bruker samme faste katalog som Luxus. Upgrade legges til dagens varmrett i Ukeplan — ikke her."
+        },
+        "sharedWarmDish": {
+          "title": "Dagens varmrett",
+          "text": "Styres i Ukeplan — én felles rett per dag for Basis, Luxus og Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Enterprise upgrade",
+          "text": "Samme dagens varmrett som Luxus, med tillegg/upgrade planlagt per dag i Ukeplan — ikke en egen varmrett."
         }
       },
       "enterprise": {

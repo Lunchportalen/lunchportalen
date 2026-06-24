@@ -22,7 +22,6 @@ import { addDaysISO, osloTodayISODate, startOfWeekISO } from "@/lib/date/oslo";
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import {
   catalogVariantByKey,
-  type MenuCatalogVariant,
 } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { EMPTY_PROVIDER_MENU_CATALOG } from "@/lib/provider-menu/lunchCategoryCatalog";
@@ -307,17 +306,6 @@ export default function ProviderMenuBuilder() {
     setWorkspaceView("week");
   }
 
-  function openCatalogVariant(variant: MenuCatalogVariant) {
-    const firstDate = weekDates[0];
-    if (!firstDate) return;
-    openSelection({
-      date: firstDate,
-      category: variant.category,
-      variantKey: variant.id.split(":")[1],
-      variantLabel: variant.label,
-    });
-  }
-
   function closeEditor() {
     setSelected(null);
     setForm(null);
@@ -520,7 +508,11 @@ export default function ProviderMenuBuilder() {
   const inspectorOpen = Boolean(form && selected);
 
   return (
-    <div className="lp-editor-root lp-editor-workspace" data-tier={tier}>
+    <div
+      className={`lp-editor-root lp-editor-workspace${workspaceView === "catalog" ? " lp-editor-workspace--catalog" : ""}`}
+      data-tier={tier}
+      data-workspace-view={workspaceView}
+    >
       <div className="lp-editor-wrap">
       <ProviderMenuCommandHeader
         tier={tier}
@@ -536,17 +528,21 @@ export default function ProviderMenuBuilder() {
         onWorkspaceViewChange={setWorkspaceView}
       />
 
-      <ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />
+      {workspaceView === "week" ? (
+        <ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />
+      ) : null}
 
-      <ProviderMenuStatusRow
-        weekStart={weekStart}
-        tierLabel={TIER_LABELS[tier]}
-        metrics={weekMetrics}
-        varmrettPublishedDays={cockpitVarmrettDisplay.publishedDays}
-        varmrettDraftDays={cockpitVarmrettDisplay.draftDays}
-        priceExVatNok={tierPrice?.priceExVatNok ?? null}
-        nextStep={nextStepHint}
-      />
+      {workspaceView === "week" ? (
+        <ProviderMenuStatusRow
+          weekStart={weekStart}
+          tierLabel={TIER_LABELS[tier]}
+          metrics={weekMetrics}
+          varmrettPublishedDays={cockpitVarmrettDisplay.publishedDays}
+          varmrettDraftDays={cockpitVarmrettDisplay.draftDays}
+          priceExVatNok={tierPrice?.priceExVatNok ?? null}
+          nextStep={nextStepHint}
+        />
+      ) : null}
 
       {error ? (
         <p className="lp-editor-builder__error" role="alert">
@@ -638,12 +634,7 @@ export default function ProviderMenuBuilder() {
               </div>
             </>
           ) : (
-            <ProviderMenuCatalogView
-              tier={tier}
-              catalog={catalog}
-              onSelectVariant={openCatalogVariant}
-              onCatalogSaved={setCatalog}
-            />
+            <ProviderMenuCatalogView tier={tier} catalog={catalog} onCatalogSaved={setCatalog} />
           )}
         </div>
       </div>

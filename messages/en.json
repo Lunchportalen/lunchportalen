@@ -1266,7 +1266,7 @@
       },
       "tabs": {
         "weekPlan": "Week plan",
-        "catalog": "Menu catalog"
+        "catalog": "Fixed choices"
       },
       "status": {
         "ariaLabel": "Week status",
@@ -1579,6 +1579,40 @@
         "messages": {
           "saveFailed": "Could not save catalog.",
           "saved": "Catalog saved."
+        }
+      },
+      "catalogModel": {
+        "title": "Fixed choices",
+        "lead": "These are your provider's fixed options. The week plan uses them when you publish lunch for specific days.",
+        "fixedChoicesTitle": "Edit fixed choices",
+        "weekPlanHint": "Changes apply from the next week publish. Today's hot meal and Enterprise upgrade are planned in the week plan.",
+        "packageMatrix": {
+          "title": "Menu packages",
+          "basis": {
+            "title": "Basis",
+            "text": "Open sandwich, salad box and today's hot meal."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Everything in Basis + sushi, poké bowl and Thai."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Same today's hot meal + Enterprise upgrade in the week plan."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis shows fixed choices for open sandwich and salad box.",
+          "luxus": "Luxus includes Basis choices and premium categories sushi, poké bowl and Thai.",
+          "enterprise": "Enterprise uses the same fixed catalog as Luxus. Upgrades are added to today's hot meal in the week plan — not here."
+        },
+        "sharedWarmDish": {
+          "title": "Today's hot meal",
+          "text": "Managed in the week plan — one shared dish per day for Basis, Luxus and Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Enterprise upgrade",
+          "text": "Same today's hot meal as Luxus, with add-ons/upgrades planned per day in the week plan — not a separate hot meal."
         }
       },
       "enterprise": {

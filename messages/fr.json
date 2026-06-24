@@ -148,7 +148,7 @@
       },
       "tabs": {
         "weekPlan": "Plan hebdomadaire",
-        "catalog": "Catalogue menu"
+        "catalog": "Choix fixes"
       },
       "status": {
         "ariaLabel": "Statut de la semaine",
@@ -387,6 +387,40 @@
         "messages": {
           "saveFailed": "Impossible d'enregistrer le catalogue.",
           "saved": "Catalogue enregistré."
+        }
+      },
+      "catalogModel": {
+        "title": "Choix fixes",
+        "lead": "Ce sont les options fixes de votre prestataire. Le plan hebdomadaire les utilise lorsque vous publiez le déjeuner pour des jours précis.",
+        "fixedChoicesTitle": "Modifier les choix fixes",
+        "weekPlanHint": "Les modifications s'appliquent à partir de la prochaine publication hebdomadaire. Le plat chaud du jour et l'upgrade Enterprise se planifient dans le plan hebdomadaire.",
+        "packageMatrix": {
+          "title": "Forfaits menu",
+          "basis": {
+            "title": "Basis",
+            "text": "Tartine, salade en barquette et plat chaud du jour."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Tout Basis + sushi, poké bowl et thaï."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Même plat chaud du jour + upgrade Enterprise dans le plan hebdomadaire."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis affiche les choix fixes pour tartine et salade en barquette.",
+          "luxus": "Luxus inclut les choix Basis et les catégories premium sushi, poké bowl et thaï.",
+          "enterprise": "Enterprise utilise le même catalogue fixe que Luxus. L'upgrade s'ajoute au plat chaud du jour dans le plan hebdomadaire — pas ici."
+        },
+        "sharedWarmDish": {
+          "title": "Plat chaud du jour",
+          "text": "Géré dans le plan hebdomadaire — un plat commun par jour pour Basis, Luxus et Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Upgrade Enterprise",
+          "text": "Même plat chaud du jour que Luxus, avec suppléments/upgrade planifiés par jour dans le plan hebdomadaire — pas un plat chaud séparé."
         }
       },
       "enterprise": {
