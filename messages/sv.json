@@ -848,6 +848,21 @@
         "heading": "Ny företagskund",
         "lead": "Direkt skapande av företagskunder är inte tillgängligt ännu. Nya företag i ditt täckningsområde kommer in via Registreringar när de visar intresse, och visas under Företag efter godkännande."
       },
+      "billing": {
+        "method": {
+          "email": "E-post",
+          "ehf": "EHF",
+          "notSelected": "Inte valt"
+        },
+        "recipient": {
+          "notSelected": "Inte valt"
+        },
+        "commissionBase": {
+          "taxEx": "exkl. moms",
+          "taxInc": "inkl. moms",
+          "notAvailable": "Inte tillgängligt"
+        }
+      },
       "detail": {
         "actions": {
           "agreementUpdated": "Avtalet uppdaterades.",

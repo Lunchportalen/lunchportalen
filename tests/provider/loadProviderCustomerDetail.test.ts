@@ -245,7 +245,7 @@ describe("loadProviderCustomerDetail", () => {
     expect(detail.stats.employeesCount).toBe(2);
     expect(detail.stats.historicalOrdersCount).toBe(1);
     expect(detail.billingBasis.confidence).toBe("complete");
-    expect(detail.billingBasis.commissionBaseLabel).toBe("eks. mva");
+    expect(detail.billingBasis.commissionBaseKey).toBe("taxEx");
     expect(detail.employees).toHaveLength(2);
     expect(detail.orders).toHaveLength(1);
     expect(detail.orders[0]?.status).toBe("DELIVERED");

@@ -9,7 +9,7 @@ import type {
   ProviderCustomersPage,
 } from "@/lib/providers/customerTypes";
 import { buildCustomerStatusCounts } from "@/lib/providers/providerCustomersSurface";
-import { buildProviderInvoiceSettings, invoiceMethodLabel } from "@/lib/providers/providerCustomerBilling";
+import { buildProviderInvoiceSettings, invoiceMethodPresentationKey } from "@/lib/providers/providerCustomerBilling";
 import { loadProviderCustomerCountsForCompanies } from "@/lib/providers/providerCustomerCounts";
 import { isProviderSelfCustomer } from "@/lib/providers/providerCustomerScope";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -133,7 +133,7 @@ export async function loadProviderCustomers(
         employeesCount: null as number | null,
         ordersThisWeek: null as number | null,
         historicalOrdersCount: null as number | null,
-        invoiceMethodLabel: invoiceMethodLabel(invoice.method),
+        invoiceMethodKey: invoiceMethodPresentationKey(invoice.method),
       };
     })
     .filter((row) =>

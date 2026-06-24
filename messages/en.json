@@ -276,6 +276,21 @@
         "lead": "Direct creation of business customers is not available yet. New companies in your coverage area arrive via Registrations when they express interest, and appear under Companies after approval.",
         "backToCustomers": "Back to companies"
       },
+      "billing": {
+        "method": {
+          "email": "Email",
+          "ehf": "EHF",
+          "notSelected": "Not selected"
+        },
+        "recipient": {
+          "notSelected": "Not selected"
+        },
+        "commissionBase": {
+          "taxEx": "ex VAT",
+          "taxInc": "inc VAT",
+          "notAvailable": "Not available"
+        }
+      },
       "errors": {
         "notAuthenticated": "Not signed in.",
         "providerAdminRequired": "Only provider admins can perform this action.",

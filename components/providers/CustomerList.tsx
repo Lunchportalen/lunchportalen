@@ -14,6 +14,7 @@ import {
   type ProviderCustomerRow,
   type ProviderCustomersPage,
 } from "@/lib/providers/customerTypes";
+import { formatInvoiceMethodPresentation } from "@/lib/providers/providerCustomerDetailSurface";
 import {
   PROVIDER_CUSTOMER_FILTERS,
   buildCustomersPaginationModel,
@@ -65,6 +66,10 @@ export default function CustomerList({
   const tEmpty = useTranslations("provider.customers.empty");
   const tCard = useTranslations("provider.customers.card");
   const tPagination = useTranslations("provider.customers.pagination");
+  const tBilling = useTranslations("provider.customers.billing");
+
+  const formatInvoiceMethod = (methodKey: ProviderCustomerRow["invoiceMethodKey"]) =>
+    formatInvoiceMethodPresentation(methodKey, (key) => tBilling(key));
 
   const filter = (searchParams.get("filter") as ProviderCustomerFilter) || "all";
   const search = searchParams.get("q") ?? "";
@@ -167,7 +172,7 @@ export default function CustomerList({
                   <td>{formatProviderCustomerCount(row.employeesCount)}</td>
                   <td>{formatProviderCustomerCount(row.ordersThisWeek)}</td>
                   <td>{formatProviderCustomerCount(row.historicalOrdersCount)}</td>
-                  <td>{row.invoiceMethodLabel}</td>
+                  <td>{formatInvoiceMethod(row.invoiceMethodKey)}</td>
                     <td>{formatProviderCustomerUpdated(row.updatedAt, locale)}</td>
                     {canManage ? (
                       <td className="text-right">
@@ -221,7 +226,7 @@ export default function CustomerList({
                     employees: formatProviderCustomerCount(row.employeesCount),
                     orders: formatProviderCustomerCount(row.ordersThisWeek),
                     history: formatProviderCustomerCount(row.historicalOrdersCount),
-                    invoice: row.invoiceMethodLabel,
+                    invoice: formatInvoiceMethod(row.invoiceMethodKey),
                   })}
                 </p>
                 {row.orgnr ? (

@@ -276,6 +276,21 @@
         "lead": "Direkte opprettelse av bedriftskunder er ikke tilgjengelig ennå. Nye bedrifter i ditt dekningsområde kommer inn via Registreringer når de melder interesse, og vises under Bedrifter etter godkjenning.",
         "backToCustomers": "Tilbake til bedrifter"
       },
+      "billing": {
+        "method": {
+          "email": "E-post",
+          "ehf": "EHF",
+          "notSelected": "Ikke valgt"
+        },
+        "recipient": {
+          "notSelected": "Ikke valgt"
+        },
+        "commissionBase": {
+          "taxEx": "eks. mva",
+          "taxInc": "inkl. mva",
+          "notAvailable": "Ikke tilgjengelig"
+        }
+      },
       "errors": {
         "notAuthenticated": "Ikke innlogget.",
         "providerAdminRequired": "Kun provider-admin kan utføre denne handlingen.",

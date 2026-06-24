@@ -659,6 +659,21 @@
         "lead": "Direkte Erstellung von Kundenunternehmen ist noch nicht verfügbar. Neue Unternehmen in Ihrem Liefergebiet kommen über Registrierungen, wenn sie Interesse bekunden, und erscheinen nach Genehmigung unter Unternehmen.",
         "backToCustomers": "Zurück zu Unternehmen"
       },
+      "billing": {
+        "method": {
+          "email": "E-Mail",
+          "ehf": "EHF",
+          "notSelected": "Nicht ausgewählt"
+        },
+        "recipient": {
+          "notSelected": "Nicht ausgewählt"
+        },
+        "commissionBase": {
+          "taxEx": "exkl. MwSt.",
+          "taxInc": "inkl. MwSt.",
+          "notAvailable": "Nicht verfügbar"
+        }
+      },
       "errors": {
         "notAuthenticated": "Nicht angemeldet.",
         "providerAdminRequired": "Nur Anbieter-Administratoren können diese Aktion ausführen.",

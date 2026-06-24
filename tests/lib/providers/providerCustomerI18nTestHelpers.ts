@@ -6,6 +6,7 @@ type ProviderCustomersMessages = {
   provider: {
     customers: {
       detail: Record<string, unknown>;
+      billing: Record<string, unknown>;
       status: Record<string, string>;
       agreement: Record<string, unknown>;
       activity: Record<string, unknown>;
@@ -35,21 +36,29 @@ export function nestedTranslator(root: Record<string, unknown>): (key: string, v
   };
 }
 
-export async function loadProviderCustomerMessages(locale: "nb" | "en" = "nb") {
+export async function loadProviderCustomerMessages(locale: "nb" | "en" | "de" = "nb") {
   return (await loadMessagesForLocale(locale)) as ProviderCustomersMessages;
 }
 
-export async function loadAgreementTranslator(locale: "nb" | "en" = "nb"): Promise<ProviderAgreementTranslate> {
+export async function loadAgreementTranslator(locale: "nb" | "en" | "de" = "nb"): Promise<ProviderAgreementTranslate> {
   const messages = await loadProviderCustomerMessages(locale);
   return nestedTranslator(messages.provider.customers.agreement);
 }
 
-export async function loadDetailTranslators(locale: "nb" | "en" = "nb"): Promise<ProviderCustomerDetailTranslators> {
+export async function loadBillingTranslator(locale: "nb" | "en" | "de" = "nb") {
+  const messages = await loadProviderCustomerMessages(locale);
+  return nestedTranslator(messages.provider.customers.billing);
+}
+
+export async function loadDetailTranslators(locale: "nb" | "en" | "de" = "nb"): Promise<
+  ProviderCustomerDetailTranslators & { tBilling: ReturnType<typeof nestedTranslator> }
+> {
   const messages = await loadProviderCustomerMessages(locale);
   const detail = messages.provider.customers.detail;
   const agreement = messages.provider.customers.agreement;
   return {
     tDetail: nestedTranslator(detail),
+    tBilling: nestedTranslator(messages.provider.customers.billing),
     tStatus: (key) => messages.provider.customers.status[key] ?? key,
     tAgreementStatus: (key) => {
       const status = agreement.status as Record<string, string> | undefined;

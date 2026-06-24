@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test, vi } from "vitest";
 
 import { LIFECYCLE_REASON_MIN_LENGTH, validateLifecycleReason } from "@/lib/providers/lifecycleReason";
 import { providerCustomerStatusLabel, providerCustomerStatusLabelKey } from "@/lib/providers/customerTypes";
+import { formatInvoiceMethodPresentation } from "@/lib/providers/providerCustomerDetailSurface";
 import { loadMessagesForLocale } from "@/lib/i18n/messages";
+import { loadBillingTranslator } from "@/tests/lib/providers/providerCustomerI18nTestHelpers";
 
 vi.mock("@/app/leverandor/kunder/actions", () => ({
   suspendCustomer: vi.fn(),
@@ -68,5 +72,21 @@ describe("server action payload contract", () => {
     expect(typeof mod.pauseCustomer).toBe("function");
     expect(typeof mod.deleteCustomer).toBe("function");
     expect(typeof mod.resumeCustomer).toBe("function");
+  });
+});
+
+describe("CustomerList billing method i18n", () => {
+  test("renders invoice method via presentation key, not raw Norwegian label field", () => {
+    const src = readFileSync(join(process.cwd(), "components/providers/CustomerList.tsx"), "utf8");
+    expect(src).toContain("invoiceMethodKey");
+    expect(src).toContain("formatInvoiceMethod");
+    expect(src).not.toMatch(/row\.invoiceMethodLabel/);
+  });
+
+  test("en locale billing method labels are not Norwegian UI copy", async () => {
+    const tBilling = await loadBillingTranslator("en");
+    expect(formatInvoiceMethodPresentation("email", tBilling)).toBe("Email");
+    expect(formatInvoiceMethodPresentation("notSelected", tBilling)).toBe("Not selected");
+    expect(formatInvoiceMethodPresentation("email", tBilling)).not.toBe("E-post");
   });
 });
