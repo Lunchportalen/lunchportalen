@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   CATEGORY_LABELS,
@@ -9,6 +10,7 @@ import {
   type Category,
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
+import { resolveProviderMenuApiError } from "@/lib/providers/providerMenuActionErrors";
 
 type FormStatus = "idle" | "loading" | "saved" | "published" | "error";
 
@@ -47,6 +49,7 @@ function todayIso(): string {
 }
 
 export default function ProviderMenuEditor() {
+  const t = useTranslations("provider.menu");
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [category, setCategory] = useState<Category>("varmrett");
   const [status, setStatus] = useState<FormStatus>("idle");
@@ -90,16 +93,16 @@ export default function ProviderMenuEditor() {
 
       if (!res.ok || !json.ok || !json.data) {
         setStatus("error");
-        setMessage(json.message ?? "Kunne ikke lagre menyen. Prøv igjen.");
+        setMessage(resolveProviderMenuApiError(t, json, "saveFailed"));
         return;
       }
 
       setResult(json.data);
       setStatus(status === "published" ? "published" : "saved");
-      setMessage(status === "published" ? "Meny publisert" : "Meny lagret");
+      setMessage(status === "published" ? t("success.published") : t("success.draftSaved"));
     } catch {
       setStatus("error");
-      setMessage("Kunne ikke lagre menyen. Sjekk nettverket og prøv igjen.");
+      setMessage(t("errors.saveFailed"));
     }
   }
 

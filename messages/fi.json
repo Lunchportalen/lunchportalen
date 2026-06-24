@@ -505,6 +505,9 @@
           "enterpriseIncludes": "Sama lämmin ruoka + lisäarvo",
           "notSeparateProduction": "Ei erillinen tuotantoannos",
           "sharedWarmDishHint": "Yksi yhteinen lämmin ruoka"
+        },
+        "emptyPanel": {
+          "selectDay": "Valitse päivä viikkosuunnitelmasta muokataksesi katalogivalintoja."
         }
       }
     },

@@ -505,6 +505,9 @@
           "enterpriseIncludes": "Gleiches Warmgericht + Mehrwert",
           "notSeparateProduction": "Kein eigenes Produktionsgericht",
           "sharedWarmDishHint": "Ein gemeinsames Warmgericht"
+        },
+        "emptyPanel": {
+          "selectDay": "Wählen Sie einen Tag im Wochenplan, um Katalogauswahlen zu bearbeiten."
         }
       }
     },

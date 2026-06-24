@@ -400,10 +400,23 @@ describe("ProviderMenuBuilder i18n", () => {
     expect(source).toContain('t("success.copiedFromTier"');
     expect(source).toContain("resolveProviderMenuApiError");
     expect(source).toContain("resolvePublishConfirmPresentation");
+    expect(source).toContain('t("workspace.emptyPanel.selectDay")');
     expect(source).not.toContain('warning: warnings[0]');
     expect(source).not.toContain("Kunne ikke lagre meny.");
     expect(source).not.toContain("Kunne ikke tilbakestille varmrett.");
     expect(source).not.toContain("Bekreft for å publisere likevel.");
+    expect(source).not.toContain("Velg en dag i ukeplanen");
+  });
+
+  test("ProviderMenuEditor legacy save errors use i18n resolver", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuEditor.tsx"),
+      "utf8",
+    );
+    expect(source).toContain("resolveProviderMenuApiError");
+    expect(source).toContain('t("errors.saveFailed")');
+    expect(source).not.toContain("Kunne ikke lagre menyen");
+    expect(source).not.toContain("json.message");
   });
 });
 
