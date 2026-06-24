@@ -87,36 +87,36 @@
       },
       "activity": {
         "agreementActivated": {
-          "description": "En leveranseavtale er aktivert.",
-          "title": "Avtal aktiverat"
+          "description": "En leveringsaftale er aktiveret.",
+          "title": "Aftale aktiveret"
         },
         "agreementUpdated": {
-          "description": "En leveranseavtale er endret.",
-          "title": "Avtal uppdaterat"
+          "description": "En leveringsaftale er ændret.",
+          "title": "Aftale opdateret"
         },
         "invoiceGenerated": {
-          "description": "Nytt fakturagrundlag er klart for gjennomgang.",
-          "title": "Fakturagrundlag generert"
+          "description": "Nyt fakturagrundlag er klar til gennemgang.",
+          "title": "Fakturagrundlag genereret"
         },
         "menuPublished": {
-          "description": "Menyinnhold er publisert og synlig for kundene.",
-          "title": "Meny publisert"
+          "description": "Menuindhold er publiceret og synligt for kunderne.",
+          "title": "Menu publiceret"
         },
         "orderCancelled": {
           "description": "En bestilling er annulleret.",
-          "title": "Beställning avbokad"
+          "title": "Bestilling annulleret"
         },
         "orderReceived": {
-          "description": "En ny bestilling er registrert.",
-          "title": "Ordre mottatt"
+          "description": "En ny bestilling er registreret.",
+          "title": "Ordre modtaget"
         },
         "registrationApproved": {
-          "description": "En kunderegistrering er godkjent og aktivert.",
-          "title": "Kund godkänd"
+          "description": "En kunderegistrering er godkendt og aktiveret.",
+          "title": "Kunde godkendt"
         },
         "registrationReceived": {
           "description": "En virksomhed har registreret sig og afventer behandling.",
-          "title": "Ny kunderegistrering mottatt"
+          "title": "Ny kunderegistrering modtaget"
         },
         "registrationRejected": {
           "description": "En kunderegistrering er behandlet og avvist.",
@@ -124,7 +124,7 @@
         },
         "settingsUpdated": {
           "description": "Leverandørindstillinger er ændret.",
-          "title": "Indstillinger oppdatert"
+          "title": "Indstillinger opdateret"
         }
       }
     },
@@ -222,7 +222,7 @@
         "loadFailed": "Kunne ikke indlæse menu.",
         "saveFailed": "Kunne ikke gemme menu.",
         "copySourceEmpty": "Ingen {tier}-menu at kopiere for denne dag/kategori.",
-        "publishConfirmRequired": "{warning} Bekreft for at publisere likevel.",
+        "publishConfirmRequired": "{warning} Bekræft for at publicere alligevel.",
         "resetVarmrettFailed": "Kunne ikke nulstille varmret."
       },
       "success": {
@@ -443,8 +443,8 @@
     },
     "billing": {
       "actions": {
-        "close": "Lukk",
-        "closeDrawer": "Lukk",
+        "close": "Luk",
+        "closeDrawer": "Luk",
         "details": "Detaljer"
       },
       "agreement": {
@@ -458,11 +458,11 @@
       "commissionNote": "Lunchportalen beregner 5 % provision pr. solgt portion, når afregning er aktiveret.",
       "contact": {
         "addressLabel": "Fakturaadresse (valgfrit)",
-        "cancel": "Avbryt",
+        "cancel": "Annuller",
         "editButton": "Rediger fakturakontakt",
         "emailLabel": "Faktura-e-mail",
         "orgLabel": "Org.nr (valgfrit)",
-        "save": "Lagre",
+        "save": "Gem",
         "saveFailed": "Kunne ikke gemme.",
         "saved": "Fakturakontakt opdateret.",
         "saving": "Gemmer…",
@@ -486,7 +486,7 @@
         "title": "Fakturagrundlag og afregning"
       },
       "invoice": {
-        "downloadPdfIntegrationTitle": "Kommer med Tripletex (norsk regnskabsintegration)",
+        "downloadPdfIntegrationTitle": "Kommer med Tripletex",
         "downloadPdfSoon": "Download PDF (kommer snart)",
         "drawerTitle": "Faktura {number}",
         "net": "Netto",
@@ -495,13 +495,13 @@
         "sent": "Sendt",
         "status": "Status",
         "table": {
-          "amount": "Beløp",
+          "amount": "Beløb",
           "dueDate": "Forfald",
           "period": "Periode",
           "status": "Status"
         },
         "total": "Totalt",
-        "vat": "MVA"
+        "vat": "Moms"
       },
       "notActivated": {
         "text": "Afregning er ikke aktiveret for denne leverandør endnu. Kontakt Lunchportalen for at aktivere afregningsaftale og fakturagrundlag.",
@@ -513,13 +513,13 @@
         "subheading": "Overblik over fakturagrundlag, provision og afregning mellem leverandøren og Lunchportalen."
       },
       "plan": {
-        "CUSTOM": "Anpassat avtal",
-        "SAAS_FIXED": "Fast månadspris",
-        "SAAS_PER_COMPANY": "Pris per företag"
+        "CUSTOM": "Tilpasset aftale",
+        "SAAS_FIXED": "Fast månedspris",
+        "SAAS_PER_COMPANY": "Pris pr. virksomhed"
       },
       "status": {
         "invoice": {
-          "DRAFT": "Utkast",
+          "DRAFT": "Kladde",
           "OVERDUE": "Forfalden",
           "PAID": "Betalt",
           "SENT": "Sendt",
@@ -533,7 +533,7 @@
       },
       "summary": {
         "activateHint": "Kontakt Lunchportalen for at aktivere.",
-        "commission": "Provisjon",
+        "commission": "Provision",
         "commissionPending": "Vises, når afregning er aktiveret",
         "nextSettlement": "Næste afregning",
         "nextSettlementNone": "Ikke planlagt",
@@ -543,56 +543,56 @@
     "coverage": {
       "actions": {
         "activate": "Aktivér",
-        "activateTitle": "Gör området tillgängligt för nya företagsförfrågningar igen.",
-        "cancel": "Avbryt",
-        "closeDrawer": "Lukk",
-        "createArea": "Skapa område",
+        "activateTitle": "Gør området tilgængeligt for nye virksomhedsforespørgsler igen.",
+        "cancel": "Annuller",
+        "closeDrawer": "Luk",
+        "createArea": "Opret område",
         "deactivate": "Deaktivér",
-        "deactivateTitle": "Nya företag i detta område kan inte välja leverantören så länge området är inaktiverat. Befintliga avtal ändras inte automatiskt.",
+        "deactivateTitle": "Nye virksomheder i dette område kan ikke vælge leverandøren, mens området er deaktiveret. Eksisterende aftaler ændres ikke automatisk.",
         "edit": "Rediger",
         "newArea": "Nyt dækningsområde",
-        "newAreaTitle": "Lägg till ett nytt täckningsområde för leverantören.",
+        "newAreaTitle": "Tilføj et nyt dækningsområde for leverandøren.",
         "readOnlyNote": "Du har læseadgang. Ændringer kræver administratoradgang.",
         "saveChanges": "Gem ændringer",
         "saving": "Gemmer…"
       },
       "empty": {
-        "step1": "Definiera postnummer eller område.",
-        "step2": "Ange minsta antal anställda.",
-        "step3": "Välj leveransdagar för området.",
-        "text": "Lägg till ett täckningsområde för att styra vilka företag som kan skicka förfrågan till leverantören.",
+        "step1": "Definér postnumre eller område.",
+        "step2": "Angiv minimum antal medarbejdere.",
+        "step3": "Vælg leveringsdage for området.",
+        "text": "Tilføj et dækningsområde for at styre, hvilke virksomheder der kan sende forespørgsel til leverandøren.",
         "title": "Ingen dækningsområder endnu"
       },
       "errors": {
-        "cityRequired": "Ort är obligatorisk.",
-        "deliveryDaysRequired": "Välj minst en dag.",
-        "employeeRangeInvalid": "Ogiltigt intervall för anställda.",
+        "cityRequired": "By er påkrævet.",
+        "deliveryDaysRequired": "Vælg mindst én dag.",
+        "employeeRangeInvalid": "Ugyldigt interval for medarbejdere.",
         "forbidden": "Du har ikke adgang til at ændre dette område.",
-        "invalidEmployeeRange": "Min antal anställda kan inte vara högre än max.",
-        "invalidPostalCode": "Postnummer måste vara 4 siffror.",
-        "invalidPostalFrom": "Från-postnummer måste vara 4 siffror.",
-        "invalidPostalRange": "Från-postnummer kan inte vara högre än till.",
-        "invalidPostalTo": "Till-postnummer måste vara 4 siffror.",
+        "invalidEmployeeRange": "Minimum antal medarbejdere kan ikke være højere end maksimum.",
+        "invalidPostalCode": "Postnummer skal være 4 cifre.",
+        "invalidPostalFrom": "Fra-postnummer skal være 4 cifre.",
+        "invalidPostalRange": "Fra-postnummer kan ikke være højere end til.",
+        "invalidPostalTo": "Til-postnummer skal være 4 cifre.",
         "notAuthenticated": "Ikke logget ind.",
-        "postalOverlap": "Postnummerintervallet överlappar ett befintligt aktivt område.",
-        "postalRangeInvalid": "Från-postnummer kan inte vara högre än till.",
+        "postalOverlap": "Postnummerintervallet overlapper et eksisterende aktivt område.",
+        "postalRangeInvalid": "Fra-postnummer kan ikke være højere end til.",
         "providerAdminRequired": "Kun leverandøradmin kan ændre dækningsområder.",
-        "saveFailed": "Kunde inte spara området. Försök igen.",
-        "serviceAreaNotFound": "Området hittades inte.",
-        "toggleFailed": "Kunde inte uppdatera status.",
+        "saveFailed": "Kunne ikke gemme området. Prøv igen.",
+        "serviceAreaNotFound": "Området blev ikke fundet.",
+        "toggleFailed": "Kunne ikke opdatere status.",
         "unknown": "Noget gik galt. Prøv igen.",
-        "validationFailed": "Ogiltigt formulär."
+        "validationFailed": "Ugyldig formular."
       },
       "form": {
-        "activeToggle": "Aktivt område (används i registreringsmatchning)",
-        "cityLabel": "Ort / område",
-        "createTitle": "Lägg till område",
+        "activeToggle": "Aktivt område (bruges i registreringsmatchning)",
+        "cityLabel": "By / område",
+        "createTitle": "Tilføj område",
         "deliveryDaysLegend": "Leveringsdage",
-        "editTitle": "Redigera område",
-        "maxEmployees": "Max antal anställda (valfritt)",
-        "minEmployees": "Min antal anställda",
-        "postalFrom": "Postnummer från",
-        "postalTo": "Postnummer till"
+        "editTitle": "Rediger område",
+        "maxEmployees": "Maks. antal medarbejdere (valgfrit)",
+        "minEmployees": "Min. antal medarbejdere",
+        "postalFrom": "Postnummer fra",
+        "postalTo": "Postnummer til"
       },
       "format": {
         "emDash": "—",
@@ -621,7 +621,7 @@
       "table": {
         "area": "Område",
         "deliveryDays": "Leveringsdage",
-        "minEmployees": "Min. anställda",
+        "minEmployees": "Min. medarbejdere",
         "postalCodes": "Postnumre",
         "status": "Status"
       },
@@ -636,72 +636,72 @@
     },
     "customers": {
       "actions": {
-        "newCustomer": "Ny företagskund",
-        "newCustomerTitle": "Nya företagskunder kommer in via kontrollerad registrering.",
-        "openCustomer": "Öppna kund",
-        "removeCustomer": "Ta bort kund",
-        "restoreCustomer": "Återställ kund"
+        "newCustomer": "Ny kundevirksomhed",
+        "newCustomerTitle": "Nye kundevirksomheder kommer ind via kontrolleret registrering.",
+        "openCustomer": "Åbn kunde",
+        "removeCustomer": "Fjern kunde",
+        "restoreCustomer": "Gendan kunde"
       },
       "activity": {
         "empty": {
           "text": "Når kunden registreres, bestiller eller gendanes, vises det her.",
-          "title": "Ingen relevante kundeaktiviteter å vise ennå."
+          "title": "Ingen relevant kundeaktivitet at vise endnu."
         },
         "events": {
           "agreement_activated": {
-            "summary": "Leveransavtal aktiverat.",
-            "title": "Avtal aktiverat"
+            "summary": "Leveringsaftale aktiveret.",
+            "title": "Aftale aktiveret"
           },
           "agreement_updated": {
-            "summary": "Leveransavtal ändrat.",
-            "title": "Avtal uppdaterat"
+            "summary": "Leveringsaftale ændret.",
+            "title": "Aftale opdateret"
           },
           "company_registration_approved": {
-            "summary": "Kundregistrering godkänd och aktiverad.",
-            "title": "Kund godkänd"
+            "summary": "Kunderegistrering godkendt og aktiveret.",
+            "title": "Kunde godkendt"
           },
           "company_registration_submitted": {
-            "summary": "Företaget skickade avtalsförfrågan.",
-            "title": "Kundregistrering mottagen"
+            "summary": "Virksomheden sendte aftaleforespørgsel.",
+            "title": "Kunderegistrering modtaget"
           },
           "order_canceled": {
-            "summary": "En beställning avbokades.",
-            "title": "Beställning avbokad"
+            "summary": "En bestilling blev annulleret.",
+            "title": "Bestilling annulleret"
           },
           "order_cancelled": {
-            "summary": "En beställning avbokades.",
-            "title": "Beställning avbokad"
+            "summary": "En bestilling blev annulleret.",
+            "title": "Bestilling annulleret"
           },
           "order_created": {
-            "summary": "Ny beställning registrerad.",
-            "title": "Beställning registrerad"
+            "summary": "Ny bestilling registreret.",
+            "title": "Bestilling registreret"
           },
           "order_received": {
-            "summary": "Ny beställning registrerad.",
-            "title": "Beställning registrerad"
+            "summary": "Ny bestilling registreret.",
+            "title": "Bestilling registreret"
           },
           "provider": {
             "customer": {
               "archive": {
                 "success": {
-                  "summary": "Kund arkiverad hos leverantör.",
-                  "title": "Kund arkiverad"
+                  "summary": "Kunde arkiveret hos leverandør.",
+                  "title": "Kunde arkiveret"
                 }
               },
               "hard_delete": {
                 "success": {
-                  "summary": "Kund borttagen från leverantörslistan.",
-                  "title": "Kund borttagen"
+                  "summary": "Kunde fjernet fra leverandørlisten.",
+                  "title": "Kunde fjernet"
                 }
               },
               "restore": {
                 "attempt": {
-                  "summary": "Återställning av kund försöktes.",
-                  "title": "Återställning startad"
+                  "summary": "Gendannelse af kunde blev forsøgt.",
+                  "title": "Gendannelse startet"
                 },
                 "success": {
-                  "summary": "Kundrelationen återaktiverades.",
-                  "title": "Kund återställd"
+                  "summary": "Kunderelationen blev genaktiveret.",
+                  "title": "Kunde gendannet"
                 }
               }
             }
@@ -709,39 +709,39 @@
         }
       },
       "agreement": {
-        "activeTitle": "Aktivt kundavtal",
+        "activeTitle": "Aktiv kundeaftale",
         "createdAt": "Oprettet {date}",
         "dayMenuLine": "{day} · {plan}",
         "dayMenusDaysTier": "{days} · {tier}",
         "dayMenusDaysTierLine": "{days}: {tier}",
         "dayMenusWeekdaysTier": "Mandag–fredag · {tier}",
         "dayMenusWeekdaysTierLine": "Mandag–fredag: {tier}",
-        "deliveryDaysWarning": "Avtalet innehåller leveransdagar utanför ordinarie lunchleverans.",
+        "deliveryDaysWarning": "Aftalen indeholder leveringsdage uden for ordinær frokostlevering.",
         "empty": {
-          "text": "När ett kundavtal godkänns visas leveransdagar, plats och avtalsinnehåll här.",
-          "title": "Inget avtal registrerat"
+          "text": "Når en kundeaftale godkendes, vises leveringsdage, lokation og aftaleindhold her.",
+          "title": "Ingen aftale registreret"
         },
-        "inactiveTitle": "Kundavtal",
+        "inactiveTitle": "Kundeaftale",
         "labels": {
           "created": "Oprettet",
-          "dayMenus": "Leveransdagar och meny",
+          "dayMenus": "Leveringsdage og menu",
           "deliveryDays": "Leveringsdage",
           "location": "Leveransadress",
-          "package": "Avtalsnivå",
+          "package": "Aftaleniveau",
           "period": "Avtalsperiod",
           "status": "Status"
         },
-        "locationMissing": "Leveransadress inte angiven",
-        "multipleActiveWarning": "Flera aktiva avtal är registrerade för denna kund.",
-        "notSpecified": "Inte angivet",
-        "packageMissing": "Inte angivet i avtalsvyn ännu",
+        "locationMissing": "Leveringsadresse ikke angivet",
+        "multipleActiveWarning": "Flere aktive aftaler er registreret for denne kunde.",
+        "notSpecified": "Ikke angivet",
+        "packageMissing": "Ikke angivet i aftalevisningen endnu",
         "packageMix": "Mix",
         "periodFromOpen": "Fra {from} · Ingen slutdato",
         "periodFromTo": "Fra {from} til {to}",
         "sectionTitle": "Avtale",
         "status": {
           "active": "Aktiv",
-          "closed": "Avsluttet",
+          "closed": "Afsluttet",
           "paused": "Pauset",
           "pending": "Under behandling",
           "rejected": "Afvist",
@@ -758,98 +758,98 @@
       },
       "card": {
         "mobileMeta": "{employees} medarbejdere · {orders} ordrer denne uge · {history} i historik · Faktura: {invoice}",
-        "mobileUpdatedPrefix": "Senast uppdaterad",
+        "mobileUpdatedPrefix": "Senest opdateret",
         "orgNrPrefix": "Org.nr: {orgnr}"
       },
       "create": {
-        "backToCustomers": "Tillbaka till företag",
-        "heading": "Ny företagskund",
+        "backToCustomers": "Tilbage til virksomheder",
+        "heading": "Ny kundevirksomhed",
         "lead": "Direkte oprettelse af erhvervskunder er ikke tilgængelig endnu. Nye virksomheder i dit dækningsområde kommer ind via Registreringer, når de viser interesse, og vises under Virksomheder efter godkendelse."
       },
       "detail": {
         "actions": {
-          "agreementUpdated": "Avtalet uppdaterades.",
-          "editAgreement": "Redigera avtal",
+          "agreementUpdated": "Aftalen blev opdateret.",
+          "editAgreement": "Rediger aftale",
           "pause": "Sæt på pause",
-          "removeCustomer": "Ta bort kund",
+          "removeCustomer": "Fjern kunde",
           "restore": "Gendan",
           "suspend": "Suspender"
         },
-        "agreementStatusMissing": "Inget aktivt avtal",
+        "agreementStatusMissing": "Ingen aktiv aftale",
         "badges": {
           "commissionAmount": "{amount} provisjon",
-          "commissionNotReady": "Provision inte klar",
+          "commissionNotReady": "Provision ikke klar",
           "historical": "{count} historiske",
           "oneHistorical": "1 historisk",
-          "oneOrderThisMonth": "1 beställning denna månad",
+          "oneOrderThisMonth": "1 bestilling denne måned",
           "ordersSuffix": "ordre",
-          "ordersThisMonth": "{count} ordre denne måneden"
+          "ordersThisMonth": "{count} bestillinger denne måned"
         },
-        "billingBasisTitle": "Fakturaunderlag",
-        "billingIncomplete": "Fakturaunderlag ofullständigt",
-        "billingPeriodLabel": "Senaste 30 dagarna",
+        "billingBasisTitle": "Faktureringsgrundlag",
+        "billingIncomplete": "Faktureringsgrundlag ufuldstændigt",
+        "billingPeriodLabel": "Seneste 30 dage",
         "billingStatus": {
-          "missingOrders": "Saknar beställningsunderlag",
-          "missingRecipient": "Saknar fakturamottagare",
-          "missingVat": "Saknar momsuppdelning",
-          "ready": "Klar för fakturaunderlag"
+          "missingOrders": "Mangler bestillingsgrundlag",
+          "missingRecipient": "Mangler fakturamodtager",
+          "missingVat": "Mangler momsopdeling",
+          "ready": "Klar til faktureringsgrundlag"
         },
-        "completeCommissionNote": "Provision beräknas av omsättning exkl. moms.",
+        "completeCommissionNote": "Provision beregnes af omsætning ekskl. moms.",
         "contactMissing": "—",
         "employeesTable": {
-          "email": "E-post",
+          "email": "E-mail",
           "name": "Navn",
           "role": "Rolle"
         },
         "eyebrow": "Kunde",
-        "grossOnlyNote": "Siffrorna visas inkl. moms eftersom beställningsunderlaget saknar separat momsuppdelning.",
+        "grossOnlyNote": "Tallene vises inkl. moms, fordi bestillingsgrundlaget mangler separat momsopdeling.",
         "identityTitle": "Kundinformation",
         "kpis": {
-          "activeOrders": "Aktiva beställningar",
+          "activeOrders": "Aktive bestillinger",
           "commission5": "Provision 5 %",
           "employees": "Ansatte",
-          "orderHistory": "Beställningshistorik",
-          "revenue30Days": "Omsättning 30 dagar"
+          "orderHistory": "Bestillingshistorik",
+          "revenue30Days": "Omsætning 30 dage"
         },
         "labels": {
-          "agreementStatus": "Avtalsstatus",
+          "agreementStatus": "Aftalestatus",
           "billingStatus": "Status",
           "commission": "Provision 5 %",
-          "commissionBase": "Provisionsunderlag",
+          "commissionBase": "Provisionsgrundlag",
           "commissionRateValue": "5 %",
           "contact": "Kontakt",
-          "deliveryAddress": "Leveransadress",
-          "email": "E-post",
+          "deliveryAddress": "Leveringsadresse",
+          "email": "E-mail",
           "invoiceMethod": "Faktureringsmetode",
           "invoiceRecipient": "Fakturamodtager",
-          "ordersThisMonth": "Beställningsunderlag",
+          "ordersThisMonth": "Bestillingsgrundlag",
           "orgnr": "Org.nr",
           "period": "Periode",
           "phone": "Telefon",
-          "revenueExVat": "Omsättning exkl. moms",
-          "revenueIncVat": "Omsättning inkl. moms",
-          "vat": "MVA"
+          "revenueExVat": "Omsætning ekskl. moms",
+          "revenueIncVat": "Omsætning inkl. moms",
+          "vat": "Moms"
         },
         "meta": {
-          "agreementLevel": "Avtalsnivå",
+          "agreementLevel": "Aftaleniveau",
           "invoiceMethod": "Faktureringsmetode",
           "orgnr": "Org.nr",
           "status": "Status"
         },
-        "orgnrMissing": "Org.nr not registered",
+        "orgnrMissing": "Org.nr ikke registreret",
         "readOnly": "Du har læseadgang. Ændringer kræver administratoradgang.",
         "sections": {
           "activity": "Aktivitet",
           "employees": "Ansatte",
-          "employeesEmpty": "Inga anställda registrerade för denna kund ännu.",
+          "employeesEmpty": "Ingen medarbejdere registreret for denne kunde endnu.",
           "orders": "Ordrer",
-          "ordersEmpty": "Inga beställningar registrerade för denna kund ännu."
+          "ordersEmpty": "Ingen bestillinger registreret for denne kunde endnu."
         },
         "statusBanner": {
-          "pausedDefault": "Kunden är pausad.",
-          "suspendedDefault": "Kunden är suspenderad."
+          "pausedDefault": "Kunden er sat på pause.",
+          "suspendedDefault": "Kunden er suspenderet."
         },
-        "vatNotSpecified": "Inte angivet"
+        "vatNotSpecified": "Ikke angivet"
       },
       "dialogs": {
         "adminEyebrow": "Kundadministration",
@@ -858,117 +858,117 @@
           "billingContact": "Fakturakontakt",
           "billingLegend": "Fakturering",
           "contactLegend": "Kontaktperson",
-          "dayMenusLead": "Välj vilken meny kunden ska ha per leveransdag.",
-          "dayMenusLegend": "Meny per leveransdag",
-          "deliveryNote": "Leveransinstruktion",
-          "deliveryWindowLegend": "Leveransfönster",
+          "dayMenusLead": "Vælg hvilken menu kunden skal have pr. leveringsdag.",
+          "dayMenusLegend": "Menu pr. leveringsdag",
+          "deliveryNote": "Leveringsinstruktion",
+          "deliveryWindowLegend": "Leveringsvindue",
           "ehf": "EHF",
           "ehfEndpoint": "EHF-slutpunkt",
-          "email": "E-post",
+          "email": "E-mail",
           "from": "Fra",
-          "invoiceEmail": "E-post",
+          "invoiceEmail": "E-mail",
           "invoiceEmailField": "Faktura-e-mail",
-          "loadFailed": "Kunde inte ladda avtalet.",
-          "loading": "Laddar avtal…",
-          "locationLegend": "Leveransadress",
-          "locationName": "Platsnamn",
+          "loadFailed": "Kunne ikke indlæse aftalen.",
+          "loading": "Indlæser aftale…",
+          "locationLegend": "Leveringsadresse",
+          "locationName": "Lokationsnavn",
           "name": "Navn",
           "orgnr": "Organisationsnummer",
           "phone": "Telefon",
-          "reasonOptional": "Anledning (valfritt, sparas i revisionsloggen)",
+          "reasonOptional": "Begrundelse (valgfrit, gemmes i revisionsloggen)",
           "save": "Gem ændringer",
-          "saveFailed": "Kunde inte spara avtalet.",
+          "saveFailed": "Kunne ikke gemme aftalen.",
           "saving": "Gemmer…",
           "statusActive": "Aktiv",
           "statusLegend": "Status",
           "statusPaused": "Pauset",
-          "title": "Redigera kundavtal",
+          "title": "Rediger kundeaftale",
           "to": "Til",
-          "updated": "Avtalet uppdaterades.",
-          "updatedWithWarnings": "Avtalet uppdaterades. {warnings}",
+          "updated": "Aftalen blev opdateret.",
+          "updatedWithWarnings": "Aftalen blev opdateret. {warnings}",
           "validation": {
-            "ehfEndpointRequired": "EHF-slutpunkt måste anges.",
-            "invalidBillingEmail": "Ogiltig e-post för fakturakontakt.",
-            "invalidEmail": "Ogiltig e-postadress.",
-            "invoiceEmailRequired": "Faktura-e-post måste vara en giltig e-postadress.",
-            "orgnrLength": "Organisationsnummer måste vara 9 siffror.",
-            "pickDeliveryDay": "Välj minst en leveransdag.",
-            "pickMenuForDay": "Velg meny for {day}."
+            "ehfEndpointRequired": "EHF-endpoint skal angives.",
+            "invalidBillingEmail": "Ugyldig e-mail til fakturakontakt.",
+            "invalidEmail": "Ugyldig e-mailadresse.",
+            "invoiceEmailRequired": "Faktura-e-mail skal være en gyldig e-mailadresse.",
+            "orgnrLength": "Organisationsnummer skal være 9 cifre.",
+            "pickDeliveryDay": "Vælg mindst én leveringsdag.",
+            "pickMenuForDay": "Vælg menu for {day}."
           },
-          "weekdaysOnlyNote": "Lunchleverans måndag–fredag. Helger stöds inte."
+          "weekdaysOnlyNote": "Frokostlevering mandag–fredag. Weekender understøttes ikke."
         },
-        "cancel": "Avbryt",
-        "closeAria": "Lukk",
+        "cancel": "Annuller",
+        "closeAria": "Luk",
         "removal": {
-          "actionFailed": "Åtgärden misslyckades.",
-          "archiveAction": "Arkivera kund",
-          "archiveCustomer": "Arkivera kund",
-          "archiveTitle": "Arkivera kund",
-          "chooseModeLead": "Välj om kunden ska arkiveras eller raderas permanent.",
+          "actionFailed": "Handlingen mislykkedes.",
+          "archiveAction": "Arkiver kunde",
+          "archiveCustomer": "Arkiver kunde",
+          "archiveTitle": "Arkiver kunde",
+          "chooseModeLead": "Vælg om kunden skal arkiveres eller slettes permanent.",
           "confirmHint": "(skriv præcis: {hint})",
-          "confirmLabel": "Bekräftelse",
-          "hardDelete": "Radera permanent",
-          "hardDeleteBlockedLead": "Denna kund har operativ historik som måste bevaras.",
-          "hardDeleteBlockedTitle": "Kunden kan inte raderas permanent",
-          "hardDeleteLead": "Kunden har ingen operativ historik och kan raderas permanent efter bekräftelse.",
-          "hardDeleteTitle": "Radera kund permanent",
-          "loadRulesFailed": "Kunde inte ladda borttagningsregler.",
+          "confirmLabel": "Bekræftelse",
+          "hardDelete": "Slet permanent",
+          "hardDeleteBlockedLead": "Denne kunde har driftshistorik, der skal bevares.",
+          "hardDeleteBlockedTitle": "Kunden kan ikke slettes permanent",
+          "hardDeleteLead": "Kunden har ingen driftshistorik og kan slettes permanent efter bekræftelse.",
+          "hardDeleteTitle": "Slet kunde permanent",
+          "loadRulesFailed": "Kunne ikke indlæse fjernelsesregler.",
           "loadRulesFailedHttp": "Kunne ikke indlæse fjernelsesregler (HTTP {status}).",
-          "loadingDependencies": "Hämtar beroenden…",
-          "loadingRules": "Laddar borttagningsregler…",
-          "reasonOptional": "Anledning (valfritt)",
-          "removeTitle": "Ta bort kund"
+          "loadingDependencies": "Henter afhængigheder…",
+          "loadingRules": "Indlæser fjernelsesregler…",
+          "reasonOptional": "Begrundelse (valgfrit)",
+          "removeTitle": "Fjern kunde"
         },
         "restore": {
-          "actionFailed": "Kunde inte återställa kunden.",
+          "actionFailed": "Kunne ikke gendanne kunden.",
           "confirmHint": "(skriv præcis: {hint})",
-          "confirmLabel": "Bekräftelse",
-          "lead": "Detta återaktiverar kundrelationen utan att radera historik.",
-          "restoreCustomer": "Återställ kund",
-          "successDefault": "Kunden återställdes.",
-          "title": "Återställ kund"
+          "confirmLabel": "Bekræftelse",
+          "lead": "Dette genaktiverer kunderelationen uden at slette historik.",
+          "restoreCustomer": "Gendan kunde",
+          "successDefault": "Kunden blev gendannet.",
+          "title": "Gendan kunde"
         },
         "working": "Udfører…"
       },
       "empty": {
         "noResults": {
-          "text": "Prova ett annat företagsnamn eller rensa filtret.",
-          "title": "Inga träffar"
+          "text": "Prøv et andet virksomhedsnavn, eller ryd filteret.",
+          "title": "Ingen resultater"
         },
         "noStatusMatch": {
-          "text": "Ändra statusfiltret för att se fler företagskunder.",
-          "title": "Inga företag med vald status"
+          "text": "Skift statusfilteret for at se flere kundevirksomheder.",
+          "title": "Ingen virksomheder med valgt status"
         },
         "noneYet": {
-          "text": "När företagskunder registreras och godkänns visas de här med status, avtal och beställningsunderlag.",
-          "title": "Inga företag ännu"
+          "text": "Når kundevirksomheder registreres og godkendes, vises de her med status, aftale og bestillingsgrundlag.",
+          "title": "Ingen virksomheder endnu"
         }
       },
       "errors": {
-        "agreementLoadFailed": "Kunde inte ladda avtalet.",
-        "agreementUpdateFailed": "Kunde inte spara avtalet.",
-        "alreadyActive": "Denna kund är redan aktiv.",
-        "alreadyArchived": "Denna kund är redan arkiverad.",
-        "confirmMismatch": "Bekräftelsen stämmer inte.",
-        "customerNotFound": "Kunden hittades inte.",
+        "agreementLoadFailed": "Kunne ikke indlæse aftalen.",
+        "agreementUpdateFailed": "Kunne ikke gemme aftalen.",
+        "alreadyActive": "Denne kunde er allerede aktiv.",
+        "alreadyArchived": "Denne kunde er allerede arkiveret.",
+        "confirmMismatch": "Bekræftelsen stemmer ikke.",
+        "customerNotFound": "Kunden blev ikke fundet.",
         "forbidden": "Du har ikke adgang til denne kunde.",
-        "hardDeleteBlocked": "Denna kund kan inte raderas permanent.",
-        "invalidAgreement": "Avtalsdata är ogiltiga.",
-        "invalidCustomer": "Saknar kund-id.",
-        "invalidPayload": "Inga giltiga ändringar angavs.",
-        "loadRulesFailed": "Kunde inte ladda borttagningsregler.",
-        "noActiveAgreement": "Företaget har inget aktivt avtal.",
+        "hardDeleteBlocked": "Denne kunde kan ikke slettes permanent.",
+        "invalidAgreement": "Aftaledata er ugyldige.",
+        "invalidCustomer": "Mangler kunde-id.",
+        "invalidPayload": "Ingen gyldige ændringer angivet.",
+        "loadRulesFailed": "Kunne ikke indlæse fjernelsesregler.",
+        "noActiveAgreement": "Virksomheden har ingen aktiv aftale.",
         "notAuthenticated": "Ikke logget ind.",
         "outOfScope": "Kunden tilhører ikke denne leverandør.",
-        "pauseFailed": "Kunde inte pausa kunden.",
-        "protectedSystem": "Systemorganisasjon kan ikke endres her.",
+        "pauseFailed": "Kunne ikke sætte kunden på pause.",
+        "protectedSystem": "Systemorganisation kan ikke ændres her.",
         "providerAdminRequired": "Kun leverandøradmin kan udføre denne handling.",
         "providerContextMissing": "Kunne ikke finde leverandørtilknytning for indlogget bruger.",
-        "reasonTooShort": "Begrundelse må være minst 20 tegn.",
-        "removeFailed": "Kunde inte ta bort kunden.",
-        "restoreFailed": "Kunde inte återställa kunden.",
+        "reasonTooShort": "Begrundelse skal være mindst 20 tegn.",
+        "removeFailed": "Kunne ikke fjerne kunden.",
+        "restoreFailed": "Kunne ikke gendanne kunden.",
         "selfCustomer": "Leverandøren kan ikke være kunde hos sig selv.",
-        "suspendFailed": "Kunde inte suspendera kunden.",
+        "suspendFailed": "Kunne ikke suspendere kunden.",
         "unknown": "Noget gik galt.",
         "updateFailed": "Kunne ikke opdatere kunde.",
         "validationFailed": "Ugyldig anmodning."
@@ -979,27 +979,27 @@
         "deleted": "Slettet",
         "paused": "Pauset",
         "searchLabel": "Søg",
-        "searchPlaceholder": "Søk efter virksomhedsnavn",
+        "searchPlaceholder": "Søg efter virksomhedsnavn",
         "statusGroupAria": "Statusfilter",
         "suspended": "Suspenderet"
       },
       "lifecycle": {
         "dialog": {
-          "cancel": "Avbryt",
-          "closeAria": "Lukk dialog",
+          "cancel": "Annuller",
+          "closeAria": "Luk dialog",
           "delete": {
             "confirm": "Slet",
-            "description": "Handlingen soft-sletter kunden. Ordrer kan påvirkes.",
+            "description": "Det blødsletter kunden. Ordrer kan påvirkes.",
             "title": "Slette {name}?"
           },
           "pause": {
             "confirm": "Sæt på pause",
-            "description": "Oppgi en tydelig begrunnelse (minst 20 tegn).",
+            "description": "Angiv en tydelig begrundelse (mindst 20 tegn).",
             "title": "Pause {name}?"
           },
           "reasonHint": "{current}/{min} tegn",
           "reasonLabel": "Begrundelse",
-          "reasonNeedMore": " — trenger flere tegn",
+          "reasonNeedMore": " — mangler flere tegn",
           "resume": {
             "confirm": "Gendan",
             "description": "Kunden og tilhørende ordrer gendanes der det er mulig.",
@@ -1007,7 +1007,7 @@
           },
           "suspend": {
             "confirm": "Suspender",
-            "description": "Oppgi en tydelig begrunnelse (minst 20 tegn).",
+            "description": "Angiv en tydelig begrundelse (mindst 20 tegn).",
             "title": "Suspendere {name}?"
           },
           "working": "Udfører…"
@@ -1024,7 +1024,7 @@
         "companies": "{count} virksomheder",
         "next": "Næste",
         "oneCompany": "1 virksomhed",
-        "page": "Side {current} av {total} ({count} totalt)",
+        "page": "Side {current} af {total} ({count} i alt)",
         "prev": "Forrige"
       },
       "status": {
@@ -1038,51 +1038,51 @@
         "employees": "Ansatte",
         "historicalOrders": "Historik",
         "invoice": "Faktura",
-        "lastUpdated": "Senast uppdaterad",
+        "lastUpdated": "Senest opdateret",
         "name": "Virksomhed",
-        "ordersThisWeek": "Ordre denne uken",
+        "ordersThisWeek": "Ordrer denne uge",
         "orgnr": "Org.nr",
         "status": "Status"
       }
     },
     "orders": {
       "actions": {
-        "markDelivered": "Markera levererad",
-        "readyForDelivery": "Klar för leverans",
+        "markDelivered": "Markér leveret",
+        "readyForDelivery": "Klar til levering",
         "saving": "Gemmer…",
-        "startProduction": "Starta produktion"
+        "startProduction": "Start produktion"
       },
       "card": {
         "allergensPrefix": "Allergener: {list}",
         "deliveryGroupPrefix": "Levering",
         "lineQuantity": "{quantity} stk · {displayLine}",
-        "noLines": "Ingen linjer registrert",
-        "noteLabel": "Merknad:",
-        "readOnlyNote": "Kun visning — du har lesetilgang til ordrene."
+        "noLines": "Ingen linjer registreret",
+        "noteLabel": "Note:",
+        "readOnlyNote": "Kun visning — du har læseadgang til ordrene."
       },
       "empty": {
         "steps": {
-          "checkMenu": "Kontroller at menyen er publisert for aktuelle dager.",
-          "checkWeek": "Se hele uken hvis du vil kontrollere kommende leveranser.",
-          "ordersAppear": "Nye bestillinger vises her som produksjonsgrunnlag efter hvert som de kommer inn."
+          "checkMenu": "Kontrollér at menuen er publiceret for de relevante dage.",
+          "checkWeek": "Se hele ugen, hvis du vil gennemgå kommende leverancer.",
+          "ordersAppear": "Nye bestillinger vises her som produktionsgrundlag, efterhånden som de kommer ind."
         },
         "text": {
-          "default": "Det finnes ingen aktive bestillinger for valgt periode.",
-          "filtered": "Det finnes ingen ordre med valgt status i valgt periode. Velg «Alle» for at se alle ordre i perioden."
+          "default": "Der findes ingen aktive bestillinger for den valgte periode.",
+          "filtered": "Der findes ingen ordrer med valgt status i denne periode. Vælg «Alle» for at se alle ordrer i perioden."
         },
         "title": {
-          "filtered": "Inga beställningar med vald status",
-          "today": "Inga beställningar för idag",
-          "tomorrow": "Inga beställningar för imorgon",
-          "week": "Inga beställningar denna vecka"
+          "filtered": "Ingen bestillinger med valgt status",
+          "today": "Ingen bestillinger for i dag",
+          "tomorrow": "Ingen bestillinger for i morgen",
+          "week": "Ingen bestillinger denne uge"
         }
       },
       "errors": {
         "kitchenRoleRequired": "Kun køkkenrollen kan opdatere status.",
         "notAuthenticated": "Ikke logget ind.",
-        "orderNotFound": "Ordre ikke funnet.",
+        "orderNotFound": "Ordre ikke fundet.",
         "unknown": "Noget gik galt.",
-        "updateFailed": "Kunde inte uppdatera status."
+        "updateFailed": "Kunne ikke opdatere status."
       },
       "filters": {
         "companyAll": "Alle virksomheder",
@@ -1091,7 +1091,7 @@
         "date": {
           "today": "I dag",
           "tomorrow": "I morgen",
-          "week": "Hele uken"
+          "week": "Hele ugen"
         },
         "dateGroupAria": "Periode",
         "groupByCompany": "Pr. virksomhed",
@@ -1102,22 +1102,22 @@
           "delivered": "Levert",
           "production": "I produktion",
           "ready": "Klar",
-          "received": "Mottatt"
+          "received": "Modtaget"
         },
         "statusGroupAria": "Status"
       },
       "page": {
-        "eyebrow": "Ordre og produksjon",
+        "eyebrow": "Ordrer og produktion",
         "heading": "Ordrer"
       },
       "status": {
         "cancelled": "Avbestilt",
         "delivered": "Levert",
         "inProduction": "I produktion",
-        "other": "Annet",
+        "other": "Andet",
         "paused": "Pauset",
-        "readyForDelivery": "Klar för leverans",
-        "received": "Mottatt"
+        "readyForDelivery": "Klar til levering",
+        "received": "Modtaget"
       }
     },
     "registrations": {
@@ -1125,11 +1125,11 @@
         "review": "Vurder"
       },
       "dialogs": {
-        "approve": "Godkjenn",
-        "approveInstead": "Godkjenn i stedet",
-        "approveTitle": "Godkjenn registrering",
-        "cancel": "Avbryt",
-        "closeAria": "Lukk",
+        "approve": "Godkend",
+        "approveInstead": "Godkend i stedet",
+        "approveTitle": "Godkend registrering",
+        "cancel": "Annuller",
+        "closeAria": "Luk",
         "contactLabel": "Kontakt",
         "employeesLabel": "Ansatte (ca.)",
         "phoneLabel": "Telefon",
@@ -1138,7 +1138,7 @@
         "rejectReasonLabel": "Begrundelse",
         "rejectTitle": "Avvis registrering",
         "saving": "Behandler…",
-        "tierLabel": "Avtalsnivå"
+        "tierLabel": "Aftaleniveau"
       },
       "empty": {
         "steps": {
@@ -1146,19 +1146,19 @@
           "rejectedFlow": "Afviste forespørgsler håndteres kontrolleret med tydelig status.",
           "reviewRequest": "Kontrollér leveringssted, kontaktoplysninger og ønsket frokostordning, når en forespørgsel kommer ind."
         },
-        "text": "Nye virksomhedsforespørgsler vises her når de matcher ditt dækningsområde.",
-        "title": "Inga förfrågningar under behandling"
+        "text": "Nye virksomhedsforespørgsler vises her, når de matcher dit dækningsområde.",
+        "title": "Ingen forespørgsler under behandling"
       },
       "errors": {
         "actionFailed": "Handlingen mislykkedes.",
-        "approveFailed": "Kunde inte godkänna registreringen.",
-        "invalidTier": "Ogiltig avtalsnivå.",
+        "approveFailed": "Kunne ikke godkende registreringen.",
+        "invalidTier": "Ugyldigt aftaleniveau.",
         "notAuthenticated": "Ikke logget ind.",
         "providerAdminRequired": "Kun leverandøradmin kan udføre denne handling.",
-        "registrationAlreadyProcessed": "Denna registrering har redan behandlats.",
-        "registrationNotFound": "Registrering hittades inte.",
-        "rejectFailed": "Kunde inte avvisa registreringen.",
-        "rejectReasonRequired": "Ange en kort anledning.",
+        "registrationAlreadyProcessed": "Denne registrering er allerede behandlet.",
+        "registrationNotFound": "Registrering blev ikke fundet.",
+        "rejectFailed": "Kunne ikke afvise registreringen.",
+        "rejectReasonRequired": "Angiv en kort begrundelse.",
         "unknown": "Noget gik galt."
       },
       "page": {
@@ -1167,14 +1167,14 @@
         "subheading": "Gennemgå nye virksomheder, der ønsker frokostordning, og vurder leveringsområde, kontaktoplysninger og ønsket aftale før behandling."
       },
       "status": {
-        "approved": "Godkjent",
-        "other": "Annet",
+        "approved": "Godkendt",
+        "other": "Andet",
         "pending": "Under behandling",
         "rejected": "Afvist"
       },
       "summary": {
         "many": "{count} under behandling",
-        "none": "Inga under behandling",
+        "none": "Ingen under behandling",
         "one": "1 under behandling"
       },
       "table": {
@@ -1182,119 +1182,119 @@
         "company": "Virksomhed",
         "contact": "Kontakt",
         "employees": "Ansatte",
-        "received": "Mottatt",
+        "received": "Modtaget",
         "status": "Status"
       }
     },
     "settings": {
       "brand": {
         "errors": {
-          "contrastTooWeak": "Färgen har för svag kontrast och kan inte användas. Välj en mörkare färg.",
-          "forbidden": "Ingen åtkomst.",
-          "invalidHex": "Använd HEX-format, till exempel #F5C518.",
-          "invalidProvider": "Ogiltig leverantör.",
+          "contrastTooWeak": "Farven har for svag kontrast og kan ikke bruges. Vælg en mørkere farve.",
+          "forbidden": "Ingen adgang.",
+          "invalidHex": "Brug HEX-format, for eksempel #F5C518.",
+          "invalidProvider": "Ugyldig leverandør.",
           "notAuthenticated": "Ikke logget ind.",
-          "saveFailed": "Kunde inte spara färgen.",
-          "unknown": "Oväntat fel vid sparande."
+          "saveFailed": "Kunne ikke gemme farven.",
+          "unknown": "Uventet fejl ved gemning."
         },
-        "formatHint": "Använd HEX-format, till exempel #F5C518. Vid dålig kontrast används standardfärg.",
+        "formatHint": "Brug HEX-format, for eksempel #F5C518. Ved dårlig kontrast bruges standardfarven.",
         "hexLabel": "HEX-kod",
-        "restoredDefault": "Standardfärg återställd.",
-        "sampleHint": "Så här används färgen: som liten accent i menyn och detaljer.",
-        "save": "Spara färg",
-        "saved": "Färg sparad.",
+        "restoredDefault": "Standardfarve gendannet.",
+        "sampleHint": "Sådan bruges farven: som lille accent i menuen og detaljer.",
+        "save": "Gem farve",
+        "saved": "Farve gemt.",
         "saving": "Gemmer…"
       },
       "logo": {
         "altWithProvider": "Logo for {providerName}",
         "errors": {
-          "fileTooLarge": "Logotypen är för stor. Max storlek är 2 MB.",
-          "forbidden": "Ingen åtkomst.",
-          "invalidProvider": "Ogiltig leverantör.",
-          "noFileSelected": "Välj en logotypfil.",
+          "fileTooLarge": "Logoet er for stort. Maks. størrelse er 2 MB.",
+          "forbidden": "Ingen adgang.",
+          "invalidProvider": "Ugyldig leverandør.",
+          "noFileSelected": "Vælg en logofil.",
           "notAuthenticated": "Ikke logget ind.",
           "removeFailed": "Kunne ikke fjerne logoet.",
           "saveFailed": "Kunne ikke gemme logoet.",
-          "unknown": "Uventet feil ved opplasting.",
-          "unsupportedFileType": "Logoen må være PNG eller WebP. Brug helst logo med transparent bakgrunn.",
+          "unknown": "Uventet fejl ved upload.",
+          "unsupportedFileType": "Logoet skal være PNG eller WebP. Brug helst logo med transparent baggrund.",
           "uploadFailed": "Kunne ikke uploade logoet.",
           "uploadUnavailable": "Upload er ikke tilgængelig lige nu.",
           "urlFailed": "Kunne ikke hente logo-URL."
         },
-        "hint": "Anbefalt: logo i PNG eller WebP med transparent bakgrunn. Maks 2 MB. Ikke bruk matbilder, bannere, skjermbilder, reklamegrafikk eller logo på rotete/farget bakgrunn.",
-        "pickFile": "Velg logofil",
-        "remove": "Ta bort logotyp",
-        "removed": "Logotyp borttagen.",
+        "hint": "Anbefalet: logo i PNG eller WebP med transparent baggrund. Maks. 2 MB. Brug ikke madbilleder, bannere, skærmbilleder, reklamegrafik eller logo på rodede/farvede baggrunde.",
+        "pickFile": "Vælg logofil",
+        "remove": "Fjern logo",
+        "removed": "Logo fjernet.",
         "removing": "Fjerner…",
-        "replace": "Bytt logo",
-        "updated": "Logo oppdatert.",
-        "upload": "Ladda upp logotyp",
-        "uploading": "Laddar upp…"
+        "replace": "Erstat logo",
+        "updated": "Logo opdateret.",
+        "upload": "Upload logo",
+        "uploading": "Uploader…"
       },
       "operations": {
-        "deliveryEmailHint": "Brukes for leveringsrelaterte varsler og meldinger når ordre er klare for levering.",
-        "deliveryEmailLabel": "Leveringsepost",
+        "deliveryEmailHint": "Bruges til leveringsrelaterede varsler og beskeder, når ordrer er klar til levering.",
+        "deliveryEmailLabel": "Leverings-e-mail",
         "errors": {
-          "emailTooLong": "E-postadressen er for lang.",
-          "forbidden": "Ingen åtkomst.",
-          "invalidEmail": "Ogiltig e-postadress.",
+          "emailTooLong": "E-mailadressen er for lang.",
+          "forbidden": "Ingen adgang.",
+          "invalidEmail": "Ugyldig e-mailadresse.",
           "invalidLocale": "Ugyldigt sprogvalg.",
           "notAuthenticated": "Ikke logget ind.",
-          "providerNotFound": "Mangler provider.",
+          "providerNotFound": "Leverandør mangler.",
           "saveFailed": "Kunne ikke gemme driftsindstillingerne lige nu.",
           "unknown": "Kunne ikke gemme driftsindstillingerne lige nu."
         },
-        "kitchenEmailHint": "Brukes for produksjonsgrunnlag og kjøkkenvarsler.",
-        "kitchenEmailLabel": "Kjøkkenepost",
+        "kitchenEmailHint": "Bruges til produktionsgrundlag og køkkenvarsler.",
+        "kitchenEmailLabel": "Køkken-e-mail",
         "localeHint": "Styrer standardsprog for leverandørens egne driftsflader, når sprogunderstøttelse er tilgængelig.",
-        "localeLabel": "Språk",
+        "localeLabel": "Sprog",
         "locales": {
           "da-DK": "Dansk",
           "en-GB": "English",
           "nb-NO": "Norsk (bokmål)",
           "sv-SE": "Svenska"
         },
-        "operationsEmailHint": "Brukes som hovedmottaker for ordrevarsler og driftsbeskjeder.",
-        "operationsEmailLabel": "Ordre- og driftsepost",
+        "operationsEmailHint": "Bruges som hovedmodtager for ordrevarsler og driftsbeskeder.",
+        "operationsEmailLabel": "Ordre- og drifts-e-mail",
         "save": "Gem driftsindstillinger",
         "saved": "Driftsindstillinger gemt.",
         "saving": "Gemmer…"
       },
       "page": {
         "accountingIntro": "Forbind Tripletex til automatisk fakturering og betalingsstatus via den norske regnskabsintegration.",
-        "accountingSection": "Regnskap",
+        "accountingSection": "Regnskab",
         "brandIntro": "Upload logo og vælg en kontrolleret accentfarve. Lunchportalen bevarer layout, typografi og produktionsregler.",
-        "brandSection": "Logo og merkevare",
-        "colorHeading": "Primærfarge",
+        "brandSection": "Logo og brand",
+        "colorHeading": "Primærfarve",
         "colorIntro": "Vælg leverandørens accentfarve. Farven bruges kun i kontrollerede detaljer.",
         "eyebrow": "Leverandør",
         "heading": "Indstillinger",
         "leadWithProvider": "Profil og kontaktoplysninger for {providerName}.",
         "logoHeading": "Logo",
         "logoIntro": "Brug et rent logo med transparent baggrund. Logoet vises kontrolleret i leverandørmenuen.",
-        "logoNote": "Logoer som ikke følger plattformens visuelle standard kan bli avvist.",
+        "logoNote": "Logoer, der ikke følger platformens visuelle standard, kan blive afvist.",
         "operationsIntro": "Angiv de e-mailadresser, der skal modtage ordrer, køkkenlister og leveringsvarsler for denne leverandør. Disse indstillinger gælder kun for dette cateringfirma.",
         "operationsNote": "Cateringfirmaet skal selv angive de e-mailadresser, der skal modtage ordrer, køkkenlister og leveringsvarsler. Lunchportalen sender ikke leverandørens operative e-mails til platformen som standard — manglende e-mail skal udfyldes her.",
         "operationsSection": "Drift og notifikationer",
-        "readOnly": "Du har læseadgang. Indstillinger kan kun endres av administrator.",
+        "readOnly": "Du har læseadgang. Indstillinger kan kun ændres af en administrator.",
         "tripletexSetup": "Tripletex-opsætning"
       },
       "profile": {
-        "emailLabel": "Kontakt e-post",
+        "emailLabel": "Kontakt-e-mail",
         "errors": {
-          "emailRequired": "Gyldig e-post er påkrevd.",
-          "forbidden": "Ingen åtkomst.",
-          "nameRequired": "Navn er påkrevd.",
+          "emailRequired": "Gyldig e-mail er påkrævet.",
+          "forbidden": "Ingen adgang.",
+          "nameRequired": "Navn er påkrævet.",
           "notAuthenticated": "Ikke logget ind.",
-          "providerNotFound": "Mangler provider.",
+          "providerNotFound": "Leverandør mangler.",
           "saveFailed": "Kunne ikke gemme indstillinger.",
-          "unknown": "Oväntat fel vid sparande."
+          "unknown": "Uventet fejl ved gemning."
         },
         "leadWithProvider": "Profil for {providerName}",
         "nameLabel": "Navn",
         "phoneLabel": "Kontakt telefon",
         "save": "Gem indstillinger",
-        "saved": "Indstillinger lagret.",
+        "saved": "Indstillinger gemt.",
         "saving": "Gemmer…"
       }
     },
@@ -1305,38 +1305,38 @@
         "onboarding_disconnected": "Tripletex frakoblet",
         "onboarding_finalized": "Forbindelse fuldført",
         "onboarding_provisioning_completed": "Opsætning fuldført",
-        "onboarding_reconnect_initiated": "Återställning startad",
+        "onboarding_reconnect_initiated": "Gendannelse startet",
         "onboarding_test_token": "Forbindelse testet",
         "onboarding_vault_purged": "Credentials slettet",
-        "state_change_configuring": "Status endret til konfigurerer",
-        "state_change_connected": "Status endret til tilkoblet",
-        "state_change_degraded": "Status endret til trenger oppmerksomhet",
+        "state_change_configuring": "Status ændret til konfigurerer",
+        "state_change_connected": "Status ændret til tilsluttet",
+        "state_change_degraded": "Status ændret til kræver opmærksomhed",
         "state_change_disconnected": "Status ændret til frakoblet",
-        "state_change_generic": "Forbindelsesstatus changed"
+        "state_change_generic": "Forbindelsesstatus ændret"
       },
       "brand": "Tripletex",
       "errors": {
-        "completeFailed": "Kunde inte spara anslutningen.",
-        "configurationMissing": "Tripletex-uppgifter är inte konfigurerade.",
-        "connectionTestFailed": "Anslutningstest misslyckades.",
-        "credentialsLoadFailed": "Kunde inte ladda uppgifter.",
-        "disconnectFailed": "Kunde inte koppla från Tripletex.",
-        "finalizeFailed": "Kunde inte slutföra anslutningen.",
+        "completeFailed": "Kunne ikke gemme forbindelsen.",
+        "configurationMissing": "Tripletex-oplysninger er ikke konfigureret.",
+        "connectionTestFailed": "Forbindelsestest mislykkedes.",
+        "credentialsLoadFailed": "Kunne ikke indlæse oplysninger.",
+        "disconnectFailed": "Kunne ikke frakoble Tripletex.",
+        "finalizeFailed": "Kunne ikke fuldføre forbindelsen.",
         "forbidden": "Du har ikke adgang til denne leverandør.",
-        "healthLoadFailed": "Kunde inte hämta anslutningsstatus.",
-        "invalidCompanyId": "Company ID måste vara 6–12 siffror.",
-        "invalidState": "Anslutningen kan inte kopplas från i nuvarande tillstånd.",
-        "missingToken": "Employee Token krävs.",
+        "healthLoadFailed": "Kunne ikke hente forbindelsesstatus.",
+        "invalidCompanyId": "Company ID skal være 6–12 cifre.",
+        "invalidState": "Forbindelsen kan ikke frakobles i den nuværende tilstand.",
+        "missingToken": "Employee Token er påkrævet.",
         "notAuthenticated": "Ikke logget ind.",
         "providerAdminRequired": "Kun leverandøradmin kan udføre denne handling.",
-        "provisioningNotComplete": "Inställningen är inte klar ännu.",
-        "rotateFailed": "Kunde inte generera webhook-secret.",
+        "provisioningNotComplete": "Opsætningen er ikke færdig endnu.",
+        "rotateFailed": "Kunne ikke generere webhook-secret.",
         "saveFailed": "Handlingen mislykkedes.",
-        "tokenVerificationFailed": "Verifiering misslyckades.",
+        "tokenVerificationFailed": "Verificering mislykkedes.",
         "unknown": "Noget gik galt. Prøv igen.",
-        "verificationFailed": "Verifiering misslyckades. Token eller behörigheter är inte giltiga.",
-        "webhookSecretRequired": "Webhook-secret måste genereras först.",
-        "webhookSyncFailed": "Kunde inte registrera webhook i Tripletex."
+        "verificationFailed": "Verificering mislykkedes. Token eller tilladelser er ikke gyldige.",
+        "webhookSecretRequired": "Webhook-secret skal genereres først.",
+        "webhookSyncFailed": "Kunne ikke registrere webhook i Tripletex."
       },
       "format": {
         "emDash": "—"
@@ -1361,12 +1361,12 @@
           "fallbackHeading": "Tripletex-status",
           "heading": "Forbindelsesstatus",
           "noAccess": "Du har ikke adgang til denne leverandør.",
-          "subheading": "Översikt över anslutning, webhook och senaste aktivitet."
+          "subheading": "Overblik over forbindelse, webhook og seneste aktivitet."
         }
       },
       "state": {
         "CONFIGURING": "Konfigurerer…",
-        "CONNECTED": "Tilkoblet",
+        "CONNECTED": "Tilsluttet",
         "DEGRADED": "Kræver opmærksomhed",
         "DISCONNECTED": "Afbrudt",
         "NOT_CONNECTED": "Ikke forbundet"
@@ -1374,46 +1374,46 @@
       "status": {
         "actions": {
           "adminNote": "Kun leverandøradmin kan udføre disse handlinger.",
-          "disconnect": "Kobl fra →",
+          "disconnect": "Frakobl →",
           "rotateSecret": "Roter webhook-secret",
           "testConnection": "Test forbindelse"
         },
         "activityStats": {
-          "empty": "Ingen hendelser registrert ennå.",
+          "empty": "Ingen hændelser registreret endnu.",
           "invoicesPaid": "Fakturaer betalt",
           "invoicesSent": "Fakturaer sendt",
-          "recentHeading": "Siste hendelser",
+          "recentHeading": "Seneste hændelser",
           "webhookEvents": "Webhooks",
-          "workerFailures": "Feilede pushes"
+          "workerFailures": "Mislykkede pushes"
         },
         "cards": {
           "customers": "Kunder",
-          "customersMeta": "Firma-koblinger i Tripletex",
+          "customersMeta": "Virksomhedskoblinger i Tripletex",
           "products": "Produkter",
-          "productsMeta": "Mappede måltidsprodukter",
-          "vatCodes": "MVA-koder",
-          "vatCodesMeta": "Unike avgiftskoder i bruk"
+          "productsMeta": "Tilknyttede måltidsprodukter",
+          "vatCodes": "Momskoder",
+          "vatCodesMeta": "Unikke afgiftskoder i brug"
         },
         "hero": {
           "configureWebhook": "Konfigurer webhook →",
           "continueSetup": "Fortsæt opsætning →",
           "credentialsPurge": "Credentials slettes {datetime}",
-          "daysUntilPurge": "om {days} dager",
-          "lastHealthCheck": "Siste helse-sjekk: {relative}",
+          "daysUntilPurge": "om {days} dage",
+          "lastHealthCheck": "Seneste sundhedstjek: {relative}",
           "reconfigure": "Re-konfigurer →",
-          "reconnect": "Kobl til igen →",
+          "reconnect": "Tilslut igen →",
           "since": "Siden {datetime}"
         },
         "modals": {
-          "close": "Lukk",
-          "copied": "Kopiert",
+          "close": "Luk",
+          "copied": "Kopieret",
           "copy": "Kopier",
-          "copyFailed": "Kunde inte kopiera",
+          "copyFailed": "Kunne ikke kopiere",
           "disconnect": {
-            "body": "Tilkoblingen sættes til frakoblet. Credentials gemmes i 30 dage, så du kan koble til igen uden nyt token. Derefter slettes de permanent.",
-            "confirm": "Bekreft frakobling",
-            "confirming": "Kobler fra…",
-            "title": "Kobl fra Tripletex"
+            "body": "Forbindelsen sættes til frakoblet. Credentials gemmes i 30 dage, så du kan tilslutte igen uden nyt token. Derefter slettes de permanent.",
+            "confirm": "Bekræft frakobling",
+            "confirming": "Frakobler…",
+            "title": "Frakobl Tripletex"
           },
           "failed": "Mislykkedes",
           "ok": "OK",
@@ -1424,35 +1424,35 @@
             "title": "Roter webhook-secret"
           },
           "test": {
-            "body": "Kjører full 3-stegs verifisering mot Tripletex via lagrede credentials.",
-            "run": "Kjør test",
+            "body": "Kører fuld 3-trins verificering mod Tripletex via gemte credentials.",
+            "run": "Kør test",
             "running": "Tester…",
-            "stepAuth": "Autentisering",
+            "stepAuth": "Autentificering",
             "stepCompany": "Virksomhed",
-            "stepScope": "Tilgang",
+            "stepScope": "Adgang",
             "title": "Test forbindelse"
           }
         },
         "sections": {
           "actions": "Handlinger",
-          "activity": "Aktivitet siste 30 dager",
-          "resources": "Ressurser i Tripletex",
+          "activity": "Aktivitet seneste 30 dage",
+          "resources": "Ressourcer i Tripletex",
           "webhook": "Webhook"
         },
         "webhook": {
           "activeCount": "{count} aktive i Tripletex",
-          "copied": "Kopiert",
+          "copied": "Kopieret",
           "copy": "Kopier",
-          "copyFailed": "Kunde inte kopiera",
-          "eventTypes": "Händelsetyper",
-          "eventsCount": "{count} hendelser",
-          "last30Days": "Senaste 30 dagarna",
-          "lastReceived": "Senast mottagen",
-          "noEventsYet": "Inga händelser ännu",
-          "noneRegistered": "Inga registrerade ännu",
-          "notRotated": "Inte roterad",
-          "secretRotated": "Secret roterad",
-          "subscriptions": "Registrerade prenumerationer"
+          "copyFailed": "Kunne ikke kopiere",
+          "eventTypes": "Hændelsestyper",
+          "eventsCount": "{count} hændelser",
+          "last30Days": "Seneste 30 dage",
+          "lastReceived": "Senest modtaget",
+          "noEventsYet": "Ingen hændelser endnu",
+          "noneRegistered": "Ingen registreret endnu",
+          "notRotated": "Ikke roteret",
+          "secretRotated": "Secret roteret",
+          "subscriptions": "Registrerede abonnementer"
         }
       },
       "wizard": {
@@ -1460,80 +1460,80 @@
         "heading": "Forbind Tripletex",
         "leadForProvider": "For {providerName}",
         "progress": {
-          "ariaLabel": "Steg {current} av {total}: {label}",
-          "done": "Ferdig",
+          "ariaLabel": "Trin {current} af {total}: {label}",
+          "done": "Færdig",
           "setup": "Opsætning",
           "token": "Token",
-          "verify": "Verifiser",
+          "verify": "Verificer",
           "webhook": "Webhook"
         },
         "steps": {
           "provisioning": {
-            "complete": "Inställning slutförd.",
-            "contactSupport": "Kontakta support",
-            "customersSync": "Kunder synkroniseras",
-            "eyebrow": "Steg 3 av 5",
-            "intro": "Detta tar vanligtvis 10–30 sekunder.",
-            "productsCreate": "Produkter skapas",
-            "starting": "Startar inställning…",
+            "complete": "Opsætning fuldført.",
+            "contactSupport": "Kontakt support",
+            "customersSync": "Kunder synkroniseres",
+            "eyebrow": "Trin 3 af 5",
+            "intro": "Dette tager normalt 10–30 sekunder.",
+            "productsCreate": "Produkter oprettes",
+            "starting": "Starter opsætning…",
             "syncing": "Synkroniserer momskoder, produkter og kunder…",
-            "timeout": "Något tog längre tid än förväntat.",
+            "timeout": "Noget tog længere tid end forventet.",
             "timeoutHint": "Opsætningen fortsætter i baggrunden. Du kan lukke siden og vende tilbage senere.",
             "title": "Opsætter Tripletex",
             "vatSync": "Momskoder synkroniseres",
-            "waiting": "Väntar på Tripletex-inställning…"
+            "waiting": "Venter på Tripletex-opsætning…"
           },
           "success": {
-            "backToSettings": "Tillbaka till översikt",
-            "bulletInvoices": "Skicka fakturor automatiskt till Tripletex",
-            "bulletPayments": "Ta emot betalningsstatus via webhook",
-            "bulletStatus": "Visa anslutningsstatus och historik",
+            "backToSettings": "Tilbage til overblik",
+            "bulletInvoices": "Send fakturaer automatisk til Tripletex",
+            "bulletPayments": "Modtag betalingsstatus via webhook",
+            "bulletStatus": "Se forbindelsesstatus og historik",
             "canNow": "Du kan nu:",
-            "companyPrefix": "Selskap:",
-            "eyebrow": "Steg 5 av 5",
+            "companyPrefix": "Virksomhed:",
+            "eyebrow": "Trin 5 af 5",
             "title": "✓ Tripletex er forbundet",
-            "viewInvoices": "Visa fakturahistorik",
-            "viewStatus": "Visa anslutningsstatus"
+            "viewInvoices": "Se fakturahistorik",
+            "viewStatus": "Se forbindelsesstatus"
           },
           "token": {
-            "checksFailed": "En eller flera kontroller misslyckades. Rätta till och försök igen.",
-            "companyIdHelp": "Format: 6–12 siffror. Hitta det i URL:en: contextId=…",
-            "companyIdInvalid": "Company ID måste vara 6–12 siffror.",
+            "checksFailed": "En eller flere kontroller mislykkedes. Ret og prøv igen.",
+            "companyIdHelp": "Format: 6–12 cifre. Find det i URL'en: contextId=…",
+            "companyIdInvalid": "Company ID skal være 6–12 cifre.",
             "companyIdLabel": "Tripletex Company ID",
-            "connecting": "Ansluter…",
-            "continue": "Fortsett",
-            "eyebrow": "Steg 1 av 5",
+            "connecting": "Forbinder…",
+            "continue": "Fortsæt",
+            "eyebrow": "Trin 1 af 5",
             "intro": "Generér Employee Token i Tripletex under Virksomhed → API-adgang. Indsæt Company ID fra URL'en (contextId) og token nedenfor.",
-            "notRun": "Inte körd",
+            "notRun": "Ikke kørt",
             "retry": "Prøv igen",
-            "title": "Klistra in och verifiera",
-            "tokenHintPending": "Token skickas endast till servern vid verifiering och lagring.",
-            "tokenHintVerified": "Token verifierad och klar för lagring.",
+            "title": "Indsæt og verificer",
+            "tokenHintPending": "Token sendes kun til serveren ved verificering og lagring.",
+            "tokenHintVerified": "Token verificeret og klar til lagring.",
             "tokenLabel": "Employee Token",
-            "tokenMissing": "Klistra in Employee Token från Tripletex.",
-            "tokenMissingOnContinue": "Token saknas. Verifiera igen.",
-            "verify": "Verifiser",
+            "tokenMissing": "Indsæt Employee Token fra Tripletex.",
+            "tokenMissingOnContinue": "Token mangler. Verificer igen.",
+            "verify": "Verificer",
             "verifying": "Verificerer…"
           },
           "webhook": {
-            "eyebrow": "Steg 4 av 5",
-            "finalize": "Slutför inställning",
-            "finalizing": "Slutför…",
+            "eyebrow": "Trin 4 af 5",
+            "finalize": "Fuldfør opsætning",
+            "finalizing": "Fuldfører…",
             "intro": "Lunchportalen registrerer webhook-abonnementer i Tripletex automatisk. Du behøver ikke indsætte URL eller secret manuelt.",
-            "prepareFailed": "Kunde inte förbereda webhook-secret.",
-            "preparing": "Förbereder webhook-secret…",
-            "ready": "Klar. Klicka «Slutför inställning» för att registrera webhook och slutföra anslutningen.",
-            "registering": "Registrerar webhook i Tripletex…",
+            "prepareFailed": "Kunne ikke forberede webhook-secret.",
+            "preparing": "Forbereder webhook-secret…",
+            "ready": "Klar. Klik «Fuldfør opsætning» for at registrere webhook og fuldføre forbindelsen.",
+            "registering": "Registrerer webhook i Tripletex…",
             "title": "Webhook-registrering"
           }
         },
         "verify": {
-          "auth": "Testar autentisering",
-          "authOk": "Anslutning OK",
-          "companyMatch": "Verifierar Company ID-match",
-          "companyOk": "Rätt företag",
-          "scope": "Testar behörigheter",
-          "scopeOk": "Åtkomst OK"
+          "auth": "Tester autentificering",
+          "authOk": "Forbindelse OK",
+          "companyMatch": "Verificerer Company ID-match",
+          "companyOk": "Korrekt virksomhed",
+          "scope": "Tester tilladelser",
+          "scopeOk": "Adgang OK"
         }
       }
     }
