@@ -223,7 +223,15 @@
         "saveFailed": "Impossible d'enregistrer le menu.",
         "copySourceEmpty": "Aucun menu {tier} à copier pour ce jour/cette catégorie.",
         "publishConfirmRequired": "{warning} Confirmez pour publier quand même.",
-        "resetVarmrettFailed": "Impossible de réinitialiser le plat chaud."
+        "resetVarmrettFailed": "Impossible de réinitialiser le plat chaud.",
+        "unauthorized": "Non connecté.",
+        "forbidden": "Vous n'avez pas accès au menu.",
+        "badRequest": "Requête invalide.",
+        "invalidBody": "Requête invalide. Vérifiez tous les champs.",
+        "validationFailed": "Échec de la validation. Vérifiez les champs et réessayez.",
+        "publishUnavailable": "La publication du menu n'est pas disponible pour le moment.",
+        "orderLocked": "Le menu est verrouillé en raison d'une commande active.",
+        "publishConfirmGeneric": "Confirmez pour publier quand même."
       },
       "success": {
         "published": "Menu publié.",

@@ -223,7 +223,15 @@
         "saveFailed": "Kunne ikke gemme menu.",
         "copySourceEmpty": "Ingen {tier}-menu at kopiere for denne dag/kategori.",
         "publishConfirmRequired": "{warning} Bekræft for at publicere alligevel.",
-        "resetVarmrettFailed": "Kunne ikke nulstille varmret."
+        "resetVarmrettFailed": "Kunne ikke nulstille varmret.",
+        "unauthorized": "Ikke logget ind.",
+        "forbidden": "Du har ikke adgang til menuen.",
+        "badRequest": "Ugyldig anmodning.",
+        "invalidBody": "Ugyldig anmodning. Tjek alle felter.",
+        "validationFailed": "Validering mislykkedes. Tjek felterne og prøv igen.",
+        "publishUnavailable": "Menupublicering er ikke tilgængelig lige nu.",
+        "orderLocked": "Menuen er låst på grund af aktiv bestilling.",
+        "publishConfirmGeneric": "Bekræft for at publicere alligevel."
       },
       "success": {
         "published": "Menu publiceret.",

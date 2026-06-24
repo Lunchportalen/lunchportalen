@@ -223,7 +223,15 @@
         "saveFailed": "Kunde inte spara menyn.",
         "copySourceEmpty": "Ingen {tier}-meny att kopiera för den här dagen/kategorin.",
         "publishConfirmRequired": "{warning} Bekräfta för att publicera ändå.",
-        "resetVarmrettFailed": "Kunde inte återställa varmrätt."
+        "resetVarmrettFailed": "Kunde inte återställa varmrätt.",
+        "unauthorized": "Inte inloggad.",
+        "forbidden": "Du har inte åtkomst till menyn.",
+        "badRequest": "Ogiltig begäran.",
+        "invalidBody": "Ogiltig begäran. Kontrollera alla fält.",
+        "validationFailed": "Validering misslyckades. Kontrollera fälten och försök igen.",
+        "publishUnavailable": "Menypublicering är inte tillgänglig just nu.",
+        "orderLocked": "Menyn är låst på grund av aktiv beställning.",
+        "publishConfirmGeneric": "Bekräfta för att publicera ändå."
       },
       "success": {
         "published": "Meny publicerad.",

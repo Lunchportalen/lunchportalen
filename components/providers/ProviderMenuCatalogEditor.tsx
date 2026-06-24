@@ -12,6 +12,7 @@ import {
   type EditableLunchCategoryKey,
   type ProviderMenuCatalogSnapshot,
 } from "@/lib/provider-menu/lunchCategoryCatalog";
+import { resolveProviderMenuCatalogApiError } from "@/lib/providers/providerMenuActionErrors";
 
 type CatalogItemDraft = {
   key?: string;
@@ -312,7 +313,7 @@ function CatalogAccordionEditor({
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        setError(json.message ?? t("catalog.messages.saveFailed"));
+        setError(resolveProviderMenuCatalogApiError(t, json));
         return;
       }
       if (json.data?.catalog) {
@@ -448,7 +449,7 @@ function CatalogLegacyEditor({
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        setError(json.message ?? t("catalog.messages.saveFailed"));
+        setError(resolveProviderMenuCatalogApiError(t, json));
         return;
       }
       if (json.data?.catalog) {

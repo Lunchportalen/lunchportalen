@@ -1321,7 +1321,15 @@
         "saveFailed": "Kunne ikke lagre meny.",
         "copySourceEmpty": "Ingen {tier}-meny å kopiere for denne dagen/kategorien.",
         "resetVarmrettFailed": "Kunne ikke tilbakestille varmrett.",
-        "publishConfirmRequired": "{warning} Bekreft for å publisere likevel."
+        "publishConfirmRequired": "{warning} Bekreft for å publisere likevel.",
+        "unauthorized": "Ikke innlogget.",
+        "forbidden": "Du har ikke tilgang til meny.",
+        "badRequest": "Ugyldig forespørsel.",
+        "invalidBody": "Ugyldig forespørsel. Sjekk alle felt.",
+        "validationFailed": "Validering feilet. Sjekk feltene og prøv igjen.",
+        "publishUnavailable": "Menypublisering er ikke tilgjengelig akkurat nå.",
+        "orderLocked": "Menyen er låst på grunn av aktiv bestilling.",
+        "publishConfirmGeneric": "Bekreft for å publisere likevel."
       },
       "success": {
         "published": "Meny publisert.",
@@ -1557,12 +1565,30 @@
           "note": "Ekstra protein og dessert/frukt som premium tillegg til dagens Varmrett"
         },
         "quickChoices": {
-          "protein": { "label": "Ekstra protein", "note": "Ekstra protein til dagens Varmrett" },
-          "portion": { "label": "Større porsjon", "note": "Større porsjon av dagens Varmrett" },
-          "dessert": { "label": "Dessert/frukt", "note": "Dessert eller frukt som premium tillegg" },
-          "topping": { "label": "Premium topping", "note": "Premium topping til dagens Varmrett" },
-          "side": { "label": "Ekstra tilbehør", "note": "Ekstra tilbehør til dagens Varmrett" },
-          "season": { "label": "Sesongupgrade", "note": "Sesongbasert Enterprise-upgrade til dagens Varmrett" }
+          "protein": {
+            "label": "Ekstra protein",
+            "note": "Ekstra protein til dagens Varmrett"
+          },
+          "portion": {
+            "label": "Større porsjon",
+            "note": "Større porsjon av dagens Varmrett"
+          },
+          "dessert": {
+            "label": "Dessert/frukt",
+            "note": "Dessert eller frukt som premium tillegg"
+          },
+          "topping": {
+            "label": "Premium topping",
+            "note": "Premium topping til dagens Varmrett"
+          },
+          "side": {
+            "label": "Ekstra tilbehør",
+            "note": "Ekstra tilbehør til dagens Varmrett"
+          },
+          "season": {
+            "label": "Sesongupgrade",
+            "note": "Sesongbasert Enterprise-upgrade til dagens Varmrett"
+          }
         },
         "upgradeTypes": {
           "PREMIUM_PROTEIN": "Premium protein",

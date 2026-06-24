@@ -223,7 +223,15 @@
         "saveFailed": "Menü konnte nicht gespeichert werden.",
         "copySourceEmpty": "Kein {tier}-Menü zum Kopieren für diesen Tag/diese Kategorie.",
         "resetVarmrettFailed": "Tagesgericht konnte nicht zurückgesetzt werden.",
-        "publishConfirmRequired": "{warning} Bestätigen, um trotzdem zu veröffentlichen."
+        "publishConfirmRequired": "{warning} Bestätigen, um trotzdem zu veröffentlichen.",
+        "unauthorized": "Nicht angemeldet.",
+        "forbidden": "Sie haben keinen Zugriff auf das Menü.",
+        "badRequest": "Ungültige Anfrage.",
+        "invalidBody": "Ungültige Anfrage. Prüfen Sie alle Felder.",
+        "validationFailed": "Validierung fehlgeschlagen. Prüfen Sie die Felder und versuchen Sie es erneut.",
+        "publishUnavailable": "Menüveröffentlichung ist derzeit nicht verfügbar.",
+        "orderLocked": "Das Menü ist aufgrund einer aktiven Bestellung gesperrt.",
+        "publishConfirmGeneric": "Bestätigen, um trotzdem zu veröffentlichen."
       },
       "success": {
         "published": "Menü veröffentlicht.",
