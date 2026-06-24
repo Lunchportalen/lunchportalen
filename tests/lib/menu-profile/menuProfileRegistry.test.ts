@@ -18,9 +18,9 @@ const ROOT = path.resolve(import.meta.dirname, "../../..");
 const MENU_PROFILE_DIR = path.join(ROOT, "lib/menu-profile");
 
 describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
-  it("listMenuProfiles returns all 8 profiles", () => {
+  it("listMenuProfiles returns all 9 profiles", () => {
     const profiles = listMenuProfiles();
-    expect(profiles).toHaveLength(8);
+    expect(profiles).toHaveLength(9);
     expect(profiles.map((p) => p.id).sort()).toEqual([...MENU_PROFILE_IDS].sort());
   });
 
@@ -122,13 +122,46 @@ describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
     });
   });
 
-    it('getDefaultMenuProfileForMarket("NO") returns norwegian_company_lunch', () => {
+  it('getDefaultMenuProfileForMarket("NO") returns norwegian_company_lunch', () => {
     expect(getDefaultMenuProfileForMarket("NO").id).toBe("norwegian_company_lunch");
     expect(getMarketDefaults("NO").defaultCurrency).toBe(`${"NO"}K`);
   });
 
   it('getDefaultMenuProfileForMarket("UK") returns uk_office_lunch', () => {
     expect(getDefaultMenuProfileForMarket("UK").id).toBe("uk_office_lunch");
+  });
+
+  it('getDefaultMenuProfileForMarket("IT") returns italian_office_lunch with EUR / it-IT', () => {
+    expect(getDefaultMenuProfileForMarket("IT").id).toBe("italian_office_lunch");
+    expect(getMarketDefaults("IT").defaultCurrency).toBe("EUR");
+    expect(getMarketDefaults("IT").defaultLocale).toBe("it-IT");
+  });
+
+  describe("IT profile packages", () => {
+    const itProfile = getMenuProfile("italian_office_lunch");
+
+    it("Basis includes panini, insalata, primo_del_giorno", () => {
+      expect(itProfile.packageModel.basis.categoryKeys).toEqual([
+        "panini",
+        "insalata",
+        "primo_del_giorno",
+      ]);
+    });
+
+    it("Luxus adds bowl and piatto_freddo", () => {
+      expect(itProfile.packageModel.luxus.categoryKeys).toEqual([
+        "panini",
+        "insalata",
+        "primo_del_giorno",
+        "bowl",
+        "piatto_freddo",
+      ]);
+    });
+
+    it("Enterprise adds enterprise_upgrade without separate warm dish", () => {
+      expect(itProfile.packageModel.enterprise.enterpriseUpgrade).toBe(true);
+      expect(itProfile.packageModel.enterprise.categoryKeys).toContain("enterprise_upgrade");
+    });
   });
 
   it("invalid profile id is fail-closed", () => {
@@ -138,8 +171,18 @@ describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
     expect(() => assertMenuProfile("")).toThrow(/Unknown menu profile/);
   });
 
-  it("MARKET_DEFAULTS covers all eight markets", () => {
-    expect(Object.keys(MARKET_DEFAULTS).sort()).toEqual(["DE", "DK", "ES", "FI", "FR", "NO", "SE", "UK"]);
+  it("MARKET_DEFAULTS covers all nine markets", () => {
+    expect(Object.keys(MARKET_DEFAULTS).sort()).toEqual([
+      "DE",
+      "DK",
+      "ES",
+      "FI",
+      "FR",
+      "IT",
+      "NO",
+      "SE",
+      "UK",
+    ]);
   });
 
   describe("no runtime coupling", () => {
@@ -174,7 +217,7 @@ describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
     });
 
     it("registry modules only import from lib/menu-profile", () => {
-      for (const file of ["registry.ts", "marketDefaults.ts", "index.ts"]) {
+      for (const file of ["registry.ts", "marketDefaults.ts", "index.ts", "warmDishBankSeeds.ts"]) {
         const src = readFileSync(path.join(MENU_PROFILE_DIR, file), "utf8");
         const importBlocks = [...src.matchAll(/import[\s\S]*?from\s+["'][^"']+["']/g)];
 

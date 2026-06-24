@@ -57,6 +57,12 @@ export const MARKET_DEFAULTS: Readonly<Record<MarketCode, MarketDefaults>> = {
     defaultCurrency: "GBP",
     defaultLocale: "en-GB",
   },
+  IT: {
+    market: "IT",
+    defaultMenuProfileId: "italian_office_lunch",
+    defaultCurrency: "EUR",
+    defaultLocale: "it-IT",
+  },
 };
 
 export function getMarketDefaults(market: MarketCode): MarketDefaults {
