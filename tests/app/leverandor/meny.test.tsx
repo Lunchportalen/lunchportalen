@@ -175,6 +175,7 @@ describe("ProviderMenuCatalogEditor accordion", () => {
     props: {
       tier?: "BASIS" | "LUXUS" | "ENTERPRISE";
       initialOpenCategoryKey?: string;
+      filterByTier?: boolean;
     } = {},
   ) {
     const messages = await loadMessagesForLocale(locale);
@@ -186,6 +187,7 @@ describe("ProviderMenuCatalogEditor accordion", () => {
           catalog: CATALOG_FIXTURE,
           onCatalogSaved: () => {},
           panelMode: true,
+          filterByTier: props.filterByTier ?? false,
           initialOpenCategoryKey: props.initialOpenCategoryKey ?? "paasmurt",
         })}
       </NextIntlClientProvider>,
@@ -224,6 +226,115 @@ describe("ProviderMenuCatalogEditor accordion", () => {
     expect(source).not.toMatch(/RID:/);
     expect(source).toContain("/api/provider/menu-catalog");
     expect(source).toContain('useTranslations("provider.menu")');
+  });
+
+  test("BASIS with filterByTier hides Luxus-only categories", async () => {
+    const html = await renderCatalogEditor("nb", { tier: "BASIS", filterByTier: true });
+    expect(html).toContain("Påsmurt");
+    expect(html).toContain("Salatboks");
+    expect(html).not.toContain("lp-editor-catalog-acc__name\">Sushi");
+    expect(html).not.toContain("lp-editor-catalog-acc__name\">Pokebowl");
+    expect(html).not.toContain("lp-editor-catalog-acc__name\">Thaimat");
+  });
+
+  test("ENTERPRISE with filterByTier shows premium categories", async () => {
+    const html = await renderCatalogEditor("nb", { tier: "ENTERPRISE", filterByTier: true });
+    expect(html).toContain("Sushi");
+    expect(html).toContain("Pokebowl");
+    expect(html).toContain("Thaimat");
+  });
+
+  test("open category renders allergen chips not legacy checkbox fieldset", async () => {
+    const html = await renderCatalogEditor("nb", { tier: "BASIS", initialOpenCategoryKey: "paasmurt" });
+    expect(html).toContain("lp-editor-catalog-acc__chip");
+    expect(html).toContain("lp-editor-catalog-acc__allergen-chips");
+    expect(html).not.toContain("lp-editor-catalog-editor__checkbox");
+    expect(html).not.toContain("lp-editor-catalog-editor__allergens");
+  });
+
+  test("save payload shape is unchanged", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuCatalogEditor.tsx"),
+      "utf8",
+    );
+    expect(source).toContain("categoryKey: openKey");
+    expect(source).toContain("title: item.title");
+    expect(source).toContain("allergens: item.allergens");
+    expect(source).toContain("isVegetarian: item.isVegetarian");
+    expect(source).not.toContain("menuDayPayload");
+  });
+});
+
+describe("ProviderMenuCatalogView Menykatalog tab", () => {
+  const CATALOG_FIXTURE = {
+    rows: [
+      {
+        key: "paasmurt",
+        title: "Påsmurt",
+        allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        items: [{ key: "ost-skinke", title: "Ost & Skinke", allergens: ["melk"], isVegetarian: false }],
+      },
+      {
+        key: "salatboks",
+        title: "Salatboks",
+        allowedPlanTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
+        items: [{ key: "skinke", title: "Skinke", allergens: [], isVegetarian: false }],
+      },
+      {
+        key: "sushi",
+        title: "Sushi",
+        allowedPlanTiers: ["LUXUS", "ENTERPRISE"],
+        items: [{ key: "sushi-pakke", title: "Sushi-pakke", allergens: ["fisk"], isVegetarian: false }],
+      },
+    ],
+  };
+
+  test("catalog view wires accordion editor with tier filter", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "components/providers/ProviderMenuCatalogView.tsx"),
+      "utf8",
+    );
+    expect(source).toContain("panelMode");
+    expect(source).toContain("filterByTier");
+    expect(source).toContain("hidePageHeader");
+    expect(source).not.toContain("panelMode={false}");
+    expect(source).not.toContain("catalog.legacyTitle");
+  });
+
+  async function renderCatalogView(tier: "BASIS" | "LUXUS" | "ENTERPRISE" = "BASIS") {
+    const messages = await loadMessagesForLocale("nb");
+    const ProviderMenuCatalogView = (await import("@/components/providers/ProviderMenuCatalogView")).default;
+    return renderToStaticMarkup(
+      <NextIntlClientProvider locale="nb" messages={messages}>
+        <ProviderMenuCatalogView
+          tier={tier}
+          catalog={CATALOG_FIXTURE}
+          onSelectVariant={() => {}}
+          onCatalogSaved={() => {}}
+        />
+      </NextIntlClientProvider>,
+    );
+  }
+
+  test("catalog tab renders accordion cards and isolate banner", async () => {
+    const html = await renderCatalogView("BASIS");
+    expect(html).toContain("lp-editor-catalog-editor--accordion");
+    expect(html).toContain("lp-editor-catalog-isolate");
+    expect(html).toContain("lp-editor-catalog-acc");
+    expect(html).not.toContain("lp-editor-catalog-editor__checkbox");
+    expect(html).not.toContain("lp-editor-catalog-editor__allergens");
+    expect(html).not.toContain("Din menykatalog");
+  });
+
+  test("catalog tab BASIS tier filter hides Sushi accordion", async () => {
+    const html = await renderCatalogView("BASIS");
+    expect(html).toContain("Påsmurt");
+    expect(html).not.toContain("lp-editor-catalog-acc__name\">Sushi");
+  });
+
+  test("catalog tab keeps provider-owned item titles untranslated", async () => {
+    const html = await renderCatalogView("BASIS");
+    expect(html).toContain("Ost &amp; Skinke");
   });
 });
 

@@ -54,12 +54,29 @@ function categoryLabel(catalog: ProviderMenuCatalogSnapshot, categoryKey: Editab
   return cat ? categoryLabelFromCatalog(catalog, cat) : categoryKey;
 }
 
+function editableCategoryKeysForTier(
+  catalog: ProviderMenuCatalogSnapshot,
+  tier: PlanTier,
+): EditableLunchCategoryKey[] {
+  return EDITABLE_LUNCH_CATEGORY_KEYS.filter((key) => {
+    const cat = categoryFromLunchCategoryKey(key);
+    if (!cat) return false;
+    const row = catalog.rows.find((r) => String(r.key ?? "").toLowerCase() === key);
+    const tiers = Array.isArray(row?.allowedPlanTiers) ? row.allowedPlanTiers : [];
+    return tiers.some((planTier) => String(planTier).toUpperCase() === tier);
+  });
+}
+
 type Props = {
   tier: PlanTier;
   catalog: ProviderMenuCatalogSnapshot;
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
   initialOpenCategoryKey?: string;
   panelMode?: boolean;
+  /** When true, only categories allowed for `tier` are shown (Menykatalog tab). */
+  filterByTier?: boolean;
+  /** Hide accordion page title/lead when embedded in ProviderMenuCatalogView. */
+  hidePageHeader?: boolean;
 };
 
 type CategoryAccordionProps = {
@@ -248,12 +265,22 @@ function CatalogAccordionEditor({
   catalog,
   onCatalogSaved,
   initialOpenCategoryKey,
+  tier,
+  filterByTier = false,
+  hidePageHeader = false,
 }: {
   catalog: ProviderMenuCatalogSnapshot;
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
   initialOpenCategoryKey?: string;
+  tier: PlanTier;
+  filterByTier?: boolean;
+  hidePageHeader?: boolean;
 }) {
   const t = useTranslations("provider.menu");
+  const visibleCategoryKeys = useMemo(
+    () => (filterByTier ? editableCategoryKeysForTier(catalog, tier) : EDITABLE_LUNCH_CATEGORY_KEYS),
+    [catalog, tier, filterByTier],
+  );
   const [openKey, setOpenKey] = useState<string | null>(initialOpenCategoryKey ?? null);
   const [drafts, setDrafts] = useState<Record<string, CatalogItemDraft[]>>({});
   const [saving, setSaving] = useState(false);
@@ -327,12 +354,22 @@ function CatalogAccordionEditor({
     }
   }
 
+  if (filterByTier && visibleCategoryKeys.length === 0) {
+    return (
+      <p className="ds-body" role="status">
+        {t("catalog.noEditableCategories", { tier: TIER_DISPLAY_LABELS[tier] ?? tier })}
+      </p>
+    );
+  }
+
   return (
     <section className="lp-editor-catalog-editor lp-editor-catalog-editor--accordion" aria-label={t("catalog.catalogAria")}>
-      <header className="lp-editor-catalog-head">
-        <h2 className="lp-editor-catalog-head__title">{t("catalog.title")}</h2>
-        <p className="lp-editor-catalog-head__lead">{t("catalog.leadAccordion")}</p>
-      </header>
+      {hidePageHeader ? null : (
+        <header className="lp-editor-catalog-head">
+          <h2 className="lp-editor-catalog-head__title">{t("catalog.title")}</h2>
+          <p className="lp-editor-catalog-head__lead">{t("catalog.leadAccordion")}</p>
+        </header>
+      )}
 
       <div className="lp-editor-catalog-isolate">
         <div className="lp-editor-catalog-isolate__body">
@@ -343,7 +380,7 @@ function CatalogAccordionEditor({
       </div>
 
       <div className="lp-editor-catalog-accordion">
-        {EDITABLE_LUNCH_CATEGORY_KEYS.map((key) => {
+        {visibleCategoryKeys.map((key) => {
           const items = openKey === key ? openDraft : itemsForCategory(catalog, key);
           return (
             <CategoryAccordion
@@ -387,17 +424,7 @@ function CatalogLegacyEditor({
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
 }) {
   const t = useTranslations("provider.menu");
-  const editableKeys = useMemo(
-    () =>
-      EDITABLE_LUNCH_CATEGORY_KEYS.filter((key) => {
-        const cat = categoryFromLunchCategoryKey(key);
-        if (!cat) return false;
-        const row = catalog.rows.find((r) => String(r.key ?? "").toLowerCase() === key);
-        const tiers = Array.isArray(row?.allowedPlanTiers) ? row.allowedPlanTiers : [];
-        return tiers.some((t) => String(t).toUpperCase() === tier);
-      }),
-    [catalog, tier],
-  );
+  const editableKeys = useMemo(() => editableCategoryKeysForTier(catalog, tier), [catalog, tier]);
 
   const [categoryKey, setCategoryKey] = useState<string>(editableKeys[0] ?? "paasmurt");
   const [items, setItems] = useState<CatalogItemDraft[]>(() => itemsForCategory(catalog, categoryKey));
@@ -610,6 +637,8 @@ export default function ProviderMenuCatalogEditor({
   onCatalogSaved,
   initialOpenCategoryKey,
   panelMode = false,
+  filterByTier = false,
+  hidePageHeader = false,
 }: Props) {
   if (panelMode) {
     return (
@@ -617,6 +646,9 @@ export default function ProviderMenuCatalogEditor({
         catalog={catalog}
         onCatalogSaved={onCatalogSaved}
         initialOpenCategoryKey={initialOpenCategoryKey}
+        tier={tier}
+        filterByTier={filterByTier}
+        hidePageHeader={hidePageHeader}
       />
     );
   }
@@ -624,4 +656,4 @@ export default function ProviderMenuCatalogEditor({
   return <CatalogLegacyEditor tier={tier} catalog={catalog} onCatalogSaved={onCatalogSaved} />;
 }
 
-export { tierBadgeForCategoryKey, itemsForCategory, categoryLabel };
+export { tierBadgeForCategoryKey, itemsForCategory, categoryLabel, editableCategoryKeysForTier };

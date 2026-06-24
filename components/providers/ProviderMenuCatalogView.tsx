@@ -37,15 +37,17 @@ export default function ProviderMenuCatalogView({
       <header className="lp-editor-catalog__head">
         <h2 className="ds-h4">{t("catalog.title")}</h2>
         <p className="ds-body">{t("catalog.leadView")}</p>
-        {catalogSupportsPersistentEdit() ? (
-          <p className="lp-editor-catalog__gap" role="status">
-            {t("catalog.publishHint")}
-          </p>
-        ) : null}
       </header>
 
       {catalogSupportsPersistentEdit() ? (
-        <ProviderMenuCatalogEditor tier={tier} catalog={catalog} onCatalogSaved={onCatalogSaved} />
+        <ProviderMenuCatalogEditor
+          tier={tier}
+          catalog={catalog}
+          onCatalogSaved={onCatalogSaved}
+          panelMode
+          filterByTier
+          hidePageHeader
+        />
       ) : null}
 
       <div className="lp-editor-catalog__groups">
