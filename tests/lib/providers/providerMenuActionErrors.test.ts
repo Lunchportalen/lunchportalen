@@ -8,6 +8,7 @@ import {
   PROVIDER_MENU_API_ERROR_CODES,
   resolveEnterpriseWarningMessageKey,
   resolveProviderMenuApiError,
+  resolveProviderMenuCatalogApiError,
   resolvePublishConfirmPresentation,
 } from "@/lib/providers/providerMenuActionErrors";
 
@@ -24,6 +25,7 @@ const t = (key: string, values?: Record<string, string>) => {
     "validation.enterprise.weakValue": "WARN:weakValue",
     "validation.enterprise.upgradeRequired": "WARN:upgradeRequired",
     "validation.enterprise.lowMargin": "WARN:lowMargin",
+    "catalog.messages.saveFailed": "CATALOG:saveFailed",
   };
   return map[key] ?? key;
 };
@@ -72,5 +74,22 @@ describe("providerMenuActionErrors", () => {
     expect(resolveProviderMenuApiError(t, { ok: false, error: "MYSTERY" }, "loadFailed")).toBe(
       "ERR:loadFailed",
     );
+  });
+
+  it("maps catalog API save failures without raw server message", () => {
+    expect(
+      resolveProviderMenuCatalogApiError(t, {
+        ok: false,
+        error: "SAVE_FAILED",
+        message: "Kunne ikke lagre katalog.",
+      }),
+    ).toBe("CATALOG:saveFailed");
+    expect(
+      resolveProviderMenuCatalogApiError(t, {
+        ok: false,
+        error: "VALIDATION_ERROR",
+        message: "Ugyldig tittel.",
+      }),
+    ).toBe("CATALOG:saveFailed");
   });
 });

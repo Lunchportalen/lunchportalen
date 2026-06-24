@@ -16,6 +16,9 @@ export const PROVIDER_MENU_API_ERROR_CODES = {
   SANITY_WRITE_DISABLED: "SANITY_WRITE_DISABLED",
   SANITY_WRITE_FAILED: "SANITY_WRITE_FAILED",
   MENU_ORDER_LOCKED: "MENU_ORDER_LOCKED",
+  /** menu-catalog route */
+  SAVE_FAILED: "SAVE_FAILED",
+  SANITY_WRITE_BLOCKED: "SANITY_WRITE_BLOCKED",
 } as const;
 
 export const PROVIDER_MENU_ERROR_KEYS = [
@@ -46,6 +49,11 @@ export type ProviderMenuErrorTranslator = (
   key: string,
   values?: Record<string, string>,
 ) => string;
+
+export type ResolveProviderMenuApiErrorOptions = {
+  /** Full i18n path when no code-specific mapping exists (e.g. catalog.messages.saveFailed). */
+  fallbackMessageKey?: string;
+};
 
 const API_CODE_TO_ERROR_KEY: Record<string, ProviderMenuErrorKey> = {
   [PROVIDER_MENU_API_ERROR_CODES.UNAUTHORIZED]: "unauthorized",
@@ -96,6 +104,7 @@ export function resolveProviderMenuApiError(
   t: ProviderMenuErrorTranslator,
   body: ProviderMenuApiErrorBody,
   fallbackKey: ProviderMenuErrorKey = "saveFailed",
+  options?: ResolveProviderMenuApiErrorOptions,
 ): string {
   const code = String(body.error ?? "").trim();
   const message = String(body.message ?? "").trim();
@@ -118,5 +127,29 @@ export function resolveProviderMenuApiError(
   }
 
   const safeFallback = isProviderMenuErrorKey(fallbackKey) ? fallbackKey : "saveFailed";
+  if (options?.fallbackMessageKey) {
+    return t(options.fallbackMessageKey);
+  }
   return t(`errors.${safeFallback}`);
+}
+
+/** Maps menu-catalog API errors — never surfaces raw server message in UI. */
+export function resolveProviderMenuCatalogApiError(
+  t: ProviderMenuErrorTranslator,
+  body: ProviderMenuApiErrorBody,
+): string {
+  const code = String(body.error ?? "").trim();
+  if (
+    code === PROVIDER_MENU_API_ERROR_CODES.SAVE_FAILED ||
+    code === PROVIDER_MENU_API_ERROR_CODES.SANITY_WRITE_BLOCKED
+  ) {
+    return t("catalog.messages.saveFailed");
+  }
+  const resolved = resolveProviderMenuApiError(t, body, "saveFailed", {
+    fallbackMessageKey: "catalog.messages.saveFailed",
+  });
+  if (resolved === t("errors.validationFailed")) {
+    return t("catalog.messages.saveFailed");
+  }
+  return resolved;
 }
