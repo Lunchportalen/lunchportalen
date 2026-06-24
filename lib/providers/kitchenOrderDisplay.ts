@@ -26,7 +26,8 @@ export type KitchenOrderItemDisplay = {
   productName: string;
   choiceLabel: string | null;
   variantTitle: string | null;
-  displayLine: string;
+  /** Null when no order line data — resolve via provider.orders.fallbacks.unknownProduct in UI. */
+  displayLine: string | null;
   allergens: string[];
 };
 
@@ -42,15 +43,16 @@ function pickString(...vals: unknown[]): string | null {
   return null;
 }
 
+/** Returns null when profile has no displayable name — resolve via provider.orders.fallbacks.unknownProfile in UI. */
 export function profileDisplayName(profile: {
   full_name?: string | null;
   email?: string | null;
-} | null | undefined): string {
+} | null | undefined): string | null {
   const full = pickString(profile?.full_name);
   if (full) return full;
   const email = pickString(profile?.email);
   if (email) return email.split("@")[0] ?? email;
-  return "Ukjent";
+  return null;
 }
 
 export function profileEmail(profile: { email?: string | null } | null | undefined): string | null {
@@ -94,12 +96,12 @@ export function resolveVariantTitle(
   return null;
 }
 
-/** Provider-facing line: `Påsmurt · Laks & Eggerøre` */
+/** Provider-facing line: `Påsmurt · Laks & Eggerøre`. Null when no line data. */
 export function formatProviderOrderItemLine(params: {
   choiceLabel?: string | null;
   variantTitle?: string | null;
   productNameSnapshot?: string | null;
-}): string {
+}): string | null {
   const choice = pickString(params.choiceLabel);
   const variant = pickString(params.variantTitle);
   const product = pickString(params.productNameSnapshot);
@@ -108,7 +110,7 @@ export function formatProviderOrderItemLine(params: {
   if (variant) return variant;
   if (choice) return choice;
   if (product) return product;
-  return "Retten";
+  return null;
 }
 
 export function buildKitchenOrderItemDisplay(input: KitchenOrderItemDisplayInput): KitchenOrderItemDisplay {
@@ -120,9 +122,11 @@ export function buildKitchenOrderItemDisplay(input: KitchenOrderItemDisplayInput
     productNameSnapshot: input.productNameSnapshot,
   });
 
+  const productName = pickString(input.productNameSnapshot) ?? displayLine ?? "";
+
   return {
     quantity: input.quantity,
-    productName: pickString(input.productNameSnapshot) || displayLine,
+    productName,
     choiceLabel,
     variantTitle,
     displayLine,

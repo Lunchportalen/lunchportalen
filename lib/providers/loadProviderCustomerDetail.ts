@@ -57,7 +57,7 @@ export type ProviderCompanyStats = {
 
 export type ProviderEmployeeRow = {
   id: string;
-  name: string;
+  name: string | null;
   email: string | null;
   role: string | null;
 };
@@ -67,7 +67,7 @@ export type ProviderOrderLineRow = {
   productName: string;
   choiceLabel: string | null;
   variantTitle: string | null;
-  displayLine: string;
+  displayLine: string | null;
 };
 
 export type ProviderOrderRow = {

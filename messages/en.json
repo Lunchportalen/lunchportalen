@@ -195,6 +195,10 @@
         "noteLabel": "Note:",
         "readOnlyNote": "View only — you have read access to orders."
       },
+      "fallbacks": {
+        "unknownProfile": "Unknown",
+        "unknownProduct": "Dish"
+      },
       "errors": {
         "notAuthenticated": "Not signed in.",
         "orderNotFound": "Order not found.",
@@ -324,6 +328,7 @@
         "eyebrow": "Customer",
         "orgnrMissing": "Org. no. not registered",
         "contactMissing": "—",
+        "locationMissing": "Delivery address not set",
         "agreementStatusMissing": "No active agreement",
         "billingIncomplete": "Billing basis incomplete",
         "vatNotSpecified": "Not specified",

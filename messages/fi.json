@@ -578,6 +578,10 @@
         "noteLabel": "Huomautus:",
         "readOnlyNote": "Vain katselu — sinulla on lukuoikeus tilauksiin."
       },
+      "fallbacks": {
+        "unknownProfile": "Tuntematon",
+        "unknownProduct": "Ruoka"
+      },
       "errors": {
         "notAuthenticated": "Et ole kirjautunut sisään.",
         "orderNotFound": "Tilausta ei löytynyt.",
@@ -707,6 +711,7 @@
         "eyebrow": "Asiakas",
         "orgnrMissing": "Y-tunnusta ei rekisteröity",
         "contactMissing": "—",
+        "locationMissing": "Toimitusosoitetta ei ole asetettu",
         "agreementStatusMissing": "Ei aktiivista sopimusta",
         "billingIncomplete": "Laskuperusta puutteellinen",
         "vatNotSpecified": "Ei määritelty",

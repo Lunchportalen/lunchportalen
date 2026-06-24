@@ -578,6 +578,10 @@
         "noteLabel": "Hinweis:",
         "readOnlyNote": "Nur Ansicht — Sie haben Lesezugriff auf Bestellungen."
       },
+      "fallbacks": {
+        "unknownProfile": "Unbekannt",
+        "unknownProduct": "Gericht"
+      },
       "errors": {
         "notAuthenticated": "Nicht angemeldet.",
         "orderNotFound": "Bestellung nicht gefunden.",
@@ -707,6 +711,7 @@
         "eyebrow": "Kunde",
         "orgnrMissing": "Org.-Nr. nicht registriert",
         "contactMissing": "—",
+        "locationMissing": "Lieferadresse nicht gesetzt",
         "agreementStatusMissing": "Kein aktiver Vertrag",
         "billingIncomplete": "Rechnungsgrundlage unvollständig",
         "vatNotSpecified": "Nicht angegeben",

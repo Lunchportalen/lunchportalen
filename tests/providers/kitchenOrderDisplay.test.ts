@@ -60,6 +60,21 @@ describe("kitchenOrderDisplay", () => {
     );
     expect(profileEmail({ email: "thomas@pettersenco.no" })).toBe("thomas@pettersenco.no");
   });
+
+  test("returns null profile and product fallbacks for UI i18n resolution", () => {
+    expect(profileDisplayName({ full_name: null, email: null })).toBeNull();
+    expect(profileDisplayName(null)).toBeNull();
+    expect(formatProviderOrderItemLine({})).toBeNull();
+    expect(formatProviderOrderItemLine({ choiceLabel: null, variantTitle: null, productNameSnapshot: null })).toBeNull();
+
+    const item = buildKitchenOrderItemDisplay({
+      productNameSnapshot: null,
+      quantity: 1,
+      choice: null,
+    });
+    expect(item.displayLine).toBeNull();
+    expect(item.productName).toBe("");
+  });
 });
 
 describe("loadKitchenOrders enrichment guard", () => {
@@ -86,6 +101,7 @@ describe("loadKitchenOrders enrichment guard", () => {
     expect(source).toContain("employeeDisplayName");
     expect(source).toContain("employeeEmail");
     expect(source).toContain("displayLine");
+    expect(source).toContain("provider.orders.fallbacks");
     expect(source).not.toContain("item_key");
   });
 });

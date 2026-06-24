@@ -3,7 +3,6 @@
 
 import type { ProviderCustomerStatus } from "@/lib/providers/customerTypes";
 import {
-  formatDeliveryAddressInline,
   formatNok,
   hasInvoiceRecipient,
   type CommissionBasePresentationKey,
@@ -61,6 +60,23 @@ export type ProviderCustomerIdentityDisplay = {
   agreementStatusLabel: string;
 };
 
+function formatIdentityDeliveryAddress(
+  input: {
+    locationName?: string | null;
+    locationAddress?: string | null;
+    companyAddress?: string | null;
+  },
+  tDetail: ProviderCustomerDetailTranslate,
+): string {
+  const name = String(input.locationName ?? "").trim();
+  const address =
+    String(input.locationAddress ?? "").trim() || String(input.companyAddress ?? "").trim();
+  if (name && address) return `${name}, ${address}`;
+  if (address) return address;
+  if (name) return name;
+  return tDetail("locationMissing");
+}
+
 export function buildCustomerIdentityDisplay(
   input: {
     companyName: string;
@@ -93,11 +109,14 @@ export function buildCustomerIdentityDisplay(
     contactName: String(input.contactName ?? "").trim() || missing,
     contactEmail: String(input.contactEmail ?? "").trim() || missing,
     contactPhone: String(input.contactPhone ?? "").trim() || missing,
-    deliveryAddress: formatDeliveryAddressInline({
-      locationName: input.locationName,
-      locationAddress: input.locationAddress,
-      companyAddress: input.companyAddress,
-    }),
+    deliveryAddress: formatIdentityDeliveryAddress(
+      {
+        locationName: input.locationName,
+        locationAddress: input.locationAddress,
+        companyAddress: input.companyAddress,
+      },
+      tDetail,
+    ),
     agreementStatusLabel: input.activeAgreementStatus
       ? agreementStatusLabel(input.activeAgreementStatus, tAgreementStatus)
       : tDetail("agreementStatusMissing"),

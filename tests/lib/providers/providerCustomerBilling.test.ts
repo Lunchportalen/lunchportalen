@@ -103,6 +103,30 @@ describe("providerCustomerDetailSurface", () => {
     expect(identity.companyName).toBe("Pettersen&Co");
   });
 
+  it("viser locationMissing via i18n når leveringsadresse mangler", async () => {
+    const { tDetail, tStatus, tAgreementStatus } = await loadDetailTranslators("nb");
+    const nbIdentity = buildCustomerIdentityDisplay(
+      { companyName: "Pettersen&Co", orgnr: "928038777", status: "ACTIVE" },
+      { tDetail, tStatus, tAgreementStatus },
+    );
+    expect(nbIdentity.deliveryAddress).toBe("Leveringsadresse ikke satt");
+
+    const en = await loadDetailTranslators("en");
+    const enIdentity = buildCustomerIdentityDisplay(
+      { companyName: "Pettersen&Co", orgnr: "928038777", status: "ACTIVE" },
+      en,
+    );
+    expect(enIdentity.deliveryAddress).toBe("Delivery address not set");
+    expect(enIdentity.deliveryAddress).not.toBe("Leveringsadresse ikke satt");
+
+    const de = await loadDetailTranslators("de");
+    const deIdentity = buildCustomerIdentityDisplay(
+      { companyName: "Pettersen&Co", orgnr: "928038777", status: "ACTIVE" },
+      de,
+    );
+    expect(deIdentity.deliveryAddress).not.toBe("Leveringsadresse ikke satt");
+  });
+
   it("viser fakturagrunnlag ikke komplett uten ordregrunnlag", async () => {
     const { tDetail, tBilling } = await loadDetailTranslators("nb");
     const display = buildBillingBasisDisplay(
