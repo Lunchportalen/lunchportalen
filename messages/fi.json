@@ -223,7 +223,15 @@
         "saveFailed": "Menua ei voitu tallentaa.",
         "copySourceEmpty": "Ei {tier}-menua kopioitavaksi tälle päivälle/kategorialle.",
         "resetVarmrettFailed": "Lämmintä ateriaa ei voitu palauttaa.",
-        "publishConfirmRequired": "{warning} Vahvista julkaistaksesi silti."
+        "publishConfirmRequired": "{warning} Vahvista julkaistaksesi silti.",
+        "unauthorized": "Et ole kirjautunut sisään.",
+        "forbidden": "Sinulla ei ole oikeutta menuun.",
+        "badRequest": "Virheellinen pyyntö.",
+        "invalidBody": "Virheellinen pyyntö. Tarkista kaikki kentät.",
+        "validationFailed": "Validointi epäonnistui. Tarkista kentät ja yritä uudelleen.",
+        "publishUnavailable": "Menun julkaisu ei ole käytettävissä juuri nyt.",
+        "orderLocked": "Menu on lukittu aktiivisen tilauksen vuoksi.",
+        "publishConfirmGeneric": "Vahvista julkaistaksesi silti."
       },
       "success": {
         "published": "Menu julkaistu.",

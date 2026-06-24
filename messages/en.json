@@ -1321,7 +1321,15 @@
         "saveFailed": "Could not save menu.",
         "copySourceEmpty": "No {tier} menu to copy for this day/category.",
         "resetVarmrettFailed": "Could not reset hot meal.",
-        "publishConfirmRequired": "{warning} Confirm to publish anyway."
+        "publishConfirmRequired": "{warning} Confirm to publish anyway.",
+        "unauthorized": "Not signed in.",
+        "forbidden": "You do not have access to the menu.",
+        "badRequest": "Invalid request.",
+        "invalidBody": "Invalid request. Check all fields.",
+        "validationFailed": "Validation failed. Check the fields and try again.",
+        "publishUnavailable": "Menu publishing is not available right now.",
+        "orderLocked": "The menu is locked due to an active order.",
+        "publishConfirmGeneric": "Confirm to publish anyway."
       },
       "success": {
         "published": "Menu published.",
@@ -1557,12 +1565,30 @@
           "note": "Extra protein and dessert/fruit as a premium add-on to today's hot meal"
         },
         "quickChoices": {
-          "protein": { "label": "Extra protein", "note": "Extra protein for today's hot meal" },
-          "portion": { "label": "Larger portion", "note": "Larger portion of today's hot meal" },
-          "dessert": { "label": "Dessert/fruit", "note": "Dessert or fruit as a premium add-on" },
-          "topping": { "label": "Premium topping", "note": "Premium topping for today's hot meal" },
-          "side": { "label": "Extra side", "note": "Extra side for today's hot meal" },
-          "season": { "label": "Seasonal upgrade", "note": "Seasonal Enterprise upgrade for today's hot meal" }
+          "protein": {
+            "label": "Extra protein",
+            "note": "Extra protein for today's hot meal"
+          },
+          "portion": {
+            "label": "Larger portion",
+            "note": "Larger portion of today's hot meal"
+          },
+          "dessert": {
+            "label": "Dessert/fruit",
+            "note": "Dessert or fruit as a premium add-on"
+          },
+          "topping": {
+            "label": "Premium topping",
+            "note": "Premium topping for today's hot meal"
+          },
+          "side": {
+            "label": "Extra side",
+            "note": "Extra side for today's hot meal"
+          },
+          "season": {
+            "label": "Seasonal upgrade",
+            "note": "Seasonal Enterprise upgrade for today's hot meal"
+          }
         },
         "upgradeTypes": {
           "PREMIUM_PROTEIN": "Premium protein",

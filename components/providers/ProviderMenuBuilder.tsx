@@ -53,6 +53,10 @@ import {
   weekDatesFromStart,
   type WeekdayKey,
 } from "@/lib/providers/providerMenuPackageSurface";
+import {
+  resolveProviderMenuApiError,
+  resolvePublishConfirmPresentation,
+} from "@/lib/providers/providerMenuActionErrors";
 import type { ProviderMenuPricePreviewDisplayPayload } from "@/lib/providers/providerMenuPricePreviewDisplay";
 import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
 
@@ -204,7 +208,7 @@ export default function ProviderMenuBuilder() {
       });
       const json = (await res.json()) as MenuWeekResponse;
       if (!res.ok || !json.ok || !json.data) {
-        setError(t("errors.loadFailed"));
+        setError(resolveProviderMenuApiError(t, json, "loadFailed"));
         setLoading(false);
         return;
       }
@@ -393,13 +397,13 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      setError(t("errors.saveFailed"));
+      setError(resolveProviderMenuApiError(t, json, "saveFailed"));
       return;
     }
 
     const warnings = (json.data as { warnings?: string[] } | undefined)?.warnings ?? [];
     if (warnings.length > 0 && status === "published" && !confirmWarnings) {
-      setError(t("errors.publishConfirmRequired", { warning: warnings[0] ?? "" }));
+      setError(resolvePublishConfirmPresentation(t, warnings[0] ?? ""));
       return;
     }
 
@@ -423,7 +427,7 @@ export default function ProviderMenuBuilder() {
     };
 
     if (!res.ok || !json.ok) {
-      setError(t("errors.resetVarmrettFailed"));
+      setError(resolveProviderMenuApiError(t, json, "resetVarmrettFailed"));
       return;
     }
 

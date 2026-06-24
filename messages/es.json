@@ -223,7 +223,15 @@
         "saveFailed": "No se pudo guardar el menú.",
         "copySourceEmpty": "No hay menú {tier} para copiar en este día/categoría.",
         "publishConfirmRequired": "{warning} Confirme para publicar de todos modos.",
-        "resetVarmrettFailed": "No se pudo restablecer el plato caliente."
+        "resetVarmrettFailed": "No se pudo restablecer el plato caliente.",
+        "unauthorized": "No ha iniciado sesión.",
+        "forbidden": "No tiene acceso al menú.",
+        "badRequest": "Solicitud no válida.",
+        "invalidBody": "Solicitud no válida. Compruebe todos los campos.",
+        "validationFailed": "Error de validación. Compruebe los campos e inténtelo de nuevo.",
+        "publishUnavailable": "La publicación del menú no está disponible en este momento.",
+        "orderLocked": "El menú está bloqueado debido a un pedido activo.",
+        "publishConfirmGeneric": "Confirme para publicar de todos modos."
       },
       "success": {
         "published": "Menú publicado.",

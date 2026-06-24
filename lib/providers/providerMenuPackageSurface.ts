@@ -58,6 +58,38 @@ export type WeekPublishSummaryKey = "missing" | "ready" | "published" | "draft";
 
 export type EnterpriseValidationMessageKey = "upgradeRequired" | "weakValue" | "lowMargin";
 
+/** Server/API nb fallback strings — must stay in sync with menuDayPayload / validateEnterprisePublish. */
+export const ENTERPRISE_VALIDATION_NB_MESSAGES: Record<EnterpriseValidationMessageKey, string> = {
+  upgradeRequired:
+    "Enterprise som gjenbruker Basis/Luxus må ha upgrade-type eller upgrade-beskrivelse ved publisering.",
+  weakValue: "Enterprise bør ha tydelig merverdi sammenlignet med Luxus.",
+  lowMargin: "Denne Enterprise-retten kan gi lavere margin enn Luxus. Kontroller råvarekost.",
+};
+
+/** Suffix appended by menuDayPayload when soft enterprise warnings require confirm. */
+export const MENU_PUBLISH_CONFIRM_SUFFIX_NB = " Bekreft for å publisere likevel.";
+
+export function enterpriseValidationMessageKeyFromNb(
+  message: string,
+): EnterpriseValidationMessageKey | null {
+  const trimmed = String(message ?? "").trim();
+  for (const key of Object.keys(ENTERPRISE_VALIDATION_NB_MESSAGES) as EnterpriseValidationMessageKey[]) {
+    if (trimmed === ENTERPRISE_VALIDATION_NB_MESSAGES[key]) return key;
+  }
+  return null;
+}
+
+export function stripPublishConfirmSuffixNb(message: string): { base: string; hadSuffix: boolean } {
+  const trimmed = String(message ?? "").trim();
+  if (trimmed.endsWith(MENU_PUBLISH_CONFIRM_SUFFIX_NB.trim())) {
+    return {
+      base: trimmed.slice(0, -MENU_PUBLISH_CONFIRM_SUFFIX_NB.trim().length).trim(),
+      hadSuffix: true,
+    };
+  }
+  return { base: trimmed, hadSuffix: false };
+}
+
 export type EnterpriseValidationWarning = {
   code: "WEAK_VALUE" | "LOW_MARGIN" | "UPGRADE_REQUIRED";
   messageKey: EnterpriseValidationMessageKey;
@@ -108,8 +140,7 @@ export function validateEnterprisePublish(input: {
     warnings.push({
       code: "UPGRADE_REQUIRED",
       messageKey: "upgradeRequired",
-      message:
-        "Enterprise som gjenbruker Basis/Luxus må ha upgrade-type eller upgrade-beskrivelse ved publisering.",
+      message: ENTERPRISE_VALIDATION_NB_MESSAGES.upgradeRequired,
       blocking: true,
     });
   }
@@ -118,7 +149,7 @@ export function validateEnterprisePublish(input: {
     warnings.push({
       code: "WEAK_VALUE",
       messageKey: "weakValue",
-      message: "Enterprise bør ha tydelig merverdi sammenlignet med Luxus.",
+      message: ENTERPRISE_VALIDATION_NB_MESSAGES.weakValue,
       blocking: false,
     });
   }
@@ -145,7 +176,7 @@ export function validateEnterprisePublish(input: {
       warnings.push({
         code: "LOW_MARGIN",
         messageKey: "lowMargin",
-        message: "Denne Enterprise-retten kan gi lavere margin enn Luxus. Kontroller råvarekost.",
+        message: ENTERPRISE_VALIDATION_NB_MESSAGES.lowMargin,
         blocking: false,
       });
     }

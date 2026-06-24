@@ -398,9 +398,9 @@ describe("ProviderMenuBuilder i18n", () => {
     );
     expect(source).toContain('t("errors.copySourceEmpty"');
     expect(source).toContain('t("success.copiedFromTier"');
-    expect(source).toContain('t("errors.saveFailed")');
-    expect(source).toContain('t("errors.publishConfirmRequired"');
-    expect(source).toContain('t("errors.resetVarmrettFailed")');
+    expect(source).toContain("resolveProviderMenuApiError");
+    expect(source).toContain("resolvePublishConfirmPresentation");
+    expect(source).not.toContain('warning: warnings[0]');
     expect(source).not.toContain("Kunne ikke lagre meny.");
     expect(source).not.toContain("Kunne ikke tilbakestille varmrett.");
     expect(source).not.toContain("Bekreft for å publisere likevel.");
