@@ -477,6 +477,7 @@ Minimum markets at launch of global model:
 | **FR** | EUR | French déjeuner | TVA |
 | **ES** | EUR | Spanish menú del día | IVA |
 | **UK** | GBP | UK office lunch | VAT |
+| **IT** | EUR | Italian office lunch (`italian_office_lunch`) | IVA |
 
 Each market has:
 
@@ -504,6 +505,10 @@ All phases are **sequential and gated**. No phase may skip Golden Path review wh
 | CI guard | Block runtime imports from inert modules until explicit allowlist |
 
 **Golden Path impact:** None.
+
+**G0.1 (merged extension):** Add **IT** / EUR / `it-IT` / `italian_office_lunch` to inert registry and market defaults — no runtime wiring.
+
+**G0.2 (merged extension):** Inert warm dish bank seeds in `lib/menu-profile/warmDishBankSeeds.ts` — canonical seed data per profile/market (5 dishes × 9 profiles). **Not** published `menuDay` documents. Sanity `mealIdea` materialization deferred to later G-phase (existing `mealIdea` schema remains runtime-bound; no prod Sanity write in G0.2).
 
 ### G1 — MenuProfile registry + NO seed
 

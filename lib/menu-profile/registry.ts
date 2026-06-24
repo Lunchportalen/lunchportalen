@@ -5,13 +5,13 @@
  * NOT FOR RUNTIME until G1+ resolver behind feature flag.
  */
 
+import { warmDishDefinitionsForProfile } from "@/lib/menu-profile/warmDishBankSeeds";
 import type {
   AutoPublishRuleSet,
   MenuCategoryDefinition,
   MenuProfile,
   MenuProfileId,
   PackageKey,
-  WarmDishDefinition,
   WarmDishRuleSet,
 } from "@/lib/menu-profile/types";
 
@@ -58,15 +58,6 @@ function upgradeCategory(label: string, description: string): MenuCategoryDefini
   };
 }
 
-function warmDish(
-  profileId: MenuProfileId,
-  key: string,
-  title: string,
-  tags?: readonly string[],
-): WarmDishDefinition {
-  return { key, title, tags, profileId };
-}
-
 function packageDef(
   key: PackageKey,
   label: string,
@@ -75,7 +66,17 @@ function packageDef(
 ) {
   const warmDishKeys = categoryKeys.filter((k) => k !== "enterprise_upgrade");
   const includesSharedWarmDish = warmDishKeys.some((k) =>
-    ["varmrett", "varm_lunch", "varm_frokost", "lammin_lounas", "warme_mahlzeit", "plat_du_jour", "plato_del_dia", "hot_lunch"].includes(k),
+    [
+      "varmrett",
+      "varm_lunch",
+      "varm_frokost",
+      "lammin_lounas",
+      "warme_mahlzeit",
+      "plat_du_jour",
+      "plato_del_dia",
+      "hot_lunch",
+      "primo_del_giorno",
+    ].includes(k),
   );
   return {
     key,
@@ -125,14 +126,7 @@ const NORWEGIAN_COMPANY_LUNCH: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("norwegian_company_lunch", "kjottkaker", "Kjøttkaker", ["classic"]),
-    warmDish("norwegian_company_lunch", "lapskaus", "Lapskaus", ["classic"]),
-    warmDish("norwegian_company_lunch", "kyllinggryte", "Kyllinggryte", ["poultry"]),
-    warmDish("norwegian_company_lunch", "fiskekaker", "Fiskekaker", ["fish"]),
-    warmDish("norwegian_company_lunch", "pastaform", "Pastaform", ["pasta"]),
-    warmDish("norwegian_company_lunch", "thai-gryte", "Thai-inspirert gryte", ["asian"]),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("norwegian_company_lunch"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
@@ -165,12 +159,7 @@ const SWEDISH_LUNCH: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("swedish_lunch", "kottbullar", "Köttbullar"),
-    warmDish("swedish_lunch", "pytt-i-panna", "Pytt i panna"),
-    warmDish("swedish_lunch", "fisksoppa", "Fisksoppa", ["fish", "soup"]),
-    warmDish("swedish_lunch", "pasta-bolognese", "Pasta bolognese"),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("swedish_lunch"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
@@ -209,12 +198,7 @@ const DANISH_OFFICE_LUNCH: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("danish_office_lunch", "frikadeller", "Frikadeller"),
-    warmDish("danish_office_lunch", "stegt-flaesk", "Stegt flæsk"),
-    warmDish("danish_office_lunch", "gullasch", "Gullasch"),
-    warmDish("danish_office_lunch", "fiskefilet", "Fiskefilet", ["fish"]),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("danish_office_lunch"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
@@ -253,12 +237,7 @@ const FINNISH_OFFICE_LUNCH: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("finnish_office_lunch", "lihapullat", "Lihapullat"),
-    warmDish("finnish_office_lunch", "lohikeitto", "Lohikeitto", ["fish", "soup"]),
-    warmDish("finnish_office_lunch", "pasta", "Pasta"),
-    warmDish("finnish_office_lunch", "kasvispata", "Kasvispata", ["vegetarian"]),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("finnish_office_lunch"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
@@ -304,13 +283,7 @@ const GERMAN_BUSINESS_LUNCH: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("german_business_lunch", "eintopf", "Eintopf", ["stew"]),
-    warmDish("german_business_lunch", "kartoffelgericht", "Kartoffelgericht"),
-    warmDish("german_business_lunch", "pasta-lunch", "Pasta lunch"),
-    warmDish("german_business_lunch", "schnitzel-style", "Schnitzel-style lunch"),
-    warmDish("german_business_lunch", "vegetarische-bowl", "Vegetarische bowl", ["vegetarian"]),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("german_business_lunch"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
@@ -356,13 +329,7 @@ const FRENCH_DEJEUNER: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("french_dejeuner", "quiche-lorraine", "Quiche lorraine"),
-    warmDish("french_dejeuner", "gratin", "Gratin"),
-    warmDish("french_dejeuner", "poulet-basquaise", "Poulet basquaise"),
-    warmDish("french_dejeuner", "ratatouille", "Ratatouille", ["vegetarian"]),
-    warmDish("french_dejeuner", "salade-complete", "Salade complète"),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("french_dejeuner"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
@@ -401,13 +368,7 @@ const SPANISH_MENU_DEL_DIA: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("spanish_menu_del_dia", "tortilla-espanola", "Tortilla española"),
-    warmDish("spanish_menu_del_dia", "pollo-al-ajillo", "Pollo al ajillo"),
-    warmDish("spanish_menu_del_dia", "arroz", "Arroz"),
-    warmDish("spanish_menu_del_dia", "lentejas", "Lentejas"),
-    warmDish("spanish_menu_del_dia", "ensalada-mixta", "Ensalada mixta"),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("spanish_menu_del_dia"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
@@ -440,19 +401,48 @@ const UK_OFFICE_LUNCH: MenuProfile = {
       { enterpriseUpgrade: true },
     ),
   },
-  warmDishBank: [
-    warmDish("uk_office_lunch", "cottage-pie", "Cottage pie"),
-    warmDish("uk_office_lunch", "chicken-curry", "Chicken curry"),
-    warmDish("uk_office_lunch", "jacket-potato", "Jacket potato lunch"),
-    warmDish("uk_office_lunch", "pasta-bake", "Pasta bake"),
-    warmDish("uk_office_lunch", "roast-vegetable-tray", "Roast vegetable tray", ["vegetarian"]),
-    warmDish("uk_office_lunch", "soup-and-roll", "Soup and roll", ["soup"]),
-  ],
+  warmDishBank: warmDishDefinitionsForProfile("uk_office_lunch"),
   warmDishRules: DEFAULT_WARM_DISH_RULES,
   autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
   enterpriseUpgradeModel: enterpriseUpgradeModel(
     "Enterprise upgrade",
     "Same hot lunch as Luxus with add-ons in the week plan — never a separate hot dish.",
+  ),
+};
+
+const ITALIAN_OFFICE_LUNCH: MenuProfile = {
+  id: "italian_office_lunch",
+  market: "IT",
+  locale: "it-IT",
+  name: "Pranzo aziendale italiano",
+  description: "Profilo pranzo ufficio italiano — seed for IT-marked.",
+  fixedChoiceCategories: [
+    fixedChoice("panini", "Panini"),
+    fixedChoice("insalata", "Insalata"),
+    warmDishCategory("primo_del_giorno", "Primo del giorno", "Un primo caldo condiviso per giorno di consegna."),
+    fixedChoice("bowl", "Bowl"),
+    fixedChoice("piatto_freddo", "Piatto freddo"),
+    upgradeCategory(
+      "Upgrade Enterprise",
+      "Supplemento sullo stesso primo del giorno — mai un piatto caldo separato.",
+    ),
+  ],
+  packageModel: {
+    basis: packageDef("basis", "Basis", ["panini", "insalata", "primo_del_giorno"]),
+    luxus: packageDef("luxus", "Luxus", ["panini", "insalata", "primo_del_giorno", "bowl", "piatto_freddo"]),
+    enterprise: packageDef(
+      "enterprise",
+      "Enterprise",
+      ["panini", "insalata", "primo_del_giorno", "bowl", "piatto_freddo", "enterprise_upgrade"],
+      { enterpriseUpgrade: true },
+    ),
+  },
+  warmDishBank: warmDishDefinitionsForProfile("italian_office_lunch"),
+  warmDishRules: DEFAULT_WARM_DISH_RULES,
+  autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
+  enterpriseUpgradeModel: enterpriseUpgradeModel(
+    "Upgrade Enterprise",
+    "Stesso primo del giorno di Luxus con supplementi nel piano settimanale.",
   ),
 };
 
@@ -465,6 +455,7 @@ export const MENU_PROFILE_REGISTRY: Readonly<Record<MenuProfileId, MenuProfile>>
   french_dejeuner: FRENCH_DEJEUNER,
   spanish_menu_del_dia: SPANISH_MENU_DEL_DIA,
   uk_office_lunch: UK_OFFICE_LUNCH,
+  italian_office_lunch: ITALIAN_OFFICE_LUNCH,
 };
 
 export function isSupportedMenuProfile(profileId: string): profileId is MenuProfileId {

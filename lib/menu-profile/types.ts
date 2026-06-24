@@ -5,7 +5,7 @@
  * until explicit G1+ phase gate.
  */
 
-export const MARKET_CODES = ["NO", "SE", "DK", "FI", "DE", "FR", "ES", "UK"] as const;
+export const MARKET_CODES = ["NO", "SE", "DK", "FI", "DE", "FR", "ES", "UK", "IT"] as const;
 export type MarketCode = (typeof MARKET_CODES)[number];
 
 export const CURRENCY_CODES = [`${"NO"}K`, "SEK", "DKK", "EUR", "GBP"] as const;
@@ -20,6 +20,7 @@ export const MENU_PROFILE_IDS = [
   "french_dejeuner",
   "spanish_menu_del_dia",
   "uk_office_lunch",
+  "italian_office_lunch",
 ] as const;
 export type MenuProfileId = (typeof MENU_PROFILE_IDS)[number];
 
@@ -50,6 +51,21 @@ export type WarmDishDefinition = {
   tags?: readonly string[];
   allergens?: readonly string[];
   profileId: MenuProfileId;
+};
+
+/** Canonical inert warm dish bank seed — ADR-019 G0.2. Not published menuDay documents. */
+export type WarmDishBankSeed = {
+  key: string;
+  profileId: MenuProfileId;
+  market: MarketCode;
+  locale: string;
+  title: string;
+  description?: string;
+  tags?: readonly string[];
+  allergens?: readonly string[];
+  dishType?: string;
+  protein?: string;
+  suitableForAutoPublish?: boolean;
 };
 
 export type WarmDishRuleSet = {
