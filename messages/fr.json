@@ -505,6 +505,9 @@
           "enterpriseIncludes": "Même plat chaud + valeur ajoutée",
           "notSeparateProduction": "Pas un plat de production séparé",
           "sharedWarmDishHint": "Un plat chaud commun"
+        },
+        "emptyPanel": {
+          "selectDay": "Sélectionnez un jour dans le plan de la semaine pour modifier les choix du catalogue."
         }
       }
     },

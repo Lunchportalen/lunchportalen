@@ -1406,6 +1406,9 @@
           "enterpriseIncludes": "Same warm dish + added value",
           "notSeparateProduction": "Not a separate production dish",
           "sharedWarmDishHint": "One shared warm dish"
+        },
+        "emptyPanel": {
+          "selectDay": "Select a day in the week plan to edit catalog choices."
         }
       },
       "price": {

@@ -505,6 +505,9 @@
           "enterpriseIncludes": "Samma varmrätt + extra värde",
           "notSeparateProduction": "Inte egen produktionsrätt",
           "sharedWarmDishHint": "En gemensam varmrätt"
+        },
+        "emptyPanel": {
+          "selectDay": "Välj en dag i veckoplanen för att redigera katalogval."
         }
       }
     },

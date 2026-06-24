@@ -1256,7 +1256,7 @@
         "autoRolloutMeta": "Publiseres automatisk torsdag 08:00 · ansatte ser uka kl. 14:00",
         "fillMissingMeta": "Fyll inn manglende varmretter før uken kan publiseres",
         "autoRolloutChip": "Auto-rollout aktiv",
-        "daysPublished": "{count} dag(er) publisert"
+        "daysPublished": "{count, plural, one {# dag publisert} other {# dager publisert}}"
       },
       "preview": {
         "ariaLabel": "Pris-preview diagnose",
@@ -1399,6 +1399,9 @@
         "allergens": {
           "none": "Ingen allergener oppgitt",
           "prefix": "Allergener: {list}"
+        },
+        "emptyPanel": {
+          "selectDay": "Velg en dag i ukeplanen for å redigere katalogvalg."
         },
         "packageCard": {
           "basisIncludes": "Påsmurt · Salatboks · Dagens varmrett",

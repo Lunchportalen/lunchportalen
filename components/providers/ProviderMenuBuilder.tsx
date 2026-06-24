@@ -631,7 +631,7 @@ export default function ProviderMenuBuilder() {
                     />
                   ) : (
                     <div className="lp-editor-panel__empty">
-                      <p>Velg en dag i ukeplanen for å redigere katalogvalg.</p>
+                      <p>{t("workspace.emptyPanel.selectDay")}</p>
                     </div>
                   )}
                 </div>

@@ -505,6 +505,9 @@
           "enterpriseIncludes": "Samme varmret + ekstra værdi",
           "notSeparateProduction": "Ikke egen produktionsret",
           "sharedWarmDishHint": "Én fælles varmret"
+        },
+        "emptyPanel": {
+          "selectDay": "Vælg en dag i ugeplanen for at redigere katalogvalg."
         }
       }
     },
