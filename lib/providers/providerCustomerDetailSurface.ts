@@ -5,6 +5,9 @@ import type { ProviderCustomerStatus } from "@/lib/providers/customerTypes";
 import {
   formatDeliveryAddressInline,
   formatNok,
+  hasInvoiceRecipient,
+  type CommissionBasePresentationKey,
+  type InvoiceMethodPresentationKey,
   type ProviderBillingBasis,
   type ProviderBillingBasisConfidence,
   type ProviderInvoiceSettings,
@@ -15,6 +18,29 @@ export type ProviderCustomerDetailTranslate = (
   key: string,
   values?: Record<string, string | number>,
 ) => string;
+
+export type ProviderCustomerBillingTranslate = (key: string) => string;
+
+export function formatInvoiceMethodPresentation(
+  methodKey: InvoiceMethodPresentationKey,
+  tBilling: ProviderCustomerBillingTranslate,
+): string {
+  return tBilling(`method.${methodKey}`);
+}
+
+export function formatCommissionBasePresentation(
+  key: CommissionBasePresentationKey,
+  tBilling: ProviderCustomerBillingTranslate,
+): string {
+  return tBilling(`commissionBase.${key}`);
+}
+
+export function formatInvoiceRecipientPresentation(
+  recipientValue: string | null,
+  tBilling: ProviderCustomerBillingTranslate,
+): string {
+  return recipientValue ?? tBilling("recipient.notSelected");
+}
 
 export type ProviderCustomerStatusTranslate = (key: ProviderCustomerStatus extends infer _ ? string : never) => string;
 
@@ -105,7 +131,7 @@ export function buildBillingBasisStatusLabel(
   if (basis.confidence === "incomplete") {
     return tDetail("billingStatus.missingVat");
   }
-  if (!invoice.method || invoice.recipientLabel === "Ikke valgt") {
+  if (!hasInvoiceRecipient(invoice)) {
     return tDetail("billingStatus.missingRecipient");
   }
   return tDetail("billingStatus.ready");
@@ -130,6 +156,7 @@ export function buildBillingBasisDisplay(
   basis: ProviderBillingBasis,
   invoice: ProviderInvoiceSettings,
   tDetail: ProviderCustomerDetailTranslate,
+  tBilling: ProviderCustomerBillingTranslate,
 ): ProviderBillingBasisDisplay {
   const incomplete = basis.confidence === "incomplete";
   const incompleteLabel = tDetail("billingIncomplete");
@@ -154,12 +181,14 @@ export function buildBillingBasisDisplay(
         ? formatNok(basis.revenueIncVatNok)
         : incompleteLabel,
     commissionBaseLabel:
-      basis.confidence === "incomplete" ? incompleteLabel : basis.commissionBaseLabel,
+      basis.confidence === "incomplete"
+        ? incompleteLabel
+        : formatCommissionBasePresentation(basis.commissionBaseKey, tBilling),
     commissionAmountLabel:
       basis.confidence === "incomplete" ? incompleteLabel : formatNok(basis.commissionNok),
     commissionRateLabel: tDetail("labels.commissionRateValue"),
-    methodLabel: invoice.methodLabel,
-    recipientLabel: invoice.recipientLabel,
+    methodLabel: formatInvoiceMethodPresentation(invoice.methodKey, tBilling),
+    recipientLabel: formatInvoiceRecipientPresentation(invoice.recipientValue, tBilling),
     statusLabel: buildBillingBasisStatusLabel(basis, invoice, tDetail),
     confidence: basis.confidence,
     note:

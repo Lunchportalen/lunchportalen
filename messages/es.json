@@ -923,6 +923,21 @@
         "heading": "Nueva empresa cliente",
         "lead": "La creación directa de empresas clientes aún no está disponible. Las nuevas empresas en su área de cobertura llegan vía Registros cuando muestran interés, y aparecen en Empresas tras la aprobación."
       },
+      "billing": {
+        "method": {
+          "email": "Correo electrónico",
+          "ehf": "EHF",
+          "notSelected": "No seleccionado"
+        },
+        "recipient": {
+          "notSelected": "No seleccionado"
+        },
+        "commissionBase": {
+          "taxEx": "sin IVA",
+          "taxInc": "con IVA",
+          "notAvailable": "No disponible"
+        }
+      },
       "detail": {
         "actions": {
           "agreementUpdated": "Acuerdo actualizado.",

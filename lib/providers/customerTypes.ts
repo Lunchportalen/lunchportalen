@@ -1,3 +1,5 @@
+import type { InvoiceMethodPresentationKey } from "@/lib/providers/providerCustomerBilling";
+
 export type ProviderCustomerFilter = "all" | "active" | "suspended" | "paused" | "deleted";
 
 export type ProviderCustomerStatus = "ACTIVE" | "PAUSED" | "SUSPENDED" | "DELETED";
@@ -10,7 +12,7 @@ export type ProviderCustomerRow = {
   employeesCount: number | null;
   ordersThisWeek: number | null;
   historicalOrdersCount: number | null;
-  invoiceMethodLabel: string;
+  invoiceMethodKey: InvoiceMethodPresentationKey;
   updatedAt: string | null;
 };
 

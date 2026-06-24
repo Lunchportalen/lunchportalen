@@ -659,6 +659,21 @@
         "lead": "Asiakasyritysten suora luonti ei ole vielä käytettävissä. Uudet yritykset toimitusalueellasi saapuvat Rekisteröinnit-kohdasta kiinnostuksen ilmoitettuaan, ja näkyvät Yritykset-kohdassa hyväksynnän jälkeen.",
         "backToCustomers": "Takaisin yrityksiin"
       },
+      "billing": {
+        "method": {
+          "email": "Sähköposti",
+          "ehf": "EHF",
+          "notSelected": "Ei valittu"
+        },
+        "recipient": {
+          "notSelected": "Ei valittu"
+        },
+        "commissionBase": {
+          "taxEx": "alv 0 %",
+          "taxInc": "sis. alv",
+          "notAvailable": "Ei saatavilla"
+        }
+      },
       "errors": {
         "notAuthenticated": "Et ole kirjautunut sisään.",
         "providerAdminRequired": "Vain toimittajan ylläpitäjä voi suorittaa tämän toiminnon.",

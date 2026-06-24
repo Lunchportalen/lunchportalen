@@ -33,31 +33,38 @@ describe("billing basis VAT labels", () => {
       revenueIncVatNok: 103.5,
     });
     expect(basis.confidence).toBe("complete");
-    expect(basis.commissionBaseLabel).toBe("eks. mva");
+    expect(basis.commissionBaseKey).toBe("taxEx");
     expect(basis.commissionNok).toBeCloseTo(4.14, 2);
   });
 
   it("bruker gross_only når bare inkl. mva finnes", async () => {
-    const { tDetail } = await loadDetailTranslators("nb");
+    const { tDetail, tBilling } = await loadDetailTranslators("nb");
     const totals = sumOrderRevenueCents([{ gross_cents_inc_vat: 10350 }]);
     const basis = computeBillingBasis({
       ordersThisMonth: 1,
       revenueIncVatNok: totals.revenueIncVatNok,
     });
     expect(basis.confidence).toBe("gross_only");
-    expect(basis.commissionBaseLabel).toBe("inkl. mva");
+    expect(basis.commissionBaseKey).toBe("taxInc");
     expect(basis.commissionNok).toBeCloseTo(5.18, 2);
 
-    const display = buildBillingBasisDisplay(basis, {
-      method: "EHF",
-      methodLabel: "EHF",
-      invoiceEmail: null,
-      orgnr: "928038777",
-      ehfEndpoint: "0192:928038777",
-      ehfEnabled: true,
-      billingContact: { name: null, email: null, phone: null },
-      recipientLabel: "0192:928038777",
-    }, tDetail);
+    const display = buildBillingBasisDisplay(
+      basis,
+      {
+        method: "EHF",
+        methodKey: "ehf",
+        invoiceEmail: null,
+        orgnr: "928038777",
+        ehfEndpoint: "0192:928038777",
+        ehfEnabled: true,
+        billingContact: { name: null, email: null, phone: null },
+        recipientValue: "0192:928038777",
+        methodLabel: "EHF",
+        recipientLabel: "0192:928038777",
+      },
+      tDetail,
+      tBilling,
+    );
     expect(display.revenueIncVatLabel).toContain("103");
     expect(display.revenueExVatLabel).toBe("Ikke spesifisert");
     expect(display.vatLabel).toBe("Ikke spesifisert");
@@ -66,18 +73,25 @@ describe("billing basis VAT labels", () => {
   });
 
   it("merker ikke gross som eks. mva", async () => {
-    const { tDetail } = await loadDetailTranslators("nb");
+    const { tDetail, tBilling } = await loadDetailTranslators("nb");
     const basis = computeBillingBasis({ ordersThisMonth: 0, revenueIncVatNok: 0 });
-    const display = buildBillingBasisDisplay(basis, {
-      method: null,
-      methodLabel: "Ikke valgt",
-      invoiceEmail: null,
-      orgnr: null,
-      ehfEndpoint: null,
-      ehfEnabled: false,
-      billingContact: { name: null, email: null, phone: null },
-      recipientLabel: "Ikke valgt",
-    }, tDetail);
+    const display = buildBillingBasisDisplay(
+      basis,
+      {
+        method: null,
+        methodKey: "notSelected",
+        invoiceEmail: null,
+        orgnr: null,
+        ehfEndpoint: null,
+        ehfEnabled: false,
+        billingContact: { name: null, email: null, phone: null },
+        recipientValue: null,
+        methodLabel: "Ikke valgt",
+        recipientLabel: "Ikke valgt",
+      },
+      tDetail,
+      tBilling,
+    );
     expect(display.revenueExVatLabel).toBe("Fakturagrunnlag ikke komplett");
     expect(display.confidence).toBe("incomplete");
   });

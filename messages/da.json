@@ -848,6 +848,21 @@
         "heading": "Ny kundevirksomhed",
         "lead": "Direkte oprettelse af erhvervskunder er ikke tilgængelig endnu. Nye virksomheder i dit dækningsområde kommer ind via Registreringer, når de viser interesse, og vises under Virksomheder efter godkendelse."
       },
+      "billing": {
+        "method": {
+          "email": "E-mail",
+          "ehf": "EHF",
+          "notSelected": "Ikke valgt"
+        },
+        "recipient": {
+          "notSelected": "Ikke valgt"
+        },
+        "commissionBase": {
+          "taxEx": "eks. moms",
+          "taxInc": "inkl. moms",
+          "notAvailable": "Ikke tilgængelig"
+        }
+      },
       "detail": {
         "actions": {
           "agreementUpdated": "Aftalen blev opdateret.",

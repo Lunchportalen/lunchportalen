@@ -5,6 +5,12 @@ import { digitsOnlyOrgnr, isValidNorwegianOrgnr } from "@/lib/orgnr/no";
 
 export type InvoiceMethod = "EMAIL" | "EHF";
 
+/** Stable presentation id for invoice method — map via provider.customers.billing.method.* */
+export type InvoiceMethodPresentationKey = "email" | "ehf" | "notSelected";
+
+/** Stable presentation id for commission base — map via provider.customers.billing.commissionBase.* */
+export type CommissionBasePresentationKey = "taxEx" | "taxInc" | "notAvailable";
+
 export const LUNCHPORTALEN_COMMISSION_RATE = 0.05;
 
 export type ProviderBillingContact = {
@@ -15,12 +21,17 @@ export type ProviderBillingContact = {
 
 export type ProviderInvoiceSettings = {
   method: InvoiceMethod | null;
-  methodLabel: string;
+  methodKey: InvoiceMethodPresentationKey;
   invoiceEmail: string | null;
   orgnr: string | null;
   ehfEndpoint: string | null;
   ehfEnabled: boolean;
   billingContact: ProviderBillingContact;
+  /** Resolved invoice recipient (email or EHF endpoint), null when not configured. */
+  recipientValue: string | null;
+  /** @deprecated Use methodKey + i18n — kept for agreement read model consumers. */
+  methodLabel: string;
+  /** @deprecated Use recipientValue + i18n — kept for agreement read model consumers. */
   recipientLabel: string;
 };
 
@@ -33,7 +44,7 @@ export type ProviderBillingBasis = {
   revenueIncVatNok: number;
   commissionNok: number;
   commissionRateLabel: string;
-  commissionBaseLabel: string;
+  commissionBaseKey: CommissionBasePresentationKey;
   confidence: ProviderBillingBasisConfidence;
   /** @deprecated use confidence + labeled fields */
   complete: boolean;
@@ -68,20 +79,43 @@ export function resolveInvoiceMethod(input: {
   return null;
 }
 
+export function invoiceMethodPresentationKey(method: InvoiceMethod | null): InvoiceMethodPresentationKey {
+  if (method === "EHF") return "ehf";
+  if (method === "EMAIL") return "email";
+  return "notSelected";
+}
+
+/** @deprecated Use invoiceMethodPresentationKey + provider.customers.billing.method.* i18n. */
 export function invoiceMethodLabel(method: InvoiceMethod | null): string {
   if (method === "EHF") return "EHF";
   if (method === "EMAIL") return "E-post";
   return "Ikke valgt";
 }
 
+export function resolveInvoiceRecipientValue(settings: {
+  method: InvoiceMethod | null;
+  invoiceEmail: string | null;
+  ehfEndpoint: string | null;
+}): string | null {
+  if (settings.method === "EHF" && settings.ehfEndpoint) return settings.ehfEndpoint;
+  if (settings.method === "EMAIL" && settings.invoiceEmail) return settings.invoiceEmail;
+  return null;
+}
+
+export function hasInvoiceRecipient(
+  settings: Pick<ProviderInvoiceSettings, "method" | "recipientValue">,
+): boolean {
+  return Boolean(settings.method && settings.recipientValue);
+}
+
+/** @deprecated Use resolveInvoiceRecipientValue + i18n for empty state. */
 export function buildInvoiceRecipientLabel(settings: {
   method: InvoiceMethod | null;
   invoiceEmail: string | null;
   ehfEndpoint: string | null;
 }): string {
-  if (settings.method === "EHF" && settings.ehfEndpoint) return settings.ehfEndpoint;
-  if (settings.method === "EMAIL" && settings.invoiceEmail) return settings.invoiceEmail;
-  return "Ikke valgt";
+  const value = resolveInvoiceRecipientValue(settings);
+  return value ?? "Ikke valgt";
 }
 
 export function buildProviderInvoiceSettings(input: {
@@ -100,9 +134,11 @@ export function buildProviderInvoiceSettings(input: {
   const ehfEnabled = Boolean(input.ehfEnabled);
   const method = resolveInvoiceMethod({ ehfEnabled, ehfEndpoint, billingEmail: invoiceEmail });
 
+  const recipientValue = resolveInvoiceRecipientValue({ method, invoiceEmail, ehfEndpoint });
+
   return {
     method,
-    methodLabel: invoiceMethodLabel(method),
+    methodKey: invoiceMethodPresentationKey(method),
     invoiceEmail,
     orgnr,
     ehfEndpoint,
@@ -112,6 +148,8 @@ export function buildProviderInvoiceSettings(input: {
       email: safeStr(input.contactEmail).toLowerCase() || null,
       phone: safeStr(input.contactPhone) || null,
     },
+    recipientValue,
+    methodLabel: invoiceMethodLabel(method),
     recipientLabel: buildInvoiceRecipientLabel({ method, invoiceEmail, ehfEndpoint }),
   };
 }
@@ -138,18 +176,18 @@ export function computeBillingBasis(input: {
 
   let confidence: ProviderBillingBasisConfidence = "incomplete";
   let commissionBase = 0;
-  let commissionBaseLabel = "Ikke tilgjengelig";
+  let commissionBaseKey: CommissionBasePresentationKey = "notAvailable";
 
   if (ordersThisMonth === 0 && !hasGross && !hasExVat) {
     confidence = "incomplete";
   } else if (hasExVat && hasVat && hasGross) {
     confidence = "complete";
     commissionBase = input.revenueExVatNok!;
-    commissionBaseLabel = "eks. mva";
+    commissionBaseKey = "taxEx";
   } else if (hasGross) {
     confidence = "gross_only";
     commissionBase = revenueIncVatNok;
-    commissionBaseLabel = "inkl. mva";
+    commissionBaseKey = "taxInc";
   } else {
     confidence = "incomplete";
   }
@@ -164,7 +202,7 @@ export function computeBillingBasis(input: {
     revenueIncVatNok,
     commissionNok,
     commissionRateLabel: "5 %",
-    commissionBaseLabel,
+    commissionBaseKey,
     confidence,
     complete: confidence !== "incomplete",
   };

@@ -848,6 +848,21 @@
         "heading": "Nouvelle entreprise cliente",
         "lead": "La création directe d'entreprises clientes n'est pas encore disponible. Les nouvelles entreprises de votre zone de livraison arrivent via Inscriptions lorsqu'elles manifestent leur intérêt, et apparaissent sous Entreprises après approbation."
       },
+      "billing": {
+        "method": {
+          "email": "E-mail",
+          "ehf": "EHF",
+          "notSelected": "Non sélectionné"
+        },
+        "recipient": {
+          "notSelected": "Non sélectionné"
+        },
+        "commissionBase": {
+          "taxEx": "HT",
+          "taxInc": "TTC",
+          "notAvailable": "Non disponible"
+        }
+      },
       "detail": {
         "actions": {
           "agreementUpdated": "Contrat mis à jour.",

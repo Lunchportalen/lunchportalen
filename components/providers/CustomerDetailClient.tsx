@@ -64,6 +64,7 @@ export default function CustomerDetailClient({
   const tAgreement = useTranslations("provider.customers.agreement");
   const tActivity = useTranslations("provider.customers.activity");
   const tErrors = useTranslations("provider.customers.errors");
+  const tBilling = useTranslations("provider.customers.billing");
   const [pending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<DialogState>({ open: false, variant: "suspend" });
   const [agreementEditOpen, setAgreementEditOpen] = useState(false);
@@ -114,6 +115,7 @@ export default function CustomerDetailClient({
     detail.billingBasis,
     detail.invoice,
     (key, values) => tDetail(key, values),
+    (key) => tBilling(key),
   );
   const billingBadges = buildBillingBasisBadges(detail.billingBasis, (key, values) => tDetail(key, values));
 
