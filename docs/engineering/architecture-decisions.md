@@ -453,7 +453,7 @@ UI locale resolves **kun** via next-intl — **utenfor** denne kjeden.
 | **R7** | Provider billing integration per market (NO Tripletex/EHF først) |
 | **R8** | Multi-market enablement bak feature flag + legal sign-off |
 
-Menu culture profile følger **egen ADR/roadmap** — ikke blandet inn i commercial resolver.
+Menu profile & provider commercial model følger **ADR-019** (G0–G7) — ikke blandet inn i commercial resolver uten eksplisitt fase-gate.
 
 ## Risks
 
@@ -552,6 +552,38 @@ See [r4-provider-price-cutover-runbook.md](./r4-provider-price-cutover-runbook.m
 
 ---
 
+# ADR-019 – Global Menu Profile & Provider Commercial Model
+
+**Status:** Proposed (docs only — **no runtime changes**)
+
+## Context
+
+Lunchportalen skal være global SaaS — ikke norsk app med oversatt UI. Read-only gap audit (2026-06) bekrefter sterk NO-pilot, men `PLAN_CATEGORIES`, `tierPricing.ts`, og manglende ProviderAgreement/settlement gjør løsningen ikke 10/10 global.
+
+## Decision
+
+Full spec: **[ADR-019-global-menu-profile-provider-commercial-model.md](./ADR-019-global-menu-profile-provider-commercial-model.md)**
+
+Låser:
+
+- Fire lag: UI-språk, menyprofil, marked, valuta — aldri blandet
+- Programmert `MenuProfile` (provider-owned) — norsk profil er seed, ikke global runtime-sannhet
+- ProviderAgreement + versjonering for valuta, provisjon, pakkepriser, menyprofil
+- Order commercial/menu snapshot + ProviderSettlement + commission ledger
+- Superadmin global kontrollflate og risk flags
+- Staged rollout G0–G7; Golden Path urørt til dedikert cutover-GO
+
+## Consequences
+
++ Autoritativ 10/10-fasit før implementering
++ ADR-017 «menu culture profile» erstattes som lettvekt-forslag av full MenuProfile-modell
++ NO nåværende oppførsel bevares som `norsk-firmalunsj`-seed
+− Krever G0–G7 phased delivery og egne cutover-ADR-er for Golden Path (G7)
+
+**Relates to:** ADR-016, ADR-017, ADR-018, [commercial-inventory.md](./commercial-inventory.md), [PROTECTED_GOLDEN_PATH.md](../PROTECTED_GOLDEN_PATH.md)
+
+---
+
 # KONKLUSJON
 
 Lunchportalen sin arkitektur er basert på:
@@ -571,8 +603,9 @@ Enhver endring i:
 - Cut-off logikk
 - Agreement-modell
 - Market/commercial config (ADR-017)
+- Global menu profile & provider commercial model (ADR-019)
 - UI locale vs. market/currency coupling
 
-må føre til ny ADR-oppføring eller ADR-017 amendment.
+må føre til ny ADR-oppføring eller ADR-017/ADR-019 amendment.
 
 Arkitektur skal aldri endres implisitt.
