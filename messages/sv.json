@@ -84,6 +84,48 @@
           "text": "När beställningar kommer in visas totalt ordervärde här.",
           "action": "Se faktura"
         }
+      },
+      "activity": {
+        "agreementActivated": {
+          "description": "Ett leveransavtal har aktiverats.",
+          "title": "Avtal aktiverat"
+        },
+        "agreementUpdated": {
+          "description": "Ett leveransavtal har ändrats.",
+          "title": "Avtal uppdaterat"
+        },
+        "invoiceGenerated": {
+          "description": "Nytt fakturaunderlag är klart för granskning.",
+          "title": "Fakturaunderlag genererat"
+        },
+        "menuPublished": {
+          "description": "Menyinhåll är publicerat och synligt för kunderna.",
+          "title": "Meny publicerad"
+        },
+        "orderCancelled": {
+          "description": "En beställning är avbokad.",
+          "title": "Beställning avbokad"
+        },
+        "orderReceived": {
+          "description": "En ny beställning har registrerats.",
+          "title": "Beställning mottagen"
+        },
+        "registrationApproved": {
+          "description": "En kundregistrering har godkänts och aktiverats.",
+          "title": "Kund godkänd"
+        },
+        "registrationReceived": {
+          "description": "Ett företag har registrerat sig och väntar på behandling.",
+          "title": "Ny kundregistrering mottagen"
+        },
+        "registrationRejected": {
+          "description": "En kundregistrering har behandlats och avvisats.",
+          "title": "Kundregistrering avvisad"
+        },
+        "settingsUpdated": {
+          "description": "Leverantörsinställningar har ändrats.",
+          "title": "Inställningar uppdaterade"
+        }
       }
     },
     "menu": {
@@ -178,12 +220,16 @@
       },
       "errors": {
         "loadFailed": "Kunde inte ladda menyn.",
-        "saveFailed": "Kunde inte spara menyn."
+        "saveFailed": "Kunde inte spara menyn.",
+        "copySourceEmpty": "Ingen {tier}-meny att kopiera för den här dagen/kategorin.",
+        "publishConfirmRequired": "{warning} Bekräfta för att publicera ändå.",
+        "resetVarmrettFailed": "Kunde inte återställa varmrätt."
       },
       "success": {
         "published": "Meny publicerad.",
         "draftSaved": "Utkast sparat.",
-        "resetVarmrett": "Varmrätt återställd till genererad."
+        "resetVarmrett": "Varmrätt återställd till genererad.",
+        "copiedFromTier": "Kopierad från {tier}. Lägg till Enterprise-uppgradering före publicering."
       },
       "price": {
         "exVatSuffix": "kr exkl. moms",
@@ -342,12 +388,30 @@
           "note": "Extra protein och dessert/frukt som premiumtillägg till dagens varmrätt"
         },
         "quickChoices": {
-          "protein": { "label": "Extra protein", "note": "Extra protein till dagens varmrätt" },
-          "portion": { "label": "Större portion", "note": "Större portion av dagens varmrätt" },
-          "dessert": { "label": "Dessert/frukt", "note": "Dessert eller frukt som premiumtillägg" },
-          "topping": { "label": "Premiumtopping", "note": "Premiumtopping till dagens varmrätt" },
-          "side": { "label": "Extra tillbehör", "note": "Extra tillbehör till dagens varmrätt" },
-          "season": { "label": "Säsongsuppgradering", "note": "Säsongsbaserad Enterprise-uppgradering till dagens varmrätt" }
+          "protein": {
+            "label": "Extra protein",
+            "note": "Extra protein till dagens varmrätt"
+          },
+          "portion": {
+            "label": "Större portion",
+            "note": "Större portion av dagens varmrätt"
+          },
+          "dessert": {
+            "label": "Dessert/frukt",
+            "note": "Dessert eller frukt som premiumtillägg"
+          },
+          "topping": {
+            "label": "Premiumtopping",
+            "note": "Premiumtopping till dagens varmrätt"
+          },
+          "side": {
+            "label": "Extra tillbehör",
+            "note": "Extra tillbehör till dagens varmrätt"
+          },
+          "season": {
+            "label": "Säsongsuppgradering",
+            "note": "Säsongsbaserad Enterprise-uppgradering till dagens varmrätt"
+          }
         },
         "upgradeTypes": {
           "PREMIUM_PROTEIN": "Premiumprotein",
@@ -362,6 +426,1114 @@
           "basedOnBasis": "Baserad på Basis",
           "basedOnLuxus": "Baserad på Luxus",
           "ownEnterprise": "Egen Enterprise"
+        }
+      }
+    },
+    "banner": {
+      "contactPrefix": "Kontakt",
+      "contactSuffix": "för att lösa upp.",
+      "paused": {
+        "defaultReason": "Tillfällig paus",
+        "title": "Leverantören är pausad"
+      },
+      "suspended": {
+        "defaultReason": "Suspenderad",
+        "title": "Leverantören är suspenderad"
+      }
+    },
+    "billing": {
+      "actions": {
+        "close": "Stäng",
+        "closeDrawer": "Stäng",
+        "details": "Detaljer"
+      },
+      "agreement": {
+        "activeEyebrow": "Aktivt avräkningsavtal",
+        "invoiceSentTo": "Faktura skickas till",
+        "netPerMonth": "Netto / mån",
+        "orgNrSuffix": " · org.nr {orgNumber}",
+        "totalPerMonth": "Totalt / mån",
+        "vatLabel": "Moms ({rate}%)"
+      },
+      "commissionNote": "Lunchportalen beräknar 5 % provision per såld portion när avräkning är aktiverad.",
+      "contact": {
+        "addressLabel": "Fakturaadress (valfritt)",
+        "cancel": "Avbryt",
+        "editButton": "Redigera fakturakontakt",
+        "emailLabel": "Faktura-e-post",
+        "orgLabel": "Org.nr (valfritt)",
+        "save": "Spara",
+        "saveFailed": "Kunde inte spara.",
+        "saved": "Fakturakontakt uppdaterad.",
+        "saving": "Sparar…",
+        "title": "Fakturakontakt"
+      },
+      "errors": {
+        "activeSubscriptionNotFound": "Ingen aktiv prenumeration att uppdatera.",
+        "forbidden": "Du har inte åtkomst.",
+        "invalidEmail": "Ogiltig faktura-e-post.",
+        "notAuthenticated": "Inte inloggad.",
+        "providerAdminRequired": "Endast leverantörsadmin kan ändra fakturakontakt.",
+        "saveFailed": "Kunde inte spara fakturakontakt.",
+        "unknown": "Något gick fel. Försök igen."
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "history": {
+        "emptyText": "När avräkning är aktiverad och underlaget är klart visas fakturaunderlag, provision, belopp, status och förfallodatum här.",
+        "emptyTitle": "Inget fakturaunderlag har genererats ännu",
+        "title": "Fakturaunderlag och avräkning"
+      },
+      "invoice": {
+        "downloadPdfIntegrationTitle": "Kommer med Tripletex (norsk redovisningsintegration)",
+        "downloadPdfSoon": "Ladda ner PDF (kommer snart)",
+        "drawerTitle": "Faktura {number}",
+        "net": "Netto",
+        "noNumber": "Utan nummer",
+        "paid": "Betalt",
+        "sent": "Skickat",
+        "status": "Status",
+        "table": {
+          "amount": "Belopp",
+          "dueDate": "Förfallodatum",
+          "period": "Period",
+          "status": "Status"
+        },
+        "total": "Totalt",
+        "vat": "Moms"
+      },
+      "notActivated": {
+        "text": "Avräkning är inte aktiverad för denna leverantör ännu. Kontakta Lunchportalen för att aktivera avräkningsavtal och fakturaunderlag.",
+        "title": "Avräkning är inte aktiverad"
+      },
+      "page": {
+        "eyebrow": "Leverantör",
+        "heading": "Faktura och avräkning",
+        "subheading": "Översikt över fakturaunderlag, provision och avräkning mellan leverantören och Lunchportalen."
+      },
+      "plan": {
+        "CUSTOM": "Anpassat avtal",
+        "SAAS_FIXED": "Fast månadspris",
+        "SAAS_PER_COMPANY": "Pris per företag"
+      },
+      "status": {
+        "invoice": {
+          "DRAFT": "Utkast",
+          "OVERDUE": "Förfallen",
+          "PAID": "Betalt",
+          "SENT": "Skickat",
+          "VOID": "Annullerad",
+          "unknown": "Okänd"
+        },
+        "settlement": {
+          "active": "Aktiv",
+          "notActivated": "Inte aktiverad"
+        }
+      },
+      "summary": {
+        "activateHint": "Kontakta Lunchportalen för att aktivera.",
+        "commission": "Provision",
+        "commissionPending": "Visas när avräkning är aktiverad",
+        "nextSettlement": "Nästa avräkning",
+        "nextSettlementNone": "Inte planerad",
+        "settlementStatus": "Avräkningsstatus"
+      }
+    },
+    "coverage": {
+      "actions": {
+        "activate": "Aktivera",
+        "activateTitle": "Gör området tillgängligt för nya företagsförfrågningar igen.",
+        "cancel": "Avbryt",
+        "closeDrawer": "Stäng",
+        "createArea": "Skapa område",
+        "deactivate": "Inaktivera",
+        "deactivateTitle": "Nya företag i detta område kan inte välja leverantören så länge området är inaktiverat. Befintliga avtal ändras inte automatiskt.",
+        "edit": "Redigera",
+        "newArea": "Nytt täckningsområde",
+        "newAreaTitle": "Lägg till ett nytt täckningsområde för leverantören.",
+        "readOnlyNote": "Du har läsbehörighet. Ändringar kräver administratörsbehörighet.",
+        "saveChanges": "Spara ändringar",
+        "saving": "Sparar…"
+      },
+      "empty": {
+        "step1": "Definiera postnummer eller område.",
+        "step2": "Ange minsta antal anställda.",
+        "step3": "Välj leveransdagar för området.",
+        "text": "Lägg till ett täckningsområde för att styra vilka företag som kan skicka förfrågan till leverantören.",
+        "title": "Inga täckningsområden ännu"
+      },
+      "errors": {
+        "cityRequired": "Ort är obligatorisk.",
+        "deliveryDaysRequired": "Välj minst en dag.",
+        "employeeRangeInvalid": "Ogiltigt intervall för anställda.",
+        "forbidden": "Du har inte åtkomst att ändra detta område.",
+        "invalidEmployeeRange": "Min antal anställda kan inte vara högre än max.",
+        "invalidPostalCode": "Postnummer måste vara 4 siffror.",
+        "invalidPostalFrom": "Från-postnummer måste vara 4 siffror.",
+        "invalidPostalRange": "Från-postnummer kan inte vara högre än till.",
+        "invalidPostalTo": "Till-postnummer måste vara 4 siffror.",
+        "notAuthenticated": "Inte inloggad.",
+        "postalOverlap": "Postnummerintervallet överlappar ett befintligt aktivt område.",
+        "postalRangeInvalid": "Från-postnummer kan inte vara högre än till.",
+        "providerAdminRequired": "Endast leverantörsadmin kan ändra täckningsområden.",
+        "saveFailed": "Kunde inte spara området. Försök igen.",
+        "serviceAreaNotFound": "Området hittades inte.",
+        "toggleFailed": "Kunde inte uppdatera status.",
+        "unknown": "Något gick fel. Försök igen.",
+        "validationFailed": "Ogiltigt formulär."
+      },
+      "form": {
+        "activeToggle": "Aktivt område (används i registreringsmatchning)",
+        "cityLabel": "Ort / område",
+        "createTitle": "Lägg till område",
+        "deliveryDaysLegend": "Leveransdagar",
+        "editTitle": "Redigera område",
+        "maxEmployees": "Max antal anställda (valfritt)",
+        "minEmployees": "Min antal anställda",
+        "postalFrom": "Postnummer från",
+        "postalTo": "Postnummer till"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesMax": "≤{max}",
+        "employeesMin": "{min}+",
+        "employeesRange": "{min}–{max}"
+      },
+      "page": {
+        "eyebrow": "Leverantör",
+        "heading": "Täckningsområden",
+        "leadNoProvider": "Täckningsområden styr vilka företag som kan skicka förfrågan till leverantören. Använd områdena för att avgränsa postnummer, minsta antal anställda och leveransdagar.",
+        "leadWithProvider": "Täckningsområden styr vilka företag som kan skicka förfrågan till {providerName}. Använd områdena för att avgränsa postnummer, minsta antal anställda och leveransdagar."
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "paused": "Pauset",
+        "unknown": "Okänd"
+      },
+      "summary": {
+        "inactiveSuffix": " · {count} inaktiva",
+        "manyActive": "{count} aktiva täckningsområden",
+        "noneActive": "Inga aktiva täckningsområden",
+        "oneActive": "1 aktivt täckningsområde"
+      },
+      "table": {
+        "area": "Område",
+        "deliveryDays": "Leveransdagar",
+        "minEmployees": "Min. anställda",
+        "postalCodes": "Postnummer",
+        "status": "Status"
+      },
+      "weekdays": {
+        "fri": "Fre",
+        "mon": "Man",
+        "thu": "Tor",
+        "tue": "Tis",
+        "wed": "Ons",
+        "weekdaysRange": "Måndag–fredag"
+      }
+    },
+    "customers": {
+      "actions": {
+        "newCustomer": "Ny företagskund",
+        "newCustomerTitle": "Nya företagskunder kommer in via kontrollerad registrering.",
+        "openCustomer": "Öppna kund",
+        "removeCustomer": "Ta bort kund",
+        "restoreCustomer": "Återställ kund"
+      },
+      "activity": {
+        "empty": {
+          "text": "När kunden registreras, beställer eller återställs visas det här.",
+          "title": "Ingen relevant kundaktivitet att visa ännu."
+        },
+        "events": {
+          "agreement_activated": {
+            "summary": "Leveransavtal aktiverat.",
+            "title": "Avtal aktiverat"
+          },
+          "agreement_updated": {
+            "summary": "Leveransavtal ändrat.",
+            "title": "Avtal uppdaterat"
+          },
+          "company_registration_approved": {
+            "summary": "Kundregistrering godkänd och aktiverad.",
+            "title": "Kund godkänd"
+          },
+          "company_registration_submitted": {
+            "summary": "Företaget skickade avtalsförfrågan.",
+            "title": "Kundregistrering mottagen"
+          },
+          "order_canceled": {
+            "summary": "En beställning avbokades.",
+            "title": "Beställning avbokad"
+          },
+          "order_cancelled": {
+            "summary": "En beställning avbokades.",
+            "title": "Beställning avbokad"
+          },
+          "order_created": {
+            "summary": "Ny beställning registrerad.",
+            "title": "Beställning registrerad"
+          },
+          "order_received": {
+            "summary": "Ny beställning registrerad.",
+            "title": "Beställning registrerad"
+          },
+          "provider": {
+            "customer": {
+              "archive": {
+                "success": {
+                  "summary": "Kund arkiverad hos leverantör.",
+                  "title": "Kund arkiverad"
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "summary": "Kund borttagen från leverantörslistan.",
+                  "title": "Kund borttagen"
+                }
+              },
+              "restore": {
+                "attempt": {
+                  "summary": "Återställning av kund försöktes.",
+                  "title": "Återställning startad"
+                },
+                "success": {
+                  "summary": "Kundrelationen återaktiverades.",
+                  "title": "Kund återställd"
+                }
+              }
+            }
+          }
+        }
+      },
+      "agreement": {
+        "activeTitle": "Aktivt kundavtal",
+        "createdAt": "Skapad {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "dayMenusWeekdaysTier": "Måndag–fredag · {tier}",
+        "dayMenusWeekdaysTierLine": "Måndag–fredag: {tier}",
+        "deliveryDaysWarning": "Avtalet innehåller leveransdagar utanför ordinarie lunchleverans.",
+        "empty": {
+          "text": "När ett kundavtal godkänns visas leveransdagar, plats och avtalsinnehåll här.",
+          "title": "Inget avtal registrerat"
+        },
+        "inactiveTitle": "Kundavtal",
+        "labels": {
+          "created": "Skapad",
+          "dayMenus": "Leveransdagar och meny",
+          "deliveryDays": "Leveransdagar",
+          "location": "Leveransadress",
+          "package": "Avtalsnivå",
+          "period": "Avtalsperiod",
+          "status": "Status"
+        },
+        "locationMissing": "Leveransadress inte angiven",
+        "multipleActiveWarning": "Flera aktiva avtal är registrerade för denna kund.",
+        "notSpecified": "Inte angivet",
+        "packageMissing": "Inte angivet i avtalsvyn ännu",
+        "packageMix": "Mix",
+        "periodFromOpen": "Från {from} · Inget slutdatum",
+        "periodFromTo": "Från {from} till {to}",
+        "sectionTitle": "Avtal",
+        "status": {
+          "active": "Aktiv",
+          "closed": "Avslutad",
+          "paused": "Pauset",
+          "pending": "Under behandling",
+          "rejected": "Avslagen",
+          "unknown": "Okänd"
+        },
+        "weekdays": {
+          "fri": "Fredag",
+          "mon": "Måndag",
+          "thu": "Torsdag",
+          "tue": "Tisdag",
+          "wed": "Onsdag"
+        },
+        "weekdaysRange": "Måndag–fredag"
+      },
+      "card": {
+        "mobileMeta": "{employees} anställda · {orders} beställningar denna vecka · {history} i historik · Faktura: {invoice}",
+        "mobileUpdatedPrefix": "Senast uppdaterad",
+        "orgNrPrefix": "Org.nr: {orgnr}"
+      },
+      "create": {
+        "backToCustomers": "Tillbaka till företag",
+        "heading": "Ny företagskund",
+        "lead": "Direkt skapande av företagskunder är inte tillgängligt ännu. Nya företag i ditt täckningsområde kommer in via Registreringar när de visar intresse, och visas under Företag efter godkännande."
+      },
+      "detail": {
+        "actions": {
+          "agreementUpdated": "Avtalet uppdaterades.",
+          "editAgreement": "Redigera avtal",
+          "pause": "Pausa",
+          "removeCustomer": "Ta bort kund",
+          "restore": "Återställ",
+          "suspend": "Suspendera"
+        },
+        "agreementStatusMissing": "Inget aktivt avtal",
+        "badges": {
+          "commissionAmount": "{amount} provision",
+          "commissionNotReady": "Provision inte klar",
+          "historical": "{count} historiska",
+          "oneHistorical": "1 historisk",
+          "oneOrderThisMonth": "1 beställning denna månad",
+          "ordersSuffix": "beställningar",
+          "ordersThisMonth": "{count} beställningar denna månaden"
+        },
+        "billingBasisTitle": "Fakturaunderlag",
+        "billingIncomplete": "Fakturaunderlag ofullständigt",
+        "billingPeriodLabel": "Senaste 30 dagarna",
+        "billingStatus": {
+          "missingOrders": "Saknar beställningsunderlag",
+          "missingRecipient": "Saknar fakturamottagare",
+          "missingVat": "Saknar momsuppdelning",
+          "ready": "Klar för fakturaunderlag"
+        },
+        "completeCommissionNote": "Provision beräknas av omsättning exkl. moms.",
+        "contactMissing": "—",
+        "employeesTable": {
+          "email": "E-post",
+          "name": "Namn",
+          "role": "Roll"
+        },
+        "eyebrow": "Kund",
+        "grossOnlyNote": "Siffrorna visas inkl. moms eftersom beställningsunderlaget saknar separat momsuppdelning.",
+        "identityTitle": "Kundinformation",
+        "kpis": {
+          "activeOrders": "Aktiva beställningar",
+          "commission5": "Provision 5 %",
+          "employees": "Anställda",
+          "orderHistory": "Beställningshistorik",
+          "revenue30Days": "Omsättning 30 dagar"
+        },
+        "labels": {
+          "agreementStatus": "Avtalsstatus",
+          "billingStatus": "Status",
+          "commission": "Provision 5 %",
+          "commissionBase": "Provisionsunderlag",
+          "commissionRateValue": "5 %",
+          "contact": "Kontakt",
+          "deliveryAddress": "Leveransadress",
+          "email": "E-post",
+          "invoiceMethod": "Faktureringsmetod",
+          "invoiceRecipient": "Fakturamottagare",
+          "ordersThisMonth": "Beställningsunderlag",
+          "orgnr": "Org.nr",
+          "period": "Period",
+          "phone": "Telefon",
+          "revenueExVat": "Omsättning exkl. moms",
+          "revenueIncVat": "Omsättning inkl. moms",
+          "vat": "Moms"
+        },
+        "meta": {
+          "agreementLevel": "Avtalsnivå",
+          "invoiceMethod": "Faktureringsmetod",
+          "orgnr": "Org.nr",
+          "status": "Status"
+        },
+        "orgnrMissing": "Org.nr not registered",
+        "readOnly": "Du har läsbehörighet. Ändringar kräver administratörsbehörighet.",
+        "sections": {
+          "activity": "Aktivitet",
+          "employees": "Anställda",
+          "employeesEmpty": "Inga anställda registrerade för denna kund ännu.",
+          "orders": "Beställningar",
+          "ordersEmpty": "Inga beställningar registrerade för denna kund ännu."
+        },
+        "statusBanner": {
+          "pausedDefault": "Kunden är pausad.",
+          "suspendedDefault": "Kunden är suspenderad."
+        },
+        "vatNotSpecified": "Inte angivet"
+      },
+      "dialogs": {
+        "adminEyebrow": "Kundadministration",
+        "agreementEdit": {
+          "address": "Adress",
+          "billingContact": "Fakturakontakt",
+          "billingLegend": "Fakturering",
+          "contactLegend": "Kontaktperson",
+          "dayMenusLead": "Välj vilken meny kunden ska ha per leveransdag.",
+          "dayMenusLegend": "Meny per leveransdag",
+          "deliveryNote": "Leveransinstruktion",
+          "deliveryWindowLegend": "Leveransfönster",
+          "ehf": "EHF",
+          "ehfEndpoint": "EHF-slutpunkt",
+          "email": "E-post",
+          "from": "Från",
+          "invoiceEmail": "E-post",
+          "invoiceEmailField": "Faktura-e-post",
+          "loadFailed": "Kunde inte ladda avtalet.",
+          "loading": "Laddar avtal…",
+          "locationLegend": "Leveransadress",
+          "locationName": "Platsnamn",
+          "name": "Namn",
+          "orgnr": "Organisationsnummer",
+          "phone": "Telefon",
+          "reasonOptional": "Anledning (valfritt, sparas i revisionsloggen)",
+          "save": "Spara ändringar",
+          "saveFailed": "Kunde inte spara avtalet.",
+          "saving": "Sparar…",
+          "statusActive": "Aktiv",
+          "statusLegend": "Status",
+          "statusPaused": "Pauset",
+          "title": "Redigera kundavtal",
+          "to": "Till",
+          "updated": "Avtalet uppdaterades.",
+          "updatedWithWarnings": "Avtalet uppdaterades. {warnings}",
+          "validation": {
+            "ehfEndpointRequired": "EHF-slutpunkt måste anges.",
+            "invalidBillingEmail": "Ogiltig e-post för fakturakontakt.",
+            "invalidEmail": "Ogiltig e-postadress.",
+            "invoiceEmailRequired": "Faktura-e-post måste vara en giltig e-postadress.",
+            "orgnrLength": "Organisationsnummer måste vara 9 siffror.",
+            "pickDeliveryDay": "Välj minst en leveransdag.",
+            "pickMenuForDay": "Välj meny för {day}."
+          },
+          "weekdaysOnlyNote": "Lunchleverans måndag–fredag. Helger stöds inte."
+        },
+        "cancel": "Avbryt",
+        "closeAria": "Stäng",
+        "removal": {
+          "actionFailed": "Åtgärden misslyckades.",
+          "archiveAction": "Arkivera kund",
+          "archiveCustomer": "Arkivera kund",
+          "archiveTitle": "Arkivera kund",
+          "chooseModeLead": "Välj om kunden ska arkiveras eller raderas permanent.",
+          "confirmHint": "(skriv exakt: {hint})",
+          "confirmLabel": "Bekräftelse",
+          "hardDelete": "Radera permanent",
+          "hardDeleteBlockedLead": "Denna kund har operativ historik som måste bevaras.",
+          "hardDeleteBlockedTitle": "Kunden kan inte raderas permanent",
+          "hardDeleteLead": "Kunden har ingen operativ historik och kan raderas permanent efter bekräftelse.",
+          "hardDeleteTitle": "Radera kund permanent",
+          "loadRulesFailed": "Kunde inte ladda borttagningsregler.",
+          "loadRulesFailedHttp": "Kunde inte ladda borttagningsregler (HTTP {status}).",
+          "loadingDependencies": "Hämtar beroenden…",
+          "loadingRules": "Laddar borttagningsregler…",
+          "reasonOptional": "Anledning (valfritt)",
+          "removeTitle": "Ta bort kund"
+        },
+        "restore": {
+          "actionFailed": "Kunde inte återställa kunden.",
+          "confirmHint": "(skriv exakt: {hint})",
+          "confirmLabel": "Bekräftelse",
+          "lead": "Detta återaktiverar kundrelationen utan att radera historik.",
+          "restoreCustomer": "Återställ kund",
+          "successDefault": "Kunden återställdes.",
+          "title": "Återställ kund"
+        },
+        "working": "Utför…"
+      },
+      "empty": {
+        "noResults": {
+          "text": "Prova ett annat företagsnamn eller rensa filtret.",
+          "title": "Inga träffar"
+        },
+        "noStatusMatch": {
+          "text": "Ändra statusfiltret för att se fler företagskunder.",
+          "title": "Inga företag med vald status"
+        },
+        "noneYet": {
+          "text": "När företagskunder registreras och godkänns visas de här med status, avtal och beställningsunderlag.",
+          "title": "Inga företag ännu"
+        }
+      },
+      "errors": {
+        "agreementLoadFailed": "Kunde inte ladda avtalet.",
+        "agreementUpdateFailed": "Kunde inte spara avtalet.",
+        "alreadyActive": "Denna kund är redan aktiv.",
+        "alreadyArchived": "Denna kund är redan arkiverad.",
+        "confirmMismatch": "Bekräftelsen stämmer inte.",
+        "customerNotFound": "Kunden hittades inte.",
+        "forbidden": "Du har inte åtkomst till denna kund.",
+        "hardDeleteBlocked": "Denna kund kan inte raderas permanent.",
+        "invalidAgreement": "Avtalsdata är ogiltiga.",
+        "invalidCustomer": "Saknar kund-id.",
+        "invalidPayload": "Inga giltiga ändringar angavs.",
+        "loadRulesFailed": "Kunde inte ladda borttagningsregler.",
+        "noActiveAgreement": "Företaget har inget aktivt avtal.",
+        "notAuthenticated": "Inte inloggad.",
+        "outOfScope": "Kunden tillhör inte denna leverantören.",
+        "pauseFailed": "Kunde inte pausa kunden.",
+        "protectedSystem": "Systemorganisation kan inte ändras här.",
+        "providerAdminRequired": "Endast leverantörsadmin kan utföra denna åtgärd.",
+        "providerContextMissing": "Hittade ingen leverantörsanknytning för inloggad användare.",
+        "reasonTooShort": "Anledning måste vara minst 20 tecken.",
+        "removeFailed": "Kunde inte ta bort kunden.",
+        "restoreFailed": "Kunde inte återställa kunden.",
+        "selfCustomer": "Leverantören kan inte vara kund till sig själv.",
+        "suspendFailed": "Kunde inte suspendera kunden.",
+        "unknown": "Något gick fel.",
+        "updateFailed": "Kunde inte uppdatera kunden.",
+        "validationFailed": "Ogiltig förfrågan."
+      },
+      "filters": {
+        "active": "Aktiv",
+        "all": "Alla",
+        "deleted": "Raderad",
+        "paused": "Pauset",
+        "searchLabel": "Sök",
+        "searchPlaceholder": "Sök efter företagsnamn",
+        "statusGroupAria": "Statusfilter",
+        "suspended": "Suspenderad"
+      },
+      "lifecycle": {
+        "dialog": {
+          "cancel": "Avbryt",
+          "closeAria": "Stäng dialog",
+          "delete": {
+            "confirm": "Radera",
+            "description": "Åtgärden soft-raderar kunden. Beställningar kan påverkas.",
+            "title": "Radera {name}?"
+          },
+          "pause": {
+            "confirm": "Pausa",
+            "description": "Ange en tydlig anledning (minst 20 tecken).",
+            "title": "Pause {name}?"
+          },
+          "reasonHint": "{current}/{min} tecken",
+          "reasonLabel": "Anledning",
+          "reasonNeedMore": " — behöver fler tecken",
+          "resume": {
+            "confirm": "Återställ",
+            "description": "Kunden och tillhörande beställningar återställs där det är möjligt.",
+            "title": "Återställ {name}?"
+          },
+          "suspend": {
+            "confirm": "Suspendera",
+            "description": "Ange en tydlig anledning (minst 20 tecken).",
+            "title": "Suspendera {name}?"
+          },
+          "working": "Utför…"
+        }
+      },
+      "page": {
+        "eyebrow": "Leverantör",
+        "heading": "Företag",
+        "leadDefault": "Hantera företagskunder, avtal och leveransupplägg.",
+        "leadWithProvider": "Hantera företagskunder, avtal och leveransupplägg för {providerName}."
+      },
+      "pagination": {
+        "aria": "Sidnavigering",
+        "companies": "{count} företag",
+        "next": "Nästa",
+        "oneCompany": "1 företag",
+        "page": "Sida {current} av {total} ({count} totalt)",
+        "prev": "Föregående"
+      },
+      "status": {
+        "active": "Aktiv",
+        "deleted": "Raderad",
+        "paused": "Pauset",
+        "suspended": "Suspenderad"
+      },
+      "table": {
+        "actions": "Åtgärder",
+        "employees": "Anställda",
+        "historicalOrders": "Historik",
+        "invoice": "Faktura",
+        "lastUpdated": "Senast uppdaterad",
+        "name": "Företag",
+        "ordersThisWeek": "Beställningar denna veckan",
+        "orgnr": "Org.nr",
+        "status": "Status"
+      }
+    },
+    "orders": {
+      "actions": {
+        "markDelivered": "Markera levererad",
+        "readyForDelivery": "Klar för leverans",
+        "saving": "Sparar…",
+        "startProduction": "Starta produktion"
+      },
+      "card": {
+        "allergensPrefix": "Allergener: {list}",
+        "deliveryGroupPrefix": "Levering",
+        "lineQuantity": "{quantity} st · {displayLine}",
+        "noLines": "Inga rader registrerade",
+        "noteLabel": "Anteckning:",
+        "readOnlyNote": "Endast visning — du har läsbehörighet till beställningarna."
+      },
+      "empty": {
+        "steps": {
+          "checkMenu": "Kontrollera att menyn är publicerad för aktuella dagar.",
+          "checkWeek": "Se hela veckan om du vill granska kommande leveranser.",
+          "ordersAppear": "Nya beställningar visas här som produktionsunderlag efter hand när de kommer in."
+        },
+        "text": {
+          "default": "Det finns inga aktiva beställningar för vald period.",
+          "filtered": "Det finns inga beställningar med vald status i vald period. Välj «Alla» för att se alla beställningar i perioden."
+        },
+        "title": {
+          "filtered": "Inga beställningar med vald status",
+          "today": "Inga beställningar för idag",
+          "tomorrow": "Inga beställningar för imorgon",
+          "week": "Inga beställningar denna vecka"
+        }
+      },
+      "errors": {
+        "kitchenRoleRequired": "Endast köksrollen kan uppdatera status.",
+        "notAuthenticated": "Inte inloggad.",
+        "orderNotFound": "Beställning hittades inte.",
+        "unknown": "Något gick fel.",
+        "updateFailed": "Kunde inte uppdatera status."
+      },
+      "filters": {
+        "companyAll": "Alla företag",
+        "companyAria": "Filtrera på företag",
+        "companyLabel": "Företag",
+        "date": {
+          "today": "I dag",
+          "tomorrow": "I morgen",
+          "week": "Hela veckan"
+        },
+        "dateGroupAria": "Period",
+        "groupByCompany": "Per företag",
+        "groupByTime": "Per tid",
+        "groupingAria": "Gruppering",
+        "status": {
+          "all": "Alla",
+          "delivered": "Levererad",
+          "production": "I produktion",
+          "ready": "Klar",
+          "received": "Mottagen"
+        },
+        "statusGroupAria": "Status"
+      },
+      "page": {
+        "eyebrow": "Beställningar och produktion",
+        "heading": "Beställningar"
+      },
+      "status": {
+        "cancelled": "Avbokad",
+        "delivered": "Levererad",
+        "inProduction": "I produktion",
+        "other": "Annat",
+        "paused": "Pauset",
+        "readyForDelivery": "Klar för leverans",
+        "received": "Mottagen"
+      }
+    },
+    "registrations": {
+      "actions": {
+        "review": "Bedöm"
+      },
+      "dialogs": {
+        "approve": "Godkänn",
+        "approveInstead": "Godkänn istället",
+        "approveTitle": "Godkänn registrering",
+        "cancel": "Avbryt",
+        "closeAria": "Stäng",
+        "contactLabel": "Kontakt",
+        "employeesLabel": "Anställda (ca.)",
+        "phoneLabel": "Telefon",
+        "reject": "Avvisa",
+        "rejectInstead": "Avvisa istället",
+        "rejectReasonLabel": "Anledning",
+        "rejectTitle": "Avvisa registrering",
+        "saving": "Bearbetar…",
+        "tierLabel": "Avtalsnivå"
+      },
+      "empty": {
+        "steps": {
+          "approvedFlow": "Godkända företag går vidare till kund- och avtalsflöde.",
+          "rejectedFlow": "Avslagna förfrågningar hanteras kontrollerat med tydlig status.",
+          "reviewRequest": "Kontrollera leveransplats, kontaktuppgifter och önskad lunchlösning när en förfrågan kommer in."
+        },
+        "text": "Nya företagsförfrågningar visas här när de matchar ditt täckningsområde.",
+        "title": "Inga förfrågningar under behandling"
+      },
+      "errors": {
+        "actionFailed": "Åtgärden misslyckades.",
+        "approveFailed": "Kunde inte godkänna registreringen.",
+        "invalidTier": "Ogiltig avtalsnivå.",
+        "notAuthenticated": "Inte inloggad.",
+        "providerAdminRequired": "Endast leverantörsadmin kan utföra denna åtgärd.",
+        "registrationAlreadyProcessed": "Denna registrering har redan behandlats.",
+        "registrationNotFound": "Registrering hittades inte.",
+        "rejectFailed": "Kunde inte avvisa registreringen.",
+        "rejectReasonRequired": "Ange en kort anledning.",
+        "unknown": "Något gick fel."
+      },
+      "page": {
+        "eyebrow": "Leverantör",
+        "heading": "Förfrågningar",
+        "subheading": "Granska nya företag som önskar lunchlösning, och bedöm leveransområde, kontaktuppgifter och önskat avtal innan behandling."
+      },
+      "status": {
+        "approved": "Godkänd",
+        "other": "Annat",
+        "pending": "Under behandling",
+        "rejected": "Avslagen"
+      },
+      "summary": {
+        "many": "{count} under behandling",
+        "none": "Inga under behandling",
+        "one": "1 under behandling"
+      },
+      "table": {
+        "area": "Område",
+        "company": "Företag",
+        "contact": "Kontakt",
+        "employees": "Anställda",
+        "received": "Mottagen",
+        "status": "Status"
+      }
+    },
+    "settings": {
+      "brand": {
+        "errors": {
+          "contrastTooWeak": "Färgen har för svag kontrast och kan inte användas. Välj en mörkare färg.",
+          "forbidden": "Ingen åtkomst.",
+          "invalidHex": "Använd HEX-format, till exempel #F5C518.",
+          "invalidProvider": "Ogiltig leverantör.",
+          "notAuthenticated": "Inte inloggad.",
+          "saveFailed": "Kunde inte spara färgen.",
+          "unknown": "Oväntat fel vid sparande."
+        },
+        "formatHint": "Använd HEX-format, till exempel #F5C518. Vid dålig kontrast används standardfärg.",
+        "hexLabel": "HEX-kod",
+        "restoredDefault": "Standardfärg återställd.",
+        "sampleHint": "Så här används färgen: som liten accent i menyn och detaljer.",
+        "save": "Spara färg",
+        "saved": "Färg sparad.",
+        "saving": "Sparar…"
+      },
+      "logo": {
+        "altWithProvider": "Logotyp för {providerName}",
+        "errors": {
+          "fileTooLarge": "Logotypen är för stor. Max storlek är 2 MB.",
+          "forbidden": "Ingen åtkomst.",
+          "invalidProvider": "Ogiltig leverantör.",
+          "noFileSelected": "Välj en logotypfil.",
+          "notAuthenticated": "Inte inloggad.",
+          "removeFailed": "Kunde inte ta bort logotypen.",
+          "saveFailed": "Kunde inte spara logotypen.",
+          "unknown": "Oväntat fel vid uppladdning.",
+          "unsupportedFileType": "Logotypen måste vara PNG eller WebP. Använd helst logotyp med transparent bakgrund.",
+          "uploadFailed": "Kunde inte ladda upp logotypen.",
+          "uploadUnavailable": "Uppladdning är inte tillgänglig just nu.",
+          "urlFailed": "Kunde inte hämta logotyp-URL."
+        },
+        "hint": "Rekommenderas: logotyp i PNG eller WebP med transparent bakgrund. Max 2 MB. Använd inte matbilder, banners, skärmdumpar, reklamgrafik eller logotyp på rörig/färgad bakgrund.",
+        "pickFile": "Välj logotypfil",
+        "remove": "Ta bort logotyp",
+        "removed": "Logotyp borttagen.",
+        "removing": "Tar bort…",
+        "replace": "Byt logotyp",
+        "updated": "Logotyp uppdaterad.",
+        "upload": "Ladda upp logotyp",
+        "uploading": "Laddar upp…"
+      },
+      "operations": {
+        "deliveryEmailHint": "Används för leveransrelaterade aviseringar och meddelanden när beställningar är klara för leverans.",
+        "deliveryEmailLabel": "Leveringsepost",
+        "errors": {
+          "emailTooLong": "E-postadressen är för lång.",
+          "forbidden": "Ingen åtkomst.",
+          "invalidEmail": "Ogiltig e-postadress.",
+          "invalidLocale": "Ogiltigt språkval.",
+          "notAuthenticated": "Inte inloggad.",
+          "providerNotFound": "Mangler provider.",
+          "saveFailed": "Kunde inte spara driftsinställningarna just nu.",
+          "unknown": "Kunde inte spara driftsinställningarna just nu."
+        },
+        "kitchenEmailHint": "Används för produktionsunderlag och köksaviseringar.",
+        "kitchenEmailLabel": "Köksepost",
+        "localeHint": "Styrar standardspråk för leverantörens egna driftytor när språkstöd är tillgängligt.",
+        "localeLabel": "Språk",
+        "locales": {
+          "da-DK": "Dansk",
+          "en-GB": "English",
+          "nb-NO": "Norsk (bokmål)",
+          "sv-SE": "Svenska"
+        },
+        "operationsEmailHint": "Används som huvudmottagare för beställningsaviseringar och driftsmeddelanden.",
+        "operationsEmailLabel": "Beställnings- och driftsepost",
+        "save": "Spara driftsinställningar",
+        "saved": "Driftsinställningar sparade.",
+        "saving": "Sparar…"
+      },
+      "page": {
+        "accountingIntro": "Anslut Tripletex för automatisk fakturering och betalningsstatus via den norska redovisningsintegrationen.",
+        "accountingSection": "Redovisning",
+        "brandIntro": "Ladda upp logotyp och välj en kontrollerad accentfärg. Lunchportalen behåller layout, typografi och produktionsregler.",
+        "brandSection": "Logotyp och varumärke",
+        "colorHeading": "Primärfärg",
+        "colorIntro": "Välj leverantörens accentfärg. Färgen används endast i kontrollerade detaljer.",
+        "eyebrow": "Leverantör",
+        "heading": "Inställningar",
+        "leadWithProvider": "Profil och kontaktuppgifter för {providerName}.",
+        "logoHeading": "Logotyp",
+        "logoIntro": "Använd en ren logotyp med transparent bakgrund. Logotypen visas kontrollerat i leverantörsmenyn.",
+        "logoNote": "Logotyper som inte följer plattformens visuella standard kan avvisas.",
+        "operationsIntro": "Ange e-postadresserna som ska ta emot beställningar, kökslistor och leveransaviseringar för denna leverantören. Dessa inställningar gäller endast för detta cateringföretaget.",
+        "operationsNote": "Cateringföretaget måste själv ange e-postadresserna som ska ta emot beställningar, kökslistor och leveransaviseringar. Lunchportalen skickar inte leverantörens operativa e-post till plattformen som standard — saknad e-post måste fyllas i här.",
+        "operationsSection": "Drift och aviseringar",
+        "readOnly": "Du har läsbehörighet. Inställningar kan endast ändras av administratör.",
+        "tripletexSetup": "Tripletex-inställning"
+      },
+      "profile": {
+        "emailLabel": "Kontakt e-post",
+        "errors": {
+          "emailRequired": "Giltig e-post krävs.",
+          "forbidden": "Ingen åtkomst.",
+          "nameRequired": "Namn krävs.",
+          "notAuthenticated": "Inte inloggad.",
+          "providerNotFound": "Mangler provider.",
+          "saveFailed": "Kunde inte spara inställningarna.",
+          "unknown": "Oväntat fel vid sparande."
+        },
+        "leadWithProvider": "Profil för {providerName}",
+        "nameLabel": "Namn",
+        "phoneLabel": "Kontakt telefon",
+        "save": "Spara inställningar",
+        "saved": "Inställningar sparade.",
+        "saving": "Sparar…"
+      }
+    },
+    "tripletex": {
+      "activity": {
+        "onboarding_connection_started": "Anslutning startad",
+        "onboarding_customer_skipped": "Kund hoppades över",
+        "onboarding_disconnected": "Tripletex frånkopplad",
+        "onboarding_finalized": "Anslutning slutförd",
+        "onboarding_provisioning_completed": "Inställning slutförd",
+        "onboarding_reconnect_initiated": "Återställning startad",
+        "onboarding_test_token": "Anslutning testad",
+        "onboarding_vault_purged": "Credentials raderade",
+        "state_change_configuring": "Status ändrad till konfigurerar",
+        "state_change_connected": "Status ändrad till ansluten",
+        "state_change_degraded": "Status ändrad till behöver uppmärksamhet",
+        "state_change_disconnected": "Status ändrad till frånkopplad",
+        "state_change_generic": "Anslutningsstatus ändrad"
+      },
+      "brand": "Tripletex",
+      "errors": {
+        "completeFailed": "Kunde inte spara anslutningen.",
+        "configurationMissing": "Tripletex-uppgifter är inte konfigurerade.",
+        "connectionTestFailed": "Anslutningstest misslyckades.",
+        "credentialsLoadFailed": "Kunde inte ladda uppgifter.",
+        "disconnectFailed": "Kunde inte koppla från Tripletex.",
+        "finalizeFailed": "Kunde inte slutföra anslutningen.",
+        "forbidden": "Du har inte åtkomst till denna leverantör.",
+        "healthLoadFailed": "Kunde inte hämta anslutningsstatus.",
+        "invalidCompanyId": "Company ID måste vara 6–12 siffror.",
+        "invalidState": "Anslutningen kan inte kopplas från i nuvarande tillstånd.",
+        "missingToken": "Employee Token krävs.",
+        "notAuthenticated": "Inte inloggad.",
+        "providerAdminRequired": "Endast leverantörsadmin kan utföra denna åtgärd.",
+        "provisioningNotComplete": "Inställningen är inte klar ännu.",
+        "rotateFailed": "Kunde inte generera webhook-secret.",
+        "saveFailed": "Åtgärden misslyckades.",
+        "tokenVerificationFailed": "Verifiering misslyckades.",
+        "unknown": "Något gick fel. Försök igen.",
+        "verificationFailed": "Verifiering misslyckades. Token eller behörigheter är inte giltiga.",
+        "webhookSecretRequired": "Webhook-secret måste genereras först.",
+        "webhookSyncFailed": "Kunde inte registrera webhook i Tripletex."
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "connect": {
+          "adminRequired": "Endast leverantörsadmin kan ansluta Tripletex.",
+          "degraded": {
+            "badge": "Behöver uppmärksamhet",
+            "body": "Anslutningen är degraderad. Omkonfigureringsflöde kommer i TPT-B-7b-edge.",
+            "heading": "Tripletex behöver uppmärksamhet"
+          },
+          "disconnected": {
+            "badge": "Frånkopplad",
+            "body": "Återställningsflöde utan ny token kommer i TPT-B-7b-edge.",
+            "heading": "Tripletex är frånkopplad"
+          },
+          "heading": "Anslut Tripletex"
+        },
+        "status": {
+          "eyebrow": "Tripletex",
+          "fallbackHeading": "Tripletex-status",
+          "heading": "Anslutningsstatus",
+          "noAccess": "Du har inte åtkomst till denna leverantör.",
+          "subheading": "Översikt över anslutning, webhook och senaste aktivitet."
+        }
+      },
+      "state": {
+        "CONFIGURING": "Konfigurerar…",
+        "CONNECTED": "Ansluten",
+        "DEGRADED": "Behöver uppmärksamhet",
+        "DISCONNECTED": "Frånkopplad",
+        "NOT_CONNECTED": "Inte ansluten"
+      },
+      "status": {
+        "actions": {
+          "adminNote": "Endast leverantörsadmin kan utföra dessa åtgärder.",
+          "disconnect": "Koppla från →",
+          "rotateSecret": "Roter webhook-secret",
+          "testConnection": "Test anslutning"
+        },
+        "activityStats": {
+          "empty": "Inga händelser registrerade ännu.",
+          "invoicesPaid": "Fakturaer betalt",
+          "invoicesSent": "Fakturaer sendt",
+          "recentHeading": "Senaste händelser",
+          "webhookEvents": "Webhooks",
+          "workerFailures": "Misslyckade pushar"
+        },
+        "cards": {
+          "customers": "Kunder",
+          "customersMeta": "Företagskopplingar i Tripletex",
+          "products": "Produkter",
+          "productsMeta": "Mappede måltidsprodukter",
+          "vatCodes": "Momskoder",
+          "vatCodesMeta": "Unika skattkoder i bruk"
+        },
+        "hero": {
+          "configureWebhook": "Konfigurer webhook →",
+          "continueSetup": "Fortsätt inställning →",
+          "credentialsPurge": "Credentials raderas {datetime}",
+          "daysUntilPurge": "om {days} dagar",
+          "lastHealthCheck": "Senaste hälsokontroll: {relative}",
+          "reconfigure": "Re-konfigurer →",
+          "reconnect": "Koppla till igen →",
+          "since": "Sedan {datetime}"
+        },
+        "modals": {
+          "close": "Stäng",
+          "copied": "Kopierat",
+          "copy": "Kopiera",
+          "copyFailed": "Kunde inte kopiera",
+          "disconnect": {
+            "body": "Anslutningen sätts till frånkopplad. Uppgifter sparas i 30 dagar så att du kan koppla till igen utan ny token. Därefter raderas de permanent.",
+            "confirm": "Bekräfta frånkoppling",
+            "confirming": "Kopplar från…",
+            "title": "Koppla från Tripletex"
+          },
+          "failed": "Misslyckades",
+          "ok": "OK",
+          "rotate": {
+            "body": "Genererar nytt secret och uppdaterar Tripletex-prenumerationer vid nästa slutförande av inställningen.",
+            "generate": "Generera nytt secret",
+            "generating": "Genererar…",
+            "title": "Roter webhook-secret"
+          },
+          "test": {
+            "body": "Kör full 3-stegs verifiering mot Tripletex via lagrade credentials.",
+            "run": "Kör test",
+            "running": "Tester…",
+            "stepAuth": "Autentisering",
+            "stepCompany": "Företag",
+            "stepScope": "Åtkomst",
+            "title": "Test anslutning"
+          }
+        },
+        "sections": {
+          "actions": "Åtgärder",
+          "activity": "Aktivitet senaste 30 dagarna",
+          "resources": "Resurser i Tripletex",
+          "webhook": "Webhook"
+        },
+        "webhook": {
+          "activeCount": "{count} aktiva i Tripletex",
+          "copied": "Kopierat",
+          "copy": "Kopiera",
+          "copyFailed": "Kunde inte kopiera",
+          "eventTypes": "Händelsetyper",
+          "eventsCount": "{count} händelser",
+          "last30Days": "Senaste 30 dagarna",
+          "lastReceived": "Senast mottagen",
+          "noEventsYet": "Inga händelser ännu",
+          "noneRegistered": "Inga registrerade ännu",
+          "notRotated": "Inte roterad",
+          "secretRotated": "Secret roterad",
+          "subscriptions": "Registrerade prenumerationer"
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Anslut Tripletex",
+        "leadForProvider": "För {providerName}",
+        "progress": {
+          "ariaLabel": "Steg {current} av {total}: {label}",
+          "done": "Klart",
+          "setup": "Inställning",
+          "token": "Token",
+          "verify": "Verifiera",
+          "webhook": "Webhook"
+        },
+        "steps": {
+          "provisioning": {
+            "complete": "Inställning slutförd.",
+            "contactSupport": "Kontakta support",
+            "customersSync": "Kunder synkroniseras",
+            "eyebrow": "Steg 3 av 5",
+            "intro": "Detta tar vanligtvis 10–30 sekunder.",
+            "productsCreate": "Produkter skapas",
+            "starting": "Startar inställning…",
+            "syncing": "Synkroniserar momskoder, produkter och kunder…",
+            "timeout": "Något tog längre tid än förväntat.",
+            "timeoutHint": "Inställningen fortsätter i bakgrunden. Du kan stänga sidan och komma tillbaka senare.",
+            "title": "Konfigurerar Tripletex",
+            "vatSync": "Momskoder synkroniseras",
+            "waiting": "Väntar på Tripletex-inställning…"
+          },
+          "success": {
+            "backToSettings": "Tillbaka till översikt",
+            "bulletInvoices": "Skicka fakturor automatiskt till Tripletex",
+            "bulletPayments": "Ta emot betalningsstatus via webhook",
+            "bulletStatus": "Visa anslutningsstatus och historik",
+            "canNow": "Du kan nu:",
+            "companyPrefix": "Företag:",
+            "eyebrow": "Steg 5 av 5",
+            "title": "✓ Tripletex är ansluten",
+            "viewInvoices": "Visa fakturahistorik",
+            "viewStatus": "Visa anslutningsstatus"
+          },
+          "token": {
+            "checksFailed": "En eller flera kontroller misslyckades. Rätta till och försök igen.",
+            "companyIdHelp": "Format: 6–12 siffror. Hitta det i URL:en: contextId=…",
+            "companyIdInvalid": "Company ID måste vara 6–12 siffror.",
+            "companyIdLabel": "Tripletex Company ID",
+            "connecting": "Ansluter…",
+            "continue": "Fortsätt",
+            "eyebrow": "Steg 1 av 5",
+            "intro": "Generera Employee Token i Tripletex under Företag → API-åtkomst. Klistra in Company ID från URL:en (contextId) och token nedan.",
+            "notRun": "Inte körd",
+            "retry": "Försök igen",
+            "title": "Klistra in och verifiera",
+            "tokenHintPending": "Token skickas endast till servern vid verifiering och lagring.",
+            "tokenHintVerified": "Token verifierad och klar för lagring.",
+            "tokenLabel": "Employee Token",
+            "tokenMissing": "Klistra in Employee Token från Tripletex.",
+            "tokenMissingOnContinue": "Token saknas. Verifiera igen.",
+            "verify": "Verifiera",
+            "verifying": "Verifierar…"
+          },
+          "webhook": {
+            "eyebrow": "Steg 4 av 5",
+            "finalize": "Slutför inställning",
+            "finalizing": "Slutför…",
+            "intro": "Lunchportalen registrerar webhook-prenumerationer i Tripletex automatiskt. Du behöver inte klistra in URL eller secret manuellt.",
+            "prepareFailed": "Kunde inte förbereda webhook-secret.",
+            "preparing": "Förbereder webhook-secret…",
+            "ready": "Klar. Klicka «Slutför inställning» för att registrera webhook och slutföra anslutningen.",
+            "registering": "Registrerar webhook i Tripletex…",
+            "title": "Webhook-registrering"
+          }
+        },
+        "verify": {
+          "auth": "Testar autentisering",
+          "authOk": "Anslutning OK",
+          "companyMatch": "Verifierar Company ID-match",
+          "companyOk": "Rätt företag",
+          "scope": "Testar behörigheter",
+          "scopeOk": "Åtkomst OK"
         }
       }
     }
