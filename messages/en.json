@@ -29,6 +29,7 @@
       "invoices": "Invoices",
       "settings": "Settings",
       "logout": "Log out",
+      "logoutPending": "Logging out…",
       "more": "More",
       "comingSoon": "(coming soon)",
       "openMenu": "Open menu",

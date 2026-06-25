@@ -105,4 +105,29 @@ describe("ProviderNav aria-labels", () => {
 
     expect(html).toContain('data-testid="locale-switcher"');
   });
+
+  test("ProviderNav wires logout label through i18n keys", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain('t("logout")');
+    expect(source).toContain('t("logoutPending")');
+    expect(source).toContain("label={logoutLabel}");
+    expect(source).toContain("pendingLabel={logoutPendingLabel}");
+  });
+
+  test.each([
+    { locale: "nb", logout: "Logg ut" },
+    { locale: "en", logout: "Log out" },
+    { locale: "sv", logout: "Logga ut" },
+    { locale: "da", logout: "Log ud" },
+    { locale: "fi", logout: "Kirjaudu ulos" },
+    { locale: "de", logout: "Abmelden" },
+    { locale: "fr", logout: "Se déconnecter" },
+    { locale: "es", logout: "Cerrar sesión" },
+    { locale: "it", logout: "Esci" },
+  ] as const)("provider.nav.logout for $locale", async ({ locale, logout }) => {
+    const messages = await loadMessagesForLocale(locale);
+    const nav = (messages.provider as { nav: Record<string, string> }).nav;
+    expect(nav.logout).toBe(logout);
+    expect(nav.logoutPending).toBeTruthy();
+  });
 });

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { loadMessagesForLocale } from "@/lib/i18n/messages";
 import { resolveAppLocale } from "@/lib/i18n/resolveAppLocale";
+import { isMenuProfileResolverEnabled, LP_MENU_PROFILE_RESOLVER_ENV } from "@/lib/menu-profile/featureFlag";
 
 const NAV_LABEL_CASES = [
   { locale: "nb", orders: "Ordrer", roleKitchen: "Kjøkken" },
@@ -72,4 +73,30 @@ describe("provider shell UI locale", () => {
       }
     },
   );
+
+  it("provider dashboard has no duplicate top-right locale switcher", () => {
+    const source = readFileSync(join(process.cwd(), "app/leverandor/page.tsx"), "utf8");
+    expect(source).not.toContain("LocaleSwitcher");
+    expect(source).not.toContain("ds-provider-topbar__locale");
+  });
+
+  it("menu profile resolver cutover is not active in provider menu workspace", () => {
+    const workspace = readFileSync(join(process.cwd(), "lib/provider-menu/providerMenuWorkspace.ts"), "utf8");
+    expect(workspace).toContain("CATEGORY_LABELS");
+    expect(workspace).not.toContain("LP_MENU_PROFILE_RESOLVER");
+    expect(workspace).not.toContain("resolveMenuProfile");
+  });
+
+  it("LP_MENU_PROFILE_RESOLVER defaults off", () => {
+    expect(LP_MENU_PROFILE_RESOLVER_ENV).toBe("LP_MENU_PROFILE_RESOLVER");
+    expect(isMenuProfileResolverEnabled({})).toBe(false);
+    expect(isMenuProfileResolverEnabled({ LP_MENU_PROFILE_RESOLVER: "false" })).toBe(false);
+  });
+
+  it("UI locale does not auto-translate provider-owned catalog titles", () => {
+    const contract = readFileSync(join(process.cwd(), "lib/cms/menuDayContract.ts"), "utf8");
+    expect(contract).toContain('paasmurt: "Påsmurt"');
+    const catalog = readFileSync(join(process.cwd(), "lib/provider-menu/lunchCategoryCatalog.ts"), "utf8");
+    expect(catalog).toContain("categoryLabelFromCatalog");
+  });
 });

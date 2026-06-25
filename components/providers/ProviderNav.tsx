@@ -134,6 +134,7 @@ function NavLink({
   pathname,
   label,
   logoutLabel,
+  logoutPendingLabel,
   comingSoonLabel,
   onNavigate,
 }: {
@@ -141,6 +142,7 @@ function NavLink({
   pathname: string;
   label: string;
   logoutLabel: string;
+  logoutPendingLabel: string;
   comingSoonLabel: string;
   onNavigate?: () => void;
 }) {
@@ -148,7 +150,15 @@ function NavLink({
   const className = `ds-admin-sidebar__item${active ? " is-active" : ""}${item.disabled ? " ds-provider-nav__item is-disabled" : ""}`;
 
   if (item.action === "logout") {
-    return <LogoutClientButton className={className} aria-label={logoutLabel} title={logoutLabel} />;
+    return (
+      <LogoutClientButton
+        className={className}
+        label={logoutLabel}
+        pendingLabel={logoutPendingLabel}
+        aria-label={logoutLabel}
+        title={logoutLabel}
+      />
+    );
   }
 
   if (item.disabled || !item.href) {
@@ -217,6 +227,7 @@ function SidebarNav({
   items,
   labelForItem,
   logoutLabel,
+  logoutPendingLabel,
   comingSoonLabel,
   sidebarLabel,
   onNavigate,
@@ -225,6 +236,7 @@ function SidebarNav({
   items: NavItem[];
   labelForItem: (item: NavItem) => string;
   logoutLabel: string;
+  logoutPendingLabel: string;
   comingSoonLabel: string;
   sidebarLabel: string;
   onNavigate?: () => void;
@@ -238,6 +250,7 @@ function SidebarNav({
           pathname={pathname}
           label={labelForItem(item)}
           logoutLabel={logoutLabel}
+          logoutPendingLabel={logoutPendingLabel}
           comingSoonLabel={comingSoonLabel}
           onNavigate={onNavigate}
         />
@@ -286,6 +299,7 @@ export default function ProviderNav({
   const roleLabel =
     userRole === "provider_admin" ? t("roleAdmin") : userRole === "provider_kitchen" ? t("roleKitchen") : t("roleDefault");
   const logoutLabel = t("logout");
+  const logoutPendingLabel = t("logoutPending");
   const comingSoonLabel = t("comingSoon");
 
   const mobilePrimary: NavItem[] = kitchenOnly
@@ -310,6 +324,7 @@ export default function ProviderNav({
           items={navItems}
           labelForItem={labelForItem}
           logoutLabel={logoutLabel}
+          logoutPendingLabel={logoutPendingLabel}
           comingSoonLabel={comingSoonLabel}
           sidebarLabel={t("sidebarLabel")}
         />
@@ -351,6 +366,7 @@ export default function ProviderNav({
               items={navItems}
               labelForItem={labelForItem}
               logoutLabel={logoutLabel}
+              logoutPendingLabel={logoutPendingLabel}
               comingSoonLabel={comingSoonLabel}
               sidebarLabel={t("sidebarLabel")}
               onNavigate={() => setDrawerOpen(false)}
@@ -375,7 +391,13 @@ export default function ProviderNav({
             </Link>
           );
         })}
-        <LogoutClientButton className="ds-admin-mobile-nav__item" aria-label={logoutLabel} title={logoutLabel} />
+        <LogoutClientButton
+          className="ds-admin-mobile-nav__item"
+          label={logoutLabel}
+          pendingLabel={logoutPendingLabel}
+          aria-label={logoutLabel}
+          title={logoutLabel}
+        />
       </nav>
     </>
   );

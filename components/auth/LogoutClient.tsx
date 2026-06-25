@@ -34,9 +34,20 @@ export async function performLogoutRedirect(): Promise<LogoutRedirectResult> {
 
 export type LogoutClientButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "onClick"> & {
   className?: string;
+  /** Visible label; defaults to Norwegian when omitted (legacy shells). */
+  label?: string;
+  /** Label while logout request is in flight. */
+  pendingLabel?: string;
 };
 
-export function LogoutClientButton({ className, ...rest }: LogoutClientButtonProps) {
+export function LogoutClientButton({
+  className,
+  label = "Logg ut",
+  pendingLabel = "Logger ut...",
+  title,
+  children,
+  ...rest
+}: LogoutClientButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +63,9 @@ export function LogoutClientButton({ className, ...rest }: LogoutClientButtonPro
     });
   }
 
+  const visibleLabel = isPending ? pendingLabel : (children ?? label);
+  const buttonTitle = isPending ? pendingLabel : (title ?? label);
+
   return (
     <div className="w-full">
       <button
@@ -60,10 +74,10 @@ export function LogoutClientButton({ className, ...rest }: LogoutClientButtonPro
         disabled={isPending}
         onClick={onLogout}
         aria-busy={isPending}
-        title={isPending ? "Logger ut..." : "Logg ut"}
+        title={buttonTitle}
         {...rest}
       >
-        {isPending ? "Logger ut..." : "Logg ut"}
+        {visibleLabel}
       </button>
       {error ? (
         <p className="mt-2 text-xs text-red-700" role="alert">
