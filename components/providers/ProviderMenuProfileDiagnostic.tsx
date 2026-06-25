@@ -29,6 +29,41 @@ export default async function ProviderMenuProfileDiagnostic({
     );
   }
 
+  if (diagnostic.kind === "legacy") {
+    const marketDisplay = t(`marketNames.${diagnostic.market}`, {
+      default: diagnostic.market,
+    });
+
+    return (
+      <div className="ds-card ds-provider-menu-profile-diagnostic" data-testid="provider-menu-profile-diagnostic-legacy">
+        <h2 className="ds-h3">{t("heading")}</h2>
+        <p className="ds-body">{t("statusInactive")}</p>
+        <dl className="ds-provider-menu-profile-diagnostic__list">
+          <div className="ds-provider-menu-profile-diagnostic__row">
+            <dt>{t("marketLabel")}</dt>
+            <dd>
+              {marketDisplay} / {diagnostic.marketCode}
+            </dd>
+          </div>
+          <div className="ds-provider-menu-profile-diagnostic__row">
+            <dt>{t("currencyLabel")}</dt>
+            <dd>{diagnostic.currency}</dd>
+          </div>
+          <div className="ds-provider-menu-profile-diagnostic__row">
+            <dt>{t("profileLabel")}</dt>
+            <dd>{diagnostic.profileName}</dd>
+          </div>
+          <div className="ds-provider-menu-profile-diagnostic__row">
+            <dt>{t("statusLabel")}</dt>
+            <dd>{t("statusInactive")}</dd>
+          </div>
+        </dl>
+        <p className="ds-body">{t("uiVsProfileExplanation")}</p>
+        <p className="ds-body ds-text-muted">{t("readOnlyNote")}</p>
+      </div>
+    );
+  }
+
   const sourceKey = SOURCE_KEYS[diagnostic.source] ?? "sourceUnknown";
 
   return (
@@ -62,6 +97,7 @@ export default async function ProviderMenuProfileDiagnostic({
           {diagnostic.warning}
         </p>
       ) : null}
+      <p className="ds-body">{t("uiVsProfileExplanation")}</p>
       <p className="ds-body ds-text-muted">{t("readOnlyNote")}</p>
     </div>
   );

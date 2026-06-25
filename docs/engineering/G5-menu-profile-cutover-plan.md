@@ -164,3 +164,55 @@ UI locale switches **chrome strings** in message catalogs. Menu categories and d
 - Break order snapshots that store title at order time.
 
 G5 profile cutover is the correct path: **market-aware presentation source-of-truth** behind flag, without touching order/publish contracts in early phases.
+
+---
+
+## Product model — UI language vs market/menu profile/currency (pre-G5a)
+
+### A. UI language alone must NOT change
+
+- Dish titles (`Ost & Skinke`, `Laks & Eggerøre`, …)
+- Catalog choices
+- Warm dish names
+- Prices
+- Currency display (kr / NOK)
+
+UI locale (`lp_locale`, next-intl) translates **chrome only** — nav, settings labels, buttons.
+
+### B. Provider market / menu profile / currency will later control
+
+Owned by **catering provider** (not company/customer/employee):
+
+- Fixed choices presentation
+- Category labels in workspace
+- Warm dish bank preview
+- Default package model explanation
+- Price display currency
+- Suggested/default package prices
+
+Sources: `provider_settings` (market, currency, menu_profile_id), `lib/menu-profile/registry.ts`, market defaults.
+
+### C. G5a scope — workspace presentation only (behind flag)
+
+| `LP_MENU_PROFILE_RESOLVER` | Behavior |
+|----------------------------|----------|
+| `false` (default) | Today's Norwegian workspace **100% unchanged** |
+| `true` | Provider workspace may show profile-based category labels and package explanation |
+
+G5a explicitly does **not** change:
+
+- Save payload / catalog write shape
+- Order choice keys
+- Publish / `menuDayPayload`
+- `/week` employee view
+- Price calculation / `provider_price_rules` / `pricePreview`
+
+### D. G5b / G5c / G5d
+
+| Phase | Scope |
+|-------|-------|
+| **G5b** | Fixed choice category model behind flag — stable order keys |
+| **G5c** | Warm dish bank preview behind flag — read-only suggestions |
+| **G5d** | Publish / order / `/week` cutover — **separate explicit GO only** |
+
+Provider settings now show read-only **Marked, valuta og menyprofil** diagnostic so admins understand why Italian UI still shows Norwegian menu + NOK until G5a+.

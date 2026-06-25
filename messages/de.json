@@ -1191,8 +1191,8 @@
         "kitchenEmailHint": "Für Produktionsgrundlage und Küchenbenachrichtigungen.",
         "deliveryEmailLabel": "Liefer-E-Mail",
         "deliveryEmailHint": "Für lieferbezogene Benachrichtigungen, wenn Bestellungen zur Lieferung bereit sind.",
-        "localeLabel": "Sprache",
-        "localeHint": "Steuert die Standardsprache für die eigenen Betriebsoberflächen des Anbieters, wenn Sprachunterstützung verfügbar ist.",
+        "localeLabel": "Verwaltungssprache",
+        "localeHint": "Legt die Standardsprache für die Betriebsoberflächen des Anbieters fest, wenn Sprachunterstützung verfügbar ist. Speiseinhalte, Menüprofil, Preise und Währung werden separat gesteuert.",
         "save": "Betriebseinstellungen speichern",
         "saving": "Speichert…",
         "saved": "Betriebseinstellungen gespeichert.",
@@ -1263,20 +1263,34 @@
         }
       },
       "menuProfile": {
-        "heading": "Menüprofil (Diagnose)",
+        "heading": "Markt, Währung und Menüprofil",
         "flagActive": "Aktiviert über Feature-Flag — nur Anzeige, noch keine Produktänderung.",
+        "statusInactive": "Das Menüprofil steuert noch keine Kategorien, Veröffentlichung oder Preise.",
+        "statusLabel": "Status",
+        "uiVsProfileExplanation": "Die UI-Sprache übersetzt die Oberfläche. Markt und Menüprofil steuern lokale Festwahl, Warmgerichte-Bank und Währung. Die vollständige Anbindung kommt in der nächsten G5-Phase.",
         "profileLabel": "Menüprofil",
         "sourceLabel": "Quelle",
         "marketLabel": "Markt",
         "localeLabel": "Locale",
-        "currencyLabel": "Standardwährung",
-        "readOnlyNote": "Das Menüprofil steuert in dieser Phase keine Kategorien, Veröffentlichung oder Bestellungen.",
+        "currencyLabel": "Währung",
+        "readOnlyNote": "Nur Anzeige. Speiseinhalte, Währung und Preise werden hier nicht geändert.",
         "invalidProfile": "Ungültiges Menüprofil in den Einstellungen: {message}",
         "sourceProviderSetting": "Anbietereinstellung",
         "sourceMarketDefault": "Marktstandard",
         "sourceFallbackNoMarket": "Fallback (Profil/Markt fehlt)",
         "sourceLegacyDisabled": "Legacy (deaktiviert)",
-        "sourceUnknown": "Unbekannt"
+        "sourceUnknown": "Unbekannt",
+        "marketNames": {
+          "NO": "Norwegen",
+          "SE": "Schweden",
+          "DK": "Dänemark",
+          "FI": "Finnland",
+          "DE": "Deutschland",
+          "FR": "Frankreich",
+          "ES": "Spanien",
+          "UK": "Vereinigtes Königreich",
+          "IT": "Italien"
+        }
       }
     },
     "banner": {

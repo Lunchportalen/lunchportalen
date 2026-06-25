@@ -1383,8 +1383,8 @@
         },
         "kitchenEmailHint": "Utilisé pour la base de production et les alertes cuisine.",
         "kitchenEmailLabel": "E-mail cuisine",
-        "localeHint": "Contrôle la langue par défaut des interfaces opérationnelles du fournisseur lorsque le support linguistique est disponible.",
-        "localeLabel": "Langue",
+        "localeHint": "Définit la langue par défaut des interfaces opérationnelles du fournisseur lorsque le support linguistique est disponible. Contenu des plats, profil menu, prix et devise sont gérés séparément.",
+        "localeLabel": "Langue d'administration",
         "locales": {
           "nb-NO": "Norvégien (bokmål)",
           "en-GB": "Anglais",
@@ -1440,20 +1440,34 @@
         "saving": "Enregistrement…"
       },
       "menuProfile": {
-        "heading": "Profil de menu (diagnostic)",
+        "heading": "Marché, devise et profil menu",
         "flagActive": "Activé via feature flag — affichage uniquement, pas encore de changement produit.",
+        "statusInactive": "Le profil menu ne pilote pas encore les catégories, la publication ou les prix.",
+        "statusLabel": "Statut",
+        "uiVsProfileExplanation": "La langue UI traduit l'interface. Le marché et le profil menu pilotent les choix fixes locaux, la banque de plats chauds et la devise. Le branchement complet viendra dans la prochaine phase G5.",
         "profileLabel": "Profil de menu",
         "sourceLabel": "Source",
         "marketLabel": "Marché",
         "localeLabel": "Locale",
-        "currencyLabel": "Devise par défaut",
-        "readOnlyNote": "Le profil de menu ne pilote pas les catégories, la publication ou les commandes dans cette phase.",
+        "currencyLabel": "Devise",
+        "readOnlyNote": "Affichage uniquement. Contenu des plats, devise et prix ne sont pas modifiés ici.",
         "invalidProfile": "Profil de menu invalide dans les paramètres : {message}",
         "sourceProviderSetting": "Paramètre fournisseur",
         "sourceMarketDefault": "Défaut marché",
         "sourceFallbackNoMarket": "Fallback (profil/marché manquant)",
         "sourceLegacyDisabled": "Legacy (désactivé)",
-        "sourceUnknown": "Inconnu"
+        "sourceUnknown": "Inconnu",
+        "marketNames": {
+          "NO": "Norvège",
+          "SE": "Suède",
+          "DK": "Danemark",
+          "FI": "Finlande",
+          "DE": "Allemagne",
+          "FR": "France",
+          "ES": "Espagne",
+          "UK": "Royaume-Uni",
+          "IT": "Italie"
+        }
       }
     },
     "tripletex": {
