@@ -4,6 +4,7 @@ import "server-only";
 import { getDefaultMenuProfileForMarket } from "@/lib/menu-profile/marketDefaults";
 import {
   isMenuProfileResolverEnabled,
+  LP_MENU_PROFILE_FIXED_CATEGORIES_ENV,
   LP_MENU_PROFILE_RESOLVER_ENV,
 } from "@/lib/menu-profile/featureFlag";
 import { getMenuProfile } from "@/lib/menu-profile/registry";
@@ -56,9 +57,12 @@ export type ProviderMenuProfileDiagnostic =
   | ProviderMenuProfileDiagnosticError
   | ProviderMenuProfileDiagnosticLegacy;
 
-/** Host env bag for LP_MENU_PROFILE_RESOLVER (server wiring only). */
+/** Host env bag for menu profile feature flags (server wiring only). */
 export function menuProfileResolverHostEnv(): Readonly<Record<string, string | undefined>> {
-  return { [LP_MENU_PROFILE_RESOLVER_ENV]: process.env.LP_MENU_PROFILE_RESOLVER };
+  return {
+    [LP_MENU_PROFILE_RESOLVER_ENV]: process.env.LP_MENU_PROFILE_RESOLVER,
+    [LP_MENU_PROFILE_FIXED_CATEGORIES_ENV]: process.env.LP_MENU_PROFILE_FIXED_CATEGORIES,
+  };
 }
 
 function inferLegacyProfile(row: ProviderSettingsMenuProfileRow) {

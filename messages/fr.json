@@ -395,6 +395,16 @@
         "banner": "L'espace de travail affiche la structure du profil menu. Le contenu du catalogue existant et les menus publiés ne sont pas modifiés dans cette phase.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Choix fixes du profil menu",
+        "description": "Affiche les choix fixes du profil menu. Le catalogue et les menus publiés ne changent pas avant un cutover ultérieur.",
+        "activeInCurrentCatalog": "Actif dans le catalogue actuel",
+        "comingStructureNotOrderActive": "Structure à venir — pas encore active dans les commandes",
+        "orderRuntimeEnabled": "Runtime commandes activé",
+        "presentationOnly": "Présentation uniquement",
+        "packagesLabel": "Forfaits",
+        "profileCategoryLabel": "Catégorie profil"
+      },
       "catalogModel": {
         "title": "Choix fixes",
         "lead": "Ce sont les options fixes de votre prestataire. Le plan hebdomadaire les utilise lorsque vous publiez le déjeuner pour des jours précis.",

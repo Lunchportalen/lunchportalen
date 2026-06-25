@@ -395,6 +395,16 @@
         "banner": "Työtila näyttää menukprofilin rakenteen. Olemassa oleva katalogisisältö ja julkaistut menut eivät muutu tässä vaiheessa.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Menukprofilin kiinteät valinnat",
+        "description": "Näyttää menukprofilin kiinteät valinnat. Katalogia ja julkaistuja menuja ei muuteta ennen myöhempää cutoveria.",
+        "activeInCurrentCatalog": "Aktiivinen nykyisessä katalogissa",
+        "comingStructureNotOrderActive": "Tuleva rakenne — ei vielä aktiivinen tilauksissa",
+        "orderRuntimeEnabled": "Tilaus-runtime aktiivinen",
+        "presentationOnly": "Vain esittely",
+        "packagesLabel": "Paketit",
+        "profileCategoryLabel": "Profilikategoria"
+      },
       "catalogModel": {
         "title": "Kiinteät valinnat",
         "lead": "Nämä ovat toimittajasi kiinteät vaihtoehdot. Viikkosuunnitelma käyttää niitä, kun julkaiset lounaan tietyille päiville.",

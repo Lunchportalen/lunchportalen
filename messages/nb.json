@@ -1622,6 +1622,16 @@
         "banner": "Workspace viser menyprofilens struktur. Eksisterende kataloginnhold og publiserte menyer endres ikke i denne fasen.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Menyprofilens faste valg",
+        "description": "Dette viser menyprofilens faste valg. Katalogen og publiserte menyer endres ikke før senere cutover.",
+        "activeInCurrentCatalog": "Aktiv i dagens katalog",
+        "comingStructureNotOrderActive": "Kommende struktur — ikke aktiv i ordre ennå",
+        "orderRuntimeEnabled": "Ordre-runtime aktiv",
+        "presentationOnly": "Kun presentasjon",
+        "packagesLabel": "Pakker",
+        "profileCategoryLabel": "Profilkategori"
+      },
       "catalogModel": {
         "title": "Faste valg",
         "lead": "Dette er leverandørens faste alternativer. Ukeplanen bruker disse når du publiserer lunsj for konkrete dager.",

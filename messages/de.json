@@ -395,6 +395,16 @@
         "banner": "Der Arbeitsbereich zeigt die Struktur des Menüprofils. Bestehende Kataloginhalte und veröffentlichte Menüs werden in dieser Phase nicht geändert.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Feste Auswahl des Menüprofils",
+        "description": "Zeigt die festen Auswahlen des Menüprofils. Katalog und veröffentlichte Menüs werden erst bei einem späteren Cutover geändert.",
+        "activeInCurrentCatalog": "Aktiv im heutigen Katalog",
+        "comingStructureNotOrderActive": "Kommende Struktur — noch nicht in Bestellungen aktiv",
+        "orderRuntimeEnabled": "Bestell-Runtime aktiv",
+        "presentationOnly": "Nur Präsentation",
+        "packagesLabel": "Pakete",
+        "profileCategoryLabel": "Profilkategorie"
+      },
       "catalogModel": {
         "title": "Feste Auswahl",
         "lead": "Das sind die festen Optionen Ihres Anbieters. Der Wochenplan nutzt sie, wenn Sie das Mittagessen für konkrete Tage veröffentlichen.",

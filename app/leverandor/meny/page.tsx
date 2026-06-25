@@ -12,6 +12,7 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { buildProviderMenuWorkspacePresentation } from "@/lib/provider-menu/providerMenuProfilePresentation";
+import { buildProviderMenuFixedCategoryPresentation } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
 import { getMarketDefaults } from "@/lib/menu-profile/marketDefaults";
 import {
   loadAndResolveProviderMenuProfile,
@@ -42,11 +43,19 @@ export default async function LeverandorMenyPage() {
     menuProfileResolver,
     menuProfileRow?.defaultCurrency ?? getMarketDefaults("NO").defaultCurrency,
   );
+  const fixedCategoryPresentation = buildProviderMenuFixedCategoryPresentation(
+    menuProfileResolver,
+    menuProfileRow?.defaultCurrency ?? getMarketDefaults("NO").defaultCurrency,
+    menuProfileEnv,
+  );
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
       {canEdit ? (
-        <ProviderMenuBuilder workspacePresentation={workspacePresentation} />
+        <ProviderMenuBuilder
+          workspacePresentation={workspacePresentation}
+          fixedCategoryPresentation={fixedCategoryPresentation}
+        />
       ) : (
         <section className="ds-card ds-provider-meny-card">
           <h2 className="ds-h3">{t("readOnlyTitle")}</h2>
