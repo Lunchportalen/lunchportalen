@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { LogoutClientButton } from "@/components/auth/LogoutClient";
+import LocaleSwitcher from "@/components/nav/LocaleSwitcher";
 import type { ProviderRole } from "@/lib/providers/types";
 
 type IconName = "grid" | "users" | "orders" | "document" | "pin" | "settings" | "billing" | "logout";
@@ -301,6 +302,9 @@ export default function ProviderNav({
           userRole={userRole}
           roleLabel={roleLabel}
         />
+        <div className="ds-provider-nav__locale-wrap">
+          <LocaleSwitcher persistProfile className="ds-provider-nav__locale" />
+        </div>
         <SidebarNav
           pathname={pathname}
           items={navItems}
@@ -339,6 +343,9 @@ export default function ProviderNav({
               userRole={userRole}
               roleLabel={roleLabel}
             />
+            <div className="ds-provider-nav__locale-wrap">
+              <LocaleSwitcher persistProfile className="ds-provider-nav__locale" />
+            </div>
             <SidebarNav
               pathname={pathname}
               items={navItems}

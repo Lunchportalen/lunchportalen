@@ -27,6 +27,19 @@
   align-self: flex-start;
 }
 
+.ds-provider-nav__locale-wrap {
+  padding: 0 12px 14px;
+}
+
+.ds-provider-nav__locale {
+  width: 100%;
+}
+
+.ds-provider-nav__locale .ds-locale-switcher__select {
+  width: 100%;
+  min-height: 44px;
+}
+
 .ds-provider-quick-grid {
   display: grid;
   gap: clamp(12px, 2vw, 18px);

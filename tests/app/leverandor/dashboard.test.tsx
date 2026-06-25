@@ -19,6 +19,10 @@ vi.mock("@/components/auth/LogoutClient", () => ({
   ),
 }));
 
+vi.mock("@/components/nav/LocaleSwitcher", () => ({
+  default: () => <div data-testid="locale-switcher" />,
+}));
+
 describe("LeverandorDashboardPage i18n", () => {
   test("dashboard page uses getTranslations for provider.dashboard", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/page.tsx"), "utf8");
@@ -67,6 +71,12 @@ describe("ProviderNav i18n", () => {
     expect(source).toContain('useTranslations("provider.nav")');
     expect(source).toContain("labelKey");
     expect(source).not.toContain('label: "Ordrer"');
+  });
+
+  test("ProviderNav wires LocaleSwitcher in provider shell", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain("<LocaleSwitcher");
+    expect(source).toContain("persistProfile");
   });
 
   test("ProviderNav aria-labels use i18n keys not hardcoded Norwegian", () => {
