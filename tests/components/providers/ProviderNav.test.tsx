@@ -19,6 +19,10 @@ vi.mock("@/components/auth/LogoutClient", () => ({
   ),
 }));
 
+vi.mock("@/components/nav/LocaleSwitcher", () => ({
+  default: () => <div data-testid="locale-switcher" />,
+}));
+
 describe("ProviderNav aria-labels", () => {
   test("sidebar nav aria-label uses sidebarLabel translation key", async () => {
     const messages = await loadMessagesForLocale("en");
@@ -55,5 +59,50 @@ describe("ProviderNav aria-labels", () => {
     const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
     expect(source).not.toMatch(/aria-label="Leverandør/);
     expect(source).not.toMatch(/aria-label="Hovednavigasjon/);
+  });
+
+  test.each([
+    { locale: "de", orders: "Bestellungen", roleKitchen: "Küche" },
+    { locale: "fr", orders: "Commandes", roleKitchen: "Cuisine" },
+    { locale: "es", orders: "Pedidos", roleKitchen: "Cocina" },
+    { locale: "it", orders: "Ordini", roleKitchen: "Cucina" },
+    { locale: "fi", orders: "Tilaukset", roleKitchen: "Keittiö" },
+  ] as const)("renders translated kitchen nav labels for $locale", async ({ locale, orders, roleKitchen }) => {
+    const messages = await loadMessagesForLocale(locale);
+    const { default: ProviderNav } = await import("@/components/providers/ProviderNav");
+
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <ProviderNav
+          providerName="Test Provider"
+          logoUrl={null}
+          userRole="provider_kitchen"
+          kitchenOnly
+        />
+      </NextIntlClientProvider>,
+    );
+
+    expect(html).toContain(orders);
+    expect(html).toContain(roleKitchen);
+    expect(html).not.toContain(">Ordrer<");
+    expect(html).not.toContain(">Kjøkken<");
+  });
+
+  test("provider shell includes locale switcher for kitchen-only members", async () => {
+    const messages = await loadMessagesForLocale("en");
+    const { default: ProviderNav } = await import("@/components/providers/ProviderNav");
+
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ProviderNav
+          providerName="Test Provider"
+          logoUrl={null}
+          userRole="provider_kitchen"
+          kitchenOnly
+        />
+      </NextIntlClientProvider>,
+    );
+
+    expect(html).toContain('data-testid="locale-switcher"');
   });
 });

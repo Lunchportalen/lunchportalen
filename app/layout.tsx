@@ -71,7 +71,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-full antialiased">
         {process.env.NODE_ENV !== "production" ? <DevOverflowGuard /> : null}
         <AttributionCapture />
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider key={locale} locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
       </body>

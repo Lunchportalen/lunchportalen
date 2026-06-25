@@ -3,7 +3,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from "next-intl/plugin";
 import { resolveNextDistDir } from "./lib/runtime/nextOutput";
 
-const withNextIntl = createNextIntlPlugin();
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 /** Keep ORT native binaries out of Vercel serverless traces (250 MB cap). */
 const ONNX_TRACE_EXCLUDES = [
