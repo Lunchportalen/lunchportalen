@@ -58,8 +58,14 @@ import {
 } from "@/lib/providers/providerMenuActionErrors";
 import type { ProviderMenuPricePreviewDisplayPayload } from "@/lib/providers/providerMenuPricePreviewDisplay";
 import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
+import type { ProviderMenuWorkspacePresentationProps } from "@/lib/provider-menu/providerMenuProfilePresentation";
+import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
 
 import "@/app/styles/ds/provider-menu-editor.css";
+
+type ProviderMenuBuilderProps = {
+  workspacePresentation?: ProviderMenuWorkspacePresentationProps;
+};
 
 type MenuWeekResponse = {
   ok: boolean;
@@ -153,8 +159,11 @@ function translateNextStepAction(
   return translate(`workspace.nextStep.${action.key}`);
 }
 
-export default function ProviderMenuBuilder() {
+export default function ProviderMenuBuilder({
+  workspacePresentation = { active: false },
+}: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
+  const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
@@ -528,6 +537,10 @@ export default function ProviderMenuBuilder() {
         onWorkspaceViewChange={setWorkspaceView}
       />
 
+      {profilePresentation && workspaceView === "week" ? (
+        <ProviderMenuProfilePresentationBanner presentation={profilePresentation} />
+      ) : null}
+
       {workspaceView === "week" ? (
         <ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />
       ) : null}
@@ -634,7 +647,12 @@ export default function ProviderMenuBuilder() {
               </div>
             </>
           ) : (
-            <ProviderMenuCatalogView tier={tier} catalog={catalog} onCatalogSaved={setCatalog} />
+            <ProviderMenuCatalogView
+              tier={tier}
+              catalog={catalog}
+              onCatalogSaved={setCatalog}
+              workspacePresentation={workspacePresentation}
+            />
           )}
         </div>
       </div>

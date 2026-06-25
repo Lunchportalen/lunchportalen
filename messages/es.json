@@ -390,6 +390,11 @@
           "saved": "Catálogo guardado."
         }
       },
+      "workspaceProfile": {
+        "badge": "Perfil de menú (presentación)",
+        "banner": "El espacio de trabajo muestra la estructura del perfil de menú. El contenido del catálogo existente y los menús publicados no cambian en esta fase.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Opciones fijas",
         "lead": "Estas son las opciones fijas de tu proveedor. El plan semanal las usa cuando publicas el almuerzo para días concretos.",

@@ -390,6 +390,16 @@
           "saved": "Katalog gemt."
         }
       },
+      "workspaceProfile": {
+        "badge": "Menukprofil (præsentation)",
+        "banner": "Arbejdsområdet viser menuprofilens struktur. Eksisterende katalogindhold og publicerede menuer ændres ikke i denne fase.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
+      "workspaceProfile": {
+        "badge": "Menukprofil (præsentation)",
+        "banner": "Arbejdsområdet viser menuprofilens struktur. Eksisterende katalogindhold og publicerede menuer ændres ikke i denne fase.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Faste valg",
         "lead": "Dette er leverandørens faste alternativer. Ugeplanen bruger dem, når du publicerer frokost for konkrete dage.",

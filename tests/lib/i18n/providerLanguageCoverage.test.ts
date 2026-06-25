@@ -50,6 +50,9 @@ const MENU_PROFILE_PATHS = [
   "provider.settings.menuProfile.sourceUnknown",
   "provider.settings.menuProfile.marketNames.NO",
   "provider.settings.menuProfile.marketNames.IT",
+  "provider.menu.workspaceProfile.badge",
+  "provider.menu.workspaceProfile.banner",
+  "provider.menu.workspaceProfile.metaLine",
 ] as const;
 
 function collectLeafPaths(node: unknown, prefix = ""): string[] {

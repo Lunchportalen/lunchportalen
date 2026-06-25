@@ -1628,6 +1628,11 @@
           "saved": "Catalogo salvato."
         }
       },
+      "workspaceProfile": {
+        "badge": "Profilo menu (presentazione)",
+        "banner": "L'area di lavoro mostra la struttura del profilo menu. I contenuti del catalogo esistenti e i menu pubblicati non vengono modificati in questa fase.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Scelte fisse",
         "lead": "Queste sono le scelte fisse del tuo fornitore. La pianificazione settimanale le utilizza quando pubblichi il pranzo per giorni specifici.",

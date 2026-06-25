@@ -1617,6 +1617,11 @@
           "saved": "Katalog lagret."
         }
       },
+      "workspaceProfile": {
+        "badge": "Menyprofil (presentasjon)",
+        "banner": "Workspace viser menyprofilens struktur. Eksisterende kataloginnhold og publiserte menyer endres ikke i denne fasen.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Faste valg",
         "lead": "Dette er leverandørens faste alternativer. Ukeplanen bruker disse når du publiserer lunsj for konkrete dager.",

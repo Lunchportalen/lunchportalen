@@ -390,6 +390,11 @@
           "saved": "Catalogue enregistré."
         }
       },
+      "workspaceProfile": {
+        "badge": "Profil menu (présentation)",
+        "banner": "L'espace de travail affiche la structure du profil menu. Le contenu du catalogue existant et les menus publiés ne sont pas modifiés dans cette phase.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Choix fixes",
         "lead": "Ce sont les options fixes de votre prestataire. Le plan hebdomadaire les utilise lorsque vous publiez le déjeuner pour des jours précis.",
