@@ -19,12 +19,10 @@ const NORWEGIAN_LEAKAGE = [
   "Innstillinger",
   "Ordre",
   "Faktura",
-  "Områder",
   "MVA",
   "oppgjør",
   "provisjon",
   "Avtale",
-  "Meny",
   "Leveringsadresse ikke satt",
   "Retten",
 ];

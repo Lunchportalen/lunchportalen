@@ -1197,9 +1197,14 @@
         "saved": "Toiminta-asetukset tallennettu.",
         "locales": {
           "nb-NO": "Norja (bokmål)",
-          "en-GB": "English",
+          "en-GB": "Englanti",
           "sv-SE": "Ruotsi",
-          "da-DK": "Tanska"
+          "da-DK": "Tanska",
+          "fi-FI": "Suomi",
+          "de-DE": "Saksa",
+          "fr-FR": "Ranska",
+          "es-ES": "Espanja",
+          "it-IT": "Italia"
         },
         "errors": {
           "notAuthenticated": "Et ole kirjautunut sisään.",
@@ -1255,6 +1260,22 @@
           "saveFailed": "Väriä ei voitu tallentaa.",
           "unknown": "Odottamaton virhe tallennuksessa."
         }
+      },
+      "menuProfile": {
+        "heading": "Valikkoprofiili (diagnostiikka)",
+        "flagActive": "Käytössä feature flagin kautta — vain näyttö, ei tuotemuutosta vielä.",
+        "profileLabel": "Valikkoprofiili",
+        "sourceLabel": "Lähde",
+        "marketLabel": "Markkina",
+        "localeLabel": "Locale",
+        "currencyLabel": "Oletusvaluutta",
+        "readOnlyNote": "Valikkoprofiili ei ohjaa kategorioita, julkaisua tai tilauksia tässä vaiheessa.",
+        "invalidProfile": "Virheellinen valikkoprofiili asetuksissa: {message}",
+        "sourceProviderSetting": "Toimittaja-asetus",
+        "sourceMarketDefault": "Markkinan oletus",
+        "sourceFallbackNoMarket": "Fallback (profiili/markkina puuttuu)",
+        "sourceLegacyDisabled": "Legacy (poistettu käytöstä)",
+        "sourceUnknown": "Tuntematon"
       }
     },
     "banner": {

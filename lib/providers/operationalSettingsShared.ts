@@ -29,7 +29,14 @@ export const PROVIDER_LOCALE_OPTIONS: ProviderLocaleOption[] = [
   { value: "en-GB", label: "English" },
   { value: "sv-SE", label: "Svenska" },
   { value: "da-DK", label: "Dansk" },
+  { value: "fi-FI", label: "Suomi" },
+  { value: "de-DE", label: "Deutsch" },
+  { value: "fr-FR", label: "Français" },
+  { value: "es-ES", label: "Español" },
+  { value: "it-IT", label: "Italiano" },
 ];
+
+export const PROVIDER_LOCALE_VALUES = PROVIDER_LOCALE_OPTIONS.map((o) => o.value);
 
 export const DEFAULT_PROVIDER_LOCALE = "nb-NO";
 

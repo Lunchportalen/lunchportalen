@@ -5,6 +5,8 @@ import {
   DEFAULT_PROVIDER_LOCALE,
   isSupportedProviderLocale,
   normalizeOperationalEmail,
+  PROVIDER_LOCALE_OPTIONS,
+  PROVIDER_LOCALE_VALUES,
 } from "@/lib/providers/operationalSettingsShared";
 import { loadMessagesForLocale } from "@/lib/i18n/messages";
 import { resolveProviderNotificationRecipients } from "@/lib/providers/providerNotificationRecipients";
@@ -39,9 +41,17 @@ describe("normalizeOperationalEmail", () => {
 });
 
 describe("isSupportedProviderLocale", () => {
+  it("godtar alle ni provider operational locales", () => {
+    for (const locale of PROVIDER_LOCALE_VALUES) {
+      expect(isSupportedProviderLocale(locale)).toBe(true);
+    }
+    expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(9);
+  });
+
   it("godtar kjente locales", () => {
     expect(isSupportedProviderLocale("nb-NO")).toBe(true);
     expect(isSupportedProviderLocale("en-GB")).toBe(true);
+    expect(isSupportedProviderLocale("it-IT")).toBe(true);
   });
 
   it("avviser ukjente locales", () => {

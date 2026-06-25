@@ -799,7 +799,12 @@
           "nb-NO": "Norvegese (Bokmål)",
           "en-GB": "English",
           "sv-SE": "Svedese",
-          "da-DK": "Danese"
+          "da-DK": "Danese",
+          "fi-FI": "Finlandese",
+          "de-DE": "Tedesco",
+          "fr-FR": "Francese",
+          "es-ES": "Spagnolo",
+          "it-IT": "Italiano"
         },
         "errors": {
           "notAuthenticated": "Accesso non eseguito",

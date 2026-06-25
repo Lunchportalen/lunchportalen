@@ -735,7 +735,7 @@
         "operationsIntro": "Enter the email addresses that should receive orders, kitchen lists and delivery notifications for this provider. These settings apply only to this catering company.",
         "operationsNote": "The catering company must enter the email addresses that should receive orders, kitchen lists and delivery notifications. Lunchportalen does not send the provider's operational emails to the platform by default — missing email must be filled in here.",
         "accountingSection": "Accounting",
-        "accountingIntro": "Connect Tripletex for automatic invoicing and payment status.",
+        "accountingIntro": "Connect Tripletex for automatic invoicing and payment status via the Norwegian accounting integration. This is not a global accounting standard.",
         "tripletexSetup": "Tripletex setup"
       },
       "menuProfile": {
@@ -788,7 +788,12 @@
           "nb-NO": "Norwegian (bokmål)",
           "en-GB": "English",
           "sv-SE": "Swedish",
-          "da-DK": "Danish"
+          "da-DK": "Danish",
+          "fi-FI": "Finnish",
+          "de-DE": "German",
+          "fr-FR": "French",
+          "es-ES": "Spanish",
+          "it-IT": "Italian"
         },
         "errors": {
           "notAuthenticated": "Not signed in.",
