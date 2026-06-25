@@ -410,6 +410,28 @@
         "packagesLabel": "Pakker",
         "profileCategoryLabel": "Profilkategori"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Varmretbank for menuprofil",
+        "description": "Dette er forslag baseret på valgt menuprofil. Forslagene indsættes ikke i katalog, ugeplan eller publicering før senere cutover.",
+        "previewOnly": "Kun forslag",
+        "notPublished": "Ikke aktiv i publicering",
+        "notVisibleToEmployees": "Ikke synlig for medarbejdere",
+        "suggestedForProfile": "Forslag til profil",
+        "suggestedTiers": "Pakkepasser",
+        "allergensLabel": "Foreslåede allergener",
+        "tagsLabel": "Foreslåede tags",
+        "weekdayLabel": "Ugedagsforslag",
+        "noItems": "Ingen varmretforslag for denne profil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Forslaget er ikke koblet til publicering eller ordrer.",
+        "weekdays": {
+          "monday": "Mandag",
+          "tuesday": "Tirsdag",
+          "wednesday": "Onsdag",
+          "thursday": "Torsdag",
+          "friday": "Fredag"
+        }
+      },
       "catalogModel": {
         "title": "Faste valg",
         "lead": "Dette er leverandørens faste alternativer. Ugeplanen bruger dem, når du publicerer frokost for konkrete dage.",

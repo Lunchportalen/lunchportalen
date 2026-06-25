@@ -405,6 +405,28 @@
         "packagesLabel": "Paquetes",
         "profileCategoryLabel": "Categoría de perfil"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Banco de platos calientes para perfil de menú",
+        "description": "Estas son sugerencias basadas en el perfil de menú seleccionado. Las sugerencias no se añaden al catálogo, plan semanal o publicación hasta un cutover posterior.",
+        "previewOnly": "Solo sugerencia",
+        "notPublished": "No activo en publicación",
+        "notVisibleToEmployees": "No visible para empleados",
+        "suggestedForProfile": "Sugerencias para perfil",
+        "suggestedTiers": "Ajuste de paquete",
+        "allergensLabel": "Alérgenos sugeridos",
+        "tagsLabel": "Etiquetas sugeridas",
+        "weekdayLabel": "Sugerencia de día",
+        "noItems": "No hay sugerencias de plato caliente para este perfil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "La sugerencia no está conectada a publicación ni pedidos.",
+        "weekdays": {
+          "monday": "Lunes",
+          "tuesday": "Martes",
+          "wednesday": "Miércoles",
+          "thursday": "Jueves",
+          "friday": "Viernes"
+        }
+      },
       "catalogModel": {
         "title": "Opciones fijas",
         "lead": "Estas son las opciones fijas de tu proveedor. El plan semanal las usa cuando publicas el almuerzo para días concretos.",

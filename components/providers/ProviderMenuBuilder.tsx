@@ -60,14 +60,17 @@ import type { ProviderMenuPricePreviewDisplayPayload } from "@/lib/providers/pro
 import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
 import type { ProviderMenuWorkspacePresentationProps } from "@/lib/provider-menu/providerMenuProfilePresentation";
 import type { MenuProfileFixedCategoryPresentationProps } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
+import type { MenuProfileWarmDishPreviewPresentationProps } from "@/lib/provider-menu/providerMenuProfileWarmDishPreview";
 import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
 import ProviderMenuProfileFixedCategoriesPanel from "@/components/providers/ProviderMenuProfileFixedCategoriesPanel";
+import ProviderMenuProfileWarmDishPreviewPanel from "@/components/providers/ProviderMenuProfileWarmDishPreviewPanel";
 
 import "@/app/styles/ds/provider-menu-editor.css";
 
 type ProviderMenuBuilderProps = {
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
   fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
+  warmDishPreviewPresentation?: MenuProfileWarmDishPreviewPresentationProps;
 };
 
 type MenuWeekResponse = {
@@ -165,10 +168,12 @@ function translateNextStepAction(
 export default function ProviderMenuBuilder({
   workspacePresentation = { active: false },
   fixedCategoryPresentation = { active: false },
+  warmDishPreviewPresentation = { active: false },
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
+  const warmDishPreview = warmDishPreviewPresentation.active ? warmDishPreviewPresentation : null;
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
@@ -548,6 +553,10 @@ export default function ProviderMenuBuilder({
 
       {fixedCategories && workspaceView === "week" ? (
         <ProviderMenuProfileFixedCategoriesPanel presentation={fixedCategories} />
+      ) : null}
+
+      {warmDishPreview && workspaceView === "week" ? (
+        <ProviderMenuProfileWarmDishPreviewPanel presentation={warmDishPreview} />
       ) : null}
 
       {workspaceView === "week" ? (

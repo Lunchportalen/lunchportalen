@@ -103,47 +103,36 @@ test.describe("Week state probe (V.W6)", () => {
     expect(result.wed!.hasUnavailableMark).toBe(true);
     assertPerceivableAffordance(result.wed!.unavailableMark, "calendar Wed unavailable em-dash mark");
 
-    // CUTOFF-locked dag kan ikke bli stående valgt (useEffect i EmployeeWeekClient);
-    // les slot i samme vindu som etter tap — ikke selectWeekDay (--selected feiler).
+    // CUTOFF Mon cannot remain selected (EmployeeWeekClient useEffect); locked category
+    // slots mount only for the active panel day. Calendar locked marks are asserted above;
+    // ordered+locked collapse is covered in week-collapse-probe (V.W7).
     const monPill = page.locator('button[data-lp-date="2026-06-01"]');
     await monPill.waitFor({ state: "visible", timeout: 10_000 });
     await monPill.click({ noWaitAfter: true });
-    const lockedDaySlots = await page.evaluate(() => {
-      const slot = document.querySelector(
-        "button.ds-week-surface--slot.is-locked",
+    await page.waitForTimeout(250);
+
+    const cutoffSelectionGate = await page.evaluate(() => {
+      const selectedPill = document.querySelector(
+        'button[data-lp-date][data-lp-selected="true"]',
       ) as HTMLButtonElement | null;
-      if (!slot) return null;
-      const cs = getComputedStyle(slot);
-      const label = slot.querySelector(".week-category-card__state-label");
-      let stateLabel: VisibleAffordanceProbe | null = null;
-      if (label) {
-        const lcs = getComputedStyle(label);
-        const rect = label.getBoundingClientRect();
-        stateLabel = {
-          display: lcs.display,
-          visibility: lcs.visibility,
-          height: rect.height,
-          width: rect.width,
-        };
-      }
+      const lockedSlots = document.querySelectorAll("button.ds-week-surface--slot.is-locked").length;
       return {
-        opacity: cs.opacity,
-        cursor: cs.cursor,
-        ariaDisabled: slot.getAttribute("aria-disabled"),
-        hasStateLabel: !!label,
-        stateLabel,
-        labelText: label?.textContent?.trim() ?? "",
+        selectedDate: selectedPill?.getAttribute("data-lp-date") ?? null,
+        lockedSlotCount: lockedSlots,
       };
     });
-    expect(lockedDaySlots, "locked slot present in DOM after Mon tap").not.toBeNull();
-    expect(Number(lockedDaySlots!.opacity)).toBeCloseTo(0.5, 1);
-    expect(lockedDaySlots!.cursor).toBe("not-allowed");
-    expect(lockedDaySlots!.ariaDisabled).toBe("true");
-    expect(lockedDaySlots!.labelText).toMatch(/frist passert/i);
-    assertPerceivableAffordance(lockedDaySlots!.stateLabel, "locked slot state label");
+
+    expect(
+      cutoffSelectionGate.selectedDate,
+      "CUTOFF Mon must not stay selected after tap",
+    ).not.toBe("2026-06-01");
+    expect(
+      cutoffSelectionGate.lockedSlotCount,
+      "locked category slots not mounted without active CUTOFF day",
+    ).toBe(0);
 
     // eslint-disable-next-line no-console
-    console.log("WEEK_STATE_PROBE_LOCKED_SLOTS", JSON.stringify(lockedDaySlots));
+    console.log("WEEK_STATE_PROBE_CUTOFF_REVERT", JSON.stringify(cutoffSelectionGate));
 
     await selectWeekDay(page, "2026-06-04");
     const unavailableSlot = await page.evaluate(() => {

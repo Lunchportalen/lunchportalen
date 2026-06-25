@@ -405,6 +405,28 @@
         "packagesLabel": "Pakete",
         "profileCategoryLabel": "Profilkategorie"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Warmgericht-Bank für Menüprofil",
+        "description": "Dies sind Vorschläge basierend auf dem gewählten Menüprofil. Vorschläge werden erst bei späterem Cutover in Katalog, Wochenplan oder Veröffentlichung übernommen.",
+        "previewOnly": "Nur Vorschlag",
+        "notPublished": "Nicht aktiv in der Veröffentlichung",
+        "notVisibleToEmployees": "Für Mitarbeitende nicht sichtbar",
+        "suggestedForProfile": "Vorschläge für Profil",
+        "suggestedTiers": "Paketpassung",
+        "allergensLabel": "Vorgeschlagene Allergene",
+        "tagsLabel": "Vorgeschlagene Tags",
+        "weekdayLabel": "Wochentagsvorschlag",
+        "noItems": "Keine Warmgericht-Vorschläge für dieses Profil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Der Vorschlag ist nicht mit Veröffentlichung oder Bestellungen verbunden.",
+        "weekdays": {
+          "monday": "Montag",
+          "tuesday": "Dienstag",
+          "wednesday": "Mittwoch",
+          "thursday": "Donnerstag",
+          "friday": "Freitag"
+        }
+      },
       "catalogModel": {
         "title": "Feste Auswahl",
         "lead": "Das sind die festen Optionen Ihres Anbieters. Der Wochenplan nutzt sie, wenn Sie das Mittagessen für konkrete Tage veröffentlichen.",
