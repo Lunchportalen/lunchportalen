@@ -7,7 +7,7 @@ const EXPECTED_PROFILE_LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es"
 
 const MIGRATION = resolve(
   process.cwd(),
-  "supabase/migrations/20260725120000_profiles_preferred_locale_nine_locales.sql",
+  "supabase/migrations/20260726120000_profiles_preferred_locale_nine_locales.sql",
 );
 
 describe("profiles.preferred_locale migration", () => {

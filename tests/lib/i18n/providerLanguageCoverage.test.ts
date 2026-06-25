@@ -100,7 +100,7 @@ describe("provider language coverage (pre-merge PR #343)", () => {
 
   it("profiles.preferred_locale migration includes all 9 app locales", () => {
     const sql = readFileSync(
-      join(process.cwd(), "supabase/migrations/20260725120000_profiles_preferred_locale_nine_locales.sql"),
+      join(process.cwd(), "supabase/migrations/20260726120000_profiles_preferred_locale_nine_locales.sql"),
       "utf8",
     );
     for (const locale of APP_LOCALES) {
