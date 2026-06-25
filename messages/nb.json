@@ -738,6 +738,22 @@
         "accountingIntro": "Koble Tripletex for automatisk fakturering og betalingsstatus.",
         "tripletexSetup": "Tripletex-oppsett"
       },
+      "menuProfile": {
+        "heading": "Menyprofil (diagnostikk)",
+        "flagActive": "Aktivert via feature flag — kun visning, ingen produktendring ennå.",
+        "profileLabel": "Menyprofil",
+        "sourceLabel": "Kilde",
+        "marketLabel": "Marked",
+        "localeLabel": "Locale",
+        "currencyLabel": "Standardvaluta",
+        "readOnlyNote": "Menyprofilen styrer ikke kategorier, publisering eller bestillinger i denne fasen.",
+        "invalidProfile": "Ugyldig menyprofil i innstillinger: {message}",
+        "sourceProviderSetting": "Provider-innstilling",
+        "sourceMarketDefault": "Markedsstandard",
+        "sourceFallbackNoMarket": "Fallback (mangler profil/marked)",
+        "sourceLegacyDisabled": "Legacy (deaktivert)",
+        "sourceUnknown": "Ukjent"
+      },
       "profile": {
         "leadWithProvider": "Profil for {providerName}",
         "nameLabel": "Navn",

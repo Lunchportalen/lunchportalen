@@ -9,6 +9,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import ProviderMenuProfileDiagnostic from "@/components/providers/ProviderMenuProfileDiagnostic";
 import ProviderBrandColor from "@/components/providers/ProviderBrandColor";
 import ProviderLogoUploader from "@/components/providers/ProviderLogoUploader";
 import ProviderOperationsForm from "@/components/providers/ProviderOperationsForm";
@@ -17,6 +18,7 @@ import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { loadProviderOperationalSettings } from "@/lib/providers/loadProviderOperationalSettings";
+import { loadProviderMenuProfileDiagnostic } from "@/lib/providers/providerMenuProfileDiagnostic";
 
 export default async function LeverandorInnstillingerPage() {
   const auth = await getAuthContext();
@@ -30,6 +32,7 @@ export default async function LeverandorInnstillingerPage() {
 
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
   const operationalSettings = canEdit ? await loadProviderOperationalSettings(provider.id) : null;
+  const menuProfileDiagnostic = canEdit ? await loadProviderMenuProfileDiagnostic(provider.id) : null;
   if (!canEdit) {
     return (
       <div className="ds-container">
@@ -70,6 +73,11 @@ export default async function LeverandorInnstillingerPage() {
           <p className="ds-body">{t("operationsIntro")}</p>
           <p className="ds-body">{t("operationsNote")}</p>
           <ProviderOperationsForm providerId={provider.id} initial={operationalSettings} />
+        </section>
+      ) : null}
+      {menuProfileDiagnostic ? (
+        <section className="ds-section">
+          <ProviderMenuProfileDiagnostic diagnostic={menuProfileDiagnostic} />
         </section>
       ) : null}
       <section className="ds-section">

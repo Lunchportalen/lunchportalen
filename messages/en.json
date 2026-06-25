@@ -738,6 +738,22 @@
         "accountingIntro": "Connect Tripletex for automatic invoicing and payment status.",
         "tripletexSetup": "Tripletex setup"
       },
+      "menuProfile": {
+        "heading": "Menu profile (diagnostics)",
+        "flagActive": "Enabled via feature flag — display only, no product change yet.",
+        "profileLabel": "Menu profile",
+        "sourceLabel": "Source",
+        "marketLabel": "Market",
+        "localeLabel": "Locale",
+        "currencyLabel": "Default currency",
+        "readOnlyNote": "Menu profile does not drive categories, publishing or orders in this phase.",
+        "invalidProfile": "Invalid menu profile in settings: {message}",
+        "sourceProviderSetting": "Provider setting",
+        "sourceMarketDefault": "Market default",
+        "sourceFallbackNoMarket": "Fallback (missing profile/market)",
+        "sourceLegacyDisabled": "Legacy (disabled)",
+        "sourceUnknown": "Unknown"
+      },
       "profile": {
         "leadWithProvider": "Profile for {providerName}",
         "nameLabel": "Name",
