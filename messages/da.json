@@ -1383,8 +1383,8 @@
         },
         "kitchenEmailHint": "Bruges til produktionsgrundlag og køkkenvarsler.",
         "kitchenEmailLabel": "Køkken-e-mail",
-        "localeHint": "Styrer standardsprog for leverandørens egne driftsflader, når sprogunderstøttelse er tilgængelig.",
-        "localeLabel": "Sprog",
+        "localeLabel": "Administrationssprog",
+        "localeHint": "Styrer standardsprog for leverandørens driftsflader, når sprogunderstøttelse er tilgængelig. Madindhold, menuprofil, priser og valuta styres separat.",
         "locales": {
           "nb-NO": "Norsk (bokmål)",
           "en-GB": "English",
@@ -1440,20 +1440,34 @@
         "saving": "Gemmer…"
       },
       "menuProfile": {
-        "heading": "Menuprofil (diagnosticering)",
+        "heading": "Marked, valuta og menuprofil",
         "flagActive": "Aktiveret via feature flag — kun visning, ingen produktændring endnu.",
+        "statusInactive": "Menuprofilen styrer ikke kategorier, udgivelse eller priser endnu.",
+        "statusLabel": "Status",
+        "uiVsProfileExplanation": "UI-sprog oversætter grænsefladen. Marked og menuprofil styrer lokale faste valg, varmretbank og valuta. Fuld kobling kommer i næste G5-fase.",
         "profileLabel": "Menuprofil",
         "sourceLabel": "Kilde",
         "marketLabel": "Marked",
         "localeLabel": "Locale",
-        "currencyLabel": "Standardvaluta",
-        "readOnlyNote": "Menuprofilen styrer ikke kategorier, udgivelse eller ordrer i denne fase.",
+        "currencyLabel": "Valuta",
+        "readOnlyNote": "Kun visning. Madindhold, valuta og priser ændres ikke her.",
         "invalidProfile": "Ugyldig menuprofil i indstillinger: {message}",
         "sourceProviderSetting": "Leverandørindstilling",
         "sourceMarketDefault": "Markedsstandard",
         "sourceFallbackNoMarket": "Fallback (mangler profil/marked)",
         "sourceLegacyDisabled": "Legacy (deaktiveret)",
-        "sourceUnknown": "Ukendt"
+        "sourceUnknown": "Ukendt",
+        "marketNames": {
+          "NO": "Norge",
+          "SE": "Sverige",
+          "DK": "Danmark",
+          "FI": "Finland",
+          "DE": "Tyskland",
+          "FR": "Frankrig",
+          "ES": "Spanien",
+          "UK": "Storbritannien",
+          "IT": "Italien"
+        }
       }
     },
     "tripletex": {

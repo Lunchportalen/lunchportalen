@@ -33,6 +33,9 @@ const NORWEGIAN_LEAKAGE = [
 const MENU_PROFILE_PATHS = [
   "provider.settings.menuProfile.heading",
   "provider.settings.menuProfile.flagActive",
+  "provider.settings.menuProfile.statusInactive",
+  "provider.settings.menuProfile.statusLabel",
+  "provider.settings.menuProfile.uiVsProfileExplanation",
   "provider.settings.menuProfile.profileLabel",
   "provider.settings.menuProfile.sourceLabel",
   "provider.settings.menuProfile.marketLabel",
@@ -45,6 +48,8 @@ const MENU_PROFILE_PATHS = [
   "provider.settings.menuProfile.sourceFallbackNoMarket",
   "provider.settings.menuProfile.sourceLegacyDisabled",
   "provider.settings.menuProfile.sourceUnknown",
+  "provider.settings.menuProfile.marketNames.NO",
+  "provider.settings.menuProfile.marketNames.IT",
 ] as const;
 
 function collectLeafPaths(node: unknown, prefix = ""): string[] {
@@ -72,30 +77,54 @@ function extractPlaceholders(value: string): string[] {
 }
 
 describe("provider language coverage (pre-merge PR #343)", () => {
-  it("APP_LOCALES contains all 9 supported app languages", () => {
-    expect(APP_LOCALES).toEqual(["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"]);
+  it("APP_LOCALES contains all 9 supported app languages in stable order", () => {
+    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "sv"]);
     expect(getLocaleLabel("it")).toBe("Italiano");
   });
 
-  it("PROVIDER_LOCALE_OPTIONS contains all 9 operational provider languages", () => {
+  it("PROVIDER_LOCALE_OPTIONS follows APP_LOCALES order", () => {
     expect(PROVIDER_LOCALE_VALUES).toEqual([
       "nb-NO",
-      "en-GB",
-      "sv-SE",
       "da-DK",
-      "fi-FI",
       "de-DE",
-      "fr-FR",
+      "en-GB",
       "es-ES",
+      "fr-FR",
       "it-IT",
+      "fi-FI",
+      "sv-SE",
     ]);
     expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(9);
+  });
+
+  it("operational language label clarifies separate menu/currency control (nb)", async () => {
+    const messages = (await loadMessagesForLocale("nb")) as {
+      provider: { settings: { operations: { localeLabel: string; localeHint: string } } };
+    };
+    expect(messages.provider.settings.operations.localeLabel).toBe("Administrasjonsspråk");
+    expect(messages.provider.settings.operations.localeLabel).not.toBe("Språk");
+    expect(messages.provider.settings.operations.localeHint).toMatch(/menyprofil/i);
+    expect(messages.provider.settings.operations.localeHint).toMatch(/valuta/i);
+  });
+
+  it("LocaleSwitcher iterates APP_LOCALES in registry order", () => {
+    const src = readFileSync(join(process.cwd(), "components/nav/LocaleSwitcher.tsx"), "utf8");
+    expect(src).toContain("APP_LOCALES.map");
   });
 
   it("ProviderOperationsForm maps every PROVIDER_LOCALE_OPTIONS value to i18n label keys", () => {
     const src = readFileSync(join(process.cwd(), "components/providers/ProviderOperationsForm.tsx"), "utf8");
     expect(src).toContain("PROVIDER_LOCALE_OPTIONS.map");
     expect(src).toContain('t(`locales.${o.value}`)');
+  });
+
+  it("menu profile diagnostic explains UI vs menu/currency separation", async () => {
+    const messages = (await loadMessagesForLocale("nb")) as {
+      provider: { settings: { menuProfile: { uiVsProfileExplanation: string; statusInactive: string } } };
+    };
+    expect(messages.provider.settings.menuProfile.uiVsProfileExplanation).toMatch(/UI-språk/i);
+    expect(messages.provider.settings.menuProfile.uiVsProfileExplanation).toMatch(/valuta/i);
+    expect(messages.provider.settings.menuProfile.statusInactive).toMatch(/Menyprofil/i);
   });
 
   it("profiles.preferred_locale migration includes all 9 app locales", () => {

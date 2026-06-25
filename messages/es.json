@@ -1383,8 +1383,8 @@
         },
         "kitchenEmailHint": "Se usa para la base de producción y alertas de cocina.",
         "kitchenEmailLabel": "Correo de cocina",
-        "localeHint": "Controla el idioma predeterminado para las superficies operativas del proveedor cuando hay soporte de idioma disponible.",
-        "localeLabel": "Idioma",
+        "localeHint": "Define el idioma predeterminado de las superficies operativas del proveedor cuando hay soporte de idioma. Contenido del menú, perfil de menú, precios y moneda se controlan por separado.",
+        "localeLabel": "Idioma de administración",
         "locales": {
           "nb-NO": "Noruego (bokmål)",
           "en-GB": "Inglés",
@@ -1440,20 +1440,34 @@
         "saving": "Guardando…"
       },
       "menuProfile": {
-        "heading": "Perfil de menú (diagnóstico)",
+        "heading": "Mercado, moneda y perfil de menú",
         "flagActive": "Activado mediante feature flag — solo visualización, sin cambio de producto aún.",
+        "statusInactive": "El perfil de menú aún no impulsa categorías, publicación ni precios.",
+        "statusLabel": "Estado",
+        "uiVsProfileExplanation": "El idioma UI traduce la interfaz. Mercado y perfil de menú controlan elecciones fijas locales, banco de platos calientes y moneda. La conexión completa llegará en la próxima fase G5.",
         "profileLabel": "Perfil de menú",
         "sourceLabel": "Origen",
         "marketLabel": "Mercado",
         "localeLabel": "Locale",
-        "currencyLabel": "Moneda predeterminada",
-        "readOnlyNote": "El perfil de menú no impulsa categorías, publicación ni pedidos en esta fase.",
+        "currencyLabel": "Moneda",
+        "readOnlyNote": "Solo visualización. Contenido del menú, moneda y precios no se cambian aquí.",
         "invalidProfile": "Perfil de menú no válido en ajustes: {message}",
         "sourceProviderSetting": "Configuración del proveedor",
         "sourceMarketDefault": "Predeterminado de mercado",
         "sourceFallbackNoMarket": "Fallback (falta perfil/mercado)",
         "sourceLegacyDisabled": "Legacy (desactivado)",
-        "sourceUnknown": "Desconocido"
+        "sourceUnknown": "Desconocido",
+        "marketNames": {
+          "NO": "Noruega",
+          "SE": "Suecia",
+          "DK": "Dinamarca",
+          "FI": "Finlandia",
+          "DE": "Alemania",
+          "FR": "Francia",
+          "ES": "España",
+          "UK": "Reino Unido",
+          "IT": "Italia"
+        }
       }
     },
     "tripletex": {

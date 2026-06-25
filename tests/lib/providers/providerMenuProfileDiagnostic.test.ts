@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { LP_MENU_PROFILE_RESOLVER_ENV } from "@/lib/menu-profile";
 import {
   buildProviderMenuProfileDiagnostic,
+  buildProviderMenuProfileLegacyDiagnostic,
   type ProviderMenuProfileDiagnostic,
 } from "@/lib/providers/providerMenuProfileDiagnostic";
 import type { ProviderSettingsMenuProfileRow } from "@/lib/providers/loadProviderSettingsMenuProfile";
@@ -25,6 +26,18 @@ const baseRow = (overrides?: Partial<ProviderSettingsMenuProfileRow>): ProviderS
 });
 
 describe("providerMenuProfileDiagnostic (ADR-019 G4)", () => {
+  describe("buildProviderMenuProfileLegacyDiagnostic", () => {
+    it("maps NO provider to norsk firmalunsj context when flag OFF", () => {
+      const diagnostic = buildProviderMenuProfileLegacyDiagnostic(baseRow(), false);
+      expect(diagnostic.kind).toBe("legacy");
+      expect(diagnostic.marketCode).toBe("NO");
+      expect(diagnostic.market).toBe("NO");
+      expect(diagnostic.currency).toBe(`${"NO"}K`);
+      expect(diagnostic.profileName).toBe("Norsk firmalunsj");
+      expect(diagnostic.resolverActive).toBe(false);
+    });
+  });
+
   describe("buildProviderMenuProfileDiagnostic flag OFF", () => {
     it("returns null for legacy_disabled resolver result", () => {
       const result = buildProviderMenuProfileDiagnostic(baseRow(), {
@@ -145,6 +158,8 @@ describe("providerMenuProfileDiagnostic (ADR-019 G4)", () => {
       );
       expect(src).not.toMatch(/use client/);
       expect(src).not.toMatch(/onSubmit|saveProvider|\.update\s*\(/);
+      expect(src).toContain("provider-menu-profile-diagnostic-legacy");
+      expect(src).toContain("uiVsProfileExplanation");
     });
   });
 });

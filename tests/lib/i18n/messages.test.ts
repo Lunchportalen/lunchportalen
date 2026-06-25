@@ -53,6 +53,6 @@ describe("i18n messages", () => {
     expect(itMessages.localeSwitcher).toMatchObject({ label: "Scegli lingua" });
     const itProvider = itMessages.provider as { nav: { orders: string }; settings: { menuProfile: { heading: string } } };
     expect(itProvider.nav.orders).toBe("Ordini");
-    expect(itProvider.settings.menuProfile.heading).toContain("Profilo menu");
+    expect(itProvider.settings.menuProfile.heading).toMatch(/profilo menu/i);
   });
 });

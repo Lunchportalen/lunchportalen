@@ -1191,8 +1191,8 @@
         "kitchenEmailHint": "Käytetään tuotantopohjaan ja keittiöilmoituksiin.",
         "deliveryEmailLabel": "Toimitussähköposti",
         "deliveryEmailHint": "Käytetään toimitukseen liittyviin ilmoituksiin ja viesteihin, kun tilaukset ovat valmiina toimitukseen.",
-        "localeLabel": "Kieli",
-        "localeHint": "Määrittää oletuskielen toimittajan omille toimintanäkymille, kun kielituki on käytettävissä.",
+        "localeLabel": "Hallintokieli",
+        "localeHint": "Määrittää oletuskielen toimittajan toimintanäkymille, kun kielituki on käytettävissä. Ruokasisältö, menu-profiili, hinnat ja valuutta ohjataan erikseen.",
         "save": "Tallenna toiminta-asetukset",
         "saving": "Tallennetaan…",
         "saved": "Toiminta-asetukset tallennettu.",
@@ -1263,20 +1263,34 @@
         }
       },
       "menuProfile": {
-        "heading": "Valikkoprofiili (diagnostiikka)",
+        "heading": "Markkina, valuutta ja menu-profiili",
         "flagActive": "Käytössä feature flagin kautta — vain näyttö, ei tuotemuutosta vielä.",
-        "profileLabel": "Valikkoprofiili",
+        "statusInactive": "Menu-profiili ei ohjaa vielä kategorioita, julkaisua tai hintoja.",
+        "statusLabel": "Tila",
+        "uiVsProfileExplanation": "UI-kieli kääntää käyttöliittymän. Markkina ja menu-profiili ohjaavat paikallisia kiinteitä valintoja, lämpimien ruokien pankkia ja valuuttaa. Täysi kytkentä tulee seuraavassa G5-vaiheessa.",
+        "profileLabel": "Menu-profiili",
         "sourceLabel": "Lähde",
         "marketLabel": "Markkina",
         "localeLabel": "Locale",
-        "currencyLabel": "Oletusvaluutta",
-        "readOnlyNote": "Valikkoprofiili ei ohjaa kategorioita, julkaisua tai tilauksia tässä vaiheessa.",
+        "currencyLabel": "Valuutta",
+        "readOnlyNote": "Vain näyttö. Ruokasisältöä, valuuttaa ja hintoja ei muuteta täällä.",
         "invalidProfile": "Virheellinen valikkoprofiili asetuksissa: {message}",
         "sourceProviderSetting": "Toimittaja-asetus",
         "sourceMarketDefault": "Markkinan oletus",
         "sourceFallbackNoMarket": "Fallback (profiili/markkina puuttuu)",
         "sourceLegacyDisabled": "Legacy (poistettu käytöstä)",
-        "sourceUnknown": "Tuntematon"
+        "sourceUnknown": "Tuntematon",
+        "marketNames": {
+          "NO": "Norja",
+          "SE": "Ruotsi",
+          "DK": "Tanska",
+          "FI": "Suomi",
+          "DE": "Saksa",
+          "FR": "Ranska",
+          "ES": "Espanja",
+          "UK": "Yhdistynyt kuningaskunta",
+          "IT": "Italia"
+        }
       }
     },
     "banner": {

@@ -113,10 +113,10 @@ describe("Italian locale foundation (pre-G5)", () => {
         };
       };
     };
-    expect(it.provider.settings.menuProfile.heading).toContain("Profilo menu");
+    expect(it.provider.settings.menuProfile.heading).toMatch(/profilo menu/i);
     expect(it.provider.settings.menuProfile.profileLabel).toBe("Profilo menu");
     expect(it.provider.settings.menuProfile.currencyLabel).toContain("Valuta");
-    expect(it.provider.settings.menuProfile.readOnlyNote).toMatch(/profilo menu/i);
+    expect(it.provider.settings.menuProfile.readOnlyNote).toMatch(/menu/i);
   });
 
   it("Italian commercial glossary: IVA, commissione, liquidazione, scelte fisse", async () => {

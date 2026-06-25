@@ -2,6 +2,8 @@
 // Client-safe typer og validering for provider-eide driftsinnstillinger.
 // Ingen Supabase/server-avhengigheter her (brukes av både UI og server action).
 
+import { APP_LOCALES, intlLocaleForAppLocale } from "@/lib/i18n/localeRegistry";
+
 export type ProviderOperationalSettings = {
   operationsEmail: string | null;
   kitchenEmail: string | null;
@@ -20,21 +22,30 @@ export const PROVIDER_EMAIL_OWNERSHIP_NOTE =
 
 export type ProviderLocaleOption = { value: string; label: string };
 
+/** Operational intl locale tags in the same order as {@link APP_LOCALES}. */
+export const PROVIDER_INTL_LOCALES = APP_LOCALES.map((locale) => intlLocaleForAppLocale(locale));
+
+const PROVIDER_LOCALE_LABELS: Record<string, string> = {
+  "nb-NO": "Norsk (bokmål)",
+  "da-DK": "Dansk",
+  "de-DE": "Deutsch",
+  "en-GB": "English",
+  "es-ES": "Español",
+  "fr-FR": "Français",
+  "it-IT": "Italiano",
+  "fi-FI": "Suomi",
+  "sv-SE": "Svenska",
+};
+
 /**
  * Kontrollert allowlist. provider_settings.locale er foreløpig inert i runtime,
  * men verdien valideres slik at fremtidig språkstøtte kan stole på den.
+ * Rekkefølge følger {@link APP_LOCALES} (Norsk først, deretter alfabetisk etter visningsnavn).
  */
-export const PROVIDER_LOCALE_OPTIONS: ProviderLocaleOption[] = [
-  { value: "nb-NO", label: "Norsk (bokmål)" },
-  { value: "en-GB", label: "English" },
-  { value: "sv-SE", label: "Svenska" },
-  { value: "da-DK", label: "Dansk" },
-  { value: "fi-FI", label: "Suomi" },
-  { value: "de-DE", label: "Deutsch" },
-  { value: "fr-FR", label: "Français" },
-  { value: "es-ES", label: "Español" },
-  { value: "it-IT", label: "Italiano" },
-];
+export const PROVIDER_LOCALE_OPTIONS: ProviderLocaleOption[] = PROVIDER_INTL_LOCALES.map((value) => ({
+  value,
+  label: PROVIDER_LOCALE_LABELS[value] ?? value,
+}));
 
 export const PROVIDER_LOCALE_VALUES = PROVIDER_LOCALE_OPTIONS.map((o) => o.value);
 

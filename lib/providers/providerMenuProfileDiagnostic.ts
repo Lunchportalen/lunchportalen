@@ -1,12 +1,19 @@
 // lib/providers/providerMenuProfileDiagnostic.ts
 import "server-only";
 
+import { getDefaultMenuProfileForMarket } from "@/lib/menu-profile/marketDefaults";
 import {
   isMenuProfileResolverEnabled,
   LP_MENU_PROFILE_RESOLVER_ENV,
 } from "@/lib/menu-profile/featureFlag";
+import { getMenuProfile } from "@/lib/menu-profile/registry";
+import { providerCountryCodeToMarket } from "@/lib/menu-profile/providerMenuProfileResolver";
 import { resolveProviderMenuProfileFromSettings } from "@/lib/menu-profile/providerMenuProfileResolver";
-import type { MenuProfileResolverResult, MenuProfileResolveSource } from "@/lib/menu-profile/types";
+import type {
+  MenuProfileId,
+  MenuProfileResolverResult,
+  MenuProfileResolveSource,
+} from "@/lib/menu-profile/types";
 import {
   loadProviderSettingsMenuProfileRow,
   providerSettingsRowToMenuProfileInput,
@@ -32,20 +39,66 @@ export type ProviderMenuProfileDiagnosticError = {
   message: string;
 };
 
+export type ProviderMenuProfileDiagnosticLegacy = {
+  kind: "legacy";
+  enabled: false;
+  resolverActive: boolean;
+  marketCode: string;
+  market: string;
+  profileId: string;
+  profileName: string;
+  currency: string;
+  operationalLocale: string;
+};
+
 export type ProviderMenuProfileDiagnostic =
   | ProviderMenuProfileDiagnosticResolved
-  | ProviderMenuProfileDiagnosticError;
+  | ProviderMenuProfileDiagnosticError
+  | ProviderMenuProfileDiagnosticLegacy;
 
 /** Host env bag for LP_MENU_PROFILE_RESOLVER (server wiring only). */
 export function menuProfileResolverHostEnv(): Readonly<Record<string, string | undefined>> {
   return { [LP_MENU_PROFILE_RESOLVER_ENV]: process.env.LP_MENU_PROFILE_RESOLVER };
 }
 
+function inferLegacyProfile(row: ProviderSettingsMenuProfileRow) {
+  if (row.menuProfileId) {
+    try {
+      const fromSetting = getMenuProfile(row.menuProfileId as MenuProfileId);
+      if (fromSetting) return fromSetting;
+    } catch {
+      // fall through to market default
+    }
+  }
+  const market = providerCountryCodeToMarket(row.defaultCountryCode) ?? "NO";
+  return getDefaultMenuProfileForMarket(market);
+}
+
+export function buildProviderMenuProfileLegacyDiagnostic(
+  row: ProviderSettingsMenuProfileRow,
+  resolverActive: boolean,
+): ProviderMenuProfileDiagnosticLegacy {
+  const profile = inferLegacyProfile(row);
+  const market = providerCountryCodeToMarket(row.defaultCountryCode) ?? profile.market;
+
+  return {
+    kind: "legacy",
+    enabled: false,
+    resolverActive,
+    marketCode: row.defaultCountryCode,
+    market,
+    profileId: profile.id,
+    profileName: profile.name,
+    currency: row.defaultCurrency,
+    operationalLocale: row.locale,
+  };
+}
+
 export function buildProviderMenuProfileDiagnostic(
   row: ProviderSettingsMenuProfileRow | null,
   resolverResult: MenuProfileResolverResult | null,
 ): ProviderMenuProfileDiagnostic | null {
-  if (!resolverResult) return null;
+  if (!resolverResult || !row) return null;
 
   if (resolverResult.ok === false) {
     return {
@@ -66,27 +119,31 @@ export function buildProviderMenuProfileDiagnostic(
     profileName: resolverResult.profile.name,
     market: resolverResult.profile.market,
     locale: resolverResult.profile.locale,
-    currencyDefault: row?.defaultCurrency ?? resolverResult.profile.market,
+    currencyDefault: row.defaultCurrency ?? resolverResult.profile.market,
     warning: resolverResult.warning,
   };
 }
 
 /**
- * Read-only menu profile diagnostic for provider admin surfaces (ADR-019 G4).
- * Returns null when flag OFF or settings row missing — no product behavior change.
+ * Read-only market/menu profile/currency diagnostic for provider admin (ADR-019 G4 + pre-G5a).
+ * Flag OFF → legacy context (why UI locale ≠ menu/currency). Flag ON → resolver diagnostics when active.
  */
 export async function loadProviderMenuProfileDiagnostic(
   providerId: string,
   env: Readonly<Record<string, string | undefined>> = menuProfileResolverHostEnv(),
 ): Promise<ProviderMenuProfileDiagnostic | null> {
-  if (!isMenuProfileResolverEnabled(env)) return null;
-
   const row = await loadProviderSettingsMenuProfileRow(providerId);
   if (!row) return null;
 
-  const resolverResult = resolveProviderMenuProfileFromSettings(
-    providerSettingsRowToMenuProfileInput(row, env),
-  );
+  const resolverActive = isMenuProfileResolverEnabled(env);
 
-  return buildProviderMenuProfileDiagnostic(row, resolverResult);
+  if (resolverActive) {
+    const resolverResult = resolveProviderMenuProfileFromSettings(
+      providerSettingsRowToMenuProfileInput(row, env),
+    );
+    const active = buildProviderMenuProfileDiagnostic(row, resolverResult);
+    if (active) return active;
+  }
+
+  return buildProviderMenuProfileLegacyDiagnostic(row, resolverActive);
 }

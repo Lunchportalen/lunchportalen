@@ -11,8 +11,8 @@ import {
 } from "@/lib/i18n/localeRegistry";
 
 describe("localeRegistry", () => {
-  it("contains all nine app locales with nb as default", () => {
-    expect(APP_LOCALES).toEqual(["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"]);
+  it("contains all nine app locales in stable display order (nb first, then alphabetical)", () => {
+    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "sv"]);
     expect(DEFAULT_APP_LOCALE).toBe("nb");
     expect(APP_LOCALES).toHaveLength(9);
   });
@@ -52,7 +52,7 @@ describe("localeRegistry", () => {
   });
 
   it("getLocaleLabel returns native labels", () => {
-    expect(getLocaleLabel("nb")).toBe("Norsk");
+    expect(getLocaleLabel("nb")).toBe("Norsk bokmål");
     expect(getLocaleLabel("en")).toBe("English");
     expect(getLocaleLabel("sv")).toBe("Svenska");
     expect(getLocaleLabel("fi")).toBe("Suomi");

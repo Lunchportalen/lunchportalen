@@ -1,6 +1,10 @@
 /** Edge-safe global app locale registry (no server-only imports). */
 
-export const APP_LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"] as const;
+/**
+ * Stable UI locale order: Norsk first, then alphabetical by native display label.
+ * Single source of truth for LocaleSwitcher, APP_LOCALES, and provider operational locales.
+ */
+export const APP_LOCALES = ["nb", "da", "de", "en", "es", "fr", "it", "fi", "sv"] as const;
 
 export type AppLocale = (typeof APP_LOCALES)[number];
 
@@ -10,7 +14,7 @@ export const LOCALE_REGISTRY: Record<
   AppLocale,
   { label: string; htmlLang: string; intl: string }
 > = {
-  nb: { label: "Norsk", htmlLang: "nb", intl: "nb-NO" },
+  nb: { label: "Norsk bokmål", htmlLang: "nb", intl: "nb-NO" },
   en: { label: "English", htmlLang: "en-GB", intl: "en-GB" },
   sv: { label: "Svenska", htmlLang: "sv-SE", intl: "sv-SE" },
   da: { label: "Dansk", htmlLang: "da-DK", intl: "da-DK" },
