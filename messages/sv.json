@@ -390,6 +390,11 @@
           "saved": "Katalog sparad."
         }
       },
+      "workspaceProfile": {
+        "badge": "Menyprofil (presentation)",
+        "banner": "Arbetsytan visar menyprofilens struktur. Befintligt kataloginnehåll och publicerade menyer ändras inte i denna fas.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Fasta val",
         "lead": "Det här är leverantörens fasta alternativ. Veckoplanen använder dem när du publicerar lunch för specifika dagar.",

@@ -390,6 +390,11 @@
           "saved": "Katalog gespeichert."
         }
       },
+      "workspaceProfile": {
+        "badge": "Menüprofil (Präsentation)",
+        "banner": "Der Arbeitsbereich zeigt die Struktur des Menüprofils. Bestehende Kataloginhalte und veröffentlichte Menüs werden in dieser Phase nicht geändert.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Feste Auswahl",
         "lead": "Das sind die festen Optionen Ihres Anbieters. Der Wochenplan nutzt sie, wenn Sie das Mittagessen für konkrete Tage veröffentlichen.",

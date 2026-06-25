@@ -390,6 +390,11 @@
           "saved": "Katalogi tallennettu."
         }
       },
+      "workspaceProfile": {
+        "badge": "Menukprofil (esittely)",
+        "banner": "Työtila näyttää menukprofilin rakenteen. Olemassa oleva katalogisisältö ja julkaistut menut eivät muutu tässä vaiheessa.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Kiinteät valinnat",
         "lead": "Nämä ovat toimittajasi kiinteät vaihtoehdot. Viikkosuunnitelma käyttää niitä, kun julkaiset lounaan tietyille päiville.",

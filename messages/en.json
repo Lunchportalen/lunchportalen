@@ -1617,6 +1617,11 @@
           "saved": "Catalog saved."
         }
       },
+      "workspaceProfile": {
+        "badge": "Menu profile (presentation)",
+        "banner": "The workspace shows the menu profile structure. Existing catalog content and published menus are not changed in this phase.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
       "catalogModel": {
         "title": "Fixed choices",
         "lead": "These are your provider's fixed options. The week plan uses them when you publish lunch for specific days.",
