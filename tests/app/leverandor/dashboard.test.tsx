@@ -27,9 +27,20 @@ describe("LeverandorDashboardPage i18n", () => {
   test("dashboard page uses getTranslations for provider.dashboard", () => {
     const source = readFileSync(resolve(process.cwd(), "app/leverandor/page.tsx"), "utf8");
     expect(source).toContain('getTranslations("provider.dashboard")');
-    expect(source).toContain("LocaleSwitcher");
-    expect(source).toContain("persistProfile");
+    expect(source).not.toContain("LocaleSwitcher");
     expect(source).not.toContain('label: "Aktive kunder"');
+  });
+
+  test("provider dashboard has no duplicate top-right locale switcher", () => {
+    const source = readFileSync(resolve(process.cwd(), "app/leverandor/page.tsx"), "utf8");
+    expect(source).not.toContain("LocaleSwitcher");
+    expect(source).not.toContain("ds-provider-topbar__locale");
+  });
+
+  test("provider shell sidebar retains locale switcher", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain("<LocaleSwitcher");
+    expect(source).toContain("ds-provider-nav__locale");
   });
 
   test("nb messages include dashboard shell defaults", async () => {
@@ -71,6 +82,12 @@ describe("ProviderNav i18n", () => {
     expect(source).toContain('useTranslations("provider.nav")');
     expect(source).toContain("labelKey");
     expect(source).not.toContain('label: "Ordrer"');
+  });
+
+  test("provider shell sidebar retains locale switcher", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/providers/ProviderNav.tsx"), "utf8");
+    expect(source).toContain("<LocaleSwitcher");
+    expect(source).toContain("ds-provider-nav__locale");
   });
 
   test("ProviderNav wires LocaleSwitcher in provider shell", () => {

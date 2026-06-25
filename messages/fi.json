@@ -29,6 +29,7 @@
       "invoices": "Laskut",
       "settings": "Asetukset",
       "logout": "Kirjaudu ulos",
+      "logoutPending": "Kirjaudutaan ulos…",
       "more": "Lisää",
       "comingSoon": "(tulossa)",
       "openMenu": "Avaa valikko",

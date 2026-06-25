@@ -29,6 +29,7 @@
       "invoices": "Facturas",
       "settings": "Ajustes",
       "logout": "Cerrar sesión",
+      "logoutPending": "Cerrando sesión…",
       "more": "Más",
       "comingSoon": "(próximamente)",
       "openMenu": "Abrir menú",
