@@ -65,3 +65,8 @@ export {
 } from "@/lib/menu-profile/featureFlag";
 
 export { resolveMenuProfileForProvider } from "@/lib/menu-profile/resolver";
+export {
+  providerCountryCodeToMarket,
+  resolveProviderMenuProfileFromSettings,
+} from "@/lib/menu-profile/providerMenuProfileResolver";
+export type { ProviderSettingsMenuProfileInput } from "@/lib/menu-profile/providerMenuProfileResolver";

@@ -526,6 +526,8 @@ All phases are **sequential and gated**. No phase may skip Golden Path review wh
 
 **G2 (schema foundation):** Additive nullable `provider_settings.menu_profile_id` with CHECK against registry IDs. No backfill. RLS unchanged. No runtime reads until explicit wiring phase.
 
+**G3 (read foundation):** Read-only loader + pure mapper from `provider_settings` → resolver behind `LP_MENU_PROFILE_RESOLVER` (default OFF). No UI write, no publish/order/week cutover.
+
 ### Provider commercial agreement schema (subsequent gate)
 
 **Scope:** Additive tables only — no mutation of customer `agreements` or frozen company lifecycle.
