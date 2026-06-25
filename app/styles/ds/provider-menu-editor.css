@@ -2059,6 +2059,104 @@ button.lp-editor-builder__variant {
   color: var(--ds-text-soft);
 }
 
+.lp-editor-profile-fixed-categories {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--ds-border);
+  border-radius: 12px;
+  background: var(--ds-surface);
+}
+
+.lp-editor-profile-fixed-categories__head {
+  margin-bottom: 12px;
+}
+
+.lp-editor-profile-fixed-categories__title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ds-text);
+}
+
+.lp-editor-profile-fixed-categories__description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ds-text-soft);
+}
+
+.lp-editor-profile-fixed-categories__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.lp-editor-profile-fixed-categories__item {
+  padding: 10px 12px;
+  border: 1px solid var(--ds-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ds-surface) 92%, var(--ds-border));
+}
+
+.lp-editor-profile-fixed-categories__item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.lp-editor-profile-fixed-categories__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ds-text);
+}
+
+.lp-editor-profile-fixed-categories__status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ds-border);
+}
+
+.lp-editor-profile-fixed-categories__status--active {
+  color: var(--ds-text);
+  border-color: color-mix(in srgb, var(--ds-accent) 30%, var(--ds-border));
+}
+
+.lp-editor-profile-fixed-categories__status--future {
+  color: var(--ds-text-soft);
+}
+
+.lp-editor-profile-fixed-categories__meta {
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ds-text-soft);
+}
+
+.lp-editor-profile-fixed-categories__meta-label {
+  font-weight: 600;
+}
+
+.lp-editor-profile-fixed-categories__key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+}
+
+.lp-editor-profile-fixed-categories__help {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ds-text-soft);
+}
+
 .lp-editor-command-header--catalog .lp-editor-page-head__main {
   max-width: 720px;
 }

@@ -53,6 +53,14 @@ const MENU_PROFILE_PATHS = [
   "provider.menu.workspaceProfile.badge",
   "provider.menu.workspaceProfile.banner",
   "provider.menu.workspaceProfile.metaLine",
+  "provider.menu.workspaceFixedCategories.title",
+  "provider.menu.workspaceFixedCategories.description",
+  "provider.menu.workspaceFixedCategories.activeInCurrentCatalog",
+  "provider.menu.workspaceFixedCategories.comingStructureNotOrderActive",
+  "provider.menu.workspaceFixedCategories.orderRuntimeEnabled",
+  "provider.menu.workspaceFixedCategories.presentationOnly",
+  "provider.menu.workspaceFixedCategories.packagesLabel",
+  "provider.menu.workspaceFixedCategories.profileCategoryLabel",
 ] as const;
 
 function collectLeafPaths(node: unknown, prefix = ""): string[] {

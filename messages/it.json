@@ -1633,6 +1633,16 @@
         "banner": "L'area di lavoro mostra la struttura del profilo menu. I contenuti del catalogo esistenti e i menu pubblicati non vengono modificati in questa fase.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Scelte fisse del profilo menu",
+        "description": "Mostra le scelte fisse del profilo menu. Il catalogo e i menu pubblicati non vengono modificati fino a un successivo cutover.",
+        "activeInCurrentCatalog": "Attivo nel catalogo attuale",
+        "comingStructureNotOrderActive": "Struttura futura — non ancora attiva negli ordini",
+        "orderRuntimeEnabled": "Runtime ordini attivo",
+        "presentationOnly": "Solo presentazione",
+        "packagesLabel": "Pacchetti",
+        "profileCategoryLabel": "Categoria profilo"
+      },
       "catalogModel": {
         "title": "Scelte fisse",
         "lead": "Queste sono le scelte fisse del tuo fornitore. La pianificazione settimanale le utilizza quando pubblichi il pranzo per giorni specifici.",

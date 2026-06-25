@@ -400,6 +400,16 @@
         "banner": "Arbejdsområdet viser menuprofilens struktur. Eksisterende katalogindhold og publicerede menuer ændres ikke i denne fase.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Menuprofilens faste valg",
+        "description": "Dette viser menuprofilens faste valg. Kataloget og publicerede menuer ændres ikke før senere cutover.",
+        "activeInCurrentCatalog": "Aktiv i dagens katalog",
+        "comingStructureNotOrderActive": "Kommende struktur — endnu ikke aktiv i ordrer",
+        "orderRuntimeEnabled": "Ordre-runtime aktiv",
+        "presentationOnly": "Kun præsentation",
+        "packagesLabel": "Pakker",
+        "profileCategoryLabel": "Profilkategori"
+      },
       "catalogModel": {
         "title": "Faste valg",
         "lead": "Dette er leverandørens faste alternativer. Ugeplanen bruger dem, når du publicerer frokost for konkrete dage.",

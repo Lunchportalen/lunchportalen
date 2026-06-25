@@ -1622,6 +1622,16 @@
         "banner": "The workspace shows the menu profile structure. Existing catalog content and published menus are not changed in this phase.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Menu profile fixed choices",
+        "description": "This shows the menu profile's fixed choices. The catalog and published menus are not changed until a later cutover.",
+        "activeInCurrentCatalog": "Active in today's catalog",
+        "comingStructureNotOrderActive": "Upcoming structure — not active in orders yet",
+        "orderRuntimeEnabled": "Order runtime enabled",
+        "presentationOnly": "Presentation only",
+        "packagesLabel": "Packages",
+        "profileCategoryLabel": "Profile category"
+      },
       "catalogModel": {
         "title": "Fixed choices",
         "lead": "These are your provider's fixed options. The week plan uses them when you publish lunch for specific days.",

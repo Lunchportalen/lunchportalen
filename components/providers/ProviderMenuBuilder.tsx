@@ -59,12 +59,15 @@ import {
 import type { ProviderMenuPricePreviewDisplayPayload } from "@/lib/providers/providerMenuPricePreviewDisplay";
 import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDisplay";
 import type { ProviderMenuWorkspacePresentationProps } from "@/lib/provider-menu/providerMenuProfilePresentation";
+import type { MenuProfileFixedCategoryPresentationProps } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
 import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
+import ProviderMenuProfileFixedCategoriesPanel from "@/components/providers/ProviderMenuProfileFixedCategoriesPanel";
 
 import "@/app/styles/ds/provider-menu-editor.css";
 
 type ProviderMenuBuilderProps = {
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
+  fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
 };
 
 type MenuWeekResponse = {
@@ -161,9 +164,11 @@ function translateNextStepAction(
 
 export default function ProviderMenuBuilder({
   workspacePresentation = { active: false },
+  fixedCategoryPresentation = { active: false },
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
+  const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
@@ -541,6 +546,10 @@ export default function ProviderMenuBuilder({
         <ProviderMenuProfilePresentationBanner presentation={profilePresentation} />
       ) : null}
 
+      {fixedCategories && workspaceView === "week" ? (
+        <ProviderMenuProfileFixedCategoriesPanel presentation={fixedCategories} />
+      ) : null}
+
       {workspaceView === "week" ? (
         <ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />
       ) : null}
@@ -652,6 +661,7 @@ export default function ProviderMenuBuilder({
               catalog={catalog}
               onCatalogSaved={setCatalog}
               workspacePresentation={workspacePresentation}
+              fixedCategoryPresentation={fixedCategoryPresentation}
             />
           )}
         </div>

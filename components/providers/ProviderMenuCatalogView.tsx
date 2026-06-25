@@ -5,14 +5,17 @@ import type { PlanTier } from "@/lib/cms/menuDayContract";
 import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { catalogSupportsPersistentEdit } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import type { ProviderMenuWorkspacePresentationProps } from "@/lib/provider-menu/providerMenuProfilePresentation";
+import type { MenuProfileFixedCategoryPresentationProps } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
 import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
+import ProviderMenuProfileFixedCategoriesPanel from "@/components/providers/ProviderMenuProfileFixedCategoriesPanel";
 
 type Props = {
   tier: PlanTier;
   catalog: ProviderMenuCatalogSnapshot;
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
+  fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
 };
 
 const PACKAGE_TIERS: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
@@ -28,13 +31,16 @@ export default function ProviderMenuCatalogView({
   catalog,
   onCatalogSaved,
   workspacePresentation = { active: false },
+  fixedCategoryPresentation = { active: false },
 }: Props) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
+  const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
 
   return (
     <section className="lp-editor-catalog" aria-label={t("catalogModel.title")}>
       {profilePresentation ? <ProviderMenuProfilePresentationBanner presentation={profilePresentation} /> : null}
+      {fixedCategories ? <ProviderMenuProfileFixedCategoriesPanel presentation={fixedCategories} /> : null}
 
       <header className="lp-editor-catalog__head">
         <h2 className="ds-h4">{t("catalogModel.title")}</h2>

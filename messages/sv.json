@@ -395,6 +395,16 @@
         "banner": "Arbetsytan visar menyprofilens struktur. Befintligt kataloginnehåll och publicerade menyer ändras inte i denna fas.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
+      "workspaceFixedCategories": {
+        "title": "Menyprofilens fasta val",
+        "description": "Visar menyprofilens fasta val. Katalogen och publicerade menyer ändras inte förrän senare cutover.",
+        "activeInCurrentCatalog": "Aktiv i dagens katalog",
+        "comingStructureNotOrderActive": "Kommande struktur — ännu inte aktiv i ordrar",
+        "orderRuntimeEnabled": "Ordre-runtime aktiv",
+        "presentationOnly": "Endast presentation",
+        "packagesLabel": "Paket",
+        "profileCategoryLabel": "Profilkategori"
+      },
       "catalogModel": {
         "title": "Fasta val",
         "lead": "Det här är leverantörens fasta alternativ. Veckoplanen använder dem när du publicerar lunch för specifika dagar.",
