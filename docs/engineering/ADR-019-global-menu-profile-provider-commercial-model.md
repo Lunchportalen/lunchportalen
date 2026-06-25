@@ -528,6 +528,8 @@ All phases are **sequential and gated**. No phase may skip Golden Path review wh
 
 **G3 (read foundation):** Read-only loader + pure mapper from `provider_settings` → resolver behind `LP_MENU_PROFILE_RESOLVER` (default OFF). No UI write, no publish/order/week cutover.
 
+**G4 (diagnostics):** Read-only provider admin diagnostic on `/leverandor/innstillinger` when flag ON. Metadata only — no category/publish/order cutover.
+
 ### Provider commercial agreement schema (subsequent gate)
 
 **Scope:** Additive tables only — no mutation of customer `agreements` or frozen company lifecycle.
