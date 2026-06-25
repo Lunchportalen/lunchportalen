@@ -1385,10 +1385,15 @@
         "localeHint": "Styrar standardspråk för leverantörens egna driftytor när språkstöd är tillgängligt.",
         "localeLabel": "Språk",
         "locales": {
-          "da-DK": "Dansk",
+          "nb-NO": "Norska (bokmål)",
           "en-GB": "English",
-          "nb-NO": "Norsk (bokmål)",
-          "sv-SE": "Svenska"
+          "sv-SE": "Svenska",
+          "da-DK": "Danska",
+          "fi-FI": "Finska",
+          "de-DE": "Tyska",
+          "fr-FR": "Franska",
+          "es-ES": "Spanska",
+          "it-IT": "Italienska"
         },
         "operationsEmailHint": "Används som huvudmottagare för beställningsaviseringar och driftsmeddelanden.",
         "operationsEmailLabel": "Beställnings- och driftsepost",
@@ -1432,6 +1437,22 @@
         "save": "Spara inställningar",
         "saved": "Inställningar sparade.",
         "saving": "Sparar…"
+      },
+      "menuProfile": {
+        "heading": "Menyprofil (diagnostik)",
+        "flagActive": "Aktiverad via feature flag — endast visning, ingen produktändring ännu.",
+        "profileLabel": "Menyprofil",
+        "sourceLabel": "Källa",
+        "marketLabel": "Marknad",
+        "localeLabel": "Locale",
+        "currencyLabel": "Standardvaluta",
+        "readOnlyNote": "Menyprofilen styr inte kategorier, publicering eller beställningar i denna fas.",
+        "invalidProfile": "Ogiltig menyprofil i inställningar: {message}",
+        "sourceProviderSetting": "Leverantörsinställning",
+        "sourceMarketDefault": "Marknadsstandard",
+        "sourceFallbackNoMarket": "Fallback (saknar profil/marknad)",
+        "sourceLegacyDisabled": "Legacy (inaktiverad)",
+        "sourceUnknown": "Okänd"
       }
     },
     "tripletex": {

@@ -41,7 +41,7 @@ describe("ProviderNav aria-labels", () => {
   });
 
   test("all eight locales define nav aria-label keys", async () => {
-    const locales = ["nb", "en", "sv", "da", "fi", "de", "fr", "es"] as const;
+    const locales = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"] as const;
     for (const locale of locales) {
       const messages = await loadMessagesForLocale(locale);
       const nav = (messages.provider as { nav: Record<string, string> }).nav;

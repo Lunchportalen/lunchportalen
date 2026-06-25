@@ -12,7 +12,7 @@ import {
 } from "@/lib/providers/kitchenOrderDisplay";
 import { loadDetailTranslators } from "@/tests/lib/providers/providerCustomerI18nTestHelpers";
 
-const LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es"] as const;
+const LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"] as const;
 
 describe("provider runtime fallback i18n (PR 9e)", () => {
   it("helpers return null instead of hardcoded Norwegian fallbacks", () => {
@@ -49,7 +49,7 @@ describe("provider runtime fallback i18n (PR 9e)", () => {
     }
   });
 
-  it("provider.orders.fallbacks exists in all 8 locales", async () => {
+  it("provider.orders.fallbacks exists in all 9 locales", async () => {
     for (const locale of LOCALES) {
       const messages = (await loadMessagesForLocale(locale)) as {
         provider: { orders: { fallbacks: { unknownProfile: string; unknownProduct: string } } };

@@ -788,7 +788,12 @@
           "nb-NO": "Norsk (bokmål)",
           "en-GB": "English",
           "sv-SE": "Svenska",
-          "da-DK": "Dansk"
+          "da-DK": "Dansk",
+          "fi-FI": "Suomi",
+          "de-DE": "Deutsch",
+          "fr-FR": "Français",
+          "es-ES": "Español",
+          "it-IT": "Italiano"
         },
         "errors": {
           "notAuthenticated": "Ikke innlogget.",

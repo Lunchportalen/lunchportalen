@@ -1385,10 +1385,15 @@
         "localeHint": "Contrôle la langue par défaut des interfaces opérationnelles du fournisseur lorsque le support linguistique est disponible.",
         "localeLabel": "Langue",
         "locales": {
-          "da-DK": "Danois",
-          "en-GB": "Anglais",
           "nb-NO": "Norvégien (bokmål)",
-          "sv-SE": "Suédois"
+          "en-GB": "Anglais",
+          "sv-SE": "Suédois",
+          "da-DK": "Danois",
+          "fi-FI": "Finnois",
+          "de-DE": "Allemand",
+          "fr-FR": "Français",
+          "es-ES": "Espagnol",
+          "it-IT": "Italien"
         },
         "operationsEmailHint": "Utilisé comme destinataire principal des alertes de commandes et messages opérationnels.",
         "operationsEmailLabel": "E-mail commandes et opérations",
@@ -1432,6 +1437,22 @@
         "save": "Enregistrer les paramètres",
         "saved": "Paramètres enregistrés.",
         "saving": "Enregistrement…"
+      },
+      "menuProfile": {
+        "heading": "Profil de menu (diagnostic)",
+        "flagActive": "Activé via feature flag — affichage uniquement, pas encore de changement produit.",
+        "profileLabel": "Profil de menu",
+        "sourceLabel": "Source",
+        "marketLabel": "Marché",
+        "localeLabel": "Locale",
+        "currencyLabel": "Devise par défaut",
+        "readOnlyNote": "Le profil de menu ne pilote pas les catégories, la publication ou les commandes dans cette phase.",
+        "invalidProfile": "Profil de menu invalide dans les paramètres : {message}",
+        "sourceProviderSetting": "Paramètre fournisseur",
+        "sourceMarketDefault": "Défaut marché",
+        "sourceFallbackNoMarket": "Fallback (profil/marché manquant)",
+        "sourceLegacyDisabled": "Legacy (désactivé)",
+        "sourceUnknown": "Inconnu"
       }
     },
     "tripletex": {

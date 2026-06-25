@@ -17,7 +17,7 @@ import {
 } from "@/lib/providers/providerMenuPackageSurface";
 import { PROD_LUNCH_CATEGORY_FIXTURE } from "../provider-menu/lunchCategoryCatalogFixtures";
 
-const LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es"] as const;
+const LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"] as const;
 
 describe("provider menu workspace i18n", () => {
   it.each(LOCALES)("loads workspace and validation keys for %s", async (locale) => {

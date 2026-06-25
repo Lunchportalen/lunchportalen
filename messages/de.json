@@ -1199,7 +1199,12 @@
           "nb-NO": "Norwegisch (Bokmål)",
           "en-GB": "Englisch",
           "sv-SE": "Schwedisch",
-          "da-DK": "Dänisch"
+          "da-DK": "Dänisch",
+          "fi-FI": "Finnisch",
+          "de-DE": "Deutsch",
+          "fr-FR": "Französisch",
+          "es-ES": "Spanisch",
+          "it-IT": "Italienisch"
         },
         "errors": {
           "notAuthenticated": "Nicht angemeldet.",
@@ -1255,6 +1260,22 @@
           "saveFailed": "Farbe konnte nicht gespeichert werden.",
           "unknown": "Unerwarteter Fehler beim Speichern."
         }
+      },
+      "menuProfile": {
+        "heading": "Menüprofil (Diagnose)",
+        "flagActive": "Aktiviert über Feature-Flag — nur Anzeige, noch keine Produktänderung.",
+        "profileLabel": "Menüprofil",
+        "sourceLabel": "Quelle",
+        "marketLabel": "Markt",
+        "localeLabel": "Locale",
+        "currencyLabel": "Standardwährung",
+        "readOnlyNote": "Das Menüprofil steuert in dieser Phase keine Kategorien, Veröffentlichung oder Bestellungen.",
+        "invalidProfile": "Ungültiges Menüprofil in den Einstellungen: {message}",
+        "sourceProviderSetting": "Anbietereinstellung",
+        "sourceMarketDefault": "Marktstandard",
+        "sourceFallbackNoMarket": "Fallback (Profil/Markt fehlt)",
+        "sourceLegacyDisabled": "Legacy (deaktiviert)",
+        "sourceUnknown": "Unbekannt"
       }
     },
     "banner": {
