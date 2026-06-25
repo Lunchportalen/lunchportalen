@@ -62,6 +62,10 @@ export {
 export {
   isMenuProfileResolverEnabled,
   LP_MENU_PROFILE_RESOLVER_ENV,
+  LP_MENU_PROFILE_FIXED_CATEGORIES_ENV,
+  LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV,
+  isMenuProfileWarmDishPreviewEnabled,
+  isMenuProfileWarmDishPreviewPanelEnabled,
 } from "@/lib/menu-profile/featureFlag";
 
 export { resolveMenuProfileForProvider } from "@/lib/menu-profile/resolver";

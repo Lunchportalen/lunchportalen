@@ -405,6 +405,28 @@
         "packagesLabel": "Paket",
         "profileCategoryLabel": "Profilkategori"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Varmrättsbank för menyprofil",
+        "description": "Det här är förslag baserade på vald menyprofil. Förslagen läggs inte in i katalog, veckoplan eller publicering förrän senare cutover.",
+        "previewOnly": "Endast förslag",
+        "notPublished": "Inte aktiv i publicering",
+        "notVisibleToEmployees": "Inte synlig för anställda",
+        "suggestedForProfile": "Förslag för profil",
+        "suggestedTiers": "Paketpassning",
+        "allergensLabel": "Föreslagna allergener",
+        "tagsLabel": "Föreslagna taggar",
+        "weekdayLabel": "Veckodagsförslag",
+        "noItems": "Inga varmrättsförslag för denna profil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Förslaget är inte kopplat till publicering eller order.",
+        "weekdays": {
+          "monday": "Måndag",
+          "tuesday": "Tisdag",
+          "wednesday": "Onsdag",
+          "thursday": "Torsdag",
+          "friday": "Fredag"
+        }
+      },
       "catalogModel": {
         "title": "Fasta val",
         "lead": "Det här är leverantörens fasta alternativ. Veckoplanen använder dem när du publicerar lunch för specifika dagar.",

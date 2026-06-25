@@ -405,6 +405,28 @@
         "packagesLabel": "Paketit",
         "profileCategoryLabel": "Profilikategoria"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Lämmin ruoka -pankki valikkoprofiilille",
+        "description": "Nämä ovat ehdotuksia valitun valikkoprofiilin perusteella. Ehdotuksia ei lisätä luetteloon, viikkosuunnitelmaan tai julkaisuun ennen myöhempää cutoveria.",
+        "previewOnly": "Vain ehdotus",
+        "notPublished": "Ei aktiivinen julkaisussa",
+        "notVisibleToEmployees": "Ei näy työntekijöille",
+        "suggestedForProfile": "Ehdotuksia profiilille",
+        "suggestedTiers": "Pakettisopivuus",
+        "allergensLabel": "Ehdotetut allergeenit",
+        "tagsLabel": "Ehdotetut tagit",
+        "weekdayLabel": "Viikonpäiväehdotus",
+        "noItems": "Ei lämpimän ruoan ehdotuksia tälle profiilille.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Ehdotus ei ole kytketty julkaisuun tai tilauksiin.",
+        "weekdays": {
+          "monday": "Maanantai",
+          "tuesday": "Tiistai",
+          "wednesday": "Keskiviikko",
+          "thursday": "Torstai",
+          "friday": "Perjantai"
+        }
+      },
       "catalogModel": {
         "title": "Kiinteät valinnat",
         "lead": "Nämä ovat toimittajasi kiinteät vaihtoehdot. Viikkosuunnitelma käyttää niitä, kun julkaiset lounaan tietyille päiville.",

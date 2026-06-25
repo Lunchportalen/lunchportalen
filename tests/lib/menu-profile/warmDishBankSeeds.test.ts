@@ -54,8 +54,8 @@ describe("warmDishBankSeeds (ADR-019 G0.2 — inert)", () => {
     const itSeeds = getWarmDishBankSeedsForProfile("italian_office_lunch");
     expect(itSeeds).toHaveLength(5);
     expect(itSeeds[0]?.locale).toBe("it-IT");
-    expect(itSeeds.some((s) => s.title.includes("Pasta"))).toBe(true);
-    expect(itSeeds.some((s) => s.key === "minestrone")).toBe(true);
+    expect(itSeeds.some((s) => s.title.includes("Lasagne"))).toBe(true);
+    expect(itSeeds.some((s) => s.key === "risotto-ai-funghi")).toBe(true);
   });
 
   it("seed titles are literal data, not UI message keys", () => {

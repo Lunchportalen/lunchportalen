@@ -1643,6 +1643,28 @@
         "packagesLabel": "Pacchetti",
         "profileCategoryLabel": "Categoria profilo"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Banca piatti caldi per profilo menu",
+        "description": "Questi sono suggerimenti basati sul profilo menu selezionato. I suggerimenti non vengono aggiunti al catalogo, al piano settimanale o alla pubblicazione fino a un cutover successivo.",
+        "previewOnly": "Solo suggerimento",
+        "notPublished": "Non attivo in pubblicazione",
+        "notVisibleToEmployees": "Non visibile ai dipendenti",
+        "suggestedForProfile": "Suggerimenti per profilo",
+        "suggestedTiers": "Adattamento pacchetto",
+        "allergensLabel": "Allergeni suggeriti",
+        "tagsLabel": "Tag suggeriti",
+        "weekdayLabel": "Suggerimento giorno",
+        "noItems": "Nessun suggerimento di piatto caldo per questo profilo.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Il suggerimento non è collegato a pubblicazione o ordini.",
+        "weekdays": {
+          "monday": "Lunedì",
+          "tuesday": "Martedì",
+          "wednesday": "Mercoledì",
+          "thursday": "Giovedì",
+          "friday": "Venerdì"
+        }
+      },
       "catalogModel": {
         "title": "Scelte fisse",
         "lead": "Queste sono le scelte fisse del tuo fornitore. La pianificazione settimanale le utilizza quando pubblichi il pranzo per giorni specifici.",

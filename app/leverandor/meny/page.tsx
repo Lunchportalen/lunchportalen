@@ -13,6 +13,7 @@ import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { buildProviderMenuWorkspacePresentation } from "@/lib/provider-menu/providerMenuProfilePresentation";
 import { buildProviderMenuFixedCategoryPresentation } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
+import { buildProviderMenuWarmDishPreviewPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishPreview";
 import { getMarketDefaults } from "@/lib/menu-profile/marketDefaults";
 import {
   loadAndResolveProviderMenuProfile,
@@ -48,6 +49,11 @@ export default async function LeverandorMenyPage() {
     menuProfileRow?.defaultCurrency ?? getMarketDefaults("NO").defaultCurrency,
     menuProfileEnv,
   );
+  const warmDishPreviewPresentation = buildProviderMenuWarmDishPreviewPresentation(
+    menuProfileResolver,
+    menuProfileRow?.defaultCurrency ?? getMarketDefaults("NO").defaultCurrency,
+    menuProfileEnv,
+  );
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
@@ -55,6 +61,7 @@ export default async function LeverandorMenyPage() {
         <ProviderMenuBuilder
           workspacePresentation={workspacePresentation}
           fixedCategoryPresentation={fixedCategoryPresentation}
+          warmDishPreviewPresentation={warmDishPreviewPresentation}
         />
       ) : (
         <section className="ds-card ds-provider-meny-card">

@@ -405,6 +405,28 @@
         "packagesLabel": "Forfaits",
         "profileCategoryLabel": "Catégorie profil"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Banque de plats chauds pour le profil menu",
+        "description": "Ce sont des suggestions basées sur le profil menu sélectionné. Les suggestions ne sont pas ajoutées au catalogue, au plan hebdomadaire ou à la publication avant un cutover ultérieur.",
+        "previewOnly": "Suggestion uniquement",
+        "notPublished": "Non actif dans la publication",
+        "notVisibleToEmployees": "Non visible pour les employés",
+        "suggestedForProfile": "Suggestions pour le profil",
+        "suggestedTiers": "Adéquation forfait",
+        "allergensLabel": "Allergènes suggérés",
+        "tagsLabel": "Tags suggérés",
+        "weekdayLabel": "Suggestion jour de semaine",
+        "noItems": "Aucune suggestion de plat chaud pour ce profil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "La suggestion n'est pas connectée à la publication ni aux commandes.",
+        "weekdays": {
+          "monday": "Lundi",
+          "tuesday": "Mardi",
+          "wednesday": "Mercredi",
+          "thursday": "Jeudi",
+          "friday": "Vendredi"
+        }
+      },
       "catalogModel": {
         "title": "Choix fixes",
         "lead": "Ce sont les options fixes de votre prestataire. Le plan hebdomadaire les utilise lorsque vous publiez le déjeuner pour des jours précis.",

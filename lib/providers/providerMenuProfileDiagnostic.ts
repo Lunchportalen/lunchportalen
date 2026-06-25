@@ -6,6 +6,7 @@ import {
   isMenuProfileResolverEnabled,
   LP_MENU_PROFILE_FIXED_CATEGORIES_ENV,
   LP_MENU_PROFILE_RESOLVER_ENV,
+  LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV,
 } from "@/lib/menu-profile/featureFlag";
 import { getMenuProfile } from "@/lib/menu-profile/registry";
 import { providerCountryCodeToMarket } from "@/lib/menu-profile/providerMenuProfileResolver";
@@ -62,6 +63,7 @@ export function menuProfileResolverHostEnv(): Readonly<Record<string, string | u
   return {
     [LP_MENU_PROFILE_RESOLVER_ENV]: process.env.LP_MENU_PROFILE_RESOLVER,
     [LP_MENU_PROFILE_FIXED_CATEGORIES_ENV]: process.env.LP_MENU_PROFILE_FIXED_CATEGORIES,
+    [LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV]: process.env.LP_MENU_PROFILE_WARM_DISH_PREVIEW,
   };
 }
 

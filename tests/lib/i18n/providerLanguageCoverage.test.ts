@@ -61,6 +61,21 @@ const MENU_PROFILE_PATHS = [
   "provider.menu.workspaceFixedCategories.presentationOnly",
   "provider.menu.workspaceFixedCategories.packagesLabel",
   "provider.menu.workspaceFixedCategories.profileCategoryLabel",
+  "provider.menu.workspaceWarmDishPreview.title",
+  "provider.menu.workspaceWarmDishPreview.description",
+  "provider.menu.workspaceWarmDishPreview.previewOnly",
+  "provider.menu.workspaceWarmDishPreview.notPublished",
+  "provider.menu.workspaceWarmDishPreview.notVisibleToEmployees",
+  "provider.menu.workspaceWarmDishPreview.suggestedForProfile",
+  "provider.menu.workspaceWarmDishPreview.suggestedTiers",
+  "provider.menu.workspaceWarmDishPreview.allergensLabel",
+  "provider.menu.workspaceWarmDishPreview.tagsLabel",
+  "provider.menu.workspaceWarmDishPreview.weekdayLabel",
+  "provider.menu.workspaceWarmDishPreview.noItems",
+  "provider.menu.workspaceWarmDishPreview.profileMeta",
+  "provider.menu.workspaceWarmDishPreview.notPublishedHelp",
+  "provider.menu.workspaceWarmDishPreview.weekdays.monday",
+  "provider.menu.workspaceWarmDishPreview.weekdays.friday",
 ] as const;
 
 function collectLeafPaths(node: unknown, prefix = ""): string[] {

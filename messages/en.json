@@ -1632,6 +1632,28 @@
         "packagesLabel": "Packages",
         "profileCategoryLabel": "Profile category"
       },
+      "workspaceWarmDishPreview": {
+        "title": "Warm dish bank for menu profile",
+        "description": "These are suggestions based on the selected menu profile. Suggestions are not added to the catalog, week plan, or publishing until a later cutover.",
+        "previewOnly": "Suggestion only",
+        "notPublished": "Not active in publishing",
+        "notVisibleToEmployees": "Not visible to employees",
+        "suggestedForProfile": "Suggestions for profile",
+        "suggestedTiers": "Package fit",
+        "allergensLabel": "Suggested allergens",
+        "tagsLabel": "Suggested tags",
+        "weekdayLabel": "Weekday suggestion",
+        "noItems": "No warm dish suggestions for this profile.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "This suggestion is not connected to publishing or orders.",
+        "weekdays": {
+          "monday": "Monday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday",
+          "thursday": "Thursday",
+          "friday": "Friday"
+        }
+      },
       "catalogModel": {
         "title": "Fixed choices",
         "lead": "These are your provider's fixed options. The week plan uses them when you publish lunch for specific days.",
