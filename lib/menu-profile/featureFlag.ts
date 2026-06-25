@@ -9,12 +9,16 @@ export const LP_MENU_PROFILE_FIXED_CATEGORIES_ENV = "LP_MENU_PROFILE_FIXED_CATEG
 
 export type EnvLike = Readonly<Record<string, string | undefined>>;
 
+function envFlagTruthy(raw: string | undefined): boolean {
+  const normalized = raw?.trim();
+  return normalized === "true" || normalized === "1";
+}
+
 /**
  * True only when env is exactly "true" or "1". Never throws. Pure — caller supplies env bag.
  */
 export function isMenuProfileResolverEnabled(env: EnvLike = {}): boolean {
-  const raw = env[LP_MENU_PROFILE_RESOLVER_ENV];
-  return raw === "true" || raw === "1";
+  return envFlagTruthy(env[LP_MENU_PROFILE_RESOLVER_ENV]);
 }
 
 /**
@@ -22,8 +26,7 @@ export function isMenuProfileResolverEnabled(env: EnvLike = {}): boolean {
  * True only when env is exactly "true" or "1". Default OFF.
  */
 export function isMenuProfileFixedCategoriesEnabled(env: EnvLike = {}): boolean {
-  const raw = env[LP_MENU_PROFILE_FIXED_CATEGORIES_ENV];
-  return raw === "true" || raw === "1";
+  return envFlagTruthy(env[LP_MENU_PROFILE_FIXED_CATEGORIES_ENV]);
 }
 
 /** G5b panel requires both resolver (G5a) and fixed-categories sub-flag. */

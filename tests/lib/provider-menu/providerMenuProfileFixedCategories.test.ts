@@ -63,6 +63,9 @@ describe("featureFlag LP_MENU_PROFILE_FIXED_CATEGORIES (G5b)", () => {
     );
     expect(isMenuProfileFixedCategoriesEnabled({ [LP_MENU_PROFILE_FIXED_CATEGORIES_ENV]: "true" })).toBe(true);
     expect(isMenuProfileFixedCategoriesEnabled({ [LP_MENU_PROFILE_FIXED_CATEGORIES_ENV]: "1" })).toBe(true);
+    expect(isMenuProfileFixedCategoriesEnabled({ [LP_MENU_PROFILE_FIXED_CATEGORIES_ENV]: "true\r\n" })).toBe(
+      true,
+    );
   });
 
   it("panel requires both resolver and fixed-categories flags", () => {
