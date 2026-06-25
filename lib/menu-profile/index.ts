@@ -1,8 +1,8 @@
 /**
- * INERT MENU PROFILE MODULE — ADR-019 G0
+ * INERT MENU PROFILE MODULE — ADR-019 G0–G1
  *
- * Public exports for menu profile registry and market defaults.
- * NOT FOR RUNTIME until G1+ phase gate.
+ * Public exports for menu profile registry, market defaults, and G1 resolver.
+ * Resolver is NOT wired to runtime routes until explicit cutover (flag default OFF).
  */
 
 export type {
@@ -17,7 +17,12 @@ export type {
   MenuProfile,
   MenuProfileId,
   MenuProfilePackageModel,
+  MenuProfileResolveSource,
+  MenuProfileResolverError,
+  MenuProfileResolverResult,
+  MenuProfileResolverSuccess,
   PackageKey,
+  ResolveMenuProfileForProviderInput,
   WarmDishBankSeed,
   WarmDishDefinition,
   WarmDishRuleSet,
@@ -53,3 +58,10 @@ export {
   warmDishDefinitionsForProfile,
   WARM_DISH_BANK_SEEDS,
 } from "@/lib/menu-profile/warmDishBankSeeds";
+
+export {
+  isMenuProfileResolverEnabled,
+  LP_MENU_PROFILE_RESOLVER_ENV,
+} from "@/lib/menu-profile/featureFlag";
+
+export { resolveMenuProfileForProvider } from "@/lib/menu-profile/resolver";
