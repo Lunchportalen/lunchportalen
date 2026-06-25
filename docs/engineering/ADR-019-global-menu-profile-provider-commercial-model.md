@@ -516,13 +516,17 @@ All phases are **sequential and gated**. No phase may skip Golden Path review wh
 
 | Deliverable | Notes |
 |-------------|-------|
-| DB column or `provider_settings` field for `menu_profile_id` | Additive |
-| `getMenuProfileForProvider()` | Flag off → current hardcoded behavior unchanged |
-| Flag on → read from registry via active agreement (when G2 exists) or provider setting |
+| `provider_settings.menu_profile_id` column | Additive — **G2 schema foundation** |
+| `resolveMenuProfileForProvider()` | Flag off → current hardcoded behavior unchanged |
+| Flag on → read from registry via provider setting (commercial agreement wiring later) |
 
 **Golden Path impact:** None until flag on and resolver wired to publish/order paths (G7).
 
-### G2 — Provider commercial agreement schema
+**G1 (merged):** Inert resolver + `LP_MENU_PROFILE_RESOLVER` feature flag (default OFF). No runtime imports. No DB column yet.
+
+**G2 (schema foundation):** Additive nullable `provider_settings.menu_profile_id` with CHECK against registry IDs. No backfill. RLS unchanged. No runtime reads until explicit wiring phase.
+
+### Provider commercial agreement schema (subsequent gate)
 
 **Scope:** Additive tables only — no mutation of customer `agreements` or frozen company lifecycle.
 
