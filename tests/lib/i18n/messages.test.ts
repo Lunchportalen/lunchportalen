@@ -46,4 +46,13 @@ describe("i18n messages", () => {
     const esProvider = es.provider as { dashboard: { quickActionsSection: string } };
     expect(esProvider.dashboard.quickActionsSection).toBe("Acciones rápidas");
   });
+
+  it("loadMessagesForLocale merges nb fallback for it", async () => {
+    const itMessages = await loadMessagesForLocale("it");
+    expect(itMessages.common).toMatchObject({ save: "Salva", language: "Lingua" });
+    expect(itMessages.localeSwitcher).toMatchObject({ label: "Scegli lingua" });
+    const itProvider = itMessages.provider as { nav: { orders: string }; settings: { menuProfile: { heading: string } } };
+    expect(itProvider.nav.orders).toBe("Ordini");
+    expect(itProvider.settings.menuProfile.heading).toContain("Profilo menu");
+  });
 });

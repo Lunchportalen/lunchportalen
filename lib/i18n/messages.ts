@@ -28,6 +28,7 @@ const LOCALE_MESSAGE_IMPORTS: Record<Exclude<AppLocale, "nb">, () => Promise<{ d
   de: () => import("../../messages/de.json"),
   fr: () => import("../../messages/fr.json"),
   es: () => import("../../messages/es.json"),
+  it: () => import("../../messages/it.json"),
 };
 
 export async function loadMessagesForLocale(locale: AppLocale): Promise<MessageTree> {

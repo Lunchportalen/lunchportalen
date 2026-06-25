@@ -1,6 +1,6 @@
 /** Edge-safe global app locale registry (no server-only imports). */
 
-export const APP_LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es"] as const;
+export const APP_LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"] as const;
 
 export type AppLocale = (typeof APP_LOCALES)[number];
 
@@ -18,6 +18,7 @@ export const LOCALE_REGISTRY: Record<
   de: { label: "Deutsch", htmlLang: "de-DE", intl: "de-DE" },
   fr: { label: "Français", htmlLang: "fr-FR", intl: "fr-FR" },
   es: { label: "Español", htmlLang: "es-ES", intl: "es-ES" },
+  it: { label: "Italiano", htmlLang: "it-IT", intl: "it-IT" },
 };
 
 export function isAppLocale(value: unknown): value is AppLocale {

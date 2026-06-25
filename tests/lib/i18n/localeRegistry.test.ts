@@ -11,13 +11,13 @@ import {
 } from "@/lib/i18n/localeRegistry";
 
 describe("localeRegistry", () => {
-  it("contains all eight app locales with nb as default", () => {
-    expect(APP_LOCALES).toEqual(["nb", "en", "sv", "da", "fi", "de", "fr", "es"]);
+  it("contains all nine app locales with nb as default", () => {
+    expect(APP_LOCALES).toEqual(["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"]);
     expect(DEFAULT_APP_LOCALE).toBe("nb");
-    expect(APP_LOCALES).toHaveLength(8);
+    expect(APP_LOCALES).toHaveLength(9);
   });
 
-  it("parseAppLocale accepts nb/en/sv/da/fi/de/fr/es", () => {
+  it("parseAppLocale accepts nb/en/sv/da/fi/de/fr/es/it", () => {
     for (const locale of APP_LOCALES) {
       expect(parseAppLocale(locale)).toBe(locale);
       expect(parseAppLocale(locale.toUpperCase())).toBe(locale);
@@ -47,6 +47,8 @@ describe("localeRegistry", () => {
     expect(intlLocaleForAppLocale("de")).toBe("de-DE");
     expect(htmlLangForAppLocale("es")).toBe("es-ES");
     expect(intlLocaleForAppLocale("es")).toBe("es-ES");
+    expect(htmlLangForAppLocale("it")).toBe("it-IT");
+    expect(intlLocaleForAppLocale("it")).toBe("it-IT");
   });
 
   it("getLocaleLabel returns native labels", () => {
@@ -55,6 +57,7 @@ describe("localeRegistry", () => {
     expect(getLocaleLabel("sv")).toBe("Svenska");
     expect(getLocaleLabel("fi")).toBe("Suomi");
     expect(getLocaleLabel("fr")).toBe("Français");
+    expect(getLocaleLabel("it")).toBe("Italiano");
   });
 
   it("all app locales are valid for profile persistence after DB migration", () => {
