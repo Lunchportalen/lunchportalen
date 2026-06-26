@@ -499,6 +499,74 @@ describe("G5d.0 — Golden Path reference contracts unchanged", () => {
   });
 });
 
+describe("G5d.3c — mapping draft validation helper runtime separation", () => {
+  const DRAFT_VALIDATION_IMPORT =
+    /from\s+["']@\/lib\/menu-profile\/runtimeMappingDraftValidation/;
+
+  const PROTECTED_PREFIXES = [
+    "app/api/provider/menu-days",
+    "app/api/provider/menu-catalog",
+    "lib/menu-publish",
+    "app/(app)/week",
+    "app/api/week",
+    "app/api/order/window",
+    "lib/week",
+    "app/api/orders",
+    "lib/orders",
+  ];
+
+  const PROTECTED_FILES = [
+    "lib/provider-menu/menuDayPayload.ts",
+    "lib/provider-menu/menuCatalogWrite.ts",
+    "lib/provider-menu/varmrettSharedWrite.ts",
+    "lib/integrations/tripletex/tripletexEngine.ts",
+  ];
+
+  test("protected runtime paths must not import mapping draft validation helpers", () => {
+    const files = [
+      ...filesUnderPrefixes(PROTECTED_PREFIXES),
+      ...PROTECTED_FILES.map((f) => path.join(ROOT, f)).filter((p) => fs.existsSync(p)),
+    ];
+    const offenders: string[] = [];
+    for (const filePath of files) {
+      const r = rel(filePath);
+      if (r.includes(`${path.sep}tests${path.sep}`)) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (DRAFT_VALIDATION_IMPORT.test(src)) offenders.push(r);
+    }
+    expect(
+      offenders,
+      `draft validation helpers leaked into runtime:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("G5d.3c validation module is only imported from allowed paths", () => {
+    const allowed = new Set([
+      "lib/menu-profile/runtimeMappingDraftValidation.ts",
+      "lib/menu-profile/runtimeMappingDraftValidationTypes.ts",
+      "tests/lib/menu-profile/runtimeMappingDraftValidation.test.ts",
+    ]);
+
+    const allFiles = [
+      ...walkFiles(path.join(ROOT, "app")),
+      ...walkFiles(path.join(ROOT, "lib")),
+      ...walkFiles(path.join(ROOT, "tests")),
+    ];
+
+    const offenders: string[] = [];
+    for (const filePath of allFiles) {
+      const r = rel(filePath);
+      if (allowed.has(r.replace(/\\/g, "/"))) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (DRAFT_VALIDATION_IMPORT.test(src)) offenders.push(r);
+    }
+    expect(
+      offenders,
+      `unexpected draft validation imports:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
 describe("G5d.3b — mapping draft table runtime separation", () => {
   const DRAFT_TABLE = /provider_menu_profile_runtime_mapping_drafts/;
 
