@@ -199,6 +199,7 @@ describe("G5d.0 — profile keys must not leak to save/menuDayPayload", () => {
     expect(saveBlock).toContain("JSON.stringify(payload)");
     expect(saveBlock).not.toContain("profileCategoryKey");
     expect(saveBlock).not.toContain("warmDishPreview");
+    expect(saveBlock).not.toContain("runtimeMappingProposal");
     expect(saveBlock).not.toContain("menuProfile");
     expect(saveBlock).not.toContain("fixedCategories");
   });
@@ -451,6 +452,34 @@ describe("G5d.0 — static import guards (protected separation)", () => {
     ].filter((p) => fs.existsSync(p));
 
     assertNoForbiddenImports(protectedFiles, [/runtimeMapping/]);
+  });
+
+  test("G5d.2 proposal UI may import runtimeMapping in provider menu presentation only", () => {
+    const allowedProposalFiles = [
+      path.join(ROOT, "app/leverandor/meny/page.tsx"),
+      path.join(ROOT, "lib/provider-menu/providerMenuRuntimeMappingProposal.ts"),
+    ].map((p) => fs.readFileSync(p, "utf8"));
+
+    for (const src of allowedProposalFiles) {
+      expect(src).toContain("runtimeMapping");
+    }
+  });
+
+  test("G5d.2 proposal panel and view model must not import protected runtime paths", () => {
+    const proposalUiFiles = [
+      path.join(ROOT, "components/providers/ProviderMenuRuntimeMappingProposalPanel.tsx"),
+      path.join(ROOT, "lib/provider-menu/providerMenuRuntimeMappingProposal.ts"),
+    ];
+
+    for (const filePath of proposalUiFiles) {
+      const src = fs.readFileSync(filePath, "utf8");
+      expect(src, rel(filePath)).not.toContain("lp_order_set");
+      expect(src, rel(filePath)).not.toContain("menuDayPayload");
+      expect(src, rel(filePath)).not.toContain("menuCatalogWrite");
+      expect(src, rel(filePath)).not.toContain("syncMenuServiceDayItems");
+      expect(src, rel(filePath)).not.toMatch(/from ["']@\/app\/api/);
+      expect(src, rel(filePath)).not.toMatch(/from ["']react/);
+    }
   });
 });
 

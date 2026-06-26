@@ -427,6 +427,43 @@
           "friday": "Freitag"
         }
       },
+      "runtimeMappingProposal": {
+        "title": "Runtime-Mapping-Vorschlag",
+        "description": "Dies ist eine Schattenansicht, wie das Menüprofil auf die aktuelle Runtime abgebildet werden könnte. In dieser Phase werden keine Auswahlen gespeichert, veröffentlicht oder Mitarbeitenden angezeigt.",
+        "shadowOnly": "Schattenansicht",
+        "notActiveInSave": "Nicht aktiv beim Speichern",
+        "notActiveInPublish": "Nicht aktiv in der Veröffentlichung",
+        "notVisibleToEmployees": "Für Mitarbeitende nicht sichtbar",
+        "existingNoRuntimeMapping": "Bestehendes NO-Runtime-Mapping",
+        "notRuntimeSupportedYet": "Noch nicht runtime-unterstützt",
+        "categoryMappings": "Kategorie-Mappings",
+        "warmDishMappings": "Warmgericht-Mappings",
+        "summary": "Zusammenfassung",
+        "mappedCategories": "{count} gemappte Kategorien",
+        "unmappedCategories": "{count} nicht gemappte Kategorien",
+        "previewOnlyWarmDishes": "{count} nur Vorschau-Warmgerichte",
+        "runtimeEnabledCount": "Runtime aktiviert: {count}",
+        "canSaveCount": "Kann speichern: {count}",
+        "canPublishCount": "Kann veröffentlichen: {count}",
+        "canOrderCount": "Kann bestellen: {count}",
+        "warningTitle": "Warnungen",
+        "noItems": "Keine Kategorien anzuzeigen.",
+        "existingNoRuntimeMappingHelp": "Diese Profilkategorie hat ein bestehendes NO-Runtime-Mapping, aber Cutover ist nicht aktiviert.",
+        "notRuntimeSupportedYetHelp": "Diese Profilkategorie ist noch nicht mit der aktuellen Runtime verbunden.",
+        "presentationOnlyHelp": "Nur Präsentation — keine Runtime-Verbindung.",
+        "unsupportedMappingHelp": "Kein Runtime-Mapping für diese Kategorie verfügbar.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Enterprise Upgrade ist keine Bestellkategorie.",
+        "previewOnly": "Nur Vorschau",
+        "notPublishable": "Nicht veröffentlichbar",
+        "previewOnlyHelp": "Nur Vorschau — nicht mit Menü oder Bestellungen verbunden.",
+        "notPublishableHelp": "In dieser Phase nicht veröffentlichbar.",
+        "warnings": {
+          "unmappedCategories": "Eine oder mehrere Kategorien haben kein Runtime-Mapping.",
+          "previewOnlyWarmDishes": "Warmgericht-Vorschläge sind nur Vorschau und können nicht veröffentlicht werden.",
+          "enterpriseUpgradeNotOrderCategory": "Enterprise Upgrade ist keine Bestellkategorie.",
+          "nonNoMarketShadowOnly": "Profil liegt außerhalb des NO-Markts — alle Mappings sind Schattenansicht."
+        }
+      },
       "catalogModel": {
         "title": "Feste Auswahl",
         "lead": "Das sind die festen Optionen Ihres Anbieters. Der Wochenplan nutzt sie, wenn Sie das Mittagessen für konkrete Tage veröffentlichen.",

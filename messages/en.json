@@ -1654,6 +1654,43 @@
           "friday": "Friday"
         }
       },
+      "runtimeMappingProposal": {
+        "title": "Runtime mapping proposal",
+        "description": "This is a shadow view of how the menu profile could map to today's runtime. No choices are saved, published, or shown to employees in this phase.",
+        "shadowOnly": "Shadow view",
+        "notActiveInSave": "Not active in save",
+        "notActiveInPublish": "Not active in publishing",
+        "notVisibleToEmployees": "Not visible to employees",
+        "existingNoRuntimeMapping": "Existing NO runtime mapping",
+        "notRuntimeSupportedYet": "Not runtime-supported yet",
+        "categoryMappings": "Category mappings",
+        "warmDishMappings": "Warm dish mappings",
+        "summary": "Summary",
+        "mappedCategories": "{count} mapped categories",
+        "unmappedCategories": "{count} unmapped categories",
+        "previewOnlyWarmDishes": "{count} preview-only warm dishes",
+        "runtimeEnabledCount": "Runtime enabled: {count}",
+        "canSaveCount": "Can save: {count}",
+        "canPublishCount": "Can publish: {count}",
+        "canOrderCount": "Can order: {count}",
+        "warningTitle": "Warnings",
+        "noItems": "No categories to show.",
+        "existingNoRuntimeMappingHelp": "This profile category has an existing NO runtime mapping, but cutover is not enabled.",
+        "notRuntimeSupportedYetHelp": "This profile category is not connected to today's runtime yet.",
+        "presentationOnlyHelp": "Presentation only — no runtime connection.",
+        "unsupportedMappingHelp": "No runtime mapping available for this category.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Enterprise upgrade is not an order category.",
+        "previewOnly": "Preview only",
+        "notPublishable": "Not publishable",
+        "previewOnlyHelp": "Preview only — not connected to menu or orders.",
+        "notPublishableHelp": "Not publishable in this phase.",
+        "warnings": {
+          "unmappedCategories": "One or more categories lack a runtime mapping.",
+          "previewOnlyWarmDishes": "Warm dish suggestions are preview-only and cannot be published.",
+          "enterpriseUpgradeNotOrderCategory": "Enterprise upgrade is not an order category.",
+          "nonNoMarketShadowOnly": "Profile is outside the NO market — all mapping is shadow-only."
+        }
+      },
       "catalogModel": {
         "title": "Fixed choices",
         "lead": "These are your provider's fixed options. The week plan uses them when you publish lunch for specific days.",

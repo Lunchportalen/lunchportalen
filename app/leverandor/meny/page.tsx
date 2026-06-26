@@ -14,7 +14,13 @@ import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { buildProviderMenuWorkspacePresentation } from "@/lib/provider-menu/providerMenuProfilePresentation";
 import { buildProviderMenuFixedCategoryPresentation } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
 import { buildProviderMenuWarmDishPreviewPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishPreview";
+import { buildProviderMenuRuntimeMappingProposalPresentation } from "@/lib/provider-menu/providerMenuRuntimeMappingProposal";
 import { getMarketDefaults } from "@/lib/menu-profile/marketDefaults";
+import type { CurrencyCode } from "@/lib/menu-profile/types";
+import {
+  isMenuProfileRuntimeMappingProposalPanelEnabled,
+} from "@/lib/menu-profile/featureFlag";
+import { buildMenuProfileRuntimeMapping } from "@/lib/menu-profile/runtimeMapping";
 import {
   loadAndResolveProviderMenuProfile,
   loadProviderSettingsMenuProfileRow,
@@ -55,6 +61,33 @@ export default async function LeverandorMenyPage() {
     menuProfileEnv,
   );
 
+  const defaultCurrency: CurrencyCode =
+    (menuProfileRow?.defaultCurrency as CurrencyCode | undefined) ??
+    getMarketDefaults("NO").defaultCurrency;
+
+  const runtimeMapping =
+    isMenuProfileRuntimeMappingProposalPanelEnabled(menuProfileEnv) &&
+    menuProfileResolver?.ok &&
+    menuProfileResolver.enabled
+      ? buildMenuProfileRuntimeMapping({
+          menuProfile: menuProfileResolver.profile,
+          currency: defaultCurrency,
+        })
+      : null;
+
+  const runtimeMappingProposal = buildProviderMenuRuntimeMappingProposalPresentation(
+    menuProfileResolver,
+    defaultCurrency,
+    runtimeMapping,
+    menuProfileEnv,
+    {
+      fixedCategoryPresentation:
+        fixedCategoryPresentation.active ? fixedCategoryPresentation : null,
+      warmDishPreview:
+        warmDishPreviewPresentation.active ? warmDishPreviewPresentation : null,
+    },
+  );
+
   return (
     <div className="ds-provider-meny-page lp-editor-page">
       {canEdit ? (
@@ -62,6 +95,7 @@ export default async function LeverandorMenyPage() {
           workspacePresentation={workspacePresentation}
           fixedCategoryPresentation={fixedCategoryPresentation}
           warmDishPreviewPresentation={warmDishPreviewPresentation}
+          runtimeMappingProposal={runtimeMappingProposal}
         />
       ) : (
         <section className="ds-card ds-provider-meny-card">

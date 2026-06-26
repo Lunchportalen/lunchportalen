@@ -427,6 +427,43 @@
           "friday": "Perjantai"
         }
       },
+      "runtimeMappingProposal": {
+        "title": "Runtime-mapping-ehdotus",
+        "description": "Tämä on varjokuva siitä, miten menu-profiili voitaisiin yhdistää nykyiseen runtimeen. Tässä vaiheessa valintoja ei tallenneta, julkaista eikä näytetä työntekijöille.",
+        "shadowOnly": "Varjokuva",
+        "notActiveInSave": "Ei aktiivinen tallennuksessa",
+        "notActiveInPublish": "Ei aktiivinen julkaisussa",
+        "notVisibleToEmployees": "Ei näy työntekijöille",
+        "existingNoRuntimeMapping": "Olemassa oleva NO-runtime-mapping",
+        "notRuntimeSupportedYet": "Ei vielä runtime-tuettu",
+        "categoryMappings": "Kategoriamappingit",
+        "warmDishMappings": "Lämmin ruoka -mappingit",
+        "summary": "Yhteenveto",
+        "mappedCategories": "{count} mapattua kategoriaa",
+        "unmappedCategories": "{count} mapaamatonta kategoriaa",
+        "previewOnlyWarmDishes": "{count} esikatseluvain lämpimiä ruokia",
+        "runtimeEnabledCount": "Runtime käytössä: {count}",
+        "canSaveCount": "Voi tallentaa: {count}",
+        "canPublishCount": "Voi julkaista: {count}",
+        "canOrderCount": "Voi tilata: {count}",
+        "warningTitle": "Varoitukset",
+        "noItems": "Ei näytettäviä kategorioita.",
+        "existingNoRuntimeMappingHelp": "Tällä profiilikategorialla on olemassa oleva NO-runtime-mapping, mutta cutover ei ole käytössä.",
+        "notRuntimeSupportedYetHelp": "Tätä profiilikategoriaa ei ole vielä yhdistetty nykyiseen runtimeen.",
+        "presentationOnlyHelp": "Vain esitys — ei runtime-yhteyttä.",
+        "unsupportedMappingHelp": "Tälle kategorialle ei ole runtime-mappingia.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Enterprise upgrade ei ole tilauskategoria.",
+        "previewOnly": "Vain esikatselu",
+        "notPublishable": "Ei julkaistavissa",
+        "previewOnlyHelp": "Vain esikatselu — ei yhdistetty menuun tai tilauksiin.",
+        "notPublishableHelp": "Ei julkaistavissa tässä vaiheessa.",
+        "warnings": {
+          "unmappedCategories": "Yhdellä tai useammalla kategorialla puuttuu runtime-mapping.",
+          "previewOnlyWarmDishes": "Lämmin ruoka -ehdotukset ovat vain esikatselua eikä niitä voi julkaista.",
+          "enterpriseUpgradeNotOrderCategory": "Enterprise upgrade ei ole tilauskategoria.",
+          "nonNoMarketShadowOnly": "Profiili on NO-markkinoiden ulkopuolella — kaikki mapping on varjokuvaa."
+        }
+      },
       "catalogModel": {
         "title": "Kiinteät valinnat",
         "lead": "Nämä ovat toimittajasi kiinteät vaihtoehdot. Viikkosuunnitelma käyttää niitä, kun julkaiset lounaan tietyille päiville.",

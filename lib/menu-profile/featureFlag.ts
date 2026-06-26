@@ -7,6 +7,8 @@
 export const LP_MENU_PROFILE_RESOLVER_ENV = "LP_MENU_PROFILE_RESOLVER";
 export const LP_MENU_PROFILE_FIXED_CATEGORIES_ENV = "LP_MENU_PROFILE_FIXED_CATEGORIES";
 export const LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV = "LP_MENU_PROFILE_WARM_DISH_PREVIEW";
+export const LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV =
+  "LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL";
 
 export type EnvLike = Readonly<Record<string, string | undefined>>;
 
@@ -46,4 +48,17 @@ export function isMenuProfileWarmDishPreviewEnabled(env: EnvLike = {}): boolean 
 /** G5c panel requires both resolver (G5a) and warm-dish-preview sub-flag. */
 export function isMenuProfileWarmDishPreviewPanelEnabled(env: EnvLike = {}): boolean {
   return isMenuProfileResolverEnabled(env) && isMenuProfileWarmDishPreviewEnabled(env);
+}
+
+/**
+ * G5d.2 sub-flag — runtime mapping proposal panel (shadow-only).
+ * True only when env is exactly "true" or "1". Default OFF.
+ */
+export function isMenuProfileRuntimeMappingProposalEnabled(env: EnvLike = {}): boolean {
+  return envFlagTruthy(env[LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV]);
+}
+
+/** G5d.2 panel requires both resolver (G5a) and runtime-mapping-proposal sub-flag. */
+export function isMenuProfileRuntimeMappingProposalPanelEnabled(env: EnvLike = {}): boolean {
+  return isMenuProfileResolverEnabled(env) && isMenuProfileRuntimeMappingProposalEnabled(env);
 }

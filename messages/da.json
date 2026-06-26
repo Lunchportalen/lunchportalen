@@ -432,6 +432,43 @@
           "friday": "Fredag"
         }
       },
+      "runtimeMappingProposal": {
+        "title": "Runtime mapping-forslag",
+        "description": "Dette er en skyggevisning af, hvordan menuprofilen kan mappes mod dagens runtime. Ingen valg gemmes, publiceres eller vises til medarbejdere i denne fase.",
+        "shadowOnly": "Skyggevisning",
+        "notActiveInSave": "Ikke aktiv i lagring",
+        "notActiveInPublish": "Ikke aktiv i publicering",
+        "notVisibleToEmployees": "Ikke synlig for medarbejdere",
+        "existingNoRuntimeMapping": "Eksisterende NO-runtime mapping",
+        "notRuntimeSupportedYet": "Ikke runtime-understøttet endnu",
+        "categoryMappings": "Kategorimapping",
+        "warmDishMappings": "Varmretmapping",
+        "summary": "Opsummering",
+        "mappedCategories": "{count} mappede kategorier",
+        "unmappedCategories": "{count} ikke mappede kategorier",
+        "previewOnlyWarmDishes": "{count} kun forslag varmretter",
+        "runtimeEnabledCount": "Runtime aktiveret: {count}",
+        "canSaveCount": "Kan gemme: {count}",
+        "canPublishCount": "Kan publicere: {count}",
+        "canOrderCount": "Kan bestille: {count}",
+        "warningTitle": "Advarsler",
+        "noItems": "Ingen kategorier at vise.",
+        "existingNoRuntimeMappingHelp": "Profilkategorien har en eksisterende NO-runtime mapping, men cutover er ikke aktiveret.",
+        "notRuntimeSupportedYetHelp": "Profilkategorien er endnu ikke koblet til dagens runtime.",
+        "presentationOnlyHelp": "Kun præsentation — ingen runtime-forbindelse.",
+        "unsupportedMappingHelp": "Ingen runtime-mapping tilgængelig for denne kategori.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Enterprise upgrade er ikke en ordrekategori.",
+        "previewOnly": "Kun forslag",
+        "notPublishable": "Ikke publicerbar",
+        "previewOnlyHelp": "Kun forslag — ikke koblet til menu eller ordrer.",
+        "notPublishableHelp": "Ikke publicerbar i denne fase.",
+        "warnings": {
+          "unmappedCategories": "Én eller flere kategorier mangler runtime-mapping.",
+          "previewOnlyWarmDishes": "Varmretforslag er kun forslag og kan ikke publiceres.",
+          "enterpriseUpgradeNotOrderCategory": "Enterprise upgrade er ikke en ordrekategori.",
+          "nonNoMarketShadowOnly": "Profilen er uden for NO-markedet — al mapping er skyggevisning."
+        }
+      },
       "catalogModel": {
         "title": "Faste valg",
         "lead": "Dette er leverandørens faste alternativer. Ugeplanen bruger dem, når du publicerer frokost for konkrete dage.",
