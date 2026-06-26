@@ -16,6 +16,7 @@ import {
 
 const ROOT = path.resolve(import.meta.dirname, "../../..");
 const MENU_PROFILE_DIR = path.join(ROOT, "lib/menu-profile");
+const SERVER_ONLY_MENU_PROFILE_FILES = new Set(["runtimeMappingDraftPersistence.server.ts"]);
 
 const EXPECTED_MARKETS = ["NO", "SE", "DK", "FI", "DE", "FR", "ES", "UK", "IT"] as const;
 
@@ -89,6 +90,7 @@ describe("warmDishBankSeeds (ADR-019 G0.2 — inert)", () => {
     it("all lib/menu-profile files remain inert", () => {
       const files = readdirSync(MENU_PROFILE_DIR).filter((f) => f.endsWith(".ts"));
       for (const file of files) {
+        if (SERVER_ONLY_MENU_PROFILE_FILES.has(file)) continue;
         const src = readFileSync(path.join(MENU_PROFILE_DIR, file), "utf8");
         expect(src, file).not.toMatch(/process\.env/);
         expect(src, file).not.toMatch(/\bfetch\s*\(/);

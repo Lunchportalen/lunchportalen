@@ -544,7 +544,12 @@ describe("G5d.3c — mapping draft validation helper runtime separation", () => 
     const allowed = new Set([
       "lib/menu-profile/runtimeMappingDraftValidation.ts",
       "lib/menu-profile/runtimeMappingDraftValidationTypes.ts",
+      "lib/menu-profile/runtimeMappingDraftPersistence.server.ts",
+      "app/api/provider/menu-profile/mapping-draft/route.ts",
+      "app/api/provider/menu-profile/mapping-draft/archive/route.ts",
       "tests/lib/menu-profile/runtimeMappingDraftValidation.test.ts",
+      "tests/lib/menu-profile/runtimeMappingDraftPersistence.server.test.ts",
+      "tests/api/provider/menu-profile-mapping-draft-api.test.ts",
     ]);
 
     const allFiles = [
@@ -610,6 +615,12 @@ describe("G5d.3b — mapping draft table runtime separation", () => {
     );
     expect(DRAFT_TABLE.test(migration)).toBe(true);
 
+    const allowedDraftTablePaths = new Set([
+      "lib/menu-profile/runtimeMappingDraftPersistence.server.ts",
+      "app/api/provider/menu-profile/mapping-draft/route.ts",
+      "app/api/provider/menu-profile/mapping-draft/archive/route.ts",
+    ].map((p) => p.replace(/\//g, path.sep)));
+
     const appFiles = walkFiles(path.join(ROOT, "app")).filter(
       (p) => !p.includes(`${path.sep}tests${path.sep}`),
     );
@@ -617,14 +628,85 @@ describe("G5d.3b — mapping draft table runtime separation", () => {
       ...walkFiles(path.join(ROOT, "lib", "menu-publish")),
       ...walkFiles(path.join(ROOT, "lib", "provider-menu")),
       ...walkFiles(path.join(ROOT, "lib", "orders")),
+      ...walkFiles(path.join(ROOT, "lib", "menu-profile")).filter(
+        (p) => !p.includes("runtimeMappingDraftPersistence.server"),
+      ),
     ];
     const offenders: string[] = [];
     for (const filePath of [...appFiles, ...libRuntimeFiles]) {
       const r = rel(filePath);
       if (r.includes("providerMenuProfileRuntimeMappingDraftsMigration")) continue;
+      if (allowedDraftTablePaths.has(r)) continue;
       const src = fs.readFileSync(filePath, "utf8");
       if (DRAFT_TABLE.test(src)) offenders.push(r);
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+describe("G5d.3d — mapping draft API runtime separation", () => {
+  const DRAFT_PERSISTENCE_IMPORT =
+    /from\s+["']@\/lib\/menu-profile\/runtimeMappingDraftPersistence\.server/;
+
+  const PROTECTED_PREFIXES = [
+    "app/api/provider/menu-days",
+    "app/api/provider/menu-catalog",
+    "lib/menu-publish",
+    "app/(app)/week",
+    "app/api/week",
+    "app/api/order/window",
+    "lib/week",
+    "app/api/orders",
+    "lib/orders",
+  ];
+
+  const PROTECTED_FILES = [
+    "lib/provider-menu/menuDayPayload.ts",
+    "lib/provider-menu/menuCatalogWrite.ts",
+    "lib/provider-menu/varmrettSharedWrite.ts",
+    "lib/integrations/tripletex/tripletexEngine.ts",
+    "components/providers/ProviderMenuBuilder.tsx",
+    "components/providers/ProviderMenuRuntimeMappingProposalPanel.tsx",
+  ];
+
+  test("protected runtime paths must not import draft persistence helper", () => {
+    const files = [
+      ...filesUnderPrefixes(PROTECTED_PREFIXES),
+      ...PROTECTED_FILES.map((f) => path.join(ROOT, f)).filter((p) => fs.existsSync(p)),
+    ];
+    const offenders: string[] = [];
+    for (const filePath of files) {
+      const r = rel(filePath);
+      if (r.includes(`${path.sep}tests${path.sep}`)) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (DRAFT_PERSISTENCE_IMPORT.test(src)) offenders.push(r);
+    }
+    expect(
+      offenders,
+      `draft persistence leaked into runtime:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("draft API routes must not import publish/order/week/Sanity/billing", () => {
+    const apiFiles = [
+      path.join(ROOT, "app/api/provider/menu-profile/mapping-draft/route.ts"),
+      path.join(ROOT, "app/api/provider/menu-profile/mapping-draft/archive/route.ts"),
+    ].filter((p) => fs.existsSync(p));
+
+    const forbidden = [
+      /menu-publish/,
+      /lp_order_set/,
+      /syncMenuServiceDay/,
+      /requireSanityWrite/,
+      /tripletex/i,
+      /provider_price_rules/,
+    ];
+
+    for (const filePath of apiFiles) {
+      const src = fs.readFileSync(filePath, "utf8");
+      for (const pattern of forbidden) {
+        expect(src, rel(filePath)).not.toMatch(pattern);
+      }
+    }
   });
 });

@@ -9,6 +9,7 @@ export const LP_MENU_PROFILE_FIXED_CATEGORIES_ENV = "LP_MENU_PROFILE_FIXED_CATEG
 export const LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV = "LP_MENU_PROFILE_WARM_DISH_PREVIEW";
 export const LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV =
   "LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL";
+export const LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV = "LP_MENU_PROFILE_MAPPING_DRAFT_API";
 
 export type EnvLike = Readonly<Record<string, string | undefined>>;
 
@@ -61,4 +62,12 @@ export function isMenuProfileRuntimeMappingProposalEnabled(env: EnvLike = {}): b
 /** G5d.2 panel requires both resolver (G5a) and runtime-mapping-proposal sub-flag. */
 export function isMenuProfileRuntimeMappingProposalPanelEnabled(env: EnvLike = {}): boolean {
   return isMenuProfileResolverEnabled(env) && isMenuProfileRuntimeMappingProposalEnabled(env);
+}
+
+/**
+ * G5d.3d — mapping draft read/write API (shadow-only persistence).
+ * True only when env is exactly "true" or "1". Default OFF. Production OFF.
+ */
+export function isMenuProfileMappingDraftApiEnabled(env: EnvLike = {}): boolean {
+  return envFlagTruthy(env[LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV]);
 }
