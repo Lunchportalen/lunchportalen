@@ -256,6 +256,7 @@ describe("G5d.0 — publish / menuDayPayload static separation", () => {
     /providerMenuProfileFixedCategories/,
     /noCategoryRuntimeMap/,
     /providerMenuProfilePresentation/,
+    /runtimeMapping/,
   ];
 
   test("lib/menu-publish must not import menu profile presentation/runtime bridge", () => {
@@ -304,6 +305,7 @@ describe("G5d.0 — order write-path contracts", () => {
       /providerMenuProfileWarmDishPreview/,
       /warmDishBankSeeds/,
       /providerMenuProfileFixedCategories/,
+      /runtimeMapping/,
     ]);
   });
 });
@@ -346,6 +348,7 @@ describe("G5d.0 — employee /week price-free contracts", () => {
       /providerMenuPricePreview/,
       /provider_price_rules/,
       /tripletexEngine/,
+      /runtimeMapping/,
     ]);
   });
 });
@@ -429,6 +432,25 @@ describe("G5d.0 — static import guards (protected separation)", () => {
       expect(src, rel(filePath)).not.toContain("menuDayPayload");
       expect(src, rel(filePath)).not.toContain("syncMenuServiceDayItems");
     }
+  });
+
+  test("protected runtime paths must not import G5d.1 runtimeMapping layer", () => {
+    const protectedFiles = [
+      ...filesUnderPrefixes(["app/api/provider/menu-days", "app/api/provider/menu-catalog"]),
+      ...walkFiles(path.join(ROOT, "lib", "menu-publish")),
+      ...filesUnderPrefixes([
+        "app/(app)/week",
+        "app/api/week",
+        "app/api/order/window",
+        "lib/week",
+      ]),
+      ...filesUnderPrefixes(["app/api/orders", "lib/orders"]),
+      path.join(ROOT, "lib/provider-menu/menuDayPayload.ts"),
+      path.join(ROOT, "lib/provider-menu/menuCatalogWrite.ts"),
+      path.join(ROOT, "lib/provider-menu/varmrettSharedWrite.ts"),
+    ].filter((p) => fs.existsSync(p));
+
+    assertNoForbiddenImports(protectedFiles, [/runtimeMapping/]);
   });
 });
 
