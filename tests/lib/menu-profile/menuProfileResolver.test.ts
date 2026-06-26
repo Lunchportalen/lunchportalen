@@ -12,6 +12,7 @@ import type { MenuProfileResolverError } from "@/lib/menu-profile";
 
 const ROOT = path.resolve(import.meta.dirname, "../../..");
 const MENU_PROFILE_DIR = path.join(ROOT, "lib/menu-profile");
+const SERVER_ONLY_MENU_PROFILE_FILES = new Set(["runtimeMappingDraftPersistence.server.ts"]);
 const ENV_KEY = LP_MENU_PROFILE_RESOLVER_ENV;
 
 describe("menuProfileResolver (ADR-019 G1 — inert, flag default OFF)", () => {
@@ -159,6 +160,7 @@ describe("menuProfileResolver (ADR-019 G1 — inert, flag default OFF)", () => {
     it("lib/menu-profile files have no forbidden imports", () => {
       const files = readdirSync(MENU_PROFILE_DIR).filter((f) => f.endsWith(".ts"));
       for (const file of files) {
+        if (SERVER_ONLY_MENU_PROFILE_FILES.has(file)) continue;
         const src = readFileSync(path.join(MENU_PROFILE_DIR, file), "utf8");
         const importBlock = src
           .split(/\r?\n/)

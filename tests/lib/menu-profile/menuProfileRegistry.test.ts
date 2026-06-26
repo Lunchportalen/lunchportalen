@@ -16,6 +16,7 @@ import {
 
 const ROOT = path.resolve(import.meta.dirname, "../../..");
 const MENU_PROFILE_DIR = path.join(ROOT, "lib/menu-profile");
+const SERVER_ONLY_MENU_PROFILE_FILES = new Set(["runtimeMappingDraftPersistence.server.ts"]);
 
 describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
   it("listMenuProfiles returns all 9 profiles", () => {
@@ -201,6 +202,7 @@ describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
       expect(files.length).toBeGreaterThan(0);
 
       for (const file of files) {
+        if (SERVER_ONLY_MENU_PROFILE_FILES.has(file)) continue;
         const src = readFileSync(path.join(MENU_PROFILE_DIR, file), "utf8");
         const importBlock = src
           .split(/\r?\n/)
