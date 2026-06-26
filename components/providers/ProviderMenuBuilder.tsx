@@ -61,9 +61,11 @@ import type { ProviderMenuPriceView } from "@/lib/providers/providerMenuPriceDis
 import type { ProviderMenuWorkspacePresentationProps } from "@/lib/provider-menu/providerMenuProfilePresentation";
 import type { MenuProfileFixedCategoryPresentationProps } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
 import type { MenuProfileWarmDishPreviewPresentationProps } from "@/lib/provider-menu/providerMenuProfileWarmDishPreview";
+import type { ProviderMenuRuntimeMappingProposalProps } from "@/lib/provider-menu/providerMenuRuntimeMappingProposal";
 import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
 import ProviderMenuProfileFixedCategoriesPanel from "@/components/providers/ProviderMenuProfileFixedCategoriesPanel";
 import ProviderMenuProfileWarmDishPreviewPanel from "@/components/providers/ProviderMenuProfileWarmDishPreviewPanel";
+import ProviderMenuRuntimeMappingProposalPanel from "@/components/providers/ProviderMenuRuntimeMappingProposalPanel";
 
 import "@/app/styles/ds/provider-menu-editor.css";
 
@@ -71,6 +73,7 @@ type ProviderMenuBuilderProps = {
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
   fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
   warmDishPreviewPresentation?: MenuProfileWarmDishPreviewPresentationProps;
+  runtimeMappingProposal?: ProviderMenuRuntimeMappingProposalProps;
 };
 
 type MenuWeekResponse = {
@@ -169,11 +172,13 @@ export default function ProviderMenuBuilder({
   workspacePresentation = { active: false },
   fixedCategoryPresentation = { active: false },
   warmDishPreviewPresentation = { active: false },
+  runtimeMappingProposal = { active: false },
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
   const warmDishPreview = warmDishPreviewPresentation.active ? warmDishPreviewPresentation : null;
+  const runtimeMapping = runtimeMappingProposal.active ? runtimeMappingProposal : null;
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("week");
@@ -559,6 +564,10 @@ export default function ProviderMenuBuilder({
         <ProviderMenuProfileWarmDishPreviewPanel presentation={warmDishPreview} />
       ) : null}
 
+      {runtimeMapping && workspaceView === "week" ? (
+        <ProviderMenuRuntimeMappingProposalPanel proposal={runtimeMapping} />
+      ) : null}
+
       {workspaceView === "week" ? (
         <ProviderMenuPricePreviewStrip tier={tier} pricePreview={pricePreview} />
       ) : null}
@@ -671,6 +680,7 @@ export default function ProviderMenuBuilder({
               onCatalogSaved={setCatalog}
               workspacePresentation={workspacePresentation}
               fixedCategoryPresentation={fixedCategoryPresentation}
+              runtimeMappingProposal={runtimeMappingProposal}
             />
           )}
         </div>

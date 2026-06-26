@@ -427,6 +427,43 @@
           "friday": "Vendredi"
         }
       },
+      "runtimeMappingProposal": {
+        "title": "Proposition de mapping runtime",
+        "description": "Il s'agit d'une vue fantôme de la façon dont le profil menu pourrait être mappé au runtime actuel. Aucun choix n'est enregistré, publié ou visible par les employés dans cette phase.",
+        "shadowOnly": "Vue fantôme",
+        "notActiveInSave": "Inactif à l'enregistrement",
+        "notActiveInPublish": "Inactif à la publication",
+        "notVisibleToEmployees": "Non visible par les employés",
+        "existingNoRuntimeMapping": "Mapping runtime NO existant",
+        "notRuntimeSupportedYet": "Pas encore pris en charge par le runtime",
+        "categoryMappings": "Mappings de catégories",
+        "warmDishMappings": "Mappings plats chauds",
+        "summary": "Résumé",
+        "mappedCategories": "{count} catégories mappées",
+        "unmappedCategories": "{count} catégories non mappées",
+        "previewOnlyWarmDishes": "{count} plats chauds en aperçu uniquement",
+        "runtimeEnabledCount": "Runtime activé : {count}",
+        "canSaveCount": "Peut enregistrer : {count}",
+        "canPublishCount": "Peut publier : {count}",
+        "canOrderCount": "Peut commander : {count}",
+        "warningTitle": "Avertissements",
+        "noItems": "Aucune catégorie à afficher.",
+        "existingNoRuntimeMappingHelp": "Cette catégorie profil a un mapping runtime NO existant, mais le cutover n'est pas activé.",
+        "notRuntimeSupportedYetHelp": "Cette catégorie profil n'est pas encore connectée au runtime actuel.",
+        "presentationOnlyHelp": "Présentation uniquement — pas de connexion runtime.",
+        "unsupportedMappingHelp": "Aucun mapping runtime disponible pour cette catégorie.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Enterprise upgrade n'est pas une catégorie de commande.",
+        "previewOnly": "Aperçu uniquement",
+        "notPublishable": "Non publiable",
+        "previewOnlyHelp": "Aperçu uniquement — non connecté au menu ou aux commandes.",
+        "notPublishableHelp": "Non publiable dans cette phase.",
+        "warnings": {
+          "unmappedCategories": "Une ou plusieurs catégories n'ont pas de mapping runtime.",
+          "previewOnlyWarmDishes": "Les suggestions de plats chauds sont en aperçu uniquement et ne peuvent pas être publiées.",
+          "enterpriseUpgradeNotOrderCategory": "Enterprise upgrade n'est pas une catégorie de commande.",
+          "nonNoMarketShadowOnly": "Le profil est hors marché NO — tout le mapping est en vue fantôme."
+        }
+      },
       "catalogModel": {
         "title": "Choix fixes",
         "lead": "Ce sont les options fixes de votre prestataire. Le plan hebdomadaire les utilise lorsque vous publiez le déjeuner pour des jours précis.",

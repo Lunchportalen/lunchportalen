@@ -6,9 +6,11 @@ import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCateg
 import { catalogSupportsPersistentEdit } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import type { ProviderMenuWorkspacePresentationProps } from "@/lib/provider-menu/providerMenuProfilePresentation";
 import type { MenuProfileFixedCategoryPresentationProps } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
+import type { ProviderMenuRuntimeMappingProposalProps } from "@/lib/provider-menu/providerMenuRuntimeMappingProposal";
 import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
 import ProviderMenuProfileFixedCategoriesPanel from "@/components/providers/ProviderMenuProfileFixedCategoriesPanel";
+import ProviderMenuRuntimeMappingProposalPanel from "@/components/providers/ProviderMenuRuntimeMappingProposalPanel";
 
 type Props = {
   tier: PlanTier;
@@ -16,6 +18,7 @@ type Props = {
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
   fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
+  runtimeMappingProposal?: ProviderMenuRuntimeMappingProposalProps;
 };
 
 const PACKAGE_TIERS: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
@@ -32,15 +35,18 @@ export default function ProviderMenuCatalogView({
   onCatalogSaved,
   workspacePresentation = { active: false },
   fixedCategoryPresentation = { active: false },
+  runtimeMappingProposal = { active: false },
 }: Props) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
+  const runtimeMapping = runtimeMappingProposal.active ? runtimeMappingProposal : null;
 
   return (
     <section className="lp-editor-catalog" aria-label={t("catalogModel.title")}>
       {profilePresentation ? <ProviderMenuProfilePresentationBanner presentation={profilePresentation} /> : null}
       {fixedCategories ? <ProviderMenuProfileFixedCategoriesPanel presentation={fixedCategories} /> : null}
+      {runtimeMapping ? <ProviderMenuRuntimeMappingProposalPanel proposal={runtimeMapping} /> : null}
 
       <header className="lp-editor-catalog__head">
         <h2 className="ds-h4">{t("catalogModel.title")}</h2>
