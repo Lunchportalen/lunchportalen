@@ -16,7 +16,6 @@ import { categoryFromLunchCategoryKey, EDITABLE_LUNCH_CATEGORY_KEYS } from "@/li
 import { canonicalMenuCategory } from "@/lib/provider-menu/menuCategoryCanonical";
 import { buildMenuDayPayload } from "@/lib/provider-menu/menuDayPayload";
 import {
-  buildProviderLunchCategoryDoc,
   validateMenuCatalogWriteInput,
 } from "@/lib/provider-menu/menuCatalogWrite";
 import { resolveNoCategoryRuntimeMapping } from "@/lib/menu-profile/noCategoryRuntimeMap";
@@ -216,15 +215,19 @@ describe("G5d.0 — catalog save payload contracts", () => {
     });
   }
 
-  test("provider-owned title preserved in catalog write doc (not auto-translated)", async () => {
+  test("provider-owned title passes through catalog validation unchanged (no locale transform)", () => {
     const title = PROVIDER_OWNED_TITLE_SAMPLE;
-    const { doc } = await buildProviderLunchCategoryDoc(PROVIDER_B, {
+    const err = validateMenuCatalogWriteInput({
       categoryKey: "paasmurt",
-      items: [{ key: "ost-skinke", title, allergens: [] }],
+      items: [{ title, allergens: [] }],
     });
-    const items = doc.items as { title: string }[];
-    expect(items[0]?.title).toBe(title);
-    expect(items[0]?.title).not.toMatch(/chicken curry|hähnchen/i);
+    expect(err).toBeNull();
+  });
+
+  test("menuCatalogWrite does not auto-translate provider-owned titles via i18n", () => {
+    const src = readSource("lib/provider-menu/menuCatalogWrite.ts");
+    expect(src).not.toMatch(/useTranslations|loadMessagesForLocale|next-intl/);
+    expect(src).toContain("title");
   });
 
   test("warm dish preview suggestions are not catalog write input", () => {
