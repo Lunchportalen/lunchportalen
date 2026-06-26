@@ -498,3 +498,65 @@ describe("G5d.0 — Golden Path reference contracts unchanged", () => {
     expect(src).not.toContain("warm-dish-preview:");
   });
 });
+
+describe("G5d.3b — mapping draft table runtime separation", () => {
+  const DRAFT_TABLE = /provider_menu_profile_runtime_mapping_drafts/;
+
+  const PROTECTED_PREFIXES = [
+    "app/api/provider/menu-days",
+    "app/api/provider/menu-catalog",
+    "lib/menu-publish",
+    "app/(app)/week",
+    "app/api/week",
+    "app/api/order/window",
+    "lib/week",
+    "app/api/orders",
+    "lib/orders",
+  ];
+
+  const PROTECTED_FILES = [
+    "lib/provider-menu/menuDayPayload.ts",
+    "lib/provider-menu/menuCatalogWrite.ts",
+    "lib/provider-menu/varmrettSharedWrite.ts",
+    "lib/integrations/tripletex/tripletexEngine.ts",
+  ];
+
+  test("protected runtime paths must not reference mapping draft table", () => {
+    const files = [
+      ...filesUnderPrefixes(PROTECTED_PREFIXES),
+      ...PROTECTED_FILES.map((f) => path.join(ROOT, f)).filter((p) => fs.existsSync(p)),
+    ];
+    const offenders: string[] = [];
+    for (const filePath of files) {
+      const r = rel(filePath);
+      if (r.includes(`${path.sep}tests${path.sep}`)) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (DRAFT_TABLE.test(src)) offenders.push(r);
+    }
+    expect(offenders, `draft table leaked into runtime:\n${offenders.join("\n")}`).toEqual([]);
+  });
+
+  test("G5d.3b migration is the only runtime source file naming the draft table", () => {
+    const migration = readSource(
+      "supabase/migrations/20260727120000_provider_menu_profile_runtime_mapping_drafts.sql",
+    );
+    expect(DRAFT_TABLE.test(migration)).toBe(true);
+
+    const appFiles = walkFiles(path.join(ROOT, "app")).filter(
+      (p) => !p.includes(`${path.sep}tests${path.sep}`),
+    );
+    const libRuntimeFiles = [
+      ...walkFiles(path.join(ROOT, "lib", "menu-publish")),
+      ...walkFiles(path.join(ROOT, "lib", "provider-menu")),
+      ...walkFiles(path.join(ROOT, "lib", "orders")),
+    ];
+    const offenders: string[] = [];
+    for (const filePath of [...appFiles, ...libRuntimeFiles]) {
+      const r = rel(filePath);
+      if (r.includes("providerMenuProfileRuntimeMappingDraftsMigration")) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (DRAFT_TABLE.test(src)) offenders.push(r);
+    }
+    expect(offenders).toEqual([]);
+  });
+});
