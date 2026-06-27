@@ -208,7 +208,7 @@ describe("G5d.4b — design document contract guards", () => {
 
 describe("G5d.4b — future shadow module import guards", () => {
   test("future shadow server/API files must not import forbidden runtime modules", () => {
-    const files = existingFutureShadowFiles();
+    const files = existingFutureShadowFiles().filter((p) => !p.includes(`${path.sep}tests${path.sep}`));
     if (files.length === 0) return;
 
     const offenders: string[] = [];
@@ -252,6 +252,50 @@ describe("G5d.4b — protected runtime paths must not import publish shadow", ()
       offenders,
       `publish shadow leaked into protected runtime:\n${offenders.join("\n")}`,
     ).toEqual([]);
+  });
+});
+
+describe("G5d.4c — shadow helper allowed but isolated", () => {
+  test("runtimeMappingPublishShadow.server.ts exists and passes forbidden import scan", () => {
+    const helperPath = path.join(ROOT, "lib/menu-profile/runtimeMappingPublishShadow.server.ts");
+    expect(fs.existsSync(helperPath)).toBe(true);
+    const src = fs.readFileSync(helperPath, "utf8");
+    expect(src).toContain('"server-only"');
+    for (const pattern of FUTURE_SHADOW_FORBIDDEN_IMPORTS) {
+      expect(src, `forbidden import in shadow helper: ${pattern}`).not.toMatch(pattern);
+    }
+    expect(src).not.toMatch(/buildMenuDayPayload/);
+  });
+
+  test("publish-shadow API route must not exist yet", () => {
+    expect(
+      fs.existsSync(path.join(ROOT, "app/api/provider/menu-profile/publish-shadow/route.ts")),
+    ).toBe(false);
+  });
+
+  test("provider UI must not import runtimeMappingPublishShadow", () => {
+    const providersDir = path.join(ROOT, "components/providers");
+    if (!fs.existsSync(providersDir)) return;
+
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(providersDir)) {
+      const src = fs.readFileSync(filePath, "utf8");
+      if (SHADOW_MODULE_IMPORT.test(src) || src.includes("runtimeMappingPublishShadow")) {
+        offenders.push(rel(filePath));
+      }
+    }
+    expect(offenders, `provider UI imports shadow helper:\n${offenders.join("\n")}`).toEqual([]);
+  });
+
+  test("app/ must not import runtimeMappingPublishShadow yet", () => {
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(path.join(ROOT, "app"))) {
+      const r = rel(filePath);
+      if (r.includes(`${path.sep}tests${path.sep}`)) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (SHADOW_MODULE_IMPORT.test(src)) offenders.push(r);
+    }
+    expect(offenders, `app imports shadow helper too early:\n${offenders.join("\n")}`).toEqual([]);
   });
 });
 
