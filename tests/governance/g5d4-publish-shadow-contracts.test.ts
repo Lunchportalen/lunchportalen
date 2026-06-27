@@ -18,6 +18,7 @@ import {
 
 const ROOT = process.cwd();
 const G5D4_DESIGN_DOC = "docs/engineering/G5d4-publish-shadow-design-audit.md";
+const G5D4F_EVIDENCE_DOC = "docs/engineering/G5d4f-publish-shadow-smoke-evidence.md";
 
 const FUTURE_SHADOW_ALLOWED_PATHS = [
   "lib/menu-profile/runtimeMappingPublishShadow.server.ts",
@@ -207,6 +208,35 @@ describe("G5d.4b — design document contract guards", () => {
     expect(doc).toMatch(/G5d\.4b.*explicit GO|G5d\.4b requires.*explicit GO/i);
     expect(doc).toMatch(/G5d\.5 must not start|not authorized here/i);
     expect(doc).toMatch(/Never as routine rollback|Do not drop|do not drop/i);
+  });
+});
+
+describe("G5d.4f — publish shadow smoke evidence document guards", () => {
+  test("G5d4f evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, G5D4F_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("evidence doc locks Production OFF, no-write, and G5d.5 explicit GO", () => {
+    const doc = readSource(G5D4F_EVIDENCE_DOC);
+    expect(doc).toContain("LP_MENU_PROFILE_PUBLISH_SHADOW");
+    expect(doc).toMatch(/Production.*OFF/i);
+    expect(doc).toMatch(/no Sanity write|No Sanity writes|sanityWrites/i);
+    expect(doc).toMatch(/\/week|weekChanges|week unchanged/i);
+    expect(doc).toMatch(/order|orderChanges|No order changes/i);
+    expect(doc).toMatch(/employee|employeeVisibleChanges|Employee UI unchanged/i);
+    expect(doc).toMatch(/G5d\.5.*explicit GO|G5d\.5 requires explicit GO/i);
+    expect(doc).toMatch(/G5d\.5 implementation must not start|must not start from this PR/i);
+    expect(doc).toMatch(/no runtime changes|no API changes|no UI changes|no DB\/RLS changes/i);
+    expect(doc).toMatch(/rollback|Rollback plan/i);
+    expect(doc).toMatch(/Pre-G5d\.5|pre-G5d\.5/i);
+  });
+
+  test("evidence doc documents G5d.4c–G5d.4d chain and skipped G5d.4e", () => {
+    const doc = readSource(G5D4F_EVIDENCE_DOC);
+    expect(doc).toMatch(/G5d\.4c/);
+    expect(doc).toMatch(/G5d\.4d/);
+    expect(doc).toMatch(/publish-shadow/);
+    expect(doc).toMatch(/G5d\.4e.*skipped|G5d\.4e.*not started/i);
   });
 });
 
