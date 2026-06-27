@@ -545,10 +545,12 @@ describe("G5d.3c — mapping draft validation helper runtime separation", () => 
       "lib/menu-profile/runtimeMappingDraftValidation.ts",
       "lib/menu-profile/runtimeMappingDraftValidationTypes.ts",
       "lib/menu-profile/runtimeMappingDraftPersistence.server.ts",
+      "lib/menu-profile/runtimeMappingPublishShadow.server.ts",
       "app/api/provider/menu-profile/mapping-draft/route.ts",
       "app/api/provider/menu-profile/mapping-draft/archive/route.ts",
       "tests/lib/menu-profile/runtimeMappingDraftValidation.test.ts",
       "tests/lib/menu-profile/runtimeMappingDraftPersistence.server.test.ts",
+      "tests/lib/menu-profile/runtimeMappingPublishShadow.test.ts",
       "tests/api/provider/menu-profile-mapping-draft-api.test.ts",
     ]);
 
