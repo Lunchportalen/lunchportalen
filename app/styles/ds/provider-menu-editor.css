@@ -2427,6 +2427,62 @@ button.lp-editor-builder__variant {
   color: var(--ds-text-soft);
 }
 
+.lp-editor-runtime-mapping-proposal__draft-save {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ds-border-subtle, rgba(0, 0, 0, 0.08));
+}
+
+.lp-editor-runtime-mapping-proposal__draft-status {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--ds-text);
+}
+
+.lp-editor-runtime-mapping-proposal__draft-help,
+.lp-editor-runtime-mapping-proposal__draft-warning,
+.lp-editor-runtime-mapping-proposal__draft-viewer-note {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ds-text-soft);
+}
+
+.lp-editor-runtime-mapping-proposal__draft-warning {
+  color: var(--ds-text);
+}
+
+.lp-editor-runtime-mapping-proposal__draft-save-btn {
+  margin-top: 12px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ds-border, rgba(0, 0, 0, 0.12));
+  background: var(--ds-surface, #fff);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lp-editor-runtime-mapping-proposal__draft-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lp-editor-runtime-mapping-proposal__draft-feedback {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.lp-editor-runtime-mapping-proposal__draft-feedback--success {
+  color: var(--ds-text);
+}
+
+.lp-editor-runtime-mapping-proposal__draft-feedback--error {
+  color: var(--ds-danger, #b42318);
+}
+
 .lp-editor-command-header--catalog .lp-editor-page-head__main {
   max-width: 720px;
 }

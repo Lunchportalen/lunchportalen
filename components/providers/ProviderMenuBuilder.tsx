@@ -74,6 +74,8 @@ type ProviderMenuBuilderProps = {
   fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
   warmDishPreviewPresentation?: MenuProfileWarmDishPreviewPresentationProps;
   runtimeMappingProposal?: ProviderMenuRuntimeMappingProposalProps;
+  mappingDraftSaveEnabled?: boolean;
+  canSaveMappingDraft?: boolean;
 };
 
 type MenuWeekResponse = {
@@ -173,6 +175,8 @@ export default function ProviderMenuBuilder({
   fixedCategoryPresentation = { active: false },
   warmDishPreviewPresentation = { active: false },
   runtimeMappingProposal = { active: false },
+  mappingDraftSaveEnabled = false,
+  canSaveMappingDraft = false,
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
@@ -565,7 +569,11 @@ export default function ProviderMenuBuilder({
       ) : null}
 
       {runtimeMapping && workspaceView === "week" ? (
-        <ProviderMenuRuntimeMappingProposalPanel proposal={runtimeMapping} />
+        <ProviderMenuRuntimeMappingProposalPanel
+          proposal={runtimeMapping}
+          draftSaveEnabled={mappingDraftSaveEnabled}
+          canSaveDraft={canSaveMappingDraft}
+        />
       ) : null}
 
       {workspaceView === "week" ? (
@@ -681,6 +689,8 @@ export default function ProviderMenuBuilder({
               workspacePresentation={workspacePresentation}
               fixedCategoryPresentation={fixedCategoryPresentation}
               runtimeMappingProposal={runtimeMappingProposal}
+              mappingDraftSaveEnabled={mappingDraftSaveEnabled}
+              canSaveMappingDraft={canSaveMappingDraft}
             />
           )}
         </div>

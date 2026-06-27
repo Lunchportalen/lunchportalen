@@ -18,6 +18,7 @@ import { buildProviderMenuRuntimeMappingProposalPresentation } from "@/lib/provi
 import { getMarketDefaults } from "@/lib/menu-profile/marketDefaults";
 import type { CurrencyCode } from "@/lib/menu-profile/types";
 import {
+  isMenuProfileMappingDraftSaveUiEnabled,
   isMenuProfileRuntimeMappingProposalPanelEnabled,
 } from "@/lib/menu-profile/featureFlag";
 import { buildMenuProfileRuntimeMapping } from "@/lib/menu-profile/runtimeMapping";
@@ -39,6 +40,7 @@ export default async function LeverandorMenyPage() {
   if (!canView) redirect("/leverandor");
 
   const canEdit = await hasProviderRole(auth.user.id, provider.id, "provider_kitchen");
+  const canSaveMappingDraft = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
   const t = await getTranslations("provider.menu.page");
 
   const menuProfileEnv = menuProfileResolverHostEnv();
@@ -88,6 +90,9 @@ export default async function LeverandorMenyPage() {
     },
   );
 
+  const mappingDraftSaveEnabled =
+    runtimeMappingProposal.active && isMenuProfileMappingDraftSaveUiEnabled(menuProfileEnv);
+
   return (
     <div className="ds-provider-meny-page lp-editor-page">
       {canEdit ? (
@@ -96,6 +101,8 @@ export default async function LeverandorMenyPage() {
           fixedCategoryPresentation={fixedCategoryPresentation}
           warmDishPreviewPresentation={warmDishPreviewPresentation}
           runtimeMappingProposal={runtimeMappingProposal}
+          mappingDraftSaveEnabled={mappingDraftSaveEnabled}
+          canSaveMappingDraft={canSaveMappingDraft}
         />
       ) : (
         <section className="ds-card ds-provider-meny-card">
