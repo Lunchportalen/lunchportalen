@@ -130,13 +130,15 @@ describe("G5d.4b — LP_MENU_PROFILE_PUBLISH_SHADOW flag contract", () => {
     }
   });
 
-  test("is not wired in app or provider UI yet", () => {
+  test("publish shadow flag is only wired in publish-shadow API route", () => {
+    const allowed = new Set(["app/api/provider/menu-profile/publish-shadow/route.ts"]);
     const scanRoots = ["app", "components"];
     const offenders: string[] = [];
     for (const root of scanRoots) {
       for (const filePath of walkFiles(path.join(ROOT, root))) {
-        const r = rel(filePath);
-        if (r.includes(`${path.sep}tests${path.sep}`)) continue;
+        const r = rel(filePath).replace(/\\/g, "/");
+        if (r.includes("/tests/")) continue;
+        if (allowed.has(r)) continue;
         const src = fs.readFileSync(filePath, "utf8");
         if (
           src.includes("isMenuProfilePublishShadowEnabled") ||
@@ -146,7 +148,9 @@ describe("G5d.4b — LP_MENU_PROFILE_PUBLISH_SHADOW flag contract", () => {
         }
       }
     }
-    expect(offenders, `publish shadow flag wired too early:\n${offenders.join("\n")}`).toEqual([]);
+    expect(offenders, `publish shadow flag wired outside API route:\n${offenders.join("\n")}`).toEqual(
+      [],
+    );
   });
 
   test("menuProfileResolverHostEnv does not expose publish shadow yet", () => {
@@ -267,10 +271,33 @@ describe("G5d.4c — shadow helper allowed but isolated", () => {
     expect(src).not.toMatch(/buildMenuDayPayload/);
   });
 
-  test("publish-shadow API route must not exist yet", () => {
+  test("publish-shadow API route exists and passes forbidden import scan", () => {
+    const routePath = path.join(ROOT, "app/api/provider/menu-profile/publish-shadow/route.ts");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const src = fs.readFileSync(routePath, "utf8");
+    expect(src).toContain('"server-only"');
+    for (const pattern of FUTURE_SHADOW_FORBIDDEN_IMPORTS) {
+      expect(src, `forbidden import in publish-shadow API: ${pattern}`).not.toMatch(pattern);
+    }
+    expect(src).not.toMatch(/buildMenuDayPayload/);
+    expect(src).not.toMatch(/\.insert\(|\.update\(|\.delete\(/);
+  });
+
+  test("only publish-shadow API route may import runtimeMappingPublishShadow in app/", () => {
+    const allowed = new Set(["app/api/provider/menu-profile/publish-shadow/route.ts"]);
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(path.join(ROOT, "app"))) {
+      const r = rel(filePath).replace(/\\/g, "/");
+      if (r.includes("/tests/")) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (SHADOW_MODULE_IMPORT.test(src) && !allowed.has(r)) {
+        offenders.push(r);
+      }
+    }
     expect(
-      fs.existsSync(path.join(ROOT, "app/api/provider/menu-profile/publish-shadow/route.ts")),
-    ).toBe(false);
+      offenders,
+      `unexpected shadow helper imports in app/:\n${offenders.join("\n")}`,
+    ).toEqual([]);
   });
 
   test("provider UI must not import runtimeMappingPublishShadow", () => {
@@ -285,17 +312,6 @@ describe("G5d.4c — shadow helper allowed but isolated", () => {
       }
     }
     expect(offenders, `provider UI imports shadow helper:\n${offenders.join("\n")}`).toEqual([]);
-  });
-
-  test("app/ must not import runtimeMappingPublishShadow yet", () => {
-    const offenders: string[] = [];
-    for (const filePath of walkFiles(path.join(ROOT, "app"))) {
-      const r = rel(filePath);
-      if (r.includes(`${path.sep}tests${path.sep}`)) continue;
-      const src = fs.readFileSync(filePath, "utf8");
-      if (SHADOW_MODULE_IMPORT.test(src)) offenders.push(r);
-    }
-    expect(offenders, `app imports shadow helper too early:\n${offenders.join("\n")}`).toEqual([]);
   });
 });
 
