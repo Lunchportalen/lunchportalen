@@ -10,6 +10,7 @@ export const LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV = "LP_MENU_PROFILE_WARM_DISH_
 export const LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV =
   "LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL";
 export const LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV = "LP_MENU_PROFILE_MAPPING_DRAFT_API";
+export const LP_MENU_PROFILE_PUBLISH_SHADOW_ENV = "LP_MENU_PROFILE_PUBLISH_SHADOW";
 
 export type EnvLike = Readonly<Record<string, string | undefined>>;
 
@@ -81,4 +82,13 @@ export function isMenuProfileMappingDraftSaveUiEnabled(env: EnvLike = {}): boole
     isMenuProfileRuntimeMappingProposalPanelEnabled(env) &&
     isMenuProfileMappingDraftApiEnabled(env)
   );
+}
+
+/**
+ * G5d.4 — publish shadow evaluation (design-only flag, inert until G5d.4c+).
+ * True only when env is exactly "true". Default OFF. Production OFF.
+ * Not wired to runtime routes in G5d.4b.
+ */
+export function isMenuProfilePublishShadowEnabled(env: EnvLike = {}): boolean {
+  return env[LP_MENU_PROFILE_PUBLISH_SHADOW_ENV]?.trim() === "true";
 }
