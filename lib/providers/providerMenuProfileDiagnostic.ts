@@ -5,6 +5,7 @@ import { getDefaultMenuProfileForMarket } from "@/lib/menu-profile/marketDefault
 import {
   isMenuProfileResolverEnabled,
   LP_MENU_PROFILE_FIXED_CATEGORIES_ENV,
+  LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV,
   LP_MENU_PROFILE_RESOLVER_ENV,
   LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV,
   LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV,
@@ -67,6 +68,7 @@ export function menuProfileResolverHostEnv(): Readonly<Record<string, string | u
     [LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV]: process.env.LP_MENU_PROFILE_WARM_DISH_PREVIEW,
     [LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV]:
       process.env.LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL,
+    [LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV]: process.env.LP_MENU_PROFILE_MAPPING_DRAFT_API,
   };
 }
 
