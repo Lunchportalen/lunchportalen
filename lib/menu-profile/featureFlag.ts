@@ -71,3 +71,14 @@ export function isMenuProfileRuntimeMappingProposalPanelEnabled(env: EnvLike = {
 export function isMenuProfileMappingDraftApiEnabled(env: EnvLike = {}): boolean {
   return envFlagTruthy(env[LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV]);
 }
+
+/**
+ * G5d.3e — mapping draft save UI in provider workspace.
+ * Requires resolver + runtime mapping proposal + mapping draft API flags. Default OFF.
+ */
+export function isMenuProfileMappingDraftSaveUiEnabled(env: EnvLike = {}): boolean {
+  return (
+    isMenuProfileRuntimeMappingProposalPanelEnabled(env) &&
+    isMenuProfileMappingDraftApiEnabled(env)
+  );
+}

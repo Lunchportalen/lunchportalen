@@ -3,9 +3,12 @@
 import { useTranslations } from "next-intl";
 
 import type { ProviderMenuRuntimeMappingProposal } from "@/lib/provider-menu/providerMenuRuntimeMappingProposal";
+import ProviderMenuRuntimeMappingDraftSaveControls from "@/components/providers/ProviderMenuRuntimeMappingDraftSaveControls";
 
 type Props = {
   proposal: ProviderMenuRuntimeMappingProposal;
+  draftSaveEnabled?: boolean;
+  canSaveDraft?: boolean;
 };
 
 function categoryStatusBadgeKey(
@@ -18,7 +21,11 @@ function categoryStatusBadgeKey(
   return null;
 }
 
-export default function ProviderMenuRuntimeMappingProposalPanel({ proposal }: Props) {
+export default function ProviderMenuRuntimeMappingProposalPanel({
+  proposal,
+  draftSaveEnabled = false,
+  canSaveDraft = false,
+}: Props) {
   const t = useTranslations("provider.menu.runtimeMappingProposal");
 
   return (
@@ -42,6 +49,12 @@ export default function ProviderMenuRuntimeMappingProposalPanel({ proposal }: Pr
           {proposal.profileId} · {proposal.market} · {proposal.locale} · {proposal.currency} ·{" "}
           {proposal.mappingVersion}
         </p>
+        {draftSaveEnabled ? (
+          <ProviderMenuRuntimeMappingDraftSaveControls
+            proposal={proposal}
+            canSaveDraft={canSaveDraft}
+          />
+        ) : null}
       </header>
 
       <section

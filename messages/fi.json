@@ -462,6 +462,23 @@
           "previewOnlyWarmDishes": "Lämmin ruoka -ehdotukset ovat vain esikatselua eikä niitä voi julkaista.",
           "enterpriseUpgradeNotOrderCategory": "Enterprise upgrade ei ole tilauskategoria.",
           "nonNoMarketShadowOnly": "Profiili on NO-markkinoiden ulkopuolella — kaikki mapping on varjokuvaa."
+        },
+        "draftSave": {
+          "sectionTitle": "Mapping draft",
+          "statusNotSaved": "Not saved",
+          "statusNotSavedHelp": "This evaluation is preview-only and has not been saved as a draft.",
+          "statusDraftSaved": "Draft saved",
+          "statusDraftSavedHelp": "The evaluation is saved as an internal draft. It is not published and not visible to employees.",
+          "statusReviewed": "Reviewed",
+          "statusArchived": "Archived",
+          "statusArchivedHelp": "This draft is archived and is not active.",
+          "activationWarning": "This does not enable publishing, ordering, or menu display.",
+          "saveButton": "Lagre vurdering som utkast",
+          "viewerNoSave": "Saving requires provider admin.",
+          "saveSuccess": "Draft saved.",
+          "validationError": "The draft could not be saved because validation blocked an unsafe change.",
+          "permissionError": "You do not have permission to save mapping drafts.",
+          "genericError": "The draft could not be saved. Try again later."
         }
       },
       "catalogModel": {

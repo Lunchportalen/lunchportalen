@@ -19,6 +19,8 @@ type Props = {
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
   fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
   runtimeMappingProposal?: ProviderMenuRuntimeMappingProposalProps;
+  mappingDraftSaveEnabled?: boolean;
+  canSaveMappingDraft?: boolean;
 };
 
 const PACKAGE_TIERS: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
@@ -36,6 +38,8 @@ export default function ProviderMenuCatalogView({
   workspacePresentation = { active: false },
   fixedCategoryPresentation = { active: false },
   runtimeMappingProposal = { active: false },
+  mappingDraftSaveEnabled = false,
+  canSaveMappingDraft = false,
 }: Props) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
@@ -46,7 +50,13 @@ export default function ProviderMenuCatalogView({
     <section className="lp-editor-catalog" aria-label={t("catalogModel.title")}>
       {profilePresentation ? <ProviderMenuProfilePresentationBanner presentation={profilePresentation} /> : null}
       {fixedCategories ? <ProviderMenuProfileFixedCategoriesPanel presentation={fixedCategories} /> : null}
-      {runtimeMapping ? <ProviderMenuRuntimeMappingProposalPanel proposal={runtimeMapping} /> : null}
+      {runtimeMapping ? (
+        <ProviderMenuRuntimeMappingProposalPanel
+          proposal={runtimeMapping}
+          draftSaveEnabled={mappingDraftSaveEnabled}
+          canSaveDraft={canSaveMappingDraft}
+        />
+      ) : null}
 
       <header className="lp-editor-catalog__head">
         <h2 className="ds-h4">{t("catalogModel.title")}</h2>

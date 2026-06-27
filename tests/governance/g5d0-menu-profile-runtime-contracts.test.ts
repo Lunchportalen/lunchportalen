@@ -710,3 +710,58 @@ describe("G5d.3d — mapping draft API runtime separation", () => {
     }
   });
 });
+
+describe("G5d.3e — mapping draft save UI runtime separation", () => {
+  const DRAFT_SAVE_UI_FILES = [
+    "components/providers/ProviderMenuRuntimeMappingDraftSaveControls.tsx",
+    "components/providers/ProviderMenuRuntimeMappingProposalPanel.tsx",
+    "lib/provider-menu/providerMenuRuntimeMappingDraftSavePayload.ts",
+  ].map((f) => path.join(ROOT, f));
+
+  const FORBIDDEN_IMPORTS = [
+    /runtimeMappingDraftPersistence\.server/,
+    /menu-publish/,
+    /lp_order_set/,
+    /syncMenuServiceDay/,
+    /requireSanityWrite/,
+    /tripletex/i,
+  ];
+
+  const FORBIDDEN_CTA_WORDS = [
+    "Aktiver",
+    "Send til ansatte",
+    "Gjør live",
+    "Bruk i meny",
+    "Apply",
+    "Enable",
+  ];
+
+  test("draft save UI files do not import server persistence or protected runtime paths", () => {
+    for (const filePath of DRAFT_SAVE_UI_FILES) {
+      if (!fs.existsSync(filePath)) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      for (const pattern of FORBIDDEN_IMPORTS) {
+        expect(src, rel(filePath)).not.toMatch(pattern);
+      }
+    }
+  });
+
+  test("draft save nb copy avoids forbidden CTA words in save control strings", () => {
+    const nb = readSource("messages/nb.json");
+    const block = nb.slice(nb.indexOf('"draftSave"'), nb.indexOf('"catalogModel"'));
+    expect(block).toContain("Lagre vurdering som utkast");
+    for (const word of FORBIDDEN_CTA_WORDS) {
+      expect(block, `forbidden CTA: ${word}`).not.toMatch(new RegExp(`\\b${word}\\b`, "i"));
+    }
+  });
+
+  test("leverandor/meny page wires draft save flags without API route imports in client components", () => {
+    const page = readSource("app/leverandor/meny/page.tsx");
+    expect(page).toContain("isMenuProfileMappingDraftSaveUiEnabled");
+    expect(page).toContain("canSaveMappingDraft");
+    expect(page).toContain("mappingDraftSaveEnabled");
+    const controls = readSource("components/providers/ProviderMenuRuntimeMappingDraftSaveControls.tsx");
+    expect(controls).not.toContain("providerId");
+    expect(controls).not.toMatch(/body:\s*JSON\.stringify\([\s\S]*providerId/);
+  });
+});

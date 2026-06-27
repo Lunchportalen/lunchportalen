@@ -1689,6 +1689,23 @@
           "previewOnlyWarmDishes": "Varmrettforslag er kun forslag og kan ikke publiseres.",
           "enterpriseUpgradeNotOrderCategory": "Enterprise upgrade er ikke en ordrekategori.",
           "nonNoMarketShadowOnly": "Profilen er utenfor NO-markedet — all mapping er skyggevisning."
+        },
+        "draftSave": {
+          "sectionTitle": "Mapping-utkast",
+          "statusNotSaved": "Ikke lagret",
+          "statusNotSavedHelp": "Denne vurderingen er kun en forhåndsvisning og er ikke lagret som utkast.",
+          "statusDraftSaved": "Utkast lagret",
+          "statusDraftSavedHelp": "Vurderingen er lagret som et internt utkast. Den er ikke publisert og er ikke synlig for ansatte.",
+          "statusReviewed": "Vurdert",
+          "statusArchived": "Arkivert",
+          "statusArchivedHelp": "Dette utkastet er arkivert og er ikke aktivt.",
+          "activationWarning": "Dette aktiverer ikke publisering, bestilling eller menyvisning.",
+          "saveButton": "Lagre vurdering som utkast",
+          "viewerNoSave": "Lagring krever leverandør-admin.",
+          "saveSuccess": "Utkast lagret.",
+          "validationError": "Utkastet kunne ikke lagres fordi valideringen stoppet en usikker endring.",
+          "permissionError": "Du har ikke tilgang til å lagre mapping-utkast.",
+          "genericError": "Utkastet kunne ikke lagres. Prøv igjen senere."
         }
       },
       "catalogModel": {
