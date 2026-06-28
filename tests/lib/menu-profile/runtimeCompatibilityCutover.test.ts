@@ -220,7 +220,9 @@ describe("G5d.6c — validation", () => {
   test("forbidden orderPayload fails", () => {
     const result = validateCompatibilityCutoverInput({
       ...baseInput(),
-      candidateProfileRuntimeSnapshot: candidateSnapshot({ orderPayload: { x: 1 } }),
+      candidateProfileRuntimeSnapshot: candidateSnapshot({
+        metadata: { orderPayload: { x: 1 } },
+      }),
     });
     expect(result.ok).toBe(false);
     expect(result.errors.join(" ")).toMatch(/orderPayload/);
@@ -465,7 +467,9 @@ describe("G5d.6c — response/DTO forbidden fields", () => {
 
   test("findForbiddenCompatibilityFields detects nested forbidden keys", () => {
     const offenders = findForbiddenCompatibilityFields({
-      currentNoRuntimeSnapshot: currentSnapshot({ publishPayload: { x: 1 } }),
+      currentNoRuntimeSnapshot: currentSnapshot({
+        metadata: { publishPayload: { x: 1 } },
+      }),
     });
     expect(offenders.join(" ")).toMatch(/publishPayload/);
   });
