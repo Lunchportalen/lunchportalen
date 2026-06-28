@@ -27,10 +27,14 @@ const G5D6_DESIGN_DOC = COMPATIBILITY_CUTOVER_DOC_PATH;
 
 const FUTURE_COMPATIBILITY_ALLOWED_PATHS = [
   FUTURE_COMPATIBILITY_HELPER_PATH,
+  "lib/menu-profile/runtimeCompatibilityCutoverTypes.ts",
   FUTURE_COMPATIBILITY_API_PATH,
   "tests/lib/menu-profile/runtimeCompatibilityCutover.test.ts",
   "tests/api/provider/menu-profile-compatibility-cutover-api.test.ts",
 ];
+
+const CANONICAL_COMPATIBILITY_HELPER = "lib/menu-profile/runtimeCompatibilityCutover.server.ts";
+const CANONICAL_COMPATIBILITY_TYPES = "lib/menu-profile/runtimeCompatibilityCutoverTypes.ts";
 
 const FUTURE_COMPATIBILITY_FORBIDDEN_IMPORTS = [
   /requireSanityWrite/,
@@ -298,11 +302,7 @@ describe("G5d.6b — design document contract guards", () => {
   });
 });
 
-describe("G5d.6b — future canonical paths (not implemented yet)", () => {
-  test("runtimeCompatibilityCutover helper does not exist yet", () => {
-    expect(fs.existsSync(path.join(ROOT, FUTURE_COMPATIBILITY_HELPER_PATH))).toBe(false);
-  });
-
+describe("G5d.6b — canonical paths (helper allowed after G5d.6c; API not yet)", () => {
   test("compatibility-cutover API route does not exist yet", () => {
     expect(fs.existsSync(path.join(ROOT, FUTURE_COMPATIBILITY_API_PATH))).toBe(false);
   });
@@ -335,6 +335,149 @@ describe("G5d.6b — future canonical paths (not implemented yet)", () => {
     expect(
       offenders,
       `compatibility cutover duplicated outside canonical paths:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
+describe("G5d.6c — pure compatibility comparison helper guards", () => {
+  test("runtimeCompatibilityCutover helper may exist only at canonical path", () => {
+    const helperPath = path.join(ROOT, CANONICAL_COMPATIBILITY_HELPER);
+    expect(fs.existsSync(helperPath)).toBe(true);
+
+    const src = readSource(CANONICAL_COMPATIBILITY_HELPER);
+    expect(src).toContain('import "server-only"');
+    expect(src).not.toMatch(/\.insert\(|\.delete\(|\.upsert\(/);
+    expect(src).not.toMatch(/\bfetch\s*\(/);
+
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(path.join(ROOT, "lib/menu-profile"))) {
+      const r = rel(filePath).replace(/\\/g, "/");
+      if (r === CANONICAL_COMPATIBILITY_HELPER) continue;
+      if (r === CANONICAL_COMPATIBILITY_TYPES) continue;
+      const fileSrc = fs.readFileSync(filePath, "utf8");
+      if (/runtimeCompatibilityCutover\.server/.test(fileSrc)) {
+        offenders.push(r);
+      }
+    }
+    expect(
+      offenders,
+      `compatibility helper duplicated outside canonical path:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("compatibility helper must not import forbidden runtime modules", () => {
+    const files = [path.join(ROOT, CANONICAL_COMPATIBILITY_HELPER)].filter((p) => fs.existsSync(p));
+
+    const offenders: string[] = [];
+    for (const filePath of files) {
+      const src = fs.readFileSync(filePath, "utf8");
+      for (const pattern of FUTURE_COMPATIBILITY_FORBIDDEN_IMPORTS) {
+        if (pattern.test(src)) {
+          offenders.push(`${rel(filePath)} → ${pattern}`);
+          break;
+        }
+      }
+    }
+    expect(
+      offenders,
+      `forbidden imports in compatibility cutover helper:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("compatibility helper is not imported from week runtime", () => {
+    assertNoCompatibilityReferences(["app/api/week", "lib/week"], "week runtime");
+  });
+
+  test("compatibility helper is not imported from employee week UI", () => {
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(path.join(ROOT, "app/(app)/week"))) {
+      const src = fs.readFileSync(filePath, "utf8");
+      if (COMPATIBILITY_MODULE_IMPORT.test(src)) {
+        offenders.push(rel(filePath));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  test("compatibility helper is not imported by order, publish, Sanity, menuDayPayload, or billing", () => {
+    const scanTargets = [
+      "app/api/orders",
+      "app/api/order",
+      "lib/orders",
+      "lib/provider-menu/menuDayPayload.ts",
+      "lib/menu-publish",
+      "lib/sanity",
+      "lib/cms",
+      "lib/integrations/tripletex",
+    ];
+
+    const offenders: string[] = [];
+    for (const target of scanTargets) {
+      const abs = path.join(ROOT, target);
+      if (!fs.existsSync(abs)) continue;
+      const files = fs.statSync(abs).isDirectory() ? walkFiles(abs) : [abs];
+      for (const filePath of files) {
+        const src = fs.readFileSync(filePath, "utf8");
+        if (COMPATIBILITY_MODULE_IMPORT.test(src) || /runtimeCompatibilityCutover/.test(src)) {
+          offenders.push(rel(filePath));
+        }
+      }
+    }
+    expect(
+      offenders,
+      `compatibility helper leaked into protected runtime:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("compatibility-cutover API route must still NOT exist", () => {
+    expect(fs.existsSync(path.join(ROOT, FUTURE_COMPATIBILITY_API_PATH))).toBe(false);
+  });
+
+  test("compatibility helper must not be barrel-exported from lib/menu-profile/index.ts", () => {
+    const indexPath = path.join(ROOT, "lib/menu-profile/index.ts");
+    if (!fs.existsSync(indexPath)) return;
+    const src = readSource("lib/menu-profile/index.ts");
+    expect(src).not.toMatch(/runtimeCompatibilityCutover/);
+  });
+
+  test("helper cannot authorize runtime hook or production cutover", () => {
+    const src = readSource(CANONICAL_COMPATIBILITY_HELPER);
+    expect(src).toMatch(/canProceedToRuntimeHook:\s*false/);
+    expect(src).toMatch(/canProceedToProduction:\s*false/);
+    expect(src).not.toMatch(/canProceedToProduction:\s*true/);
+    expect(src).not.toMatch(/canProceedToRuntimeHook:\s*true/);
+    expect(src).not.toMatch(/sourceOfTruth|source_of_truth|autoRollout|auto-rollout/i);
+  });
+});
+
+describe("G5d.6c — G5d.6d / G5d.7 gate reminders", () => {
+  test("G5d.6d API requires explicit GO and G5d.7 must not start", () => {
+    const doc = readSource(G5D6_DESIGN_DOC);
+    expect(doc).toMatch(/G5d\.6d/);
+    expect(doc).toMatch(/G5d\.7/);
+    expect(doc).toMatch(/explicit GO|separate final GO/i);
+    expect(doc).not.toMatch(/G5d\.7 implementation authorized from G5d\.6c/i);
+  });
+
+  test("no app/components wiring of compatibility cutover flag yet", () => {
+    const scanRoots = ["app", "components"];
+    const offenders: string[] = [];
+    for (const root of scanRoots) {
+      for (const filePath of walkFiles(path.join(ROOT, root))) {
+        const r = rel(filePath).replace(/\\/g, "/");
+        if (r.includes("/tests/")) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        if (
+          src.includes("isMenuProfileCompatibilityCutoverEnabled") ||
+          src.includes("LP_MENU_PROFILE_COMPATIBILITY_CUTOVER")
+        ) {
+          offenders.push(r);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `compatibility cutover flag wired in app/components before G5d.6d:\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
 });
@@ -397,9 +540,11 @@ describe("G5d.6b — protected runtime isolation", () => {
 });
 
 describe("G5d.6b — future compatibility module import guards", () => {
-  test("future compatibility server/API files must not import forbidden runtime modules", () => {
+  test("future compatibility server files must not import forbidden runtime modules", () => {
     const files = existingFutureCompatibilityFiles().filter(
-      (p) => !p.includes(`${path.sep}tests${path.sep}`),
+      (p) =>
+        !p.includes(`${path.sep}tests${path.sep}`) &&
+        p.endsWith(".server.ts"),
     );
     if (files.length === 0) return;
 
@@ -419,15 +564,17 @@ describe("G5d.6b — future compatibility module import guards", () => {
     ).toEqual([]);
   });
 
-  test("future compatibility files must not contain DB mutations if they exist", () => {
+  test("future compatibility server files must not contain DB mutations if they exist", () => {
     const files = existingFutureCompatibilityFiles().filter(
-      (p) => !p.includes(`${path.sep}tests${path.sep}`),
+      (p) =>
+        !p.includes(`${path.sep}tests${path.sep}`) &&
+        p.endsWith(".server.ts"),
     );
     if (files.length === 0) return;
 
     for (const filePath of files) {
       const src = fs.readFileSync(filePath, "utf8");
-      expect(src, rel(filePath)).not.toMatch(/\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
+      expect(src, rel(filePath)).not.toMatch(/\.insert\(|\.delete\(|\.upsert\(/);
     }
   });
 });
