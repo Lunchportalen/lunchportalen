@@ -19,6 +19,7 @@ import {
 
 const ROOT = process.cwd();
 const G5D5_DESIGN_DOC = "docs/engineering/G5d5-week-shadow-read-design-audit.md";
+const G5D5E_EVIDENCE_DOC = "docs/engineering/G5d5e-week-shadow-smoke-evidence.md";
 const CANONICAL_WEEK_SHADOW_API_ROUTE = "app/api/provider/menu-profile/week-shadow/route.ts";
 const CANONICAL_WEEK_SHADOW_HELPER = "lib/menu-profile/runtimeMappingWeekShadow.server.ts";
 
@@ -216,6 +217,37 @@ describe("G5d.5b — design document contract guards", () => {
     expect(doc).toMatch(/G5d\.5b.*explicit GO|G5d\.5b requires.*explicit GO/i);
     expect(doc).toMatch(/G5d\.6 must not start|not authorized here/i);
     expect(doc).toMatch(/no Production flags|Production OFF/i);
+  });
+});
+
+describe("G5d.5e — week shadow smoke evidence document guards", () => {
+  test("G5d5e evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, G5D5E_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("evidence doc locks Production OFF, no-write, and G5d.6 explicit GO", () => {
+    const doc = readSource(G5D5E_EVIDENCE_DOC);
+    expect(doc).toContain("LP_MENU_PROFILE_WEEK_SHADOW_READ");
+    expect(doc).toMatch(/Production.*OFF/i);
+    expect(doc).toMatch(/no Sanity write|No Sanity writes|sanityWrites/i);
+    expect(doc).toMatch(/\/week|weekResponseChanges|week unchanged/i);
+    expect(doc).toMatch(/order|orderChanges|No order changes/i);
+    expect(doc).toMatch(/employee|employeeVisibleChanges|Employee UI unchanged/i);
+    expect(doc).toMatch(/menuDayPayload mutation|Mutate `menuDayPayload`/i);
+    expect(doc).toMatch(/G5d\.6.*explicit GO|G5d\.6 requires explicit GO/i);
+    expect(doc).toMatch(/G5d\.6 implementation must not start|must not start from this PR/i);
+    expect(doc).toMatch(/no runtime changes|no API changes|no UI changes|no DB\/RLS changes/i);
+    expect(doc).toMatch(/rollback|Rollback plan/i);
+    expect(doc).toMatch(/Pre-G5d\.6|pre-G5d\.6/i);
+  });
+
+  test("evidence doc documents G5d.5c–G5d.5d chain and Preview smoke", () => {
+    const doc = readSource(G5D5E_EVIDENCE_DOC);
+    expect(doc).toMatch(/G5d\.5c/);
+    expect(doc).toMatch(/G5d\.5d/);
+    expect(doc).toMatch(/week-shadow/);
+    expect(doc).toMatch(/Preview smoke|Preview smoke evidence/i);
+    expect(doc).toMatch(/runtime separation|Runtime separation/i);
   });
 });
 
