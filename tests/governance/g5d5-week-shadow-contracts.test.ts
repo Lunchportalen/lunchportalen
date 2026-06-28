@@ -19,6 +19,8 @@ import {
 
 const ROOT = process.cwd();
 const G5D5_DESIGN_DOC = "docs/engineering/G5d5-week-shadow-read-design-audit.md";
+const CANONICAL_WEEK_SHADOW_API_ROUTE = "app/api/provider/menu-profile/week-shadow/route.ts";
+const CANONICAL_WEEK_SHADOW_HELPER = "lib/menu-profile/runtimeMappingWeekShadow.server.ts";
 
 const FUTURE_WEEK_SHADOW_ALLOWED_PATHS = [
   "lib/menu-profile/runtimeMappingWeekShadow.server.ts",
@@ -140,13 +142,14 @@ describe("G5d.5b — LP_MENU_PROFILE_WEEK_SHADOW_READ flag contract", () => {
     }
   });
 
-  test("week shadow read flag is not wired in app/ or components/ yet", () => {
+  test("week shadow read flag is wired only in week-shadow API route", () => {
     const scanRoots = ["app", "components"];
     const offenders: string[] = [];
     for (const root of scanRoots) {
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath).replace(/\\/g, "/");
         if (r.includes("/tests/")) continue;
+        if (r === CANONICAL_WEEK_SHADOW_API_ROUTE) continue;
         const src = fs.readFileSync(filePath, "utf8");
         if (
           src.includes("isMenuProfileWeekShadowReadEnabled") ||
@@ -158,7 +161,7 @@ describe("G5d.5b — LP_MENU_PROFILE_WEEK_SHADOW_READ flag contract", () => {
     }
     expect(
       offenders,
-      `week shadow read flag wired in runtime before G5d.5c:\n${offenders.join("\n")}`,
+      `week shadow read flag wired outside week-shadow API:\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
 
@@ -238,10 +241,27 @@ describe("G5d.5b — future week shadow module import guards", () => {
     );
   });
 
-  test("week-shadow API route must not exist yet (G5d.5d only)", () => {
+  test("week-shadow API route may exist only at canonical path and uses flag gate", () => {
+    expect(fs.existsSync(path.join(ROOT, CANONICAL_WEEK_SHADOW_API_ROUTE))).toBe(true);
+
+    const src = readSource(CANONICAL_WEEK_SHADOW_API_ROUTE);
+    expect(src).toContain('import "server-only"');
+    expect(src).toContain("isMenuProfileWeekShadowReadEnabled");
+    expect(src).toContain("buildRuntimeMappingWeekShadowEvaluation");
+
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(path.join(ROOT, "app/api/provider/menu-profile"))) {
+      const r = rel(filePath).replace(/\\/g, "/");
+      if (r === CANONICAL_WEEK_SHADOW_API_ROUTE) continue;
+      const fileSrc = fs.readFileSync(filePath, "utf8");
+      if (/menu-profile\/week-shadow\/route/.test(r) || /week-shadow\/route/.test(fileSrc)) {
+        offenders.push(r);
+      }
+    }
     expect(
-      fs.existsSync(path.join(ROOT, "app/api/provider/menu-profile/week-shadow/route.ts")),
-    ).toBe(false);
+      offenders,
+      `week shadow API duplicated outside canonical path:\n${offenders.join("\n")}`,
+    ).toEqual([]);
   });
 
   test("week shadow helper may exist only at lib/menu-profile/runtimeMappingWeekShadow.server.ts", () => {
@@ -267,13 +287,14 @@ describe("G5d.5b — future week shadow module import guards", () => {
     ).toEqual([]);
   });
 
-  test("week shadow helper must not be imported by app/ or components/ runtime", () => {
+  test("week shadow helper may be imported only by week-shadow API route in app/", () => {
     const scanRoots = ["app", "components"];
     const offenders: string[] = [];
     for (const root of scanRoots) {
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath).replace(/\\/g, "/");
         if (r.includes("/tests/")) continue;
+        if (r === CANONICAL_WEEK_SHADOW_API_ROUTE) continue;
         const src = fs.readFileSync(filePath, "utf8");
         if (WEEK_SHADOW_MODULE_IMPORT.test(src)) {
           offenders.push(r);
@@ -282,8 +303,19 @@ describe("G5d.5b — future week shadow module import guards", () => {
     }
     expect(
       offenders,
-      `week shadow helper wired into runtime before G5d.5d:\n${offenders.join("\n")}`,
+      `week shadow helper imported outside week-shadow API:\n${offenders.join("\n")}`,
     ).toEqual([]);
+  });
+
+  test("week-shadow API route must not import /week runtime or forbidden modules", () => {
+    const src = readSource(CANONICAL_WEEK_SHADOW_API_ROUTE);
+    expect(src).not.toMatch(/from\s+["']@\/app\/api\/week/);
+    expect(src).not.toMatch(/from\s+["']@\/app\/\(app\)\/week/);
+    expect(src).not.toMatch(/from\s+["']@\/lib\/week/);
+    expect(src).not.toMatch(/\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
+    for (const pattern of FUTURE_WEEK_SHADOW_FORBIDDEN_IMPORTS) {
+      expect(src, `week-shadow API → ${pattern}`).not.toMatch(pattern);
+    }
   });
 });
 
