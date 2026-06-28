@@ -12,6 +12,7 @@ export const LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV =
 export const LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV = "LP_MENU_PROFILE_MAPPING_DRAFT_API";
 export const LP_MENU_PROFILE_PUBLISH_SHADOW_ENV = "LP_MENU_PROFILE_PUBLISH_SHADOW";
 export const LP_MENU_PROFILE_WEEK_SHADOW_READ_ENV = "LP_MENU_PROFILE_WEEK_SHADOW_READ";
+export const LP_MENU_PROFILE_COMPATIBILITY_CUTOVER_ENV = "LP_MENU_PROFILE_COMPATIBILITY_CUTOVER";
 
 export type EnvLike = Readonly<Record<string, string | undefined>>;
 
@@ -101,4 +102,13 @@ export function isMenuProfilePublishShadowEnabled(env: EnvLike = {}): boolean {
  */
 export function isMenuProfileWeekShadowReadEnabled(env: EnvLike = {}): boolean {
   return env[LP_MENU_PROFILE_WEEK_SHADOW_READ_ENV]?.trim() === "true";
+}
+
+/**
+ * G5d.6 — compatibility cutover evaluation (design-only flag, inert until G5d.6c+).
+ * True only when env is exactly "true". Default OFF. Production OFF.
+ * Not wired to runtime routes in G5d.6b.
+ */
+export function isMenuProfileCompatibilityCutoverEnabled(env: EnvLike = {}): boolean {
+  return env[LP_MENU_PROFILE_COMPATIBILITY_CUTOVER_ENV] === "true";
 }
