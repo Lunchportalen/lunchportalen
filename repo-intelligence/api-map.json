@@ -3999,6 +3999,37 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/provider/menu-profile/mapping-draft/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/provider/menu-profile/mapping-draft",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/menu-profile/mapping-draft/archive/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/menu-profile/mapping-draft/archive",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/menu-profile/publish-shadow/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/provider/menu-profile/publish-shadow",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/public/ai-demo-cta/assign/route.ts",
       "methods": [
         "POST"
@@ -6296,6 +6327,18 @@
         "GET"
       ],
       "route": "/api/user/gdpr/export",
+      "rpc_calls": [],
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/user/locale/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/user/locale",
       "rpc_calls": [],
       "uses_tables": [
         "profiles"

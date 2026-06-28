@@ -1426,6 +1426,7 @@
         "app/api/superadmin/users/set-scope/route.ts",
         "app/api/support/report/route.ts",
         "app/api/user/gdpr/export/route.ts",
+        "app/api/user/locale/route.ts",
         "app/auth/profile/route.ts",
         "app/driver/csv/route.ts",
         "app/driver/page.tsx",
@@ -1447,6 +1448,7 @@
         "lib/auth/requireRole.ts",
         "lib/db/profileLookup.ts",
         "lib/guards/requireSuperadmin.ts",
+        "lib/i18n/profileLocale.ts",
         "lib/invites/createEmployeeSingleInvite.ts",
         "lib/kitchen/batchSummary.ts",
         "lib/kitchen/dayData.ts",
@@ -1487,12 +1489,14 @@
         "lib/auth/getAuthContext.ts",
         "lib/auth/provider.ts",
         "lib/server/provider/providerCustomerRouteAuth.ts",
-        "lib/superadmin/loadPilotControlCenter.ts"
+        "lib/superadmin/loadPilotControlCenter.ts",
+        "scripts/e2e/seed-e2e-provider-kitchen-access.mjs"
       ]
     },
     "provider_price_rules": {
       "used_in": [
-        "lib/providers/providerMenuPriceConfig.ts"
+        "lib/providers/providerMenuPriceConfig.ts",
+        "lib/providers/providerMenuPricePreview.ts"
       ]
     },
     "provider_service_areas": {
@@ -1504,6 +1508,7 @@
     "provider_settings": {
       "used_in": [
         "lib/providers/loadProviderOperationalSettings.ts",
+        "lib/providers/loadProviderSettingsMenuProfile.ts",
         "lib/providers/providerNotificationRecipients.ts",
         "lib/providers/saveProviderOperationalSettings.ts"
       ]

@@ -8492,6 +8492,7 @@
       "http_methods": [],
       "imports": [
         "./AdminTopbarUserMenu.client",
+        "@/components/nav/LocaleSwitcher",
         "next/link"
       ],
       "keywords_hit": [],
@@ -18874,6 +18875,9 @@
         "@/lib/provider-menu/providerMenuOrderLock",
         "@/lib/providers/providerMenuPackageSurface",
         "@/lib/providers/providerMenuPriceConfig",
+        "@/lib/providers/providerMenuPricePreview",
+        "@/lib/providers/providerMenuPricePreviewApi",
+        "@/lib/providers/providerMenuPricePreviewFlag",
         "@/lib/sanity/client",
         "@/lib/supabase/admin",
         "next/server",
@@ -18943,6 +18947,91 @@
       ],
       "keywords_hit": [],
       "path": "app/api/provider/menu-days/varmrett/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "POST"
+      ],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/auth/providerContext",
+        "@/lib/http/respond",
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/runtimeMappingDraftPersistence.server",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/menu-profile/mapping-draft/archive/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GET",
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/auth/providerContext",
+        "@/lib/http/respond",
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/runtimeMappingDraftPersistence.server",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/menu-profile/mapping-draft/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "GET",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "GET"
+      ],
+      "imports": [
+        "@/lib/auth/getAuthContext",
+        "@/lib/auth/provider",
+        "@/lib/auth/providerContext",
+        "@/lib/http/respond",
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/runtimeMappingDraftPersistence.server",
+        "@/lib/menu-profile/runtimeMappingPublishShadow.server",
+        "@/lib/menu-profile/runtimeMappingPublishShadowTypes",
+        "next/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/provider/menu-profile/publish-shadow/route.ts",
       "rpc_calls": [],
       "type": "api",
       "uses_tables": []
@@ -24204,6 +24293,32 @@
     },
     {
       "exports": [
+        "POST",
+        "dynamic",
+        "revalidate",
+        "runtime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [
+        "POST"
+      ],
+      "imports": [
+        "@/lib/http/respond",
+        "@/lib/http/routeGuard",
+        "@/lib/i18n/middlewareLocale",
+        "@/lib/supabase/server",
+        "next/server"
+      ],
+      "keywords_hit": [],
+      "path": "app/api/user/locale/route.ts",
+      "rpc_calls": [],
+      "type": "api",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "exports": [
         "GET",
         "dynamic",
         "runtime"
@@ -24945,7 +25060,10 @@
         "@/app/fonts/fonts",
         "@/components/DevOverflowGuard",
         "@/components/revenue/AttributionCapture",
+        "@/lib/i18n/middlewareLocale",
         "next",
+        "next-intl",
+        "next-intl/server",
         "react"
       ],
       "keywords_hit": [],
@@ -24964,6 +25082,7 @@
       "imports": [
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
+        "@/lib/providers/providerBillingActionErrors",
         "@/lib/supabase/server",
         "next/cache",
         "server-only"
@@ -24991,7 +25110,7 @@
         "@/lib/auth/provider",
         "@/lib/auth/providerContext",
         "@/lib/providers/loadProviderBilling",
-        "@/lib/providers/providerBillingSurface",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
@@ -25013,13 +25132,15 @@
       "imports": [
         "@/components/providers/ProviderBrandColor",
         "@/components/providers/ProviderLogoUploader",
+        "@/components/providers/ProviderMenuProfileDiagnostic",
         "@/components/providers/ProviderOperationsForm",
         "@/components/providers/ProviderSettingsForm",
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/auth/providerContext",
         "@/lib/providers/loadProviderOperationalSettings",
-        "@/lib/providers/operationalSettingsShared",
+        "@/lib/providers/providerMenuProfileDiagnostic",
+        "next-intl/server",
         "next/link",
         "next/navigation",
         "server-only"
@@ -25049,6 +25170,7 @@
         "@/lib/integrations/tripletex/onboardingVerify",
         "@/lib/integrations/tripletex/providerWebhookUrl",
         "@/lib/integrations/tripletex/resolveTripletexProviderEnv",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
         "@/lib/integrations/tripletex/webhookSubscriptions",
         "@/lib/supabase/admin",
         "@/lib/supabase/server",
@@ -25086,6 +25208,8 @@
         "@/lib/auth/providerContext",
         "@/lib/integrations/tripletex/loadProviderConnectionState",
         "@/lib/integrations/tripletex/providerWebhookUrl",
+        "@/lib/integrations/tripletex/tripletexStatusPresentation",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
@@ -25115,6 +25239,7 @@
         "@/lib/integrations/tripletex/onboardingVerify",
         "@/lib/integrations/tripletex/providerWebhookUrl",
         "@/lib/integrations/tripletex/resolveTripletexProviderEnv",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
         "@/lib/integrations/tripletex/webhookSubscriptions",
         "@/lib/supabase/admin",
         "@/lib/supabase/server",
@@ -25154,6 +25279,8 @@
         "@/lib/auth/isSuperadminProfile",
         "@/lib/auth/provider",
         "@/lib/auth/providerContext",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
@@ -25202,6 +25329,7 @@
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/providers/lifecycleReason",
+        "@/lib/providers/providerCustomerActionErrors",
         "@/lib/supabase/server",
         "next/cache",
         "server-only"
@@ -25225,6 +25353,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "next-intl/server",
         "next/link"
       ],
       "keywords_hit": [],
@@ -25249,7 +25378,7 @@
         "@/lib/auth/providerContext",
         "@/lib/providers/loadProviderCustomers",
         "@/lib/providers/loadProviderOperationalSettings",
-        "@/lib/providers/providerCustomersSurface",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
@@ -25302,6 +25431,17 @@
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/auth/providerContext",
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/marketDefaults",
+        "@/lib/menu-profile/runtimeMapping",
+        "@/lib/menu-profile/types",
+        "@/lib/provider-menu/providerMenuProfileFixedCategories",
+        "@/lib/provider-menu/providerMenuProfilePresentation",
+        "@/lib/provider-menu/providerMenuProfileWarmDishPreview",
+        "@/lib/provider-menu/providerMenuRuntimeMappingProposal",
+        "@/lib/providers/loadProviderSettingsMenuProfile",
+        "@/lib/providers/providerMenuProfileDiagnostic",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
@@ -25322,6 +25462,7 @@
       "imports": [
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
+        "@/lib/providers/providerCoverageActionErrors",
         "@/lib/providers/serviceAreaSchema",
         "@/lib/supabase/server",
         "next/cache",
@@ -25352,6 +25493,7 @@
         "@/lib/auth/providerContext",
         "@/lib/providers/loadServiceAreas",
         "@/lib/providers/providerCoverageSurface",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
@@ -25373,6 +25515,7 @@
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/providers/kitchenOrderStatus",
+        "@/lib/providers/providerOrdersActionErrors",
         "@/lib/supabase/server",
         "next/cache",
         "server-only"
@@ -25404,10 +25547,13 @@
         "@/lib/providers/loadKitchenOrders",
         "@/lib/providers/loadProviderOperationalSettings",
         "@/lib/providers/providerOrdersSurface",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
-      "keywords_hit": [],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "app/leverandor/ordrer/page.tsx",
       "rpc_calls": [],
       "type": "route",
@@ -25429,6 +25575,7 @@
         "@/lib/providers/loadProviderDashboard",
         "@/lib/providers/providerDashboardActivity",
         "@/lib/providers/providerDashboardKpis",
+        "next-intl/server",
         "next/link",
         "next/navigation",
         "server-only"
@@ -25454,6 +25601,7 @@
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/auth/providerContext",
+        "@/lib/providers/providerRegistrationActionErrors",
         "@/lib/supabase/server",
         "next/cache",
         "server-only"
@@ -25483,7 +25631,7 @@
         "@/lib/auth/providerContext",
         "@/lib/providers/loadProviderOperationalSettings",
         "@/lib/providers/loadProviderRegistrations",
-        "@/lib/providers/providerRegistrationsSurface",
+        "next-intl/server",
         "next/navigation",
         "server-only"
       ],
@@ -26495,13 +26643,15 @@
     },
     {
       "exports": [
-        "default"
+        "default",
+        "formatCfoMoneyDisplay"
       ],
       "fetch_urls": [
         "/api/superadmin/cfo/summary"
       ],
       "http_methods": [],
       "imports": [
+        "@/lib/commercial/moneyDisplay",
         "@/lib/date/oslo",
         "react"
       ],
@@ -26953,13 +27103,15 @@
     },
     {
       "exports": [
-        "default"
+        "default",
+        "formatCtoRevenueDisplay"
       ],
       "fetch_urls": [
         "/api/cto/run"
       ],
       "http_methods": [],
       "imports": [
+        "@/lib/commercial/moneyDisplay",
         "react"
       ],
       "keywords_hit": [
@@ -32558,6 +32710,7 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/components/nav/LocaleSwitcher",
         "@/components/nav/ProfileMenu",
         "@/lib/layout/globalHeaderFromCms",
         "next/image",
@@ -32566,6 +32719,26 @@
       ],
       "keywords_hit": [],
       "path": "components/nav/HeaderShellView.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [
+        "/api/user/locale"
+      ],
+      "http_methods": [],
+      "imports": [
+        "@/lib/i18n/middlewareLocale",
+        "next-intl",
+        "next/navigation",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/nav/LocaleSwitcher.tsx",
       "rpc_calls": [],
       "type": "component",
       "uses_tables": []
@@ -32762,7 +32935,8 @@
         "./activityIconKind",
         "@/app/leverandor/innstillinger/tripletex/status/actions",
         "@/lib/integrations/tripletex/tripletexStatusPresentation",
-        "lucide-react"
+        "lucide-react",
+        "next-intl"
       ],
       "keywords_hit": [],
       "path": "components/provider/tripletex-status/ActivityFeed.tsx",
@@ -32776,7 +32950,9 @@
       ],
       "fetch_urls": [],
       "http_methods": [],
-      "imports": [],
+      "imports": [
+        "next-intl"
+      ],
       "keywords_hit": [],
       "path": "components/provider/tripletex-status/ActivityStats.tsx",
       "rpc_calls": [],
@@ -32790,7 +32966,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "@/app/leverandor/innstillinger/tripletex/status/actions"
+        "@/app/leverandor/innstillinger/tripletex/status/actions",
+        "next-intl"
       ],
       "keywords_hit": [],
       "path": "components/provider/tripletex-status/ResourceSummary.tsx",
@@ -32808,6 +32985,8 @@
         "@/app/leverandor/innstillinger/tripletex/koble-til/actions",
         "@/app/leverandor/innstillinger/tripletex/status/actions",
         "@/lib/integrations/tripletex/onboardingVerify",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -32830,6 +33009,8 @@
         "./StatusHero",
         "./WebhookHealth",
         "@/app/leverandor/innstillinger/tripletex/status/actions",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -32847,6 +33028,7 @@
       "imports": [
         "@/app/leverandor/innstillinger/tripletex/status/actions",
         "@/lib/integrations/tripletex/tripletexStatusPresentation",
+        "next-intl",
         "next/link"
       ],
       "keywords_hit": [],
@@ -32864,6 +33046,7 @@
       "imports": [
         "@/app/leverandor/innstillinger/tripletex/status/actions",
         "@/lib/integrations/tripletex/tripletexStatusPresentation",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -32901,6 +33084,7 @@
         "./Step4Success",
         "./WizardProgress",
         "./types",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -32919,6 +33103,8 @@
         "./types",
         "@/app/leverandor/innstillinger/tripletex/koble-til/actions",
         "@/lib/integrations/tripletex/onboardingVerify",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -32935,6 +33121,8 @@
       "http_methods": [],
       "imports": [
         "@/app/leverandor/innstillinger/tripletex/koble-til/actions",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -32951,6 +33139,8 @@
       "http_methods": [],
       "imports": [
         "@/app/leverandor/innstillinger/tripletex/koble-til/actions",
+        "@/lib/integrations/tripletex/tripletexActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -32966,6 +33156,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/integrations/tripletex/tripletexStatusPresentation",
+        "next-intl",
         "next/link"
       ],
       "keywords_hit": [],
@@ -32981,7 +33173,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "./types"
+        "./types",
+        "next-intl"
       ],
       "keywords_hit": [],
       "path": "components/provider/tripletex-wizard/WizardProgress.tsx",
@@ -32993,7 +33186,8 @@
       "exports": [
         "VerifyItemKey",
         "VerifyItemState",
-        "WIZARD_PROGRESS_LABELS",
+        "WIZARD_PROGRESS_KEYS",
+        "WizardProgressKey",
         "WizardScreen",
         "progressIndexForScreen"
       ],
@@ -33014,7 +33208,9 @@
       "http_methods": [],
       "imports": [
         "@/app/leverandor/faktura/actions",
+        "@/lib/providers/providerBillingActionErrors",
         "@/lib/providers/providerBillingShared",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33036,9 +33232,10 @@
         "@/components/providers/SuspendDialog",
         "@/lib/providers/customerTypes",
         "@/lib/providers/loadProviderCustomerDetail",
+        "@/lib/providers/providerCustomerActionErrors",
         "@/lib/providers/providerCustomerAgreementSurface",
-        "@/lib/providers/providerCustomerDetailActivity",
         "@/lib/providers/providerCustomerDetailSurface",
+        "next-intl",
         "next/navigation",
         "react"
       ],
@@ -33060,7 +33257,9 @@
         "@/components/providers/ProviderCustomerRemovalDialog",
         "@/components/providers/ProviderCustomerRestoreDialog",
         "@/lib/providers/customerTypes",
+        "@/lib/providers/providerCustomerDetailSurface",
         "@/lib/providers/providerCustomersSurface",
+        "next-intl",
         "next/link",
         "next/navigation",
         "react"
@@ -33081,10 +33280,13 @@
       "http_methods": [],
       "imports": [
         "@/lib/providers/providerOrdersSurface",
+        "next-intl",
         "next/navigation",
         "react"
       ],
-      "keywords_hit": [],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "components/providers/KitchenFilters.tsx",
       "rpc_calls": [],
       "type": "component",
@@ -33101,11 +33303,14 @@
         "@/lib/date/format",
         "@/lib/providers/kitchenOrderStatus",
         "@/lib/providers/loadKitchenOrders",
-        "@/lib/providers/providerOrdersSurface",
+        "@/lib/providers/providerOrdersActionErrors",
+        "next-intl",
         "next/navigation",
         "react"
       ],
-      "keywords_hit": [],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "components/providers/KitchenOrderCard.tsx",
       "rpc_calls": [],
       "type": "component",
@@ -33123,6 +33328,7 @@
         "@/lib/date/format",
         "@/lib/providers/loadKitchenOrders",
         "@/lib/providers/providerOrdersSurface",
+        "next-intl",
         "next/navigation",
         "react"
       ],
@@ -33171,6 +33377,7 @@
         "@/lib/date/format",
         "@/lib/providers/providerBillingShared",
         "@/lib/providers/providerBillingSurface",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33188,7 +33395,9 @@
       "http_methods": [],
       "imports": [
         "@/lib/providers/brandColor",
+        "@/lib/providers/providerSettingsActionErrors",
         "@/lib/providers/saveProviderLogo",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33205,8 +33414,10 @@
       "http_methods": [],
       "imports": [
         "@/lib/agreements/normalize",
+        "@/lib/providers/providerCustomerActionErrors",
         "@/lib/providers/providerCustomerAgreementTypes",
         "@/lib/providers/providerCustomerBilling",
+        "next-intl",
         "react",
         "react-dom"
       ],
@@ -33223,6 +33434,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/providers/providerCustomerActionErrors",
+        "next-intl",
         "react",
         "react-dom"
       ],
@@ -33239,6 +33452,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/providers/providerCustomerActionErrors",
+        "next-intl",
         "react",
         "react-dom"
       ],
@@ -33271,7 +33486,9 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/providers/providerSettingsActionErrors",
         "@/lib/providers/saveProviderLogo",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33290,9 +33507,16 @@
       ],
       "http_methods": [],
       "imports": [
+        "@/app/styles/ds/provider-menu-editor.css",
+        "@/components/providers/ProviderMenuCatalogEditor",
         "@/components/providers/ProviderMenuCatalogView",
         "@/components/providers/ProviderMenuCommandHeader",
         "@/components/providers/ProviderMenuEditorPanel",
+        "@/components/providers/ProviderMenuPricePreviewStrip",
+        "@/components/providers/ProviderMenuProfileFixedCategoriesPanel",
+        "@/components/providers/ProviderMenuProfilePresentationBanner",
+        "@/components/providers/ProviderMenuProfileWarmDishPreviewPanel",
+        "@/components/providers/ProviderMenuRuntimeMappingProposalPanel",
         "@/components/providers/ProviderMenuStatusRow",
         "@/components/providers/ProviderMenuWeekPlanner",
         "@/lib/cms/menuDayContract",
@@ -33302,10 +33526,17 @@
         "@/lib/provider-menu/mergeProviderMenuSlots",
         "@/lib/provider-menu/providerMenuCatalogReadModel",
         "@/lib/provider-menu/providerMenuCatalogSurface",
+        "@/lib/provider-menu/providerMenuProfileFixedCategories",
+        "@/lib/provider-menu/providerMenuProfilePresentation",
+        "@/lib/provider-menu/providerMenuProfileWarmDishPreview",
+        "@/lib/provider-menu/providerMenuRuntimeMappingProposal",
         "@/lib/provider-menu/providerMenuTierContract",
         "@/lib/provider-menu/providerMenuWorkspace",
+        "@/lib/providers/providerMenuActionErrors",
         "@/lib/providers/providerMenuPackageSurface",
         "@/lib/providers/providerMenuPriceDisplay",
+        "@/lib/providers/providerMenuPricePreviewDisplay",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33325,6 +33556,8 @@
       "imports": [
         "@/lib/cms/menuDayContract",
         "@/lib/provider-menu/lunchCategoryCatalog",
+        "@/lib/providers/providerMenuActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33341,9 +33574,16 @@
       "http_methods": [],
       "imports": [
         "@/components/providers/ProviderMenuCatalogEditor",
+        "@/components/providers/ProviderMenuProfileFixedCategoriesPanel",
+        "@/components/providers/ProviderMenuProfilePresentationBanner",
+        "@/components/providers/ProviderMenuRuntimeMappingProposalPanel",
         "@/lib/cms/menuDayContract",
         "@/lib/provider-menu/lunchCategoryCatalog",
-        "@/lib/provider-menu/providerMenuCatalogReadModel"
+        "@/lib/provider-menu/providerMenuCatalogReadModel",
+        "@/lib/provider-menu/providerMenuProfileFixedCategories",
+        "@/lib/provider-menu/providerMenuProfilePresentation",
+        "@/lib/provider-menu/providerMenuRuntimeMappingProposal",
+        "next-intl"
       ],
       "keywords_hit": [],
       "path": "components/providers/ProviderMenuCatalogView.tsx",
@@ -33359,8 +33599,10 @@
       "http_methods": [],
       "imports": [
         "@/lib/cms/menuDayContract",
-        "@/lib/provider-menu/providerMenuWorkspace",
-        "@/lib/providers/providerMenuPriceDisplay"
+        "@/lib/date/week",
+        "@/lib/i18n/localeRegistry",
+        "@/lib/providers/providerMenuPriceDisplay",
+        "next-intl"
       ],
       "keywords_hit": [],
       "path": "components/providers/ProviderMenuCommandHeader.tsx",
@@ -33378,6 +33620,8 @@
       "http_methods": [],
       "imports": [
         "@/lib/cms/menuDayContract",
+        "@/lib/providers/providerMenuActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33394,11 +33638,14 @@
       "http_methods": [],
       "imports": [
         "@/lib/cms/menuDayContract",
+        "@/lib/date/format",
+        "@/lib/i18n/localeRegistry",
         "@/lib/provider-menu/mergeProviderMenuSlots",
         "@/lib/provider-menu/providerMenuTierContract",
         "@/lib/provider-menu/providerMenuWorkspace",
         "@/lib/providers/providerMenuPackageSurface",
         "@/lib/providers/providerMenuPriceDisplay",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33414,8 +33661,126 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/i18n/localeRegistry",
+        "@/lib/providers/providerMenuPriceDisplay",
+        "@/lib/providers/providerMenuPricePreviewDisplay",
+        "next-intl"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuPricePreviewStrip.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/providers/providerMenuProfileDiagnostic",
+        "next-intl/server"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuProfileDiagnostic.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/provider-menu/providerMenuProfileFixedCategories",
+        "next-intl"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuProfileFixedCategoriesPanel.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/provider-menu/providerMenuProfilePresentation",
+        "next-intl"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuProfilePresentationBanner.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/provider-menu/providerMenuProfileWarmDishPreview",
+        "next-intl"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuProfileWarmDishPreviewPanel.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/provider-menu/providerMenuRuntimeMappingDraftSavePayload",
+        "@/lib/provider-menu/providerMenuRuntimeMappingProposal",
+        "next-intl",
+        "react"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuRuntimeMappingDraftSaveControls.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/components/providers/ProviderMenuRuntimeMappingDraftSaveControls",
+        "@/lib/provider-menu/providerMenuRuntimeMappingProposal",
+        "next-intl"
+      ],
+      "keywords_hit": [],
+      "path": "components/providers/ProviderMenuRuntimeMappingProposalPanel.tsx",
+      "rpc_calls": [],
+      "type": "component",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "default"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
         "@/lib/provider-menu/providerMenuWorkspace",
-        "@/lib/providers/providerMenuPriceDisplay"
+        "next-intl"
       ],
       "keywords_hit": [],
       "path": "components/providers/ProviderMenuStatusRow.tsx",
@@ -33432,12 +33797,15 @@
       "http_methods": [],
       "imports": [
         "@/lib/cms/menuDayContract",
+        "@/lib/menu-publish/generateWeekMenu",
         "@/lib/provider-menu/lunchCategoryCatalog",
         "@/lib/provider-menu/menuCategoryCanonical",
         "@/lib/provider-menu/mergeProviderMenuSlots",
         "@/lib/provider-menu/providerMenuCatalogSurface",
         "@/lib/provider-menu/providerMenuWorkspace",
-        "@/lib/providers/providerMenuPackageSurface"
+        "@/lib/providers/providerMenuPackageSurface",
+        "next-intl",
+        "react"
       ],
       "keywords_hit": [],
       "path": "components/providers/ProviderMenuWeekPlanner.tsx",
@@ -33454,7 +33822,9 @@
       "http_methods": [],
       "imports": [
         "@/components/auth/LogoutClient",
+        "@/components/nav/LocaleSwitcher",
         "@/lib/providers/types",
+        "next-intl",
         "next/link",
         "next/navigation",
         "react"
@@ -33475,7 +33845,9 @@
       "http_methods": [],
       "imports": [
         "@/lib/providers/operationalSettingsShared",
+        "@/lib/providers/providerSettingsActionErrors",
         "@/lib/providers/saveProviderOperationalSettings",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33494,6 +33866,7 @@
         "@/components/providers/RegistrationApproveDialog",
         "@/lib/providers/loadProviderRegistrations",
         "@/lib/providers/providerRegistrationsSurface",
+        "next-intl",
         "next/navigation",
         "react"
       ],
@@ -33510,8 +33883,10 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
+        "@/lib/providers/providerSettingsActionErrors",
         "@/lib/providers/saveProviderSettings",
         "@/lib/providers/types",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33548,6 +33923,8 @@
       "imports": [
         "@/app/leverandor/registreringer/actions",
         "@/lib/providers/loadProviderRegistrations",
+        "@/lib/providers/providerRegistrationActionErrors",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33565,8 +33942,10 @@
       "http_methods": [],
       "imports": [
         "@/app/leverandor/omrader/actions",
+        "@/lib/providers/providerCoverageActionErrors",
         "@/lib/providers/serviceAreaSchema",
         "@/lib/providers/serviceAreaShared",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33584,8 +33963,10 @@
       "imports": [
         "@/app/leverandor/omrader/actions",
         "@/components/providers/ServiceAreaEditor",
+        "@/lib/providers/providerCoverageActionErrors",
         "@/lib/providers/providerCoverageSurface",
         "@/lib/providers/serviceAreaShared",
+        "next-intl",
         "next/navigation",
         "react"
       ],
@@ -33605,6 +33986,7 @@
       "http_methods": [],
       "imports": [
         "@/lib/providers/lifecycleReason",
+        "next-intl",
         "react"
       ],
       "keywords_hit": [],
@@ -33620,7 +34002,8 @@
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
-        "@/lib/providers/types"
+        "@/lib/providers/types",
+        "next-intl/server"
       ],
       "keywords_hit": [],
       "path": "components/providers/SuspendedBanner.tsx",
@@ -47670,6 +48053,50 @@
     },
     {
       "exports": [
+        "CurrencyCode",
+        "MARKET_COMMERCIAL_CONFIGS",
+        "MARKET_COMMERCIAL_CONFIG_LIST",
+        "MarketCode",
+        "MarketCommercialConfig",
+        "PriceDisplayMode",
+        "TaxBasis",
+        "TaxDisplayMode",
+        "TaxValidationStatus"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/commercial/marketConfigs.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CurrencyCode",
+        "DEFAULT_NO_LOCALE",
+        "MoneyDisplayInput",
+        "MoneyDisplayResult",
+        "MoneyDisplayWithTaxBasisInput",
+        "TaxBasis",
+        "formatMoneyDisplay",
+        "formatMoneyWithTaxBasis",
+        "formatTaxBasisLabel"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/commercial/moneyDisplay.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "anonymizeUser"
       ],
       "fetch_urls": [],
@@ -48826,7 +49253,9 @@
       "exports": [
         "formatOsloISO",
         "getCurrentWeekDates",
+        "isoWeekNumberFromMondayStart",
         "startOfWeekISO",
+        "weekHeadingFromMondayStart",
         "weekRangeISO",
         "weekRangeISOFrom"
       ],
@@ -53887,6 +54316,137 @@
     },
     {
       "exports": [
+        "formatCurrency",
+        "formatDate",
+        "formatNumber"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/date/oslo",
+        "@/lib/i18n/middlewareLocale"
+      ],
+      "keywords_hit": [],
+      "path": "lib/i18n/format.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "APP_LOCALES",
+        "AppLocale",
+        "DEFAULT_APP_LOCALE",
+        "LOCALE_REGISTRY",
+        "getLocaleLabel",
+        "htmlLangForAppLocale",
+        "intlLocaleForAppLocale",
+        "isAppLocale",
+        "parseAppLocale"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/i18n/localeRegistry.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "deepMergeMessages",
+        "loadMessagesForLocale"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "../../messages/da.json",
+        "../../messages/de.json",
+        "../../messages/en.json",
+        "../../messages/es.json",
+        "../../messages/fi.json",
+        "../../messages/fr.json",
+        "../../messages/it.json",
+        "../../messages/nb.json",
+        "../../messages/sv.json",
+        "@/lib/i18n/middlewareLocale"
+      ],
+      "keywords_hit": [],
+      "path": "lib/i18n/messages.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "LP_LOCALE_COOKIE",
+        "resolveLocaleFromCookie"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/i18n/localeRegistry"
+      ],
+      "keywords_hit": [],
+      "path": "lib/i18n/middlewareLocale.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "loadProfilePreferredLocaleForRequest"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/i18n/middlewareLocale",
+        "@/lib/supabase/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/i18n/profileLocale.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "exports": [
+        "ResolveAppLocaleInput",
+        "resolveAppLocale"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/i18n/middlewareLocale"
+      ],
+      "keywords_hit": [],
+      "path": "lib/i18n/resolveAppLocale.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "routing"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/i18n/middlewareLocale",
+        "next-intl/routing"
+      ],
+      "keywords_hit": [],
+      "path": "lib/i18n/routing.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "DEFAULT_START_LOCALE",
         "SUPPORTED_START_LOCALES",
         "StartCopy",
@@ -54866,10 +55426,34 @@
     },
     {
       "exports": [
+        "PROVIDER_TRIPLETEX_ACTION_ERROR_KEYS",
+        "ProviderTripletexActionErrorKey",
+        "TripletexActionFailure",
+        "isProviderTripletexActionErrorKey",
+        "mapDisconnectRpcErrorKey",
+        "mapFinalizeRpcErrorKey",
+        "resolveTripletexActionError",
+        "tripletexActionFailure"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/integrations/tripletex/tripletexActionErrors.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "TRIPLETEX_ACTIVITY_ACTION_KEYS",
+        "TRIPLETEX_CONNECTION_STATES",
+        "TripletexConnectionState",
         "formatTripletexDateTime",
         "formatTripletexRelative",
-        "tripletexActivityLabel",
-        "tripletexConnectionStateLabel"
+        "isTripletexConnectionState",
+        "resolveTripletexActivityLabel",
+        "resolveTripletexConnectionStateLabel"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -56172,6 +56756,374 @@
       ],
       "keywords_hit": [],
       "path": "lib/media/variantResolution.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "EnvLike",
+        "LP_MENU_PROFILE_FIXED_CATEGORIES_ENV",
+        "LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV",
+        "LP_MENU_PROFILE_PUBLISH_SHADOW_ENV",
+        "LP_MENU_PROFILE_RESOLVER_ENV",
+        "LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV",
+        "LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV",
+        "isMenuProfileFixedCategoriesEnabled",
+        "isMenuProfileFixedCategoriesPanelEnabled",
+        "isMenuProfileMappingDraftApiEnabled",
+        "isMenuProfileMappingDraftSaveUiEnabled",
+        "isMenuProfilePublishShadowEnabled",
+        "isMenuProfileResolverEnabled",
+        "isMenuProfileRuntimeMappingProposalEnabled",
+        "isMenuProfileRuntimeMappingProposalPanelEnabled",
+        "isMenuProfileWarmDishPreviewEnabled",
+        "isMenuProfileWarmDishPreviewPanelEnabled"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/featureFlag.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/marketDefaults",
+        "@/lib/menu-profile/providerMenuProfileResolver",
+        "@/lib/menu-profile/registry",
+        "@/lib/menu-profile/resolver",
+        "@/lib/menu-profile/types",
+        "@/lib/menu-profile/warmDishBankSeeds"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/index.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "MARKET_DEFAULTS",
+        "getDefaultMenuProfileForMarket",
+        "getMarketDefaults"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/registry",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/marketDefaults.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "NoCategoryRuntimeMapping",
+        "resolveNoCategoryRuntimeMapping"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/noCategoryRuntimeMap.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderSettingsMenuProfileInput",
+        "providerCountryCodeToMarket",
+        "resolveProviderMenuProfileFromSettings"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/resolver",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/providerMenuProfileResolver.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "MENU_PROFILE_REGISTRY",
+        "assertMenuProfile",
+        "getMenuProfile",
+        "isSupportedMenuProfile",
+        "listMenuProfiles"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/types",
+        "@/lib/menu-profile/warmDishBankSeeds"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/registry.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "resolveMenuProfileForProvider"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/marketDefaults",
+        "@/lib/menu-profile/registry",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/resolver.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "BuildMenuProfileRuntimeMappingInput",
+        "NoCategoryRuntimeMapResolver",
+        "WARM_DISH_PREVIEW_ID_PREFIX",
+        "WarmDishPreviewMappingInput",
+        "assertNoRuntimeEnablement",
+        "buildMenuProfileRuntimeMapping",
+        "isProfileCategoryRuntimeMapped",
+        "isProfileCategoryShadowOnly",
+        "listMappedNoCategories",
+        "listUnmappedProfileCategories",
+        "mapProfileCategoryToRuntime"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/marketDefaults",
+        "@/lib/menu-profile/noCategoryRuntimeMap",
+        "@/lib/menu-profile/registry",
+        "@/lib/menu-profile/runtimeMappingTypes",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/runtimeMapping.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CreateRuntimeMappingDraftResult",
+        "RuntimeMappingDraftDto",
+        "RuntimeMappingDraftPersistenceError",
+        "RuntimeMappingDraftWriteRequest",
+        "archiveRuntimeMappingDraft",
+        "createRuntimeMappingDraft",
+        "mapDbRowToRuntimeMappingDraftDto",
+        "parseRuntimeMappingDraftRequest",
+        "readLatestRuntimeMappingDraft"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/runtimeMappingDraftValidation",
+        "@/lib/menu-profile/runtimeMappingDraftValidationTypes",
+        "@/lib/supabase/server",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/runtimeMappingDraftPersistence.server.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "assertValidRuntimeMappingDraft",
+        "normalizeRuntimeMappingDraftInput",
+        "validateDraftStatus",
+        "validateMappingJsonShape",
+        "validateMenuProfileId",
+        "validateNoEmployeeVisibility",
+        "validateNoPriceCurrencyMutation",
+        "validateNoProviderOwnedDataMutation",
+        "validateNoPublishOrderActivationFlags",
+        "validateNoPublishOrderSaveFlags",
+        "validateNoRuntimeEnablement",
+        "validateNoSanityWriteFields",
+        "validateProfileKeysInOrderChoiceFields",
+        "validateRuntimeMappingDraft",
+        "validateWarmDishPreviewJson"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/runtimeMapping",
+        "@/lib/menu-profile/runtimeMappingDraftValidationTypes",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/runtimeMappingDraftValidation.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "NormalizedRuntimeMappingDraftInput",
+        "RuntimeMappingDraftStatus",
+        "RuntimeMappingDraftValidationError",
+        "RuntimeMappingDraftValidationErrorCode",
+        "RuntimeMappingDraftValidationInput",
+        "RuntimeMappingDraftValidationResult"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/runtimeMappingDraftValidationTypes.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "assertValidPublishShadowEvaluation",
+        "buildBlockedRuntimeActivationReasons",
+        "buildRuntimeMappingPublishShadowEvaluation",
+        "extractUnmappedCategories",
+        "extractWouldMapCategories",
+        "summarizeWarmDishPreview",
+        "validatePublishShadowInput"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/runtimeMappingDraftValidation",
+        "@/lib/menu-profile/runtimeMappingDraftValidationTypes",
+        "@/lib/menu-profile/runtimeMappingPublishShadowTypes",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/runtimeMappingPublishShadow.server.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "PUBLISH_SHADOW_BASE_BLOCKED_REASONS",
+        "PUBLISH_SHADOW_FORBIDDEN_DTO_FIELDS",
+        "PublishShadowComparison",
+        "PublishShadowEvaluationDto",
+        "PublishShadowImpact",
+        "PublishShadowInputValidationError",
+        "PublishShadowWarmDishPreviewSummary",
+        "PublishShadowWouldMapCategory",
+        "RuntimeMappingPublishShadowInput",
+        "ZERO_PUBLISH_SHADOW_IMPACT"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/runtimeMappingPublishShadowTypes.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "MENU_PROFILE_RUNTIME_MAPPING_REASON_CODES",
+        "MENU_PROFILE_RUNTIME_MAPPING_VERSION",
+        "MenuProfileRuntimeCategoryMapping",
+        "MenuProfileRuntimeMapping",
+        "MenuProfileRuntimeMappingReasonCode",
+        "MenuProfileRuntimeWarmDishMapping"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/runtimeMappingTypes.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "AutoPublishRuleSet",
+        "CURRENCY_CODES",
+        "CurrencyCode",
+        "EnterpriseUpgradeDefinition",
+        "MARKET_CODES",
+        "MENU_PROFILE_IDS",
+        "MarketCode",
+        "MarketDefaults",
+        "MenuCategoryDefinition",
+        "MenuCategoryKind",
+        "MenuPackageDefinition",
+        "MenuProfile",
+        "MenuProfileId",
+        "MenuProfilePackageModel",
+        "MenuProfileResolveSource",
+        "MenuProfileResolverError",
+        "MenuProfileResolverResult",
+        "MenuProfileResolverSuccess",
+        "PACKAGE_KEYS",
+        "PackageKey",
+        "ResolveMenuProfileForProviderInput",
+        "WarmDishBankSeed",
+        "WarmDishDefinition",
+        "WarmDishRuleSet"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/types.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "WARM_DISH_BANK_SEEDS",
+        "assertWarmDishBankSeed",
+        "getWarmDishBankSeedsForMarket",
+        "getWarmDishBankSeedsForProfile",
+        "listWarmDishBankSeeds",
+        "toWarmDishDefinition",
+        "warmDishDefinitionsForProfile"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/menu-profile/warmDishBankSeeds.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -61969,11 +62921,15 @@
     },
     {
       "exports": [
+        "EnterpriseSourceKey",
         "ProviderVariantDisplayRow",
         "VariantDisplayStatus",
+        "VariantDisplayStatusKey",
+        "WorkspaceWeekSummaryKey",
         "providerWorkspaceCategories",
         "resolveVariantRowsForDay",
-        "summarizeWorkspaceWeekStatus"
+        "summarizeWorkspaceWeekStatus",
+        "summarizeWorkspaceWeekStatusKey"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -62030,6 +62986,123 @@
     },
     {
       "exports": [
+        "MenuProfileFixedCategoryHelpKey",
+        "MenuProfileFixedCategoryItem",
+        "MenuProfileFixedCategoryPresentation",
+        "MenuProfileFixedCategoryPresentationProps",
+        "MenuProfileFixedCategoryStatusKey",
+        "buildMenuProfileFixedCategoryPresentation",
+        "buildProviderMenuFixedCategoryPresentation"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/noCategoryRuntimeMap",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuProfileFixedCategories.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderMenuProfileCalloutPresentation",
+        "ProviderMenuProfilePackageTierPresentation",
+        "ProviderMenuProfilePresentationMeta",
+        "ProviderMenuWorkspacePresentation",
+        "ProviderMenuWorkspacePresentationProps",
+        "buildMenuProfileWorkspacePresentation",
+        "buildProviderMenuWorkspacePresentation",
+        "categoryLabelFromMenuProfile"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/menu-profile/types"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuProfilePresentation.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "MenuProfileWarmDishPreview",
+        "MenuProfileWarmDishPreviewHelpKey",
+        "MenuProfileWarmDishPreviewItem",
+        "MenuProfileWarmDishPreviewPresentationProps",
+        "MenuProfileWarmDishPreviewStatusKey",
+        "buildMenuProfileWarmDishPreview",
+        "buildProviderMenuWarmDishPreviewPresentation"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/types",
+        "@/lib/menu-profile/warmDishBankSeeds"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuProfileWarmDishPreview.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "RuntimeMappingDraftSaveRequestBody",
+        "buildRuntimeMappingDraftSaveRequestBody"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/provider-menu/providerMenuRuntimeMappingProposal"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuRuntimeMappingDraftSavePayload.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderMenuRuntimeMappingProposal",
+        "ProviderMenuRuntimeMappingProposalCategory",
+        "ProviderMenuRuntimeMappingProposalProps",
+        "ProviderMenuRuntimeMappingProposalSummary",
+        "ProviderMenuRuntimeMappingProposalWarmDish",
+        "RuntimeMappingProposalCategoryExplanationKey",
+        "RuntimeMappingProposalCategoryStatus",
+        "RuntimeMappingProposalWarmDishExplanationKey",
+        "RuntimeMappingProposalWarmDishStatus",
+        "assertNoRuntimeEnablement",
+        "buildProviderMenuRuntimeMappingProposal",
+        "buildProviderMenuRuntimeMappingProposalPresentation"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/runtimeMappingTypes",
+        "@/lib/menu-profile/types",
+        "@/lib/provider-menu/providerMenuProfileFixedCategories",
+        "@/lib/provider-menu/providerMenuProfileWarmDishPreview"
+      ],
+      "keywords_hit": [],
+      "path": "lib/provider-menu/providerMenuRuntimeMappingProposal.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "BASIS_WORKSPACE_CATEGORIES",
         "CATEGORY_VARIANT_CONTRACT",
         "ENTERPRISE_TIER_MODEL",
@@ -62062,36 +63135,44 @@
       "exports": [
         "CategoryDaySummary",
         "CategoryGroupRow",
-        "DAY_PACKAGE_INCLUDES",
         "DayCardSummary",
         "ENTERPRISE_DEFAULT_SUGGESTION",
         "ENTERPRISE_UPGRADE_QUICK_CHOICES",
         "ENTERPRISE_UPGRADE_SELECTION_KEY",
         "EditorContext",
+        "EditorContextLine",
+        "EditorContextLineKey",
         "EditorFocus",
         "EnterpriseUpgradeDaySummary",
         "EnterpriseUpgradeQuickChoice",
-        "PACKAGE_CARD_COPY",
-        "PACKAGE_WARM_DISH_HELPER",
-        "PRODUCTION_RULE_TEXT",
-        "PRODUCTION_RULE_TITLE",
-        "SHARED_WARM_DISH_HINT",
+        "EnterpriseUpgradeQuickChoiceId",
+        "EnterpriseUpgradeSummaryKey",
+        "NextStepAction",
+        "NextStepActionKey",
+        "PACKAGE_CARD_KEYS",
+        "PackageCardKey",
+        "WeekCockpitPart",
+        "WeekReadinessKey",
         "WeekWorkspaceMetrics",
         "WorkspaceStatusChip",
         "applyEnterpriseUpgradePreset",
         "buildEditorContext",
+        "buildWeekCockpitParts",
         "buildWeekCockpitSummary",
         "editorContextLine",
         "enterpriseUpgradeHasContent",
+        "resolveEditorContextLine",
         "resolveNextStepAction",
         "resolveSharedVarmrettSlot",
         "statusChipFromRowStatus",
         "statusChipLabel",
+        "statusChipLabelKey",
         "summarizeCategoryDay",
         "summarizeDayCard",
         "summarizeEnterpriseUpgradeDay",
         "summarizeSharedVarmrettDay",
         "summarizeWeekMetrics",
+        "weekReadinessKey",
         "weekReadinessLabel"
       ],
       "fetch_urls": [],
@@ -62105,7 +63186,9 @@
         "@/lib/provider-menu/providerMenuTierContract",
         "@/lib/providers/providerMenuPackageSurface"
       ],
-      "keywords_hit": [],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "lib/provider-menu/providerMenuWorkspace.ts",
       "rpc_calls": [],
       "type": "lib",
@@ -62165,11 +63248,14 @@
         "ProviderCustomerRow",
         "ProviderCustomerStatus",
         "ProviderCustomersPage",
-        "providerCustomerStatusLabel"
+        "providerCustomerStatusLabel",
+        "providerCustomerStatusLabelKey"
       ],
       "fetch_urls": [],
       "http_methods": [],
-      "imports": [],
+      "imports": [
+        "@/lib/providers/providerCustomerBilling"
+      ],
       "keywords_hit": [
         "orders"
       ],
@@ -62201,7 +63287,9 @@
         "@/lib/cms/mealTypeDisplayFallback",
         "@/lib/cms/mealTypeKey"
       ],
-      "keywords_hit": [],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "lib/providers/kitchenOrderDisplay.ts",
       "rpc_calls": [],
       "type": "lib",
@@ -62209,18 +63297,22 @@
     },
     {
       "exports": [
+        "KitchenActionLabelKey",
         "KitchenOrderStatus",
+        "KitchenStatusLabelKey",
         "KitchenStatusTarget",
-        "kitchenStatusLabel",
+        "kitchenStatusLabelKey",
         "kitchenStatusPillClass",
         "nextKitchenTarget",
         "normalizeKitchenOrderStatus",
-        "targetActionLabel"
+        "targetActionLabelKey"
       ],
       "fetch_urls": [],
       "http_methods": [],
       "imports": [],
-      "keywords_hit": [],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "lib/providers/kitchenOrderStatus.ts",
       "rpc_calls": [],
       "type": "lib",
@@ -62436,6 +63528,30 @@
     },
     {
       "exports": [
+        "ProviderSettingsMenuProfileRow",
+        "loadAndResolveProviderMenuProfile",
+        "loadProviderSettingsMenuProfileRow",
+        "providerSettingsRowToMenuProfileInput"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/providerMenuProfileResolver",
+        "@/lib/menu-profile/types",
+        "@/lib/providers/operationalSettingsShared",
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/loadProviderSettingsMenuProfile.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "provider_settings"
+      ]
+    },
+    {
+      "exports": [
         "loadServiceAreas"
       ],
       "fetch_urls": [],
@@ -62458,7 +63574,9 @@
         "DEFAULT_PROVIDER_LOCALE",
         "NormalizedEmailResult",
         "PROVIDER_EMAIL_OWNERSHIP_NOTE",
+        "PROVIDER_INTL_LOCALES",
         "PROVIDER_LOCALE_OPTIONS",
+        "PROVIDER_LOCALE_VALUES",
         "ProviderLocaleOption",
         "ProviderOperationalSettings",
         "isSupportedProviderLocale",
@@ -62466,7 +63584,9 @@
       ],
       "fetch_urls": [],
       "http_methods": [],
-      "imports": [],
+      "imports": [
+        "@/lib/i18n/localeRegistry"
+      ],
       "keywords_hit": [],
       "path": "lib/providers/operationalSettingsShared.ts",
       "rpc_calls": [],
@@ -62475,11 +63595,33 @@
     },
     {
       "exports": [
+        "PROVIDER_BILLING_ACTION_ERROR_KEYS",
+        "ProviderBillingActionErrorKey",
+        "billingContactActionFailure",
+        "isProviderBillingActionErrorKey",
+        "mapBillingContactRpcErrorKey",
+        "resolveProviderBillingActionError"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/providers/providerBillingActionErrors.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "INVOICE_STATUS_LABELS",
+        "InvoiceStatusKey",
         "PLAN_LABELS",
         "ProviderBillingBundle",
         "ProviderInvoiceRow",
-        "ProviderSubscriptionRow"
+        "ProviderPlanKey",
+        "ProviderSubscriptionRow",
+        "invoiceStatusKey",
+        "providerPlanKey"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -62493,9 +63635,13 @@
     {
       "exports": [
         "BillingSummaryCard",
-        "PROVIDER_BILLING_COPY",
+        "BillingSummaryCardId",
+        "BillingTranslator",
+        "SettlementStatusKey",
         "buildBillingSummaryCards",
         "invoiceStatusLabel",
+        "providerPlanLabel",
+        "settlementStatusKey",
         "settlementStatusLabel"
       ],
       "fetch_urls": [],
@@ -62511,8 +63657,31 @@
     },
     {
       "exports": [
-        "PROVIDER_COVERAGE_COPY",
-        "PROVIDER_COVERAGE_EMPTY_STATE",
+        "PROVIDER_COVERAGE_ACTION_ERROR_KEYS",
+        "ProviderCoverageActionErrorKey",
+        "coverageActionFailure",
+        "isProviderCoverageActionErrorKey",
+        "mapServiceAreaRpcErrorKey",
+        "mapServiceAreaZodErrorKey",
+        "resolveProviderCoverageActionError"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "zod"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerCoverageActionErrors.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "CoverageStatusKey",
+        "CoverageTranslator",
+        "PROVIDER_COVERAGE_EMPTY_STEP_KEYS",
+        "coverageStatusKey",
         "coverageStatusLabel",
         "formatCoverageDays",
         "formatCoverageEmployees",
@@ -62532,16 +63701,45 @@
     },
     {
       "exports": [
+        "PROVIDER_CUSTOMER_ACTION_ERROR_KEYS",
+        "ProviderCustomerActionErrorKey",
+        "ProviderCustomerApiErrBody",
+        "ProviderCustomerApiErrorContext",
+        "customerActionFailure",
+        "defaultProviderCustomerApiErrorKey",
+        "extractProviderCustomerApiErrorCode",
+        "isProviderCustomerActionErrorKey",
+        "mapProviderCustomerApiErrorKey",
+        "resolveProviderCustomerActionError",
+        "resolveProviderCustomerApiError"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/providers/providerCustomerActionErrors.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "AgreementDeliveryDaysDisplay",
         "AgreementLocationLookup",
+        "AgreementStatusLabelKey",
         "AgreementStatusTone",
-        "PROVIDER_AGREEMENT_COPY",
+        "PROVIDER_AGREEMENT_EMPTY_KEYS",
+        "PROVIDER_AGREEMENT_LABEL_KEYS",
         "ProviderAgreementDisplay",
+        "ProviderAgreementEmptyKey",
         "ProviderAgreementSourceRow",
+        "ProviderAgreementTranslate",
         "agreementDeliveryDaysDisplay",
         "agreementLocationLabel",
+        "agreementPackageIsMissing",
         "agreementPackageLabel",
         "agreementStatusLabel",
+        "agreementStatusLabelKey",
         "agreementStatusTone",
         "agreementTierLabel",
         "buildAgreementDisplay",
@@ -62586,7 +63784,9 @@
     },
     {
       "exports": [
+        "CommissionBasePresentationKey",
         "InvoiceMethod",
+        "InvoiceMethodPresentationKey",
         "LUNCHPORTALEN_COMMISSION_RATE",
         "ProviderBillingBasis",
         "ProviderBillingBasisConfidence",
@@ -62598,9 +63798,12 @@
         "formatDeliveryAddress",
         "formatDeliveryAddressInline",
         "formatNok",
+        "hasInvoiceRecipient",
         "invoiceMethodLabel",
+        "invoiceMethodPresentationKey",
         "resolveCompanyOrgnr",
         "resolveInvoiceMethod",
+        "resolveInvoiceRecipientValue",
         "suggestEhfEndpoint",
         "sumOrderRevenueCents"
       ],
@@ -62642,7 +63845,10 @@
     },
     {
       "exports": [
-        "PROVIDER_CUSTOMER_ACTIVITY_EMPTY",
+        "PROVIDER_CUSTOMER_ACTIVITY_EMPTY_KEYS",
+        "PROVIDER_CUSTOMER_ACTIVITY_EVENT_KEYS",
+        "ProviderCustomerActivityEmptyKey",
+        "ProviderCustomerActivityEventKey",
         "ProviderCustomerActivityItem",
         "ProviderCustomerActivityRow",
         "mapProviderCustomerDetailActivity"
@@ -62658,13 +63864,19 @@
     },
     {
       "exports": [
-        "PROVIDER_CUSTOMER_DETAIL_COPY",
         "ProviderBillingBasisDisplay",
+        "ProviderCustomerBillingTranslate",
+        "ProviderCustomerDetailTranslate",
+        "ProviderCustomerDetailTranslators",
         "ProviderCustomerIdentityDisplay",
+        "ProviderCustomerStatusTranslate",
         "buildBillingBasisBadges",
         "buildBillingBasisDisplay",
         "buildBillingBasisStatusLabel",
-        "buildCustomerIdentityDisplay"
+        "buildCustomerIdentityDisplay",
+        "formatCommissionBasePresentation",
+        "formatInvoiceMethodPresentation",
+        "formatInvoiceRecipientPresentation"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -62700,17 +63912,17 @@
     },
     {
       "exports": [
-        "PROVIDER_CUSTOMERS_COPY",
         "PROVIDER_CUSTOMER_FILTERS",
         "ProviderCustomerStatusCounts",
-        "ProviderCustomersEmptyState",
+        "ProviderCustomersEmptyStateKey",
+        "ProviderCustomersEmptyStateKeys",
         "ProviderCustomersPaginationModel",
+        "ProviderCustomersPaginationSummary",
         "buildCustomerStatusCounts",
         "buildCustomersPaginationModel",
         "formatProviderCustomerCount",
         "formatProviderCustomerUpdated",
-        "providerCustomersEmptyState",
-        "providerCustomersSubheading"
+        "providerCustomersEmptyStateKeys"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -62718,9 +63930,7 @@
         "@/lib/providers/customerTypes",
         "@/lib/providers/operationalSettingsShared"
       ],
-      "keywords_hit": [
-        "orders"
-      ],
+      "keywords_hit": [],
       "path": "lib/providers/providerCustomersSurface.ts",
       "rpc_calls": [],
       "type": "lib",
@@ -62728,8 +63938,7 @@
     },
     {
       "exports": [
-        "PROVIDER_ACTIVITY_EMPTY_STATE",
-        "PROVIDER_FOLLOW_UP_ALL_CLEAR",
+        "DashboardActivityMessageId",
         "ProviderDashboardActivityItem",
         "ProviderFollowUpInput",
         "ProviderFollowUpItem",
@@ -62784,25 +63993,55 @@
     },
     {
       "exports": [
-        "ENTERPRISE_UPGRADE_LABELS",
+        "PROVIDER_MENU_API_ERROR_CODES",
+        "PROVIDER_MENU_ERROR_KEYS",
+        "ProviderMenuApiErrorBody",
+        "ProviderMenuErrorKey",
+        "ProviderMenuErrorTranslator",
+        "ResolveProviderMenuApiErrorOptions",
+        "resolveEnterpriseWarningMessageKey",
+        "resolveEnterpriseWarningPresentation",
+        "resolveProviderMenuApiError",
+        "resolveProviderMenuCatalogApiError",
+        "resolvePublishConfirmPresentation"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/providers/providerMenuPackageSurface"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuActionErrors.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "AllergensDisplayInput",
+        "AllergensDisplayResult",
         "ENTERPRISE_UPGRADE_TYPES",
+        "ENTERPRISE_VALIDATION_NB_MESSAGES",
         "EnterpriseUpgradeType",
+        "EnterpriseValidationMessageKey",
         "EnterpriseValidationWarning",
+        "MENU_PUBLISH_CONFIRM_SUFFIX_NB",
         "MarginEstimate",
-        "PROVIDER_MENU_BUILDER_COPY",
         "ProviderMenuPriceView",
         "ProviderMenuSlotKey",
         "ProviderMenuSlotState",
         "WEEKDAY_KEYS",
-        "WEEKDAY_LABELS",
+        "WeekPublishSummaryKey",
         "WeekdayKey",
         "categoriesForTier",
         "categoryLabel",
         "computeMarginEstimate",
+        "enterpriseValidationMessageKeyFromNb",
         "isValidPlanTier",
-        "parseAllergensDisplay",
+        "resolveAllergensDisplay",
         "slotKey",
-        "summarizeWeekStatus",
+        "stripPublishConfirmSuffixNb",
+        "summarizeWeekStatusKey",
         "validateEnterprisePublish",
         "weekDatesFromStart"
       ],
@@ -62846,6 +64085,7 @@
     {
       "exports": [
         "ProviderMenuPriceView",
+        "formatPriceAmount",
         "formatPriceExVatLabel",
         "formatPriceIncVatLabel",
         "formatProviderMenuPricePair"
@@ -62857,6 +64097,116 @@
       ],
       "keywords_hit": [],
       "path": "lib/providers/providerMenuPriceDisplay.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderMenuPricePreviewAggregateSource",
+        "ProviderMenuPricePreviewDiagnostics",
+        "ProviderMenuPricePreviewOptions",
+        "ProviderMenuPricePreviewResult",
+        "ProviderMenuPricePreviewSource",
+        "ProviderMenuPricePreviewTier",
+        "loadProviderMenuPricesPreview"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/commercial/marketConfigs",
+        "@/lib/providers/providerMenuPriceConfig",
+        "@/lib/supabase/admin",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuPricePreview.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": [
+        "provider_price_rules"
+      ]
+    },
+    {
+      "exports": [
+        "ProviderMenuPricePreviewApiPayload",
+        "ProviderMenuPricePreviewApiTier",
+        "toProviderMenuPricePreviewApiPayload"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract",
+        "@/lib/providers/providerMenuPriceConfig",
+        "@/lib/providers/providerMenuPricePreview",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuPricePreviewApi.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderMenuPricePreviewDisplayAggregateSource",
+        "ProviderMenuPricePreviewDisplayPayload",
+        "ProviderMenuPricePreviewDisplaySource",
+        "ProviderMenuPricePreviewDisplayTier",
+        "formatPreviewTaxBasisLabel",
+        "previewAggregateSourceLabelKey"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/cms/menuDayContract"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuPricePreviewDisplay.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "isProviderMenuPricePreviewDisplayEnabled"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuPricePreviewFlag.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "ProviderMenuProfileDiagnostic",
+        "ProviderMenuProfileDiagnosticError",
+        "ProviderMenuProfileDiagnosticLegacy",
+        "ProviderMenuProfileDiagnosticResolved",
+        "buildProviderMenuProfileDiagnostic",
+        "buildProviderMenuProfileLegacyDiagnostic",
+        "loadProviderMenuProfileDiagnostic",
+        "menuProfileResolverHostEnv"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "@/lib/menu-profile/featureFlag",
+        "@/lib/menu-profile/marketDefaults",
+        "@/lib/menu-profile/providerMenuProfileResolver",
+        "@/lib/menu-profile/registry",
+        "@/lib/menu-profile/types",
+        "@/lib/providers/loadProviderSettingsMenuProfile",
+        "server-only"
+      ],
+      "keywords_hit": [],
+      "path": "lib/providers/providerMenuProfileDiagnostic.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -62915,24 +64265,47 @@
     },
     {
       "exports": [
+        "PROVIDER_ORDERS_ACTION_ERROR_KEYS",
+        "ProviderOrdersActionErrorKey",
+        "isProviderOrdersActionErrorKey",
+        "kitchenOrderActionFailure",
+        "resolveProviderOrdersActionError"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [
+        "orders"
+      ],
+      "path": "lib/providers/providerOrdersActionErrors.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "KitchenStatusCounts",
         "KitchenStatusFilterId",
-        "PROVIDER_ORDERS_COPY",
+        "OrdersStatusFilterKey",
         "PROVIDER_ORDERS_DATE_MODES",
         "PROVIDER_ORDERS_STATUS_FILTERS",
         "ProviderOrdersDateMode",
-        "ProviderOrdersEmptyState",
+        "ProviderOrdersEmptyStateKeys",
+        "ProviderOrdersEmptyStepKey",
         "buildKitchenStatusCounts",
         "formatProviderOrdersDate",
         "formatProviderOrdersDateRange",
-        "providerOrdersEmptyState"
+        "ordersStatusFilterKey",
+        "providerOrdersEmptyStateKeys"
       ],
       "fetch_urls": [],
       "http_methods": [],
       "imports": [
         "@/lib/providers/operationalSettingsShared"
       ],
-      "keywords_hit": [],
+      "keywords_hit": [
+        "orders"
+      ],
       "path": "lib/providers/providerOrdersSurface.ts",
       "rpc_calls": [],
       "type": "lib",
@@ -62940,11 +64313,31 @@
     },
     {
       "exports": [
-        "PROVIDER_REGISTRATIONS_COPY",
-        "PROVIDER_REGISTRATIONS_EMPTY_STATE",
+        "PROVIDER_REGISTRATION_ACTION_ERROR_KEYS",
+        "ProviderRegistrationActionErrorKey",
+        "isProviderRegistrationActionErrorKey",
+        "mapRegistrationRpcErrorKey",
+        "registrationActionFailure",
+        "resolveProviderRegistrationActionError"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/providers/providerRegistrationActionErrors.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "PROVIDER_REGISTRATIONS_EMPTY_STEP_KEYS",
+        "ProviderRegistrationStatusLabelKey",
+        "ProviderRegistrationsEmptyStepKey",
+        "ProviderRegistrationsSummaryKey",
         "formatProviderRegistrationReceived",
-        "providerRegistrationStatusLabel",
-        "providerRegistrationsSummary"
+        "providerRegistrationStatusLabelKey",
+        "providerRegistrationsSummaryKey"
       ],
       "fetch_urls": [],
       "http_methods": [],
@@ -62953,6 +64346,35 @@
       ],
       "keywords_hit": [],
       "path": "lib/providers/providerRegistrationsSurface.ts",
+      "rpc_calls": [],
+      "type": "lib",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "PROVIDER_SETTINGS_BRAND_ERROR_KEYS",
+        "PROVIDER_SETTINGS_LOGO_ERROR_KEYS",
+        "PROVIDER_SETTINGS_OPERATIONS_ERROR_KEYS",
+        "PROVIDER_SETTINGS_PROFILE_ERROR_KEYS",
+        "ProviderSettingsBrandErrorKey",
+        "ProviderSettingsLogoErrorKey",
+        "ProviderSettingsOperationsErrorKey",
+        "ProviderSettingsProfileErrorKey",
+        "mapOperationalEmailErrorKey",
+        "resolveProviderSettingsBrandError",
+        "resolveProviderSettingsLogoError",
+        "resolveProviderSettingsOperationsError",
+        "resolveProviderSettingsProfileError",
+        "settingsBrandFailure",
+        "settingsLogoFailure",
+        "settingsOperationsFailure",
+        "settingsProfileFailure"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "lib/providers/providerSettingsActionErrors.ts",
       "rpc_calls": [],
       "type": "lib",
       "uses_tables": []
@@ -63006,6 +64428,7 @@
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/providers/brandColor",
+        "@/lib/providers/providerSettingsActionErrors",
         "@/lib/supabase/admin",
         "@/lib/supabase/server",
         "next/cache"
@@ -63030,6 +64453,7 @@
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
         "@/lib/providers/operationalSettingsShared",
+        "@/lib/providers/providerSettingsActionErrors",
         "@/lib/supabase/admin",
         "next/cache"
       ],
@@ -63052,6 +64476,7 @@
       "imports": [
         "@/lib/auth/getAuthContext",
         "@/lib/auth/provider",
+        "@/lib/providers/providerSettingsActionErrors",
         "@/lib/supabase/server",
         "next/cache"
       ],
@@ -72635,6 +74060,39 @@
     },
     {
       "exports": [
+        "assertCiSanityNoProductionWrite",
+        "assertCiSanityNonProductionDataset",
+        "assertCiSanityReadOnly",
+        "hasSanityWriteTokenInEnv",
+        "isProductionSanityDataset",
+        "resolveSanityDatasetFromEnv",
+        "runCiSanityGuard"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [],
+      "keywords_hit": [],
+      "path": "scripts/ci/assert-ci-sanity-env.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "./assert-ci-sanity-env.mjs",
+        "node:assert/strict"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/ci/assert-ci-sanity-env.test.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [
         "PROJECT_REFS",
         "assertDbTarget",
         "createPgClientConfig",
@@ -72680,6 +74138,39 @@
       ],
       "keywords_hit": [],
       "path": "scripts/ci/cms-integrity.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [
+        "COMMERCIAL_HARDCODE_PATTERNS",
+        "runCommercialHardcodesGuard",
+        "scanCommercialHardcodes"
+      ],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "node:fs",
+        "node:path",
+        "node:url"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/ci/commercial-hardcodes-guard.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "./commercial-hardcodes-guard.mjs",
+        "node:assert/strict"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/ci/commercial-hardcodes-guard.test.mjs",
       "rpc_calls": [],
       "type": "script",
       "uses_tables": []
@@ -72984,6 +74475,20 @@
       ],
       "keywords_hit": [],
       "path": "scripts/ci/repair-staging-mcp-batch-ledger.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "node:child_process",
+        "pg"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/ci/repair-staging-menu-week-opening-ledger.mjs",
       "rpc_calls": [],
       "type": "script",
       "uses_tables": []
@@ -73457,6 +74962,25 @@
       "rpc_calls": [],
       "type": "script",
       "uses_tables": []
+    },
+    {
+      "exports": [],
+      "fetch_urls": [],
+      "http_methods": [],
+      "imports": [
+        "../smoke/seed-e2e-users.mjs",
+        "@supabase/supabase-js",
+        "dotenv",
+        "node:fs",
+        "node:path"
+      ],
+      "keywords_hit": [],
+      "path": "scripts/e2e/seed-e2e-provider-kitchen-access.mjs",
+      "rpc_calls": [],
+      "type": "script",
+      "uses_tables": [
+        "provider_memberships"
+      ]
     },
     {
       "exports": [],
