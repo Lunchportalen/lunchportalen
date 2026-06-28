@@ -238,16 +238,52 @@ describe("G5d.5b — future week shadow module import guards", () => {
     );
   });
 
-  test("future week shadow route must not exist yet in G5d.5b", () => {
+  test("week-shadow API route must not exist yet (G5d.5d only)", () => {
     expect(
       fs.existsSync(path.join(ROOT, "app/api/provider/menu-profile/week-shadow/route.ts")),
     ).toBe(false);
   });
 
-  test("future week shadow helper must not exist yet in G5d.5b", () => {
+  test("week shadow helper may exist only at lib/menu-profile/runtimeMappingWeekShadow.server.ts", () => {
+    const helperPath = path.join(ROOT, "lib/menu-profile/runtimeMappingWeekShadow.server.ts");
+    expect(fs.existsSync(helperPath)).toBe(true);
+
+    const src = readSource("lib/menu-profile/runtimeMappingWeekShadow.server.ts");
+    expect(src).toContain('import "server-only"');
+
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(path.join(ROOT, "lib/menu-profile"))) {
+      const r = rel(filePath).replace(/\\/g, "/");
+      if (r === "lib/menu-profile/runtimeMappingWeekShadow.server.ts") continue;
+      if (r === "lib/menu-profile/runtimeMappingWeekShadowTypes.ts") continue;
+      const fileSrc = fs.readFileSync(filePath, "utf8");
+      if (/runtimeMappingWeekShadow\.server/.test(fileSrc)) {
+        offenders.push(r);
+      }
+    }
     expect(
-      fs.existsSync(path.join(ROOT, "lib/menu-profile/runtimeMappingWeekShadow.server.ts")),
-    ).toBe(false);
+      offenders,
+      `week shadow helper duplicated outside canonical path:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("week shadow helper must not be imported by app/ or components/ runtime", () => {
+    const scanRoots = ["app", "components"];
+    const offenders: string[] = [];
+    for (const root of scanRoots) {
+      for (const filePath of walkFiles(path.join(ROOT, root))) {
+        const r = rel(filePath).replace(/\\/g, "/");
+        if (r.includes("/tests/")) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        if (WEEK_SHADOW_MODULE_IMPORT.test(src)) {
+          offenders.push(r);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `week shadow helper wired into runtime before G5d.5d:\n${offenders.join("\n")}`,
+    ).toEqual([]);
   });
 });
 
