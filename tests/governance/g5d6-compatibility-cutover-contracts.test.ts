@@ -24,6 +24,7 @@ import {
 
 const ROOT = process.cwd();
 const G5D6_DESIGN_DOC = COMPATIBILITY_CUTOVER_DOC_PATH;
+const G5D6E_EVIDENCE_DOC = "docs/engineering/G5d6e-compatibility-cutover-smoke-evidence.md";
 
 const FUTURE_COMPATIBILITY_ALLOWED_PATHS = [
   FUTURE_COMPATIBILITY_HELPER_PATH,
@@ -549,6 +550,40 @@ describe("G5d.6c — G5d.6e / G5d.7 gate reminders", () => {
     expect(doc).toMatch(/G5d\.7/);
     expect(doc).toMatch(/explicit GO|separate final GO/i);
     expect(doc).not.toMatch(/G5d\.7 implementation authorized from G5d\.6d/i);
+  });
+});
+
+describe("G5d.6e — compatibility cutover smoke evidence document guards", () => {
+  test("G5d6e evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, G5D6E_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("evidence doc locks Production OFF, no-write, and G5d.7 explicit GO", () => {
+    const doc = readSource(G5D6E_EVIDENCE_DOC);
+    expect(doc).toContain("LP_MENU_PROFILE_COMPATIBILITY_CUTOVER");
+    expect(doc).toMatch(/Production.*OFF/i);
+    expect(doc).toMatch(/no Sanity write|No Sanity writes|sanityWrites/i);
+    expect(doc).toMatch(/\/week|weekResponseChanges|week unchanged/i);
+    expect(doc).toMatch(/order|orderChanges|No order changes/i);
+    expect(doc).toMatch(/employee|employeeVisibleChanges|Employee UI unchanged/i);
+    expect(doc).toMatch(/menuDayPayload mutation|Mutate `menuDayPayload`/i);
+    expect(doc).toMatch(/G5d\.7.*explicit GO|G5d\.7 requires explicit GO/i);
+    expect(doc).toMatch(/G5d\.7 implementation must not start|must not start from this PR/i);
+    expect(doc).toMatch(/no runtime changes|no API changes|no UI changes|no DB\/RLS changes/i);
+    expect(doc).toMatch(/rollback|Rollback plan/i);
+    expect(doc).toMatch(/Pre-G5d\.7|pre-G5d\.7/i);
+    expect(doc).toMatch(/no source-of-truth switch|source-of-truth switch/i);
+    expect(doc).toMatch(/no auto-rollout|Auto-rollout|auto-rollout/i);
+    expect(doc).toMatch(/Production activation requires.*separate|separate final GO/i);
+  });
+
+  test("evidence doc documents G5d.6c–G5d.6d chain and Preview smoke", () => {
+    const doc = readSource(G5D6E_EVIDENCE_DOC);
+    expect(doc).toMatch(/G5d\.6c/);
+    expect(doc).toMatch(/G5d\.6d/);
+    expect(doc).toMatch(/compatibility-cutover/);
+    expect(doc).toMatch(/Preview smoke|Preview smoke evidence/i);
+    expect(doc).toMatch(/runtime separation|Runtime separation/i);
   });
 });
 
