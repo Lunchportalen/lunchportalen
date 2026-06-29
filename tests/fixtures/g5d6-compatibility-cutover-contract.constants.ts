@@ -6,6 +6,9 @@ export const COMPATIBILITY_CUTOVER_DOC_PATH =
   "docs/engineering/G5d6-compatibility-cutover-design-audit.md";
 export const FUTURE_COMPATIBILITY_HELPER_PATH =
   "lib/menu-profile/runtimeCompatibilityCutover.server.ts";
+export const COMPATIBILITY_CUTOVER_TYPES_PATH =
+  "lib/menu-profile/runtimeCompatibilityCutoverTypes.ts";
+export const CANONICAL_COMPATIBILITY_HELPER_PATH = FUTURE_COMPATIBILITY_HELPER_PATH;
 export const FUTURE_COMPATIBILITY_API_PATH =
   "app/api/provider/menu-profile/compatibility-cutover/route.ts";
 
@@ -23,8 +26,8 @@ export type CompatibilityCutoverEvaluationDto = {
   providerOnly: true;
   evaluatedAt: string;
   providerMenuProfileId: string;
-  sourceDraftId: string;
-  sourceMappingVersion: string;
+  sourceDraftId: string | null;
+  sourceMappingVersion: string | null;
   currentNoRuntimeUnchanged: true;
   weekResponseChanges: 0;
   employeeVisibleChanges: 0;
@@ -78,16 +81,15 @@ export const COMPATIBILITY_CUTOVER_FORBIDDEN_SOURCE_OF_TRUTH_WORDS = [
 ] as const;
 
 export const COMPATIBILITY_CUTOVER_BASE_BLOCKED_REASONS = [
-  "compatibility_only_provider_evidence",
-  "no_week_runtime_change",
-  "no_employee_visibility",
-  "no_order_changes",
-  "no_publish_changes",
-  "no_sanity_writes",
-  "no_menu_day_payload_mutation",
-  "no_price_commercial_exposure",
-  "runtime_hook_not_authorized",
-  "production_not_authorized",
+  "compatibility_only_no_runtime_cutover",
+  "compatibility_only_no_production_activation",
+  "compatibility_only_no_source_of_truth_switch",
+  "compatibility_only_no_auto_rollout",
+  "compatibility_only_no_employee_visibility",
+  "compatibility_only_no_order_changes",
+  "compatibility_only_no_publish_mutation",
+  "compatibility_only_no_sanity_writes",
+  "compatibility_only_no_menu_day_payload_mutation",
 ] as const;
 
 export const G5D6_COMPATIBILITY_CUTOVER_CONTRACT_FIXTURE: CompatibilityCutoverEvaluationDto = {
@@ -110,7 +112,15 @@ export const G5D6_COMPATIBILITY_CUTOVER_CONTRACT_FIXTURE: CompatibilityCutoverEv
   canProceedToRuntimeHook: false,
   canProceedToProduction: false,
   blockedReasons: [...COMPATIBILITY_CUTOVER_BASE_BLOCKED_REASONS],
-  requiredEvidence: ["g5d4-publish-shadow-evidence", "g5d5-week-shadow-evidence"],
+  requiredEvidence: [
+    "preview_compare_smoke_required",
+    "golden_path_must_pass",
+    "week_response_hash_must_match",
+    "employee_ui_must_be_unchanged",
+    "order_flow_must_be_unchanged",
+    "production_flags_must_remain_off",
+    "rollback_plan_required",
+  ],
   comparison: {
     currentNoRuntimeHash: "sha256:no-runtime-contract-fixture-current",
     candidateProfileRuntimeHash: "sha256:no-runtime-contract-fixture-current",
