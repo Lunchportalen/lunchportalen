@@ -313,10 +313,11 @@ describe("G5d.4c — shadow helper allowed but isolated", () => {
     expect(src).not.toMatch(/\.insert\(|\.update\(|\.delete\(/);
   });
 
-  test("only publish-shadow and week-shadow API routes may import runtimeMappingPublishShadow in app/", () => {
+  test("only publish-shadow, week-shadow, and compatibility-cutover API routes may import runtimeMappingPublishShadow in app/", () => {
     const allowed = new Set([
       "app/api/provider/menu-profile/publish-shadow/route.ts",
       "app/api/provider/menu-profile/week-shadow/route.ts",
+      "app/api/provider/menu-profile/compatibility-cutover/route.ts",
     ]);
     const offenders: string[] = [];
     for (const filePath of walkFiles(path.join(ROOT, "app"))) {
