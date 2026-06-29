@@ -11,6 +11,7 @@ export const COMPATIBILITY_CUTOVER_TYPES_PATH =
 export const CANONICAL_COMPATIBILITY_HELPER_PATH = FUTURE_COMPATIBILITY_HELPER_PATH;
 export const FUTURE_COMPATIBILITY_API_PATH =
   "app/api/provider/menu-profile/compatibility-cutover/route.ts";
+export const CANONICAL_COMPATIBILITY_API_PATH = FUTURE_COMPATIBILITY_API_PATH;
 
 export type CompatibilityCutoverComparison = {
   currentNoRuntimeHash: string;

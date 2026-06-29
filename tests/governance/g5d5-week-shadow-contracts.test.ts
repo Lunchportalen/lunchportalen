@@ -21,6 +21,10 @@ const ROOT = process.cwd();
 const G5D5_DESIGN_DOC = "docs/engineering/G5d5-week-shadow-read-design-audit.md";
 const G5D5E_EVIDENCE_DOC = "docs/engineering/G5d5e-week-shadow-smoke-evidence.md";
 const CANONICAL_WEEK_SHADOW_API_ROUTE = "app/api/provider/menu-profile/week-shadow/route.ts";
+const WEEK_SHADOW_HELPER_ALLOWED_APP_IMPORTS = new Set([
+  CANONICAL_WEEK_SHADOW_API_ROUTE,
+  "app/api/provider/menu-profile/compatibility-cutover/route.ts",
+]);
 const CANONICAL_WEEK_SHADOW_HELPER = "lib/menu-profile/runtimeMappingWeekShadow.server.ts";
 
 const FUTURE_WEEK_SHADOW_ALLOWED_PATHS = [
@@ -326,7 +330,7 @@ describe("G5d.5b — future week shadow module import guards", () => {
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath).replace(/\\/g, "/");
         if (r.includes("/tests/")) continue;
-        if (r === CANONICAL_WEEK_SHADOW_API_ROUTE) continue;
+        if (WEEK_SHADOW_HELPER_ALLOWED_APP_IMPORTS.has(r)) continue;
         const src = fs.readFileSync(filePath, "utf8");
         if (WEEK_SHADOW_MODULE_IMPORT.test(src)) {
           offenders.push(r);

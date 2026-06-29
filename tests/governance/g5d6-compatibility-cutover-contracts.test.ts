@@ -35,6 +35,7 @@ const FUTURE_COMPATIBILITY_ALLOWED_PATHS = [
 
 const CANONICAL_COMPATIBILITY_HELPER = "lib/menu-profile/runtimeCompatibilityCutover.server.ts";
 const CANONICAL_COMPATIBILITY_TYPES = "lib/menu-profile/runtimeCompatibilityCutoverTypes.ts";
+const CANONICAL_COMPATIBILITY_API_ROUTE = FUTURE_COMPATIBILITY_API_PATH;
 
 const FUTURE_COMPATIBILITY_FORBIDDEN_IMPORTS = [
   /requireSanityWrite/,
@@ -195,13 +196,14 @@ describe("G5d.6b — LP_MENU_PROFILE_COMPATIBILITY_CUTOVER flag contract", () =>
     }
   });
 
-  test("compatibility cutover flag is not wired in app/components yet", () => {
+  test("compatibility cutover flag is wired only in compatibility-cutover API route", () => {
     const scanRoots = ["app", "components"];
     const offenders: string[] = [];
     for (const root of scanRoots) {
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath).replace(/\\/g, "/");
         if (r.includes("/tests/")) continue;
+        if (r === CANONICAL_COMPATIBILITY_API_ROUTE) continue;
         const src = fs.readFileSync(filePath, "utf8");
         if (
           src.includes("isMenuProfileCompatibilityCutoverEnabled") ||
@@ -213,7 +215,7 @@ describe("G5d.6b — LP_MENU_PROFILE_COMPATIBILITY_CUTOVER flag contract", () =>
     }
     expect(
       offenders,
-      `compatibility cutover flag wired in app/components before G5d.6d:\n${offenders.join("\n")}`,
+      `compatibility cutover flag wired outside compatibility-cutover API:\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
 
@@ -302,9 +304,28 @@ describe("G5d.6b — design document contract guards", () => {
   });
 });
 
-describe("G5d.6b — canonical paths (helper allowed after G5d.6c; API not yet)", () => {
-  test("compatibility-cutover API route does not exist yet", () => {
-    expect(fs.existsSync(path.join(ROOT, FUTURE_COMPATIBILITY_API_PATH))).toBe(false);
+describe("G5d.6b — canonical paths (helper + API allowed after G5d.6c/G5d.6d)", () => {
+  test("compatibility-cutover API route may exist only at canonical path", () => {
+    expect(fs.existsSync(path.join(ROOT, CANONICAL_COMPATIBILITY_API_ROUTE))).toBe(true);
+
+    const src = readSource(CANONICAL_COMPATIBILITY_API_ROUTE);
+    expect(src).toContain('import "server-only"');
+    expect(src).toContain("isMenuProfileCompatibilityCutoverEnabled");
+    expect(src).toContain("buildCompatibilityCutoverEvaluation");
+
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(path.join(ROOT, "app/api/provider/menu-profile"))) {
+      const r = rel(filePath).replace(/\\/g, "/");
+      if (r === CANONICAL_COMPATIBILITY_API_ROUTE) continue;
+      const fileSrc = fs.readFileSync(filePath, "utf8");
+      if (/menu-profile\/compatibility-cutover\/route/.test(r) || /compatibility-cutover\/route/.test(fileSrc)) {
+        offenders.push(r);
+      }
+    }
+    expect(
+      offenders,
+      `compatibility cutover API duplicated outside canonical path:\n${offenders.join("\n")}`,
+    ).toEqual([]);
   });
 
   test("no other compatibility-cutover route/helper paths exist outside allowed set", () => {
@@ -429,10 +450,6 @@ describe("G5d.6c — pure compatibility comparison helper guards", () => {
     ).toEqual([]);
   });
 
-  test("compatibility-cutover API route must still NOT exist", () => {
-    expect(fs.existsSync(path.join(ROOT, FUTURE_COMPATIBILITY_API_PATH))).toBe(false);
-  });
-
   test("compatibility helper must not be barrel-exported from lib/menu-profile/index.ts", () => {
     const indexPath = path.join(ROOT, "lib/menu-profile/index.ts");
     if (!fs.existsSync(indexPath)) return;
@@ -450,35 +467,88 @@ describe("G5d.6c — pure compatibility comparison helper guards", () => {
   });
 });
 
-describe("G5d.6c — G5d.6d / G5d.7 gate reminders", () => {
-  test("G5d.6d API requires explicit GO and G5d.7 must not start", () => {
-    const doc = readSource(G5D6_DESIGN_DOC);
-    expect(doc).toMatch(/G5d\.6d/);
-    expect(doc).toMatch(/G5d\.7/);
-    expect(doc).toMatch(/explicit GO|separate final GO/i);
-    expect(doc).not.toMatch(/G5d\.7 implementation authorized from G5d\.6c/i);
+describe("G5d.6d — provider-only compatibility-cutover API guards", () => {
+  test("compatibility-cutover API route may import compatibility helper only at canonical paths", () => {
+    const src = readSource(CANONICAL_COMPATIBILITY_API_ROUTE);
+    expect(src).toContain("buildCompatibilityCutoverEvaluation");
+    expect(src).not.toMatch(/from\s+["']@\/app\/api\/week/);
+    expect(src).not.toMatch(/from\s+["']@\/app\/\(app\)\/week/);
+    expect(src).not.toMatch(/from\s+["']@\/lib\/week/);
+    expect(src).not.toMatch(/\.insert\(|\.delete\(|\.upsert\(/);
+
+    for (const pattern of FUTURE_COMPATIBILITY_FORBIDDEN_IMPORTS) {
+      expect(src, `compatibility-cutover API → ${pattern}`).not.toMatch(pattern);
+    }
   });
 
-  test("no app/components wiring of compatibility cutover flag yet", () => {
+  test("runtimeCompatibilityCutover helper may be imported only by compatibility-cutover API in app/", () => {
     const scanRoots = ["app", "components"];
     const offenders: string[] = [];
     for (const root of scanRoots) {
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath).replace(/\\/g, "/");
         if (r.includes("/tests/")) continue;
+        if (r === CANONICAL_COMPATIBILITY_API_ROUTE) continue;
         const src = fs.readFileSync(filePath, "utf8");
-        if (
-          src.includes("isMenuProfileCompatibilityCutoverEnabled") ||
-          src.includes("LP_MENU_PROFILE_COMPATIBILITY_CUTOVER")
-        ) {
+        if (COMPATIBILITY_MODULE_IMPORT.test(src)) {
           offenders.push(r);
         }
       }
     }
     expect(
       offenders,
-      `compatibility cutover flag wired in app/components before G5d.6d:\n${offenders.join("\n")}`,
+      `compatibility helper imported outside compatibility-cutover API:\n${offenders.join("\n")}`,
     ).toEqual([]);
+  });
+
+  test("compatibility-cutover API must fail-closed with 404 when flag OFF", () => {
+    const src = readSource(CANONICAL_COMPATIBILITY_API_ROUTE);
+    expect(src).toMatch(/isMenuProfileCompatibilityCutoverEnabled\(process\.env\)/);
+    expect(src).toMatch(/404/);
+    const getHandler = src.slice(src.indexOf("export async function GET"));
+    const flagIndex = getHandler.indexOf("isMenuProfileCompatibilityCutoverEnabled");
+    const authCallIndex = getHandler.indexOf("resolveProviderAdmin");
+    expect(flagIndex).toBeGreaterThan(-1);
+    expect(authCallIndex).toBeGreaterThan(flagIndex);
+  });
+
+  test("compatibility-cutover API response must not include providerId field", () => {
+    const src = readSource(CANONICAL_COMPATIBILITY_API_ROUTE);
+    const returnBlocks = src.match(/return jsonOk\([\s\S]*?\);/g) ?? [];
+    expect(returnBlocks.length).toBeGreaterThan(0);
+    for (const block of returnBlocks) {
+      expect(block).not.toContain("providerId");
+    }
+  });
+
+  test("no provider UI wiring for compatibility cutover flag", () => {
+    const providersDir = path.join(ROOT, "components/providers");
+    if (!fs.existsSync(providersDir)) return;
+
+    const offenders: string[] = [];
+    for (const filePath of walkFiles(providersDir)) {
+      const src = fs.readFileSync(filePath, "utf8");
+      if (
+        src.includes("LP_MENU_PROFILE_COMPATIBILITY_CUTOVER") ||
+        src.includes("isMenuProfileCompatibilityCutoverEnabled") ||
+        src.includes("compatibility-cutover")
+      ) {
+        offenders.push(rel(filePath));
+      }
+    }
+    expect(offenders, `provider UI references compatibility cutover:\n${offenders.join("\n")}`).toEqual(
+      [],
+    );
+  });
+});
+
+describe("G5d.6c — G5d.6e / G5d.7 gate reminders", () => {
+  test("G5d.6e smoke evidence requires explicit GO and G5d.7 must not start", () => {
+    const doc = readSource(G5D6_DESIGN_DOC);
+    expect(doc).toMatch(/G5d\.6d/);
+    expect(doc).toMatch(/G5d\.7/);
+    expect(doc).toMatch(/explicit GO|separate final GO/i);
+    expect(doc).not.toMatch(/G5d\.7 implementation authorized from G5d\.6d/i);
   });
 });
 
