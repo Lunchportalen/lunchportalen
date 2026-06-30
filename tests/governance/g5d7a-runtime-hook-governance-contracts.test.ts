@@ -1,0 +1,525 @@
+/**
+ * G5d.7a — Future runtime hook contract/governance tests (tests only).
+ * Locks boundaries before G5d.7b adapter / G5d.7c hook implementation.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { describe, expect, test } from "vitest";
+
+const ROOT = process.cwd();
+const G5D7_DESIGN_DOC = "docs/engineering/G5d7-compatibility-cutover-design-plan.md";
+
+const RUNTIME_HOOK_FLAG = "LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK";
+const EMPLOYEE_PROFILE_RUNTIME_FLAG = "LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME";
+
+const FUTURE_HOOK_HELPER_PATH = "lib/menu-profile/weekRuntimeCompatibilityResolver.server.ts";
+const FUTURE_HOOK_TEST_PATH = "tests/lib/menu-profile/weekRuntimeCompatibilityResolver.test.ts";
+
+const G5D7_GOVERNANCE_ALLOWED_PATHS = [
+  G5D7_DESIGN_DOC,
+  "tests/governance/g5d7-compatibility-cutover-design-contracts.test.ts",
+  "tests/governance/g5d7a-runtime-hook-governance-contracts.test.ts",
+  "docs/engineering/G5d6-compatibility-cutover-design-audit.md",
+  "docs/engineering/G5d6e-compatibility-cutover-smoke-evidence.md",
+];
+
+const FUTURE_HOOK_ALLOWED_RUNTIME_PATHS = [
+  FUTURE_HOOK_HELPER_PATH,
+  FUTURE_HOOK_TEST_PATH,
+];
+
+const PROPOSED_FLAG_TOKENS = [RUNTIME_HOOK_FLAG, EMPLOYEE_PROFILE_RUNTIME_FLAG] as const;
+
+const HOOK_REFERENCE_PATTERNS = [
+  /LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK/,
+  /LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME/,
+  /weekRuntimeCompatibilityResolver/,
+  /isMenuProfileRuntimeCompatibilityHookEnabled/,
+  /isMenuProfileEmployeeProfileRuntimeEnabled/,
+  /runtime compatibility hook/i,
+];
+
+const SOURCE_OF_TRUTH_SWITCH_TOKENS = [
+  "useProfileRuntimeAsSource",
+  "sourceOfTruthSwitch",
+  "menuProfileSourceOfTruth",
+  "promoteCandidate",
+  "activateCandidate",
+  "applyCandidateToWeek",
+  "orderableCandidate",
+  "candidateOrderable",
+] as const;
+
+const SOURCE_OF_TRUTH_SWITCH_PATTERNS = [
+  /\bautoRollout\b/,
+  /\bauto-rollout\b/,
+] as const;
+
+function containsSourceOfTruthSwitchToken(src: string): string | null {
+  for (const token of SOURCE_OF_TRUTH_SWITCH_TOKENS) {
+    if (src.includes(token)) return token;
+  }
+  for (const pattern of SOURCE_OF_TRUTH_SWITCH_PATTERNS) {
+    if (pattern.test(src)) return String(pattern);
+  }
+  return null;
+}
+
+const COMMERCIAL_SENSITIVE_TOKENS = [
+  "provider_price_rules",
+  "pricePreview",
+  "commission",
+  "provisjon",
+  "vat",
+  "mva",
+  "billing",
+  "Tripletex",
+  "commercialVisibleChanges",
+  "priceVisibleChanges",
+] as const;
+
+const PROTECTED_PREFIXES = [
+  "app/api/week",
+  "app/(app)/week",
+  "app/api/order/window",
+  "lib/week",
+  "app/api/orders",
+  "app/api/order",
+  "lib/orders",
+  "app/api/provider/menu-days",
+  "app/api/provider/menu-catalog",
+  "lib/menu-publish",
+  "lib/sanity",
+  "lib/cms",
+  "lib/integrations/tripletex",
+  "components/employee",
+  "components/week",
+  "components/providers",
+];
+
+const PROTECTED_FILES = [
+  "lib/provider-menu/menuDayPayload.ts",
+  "lib/provider-menu/menuCatalogWrite.ts",
+  "app/api/week/route.ts",
+];
+
+const ENV_CONFIG_SCAN_PATHS = [
+  ".env.example",
+  ".env.production.example",
+  "vercel.json",
+  "render.yaml",
+];
+
+const RUNTIME_SCAN_ROOTS = ["app", "components", "lib"] as const;
+
+const G5D6_RUNTIME_ALLOWED_PREFIXES = [
+  "lib/menu-profile/runtimeCompatibilityCutover",
+  "lib/menu-profile/runtimeCompatibilityCutoverTypes",
+  "app/api/provider/menu-profile/compatibility-cutover",
+];
+
+const FUTURE_HOOK_FORBIDDEN_IMPORTS = [
+  /requireSanityWrite/,
+  /sanityWriteClient/,
+  /menuCatalogWrite/,
+  /syncMenuServiceDaysFromMenuDay/,
+  /syncMenuServiceDayItems/,
+  /runMenuWeekRolloutCore/,
+  /runMenuWeekRollout/,
+  /lp_order_set/,
+  /lp_order_advance_status/,
+  /tripletex/i,
+  /buildMenuDayPayload/,
+  /EmployeeWeekClient/,
+  /provider_price_rules/,
+  /pricePreview/,
+  /from\s+["']@\/app\/api\/week/,
+  /from\s+["']@\/app\/\(app\)\/week/,
+  /employeePayload/,
+  /orderPayload/,
+  /compatibilityCutover/,
+  /weekShadow/,
+  /publishShadow/,
+];
+
+const HOOK_MODULE_IMPORT =
+  /from\s+["']@\/lib\/menu-profile\/weekRuntimeCompatibilityResolver|weekRuntimeCompatibilityResolver\.server/;
+
+function readSource(relPath: string): string {
+  return fs.readFileSync(path.join(ROOT, relPath), "utf8");
+}
+
+function rel(absPath: string): string {
+  return path.normalize(path.relative(ROOT, absPath)).replace(/\\/g, "/");
+}
+
+/** Strip comments so governance-only mentions (e.g. “no auto-rollout”) do not false-positive. */
+function stripComments(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/.*$/gm, " ");
+}
+
+function walkFiles(dir: string, out: string[] = []): string[] {
+  if (!fs.existsSync(dir)) return out;
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, ent.name);
+    if (ent.isDirectory()) {
+      if (ent.name === "node_modules" || ent.name === ".next") continue;
+      walkFiles(p, out);
+    } else if (/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env)$/.test(ent.name)) {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+function filesUnderPrefixes(prefixes: string[]): string[] {
+  const out: string[] = [];
+  for (const prefix of prefixes) {
+    walkFiles(path.join(ROOT, prefix), out);
+  }
+  return out;
+}
+
+function isG5d7GovernanceAllowedPath(fileRel: string): boolean {
+  return G5D7_GOVERNANCE_ALLOWED_PATHS.some((p) => fileRel === p.replace(/\\/g, "/"));
+}
+
+function isFutureHookAllowedRuntimePath(fileRel: string): boolean {
+  return FUTURE_HOOK_ALLOWED_RUNTIME_PATHS.some((p) => fileRel === p.replace(/\\/g, "/"));
+}
+
+function isG5d6RuntimeAllowedPath(fileRel: string): boolean {
+  return G5D6_RUNTIME_ALLOWED_PREFIXES.some((prefix) => fileRel.includes(prefix.replace(/\\/g, "/")));
+}
+
+function isRuntimeScopeFile(fileRel: string): boolean {
+  if (fileRel.includes("/tests/")) return false;
+  if (isG5d7GovernanceAllowedPath(fileRel)) return false;
+  if (isFutureHookAllowedRuntimePath(fileRel)) return false;
+  if (isG5d6RuntimeAllowedPath(fileRel)) return false;
+  return (
+    fileRel.startsWith("app/") ||
+    fileRel.startsWith("components/") ||
+    fileRel.startsWith("lib/")
+  );
+}
+
+function assertNoHookReferences(prefixes: string[], label: string) {
+  const offenders: string[] = [];
+  for (const filePath of filesUnderPrefixes(prefixes)) {
+    const r = rel(filePath);
+    if (r.includes("/tests/")) continue;
+    if (isG5d7GovernanceAllowedPath(r)) continue;
+    const src = fs.readFileSync(filePath, "utf8");
+    for (const pattern of HOOK_REFERENCE_PATTERNS) {
+      if (pattern.test(src)) {
+        offenders.push(`${r} → ${pattern}`);
+        break;
+      }
+    }
+  }
+  expect(offenders, `${label} must not reference G5d.7 runtime hook:\n${offenders.join("\n")}`).toEqual(
+    [],
+  );
+}
+
+function existingFutureHookFiles(): string[] {
+  return FUTURE_HOOK_ALLOWED_RUNTIME_PATHS.map((p) => path.join(ROOT, p)).filter((p) =>
+    fs.existsSync(p),
+  );
+}
+
+describe("G5d.7a — G5d.7 design remains planning only", () => {
+  test("G5d7 design plan document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, G5D7_DESIGN_DOC))).toBe(true);
+  });
+
+  test("design plan locks planning only, no implementation, and explicit GO", () => {
+    const doc = readSource(G5D7_DESIGN_DOC);
+    expect(doc).toMatch(/design\/planning only|Design \/ planning only/i);
+    expect(doc).toMatch(/no runtime changes|no API changes|no UI changes|no DB\/RLS changes/i);
+    expect(doc).toMatch(/no `\/week` changes|no \/week changes|\/week` changes/i);
+    expect(doc).toMatch(/no implementation|not implementation/i);
+    expect(doc).toMatch(/explicit GO|separate explicit GO/i);
+    expect(doc).toMatch(/Production activation requires.*separate|separate final GO/i);
+    expect(doc).toMatch(/G5d\.8.*not started|not authorized from G5d\.7/i);
+    expect(doc).toMatch(/G5d\.7 \(this PR\) authorizes none of the above/i);
+  });
+});
+
+describe("G5d.7a — proposed future flags are not implemented", () => {
+  test("featureFlag.ts does not export future hook flag helpers", () => {
+    const src = readSource("lib/menu-profile/featureFlag.ts");
+    for (const token of PROPOSED_FLAG_TOKENS) {
+      expect(src, `featureFlag.ts → ${token}`).not.toContain(token);
+    }
+    expect(src).not.toContain("isMenuProfileRuntimeCompatibilityHookEnabled");
+    expect(src).not.toContain("isMenuProfileEmployeeProfileRuntimeEnabled");
+  });
+
+  test("proposed flags appear only in allowed docs/governance paths", () => {
+    const offenders: string[] = [];
+    for (const token of PROPOSED_FLAG_TOKENS) {
+      for (const filePath of walkFiles(ROOT)) {
+        const r = rel(filePath);
+        if (!/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env|md)$/.test(r)) continue;
+        if (r.includes("node_modules/") || r.includes(".next/")) continue;
+        if (isG5d7GovernanceAllowedPath(r)) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        if (src.includes(token)) {
+          offenders.push(`${r} → ${token}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `proposed G5d.7 flags wired outside docs/governance:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("app and components have no proposed flag wiring", () => {
+    const offenders: string[] = [];
+    for (const root of ["app", "components"] as const) {
+      for (const filePath of walkFiles(path.join(ROOT, root))) {
+        const r = rel(filePath);
+        const src = fs.readFileSync(filePath, "utf8");
+        for (const token of PROPOSED_FLAG_TOKENS) {
+          if (src.includes(token)) offenders.push(`${r} → ${token}`);
+        }
+      }
+    }
+    expect(offenders, `proposed flags in app/components:\n${offenders.join("\n")}`).toEqual([]);
+  });
+
+  test("lib/week has no proposed flag wiring", () => {
+    assertNoHookReferences(["lib/week"], "lib/week");
+  });
+});
+
+describe("G5d.7a — future hook path reserved but not built", () => {
+  test("canonical future adapter path is documented", () => {
+    const doc = readSource(G5D7_DESIGN_DOC);
+    expect(doc).toContain(FUTURE_HOOK_HELPER_PATH);
+    expect(doc).toContain(FUTURE_HOOK_TEST_PATH);
+  });
+
+  test("future adapter may be absent before G5d.7b", () => {
+    const exists = fs.existsSync(path.join(ROOT, FUTURE_HOOK_HELPER_PATH));
+    if (!exists) {
+      expect(exists).toBe(false);
+      return;
+    }
+    const src = readSource(FUTURE_HOOK_HELPER_PATH);
+    expect(src).toMatch(/import\s+["']server-only["']/);
+    expect(src).not.toMatch(/\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
+    for (const token of SOURCE_OF_TRUTH_SWITCH_TOKENS) {
+      expect(src, `future adapter → ${token}`).not.toContain(token);
+    }
+    for (const pattern of SOURCE_OF_TRUTH_SWITCH_PATTERNS) {
+      expect(src, `future adapter → ${pattern}`).not.toMatch(pattern);
+    }
+    for (const pattern of FUTURE_HOOK_FORBIDDEN_IMPORTS) {
+      expect(src, `future adapter → ${pattern}`).not.toMatch(pattern);
+    }
+  });
+
+  test("future adapter must not be imported by app/api/week before G5d.7c", () => {
+    const weekRoute = path.join(ROOT, "app/api/week/route.ts");
+    if (!fs.existsSync(weekRoute)) return;
+    const src = fs.readFileSync(weekRoute, "utf8");
+    expect(src).not.toMatch(HOOK_MODULE_IMPORT);
+    expect(src).not.toContain("weekRuntimeCompatibilityResolver");
+  });
+
+  test("future hook server files must not import forbidden runtime modules if they exist", () => {
+    const files = existingFutureHookFiles().filter(
+      (p) => !p.includes(`${path.sep}tests${path.sep}`) && p.endsWith(".server.ts"),
+    );
+    if (files.length === 0) return;
+
+    const offenders: string[] = [];
+    for (const filePath of files) {
+      const src = fs.readFileSync(filePath, "utf8");
+      for (const pattern of FUTURE_HOOK_FORBIDDEN_IMPORTS) {
+        if (pattern.test(src)) {
+          offenders.push(`${rel(filePath)} → ${pattern}`);
+          break;
+        }
+      }
+    }
+    expect(
+      offenders,
+      `forbidden imports in future hook files:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
+describe("G5d.7a — protected paths have no hook refs", () => {
+  test("week API and lib have no G5d.7 runtime hook references", () => {
+    assertNoHookReferences(["app/api/week", "lib/week"], "week runtime");
+  });
+
+  test("employee week UI has no G5d.7 runtime hook references", () => {
+    assertNoHookReferences(["app/(app)/week", "components/employee", "components/week"], "employee week UI");
+  });
+
+  test("order runtime has no G5d.7 runtime hook references", () => {
+    assertNoHookReferences(["app/api/orders", "app/api/order", "lib/orders"], "order runtime");
+  });
+
+  test("publish/Sanity/menuDayPayload have no G5d.7 runtime hook references", () => {
+    assertNoHookReferences(
+      ["lib/menu-publish", "lib/sanity", "lib/cms"],
+      "publish/Sanity runtime",
+    );
+    const src = readSource("lib/provider-menu/menuDayPayload.ts");
+    for (const pattern of HOOK_REFERENCE_PATTERNS) {
+      expect(src, `menuDayPayload → ${pattern}`).not.toMatch(pattern);
+    }
+  });
+
+  test("billing/Tripletex and provider UI have no G5d.7 runtime hook references", () => {
+    assertNoHookReferences(["lib/integrations/tripletex"], "Tripletex runtime");
+    assertNoHookReferences(["components/providers"], "provider UI");
+  });
+
+  test("public customer pages have no G5d.7 runtime hook references", () => {
+    const publicRoots = ["app/(public)", "app/(marketing)"].filter((p) =>
+      fs.existsSync(path.join(ROOT, p)),
+    );
+    if (publicRoots.length === 0) return;
+    assertNoHookReferences(publicRoots, "public pages");
+  });
+
+  test("protected paths must not import weekRuntimeCompatibilityResolver helper", () => {
+    const files = [
+      ...filesUnderPrefixes(PROTECTED_PREFIXES),
+      ...PROTECTED_FILES.map((f) => path.join(ROOT, f)).filter((p) => fs.existsSync(p)),
+    ];
+    const offenders: string[] = [];
+    for (const filePath of files) {
+      const r = rel(filePath);
+      if (r.includes("/tests/")) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      if (HOOK_MODULE_IMPORT.test(src) || src.includes("weekRuntimeCompatibilityResolver")) {
+        offenders.push(r);
+      }
+    }
+    expect(
+      offenders,
+      `G5d.7 hook leaked into protected runtime:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
+describe("G5d.7a — no source-of-truth switch / no auto-rollout in runtime", () => {
+  test("runtime scopes do not contain G5d.7 source-of-truth switch tokens", () => {
+    const offenders: string[] = [];
+    for (const root of RUNTIME_SCAN_ROOTS) {
+      for (const filePath of walkFiles(path.join(ROOT, root))) {
+        const r = rel(filePath);
+        if (!isRuntimeScopeFile(r)) continue;
+        const src = stripComments(fs.readFileSync(filePath, "utf8"));
+        const hit = containsSourceOfTruthSwitchToken(src);
+        if (hit) {
+          offenders.push(`${r} → ${hit}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `source-of-truth / auto-rollout tokens in runtime:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("runtime does not couple G5d.7 hook flags with auto-rollout", () => {
+    const offenders: string[] = [];
+    for (const root of RUNTIME_SCAN_ROOTS) {
+      for (const filePath of walkFiles(path.join(ROOT, root))) {
+        const r = rel(filePath);
+        if (!isRuntimeScopeFile(r)) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        const hasHook =
+          PROPOSED_FLAG_TOKENS.some((t) => src.includes(t)) ||
+          src.includes("weekRuntimeCompatibilityResolver");
+        if (hasHook && /runMenuWeekRollout|auto-rollout|autoRollout/.test(src)) {
+          offenders.push(r);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `auto-rollout coupled to G5d.7 hook:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
+describe("G5d.7a — employee/commercial boundary", () => {
+  test("runtime scopes do not combine G5d.7 hook terms with commercial-sensitive terms", () => {
+    const offenders: string[] = [];
+    for (const root of RUNTIME_SCAN_ROOTS) {
+      for (const filePath of walkFiles(path.join(ROOT, root))) {
+        const r = rel(filePath);
+        if (!isRuntimeScopeFile(r)) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        const hasHook =
+          HOOK_REFERENCE_PATTERNS.some((p) => p.test(src)) ||
+          PROPOSED_FLAG_TOKENS.some((t) => src.includes(t));
+        if (!hasHook) continue;
+        for (const token of COMMERCIAL_SENSITIVE_TOKENS) {
+          if (src.includes(token)) {
+            offenders.push(`${r} → hook + ${token}`);
+            break;
+          }
+        }
+      }
+    }
+    expect(
+      offenders,
+      `G5d.7 hook coupled to commercial fields:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
+describe("G5d.7a — Production OFF / env guard", () => {
+  test("no committed env/config sets proposed G5d.7 flags to true", () => {
+    const offenders: string[] = [];
+    for (const relPath of ENV_CONFIG_SCAN_PATHS) {
+      const abs = path.join(ROOT, relPath);
+      if (!fs.existsSync(abs)) continue;
+      const src = readSource(relPath);
+      for (const token of PROPOSED_FLAG_TOKENS) {
+        const pattern = new RegExp(`${token}\\s*=\\s*true`, "i");
+        if (pattern.test(src)) offenders.push(`${relPath} → ${token}=true`);
+      }
+    }
+    expect(
+      offenders,
+      `env/config enables proposed G5d.7 flags:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("design plan does not authorize Production ON for proposed hook flags", () => {
+    const doc = readSource(G5D7_DESIGN_DOC);
+    expect(doc).toMatch(/Production.*OFF/i);
+    expect(doc).toMatch(/Do not add these flags in G5d\.7/i);
+    expect(doc).toMatch(/separate final GO/i);
+    expect(doc).not.toMatch(/Production ON for.*RUNTIME_COMPATIBILITY_HOOK/i);
+  });
+});
+
+describe("G5d.7a — G5d.7b/G5d.7c/G5d.8 requires explicit GO", () => {
+  test("design plan documents phased implementation with explicit GO per phase", () => {
+    const doc = readSource(G5D7_DESIGN_DOC);
+    expect(doc).toMatch(/G5d\.7a/);
+    expect(doc).toMatch(/G5d\.7b/);
+    expect(doc).toMatch(/G5d\.7c/);
+    expect(doc).toMatch(/G5d\.8/);
+    expect(doc).toMatch(/explicit GO per phase|explicit GO.*phase/i);
+    expect(doc).toMatch(/STOP before merge/i);
+    expect(doc).toMatch(/G5d\.7a implementation GO.*Not granted|G5d\.7a.*GO/i);
+    expect(doc).toMatch(/Production activation.*not allowed.*from G5d\.7/i);
+    expect(doc).not.toMatch(/G5d\.7b implementation authorized from G5d\.7a/i);
+    expect(doc).not.toMatch(/G5d\.7c implementation authorized from G5d\.7a/i);
+  });
+});
