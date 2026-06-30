@@ -208,7 +208,7 @@ Each phase requires **explicit GO**, **STOP before merge**, and **no Production 
 | Phase | Deliverable | Type | Notes |
 |-------|-------------|------|-------|
 | **G5d.7a** | Contract/governance tests for future runtime hook | Tests only | Locks hook boundaries before any lib code |
-| **G5d.7b** | Pure resolver adapter (`weekRuntimeCompatibilityResolver.server.ts`) | `lib/menu-profile/` — no I/O, not wired | Compare/select logic only; not imported by `/week` |
+| **G5d.7b** | Pure resolver adapter (`weekRuntimeCompatibilityResolver.server.ts`) + unit tests (`tests/lib/menu-profile/weekRuntimeCompatibilityResolver.test.ts`) | `lib/menu-profile/` — no I/O, not wired | Compare/select logic only; not imported by `/week` |
 | **G5d.7c** | Preview-only runtime hook behind `LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK` | Minimal wiring at assembly boundary | Default OFF; fail-closed to current assembly |
 | **G5d.7d** | Preview smoke / rollback evidence | Docs | Melhus probe; flag OFF → parity proof |
 | **G5d.7e** | Byte/schema parity evidence | Docs + tests | Define parity standard (byte vs schema — open question) |
