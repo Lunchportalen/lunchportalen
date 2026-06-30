@@ -106,3 +106,64 @@ describe("Live readiness — audit doc scope guard (docs-only PR)", () => {
     expect(doc).toMatch(/docs-only|no runtime changes|read-only audit/i);
   });
 });
+
+const P0_1_EVIDENCE_DOC = "docs/launch/p0-1-employee-smoke-evidence.md";
+
+const SECRET_LIKE_PATTERNS = [
+  /E2E_EMPLOYEE_PASSWORD\s*=\s*\S+/,
+  /E2E_EMPLOYEE_EMAIL\s*=\s*[^\s]+@[^\s]+/,
+  /password:\s*["'][^"']+["']/i,
+];
+
+describe("P0-1 — employee smoke evidence document guards", () => {
+  test("P0-1 evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, P0_1_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("P0-1 evidence doc does not contain secret values", () => {
+    const doc = readSource(P0_1_EVIDENCE_DOC);
+    for (const pattern of SECRET_LIKE_PATTERNS) {
+      expect(doc).not.toMatch(pattern);
+    }
+    expect(doc).toMatch(/no secret values|Values not printed|not recorded/i);
+  });
+
+  test("P0-1 evidence documents credentials and Production flag check", () => {
+    const doc = readSource(P0_1_EVIDENCE_DOC);
+    expect(doc).toMatch(/E2E_EMPLOYEE_EMAIL/);
+    expect(doc).toMatch(/E2E_EMPLOYEE_PASSWORD/);
+    expect(doc).toMatch(/Production flag check|LP_MENU_PROFILE_/i);
+    expect(doc).toMatch(/provider admin not reused|Provider admin not reused|not valid for employee/i);
+    expect(doc).toMatch(/Golden Path|test:golden-path/);
+    expect(doc).toMatch(/Forbidden field scan/i);
+  });
+
+  test("audit cannot mark P0-1 CLOSED unless evidence doc says CLOSED", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_1_EVIDENCE_DOC);
+    const auditMarksP01Closed = /P0-1.*CLOSED|P0-1.*closed/i.test(audit);
+    const evidenceClosed = /P0-1 status.*CLOSED|P0-1.*\*\*CLOSED\*\*/i.test(evidence);
+    if (auditMarksP01Closed) {
+      expect(evidenceClosed).toBe(true);
+    }
+  });
+
+  test("audit cannot claim full GO while P0 blockers remain open", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const hasOpenP0 =
+      /P0-1.*OPEN|P0-2.*OPEN|Missing employee smoke|Manual smoke not executed|On-call not assigned|Multi-tenant manual negative test not/i.test(
+        audit,
+      );
+    const claimsFullGo = /\*\*GO\*\*(?!.*CONDITIONAL)|Recommendation.*\*\*GO\*\*\s*\|/i.test(audit);
+    if (hasOpenP0) {
+      expect(claimsFullGo).toBe(false);
+    }
+    expect(audit).toMatch(/CONDITIONAL GO/);
+  });
+
+  test("Production LP_MENU_PROFILE flags remain documented OFF in launch audit", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    expect(menuProfileFlagsInDoc(audit).length).toBeGreaterThanOrEqual(10);
+    expect(audit).toMatch(/Launch value = OFF|launch value = OFF/i);
+  });
+});
