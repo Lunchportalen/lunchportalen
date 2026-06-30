@@ -1,10 +1,10 @@
 # P0-1 — Employee smoke credentials and Production /week smoke evidence
 
-**Status:** Evidence run · docs-only · **P0-1 NOT CLOSED**  
-**Date:** 2026-06-30  
+**Status:** Evidence run · docs-only · **P0-1 CLOSED**  
+**Date:** 2026-06-30 (re-run with operator credentials)  
 **Branch:** `audit/p0-1-employee-smoke-credentials`  
 **Target:** `https://app.lunchportalen.no`  
-**Operator:** Cursor agent (read-only + blocked authenticated smoke)
+**Operator:** Cursor agent (local smoke; no runtime changes)
 
 ---
 
@@ -12,12 +12,12 @@
 
 | In scope | Out of scope |
 |----------|--------------|
-| Credential availability check (names only) | Runtime code changes |
+| Credential availability (names / masked email only) | Runtime code changes |
 | Production flag read-only check | API / UI changes |
-| Unauthenticated `/api/week` probe | DB / RLS changes |
-| Blocked authenticated smoke (missing operator creds) | Production env value changes |
-| Forbidden-field scan (when authenticated smoke blocked: N/A) | Feature flag activation |
-| Golden Path recheck | G5d.8 · cutover · SoT switch · auto-rollout |
+| Unauthenticated + authenticated `/api/week` smoke | DB / RLS changes |
+| Employee `/week` page smoke | Production env value changes |
+| Forbidden-field scan | Feature flag activation |
+| Golden Path + governance gates | G5d.8 · cutover · SoT switch · auto-rollout |
 
 **No secret values are recorded in this document.**
 
@@ -27,65 +27,41 @@
 
 | Check | Result |
 |-------|--------|
-| `E2E_EMPLOYEE_EMAIL` in GitHub Actions secrets | **yes** (name listed via `gh secret list`, 2026-05-31) |
-| `E2E_EMPLOYEE_PASSWORD` in GitHub Actions secrets | **yes** (name listed via `gh secret list`, 2026-05-31) |
-| `E2E_EMPLOYEE_EMAIL` in operator `.env.local` | **no** — MISSING |
-| `E2E_EMPLOYEE_PASSWORD` in operator `.env.local` | **no** — MISSING |
-| Stored securely (GitHub secrets) | **yes** (encrypted; values not readable from CLI) |
+| `E2E_EMPLOYEE_EMAIL` in GitHub Actions secrets | **yes** (name listed via `gh secret list`) |
+| `E2E_EMPLOYEE_PASSWORD` in GitHub Actions secrets | **yes** (name listed via `gh secret list`) |
+| `E2E_EMPLOYEE_EMAIL` in operator `.env.local` | **yes** — SET (len=21) |
+| `E2E_EMPLOYEE_PASSWORD` in operator `.env.local` | **yes** — SET (len=10) |
+| Stored securely (gitignored `.env.local`) | **yes** — `.env.local` in `.gitignore`, not staged |
 | Values printed in docs/logs/PR | **no** |
-| Owner confirmed Production employee user for prod smoke | **no** — pending Thomas |
-| Timestamp | 2026-06-30T23:17:14Z |
-
-### Operator smoke result
-
-```
-AUTH_BLOCKED: E2E_EMPLOYEE_EMAIL/PASSWORD missing in operator env
-```
-
-Authenticated Production employee smoke **did not run**.
-
-### Who must provide / where to store
-
-| Item | Owner | Storage |
-|------|-------|---------|
-| Production employee smoke user (`E2E_EMPLOYEE_*`) | **Thomas (owner)** | GitHub Actions secrets (CI) **and** operator `.env.local` (gitignored) for manual Production smoke |
-| Values | Owner only | Never in repo, docs, PR body, logs, or screenshots |
-
-**Important:** GitHub `E2E_*` secrets are used by CI E2E against **staging Supabase (uigx)** per `docs/e2e/UIGX-RESEED-CHAIN.md`. Production smoke at `app.lunchportalen.no` requires a **Production** employee account with active agreement — confirm with owner that secret values map to Production auth, or provision dedicated prod smoke credentials.
+| Masked employee email (Production smoke user) | `t***@pettersenco.no` |
+| Email hash (SHA-256 prefix) | `62f34cb467a4` |
+| Owner confirmed Production employee user | **yes** — Thomas (operator `.env.local`, 2026-06-30) |
+| Timestamp | 2026-06-30T23:47:43Z |
 
 ### Provider admin not reused
 
 | Check | Result |
 |-------|--------|
-| `E2E_PROVIDER_KITCHEN_EMAIL` in operator env | **no** — not configured locally |
-| Employee creds distinct from provider kitchen | **not verified** (employee creds missing) |
-| Provider admin used for employee `/api/week` proof | **no** — smoke blocked before login |
+| `E2E_PROVIDER_KITCHEN_EMAIL` in operator env | **no** — not configured |
+| Provider admin used for employee `/api/week` proof | **no** |
+| Employee creds used exclusively for smoke | **yes** |
 
 ---
 
 ## 3. Production flag check (read-only)
 
-**Method:** `vercel env ls production` (names only, 2026-06-30) + audit cross-check  
+**Method:** `vercel env ls production` (names only)  
 **Values not printed.**
 
 | Flag | Production Vercel env |
 |------|----------------------|
-| `LP_MENU_PROFILE_RESOLVER` | **absent** |
-| `LP_MENU_PROFILE_FIXED_CATEGORIES` | **absent** |
-| `LP_MENU_PROFILE_WARM_DISH_PREVIEW` | **absent** |
-| `LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL` | **absent** |
-| `LP_MENU_PROFILE_MAPPING_DRAFT_API` | **absent** |
-| `LP_MENU_PROFILE_PUBLISH_SHADOW` | **absent** |
-| `LP_MENU_PROFILE_WEEK_SHADOW_READ` | **absent** |
-| `LP_MENU_PROFILE_COMPATIBILITY_CUTOVER` | **absent** |
+| All `LP_MENU_PROFILE_*` (10 flags) | **absent** |
 | `LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK` | **absent** |
 | `LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME` | **absent / not implemented** |
 
-**Result:** **PASS** — no `LP_MENU_PROFILE_*` entries in Production Vercel environment list.
+**Result:** **PASS** — zero `LP_MENU_PROFILE_*` entries in Production Vercel environment list.
 
-**Note:** Preview environment has G5d flags for evidence-only work (expected). Production list had **zero** `LP_MENU_PROFILE_*` matches. This does not replace owner Production env sign-off (P0-3).
-
-**Timestamp:** 2026-06-30T23:17Z
+**Timestamp:** 2026-06-30T23:46Z (re-run)
 
 ---
 
@@ -93,12 +69,12 @@ Authenticated Production employee smoke **did not run**.
 
 | Field | Value |
 |-------|-------|
-| Target URL | `https://app.lunchportalen.no` |
-| Role expected | employee |
-| Status | **NOT RUN** |
-| Result | **BLOCKED** — missing operator `E2E_EMPLOYEE_*` |
-| Timestamp | 2026-06-30T23:17:14Z |
-| RID / session marker | N/A (no session) |
+| Target URL | `https://app.lunchportalen.no/login?next=%2Fweek` |
+| Role | employee (lands on `/week`) |
+| Status | **PASS** |
+| Landed path | `/week` |
+| Timestamp | 2026-06-30T23:47:46Z |
+| Session marker | email hash `62f34cb467a4` only |
 | Secret values | not recorded |
 
 ---
@@ -108,23 +84,22 @@ Authenticated Production employee smoke **did not run**.
 | Field | Value |
 |-------|-------|
 | Route | `GET /api/week?weekOffset=0` |
-| Status | **NOT RUN** (authenticated) |
-| RID | N/A |
-| Days count | N/A |
-| Response shape | N/A |
-| Normalized hash | N/A |
-| Forbidden field scan | **N/A** — blocked |
-| Result | **FAIL (blocked)** |
+| HTTP status | **200** |
+| `ok` | **true** |
+| RID | `week_api_mr1ar8vt_wictlr` |
+| Top-level keys | `data`, `ok`, `rid` |
+| Days count | **5** |
+| Normalized response hash | `9b3e8fd0a5d04bd424cf9e50972fc7cb90d1f869676823b1a6d3afabf6a21376` |
+| Forbidden field scan | **PASS** (zero hits) |
+| Result | **PASS** |
 
-### Unauthenticated control (expected fail-closed)
+### Unauthenticated control
 
 | Field | Value |
 |-------|-------|
 | Route | `GET /api/week?weekOffset=0` (no session) |
 | HTTP status | **401** |
-| `ok` | false |
-| RID | `mw_mr19nyx8_nod77rnl` |
-| Message | `Ikke innlogget.` |
+| RID | `mw_mr1ar6ii_jldyg1v9` |
 | Result | **PASS** (expected unauthorized) |
 
 ---
@@ -134,49 +109,46 @@ Authenticated Production employee smoke **did not run**.
 | Field | Value |
 |-------|-------|
 | Route | `/week` |
-| Status | **NOT RUN** |
-| Visible result | N/A |
-| Forbidden visible data | N/A |
-| Result | **BLOCKED** |
+| Status | **PASS** |
+| Forbidden visible fields | none |
+| Commercial visible fields | none |
+| Access denied text | none |
+| Screenshot | `test-results/p0-1-prod-week-redacted.png` (local only, not committed) |
+| Result | **PASS** |
 
 ---
 
 ## 7. Forbidden field scan
 
-Authenticated response scan: **N/A (blocked)**.
+Authenticated `/api/week` JSON — all **PASS**:
 
-| Field | Scan result |
-|-------|-------------|
-| providerId | N/A |
-| compatibilityDecision | N/A |
-| opsLog | N/A |
-| pricePreview | N/A |
-| provider_price_rules | N/A |
-| commission / provisjon / vat / mva | N/A |
-| candidateOrderable / orderableCandidate | N/A |
-| sourceOfTruthChanged | N/A |
-| autoRollout | N/A |
-
-**Required for P0-1 close:** all **PASS** on authenticated Production `/api/week` JSON — not achieved.
+| Field | Result |
+|-------|--------|
+| providerId | PASS |
+| providerInternal | PASS |
+| compatibilityDecision / compatibilityCutover | PASS |
+| weekRuntimeCompatibilityDecision | PASS |
+| opsLog | PASS |
+| pricePreview | PASS |
+| provider_price_rules | PASS |
+| commission / provisjon / vat / mva | PASS |
+| commercialVisibleChanges / priceVisibleChanges | PASS |
+| candidateOrderable / orderableCandidate | PASS |
+| sourceOfTruthChanged / sourceOfTruthSwitch | PASS |
+| autoRollout | PASS |
+| runtimeHookActive | PASS |
 
 ---
 
-## 8. Golden Path
+## 8. Golden Path and gates
 
-| Field | Value |
-|-------|-------|
-| Command | `npm run test:golden-path` |
-| Result | **91/91 PASS** |
-| Expected | 91/91 PASS |
-| Timestamp | 2026-06-30 (local gate run on branch) |
-
-Also run (local):
-
-| Command | Result |
-|---------|--------|
-| `npm run typecheck` | PASS |
-| `npm run lint` | PASS |
-| `npm run ci:commercial-hardcodes-guard` | PASS |
+| Command | Result | Timestamp |
+|---------|--------|-----------|
+| `npm run test:golden-path` | **91/91 PASS** | 2026-06-30 |
+| `npm run typecheck` | PASS | 2026-06-30 |
+| `npm run lint` | PASS | 2026-06-30 |
+| `npm run ci:commercial-hardcodes-guard` | PASS | 2026-06-30 |
+| `live-readiness-launch-audit-contracts.test.ts` | **18/18 PASS** | 2026-06-30 |
 
 ---
 
@@ -184,40 +156,31 @@ Also run (local):
 
 | Field | Value |
 |-------|-------|
-| **P0-1 status** | **NOT CLOSED** |
-| **Launch decision** | Remains **CONDITIONAL GO** (not full GO) |
+| **P0-1 status** | **CLOSED** |
+| **Launch decision** | Remains **CONDITIONAL GO** (P0-2..P0-5 still open) |
 
-### Why NOT CLOSED
+### Closed because
 
-1. Operator environment lacks `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` — authenticated Production smoke blocked.  
-2. Employee login, authenticated `/api/week`, `/week` page, and forbidden-field scan **not executed**.  
-3. Owner has not confirmed Production employee smoke user is provisioned and loaded for operator runs.  
-4. GitHub secret **names** exist, but Production authenticated proof was not obtained in this run.
+1. Operator `E2E_EMPLOYEE_*` present in gitignored `.env.local`.  
+2. Production employee login → `/week` **PASS**.  
+3. Authenticated `GET /api/week?weekOffset=0` → **200**, 5 days, forbidden scan **PASS**.  
+4. Employee `/week` page **PASS** — no commercial/provider leakage visible.  
+5. Production `LP_MENU_PROFILE_*` absent in Vercel Production env list.  
+6. Golden Path **91/91 PASS**.  
+7. No runtime changes · no Production env values exposed · no flag activation.
 
-### What passed
-
-- Production `LP_MENU_PROFILE_*` absent in Vercel Production env list (read-only).  
-- Unauthenticated `/api/week` returns **401** (fail-closed).  
-- Golden Path **91/91 PASS**.  
-- No provider admin credentials used for employee proof.
-
-### Remaining issues (P0)
+### Remaining P0 (not in scope for P0-1)
 
 | ID | Status |
 |----|--------|
-| P0-1 | **OPEN** — this document |
-| P0-2 | OPEN — manual smoke not archived |
+| P0-2 | OPEN — full manual smoke §9 not archived |
 | P0-3 | OPEN — Production env owner sign-off |
 | P0-4 | OPEN — on-call not named |
 | P0-5 | OPEN — cross-tenant negative test |
 
-### Next step (owner)
+### Next P0
 
-1. Add **Production** employee `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` to operator `.env.local` (gitignored) — values from owner only.  
-2. Confirm user is **employee** role with active agreement on Production.  
-3. Re-run operator smoke (local script `scripts/temp-p0-1-prod-employee-smoke.mjs`, do not commit).  
-4. If all checks PASS, update this doc to **CLOSED** and mark P0-1 in launch audit with evidence link.  
-5. Do **not** use provider admin for employee `/api/week` proof.
+**P0-2** — Execute and archive full Production manual smoke checklist (§9 in launch audit).
 
 ---
 

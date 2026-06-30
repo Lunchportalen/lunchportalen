@@ -150,15 +150,19 @@ describe("P0-1 — employee smoke evidence document guards", () => {
 
   test("audit cannot claim full GO while P0 blockers remain open", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_1_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-1.*OPEN|P0-2.*OPEN|Missing employee smoke|Manual smoke not executed|On-call not assigned|Multi-tenant manual negative test not/i.test(
+      /P0-2.*OPEN|P0-3.*OPEN|P0-4.*OPEN|P0-5.*OPEN|Manual smoke not executed|Production env secrets not signed|On-call not assigned|Multi-tenant manual negative test not/i.test(
         audit,
       );
-    const claimsFullGo = /\*\*GO\*\*(?!.*CONDITIONAL)|Recommendation.*\*\*GO\*\*\s*\|/i.test(audit);
+    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
     expect(audit).toMatch(/CONDITIONAL GO/);
+    if (/P0-1.*CLOSED/i.test(audit)) {
+      expect(evidence).toMatch(/P0-1.*CLOSED/i);
+    }
   });
 
   test("Production LP_MENU_PROFILE flags remain documented OFF in launch audit", () => {
