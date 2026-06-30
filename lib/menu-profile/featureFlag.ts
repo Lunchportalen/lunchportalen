@@ -13,6 +13,8 @@ export const LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV = "LP_MENU_PROFILE_MAPPING_DR
 export const LP_MENU_PROFILE_PUBLISH_SHADOW_ENV = "LP_MENU_PROFILE_PUBLISH_SHADOW";
 export const LP_MENU_PROFILE_WEEK_SHADOW_READ_ENV = "LP_MENU_PROFILE_WEEK_SHADOW_READ";
 export const LP_MENU_PROFILE_COMPATIBILITY_CUTOVER_ENV = "LP_MENU_PROFILE_COMPATIBILITY_CUTOVER";
+export const LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV =
+  "LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK";
 
 export type EnvLike = Readonly<Record<string, string | undefined>>;
 
@@ -111,4 +113,13 @@ export function isMenuProfileWeekShadowReadEnabled(env: EnvLike = {}): boolean {
  */
 export function isMenuProfileCompatibilityCutoverEnabled(env: EnvLike = {}): boolean {
   return env[LP_MENU_PROFILE_COMPATIBILITY_CUTOVER_ENV] === "true";
+}
+
+/**
+ * G5d.7c — Preview-only /week runtime compatibility hook (compare-only, fail-closed to current).
+ * True only when env is exactly "true". Default OFF. Production OFF.
+ * Not included in client-visible host env bags.
+ */
+export function isMenuProfileRuntimeCompatibilityHookEnabled(env: EnvLike = {}): boolean {
+  return env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV]?.trim() === "true";
 }

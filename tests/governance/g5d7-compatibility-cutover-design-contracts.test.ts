@@ -84,16 +84,20 @@ describe("G5d.7 — compatibility cutover design plan document guards", () => {
   });
 });
 
-describe("G5d.7 — no runtime wiring guard", () => {
-  test("proposed future hook flag is not wired in featureFlag.ts", () => {
+describe("G5d.7 — runtime hook wiring guard (G5d.7c)", () => {
+  test("G5d.7c hook flag exists in featureFlag.ts; employee exposure flag still absent", () => {
     const src = readSource("lib/menu-profile/featureFlag.ts");
-    expect(src).not.toContain("LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK");
+    expect(src).toContain("LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK");
+    expect(src).toContain("isMenuProfileRuntimeCompatibilityHookEnabled");
     expect(src).not.toContain("LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME");
-    expect(src).not.toContain("isMenuProfileRuntimeCompatibilityHookEnabled");
+    expect(src).not.toContain("isMenuProfileEmployeeProfileRuntimeEnabled");
   });
 
-  test("week API has no G5d.7 runtime hook references", () => {
+  test("week API wires hook only via explicit G5d.7c boundary helper", () => {
     const src = readSource("app/api/week/route.ts");
-    expect(src).not.toMatch(/runtimeCompatibilityCutover|weekRuntimeCompatibility|LP_MENU_PROFILE_RUNTIME_COMPATIBILITY/);
+    expect(src).toContain("maybeRunWeekRuntimeCompatibilityHook");
+    expect(src).toContain("weekRuntimeCompatibilityHook.server");
+    expect(src).not.toMatch(/buildWeekRuntimeCompatibilityDecision/);
+    expect(src).not.toMatch(/weekRuntimeCompatibilityResolver\.server/);
   });
 });
