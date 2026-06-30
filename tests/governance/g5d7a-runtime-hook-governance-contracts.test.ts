@@ -21,6 +21,8 @@ const G5D7_GOVERNANCE_ALLOWED_PATHS = [
   "tests/governance/g5d7a-runtime-hook-governance-contracts.test.ts",
   "docs/engineering/G5d6-compatibility-cutover-design-audit.md",
   "docs/engineering/G5d6e-compatibility-cutover-smoke-evidence.md",
+  FUTURE_HOOK_HELPER_PATH,
+  FUTURE_HOOK_TEST_PATH,
 ];
 
 const FUTURE_HOOK_ALLOWED_RUNTIME_PATHS = [
@@ -296,34 +298,47 @@ describe("G5d.7a — proposed future flags are not implemented", () => {
   });
 });
 
-describe("G5d.7a — future hook path reserved but not built", () => {
-  test("canonical future adapter path is documented", () => {
+describe("G5d.7a/7b — pure adapter exists but is not wired", () => {
+  test("canonical adapter and unit test paths are documented", () => {
     const doc = readSource(G5D7_DESIGN_DOC);
     expect(doc).toContain(FUTURE_HOOK_HELPER_PATH);
     expect(doc).toContain(FUTURE_HOOK_TEST_PATH);
   });
 
-  test("future adapter may be absent before G5d.7b", () => {
-    const exists = fs.existsSync(path.join(ROOT, FUTURE_HOOK_HELPER_PATH));
-    if (!exists) {
-      expect(exists).toBe(false);
-      return;
-    }
+  test("G5d.7b adapter exists at canonical path only", () => {
+    expect(fs.existsSync(path.join(ROOT, FUTURE_HOOK_HELPER_PATH))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, FUTURE_HOOK_TEST_PATH))).toBe(true);
+  });
+
+  test("G5d.7b adapter is server-only pure helper with no writes or forbidden imports", () => {
     const src = readSource(FUTURE_HOOK_HELPER_PATH);
     expect(src).toMatch(/import\s+["']server-only["']/);
-    expect(src).not.toMatch(/\.insert\(|\.update\(|\.delete\(|\.upsert\(/);
+    expect(src).not.toMatch(/\.insert\s*\(|\.delete\s*\(|\.upsert\s*\(/);
+    const importBlock = src
+      .split(/\r?\n/)
+      .filter((line) => /^\s*import\s/.test(line))
+      .join("\n");
+    expect(importBlock).not.toMatch(/process\.env/);
+    expect(importBlock).not.toMatch(/featureFlag/);
+    expect(importBlock).not.toMatch(/from\s+["']@\/lib\/week/);
+    expect(importBlock).not.toMatch(/from\s+["']@\/components/);
+    expect(importBlock).not.toMatch(/\bfetch\s*\(/);
+    expect(src).not.toMatch(/candidateOrderable:\s*true/);
+    expect(src).not.toMatch(/autoRollout:\s*true/);
+    expect(src).not.toMatch(/\bauto-rollout\b/);
     for (const token of SOURCE_OF_TRUTH_SWITCH_TOKENS) {
-      expect(src, `future adapter → ${token}`).not.toContain(token);
-    }
-    for (const pattern of SOURCE_OF_TRUTH_SWITCH_PATTERNS) {
-      expect(src, `future adapter → ${pattern}`).not.toMatch(pattern);
+      if (token === "candidateOrderable") {
+        expect(src).not.toMatch(/candidateOrderable:\s*true/);
+        continue;
+      }
+      expect(src, `adapter → ${token}`).not.toContain(token);
     }
     for (const pattern of FUTURE_HOOK_FORBIDDEN_IMPORTS) {
-      expect(src, `future adapter → ${pattern}`).not.toMatch(pattern);
+      expect(importBlock, `adapter imports → ${pattern}`).not.toMatch(pattern);
     }
   });
 
-  test("future adapter must not be imported by app/api/week before G5d.7c", () => {
+  test("G5d.7b adapter must not be imported by app/api/week before G5d.7c", () => {
     const weekRoute = path.join(ROOT, "app/api/week/route.ts");
     if (!fs.existsSync(weekRoute)) return;
     const src = fs.readFileSync(weekRoute, "utf8");
@@ -331,25 +346,47 @@ describe("G5d.7a — future hook path reserved but not built", () => {
     expect(src).not.toContain("weekRuntimeCompatibilityResolver");
   });
 
-  test("future hook server files must not import forbidden runtime modules if they exist", () => {
+  test("G5d.7b adapter server file must not import forbidden runtime modules", () => {
     const files = existingFutureHookFiles().filter(
       (p) => !p.includes(`${path.sep}tests${path.sep}`) && p.endsWith(".server.ts"),
     );
-    if (files.length === 0) return;
+    expect(files.length).toBe(1);
 
     const offenders: string[] = [];
-    for (const filePath of files) {
-      const src = fs.readFileSync(filePath, "utf8");
-      for (const pattern of FUTURE_HOOK_FORBIDDEN_IMPORTS) {
-        if (pattern.test(src)) {
-          offenders.push(`${rel(filePath)} → ${pattern}`);
-          break;
+    const importBlock = fs
+      .readFileSync(files[0]!, "utf8")
+      .split(/\r?\n/)
+      .filter((line) => /^\s*import\s/.test(line))
+      .join("\n");
+    for (const pattern of FUTURE_HOOK_FORBIDDEN_IMPORTS) {
+      if (pattern.test(importBlock)) {
+        offenders.push(`${rel(files[0]!)} → ${pattern}`);
+      }
+    }
+    expect(
+      offenders,
+      `forbidden imports in G5d.7b adapter:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("G5d.7b adapter must not be imported by components, provider UI, or employee UI", () => {
+    const prefixes = ["components", "app/(app)/week", "app/leverandor"];
+    const offenders: string[] = [];
+    for (const prefix of prefixes) {
+      const dir = path.join(ROOT, prefix);
+      if (!fs.existsSync(dir)) continue;
+      for (const filePath of walkFiles(dir)) {
+        const r = rel(filePath);
+        if (r === FUTURE_HOOK_HELPER_PATH) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        if (HOOK_MODULE_IMPORT.test(src) || src.includes("weekRuntimeCompatibilityResolver")) {
+          offenders.push(r);
         }
       }
     }
     expect(
       offenders,
-      `forbidden imports in future hook files:\n${offenders.join("\n")}`,
+      `G5d.7b adapter imported by UI before G5d.7c:\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
 });
