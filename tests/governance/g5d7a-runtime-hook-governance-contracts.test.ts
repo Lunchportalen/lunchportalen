@@ -14,6 +14,24 @@ const EMPLOYEE_PROFILE_RUNTIME_FLAG = "LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME"
 
 const FUTURE_HOOK_HELPER_PATH = "lib/menu-profile/weekRuntimeCompatibilityResolver.server.ts";
 const FUTURE_HOOK_TEST_PATH = "tests/lib/menu-profile/weekRuntimeCompatibilityResolver.test.ts";
+const G5D7C_WEEK_HOOK_BOUNDARY_PATH = "lib/menu-profile/weekRuntimeCompatibilityHook.server.ts";
+const G5D7C_WEEK_HOOK_ROUTE_PATH = "app/api/week/route.ts";
+const G5D7C_HOOK_UNIT_TEST_PATH = "tests/lib/menu-profile/weekRuntimeCompatibilityHook.test.ts";
+const G5D7C_WEEK_API_TEST_PATH = "tests/api/week-runtime-compatibility-hook.test.ts";
+
+const G5D7C_WEEK_HOOK_BOUNDARY_PATHS = [
+  G5D7C_WEEK_HOOK_ROUTE_PATH,
+  G5D7C_WEEK_HOOK_BOUNDARY_PATH,
+] as const;
+
+const RUNTIME_HOOK_FLAG_ALLOWED_PATHS = [
+  "lib/menu-profile/featureFlag.ts",
+  ...G5D7C_WEEK_HOOK_BOUNDARY_PATHS,
+  FUTURE_HOOK_HELPER_PATH,
+  FUTURE_HOOK_TEST_PATH,
+  G5D7C_HOOK_UNIT_TEST_PATH,
+  G5D7C_WEEK_API_TEST_PATH,
+];
 
 const G5D7_GOVERNANCE_ALLOWED_PATHS = [
   G5D7_DESIGN_DOC,
@@ -23,14 +41,21 @@ const G5D7_GOVERNANCE_ALLOWED_PATHS = [
   "docs/engineering/G5d6e-compatibility-cutover-smoke-evidence.md",
   FUTURE_HOOK_HELPER_PATH,
   FUTURE_HOOK_TEST_PATH,
+  G5D7C_WEEK_HOOK_BOUNDARY_PATH,
+  G5D7C_WEEK_HOOK_ROUTE_PATH,
+  G5D7C_HOOK_UNIT_TEST_PATH,
+  G5D7C_WEEK_API_TEST_PATH,
 ];
 
 const FUTURE_HOOK_ALLOWED_RUNTIME_PATHS = [
   FUTURE_HOOK_HELPER_PATH,
   FUTURE_HOOK_TEST_PATH,
+  G5D7C_WEEK_HOOK_BOUNDARY_PATH,
 ];
 
-const PROPOSED_FLAG_TOKENS = [RUNTIME_HOOK_FLAG, EMPLOYEE_PROFILE_RUNTIME_FLAG] as const;
+const PROPOSED_FLAG_TOKENS = [EMPLOYEE_PROFILE_RUNTIME_FLAG] as const;
+
+const RUNTIME_HOOK_FLAG_TOKENS = [RUNTIME_HOOK_FLAG] as const;
 
 const HOOK_REFERENCE_PATTERNS = [
   /LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK/,
@@ -151,6 +176,15 @@ function readSource(relPath: string): string {
   return fs.readFileSync(path.join(ROOT, relPath), "utf8");
 }
 
+function readFileIfExists(absPath: string): string | null {
+  if (!fs.existsSync(absPath)) return null;
+  try {
+    return fs.readFileSync(absPath, "utf8");
+  } catch {
+    return null;
+  }
+}
+
 function rel(absPath: string): string {
   return path.normalize(path.relative(ROOT, absPath)).replace(/\\/g, "/");
 }
@@ -186,8 +220,16 @@ function isG5d7GovernanceAllowedPath(fileRel: string): boolean {
   return G5D7_GOVERNANCE_ALLOWED_PATHS.some((p) => fileRel === p.replace(/\\/g, "/"));
 }
 
+function isRuntimeHookFlagAllowedPath(fileRel: string): boolean {
+  return RUNTIME_HOOK_FLAG_ALLOWED_PATHS.some((p) => fileRel === p.replace(/\\/g, "/"));
+}
+
 function isFutureHookAllowedRuntimePath(fileRel: string): boolean {
   return FUTURE_HOOK_ALLOWED_RUNTIME_PATHS.some((p) => fileRel === p.replace(/\\/g, "/"));
+}
+
+function isG5d7cWeekHookBoundaryPath(fileRel: string): boolean {
+  return G5D7C_WEEK_HOOK_BOUNDARY_PATHS.some((p) => fileRel === p.replace(/\\/g, "/"));
 }
 
 function isG5d6RuntimeAllowedPath(fileRel: string): boolean {
@@ -249,17 +291,37 @@ describe("G5d.7a — G5d.7 design remains planning only", () => {
   });
 });
 
-describe("G5d.7a — proposed future flags are not implemented", () => {
-  test("featureFlag.ts does not export future hook flag helpers", () => {
+describe("G5d.7a/7c — runtime hook flag and employee proposed flag guards", () => {
+  test("featureFlag.ts exports G5d.7c hook helper but not employee exposure flag", () => {
     const src = readSource("lib/menu-profile/featureFlag.ts");
-    for (const token of PROPOSED_FLAG_TOKENS) {
-      expect(src, `featureFlag.ts → ${token}`).not.toContain(token);
-    }
-    expect(src).not.toContain("isMenuProfileRuntimeCompatibilityHookEnabled");
+    expect(src).toContain("LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK");
+    expect(src).toContain("isMenuProfileRuntimeCompatibilityHookEnabled");
+    expect(src).not.toContain("LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME");
     expect(src).not.toContain("isMenuProfileEmployeeProfileRuntimeEnabled");
   });
 
-  test("proposed flags appear only in allowed docs/governance paths", () => {
+  test("LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK appears only in allowed paths", () => {
+    const offenders: string[] = [];
+    for (const token of RUNTIME_HOOK_FLAG_TOKENS) {
+      for (const filePath of walkFiles(ROOT)) {
+        const r = rel(filePath);
+        if (!/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env|md)$/.test(r)) continue;
+        if (r.includes("node_modules/") || r.includes(".next/")) continue;
+        if (isG5d7GovernanceAllowedPath(r)) continue;
+        if (isRuntimeHookFlagAllowedPath(r)) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        if (src.includes(token)) {
+          offenders.push(`${r} → ${token}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `runtime hook flag wired outside allowed G5d.7c paths:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME appears only in docs/governance", () => {
     const offenders: string[] = [];
     for (const token of PROPOSED_FLAG_TOKENS) {
       for (const filePath of walkFiles(ROOT)) {
@@ -275,25 +337,23 @@ describe("G5d.7a — proposed future flags are not implemented", () => {
     }
     expect(
       offenders,
-      `proposed G5d.7 flags wired outside docs/governance:\n${offenders.join("\n")}`,
+      `employee profile runtime flag wired outside docs/governance:\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
 
-  test("app and components have no proposed flag wiring", () => {
+  test("components have no runtime hook flag wiring", () => {
     const offenders: string[] = [];
-    for (const root of ["app", "components"] as const) {
-      for (const filePath of walkFiles(path.join(ROOT, root))) {
-        const r = rel(filePath);
-        const src = fs.readFileSync(filePath, "utf8");
-        for (const token of PROPOSED_FLAG_TOKENS) {
-          if (src.includes(token)) offenders.push(`${r} → ${token}`);
-        }
+    for (const filePath of walkFiles(path.join(ROOT, "components"))) {
+      const r = rel(filePath);
+      const src = fs.readFileSync(filePath, "utf8");
+      for (const token of [...RUNTIME_HOOK_FLAG_TOKENS, ...PROPOSED_FLAG_TOKENS]) {
+        if (src.includes(token)) offenders.push(`${r} → ${token}`);
       }
     }
-    expect(offenders, `proposed flags in app/components:\n${offenders.join("\n")}`).toEqual([]);
+    expect(offenders, `hook flags in components:\n${offenders.join("\n")}`).toEqual([]);
   });
 
-  test("lib/week has no proposed flag wiring", () => {
+  test("lib/week has no runtime hook flag wiring", () => {
     assertNoHookReferences(["lib/week"], "lib/week");
   });
 });
@@ -338,17 +398,32 @@ describe("G5d.7a/7b — pure adapter exists but is not wired", () => {
     }
   });
 
-  test("G5d.7b adapter must not be imported by app/api/week before G5d.7c", () => {
-    const weekRoute = path.join(ROOT, "app/api/week/route.ts");
-    if (!fs.existsSync(weekRoute)) return;
-    const src = fs.readFileSync(weekRoute, "utf8");
+  test("G5d.7c week route imports hook boundary only, not adapter directly", () => {
+    const src = readSource(G5D7C_WEEK_HOOK_ROUTE_PATH);
+    expect(src).toContain("weekRuntimeCompatibilityHook.server");
+    expect(src).toContain("maybeRunWeekRuntimeCompatibilityHook");
     expect(src).not.toMatch(HOOK_MODULE_IMPORT);
-    expect(src).not.toContain("weekRuntimeCompatibilityResolver");
+    expect(src).not.toContain("buildWeekRuntimeCompatibilityDecision");
+  });
+
+  test("G5d.7c hook boundary is server-only and imports adapter only", () => {
+    const src = readSource(G5D7C_WEEK_HOOK_BOUNDARY_PATH);
+    expect(src).toMatch(/import\s+["']server-only["']/);
+    expect(src).toContain("buildWeekRuntimeCompatibilityDecision");
+    expect(src).toContain("isMenuProfileRuntimeCompatibilityHookEnabled");
+    expect(src).not.toMatch(/\.insert\s*\(|\.delete\s*\(|\.upsert\s*\(/);
+    expect(src).not.toMatch(/\bfetch\s*\(/);
+    expect(src).not.toMatch(/candidateOrderable:\s*true/);
+    expect(src).not.toMatch(/sourceOfTruthSwitch/);
+    expect(src).not.toMatch(/promoteCandidate/);
   });
 
   test("G5d.7b adapter server file must not import forbidden runtime modules", () => {
     const files = existingFutureHookFiles().filter(
-      (p) => !p.includes(`${path.sep}tests${path.sep}`) && p.endsWith(".server.ts"),
+      (p) =>
+        !p.includes(`${path.sep}tests${path.sep}`) &&
+        p.endsWith(".server.ts") &&
+        p.includes("weekRuntimeCompatibilityResolver.server.ts"),
     );
     expect(files.length).toBe(1);
 
@@ -428,7 +503,7 @@ describe("G5d.7a — protected paths have no hook refs", () => {
     assertNoHookReferences(publicRoots, "public pages");
   });
 
-  test("protected paths must not import weekRuntimeCompatibilityResolver helper", () => {
+  test("protected paths must not import weekRuntimeCompatibilityResolver helper directly", () => {
     const files = [
       ...filesUnderPrefixes(PROTECTED_PREFIXES),
       ...PROTECTED_FILES.map((f) => path.join(ROOT, f)).filter((p) => fs.existsSync(p)),
@@ -437,6 +512,7 @@ describe("G5d.7a — protected paths have no hook refs", () => {
     for (const filePath of files) {
       const r = rel(filePath);
       if (r.includes("/tests/")) continue;
+      if (isG5d7cWeekHookBoundaryPath(r)) continue;
       const src = fs.readFileSync(filePath, "utf8");
       if (HOOK_MODULE_IMPORT.test(src) || src.includes("weekRuntimeCompatibilityResolver")) {
         offenders.push(r);
@@ -444,7 +520,26 @@ describe("G5d.7a — protected paths have no hook refs", () => {
     }
     expect(
       offenders,
-      `G5d.7 hook leaked into protected runtime:\n${offenders.join("\n")}`,
+      `G5d.7 resolver leaked into protected runtime:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  test("only G5d.7c week boundary may import weekRuntimeCompatibilityHook.server", () => {
+    const offenders: string[] = [];
+    for (const root of ["app", "components", "lib"] as const) {
+      for (const filePath of walkFiles(path.join(ROOT, root))) {
+        const r = rel(filePath);
+        if (r.includes("/tests/")) continue;
+        if (isG5d7cWeekHookBoundaryPath(r)) continue;
+        const src = fs.readFileSync(filePath, "utf8");
+        if (/weekRuntimeCompatibilityHook\.server|maybeRunWeekRuntimeCompatibilityHook/.test(src)) {
+          offenders.push(r);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `hook boundary imported outside G5d.7c allowed paths:\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
 });
@@ -456,8 +551,9 @@ describe("G5d.7a — no source-of-truth switch / no auto-rollout in runtime", ()
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath);
         if (!isRuntimeScopeFile(r)) continue;
-        const src = stripComments(fs.readFileSync(filePath, "utf8"));
-        const hit = containsSourceOfTruthSwitchToken(src);
+        const src = readFileIfExists(filePath);
+        if (src === null) continue;
+        const hit = containsSourceOfTruthSwitchToken(stripComments(src));
         if (hit) {
           offenders.push(`${r} → ${hit}`);
         }
@@ -475,10 +571,13 @@ describe("G5d.7a — no source-of-truth switch / no auto-rollout in runtime", ()
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath);
         if (!isRuntimeScopeFile(r)) continue;
-        const src = fs.readFileSync(filePath, "utf8");
+        const src = readFileIfExists(filePath);
+        if (src === null) continue;
         const hasHook =
+          RUNTIME_HOOK_FLAG_TOKENS.some((t) => src.includes(t)) ||
           PROPOSED_FLAG_TOKENS.some((t) => src.includes(t)) ||
-          src.includes("weekRuntimeCompatibilityResolver");
+          src.includes("weekRuntimeCompatibilityResolver") ||
+          src.includes("weekRuntimeCompatibilityHook");
         if (hasHook && /runMenuWeekRollout|auto-rollout|autoRollout/.test(src)) {
           offenders.push(r);
         }
@@ -498,9 +597,11 @@ describe("G5d.7a — employee/commercial boundary", () => {
       for (const filePath of walkFiles(path.join(ROOT, root))) {
         const r = rel(filePath);
         if (!isRuntimeScopeFile(r)) continue;
-        const src = fs.readFileSync(filePath, "utf8");
+        const src = readFileIfExists(filePath);
+        if (src === null) continue;
         const hasHook =
           HOOK_REFERENCE_PATTERNS.some((p) => p.test(src)) ||
+          RUNTIME_HOOK_FLAG_TOKENS.some((t) => src.includes(t)) ||
           PROPOSED_FLAG_TOKENS.some((t) => src.includes(t));
         if (!hasHook) continue;
         for (const token of COMMERCIAL_SENSITIVE_TOKENS) {

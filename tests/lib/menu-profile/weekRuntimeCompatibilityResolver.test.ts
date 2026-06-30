@@ -88,8 +88,8 @@ describe("G5d.7b — server-only / imports / no writes", () => {
     expect(src).not.toMatch(/\.insert\s*\(|\.delete\s*\(|\.upsert\s*\(/);
   });
 
-  test("helper is not imported from week runtime", () => {
-    const prefixes = ["app/api/week", "app/(app)/week", "lib/week"];
+  test("helper is not imported from week runtime except G5d.7c hook boundary route", () => {
+    const prefixes = ["app/(app)/week", "lib/week"];
     const offenders: string[] = [];
     for (const prefix of prefixes) {
       for (const filePath of walkFiles(path.join(ROOT, prefix))) {
@@ -98,6 +98,12 @@ describe("G5d.7b — server-only / imports / no writes", () => {
           offenders.push(rel(filePath));
         }
       }
+    }
+    const weekRoute = path.join(ROOT, "app/api/week/route.ts");
+    if (fs.existsSync(weekRoute)) {
+      const src = fs.readFileSync(weekRoute, "utf8");
+      expect(src).not.toContain("weekRuntimeCompatibilityResolver");
+      expect(src).toContain("weekRuntimeCompatibilityHook.server");
     }
     expect(offenders).toEqual([]);
   });

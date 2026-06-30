@@ -16,6 +16,7 @@ import { fetchAgreementDayTiersForCompany } from "@/lib/agreement/currentAgreeme
 import { buildEmployeeWeekDayRows } from "@/lib/week/employeeWeekMenuDays";
 import { loadEmployeeWeekMenusFromMsdi } from "@/lib/week/loadEmployeeWeekMenusFromMsdi";
 import { resolveEmployeeWeekScope } from "@/lib/week/resolveEmployeeWeekScope";
+import { maybeRunWeekRuntimeCompatibilityHook } from "@/lib/menu-profile/weekRuntimeCompatibilityHook.server";
 import { menuScopeDecision, menuDayQueryOptsFromScope, resolveProviderMenuScopeForCompany } from "@/lib/menu/providerMenuScope";
 import type { MenuDay } from "@/lib/cms/menuDay";
 import { asPlanTier } from "@/lib/cms/menuDayContract";
@@ -221,6 +222,8 @@ export async function GET(req: Request) {
       weekOffset,
       menuByDate,
     });
+
+    maybeRunWeekRuntimeCompatibilityHook({ currentDays: days, rid: _rid, env: process.env });
 
     const rangeFrom = dates[0] ?? "";
     const rangeTo = dates[dates.length - 1] ?? "";
