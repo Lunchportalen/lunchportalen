@@ -12,6 +12,7 @@ Toppnivå-index for repository documentation. For naming-regler og hub-struktur:
 | [compliance/](./compliance/) | Compliance-rammeverk | SOC2 control matrix, ISO27001 SoA + alignment, GDPR |
 | [strategy/](./strategy/) | Forretningsstrategi og audits | Full-repo-audits, frameworks/, GTM-alignment, TECH DD |
 | [engineering/](./engineering/) | Teknisk dokumentasjon | Architecture, onboarding, control map, ESG brief |
+| [launch/](./launch/) | **Production launch readiness** | [enterprise-production-readiness-audit.md](./launch/enterprise-production-readiness-audit.md) |
 | [sales/](./sales/) | Salgsmateriell | Enterprise RFP-templates, AI positioning |
 
 ## Audit-record (immutable)
