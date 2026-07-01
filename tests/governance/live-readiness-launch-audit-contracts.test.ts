@@ -88,7 +88,7 @@ describe("Live readiness — enterprise production launch audit document guards"
   test("executive go/no-go recommendation present", () => {
     const doc = readSource(LAUNCH_AUDIT_DOC);
     expect(doc).toMatch(/Executive decision|Go\/no-go recommendation/i);
-    expect(doc).toMatch(/CONDITIONAL GO|NO-GO|GO|READY_FOR_FINAL_GO_REVIEW/);
+    expect(doc).toMatch(/CONDITIONAL GO|NO-GO|GO|READY_FOR_FINAL_GO_REVIEW|FINAL GO.*Launch approved/);
   });
 
   test("manual smoke plan and automated gates documented", () => {
@@ -112,6 +112,7 @@ const P0_2_EVIDENCE_DOC = "docs/launch/p0-2-production-manual-smoke-evidence.md"
 const P0_3_EVIDENCE_DOC = "docs/launch/p0-3-production-env-signoff-evidence.md";
 const P0_4_EVIDENCE_DOC = "docs/launch/p0-4-on-call-roster-evidence.md";
 const P0_5_EVIDENCE_DOC = "docs/launch/p0-5-cross-tenant-negative-test-evidence.md";
+const FINAL_GO_EVIDENCE_DOC = "docs/launch/final-go-owner-decision.md";
 
 const SECRET_LIKE_PATTERNS = [
   /E2E_EMPLOYEE_PASSWORD\s*=\s*\S+/,
@@ -167,7 +168,7 @@ describe("P0-1 — employee smoke evidence document guards", () => {
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW|FINAL GO.*Launch approved/);
     if (/P0-1.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-1.*CLOSED/i);
     }
@@ -225,7 +226,7 @@ describe("P0-2 — Production manual smoke evidence document guards", () => {
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW|FINAL GO.*Launch approved/);
     if (/P0-2.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-2.*CLOSED/i);
     }
@@ -283,7 +284,7 @@ describe("P0-3 — Production env sign-off evidence document guards", () => {
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW|FINAL GO.*Launch approved/);
     if (/P0-3.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-3.*CLOSED/i);
     }
@@ -343,7 +344,7 @@ describe("P0-4 — on-call roster evidence document guards", () => {
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW|FINAL GO.*Launch approved/);
     if (/P0-4.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-4.*CLOSED/i);
     }
@@ -393,15 +394,17 @@ describe("P0-5 — cross-tenant negative test evidence document guards", () => {
     }
   });
 
-  test("audit cannot claim automatic full GO", () => {
+  test("P0-5 evidence remains pre-FINAL-GO record; audit FINAL GO requires separate owner doc", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_5_EVIDENCE_DOC);
-    expect(audit).not.toMatch(/production launch approved|\|\s*\*\*LIVE GO\*\*\s*\|/i);
-    expect(evidence).not.toMatch(/production launch approved|\|\s*\*\*FULL GO\*\*\s*\||\|\s*\*\*LIVE GO\*\*\s*\|/i);
+    expect(evidence).not.toMatch(/Launch approved by owner|FINAL GO.*Launch approved/i);
     expect(evidence).toMatch(/not automatic full GO|not claimed|READY_FOR_FINAL_GO_REVIEW/i);
+    if (/FINAL GO.*Launch approved/i.test(audit)) {
+      expect(fs.existsSync(path.join(ROOT, FINAL_GO_EVIDENCE_DOC))).toBe(true);
+    }
   });
 
-  test("READY_FOR_FINAL_GO_REVIEW only when P0-1..P0-5 CLOSED", () => {
+  test("READY_FOR_FINAL_GO_REVIEW or FINAL GO only when P0-1..P0-5 CLOSED", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const allP0Closed =
       /P0-1.*CLOSED/i.test(audit) &&
@@ -409,11 +412,14 @@ describe("P0-5 — cross-tenant negative test evidence document guards", () => {
       /P0-3.*CLOSED/i.test(audit) &&
       /P0-4.*CLOSED/i.test(audit) &&
       /P0-5.*CLOSED/i.test(audit);
-    if (audit.includes("READY_FOR_FINAL_GO_REVIEW")) {
+    if (audit.includes("READY_FOR_FINAL_GO_REVIEW") || /FINAL GO.*Launch approved/i.test(audit)) {
       expect(allP0Closed).toBe(true);
     }
-    if (allP0Closed) {
+    if (allP0Closed && audit.includes("READY_FOR_FINAL_GO_REVIEW") && !/FINAL GO.*Launch approved/i.test(audit)) {
       expect(audit).toMatch(/READY_FOR_FINAL_GO_REVIEW/);
+    }
+    if (/FINAL GO.*Launch approved/i.test(audit)) {
+      expect(fs.existsSync(path.join(ROOT, FINAL_GO_EVIDENCE_DOC))).toBe(true);
     }
   });
 
@@ -427,5 +433,68 @@ describe("P0-5 — cross-tenant negative test evidence document guards", () => {
     const doc = readSource(P0_5_EVIDENCE_DOC);
     expect(doc).toMatch(/LP_MENU_PROFILE_.*0|zero.*LP_MENU_PROFILE|absent.*OFF/i);
     expect(doc).not.toMatch(/enable.*Production.*LP_MENU_PROFILE|Production ON/i);
+  });
+});
+
+describe("Final GO — owner launch approval document guards", () => {
+  test("final GO evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, FINAL_GO_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("final GO evidence doc does not contain secret values", () => {
+    const doc = readSource(FINAL_GO_EVIDENCE_DOC);
+    for (const pattern of SECRET_LIKE_PATTERNS) {
+      expect(doc).not.toMatch(pattern);
+    }
+    expect(doc).toMatch(/no secret values|Values not printed|not recorded/i);
+  });
+
+  test("final GO evidence documents owner, SHA, CI, Golden Path, and governance", () => {
+    const doc = readSource(FINAL_GO_EVIDENCE_DOC);
+    expect(doc).toMatch(/FINAL GO.*Launch approved|Launch approved by owner/i);
+    expect(doc).toMatch(/Thomas Johansen/);
+    expect(doc).toMatch(/2119bb2c/);
+    expect(doc).toMatch(/Golden Path|91\/91/);
+    expect(doc).toMatch(/Governance|44\/44/);
+    expect(doc).toMatch(/Main CI|ALL PASS/i);
+    expect(doc).toMatch(/P0-1.*CLOSED/i);
+    expect(doc).toMatch(/P0-5.*CLOSED/i);
+  });
+
+  test("audit FINAL GO requires P0-1..P0-5 CLOSED and final GO evidence", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const finalGo = readSource(FINAL_GO_EVIDENCE_DOC);
+    if (/FINAL GO.*Launch approved/i.test(audit)) {
+      expect(/P0-1.*CLOSED/i.test(audit)).toBe(true);
+      expect(/P0-2.*CLOSED/i.test(audit)).toBe(true);
+      expect(/P0-3.*CLOSED/i.test(audit)).toBe(true);
+      expect(/P0-4.*CLOSED/i.test(audit)).toBe(true);
+      expect(/P0-5.*CLOSED/i.test(audit)).toBe(true);
+      expect(finalGo).toMatch(/FINAL GO.*Launch approved|Launch approved by owner/i);
+    }
+  });
+
+  test("final GO must not claim G5d.8, cutover, auto-rollout, or Production flags active", () => {
+    const doc = readSource(FINAL_GO_EVIDENCE_DOC);
+    expect(doc).toMatch(/G5d\.8.*not started|not started.*G5d\.8|no G5d\.8/i);
+    expect(doc).toMatch(/cutover.*not started|not started.*cutover|no runtime cutover/i);
+    expect(doc).toMatch(/auto-rollout.*not started|not started.*auto-rollout|no auto-rollout/i);
+    expect(doc).toMatch(/LP_MENU_PROFILE_.*OFF|OFF\/unset|not activated/i);
+    expect(doc).not.toMatch(/G5d\.8 started|cutover complete|auto-rollout enabled|Production ON/i);
+    expect(doc).not.toMatch(/runtime cutover approved|source-of-truth switch approved|Tripletex automation enabled/i);
+  });
+
+  test("final GO documents known limitations", () => {
+    const doc = readSource(FINAL_GO_EVIDENCE_DOC);
+    expect(doc).toMatch(/Known limitations|limitations accepted/i);
+    expect(doc).toMatch(/Provider B|Company B|pilot pair/i);
+    expect(doc).toMatch(/Tripletex|manual first invoice/i);
+    expect(doc).toMatch(/load\/performance|load.*performance/i);
+  });
+
+  test("final GO evidence is docs-only with no runtime imports in governance file", () => {
+    const governance = readSource("tests/governance/live-readiness-launch-audit-contracts.test.ts");
+    expect(governance).not.toMatch(/from ["']@\/|from ["']app\/|from ["']lib\//);
+    expect(governance).not.toMatch(/process\.env\.\w+\s*=/);
   });
 });
