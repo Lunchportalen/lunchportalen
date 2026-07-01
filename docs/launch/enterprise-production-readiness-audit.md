@@ -23,7 +23,7 @@
 | **CI / guards** | `ci:enterprise` = typecheck + full vitest + tenant + lint + `build:enterprise`. Golden Path: `npm run test:golden-path`. Commercial hardcodes: `npm run ci:commercial-hardcodes-guard`. Protected path: `scripts/ci/guard-protected-golden-path.mjs`. |
 | **Production flags** | All `LP_MENU_PROFILE_*` must be OFF/unset at launch (see §3). G5d.7c hook exists in code but is inert when flag OFF. |
 | **Critical secrets** | `SYSTEM_MOTOR_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, Sanity read/write tokens as needed, `CRON_SECRET`, email provider keys, optional Tripletex keys if billing in scope. |
-| **Smoke credentials gap** | G5d.7d Preview `/api/week` smoke blocked: missing `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` (or equivalent). Provider admin creds are **not** valid for employee `/api/week` smoke. |
+| **Smoke credentials gap** | ~~Missing locally~~ **P0-1 CLOSED** — see `docs/launch/p0-1-employee-smoke-evidence.md` (Production `/api/week` smoke PASS, 2026-06-30) |
 
 ---
 
@@ -33,11 +33,11 @@
 |-------|-------|
 | **Decision** | **CONDITIONAL GO** |
 | **Launch date readiness** | Target ~1 week is **achievable** if P0 items below are closed before Production cutover. Code/contracts are RC-ready; operational proof is incomplete. |
-| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **Blockers are operational:** missing employee smoke credentials, no completed Production-target manual smoke, Production env verification is owner-run not automated in this audit. |
+| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 (employee credentials + Production `/api/week` smoke) CLOSED** — see `docs/launch/p0-1-employee-smoke-evidence.md`. Remaining blockers are operational: full manual smoke archive, Production env sign-off, on-call, cross-tenant proof. |
 
 ### Top 5 launch blockers (P0)
 
-1. **No verified employee smoke credentials** for pre-launch `/week` + order manual smoke (`E2E_EMPLOYEE_*` or equivalent Golden Path employee).
+1. ~~**No verified employee smoke credentials**~~ **CLOSED (P0-1)** — `docs/launch/p0-1-employee-smoke-evidence.md`
 2. **Pre-launch manual smoke not executed** on Production (or agreed staging mirror) — provider publish → employee `/week` → order → provider visibility → status advance.
 3. **Production env secrets checklist** not signed off (owner must confirm `SYSTEM_MOTOR_SECRET`, Supabase triple, Sanity read path, cron secret — no values in docs).
 4. **On-call + 48-hour watch roster** not documented as assigned (escalation path exists in runbooks but owner assignment required).
@@ -129,9 +129,9 @@ All flags: **expected Production value = OFF/unset**. **Launch value = OFF/unset
 | **B. Provider publishes menu** | Menu visible in provider UI; Sanity publish | Menu publish tests, golden path guards | Publish or confirm week menu | Provider ops | Ready (contract) | Re-publish; check Sanity + MSDI sync |
 | **C. Provider sees orders** | Own orders only in `/leverandor/ordrer` | `kitchenOrderDisplay`, RLS, loader tests | Place test order; verify card | Ops | Ready (contract) | Check `provider_id` filter |
 | **D. Company active agreement** | Employee can order when ACTIVE | `domainHardening.agreementOrders` | Verify agreement status in admin | Company admin | Ready (contract) | Activate agreement; no partial writes |
-| **E. Employee login** | Lands on `/week` | post-login, role tests | Employee login smoke | Ops | **Blocked on creds** | Password reset flow |
-| **F. Employee `/week`** | Scoped menu days, locked/cutoff flags | `week-profile-lookup`, week tests | Load `/week` + `/api/week` | Ops | **Blocked on creds** | Check agreement + menu publish |
-| **G. Employee places order** | Order stored with correct scope | idempotency, menu-scope tests | Order one variant | Ops | **Blocked on creds** | Support reads order by RID |
+| **E. Employee login** | Lands on `/week` | post-login, role tests | Employee login smoke | Ops | **Ready** (P0-1 evidence) | Password reset flow |
+| **F. Employee `/week`** | Scoped menu days, locked/cutoff flags | `week-profile-lookup`, week tests | Load `/week` + `/api/week` | Ops | **Ready** (P0-1 Production smoke PASS) | Check agreement + menu publish |
+| **G. Employee places order** | Order stored with correct scope | idempotency, menu-scope tests | Order one variant | Ops | Ready (contract; order not in P0-1 scope) | Support reads order by RID |
 | **H. Cutoff** | After 08:00 Oslo employee blocked; provider can advance | cutoff + providerProductionCutoff | Test before/after cutoff window | Ops | Ready (contract) | Document time; no code change |
 | **I. Allergens / special needs** | Visible on employee week where configured | allergen tests | Visual check one employee | Product | Ready (contract) | Support verifies profile fields |
 | **J. Provider advances status** | Mottatt → … → Levert | `providerProductionStatusFlow` | Click through one order | Provider ops | Ready (contract) | Manual status via support + RPC audit |
@@ -432,7 +432,7 @@ npm run test:golden-path
 
 | ID | Blocker | Recommended fix (separate PR/ops) |
 |----|---------|-------------------------------------|
-| P0-1 | Missing employee smoke credentials | Owner adds `E2E_EMPLOYEE_*` to secure store |
+| P0-1 | ~~Missing employee smoke credentials~~ **CLOSED** | Evidence: `docs/launch/p0-1-employee-smoke-evidence.md` (2026-06-30) |
 | P0-2 | Manual smoke not executed on Production target | Run §9 checklist; archive evidence |
 | P0-3 | Production env not signed off | Vercel audit + system health NORMAL |
 | P0-4 | On-call not assigned | Name primary + backup |
@@ -488,11 +488,11 @@ npm run test:golden-path
 | Field | Value |
 |-------|-------|
 | **Recommendation** | **CONDITIONAL GO** |
-| **Required fixes before live** | P0-1 through P0-5 (§17) |
-| **Required manual smoke** | §9 full checklist on Production target |
-| **Required credentials** | `E2E_EMPLOYEE_*` + provider admin for publish/orders |
+| **Required fixes before live** | P0-2 through P0-5 (§17); P0-1 **CLOSED** |
+| **Required manual smoke** | §9 full checklist on Production target (P0-2) |
+| **Required credentials** | `E2E_EMPLOYEE_*` **verified** (P0-1 closed) + provider admin for publish/orders |
 | **Postponed** | G5d.8, cutover, all Production `LP_MENU_PROFILE_*` ON |
-| **Owner checklist** | ☐ Env audit ☐ Flags OFF ☐ Golden Path PASS ☐ Manual smoke ☐ On-call ☐ Comms template ready |
+| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☐ Env audit ☐ Flags OFF ☐ Golden Path PASS ☐ Full manual smoke ☐ On-call ☐ Comms template ready |
 
 **Final GO** requires owner sign-off after P0 closure — not automatic from this document alone.
 
@@ -507,6 +507,7 @@ npm run test:golden-path
 - `docs/environments-runtime.json`
 - `scripts/ci/guard-protected-golden-path.mjs`
 - `lib/menu-profile/featureFlag.ts`
+- `docs/launch/p0-1-employee-smoke-evidence.md`
 
 ---
 
