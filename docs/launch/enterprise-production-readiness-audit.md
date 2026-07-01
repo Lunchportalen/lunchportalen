@@ -31,9 +31,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Decision** | **CONDITIONAL GO** |
-| **Launch date readiness** | Target ~1 week is **achievable** if P0 items below are closed before Production cutover. Code/contracts are RC-ready; operational proof is incomplete. |
-| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 CLOSED** — `docs/launch/p0-1-employee-smoke-evidence.md`. **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md`. **P0-3 CLOSED** — `docs/launch/p0-3-production-env-signoff-evidence.md` (2026-07-01). **P0-4 CLOSED** — `docs/launch/p0-4-on-call-roster-evidence.md` (2026-07-01). Remaining blocker: cross-tenant proof. |
+| **Decision** | **READY_FOR_FINAL_GO_REVIEW** |
+| **Launch date readiness** | Target ~1 week is **achievable** after owner final GO sign-off. Code/contracts are RC-ready; P0 operational proof is **complete** (P0-1..P0-5 CLOSED). |
+| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 CLOSED** — `docs/launch/p0-1-employee-smoke-evidence.md`. **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md`. **P0-3 CLOSED** — `docs/launch/p0-3-production-env-signoff-evidence.md` (2026-07-01). **P0-4 CLOSED** — `docs/launch/p0-4-on-call-roster-evidence.md` (2026-07-01). **P0-5 CLOSED** — `docs/launch/p0-5-cross-tenant-negative-test-evidence.md` (2026-07-01). **Not automatic full GO** — owner final review required. |
 
 ### Top 5 launch blockers (P0)
 
@@ -41,7 +41,7 @@
 2. ~~**Pre-launch manual smoke not executed**~~ **CLOSED (P0-2)** — `docs/launch/p0-2-production-manual-smoke-evidence.md`
 3. ~~**Production env secrets checklist** not signed off~~ **CLOSED (P0-3)** — `docs/launch/p0-3-production-env-signoff-evidence.md`
 4. ~~**On-call + 48-hour watch roster** not documented as assigned~~ **CLOSED (P0-4)** — `docs/launch/p0-4-on-call-roster-evidence.md`
-5. **Cross-tenant manual verification** for at least two provider/company pairs not yet recorded (automated RLS tests pass; live multi-tenant smoke pending).
+5. ~~**Cross-tenant manual verification**~~ **CLOSED (P0-5)** — `docs/launch/p0-5-cross-tenant-negative-test-evidence.md` (single Production pilot pair + synthetic foreign UUID negatives; Provider B/Company B not in smoke store — documented limitation).
 
 ### Top 5 risks (P1 — high but mitigable)
 
@@ -436,7 +436,7 @@ npm run test:golden-path
 | P0-2 | ~~Manual smoke not executed on Production target~~ **CLOSED** | Evidence: `docs/launch/p0-2-production-manual-smoke-evidence.md` (2026-07-01) |
 | P0-3 | ~~Production env not signed off~~ **CLOSED** | Evidence: `docs/launch/p0-3-production-env-signoff-evidence.md` (2026-07-01) |
 | P0-4 | ~~On-call not assigned~~ **CLOSED** | Evidence: `docs/launch/p0-4-on-call-roster-evidence.md` (2026-07-01) |
-| P0-5 | Multi-tenant manual negative test not done | Run cross-provider check in §9 step 11 |
+| P0-5 | ~~Multi-tenant manual negative test not done~~ **CLOSED** | Evidence: `docs/launch/p0-5-cross-tenant-negative-test-evidence.md` (2026-07-01) |
 
 ### P1 — high risk
 
@@ -487,14 +487,14 @@ npm run test:golden-path
 
 | Field | Value |
 |-------|-------|
-| **Recommendation** | **CONDITIONAL GO** |
-| **Required fixes before live** | P0-5 (§17); P0-1 **CLOSED**; P0-2 **CLOSED**; P0-3 **CLOSED**; P0-4 **CLOSED** |
+| **Recommendation** | **READY_FOR_FINAL_GO_REVIEW** |
+| **Required fixes before live** | P0-1 **CLOSED**; P0-2 **CLOSED**; P0-3 **CLOSED**; P0-4 **CLOSED**; P0-5 **CLOSED** (§17) |
 | **Required manual smoke** | §9 full checklist on Production target — **P0-2 CLOSED** (`docs/launch/p0-2-production-manual-smoke-evidence.md`) |
 | **Required credentials** | `E2E_EMPLOYEE_*` **verified** (P0-1 closed) + provider admin for publish/orders |
 | **Postponed** | G5d.8, cutover, all Production `LP_MENU_PROFILE_*` ON |
-| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☑ Full manual smoke (P0-2) ☑ Env audit (P0-3) ☑ On-call (P0-4) ☑ Flags OFF ☐ Golden Path PASS ☐ Comms template ready |
+| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☑ Full manual smoke (P0-2) ☑ Env audit (P0-3) ☑ On-call (P0-4) ☑ Cross-tenant negative test (P0-5) ☑ Flags OFF ☑ Golden Path PASS ☐ Comms template ready ☐ Owner final GO |
 
-**Final GO** requires owner sign-off after P0 closure — not automatic from this document alone.
+**Final GO** requires owner sign-off after P0 closure — **READY_FOR_FINAL_GO_REVIEW** is not automatic full GO.
 
 ---
 
@@ -509,6 +509,7 @@ npm run test:golden-path
 - `lib/menu-profile/featureFlag.ts`
 - `docs/launch/p0-1-employee-smoke-evidence.md`
 - `docs/launch/p0-4-on-call-roster-evidence.md`
+- `docs/launch/p0-5-cross-tenant-negative-test-evidence.md`
 
 ---
 

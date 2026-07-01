@@ -88,7 +88,7 @@ describe("Live readiness — enterprise production launch audit document guards"
   test("executive go/no-go recommendation present", () => {
     const doc = readSource(LAUNCH_AUDIT_DOC);
     expect(doc).toMatch(/Executive decision|Go\/no-go recommendation/i);
-    expect(doc).toMatch(/CONDITIONAL GO|NO-GO|GO/);
+    expect(doc).toMatch(/CONDITIONAL GO|NO-GO|GO|READY_FOR_FINAL_GO_REVIEW/);
   });
 
   test("manual smoke plan and automated gates documented", () => {
@@ -111,6 +111,7 @@ const P0_1_EVIDENCE_DOC = "docs/launch/p0-1-employee-smoke-evidence.md";
 const P0_2_EVIDENCE_DOC = "docs/launch/p0-2-production-manual-smoke-evidence.md";
 const P0_3_EVIDENCE_DOC = "docs/launch/p0-3-production-env-signoff-evidence.md";
 const P0_4_EVIDENCE_DOC = "docs/launch/p0-4-on-call-roster-evidence.md";
+const P0_5_EVIDENCE_DOC = "docs/launch/p0-5-cross-tenant-negative-test-evidence.md";
 
 const SECRET_LIKE_PATTERNS = [
   /E2E_EMPLOYEE_PASSWORD\s*=\s*\S+/,
@@ -159,14 +160,14 @@ describe("P0-1 — employee smoke evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_1_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
+      /P0-[1-5].*OPEN|Multi-tenant manual negative test not done/i.test(
         audit,
       );
-    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
+    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO") && !audit.includes("READY_FOR_FINAL_GO_REVIEW");
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
     if (/P0-1.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-1.*CLOSED/i);
     }
@@ -217,14 +218,14 @@ describe("P0-2 — Production manual smoke evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_2_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
+      /P0-[1-5].*OPEN|Multi-tenant manual negative test not done/i.test(
         audit + evidence,
       );
-    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
+    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO") && !audit.includes("READY_FOR_FINAL_GO_REVIEW");
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
     if (/P0-2.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-2.*CLOSED/i);
     }
@@ -275,14 +276,14 @@ describe("P0-3 — Production env sign-off evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_3_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
+      /P0-[1-5].*OPEN|Multi-tenant manual negative test not done/i.test(
         audit + evidence,
       );
-    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
+    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO") && !audit.includes("READY_FOR_FINAL_GO_REVIEW");
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
     if (/P0-3.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-3.*CLOSED/i);
     }
@@ -335,14 +336,14 @@ describe("P0-4 — on-call roster evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_4_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
+      /P0-[1-5].*OPEN|Multi-tenant manual negative test not done/i.test(
         audit + evidence,
       );
-    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
+    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO") && !audit.includes("READY_FOR_FINAL_GO_REVIEW");
     if (hasOpenP0) {
       expect(claimsFullGo).toBe(false);
     }
-    expect(audit).toMatch(/CONDITIONAL GO/);
+    expect(audit).toMatch(/CONDITIONAL GO|READY_FOR_FINAL_GO_REVIEW/);
     if (/P0-4.*CLOSED/i.test(audit)) {
       expect(evidence).toMatch(/P0-4.*CLOSED/i);
     }
@@ -352,5 +353,79 @@ describe("P0-4 — on-call roster evidence document guards", () => {
     const doc = readSource(P0_4_EVIDENCE_DOC);
     expect(doc).toMatch(/no G5d\.8|G5d\.8 · cutover|no cutover|no auto-rollout/i);
     expect(doc).not.toMatch(/G5d\.8 started|cutover complete|auto-rollout enabled/i);
+  });
+});
+
+describe("P0-5 — cross-tenant negative test evidence document guards", () => {
+  test("P0-5 evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, P0_5_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("P0-5 evidence doc does not contain secret values", () => {
+    const doc = readSource(P0_5_EVIDENCE_DOC);
+    for (const pattern of SECRET_LIKE_PATTERNS) {
+      expect(doc).not.toMatch(pattern);
+    }
+    expect(doc).toMatch(/no secret values|Values not printed|not recorded/i);
+  });
+
+  test("P0-5 evidence documents cross-tenant matrix and isolation", () => {
+    const doc = readSource(P0_5_EVIDENCE_DOC);
+    expect(doc).toMatch(/app\.lunchportalen\.no/);
+    expect(doc).toMatch(/Negative test matrix|cross-tenant/i);
+    expect(doc).toMatch(/Employee isolation|employee isolation/i);
+    expect(doc).toMatch(/Provider isolation|provider isolation/i);
+    expect(doc).toMatch(/Order isolation|order isolation/i);
+    expect(doc).toMatch(/Company\/customer isolation|company\/customer isolation/i);
+    expect(doc).toMatch(/Forbidden field|forbidden.*commercial|commercial leakage/i);
+    expect(doc).toMatch(/LP_MENU_PROFILE_/);
+    expect(doc).toMatch(/Golden Path|test:golden-path/);
+    expect(doc).toMatch(/Hit count.*0|hits=0|0 hits/i);
+  });
+
+  test("audit cannot mark P0-5 CLOSED unless evidence doc says CLOSED", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_5_EVIDENCE_DOC);
+    const auditMarksP05Closed = /P0-5.*CLOSED|P0-5.*closed/i.test(audit);
+    const evidenceClosed = /P0-5 status.*CLOSED|P0-5.*\*\*CLOSED\*\*/i.test(evidence);
+    if (auditMarksP05Closed) {
+      expect(evidenceClosed).toBe(true);
+    }
+  });
+
+  test("audit cannot claim automatic full GO", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_5_EVIDENCE_DOC);
+    expect(audit).not.toMatch(/production launch approved|\|\s*\*\*LIVE GO\*\*\s*\|/i);
+    expect(evidence).not.toMatch(/production launch approved|\|\s*\*\*FULL GO\*\*\s*\||\|\s*\*\*LIVE GO\*\*\s*\|/i);
+    expect(evidence).toMatch(/not automatic full GO|not claimed|READY_FOR_FINAL_GO_REVIEW/i);
+  });
+
+  test("READY_FOR_FINAL_GO_REVIEW only when P0-1..P0-5 CLOSED", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const allP0Closed =
+      /P0-1.*CLOSED/i.test(audit) &&
+      /P0-2.*CLOSED/i.test(audit) &&
+      /P0-3.*CLOSED/i.test(audit) &&
+      /P0-4.*CLOSED/i.test(audit) &&
+      /P0-5.*CLOSED/i.test(audit);
+    if (audit.includes("READY_FOR_FINAL_GO_REVIEW")) {
+      expect(allP0Closed).toBe(true);
+    }
+    if (allP0Closed) {
+      expect(audit).toMatch(/READY_FOR_FINAL_GO_REVIEW/);
+    }
+  });
+
+  test("P0-5 evidence does not claim G5d.8 / cutover / auto-rollout started", () => {
+    const doc = readSource(P0_5_EVIDENCE_DOC);
+    expect(doc).toMatch(/no G5d\.8|G5d\.8 · cutover|no cutover|no auto-rollout|not started/i);
+    expect(doc).not.toMatch(/G5d\.8 started|cutover complete|auto-rollout enabled/i);
+  });
+
+  test("Production LP_MENU_PROFILE flags remain documented OFF in P0-5 evidence", () => {
+    const doc = readSource(P0_5_EVIDENCE_DOC);
+    expect(doc).toMatch(/LP_MENU_PROFILE_.*0|zero.*LP_MENU_PROFILE|absent.*OFF/i);
+    expect(doc).not.toMatch(/enable.*Production.*LP_MENU_PROFILE|Production ON/i);
   });
 });
