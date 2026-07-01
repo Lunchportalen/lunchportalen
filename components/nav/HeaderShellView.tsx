@@ -38,6 +38,8 @@ type HeaderShellViewProps = HeaderShellViewModel & {
   headerClassName: string;
   innerGridClassName: string;
   email: string | null;
+  /** When false, hide UI locale switcher (employee shell until employee i18n ships). */
+  showLocaleSwitcher?: boolean;
 };
 
 /** Presentational twin of `HeaderShell` — same DOM/CSS, props from server or client fetch. */
@@ -49,6 +51,7 @@ export default function HeaderShellView({
   logoSrc,
   navigation,
   email,
+  showLocaleSwitcher = true,
 }: HeaderShellViewProps) {
   const [headerLogoSrc, setHeaderLogoSrc] = useState(HEADER_LOGO_PUBLIC_PNG);
 
@@ -93,7 +96,7 @@ export default function HeaderShellView({
               {email}
             </span>
           ) : null}
-          <LocaleSwitcher persistProfile={Boolean(email)} />
+          {showLocaleSwitcher ? <LocaleSwitcher persistProfile={Boolean(email)} /> : null}
           <ProfileMenu email={email} />
         </div>
       </div>
