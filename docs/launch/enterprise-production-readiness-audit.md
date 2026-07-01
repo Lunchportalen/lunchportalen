@@ -33,12 +33,12 @@
 |-------|-------|
 | **Decision** | **CONDITIONAL GO** |
 | **Launch date readiness** | Target ~1 week is **achievable** if P0 items below are closed before Production cutover. Code/contracts are RC-ready; operational proof is incomplete. |
-| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 (employee credentials + Production `/api/week` smoke) CLOSED** — see `docs/launch/p0-1-employee-smoke-evidence.md`. Remaining blockers are operational: full manual smoke archive, Production env sign-off, on-call, cross-tenant proof. |
+| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 CLOSED** — `docs/launch/p0-1-employee-smoke-evidence.md`. **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md` (full Production §9 smoke, 2026-07-01). Remaining blockers: Production env sign-off, on-call, cross-tenant proof. |
 
 ### Top 5 launch blockers (P0)
 
 1. ~~**No verified employee smoke credentials**~~ **CLOSED (P0-1)** — `docs/launch/p0-1-employee-smoke-evidence.md`
-2. **Pre-launch manual smoke not executed** on Production (or agreed staging mirror) — provider publish → employee `/week` → order → provider visibility → status advance.
+2. ~~**Pre-launch manual smoke not executed**~~ **CLOSED (P0-2)** — `docs/launch/p0-2-production-manual-smoke-evidence.md`
 3. **Production env secrets checklist** not signed off (owner must confirm `SYSTEM_MOTOR_SECRET`, Supabase triple, Sanity read path, cron secret — no values in docs).
 4. **On-call + 48-hour watch roster** not documented as assigned (escalation path exists in runbooks but owner assignment required).
 5. **Cross-tenant manual verification** for at least two provider/company pairs not yet recorded (automated RLS tests pass; live multi-tenant smoke pending).
@@ -253,7 +253,7 @@ npm run test:golden-path
 | Gap | Who provides | Validation without exposing secrets |
 |-----|--------------|-------------------------------------|
 | Employee Golden Path creds for G5d.7d / pre-launch smoke | **Owner (Thomas)** | `scripts/temp-g5d7d-preview-smoke.mjs` exits `AUTH_BLOCKED` when unset; hash-only login probe |
-| Production-target manual smoke record | **Ops** | Signed checklist in §9 with date + RID |
+| Production-target manual smoke record | **Ops** | **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md` (2026-07-01) |
 
 ### Secure storage
 
@@ -433,7 +433,7 @@ npm run test:golden-path
 | ID | Blocker | Recommended fix (separate PR/ops) |
 |----|---------|-------------------------------------|
 | P0-1 | ~~Missing employee smoke credentials~~ **CLOSED** | Evidence: `docs/launch/p0-1-employee-smoke-evidence.md` (2026-06-30) |
-| P0-2 | Manual smoke not executed on Production target | Run §9 checklist; archive evidence |
+| P0-2 | ~~Manual smoke not executed on Production target~~ **CLOSED** | Evidence: `docs/launch/p0-2-production-manual-smoke-evidence.md` (2026-07-01) |
 | P0-3 | Production env not signed off | Vercel audit + system health NORMAL |
 | P0-4 | On-call not assigned | Name primary + backup |
 | P0-5 | Multi-tenant manual negative test not done | Run cross-provider check in §9 step 11 |
@@ -488,11 +488,11 @@ npm run test:golden-path
 | Field | Value |
 |-------|-------|
 | **Recommendation** | **CONDITIONAL GO** |
-| **Required fixes before live** | P0-2 through P0-5 (§17); P0-1 **CLOSED** |
-| **Required manual smoke** | §9 full checklist on Production target (P0-2) |
+| **Required fixes before live** | P0-3 through P0-5 (§17); P0-1 **CLOSED**; P0-2 **CLOSED** |
+| **Required manual smoke** | §9 full checklist on Production target — **P0-2 CLOSED** (`docs/launch/p0-2-production-manual-smoke-evidence.md`) |
 | **Required credentials** | `E2E_EMPLOYEE_*` **verified** (P0-1 closed) + provider admin for publish/orders |
 | **Postponed** | G5d.8, cutover, all Production `LP_MENU_PROFILE_*` ON |
-| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☐ Env audit ☐ Flags OFF ☐ Golden Path PASS ☐ Full manual smoke ☐ On-call ☐ Comms template ready |
+| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☑ Full manual smoke (P0-2) ☐ Env audit ☐ Flags OFF ☐ Golden Path PASS ☐ On-call ☐ Comms template ready |
 
 **Final GO** requires owner sign-off after P0 closure — not automatic from this document alone.
 
