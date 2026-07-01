@@ -110,6 +110,7 @@ describe("Live readiness — audit doc scope guard (docs-only PR)", () => {
 const P0_1_EVIDENCE_DOC = "docs/launch/p0-1-employee-smoke-evidence.md";
 const P0_2_EVIDENCE_DOC = "docs/launch/p0-2-production-manual-smoke-evidence.md";
 const P0_3_EVIDENCE_DOC = "docs/launch/p0-3-production-env-signoff-evidence.md";
+const P0_4_EVIDENCE_DOC = "docs/launch/p0-4-on-call-roster-evidence.md";
 
 const SECRET_LIKE_PATTERNS = [
   /E2E_EMPLOYEE_PASSWORD\s*=\s*\S+/,
@@ -158,7 +159,7 @@ describe("P0-1 — employee smoke evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_1_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-4.*OPEN|P0-5.*OPEN|On-call not assigned|Multi-tenant manual negative test not/i.test(
+      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
         audit,
       );
     const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
@@ -216,7 +217,7 @@ describe("P0-2 — Production manual smoke evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_2_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-3.*OPEN|P0-4.*OPEN|P0-5.*OPEN|Production env not signed|On-call not assigned|Multi-tenant manual negative test not/i.test(
+      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
         audit + evidence,
       );
     const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
@@ -270,11 +271,11 @@ describe("P0-3 — Production env sign-off evidence document guards", () => {
     }
   });
 
-  test("audit cannot claim full GO while P0-4/P0-5 remain open", () => {
+  test("audit cannot claim full GO while P0-5 remains open", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_3_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-4.*OPEN|P0-5.*OPEN|On-call not assigned|Multi-tenant manual negative test not/i.test(
+      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
         audit + evidence,
       );
     const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
@@ -289,6 +290,66 @@ describe("P0-3 — Production env sign-off evidence document guards", () => {
 
   test("P0-3 evidence does not claim G5d.8 / cutover / auto-rollout started", () => {
     const doc = readSource(P0_3_EVIDENCE_DOC);
+    expect(doc).toMatch(/no G5d\.8|G5d\.8 · cutover|no cutover|no auto-rollout/i);
+    expect(doc).not.toMatch(/G5d\.8 started|cutover complete|auto-rollout enabled/i);
+  });
+});
+
+describe("P0-4 — on-call roster evidence document guards", () => {
+  test("P0-4 evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, P0_4_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("P0-4 evidence doc does not contain secret values or phone numbers", () => {
+    const doc = readSource(P0_4_EVIDENCE_DOC);
+    for (const pattern of SECRET_LIKE_PATTERNS) {
+      expect(doc).not.toMatch(pattern);
+    }
+    expect(doc).toMatch(/no phone numbers|Contact leak|no secret values/i);
+    expect(doc).not.toMatch(/\+47\s*\d{2}/);
+  });
+
+  test("P0-4 evidence documents on-call roster and escalation path", () => {
+    const doc = readSource(P0_4_EVIDENCE_DOC);
+    expect(doc).toMatch(/Primary on-call|primary on-call/i);
+    expect(doc).toMatch(/Backup on-call|backup on-call/i);
+    expect(doc).toMatch(/Thomas Johansen/);
+    expect(doc).toMatch(/Support contact|post@lunchportalen\.no/i);
+    expect(doc).toMatch(/48-hour launch watch|48-hour/i);
+    expect(doc).toMatch(/Escalation path|escalation path/i);
+    expect(doc).toMatch(/SLO_ALERTING_RUNBOOK|RECOVERY_PLAYBOOK/i);
+    expect(doc).toMatch(/Golden Path|test:golden-path/);
+  });
+
+  test("audit cannot mark P0-4 CLOSED unless evidence doc says CLOSED", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_4_EVIDENCE_DOC);
+    const auditMarksP04Closed = /P0-4.*CLOSED|P0-4.*closed/i.test(audit);
+    const evidenceClosed = /P0-4 status.*CLOSED|P0-4.*\*\*CLOSED\*\*/i.test(evidence);
+    if (auditMarksP04Closed) {
+      expect(evidenceClosed).toBe(true);
+    }
+  });
+
+  test("audit cannot claim full GO while P0-5 remains open", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_4_EVIDENCE_DOC);
+    const hasOpenP0 =
+      /P0-5.*OPEN|Multi-tenant manual negative test not/i.test(
+        audit + evidence,
+      );
+    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
+    if (hasOpenP0) {
+      expect(claimsFullGo).toBe(false);
+    }
+    expect(audit).toMatch(/CONDITIONAL GO/);
+    if (/P0-4.*CLOSED/i.test(audit)) {
+      expect(evidence).toMatch(/P0-4.*CLOSED/i);
+    }
+  });
+
+  test("P0-4 evidence does not claim G5d.8 / cutover / auto-rollout started", () => {
+    const doc = readSource(P0_4_EVIDENCE_DOC);
     expect(doc).toMatch(/no G5d\.8|G5d\.8 · cutover|no cutover|no auto-rollout/i);
     expect(doc).not.toMatch(/G5d\.8 started|cutover complete|auto-rollout enabled/i);
   });
