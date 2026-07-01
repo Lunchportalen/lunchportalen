@@ -108,10 +108,12 @@ describe("Live readiness — audit doc scope guard (docs-only PR)", () => {
 });
 
 const P0_1_EVIDENCE_DOC = "docs/launch/p0-1-employee-smoke-evidence.md";
+const P0_2_EVIDENCE_DOC = "docs/launch/p0-2-production-manual-smoke-evidence.md";
 
 const SECRET_LIKE_PATTERNS = [
   /E2E_EMPLOYEE_PASSWORD\s*=\s*\S+/,
   /E2E_EMPLOYEE_EMAIL\s*=\s*[^\s]+@[^\s]+/,
+  /MELHUS_PROVIDER_ADMIN_PASSWORD\s*=\s*\S+/,
   /password:\s*["'][^"']+["']/i,
 ];
 
@@ -152,7 +154,7 @@ describe("P0-1 — employee smoke evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     const evidence = readSource(P0_1_EVIDENCE_DOC);
     const hasOpenP0 =
-      /P0-2.*OPEN|P0-3.*OPEN|P0-4.*OPEN|P0-5.*OPEN|Manual smoke not executed|Production env secrets not signed|On-call not assigned|Multi-tenant manual negative test not/i.test(
+      /P0-3.*OPEN|P0-4.*OPEN|P0-5.*OPEN|Production env secrets not signed|Production env not signed|On-call not assigned|Multi-tenant manual negative test not/i.test(
         audit,
       );
     const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
@@ -169,5 +171,63 @@ describe("P0-1 — employee smoke evidence document guards", () => {
     const audit = readSource(LAUNCH_AUDIT_DOC);
     expect(menuProfileFlagsInDoc(audit).length).toBeGreaterThanOrEqual(10);
     expect(audit).toMatch(/Launch value = OFF|launch value = OFF/i);
+  });
+});
+
+describe("P0-2 — Production manual smoke evidence document guards", () => {
+  test("P0-2 evidence document exists", () => {
+    expect(fs.existsSync(path.join(ROOT, P0_2_EVIDENCE_DOC))).toBe(true);
+  });
+
+  test("P0-2 evidence doc does not contain secret values", () => {
+    const doc = readSource(P0_2_EVIDENCE_DOC);
+    for (const pattern of SECRET_LIKE_PATTERNS) {
+      expect(doc).not.toMatch(pattern);
+    }
+    expect(doc).toMatch(/no secret values|Values not printed|not recorded/i);
+  });
+
+  test("P0-2 evidence documents Production §9 smoke and flag check", () => {
+    const doc = readSource(P0_2_EVIDENCE_DOC);
+    expect(doc).toMatch(/app\.lunchportalen\.no/);
+    expect(doc).toMatch(/Manual smoke checklist|§9 steps A–M/i);
+    expect(doc).toMatch(/Provider login|Employee.*week|order/i);
+    expect(doc).toMatch(/LP_MENU_PROFILE_/i);
+    expect(doc).toMatch(/Golden Path|test:golden-path/);
+    expect(doc).toMatch(/Forbidden field|leakage scan/i);
+    expect(doc).toMatch(/cleanup|cancel/i);
+  });
+
+  test("audit cannot mark P0-2 CLOSED unless evidence doc says CLOSED", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_2_EVIDENCE_DOC);
+    const auditMarksP02Closed = /P0-2.*CLOSED|P0-2.*closed/i.test(audit);
+    const evidenceClosed = /P0-2 status.*CLOSED|P0-2.*\*\*CLOSED\*\*/i.test(evidence);
+    if (auditMarksP02Closed) {
+      expect(evidenceClosed).toBe(true);
+    }
+  });
+
+  test("audit cannot claim full GO while P0-3..P0-5 remain open", () => {
+    const audit = readSource(LAUNCH_AUDIT_DOC);
+    const evidence = readSource(P0_2_EVIDENCE_DOC);
+    const hasOpenP0 =
+      /P0-3.*OPEN|P0-4.*OPEN|P0-5.*OPEN|Production env not signed|On-call not assigned|Multi-tenant manual negative test not/i.test(
+        audit + evidence,
+      );
+    const claimsFullGo = /\|\s*\*\*GO\*\*\s*\|/.test(audit) && !audit.includes("CONDITIONAL GO");
+    if (hasOpenP0) {
+      expect(claimsFullGo).toBe(false);
+    }
+    expect(audit).toMatch(/CONDITIONAL GO/);
+    if (/P0-2.*CLOSED/i.test(audit)) {
+      expect(evidence).toMatch(/P0-2.*CLOSED/i);
+    }
+  });
+
+  test("P0-2 evidence does not claim G5d.8 / cutover / auto-rollout started", () => {
+    const doc = readSource(P0_2_EVIDENCE_DOC);
+    expect(doc).toMatch(/no G5d\.8|G5d\.8 · cutover|no cutover|no auto-rollout/i);
+    expect(doc).not.toMatch(/G5d\.8 started|cutover complete|auto-rollout enabled/i);
   });
 });
