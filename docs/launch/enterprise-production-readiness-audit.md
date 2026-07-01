@@ -33,14 +33,14 @@
 |-------|-------|
 | **Decision** | **CONDITIONAL GO** |
 | **Launch date readiness** | Target ~1 week is **achievable** if P0 items below are closed before Production cutover. Code/contracts are RC-ready; operational proof is incomplete. |
-| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 CLOSED** — `docs/launch/p0-1-employee-smoke-evidence.md`. **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md`. **P0-3 CLOSED** — `docs/launch/p0-3-production-env-signoff-evidence.md` (2026-07-01). Remaining blockers: on-call, cross-tenant proof. |
+| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 CLOSED** — `docs/launch/p0-1-employee-smoke-evidence.md`. **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md`. **P0-3 CLOSED** — `docs/launch/p0-3-production-env-signoff-evidence.md` (2026-07-01). **P0-4 CLOSED** — `docs/launch/p0-4-on-call-roster-evidence.md` (2026-07-01). Remaining blocker: cross-tenant proof. |
 
 ### Top 5 launch blockers (P0)
 
 1. ~~**No verified employee smoke credentials**~~ **CLOSED (P0-1)** — `docs/launch/p0-1-employee-smoke-evidence.md`
 2. ~~**Pre-launch manual smoke not executed**~~ **CLOSED (P0-2)** — `docs/launch/p0-2-production-manual-smoke-evidence.md`
 3. ~~**Production env secrets checklist** not signed off~~ **CLOSED (P0-3)** — `docs/launch/p0-3-production-env-signoff-evidence.md`
-4. **On-call + 48-hour watch roster** not documented as assigned (escalation path exists in runbooks but owner assignment required).
+4. ~~**On-call + 48-hour watch roster** not documented as assigned~~ **CLOSED (P0-4)** — `docs/launch/p0-4-on-call-roster-evidence.md`
 5. **Cross-tenant manual verification** for at least two provider/company pairs not yet recorded (automated RLS tests pass; live multi-tenant smoke pending).
 
 ### Top 5 risks (P1 — high but mitigable)
@@ -403,7 +403,7 @@ npm run test:golden-path
 | Billing errors | Outbox / Tripletex logs | P1 — manual invoice |
 | `SYSTEM_MOTOR_SECRET` missing | `/superadmin/system` | WARN/FAIL — block motor jobs |
 
-**On-call first 48 hours:** Assign named owner + backup (Thomas + support contact).  
+**On-call first 48 hours:** **ASSIGNED (P0-4)** — Thomas Johansen (primary) + Support contact L1 (backup). Evidence: `docs/launch/p0-4-on-call-roster-evidence.md`.  
 **Escalation:** `docs/backoffice/RECOVERY_PLAYBOOK.md`, `docs/SLO_ALERTING_RUNBOOK.md`.
 
 ---
@@ -435,7 +435,7 @@ npm run test:golden-path
 | P0-1 | ~~Missing employee smoke credentials~~ **CLOSED** | Evidence: `docs/launch/p0-1-employee-smoke-evidence.md` (2026-06-30) |
 | P0-2 | ~~Manual smoke not executed on Production target~~ **CLOSED** | Evidence: `docs/launch/p0-2-production-manual-smoke-evidence.md` (2026-07-01) |
 | P0-3 | ~~Production env not signed off~~ **CLOSED** | Evidence: `docs/launch/p0-3-production-env-signoff-evidence.md` (2026-07-01) |
-| P0-4 | On-call not assigned | Name primary + backup |
+| P0-4 | ~~On-call not assigned~~ **CLOSED** | Evidence: `docs/launch/p0-4-on-call-roster-evidence.md` (2026-07-01) |
 | P0-5 | Multi-tenant manual negative test not done | Run cross-provider check in §9 step 11 |
 
 ### P1 — high risk
@@ -477,9 +477,9 @@ npm run test:golden-path
 | First order | Hour 0–8 | Ops |
 | First provider order view | After first order | Ops |
 | First delivery status update | Same day | Provider |
-| Error logs review | Every hour × 48 | On-call |
-| Support channel | Continuous | Support |
-| Rollback decision point | Any P0 Golden Path break | Owner |
+| Error logs review | Every hour × 48 | On-call (Thomas Johansen — P0-4) |
+| Support channel | Continuous | Support (L1 — P0-4) |
+| Rollback decision point | Any P0 Golden Path break | Owner (Thomas Johansen — P0-4) |
 
 ---
 
@@ -488,11 +488,11 @@ npm run test:golden-path
 | Field | Value |
 |-------|-------|
 | **Recommendation** | **CONDITIONAL GO** |
-| **Required fixes before live** | P0-4 and P0-5 (§17); P0-1 **CLOSED**; P0-2 **CLOSED**; P0-3 **CLOSED** |
+| **Required fixes before live** | P0-5 (§17); P0-1 **CLOSED**; P0-2 **CLOSED**; P0-3 **CLOSED**; P0-4 **CLOSED** |
 | **Required manual smoke** | §9 full checklist on Production target — **P0-2 CLOSED** (`docs/launch/p0-2-production-manual-smoke-evidence.md`) |
 | **Required credentials** | `E2E_EMPLOYEE_*` **verified** (P0-1 closed) + provider admin for publish/orders |
 | **Postponed** | G5d.8, cutover, all Production `LP_MENU_PROFILE_*` ON |
-| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☑ Full manual smoke (P0-2) ☑ Env audit (P0-3) ☑ Flags OFF ☐ Golden Path PASS ☐ On-call ☐ Comms template ready |
+| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☑ Full manual smoke (P0-2) ☑ Env audit (P0-3) ☑ On-call (P0-4) ☑ Flags OFF ☐ Golden Path PASS ☐ Comms template ready |
 
 **Final GO** requires owner sign-off after P0 closure — not automatic from this document alone.
 
@@ -508,6 +508,7 @@ npm run test:golden-path
 - `scripts/ci/guard-protected-golden-path.mjs`
 - `lib/menu-profile/featureFlag.ts`
 - `docs/launch/p0-1-employee-smoke-evidence.md`
+- `docs/launch/p0-4-on-call-roster-evidence.md`
 
 ---
 
