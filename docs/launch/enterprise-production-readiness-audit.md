@@ -31,9 +31,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Decision** | **READY_FOR_FINAL_GO_REVIEW** |
-| **Launch date readiness** | Target ~1 week is **achievable** after owner final GO sign-off. Code/contracts are RC-ready; P0 operational proof is **complete** (P0-1..P0-5 CLOSED). |
-| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags are designed OFF-by-default. **P0-1 CLOSED** — `docs/launch/p0-1-employee-smoke-evidence.md`. **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md`. **P0-3 CLOSED** — `docs/launch/p0-3-production-env-signoff-evidence.md` (2026-07-01). **P0-4 CLOSED** — `docs/launch/p0-4-on-call-roster-evidence.md` (2026-07-01). **P0-5 CLOSED** — `docs/launch/p0-5-cross-tenant-negative-test-evidence.md` (2026-07-01). **Not automatic full GO** — owner final review required. |
+| **Decision** | **FINAL GO — Launch approved** |
+| **Launch date readiness** | **Launch approved by owner** (Thomas Johansen, 2026-07-01). P0 operational proof **complete** (P0-1..P0-5 CLOSED). Operate 48-hour launch watch per P0-4. |
+| **Rationale** | Golden Path contract suite is green in repo gates. Protected path is locked. All menu-profile runtime flags remain **OFF/unset**. **P0-1 CLOSED** — `docs/launch/p0-1-employee-smoke-evidence.md`. **P0-2 CLOSED** — `docs/launch/p0-2-production-manual-smoke-evidence.md`. **P0-3 CLOSED** — `docs/launch/p0-3-production-env-signoff-evidence.md`. **P0-4 CLOSED** — `docs/launch/p0-4-on-call-roster-evidence.md`. **P0-5 CLOSED** — `docs/launch/p0-5-cross-tenant-negative-test-evidence.md`. **Owner FINAL GO** — `docs/launch/final-go-owner-decision.md` (2026-07-01). **Safety locks unchanged:** no G5d.8 · no runtime cutover · no source-of-truth switch · no auto-rollout · no Production `LP_MENU_PROFILE_*` activation. |
 
 ### Top 5 launch blockers (P0)
 
@@ -487,14 +487,15 @@ npm run test:golden-path
 
 | Field | Value |
 |-------|-------|
-| **Recommendation** | **READY_FOR_FINAL_GO_REVIEW** |
+| **Recommendation** | **FINAL GO — Launch approved** |
+| **Owner decision record** | `docs/launch/final-go-owner-decision.md` (Thomas Johansen, 2026-07-01) |
 | **Required fixes before live** | P0-1 **CLOSED**; P0-2 **CLOSED**; P0-3 **CLOSED**; P0-4 **CLOSED**; P0-5 **CLOSED** (§17) |
 | **Required manual smoke** | §9 full checklist on Production target — **P0-2 CLOSED** (`docs/launch/p0-2-production-manual-smoke-evidence.md`) |
 | **Required credentials** | `E2E_EMPLOYEE_*` **verified** (P0-1 closed) + provider admin for publish/orders |
-| **Postponed** | G5d.8, cutover, all Production `LP_MENU_PROFILE_*` ON |
-| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☑ Full manual smoke (P0-2) ☑ Env audit (P0-3) ☑ On-call (P0-4) ☑ Cross-tenant negative test (P0-5) ☑ Flags OFF ☑ Golden Path PASS ☐ Comms template ready ☐ Owner final GO |
+| **Postponed (not approved by FINAL GO)** | G5d.8 · runtime cutover · source-of-truth switch · auto-rollout · all Production `LP_MENU_PROFILE_*` ON · full Tripletex automation at scale |
+| **Owner checklist** | ☑ P0-1 employee creds + `/api/week` smoke ☑ Full manual smoke (P0-2) ☑ Env audit (P0-3) ☑ On-call (P0-4) ☑ Cross-tenant negative test (P0-5) ☑ Flags OFF ☑ Golden Path PASS ☑ Owner final GO (`docs/launch/final-go-owner-decision.md`) ☐ Comms template ready |
 
-**Final GO** requires owner sign-off after P0 closure — **READY_FOR_FINAL_GO_REVIEW** is not automatic full GO.
+**FINAL GO** is owner launch approval only — **not** runtime cutover, source-of-truth switch, auto-rollout, or Production feature flag activation.
 
 ---
 
@@ -510,6 +511,7 @@ npm run test:golden-path
 - `docs/launch/p0-1-employee-smoke-evidence.md`
 - `docs/launch/p0-4-on-call-roster-evidence.md`
 - `docs/launch/p0-5-cross-tenant-negative-test-evidence.md`
+- `docs/launch/final-go-owner-decision.md`
 
 ---
 
