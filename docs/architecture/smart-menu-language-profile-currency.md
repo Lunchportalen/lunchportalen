@@ -226,42 +226,75 @@ SMART-MENU extends ADR-019 with an explicit **provider-approved translation laye
 
 ---
 
-## 5. Translation data model proposal (SMART-1)
+## 5. Translation data model — SMART-1 implemented (storage + RLS only)
 
-**Hybrid model (recommended):**
+**Hybrid model (locked):**
 
 | Store | Role |
 |-------|------|
 | **Sanity** | Original provider text for menu days, items, catalog labels |
 | **Postgres** | Approved translations, status, RLS, audit trail |
 
-### Proposed table: `menu_content_translations`
+**Migration:** `supabase/migrations/20260728120000_menu_content_translations.sql`  
+**Pure helpers:** `lib/smart-menu/translationStatus.ts` (hash + employee visibility contract — no runtime wiring)
+
+### Table: `menu_content_translations`
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | uuid PK | |
-| `provider_id` | uuid NOT NULL | Tenant scope |
-| `source_kind` | enum/text | `menu_day`, `menu_day_item`, `category_label`, `allergen_label` |
+| `provider_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE |
+| `source_kind` | text NOT NULL | CHECK: `menu_day`, `menu_day_item`, `category_label`, `allergen_label` |
 | `source_ref` | text NOT NULL | Stable ref (Sanity id, slug, or composite key) |
-| `field` | enum/text | `title`, `description`, `label` |
-| `locale` | text NOT NULL | BCP-47 / app locale |
-| `original_text` | text NOT NULL | Snapshot at last provider edit |
-| `original_text_hash` | text NOT NULL | Hash for stale detection |
-| `translated_text` | text | Nullable until approved |
-| `status` | enum/text | `missing`, `draft`, `suggested`, `approved`, `rejected`, `stale` |
-| `approved_by` | uuid NULL | Provider user |
-| `approved_at` | timestamptz NULL | |
+| `field` | text NOT NULL | CHECK: `title`, `description`, `label` |
+| `locale` | text NOT NULL | CHECK: nine `APP_LOCALES` short codes (`nb`, `en`, …) |
+| `original_text` | text NOT NULL | Snapshot at provider edit |
+| `original_text_hash` | text NOT NULL | `sha256:` digest for stale detection |
+| `translated_text` | text NULL | Nullable until approved |
+| `status` | text NOT NULL DEFAULT `missing` | CHECK: `missing`, `draft`, `suggested`, `approved`, `rejected`, `stale` |
+| `approved_by` | uuid NULL | FK → `auth.users(id)` ON DELETE SET NULL; required when `status = approved` |
+| `approved_at` | timestamptz NULL | Required when `status = approved` |
 | `created_at` | timestamptz | |
-| `updated_at` | timestamptz | |
+| `updated_at` | timestamptz | `tg_set_updated_at()` trigger |
 
 **Unique constraint:** `(provider_id, source_kind, source_ref, field, locale)`
 
+**Indexes:** `provider_id`; `(provider_id, locale, status)`; `(provider_id, source_kind, source_ref)`; partial `(provider_id, locale, status) WHERE status = 'approved'`
+
+### RLS principles (SMART-1)
+
+| Actor | Access |
+|-------|--------|
+| `service_role` | ALL (future server read model in SMART-3) |
+| Platform admin | ALL via `is_platform_admin()` |
+| Provider member | SELECT own `provider_id` via `can_access_provider()` |
+| Provider admin | INSERT/UPDATE own `provider_id` via `provider_admin` membership |
+| Employee | **No direct table access** — no employee policy; outsider SELECT returns zero rows |
+| `anon` | REVOKED |
+
+**No DELETE** for authenticated — lifecycle via `status` only.
+
+### Employee direct access: denied
+
+Employees must **never** query `menu_content_translations` directly. Future SMART-3 approved overlay is **server read model only** (`service_role` + `isEmployeeVisibleTranslation()` filter).
+
 ### Stale policy
 
-- When Sanity/original text changes, recompute `original_text_hash`
+- When Sanity/original text changes, recompute `original_text_hash` via `hashOriginalText()`
 - If stored hash ≠ current hash → mark row `stale`
 - Employee sees **original provider text** until provider reapproves
-- **Recommended default:** stale approved translations are **hidden** from employee (original shown, no warning banner in v1)
+- **Default:** stale approved translations are **hidden** from employee (`isEmployeeVisibleTranslation` requires `approved` + hash match)
+
+### SMART-1 non-goals (still locked)
+
+- No provider approval API/UI (SMART-2)
+- No employee `/week` overlay (SMART-3)
+- No LocaleSwitcher re-enable
+- No order write path changes
+- No `LP_MENU_PROFILE_*` activation
+- No G5d.8 / cutover / source-of-truth switch / auto-rollout
+
+**Next phase:** SMART-2 — provider translation approval API/UI (explicit owner GO required)
 
 ---
 
@@ -347,8 +380,8 @@ Orders **never** use:
 
 | Phase | Scope | Runtime | DB/RLS | Flags | Golden Path risk | Gates |
 |-------|-------|---------|--------|-------|------------------|-------|
-| **SMART-0** | This doc + invariant tests | None | None | None | None | typecheck, lint, governance tests, golden-path |
-| **SMART-1** | Translation table design + RLS spec + migration | None until GO | Yes (design + migration) | None | Low if read-only | + migration review |
+| **SMART-0** | Design doc + invariant tests | None | None | None | None | **Merged** PR #390 |
+| **SMART-1** | `menu_content_translations` migration + RLS + pure helpers + governance tests | **None** | Yes — migration only | None | Low | migration review, governance tests |
 | **SMART-2** | Provider approval API + UI | Provider routes | RLS enforce | None | Low | + provider E2E |
 | **SMART-3** | Employee approved overlay in `/week` read model; re-enable LocaleSwitcher with honest behavior | Employee read | Read approved only | None | **Medium** — touch `/week` | golden-path, week-visual |
 | **SMART-4** | Provider menu profile selection for future publish | Provider admin | `menu_profile_id` write | `LP_MENU_PROFILE_*` per phase GO | **Medium** — publish path | publish shadow tests |
@@ -394,7 +427,7 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 
 | Topic | Options | Recommended default |
 |-------|---------|---------------------|
-| Exact enum names | `source_kind`, `status` values | As proposed in §5; finalize in SMART-1 |
+| Exact enum names | `source_kind`, `status` values | **Locked in SMART-1** migration CHECK constraints |
 | `supported_employee_locales` storage | `provider_settings` JSON vs separate table | Defer to SMART-2 |
 | Company override field name | `agreement.menu_profile_id` vs company settings | Defer to SMART-4 |
 | AI suggestions in SMART-2 vs later | Provider UI with/without AI draft | Defer — manual draft minimum |
@@ -404,13 +437,15 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 
 ## 14. Recommendation
 
-**SMART-0 is complete when:**
+**SMART-0:** merged (PR #390 @ `0ba9c0a8`).
 
-- This document is merged on `main`
-- `tests/governance/smart-menu-architecture-invariants.test.ts` passes
-- Existing language-menu separation and Golden Path tests pass
-- No runtime, DB, flag, or Production changes ship in the same PR
+**SMART-1 is complete when:**
 
-**Do not start SMART-1, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-0 merge.**
+- Migration `20260728120000_menu_content_translations.sql` is merged on `main`
+- `tests/governance/smart-menu-translation-model-contracts.test.ts` passes
+- Existing smart-menu architecture, language-menu separation, and Golden Path tests pass
+- No `/week`, order write, provider approval UI, or employee overlay runtime ships in the same PR
 
-**READY FOR SMART-1 only after SMART-0 is merged and owner gives explicit GO.**
+**Do not start SMART-2, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-1 merge.**
+
+**READY FOR SMART-2 only after SMART-1 is merged and owner gives explicit GO.**

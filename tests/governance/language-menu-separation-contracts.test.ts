@@ -287,3 +287,21 @@ describe("language-menu separation — SMART-0 architecture doc reference", () =
     ).toBe(true);
   });
 });
+
+describe("language-menu separation — SMART-1 translation model reference", () => {
+  const MIGRATION = "supabase/migrations/20260728120000_menu_content_translations.sql";
+
+  test("SMART-1 migration exists and denies employee runtime wiring", () => {
+    expect(fs.existsSync(path.join(ROOT, MIGRATION))).toBe(true);
+    const sql = readSource(MIGRATION);
+    expect(sql).toMatch(/menu_content_translations/);
+    expect(sql).toMatch(/Not read by employee runtime|future SMART-3 server read model/i);
+    expect(sql).toMatch(/ENABLE ROW LEVEL SECURITY/i);
+  });
+
+  test("SMART-1 translation model governance tests exist", () => {
+    expect(
+      fs.existsSync(path.join(ROOT, "tests/governance/smart-menu-translation-model-contracts.test.ts")),
+    ).toBe(true);
+  });
+});
