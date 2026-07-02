@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-06-23T09:10:03.207Z",
+  "generated_at": "2026-07-02T21:14:22.073Z",
   "project_ref": "hkpokyapzarefrgqzkos",
   "postgres_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
   "policies": [
@@ -1731,6 +1731,66 @@
     },
     {
       "schema": "public",
+      "table": "menu_content_translations",
+      "name": "menu_content_translations_insert_provider_admin",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = menu_content_translations.provider_id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_content_translations",
+      "name": "menu_content_translations_select_provider_scope",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_content_translations",
+      "name": "menu_content_translations_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_content_translations",
+      "name": "menu_content_translations_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "menu_content_translations",
+      "name": "menu_content_translations_update_provider_admin",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = menu_content_translations.provider_id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "check_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = menu_content_translations.provider_id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "menu_service_day_items",
       "name": "menu_service_day_items_manage",
       "command": "ALL",
@@ -2385,6 +2445,66 @@
       "roles": [],
       "using_expr": "is_platform_admin()",
       "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_menu_profile_runtime_mapping_drafts",
+      "name": "provider_menu_profile_runtime_mapping_drafts_insert_provider_ad",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "((EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_menu_profile_runtime_mapping_drafts.provider_id) AND (pm.role = 'provider_admin'::provider_role)))) AND (created_by = auth.uid()) AND (updated_by = auth.uid()))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_menu_profile_runtime_mapping_drafts",
+      "name": "provider_menu_profile_runtime_mapping_drafts_select_provider_sc",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_menu_profile_runtime_mapping_drafts",
+      "name": "provider_menu_profile_runtime_mapping_drafts_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_menu_profile_runtime_mapping_drafts",
+      "name": "provider_menu_profile_runtime_mapping_drafts_superadmin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_menu_profile_runtime_mapping_drafts",
+      "name": "provider_menu_profile_runtime_mapping_drafts_update_provider_ad",
+      "command": "UPDATE",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_menu_profile_runtime_mapping_drafts.provider_id) AND (pm.role = 'provider_admin'::provider_role))))",
+      "check_expr": "((EXISTS ( SELECT 1\n   FROM provider_memberships pm\n  WHERE ((pm.user_id = auth.uid()) AND (pm.provider_id = provider_menu_profile_runtime_mapping_drafts.provider_id) AND (pm.role = 'provider_admin'::provider_role)))) AND (updated_by = auth.uid()))",
       "permissive": true
     },
     {
@@ -3858,6 +3978,11 @@
     },
     {
       "schema": "public",
+      "name": "menu_content_translations",
+      "policy_count": 5
+    },
+    {
+      "schema": "public",
       "name": "menu_service_day_items",
       "policy_count": 2
     },
@@ -3970,6 +4095,11 @@
       "schema": "public",
       "name": "provider_memberships",
       "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "provider_menu_profile_runtime_mapping_drafts",
+      "policy_count": 5
     },
     {
       "schema": "public",

@@ -36,8 +36,16 @@ describe("SMART-1 — db evidence housekeeping", () => {
     const doc = read(EVIDENCE);
     expect(doc).toMatch(/staging/u);
     expect(doc).toMatch(/production/u);
-    expect(doc).toMatch(/waiting|pending/i);
+    expect(doc).toMatch(/28614693722/);
+    expect(doc).toMatch(/success/i);
     expect(doc).toMatch(/SMART-2.*Not started|not started/i);
+  });
+
+  test("evidence documents RLS golden snapshot refresh for menu_content_translations", () => {
+    const doc = read(EVIDENCE);
+    expect(doc).toMatch(/golden-rls-snapshot\.json/);
+    expect(doc).toMatch(/menu_content_translations_select_provider_scope/);
+    expect(doc).toMatch(/check:rls-drift/);
   });
 
   test("evidence contains no secrets", () => {
