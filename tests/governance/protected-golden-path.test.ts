@@ -211,3 +211,28 @@ describe("Protected Golden Path — contract locks (no runtime changes)", () => 
     expect(fs.existsSync(path.join(ROOT, "tests/providers/providerProductionCutoff.test.ts"))).toBe(true);
   });
 });
+
+describe("Protected Golden Path — SMART-1 additive migration (metadata only)", () => {
+  const SMART1_MIGRATION = "supabase/migrations/20260728120000_menu_content_translations.sql";
+
+  it("menu_content_translations migration is additive metadata only — no Golden Path runtime wiring", () => {
+    expect(fs.existsSync(path.join(ROOT, SMART1_MIGRATION))).toBe(true);
+    const sql = readSource(SMART1_MIGRATION);
+    expect(sql).toMatch(/menu_content_translations/);
+    expect(sql).toMatch(/Not read by employee runtime/i);
+    expect(sql).not.toMatch(/lp_order_set/);
+    expect(sql).not.toMatch(/menuDayPayload/);
+    expect(sql).not.toMatch(/syncMenuServiceDayItems/);
+    for (const route of [
+      "app/api/week/route.ts",
+      "app/api/order/window/route.ts",
+      "app/api/orders/set/route.ts",
+    ]) {
+      const src = readSource(route);
+      expect(src, `${route} must not reference menu_content_translations`).not.toMatch(
+        /menu_content_translations/,
+      );
+    }
+    expect(readSource("lib/orders/rpcWrite.ts")).not.toMatch(/menu_content_translations/);
+  });
+});

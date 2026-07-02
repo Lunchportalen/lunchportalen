@@ -159,9 +159,16 @@ describe("SMART-0 — smart-menu architecture design doc", () => {
     }
   });
 
-  test("design doc ends with SMART-1 gate — explicit owner GO", () => {
+  test("design doc documents SMART-1 migration without live employee translations", () => {
     const doc = readDoc();
-    expect(doc).toMatch(/READY FOR SMART-1 only after SMART-0 is merged/i);
+    expect(doc).toMatch(/20260728120000_menu_content_translations\.sql/);
+    expect(doc).toMatch(/Employee direct access: denied|No direct table access/i);
+    expect(doc).not.toMatch(/employee translations are live/i);
+  });
+
+  test("design doc ends with next-phase gate — explicit owner GO", () => {
+    const doc = readDoc();
+    expect(doc).toMatch(/READY FOR SMART-[12] only after SMART-[01] is merged/i);
     expect(doc).toMatch(/explicit GO/i);
   });
 
