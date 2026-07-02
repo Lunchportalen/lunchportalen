@@ -268,3 +268,22 @@ describe("language-menu separation — feature flag safety", () => {
     expect(presentationSrc).toContain("return { active: false }");
   });
 });
+
+describe("language-menu separation — SMART-0 architecture doc reference", () => {
+  const SMART_MENU_DOC = "docs/architecture/smart-menu-language-profile-currency.md";
+
+  test("SMART-0 design doc exists and declares PR #389 superseded", () => {
+    expect(fs.existsSync(path.join(ROOT, SMART_MENU_DOC))).toBe(true);
+    const doc = readSource(SMART_MENU_DOC);
+    expect(doc).toMatch(/PR #389/);
+    expect(doc).toMatch(/superseded|Superseded/i);
+    expect(doc).toMatch(/SMART-MENU/);
+    expect(doc).toMatch(/no runtime implementation/i);
+  });
+
+  test("SMART-0 invariant tests file exists", () => {
+    expect(
+      fs.existsSync(path.join(ROOT, "tests/governance/smart-menu-architecture-invariants.test.ts")),
+    ).toBe(true);
+  });
+});
