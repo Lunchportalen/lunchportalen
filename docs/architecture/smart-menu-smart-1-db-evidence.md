@@ -1,7 +1,8 @@
 # SMART-1 — Database evidence (housekeeping)
 
-**Status:** Housekeeping archived — staging verified; production migrate pending owner approval  
-**Date:** 2026-07-02  
+**Status:** Housekeeping archived — staging and production verified; RLS golden snapshot refreshed  
+**Date:** 2026-07-02 (updated after prod migrate approval)  
+**Housekeeping merge (PR #392):** `c6358828b6db29a651c7b8bea7b907d824cb3b6c`  
 **SMART-1 merge:** `7eaf0fb35181ddda3a08e244b83084c05b1b8884` (PR #391)  
 **Migration:** `supabase/migrations/20260728120000_menu_content_translations.sql`
 
@@ -52,11 +53,22 @@ Triggered on push to `main` at SMART-1 merge:
 
 | Run ID | Event | HEAD SHA | Status |
 |--------|-------|----------|--------|
-| [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722) | `push` | `7eaf0fb3…` | **waiting** |
+| [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722) | `push` | `7eaf0fb3…` | **success** |
 
-**Blocker:** GitHub Actions `environment: production` deployment approval required. Staging job on this run was **skipped** (push-only prod path).
+| Step | Result |
+|------|--------|
+| Production environment approval | **approved** (2026-07-02) — SMART-1 migration only |
+| Preflight dry-run | **PASS** |
+| Apply migrations (`20260728120000_menu_content_translations.sql`) | **PASS** |
+| Verify migration in `schema_migrations` | **PASS** |
+| Verify DB contracts | **PASS** |
+| Smoke tests (prod) | **PASS** |
+| Typegen (prod) | **PASS** — artifact `typegen=ok` |
+| Evidence artifact | **uploaded** — `evidence-prod-7eaf0fb35181ddda3a08e244b83084c05b1b8884` |
 
-**Production conclusion:** migration **not yet applied** on prod. Owner must approve Production environment deployment to complete prod migrate + prod evidence + prod typegen artifact.
+Pre-approval verification: push diff contained **only** `supabase/migrations/20260728120000_menu_content_translations.sql` (no unexpected migrations, no env/flag changes).
+
+**Production conclusion:** migrate apply, verify, contracts, smoke, typegen, and evidence **PASS** on prod.
 
 ---
 
@@ -65,33 +77,35 @@ Triggered on push to `main` at SMART-1 merge:
 | Item | Status |
 |------|--------|
 | CI typegen on staging | **PASS** — see artifact `typegen/supabase.types.ts` |
-| Repo `lib/types/database.ts` | **UPDATED** (housekeeping) — strict `MenuContentTranslationsTable` with all SMART-1 columns |
+| CI typegen on prod (run 28614693722) | **PASS** — artifact `typegen=ok`; table in `typegen/supabase.types.ts` |
+| Repo `lib/types/database.ts` | **UPDATED** (PR #392 on main) — strict `MenuContentTranslationsTable`; workflow did **not** commit a new typegen file |
 | Runtime imports of table type | **None** — no employee/provider runtime wiring |
 
 Required columns present in Row type: `id`, `provider_id`, `source_kind`, `source_ref`, `field`, `locale`, `original_text`, `original_text_hash`, `translated_text`, `status`, `approved_by`, `approved_at`, `created_at`, `updated_at`.
 
 ---
 
-## 4. Target DB table verify (staging uigx)
+## 4. Target DB table verify
 
 Verified via:
 
-1. PR #391 CI `db-push.log` + schema_migrations verify step  
-2. Integration probe: `RUN_SUPABASE_INTEGRATION_TESTS=1` — `table exists when migration is applied` **PASS**  
-3. Static migration contract tests (`tests/lib/smart-menu/menuContentTranslationsMigration.test.ts`)
+1. PR #391 CI `db-push.log` + schema_migrations verify (staging)  
+2. Prod workflow run 28614693722 apply + verify steps (production)  
+3. Integration probe: `RUN_SUPABASE_INTEGRATION_TESTS=1` — `table exists when migration is applied` **PASS** (staging target in harness)  
+4. Static migration contract tests (`tests/lib/smart-menu/menuContentTranslationsMigration.test.ts`)  
+5. Refreshed RLS golden snapshot against prod ref `hkpokyapzarefrgqzkos` (§6)
 
 | Property | Staging (uigx) | Production |
 |----------|----------------|------------|
-| Table `public.menu_content_translations` exists | **yes** | **pending** (prod migrate waiting) |
-| RLS enabled | **yes** (migration) | **pending** |
-| Anon access revoked | **yes** (migration `REVOKE ALL … FROM PUBLIC, anon`) | **pending** |
-| No broad authenticated SELECT | **yes** — provider-scoped + superadmin + service_role only | **pending** |
-| Provider-scoped policies | **yes** — `select_provider_scope`, `insert_provider_admin`, `update_provider_admin` | **pending** |
-| Employee direct access | **denied** — no employee/company policy; outsider SELECT returns 0 rows (integration table-exists PASS; behavioral suite skipped — see §5) | **pending** |
-| `menu_content_translations_approved_lookup_idx` | **yes** (partial index in migration) | **pending** |
-| CHECK / UNIQUE constraints | **yes** (migration) | **pending** |
-
-Local Postgres introspection script was **not** used in evidence (SSL cert chain failure against pooler from dev machine). CI + integration table probe are authoritative for staging.
+| Table `public.menu_content_translations` exists | **yes** | **yes** |
+| RLS enabled | **yes** | **yes** — `policy_count: 5` in golden snapshot |
+| Anon access revoked | **yes** | **yes** — migration `REVOKE ALL … FROM PUBLIC, anon` |
+| No broad authenticated SELECT | **yes** | **yes** — `can_access_provider(provider_id)` on SELECT |
+| Provider-scoped policies | **yes** | **yes** — `select_provider_scope`, `insert_provider_admin`, `update_provider_admin` |
+| Employee direct access | **denied** | **denied** — no employee/company policy; no `using true` for authenticated |
+| `menu_content_translations_approved_lookup_idx` | **yes** | **yes** (migration partial index) |
+| CHECK / UNIQUE constraints | **yes** | **yes** (migration) |
+| DELETE for authenticated | **denied** | **denied** — no DELETE policy for authenticated |
 
 ---
 
@@ -105,10 +119,10 @@ RUN_SUPABASE_INTEGRATION_TESTS=1 npx vitest run tests/db/menu-content-translatio
 
 | Result | Detail |
 |--------|--------|
-| **1 passed, 7 skipped** | `table exists when migration is applied` **PASS** on staging |
-| Skipped behavioral tests | Vitest `test.skipIf(!tableReady)` evaluated at collection time before `beforeAll` sets `tableReady=true` — known test harness limitation; static migration RLS contracts + staging CI evidence cover policy intent |
+| **1 passed, 7 skipped** | `table exists when migration is applied` **PASS** (2026-07-02 re-run) |
+| Skipped behavioral tests | Vitest `test.skipIf(!tableReady)` evaluated at collection time before `beforeAll` sets `tableReady=true` — **7 behavioral tests still skipped**; do not report as PASS |
 
-**Not a SMART-2 blocker** if prod migrate + golden snapshot are still pending; behavioral integration should be re-run after fixing skip pattern or using `describe.runIf` in a future test-only PR.
+Behavioral integration (provider scope, employee deny, CHECK, DELETE deny) **not executed** due to harness timing. Static migration contracts + prod RLS golden snapshot are authoritative for policy shape until a test-only PR fixes `describe.runIf` / lazy skip.
 
 ---
 
@@ -116,9 +130,21 @@ RUN_SUPABASE_INTEGRATION_TESTS=1 npx vitest run tests/db/menu-content-translatio
 
 | Item | Status |
 |------|--------|
-| `tests/rls/golden-rls-snapshot.json` | **Not updated** — pinned to prod ref `hkpokyapzarefrgqzkos`; prod migration not applied |
-| `npm run rls:snapshot` | **Deferred** until prod migrate completes and owner runs snapshot against prod |
-| Drift guard | **N/A for SMART-1 table** until prod policies exist |
+| `tests/rls/golden-rls-snapshot.json` | **UPDATED** (2026-07-02) — `generated_at` after prod migrate; includes `menu_content_translations` (5 policies) |
+| `npm run rls:snapshot` | **PASS** — 259 policies, 48 private functions, 147 RLS-enabled tables @ `hkpokyapzarefrgqzkos` |
+| `npm run check:rls-drift` | **PASS** — golden vs live match (2026-07-02) |
+
+Captured `menu_content_translations` policies (prod):
+
+| Policy | Command | Roles | Scope |
+|--------|---------|-------|-------|
+| `menu_content_translations_service_role_all` | ALL | `service_role` | service bypass |
+| `menu_content_translations_superadmin_all` | ALL | `authenticated` | `is_platform_admin()` |
+| `menu_content_translations_select_provider_scope` | SELECT | `authenticated` | `can_access_provider(provider_id)` |
+| `menu_content_translations_insert_provider_admin` | INSERT | `authenticated` | provider_admin membership check |
+| `menu_content_translations_update_provider_admin` | UPDATE | `authenticated` | provider_admin membership check |
+
+No anon policies. No authenticated DELETE policy. No employee direct SELECT policy.
 
 ---
 
@@ -141,12 +167,16 @@ RUN_SUPABASE_INTEGRATION_TESTS=1 npx vitest run tests/db/menu-content-translatio
 | Gate | Ready? |
 |------|--------|
 | Staging migration + typegen evidence | **yes** |
-| Repo types include `menu_content_translations` | **yes** (this housekeeping PR) |
-| Production migration applied | **no** — approve run [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722) |
-| RLS golden snapshot includes new policies | **no** — after prod migrate |
-| Full integration RLS behavioral suite | **partial** — table exists; 7 tests skipped (harness) |
+| Production migration applied | **yes** — run [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722) |
+| Repo types include `menu_content_translations` | **yes** (PR #392 on main) |
+| RLS golden snapshot includes new policies | **yes** — pending merge of prod RLS evidence PR |
+| RLS drift guard green | **yes** (local, post-snapshot) |
+| Full integration RLS behavioral suite | **no** — 7 tests skipped (harness); needs test-only fix |
+| Employee translation runtime | **no** — not started |
+| Provider approval API/UI | **no** — not started |
+| Flags / G5d.8 / cutover | **no** — not started |
 
-**Recommendation:** SMART-2 **design/API work** may proceed against staging uigx with repo types; **production cutover** and **RLS drift parity** remain blocked until prod migrate + snapshot refresh.
+**Recommendation:** Owner may give explicit GO for **SMART-2 provider-side API/storage work** against verified prod schema + RLS snapshot. Do **not** start employee overlay, flags, cutover, or PR #389 merge without separate owner GO.
 
 ---
 

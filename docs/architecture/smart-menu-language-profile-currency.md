@@ -447,7 +447,7 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 - Existing smart-menu architecture, language-menu separation, and Golden Path tests pass
 - No `/week`, order write, provider approval UI, or employee overlay runtime ships in the same PR
 
-**SMART-1 DB housekeeping:** see [smart-menu-smart-1-db-evidence.md](./smart-menu-smart-1-db-evidence.md). Staging (uigx) migrate + typegen verified; production migrate run [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722) awaits owner Production environment approval. Employee translations are **not** live.
+**SMART-1 DB housekeeping:** see [smart-menu-smart-1-db-evidence.md](./smart-menu-smart-1-db-evidence.md). Staging (uigx) and production migrate verified (run [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722)); RLS golden snapshot refreshed. Employee translations are **not** live.
 
 **Do not start SMART-2, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-1 merge.**
 
