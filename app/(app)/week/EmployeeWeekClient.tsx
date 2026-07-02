@@ -2237,6 +2237,11 @@ export default function EmployeeWeekClient({
             Endringsfrist kl. 08:00
           </p>
         )}
+        {!readOnlyPreview ? (
+          <p className="mt-2 max-w-md text-sm leading-6 text-neutral-500" role="note">
+            Menyinnhold vises på leverandørens originalspråk. Språkvalg for ansatte kommer senere.
+          </p>
+        ) : null}
       </header>
 
       {!readOnlyPreview ? <WeekAllergenProfileCard /> : null}

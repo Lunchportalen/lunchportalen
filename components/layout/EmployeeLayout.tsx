@@ -18,6 +18,7 @@ export default function EmployeeLayout({ children }: { children: ReactNode }) {
         email={email}
         headerClassName={headerClassName}
         innerGridClassName={innerGridClassName}
+        showLocaleSwitcher={false}
       />
       <main className="lp-main">
         <div className="w-full">{children}</div>

@@ -204,6 +204,21 @@ describe("language-menu separation — employee forbidden commercial/runtime fie
   });
 });
 
+describe("language-menu separation — employee week language UX (PR B)", () => {
+  test("employee HeaderShell does not expose active LocaleSwitcher", () => {
+    const headerShell = readSource("components/nav/HeaderShell.tsx");
+    expect(headerShell).toContain('navVariantKey !== "employee"');
+    const headerView = readSource("components/nav/HeaderShellView.tsx");
+    expect(headerView).toMatch(/showLocaleSwitcher\s*\?\s*<LocaleSwitcher/);
+  });
+
+  test("employee week client does not promise translated menu content", () => {
+    const src = readSource("app/(app)/week/EmployeeWeekClient.tsx");
+    expect(src).toContain("leverandørens originalspråk");
+    expect(src).not.toMatch(/oversatt meny|translated menu/i);
+  });
+});
+
 describe("language-menu separation — feature flag safety", () => {
   const EMPTY_ENV = {};
 
