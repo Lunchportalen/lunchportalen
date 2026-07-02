@@ -169,6 +169,67 @@ type AiActionMemoryTable = {
   Relationships: [];
 };
 
+/** SMART-1 — provider-approved menu translation overlays (storage + RLS only). */
+type MenuContentTranslationsTable = {
+  Row: {
+    id: string;
+    provider_id: string;
+    source_kind: string;
+    source_ref: string;
+    field: string;
+    locale: string;
+    original_text: string;
+    original_text_hash: string;
+    translated_text: string | null;
+    status: string;
+    approved_by: string | null;
+    approved_at: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  Insert: {
+    id?: string;
+    provider_id: string;
+    source_kind: string;
+    source_ref: string;
+    field: string;
+    locale: string;
+    original_text: string;
+    original_text_hash: string;
+    translated_text?: string | null;
+    status?: string;
+    approved_by?: string | null;
+    approved_at?: string | null;
+    created_at?: string;
+    updated_at?: string;
+  };
+  Update: Partial<{
+    id: string;
+    provider_id: string;
+    source_kind: string;
+    source_ref: string;
+    field: string;
+    locale: string;
+    original_text: string;
+    original_text_hash: string;
+    translated_text: string | null;
+    status: string;
+    approved_by: string | null;
+    approved_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }>;
+  Relationships: [
+    {
+      foreignKeyName: "menu_content_translations_provider_id_fkey";
+      columns: ["provider_id"];
+      isOneToOne: false;
+      referencedRelation: "organizations";
+      referencedColumns: ["id"];
+    },
+  ];
+};
+
 const PUBLIC_TABLE_NAMES = [
   "ab_experiments",
   "ab_variants",
@@ -261,6 +322,7 @@ const PUBLIC_TABLE_NAMES = [
   "lp_user_allergens",
   "location_audit",
   "media_items",
+  "menu_content_translations",
   "menu_visibility_days",
   "order_outbox",
   "orders",
@@ -301,13 +363,15 @@ export type Database = {
     Tables: {
       [K in PublicTableName]: K extends "ai_action_memory"
         ? AiActionMemoryTable
-        : K extends "leads"
-          ? LeadsTable
-          : K extends "lp_user_allergens"
-            ? LpUserAllergensTable
-            : K extends "system_settings"
-              ? SystemSettingsTable
-              : LoosePublicTable;
+        : K extends "menu_content_translations"
+          ? MenuContentTranslationsTable
+          : K extends "leads"
+            ? LeadsTable
+            : K extends "lp_user_allergens"
+              ? LpUserAllergensTable
+              : K extends "system_settings"
+                ? SystemSettingsTable
+                : LoosePublicTable;
     };
     Views: {
       /**

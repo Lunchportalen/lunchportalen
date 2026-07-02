@@ -236,6 +236,7 @@ SMART-MENU extends ADR-019 with an explicit **provider-approved translation laye
 | **Postgres** | Approved translations, status, RLS, audit trail |
 
 **Migration:** `supabase/migrations/20260728120000_menu_content_translations.sql`  
+**DB evidence (housekeeping):** [smart-menu-smart-1-db-evidence.md](./smart-menu-smart-1-db-evidence.md) — staging migrate/typegen verified; prod migrate pending Production environment approval  
 **Pure helpers:** `lib/smart-menu/translationStatus.ts` (hash + employee visibility contract — no runtime wiring)
 
 ### Table: `menu_content_translations`
@@ -445,6 +446,8 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 - `tests/governance/smart-menu-translation-model-contracts.test.ts` passes
 - Existing smart-menu architecture, language-menu separation, and Golden Path tests pass
 - No `/week`, order write, provider approval UI, or employee overlay runtime ships in the same PR
+
+**SMART-1 DB housekeeping:** see [smart-menu-smart-1-db-evidence.md](./smart-menu-smart-1-db-evidence.md). Staging (uigx) migrate + typegen verified; production migrate run [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722) awaits owner Production environment approval. Employee translations are **not** live.
 
 **Do not start SMART-2, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-1 merge.**
 
