@@ -432,7 +432,7 @@ describe("EmployeeWeekClient in-card CTA (WeekDayCardMobile)", () => {
     expect(mobileStart).toBeGreaterThan(-1);
     expect(exportDefault).toBeGreaterThan(mobileStart);
     const mobileBlock = source.slice(mobileStart, exportDefault);
-    expect(mobileBlock).toContain('"Bestill lunsj"');
+    expect(mobileBlock).toContain('display.ui("actions.orderLunch")');
 
     expect(source).not.toContain("ds-week-sticky-safe-bottom");
     expect(source).not.toContain("stickyCtaForDay");

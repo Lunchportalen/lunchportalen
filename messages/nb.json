@@ -18,6 +18,74 @@
     "label": "Velg språk",
     "current": "Gjeldende språk: {language}"
   },
+  "employeeWeekView": {
+    "pageTitle": "Bestill eller avbestill lunsj",
+    "changeDeadlineSuffix": "Endringsfrist kl. 08:00",
+    "originalLanguageNotice": "Menyinnhold vises på leverandørens originalspråk. Språkvalg for ansatte kommer senere.",
+    "originalMealNotice": "Rettens navn og beskrivelse vises på leverandørens originalspråk.",
+    "upcomingDays": "Kommende dager",
+    "noMenu": "Ingen meny",
+    "noMenuYetForCategory": "Ingen meny lagt inn enda for {category}.",
+    "allergensHeading": "Allergener",
+    "allergenUnverifiedNotice": "Allergener ikke bekreftet — kontakt leverandør",
+    "containsAllergens": "Inneholder {list}",
+    "vegetarian": "Vegetar",
+    "thisWeek": "Denne uken",
+    "nextWeek": "Neste uke",
+    "categories": {
+      "paasmurt": "Påsmurt",
+      "salat": "Salatboks",
+      "salatboks": "Salatboks",
+      "sushi": "Sushi",
+      "pokebowl": "Poké bowl",
+      "thai": "Thaimat",
+      "thaimat": "Thaimat",
+      "varmrett": "Varmmat",
+      "varmmat": "Varmmat"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "hvete": "Gluten",
+      "melk": "Melk",
+      "egg": "Egg",
+      "fisk": "Fisk",
+      "skalldyr": "Skalldyr",
+      "krepsdyr": "Skalldyr",
+      "notter": "Nøtter",
+      "nøtter": "Nøtter",
+      "peanotter": "Peanøtter",
+      "peanøtter": "Peanøtter",
+      "soya": "Soya",
+      "selleri": "Selleri",
+      "sennep": "Sennep",
+      "sesam": "Sesam",
+      "sulfitter": "Sulfitter",
+      "sulfitt": "Sulfitter",
+      "lupin": "Lupin",
+      "blotdyr": "Bløtdyr",
+      "bløtdyr": "Bløtdyr"
+    },
+    "status": {
+      "ordered": "Bestilt",
+      "notOrdered": "Ikke bestilt",
+      "cancelled": "Avbestilt",
+      "cutoffPassed": "Frist passert",
+      "unavailable": "Ikke tilgjengelig"
+    },
+    "actions": {
+      "order": "Bestill",
+      "orderLunch": "Bestill lunsj",
+      "cancelLunch": "Avbestill lunsj",
+      "change": "Endre",
+      "confirm": "Bekreft",
+      "cancel": "Avbryt"
+    },
+    "errors": {
+      "menuNotPublished": "Menyen for valgt dag er ikke publisert ennå",
+      "menuItemsMissing": "Menyen er ikke ferdig klargjort — prøv igjen om litt",
+      "generic": "Noe gikk galt — prøv igjen"
+    }
+  },
   "provider": {
     "nav": {
       "dashboard": "Dashboard",

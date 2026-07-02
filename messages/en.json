@@ -18,6 +18,71 @@
     "label": "Choose language",
     "current": "Current language: {language}"
   },
+  "employeeWeekView": {
+    "pageTitle": "Order or cancel lunch",
+    "changeDeadlineSuffix": "Change deadline 08:00",
+    "originalLanguageNotice": "Menu content is shown in the provider's original language. Language choice for employees is coming later.",
+    "originalMealNotice": "Dish names and descriptions are shown in the provider's original language.",
+    "upcomingDays": "Upcoming days",
+    "noMenu": "No menu",
+    "noMenuYetForCategory": "No menu added yet for {category}.",
+    "allergensHeading": "Allergens",
+    "allergenUnverifiedNotice": "Allergens not confirmed — contact the provider",
+    "containsAllergens": "Contains {list}",
+    "vegetarian": "Vegetarian",
+    "thisWeek": "This week",
+    "nextWeek": "Next week",
+    "categories": {
+      "paasmurt": "Open sandwiches",
+      "salat": "Salad box",
+      "salatboks": "Salad box",
+      "sushi": "Sushi",
+      "pokebowl": "Poke bowl",
+      "thai": "Thai food",
+      "thaimat": "Thai food",
+      "varmrett": "Hot meal",
+      "varmmat": "Hot meal"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "hvete": "Gluten",
+      "melk": "Milk",
+      "egg": "Egg",
+      "fisk": "Fish",
+      "skalldyr": "Shellfish",
+      "krepsdyr": "Shellfish",
+      "notter": "Nuts",
+      "peanotter": "Peanuts",
+      "soya": "Soya",
+      "selleri": "Celery",
+      "sennep": "Mustard",
+      "sesam": "Sesame",
+      "sulfitter": "Sulphites",
+      "sulfitt": "Sulphites",
+      "lupin": "Lupin",
+      "blotdyr": "Molluscs"
+    },
+    "status": {
+      "ordered": "Ordered",
+      "notOrdered": "Not ordered",
+      "cancelled": "Cancelled",
+      "cutoffPassed": "Deadline passed",
+      "unavailable": "Unavailable"
+    },
+    "actions": {
+      "order": "Order",
+      "orderLunch": "Order lunch",
+      "cancelLunch": "Cancel lunch",
+      "change": "Change",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "menuNotPublished": "The menu for the selected day is not published yet",
+      "menuItemsMissing": "The menu is not ready yet — please try again shortly",
+      "generic": "Something went wrong — please try again"
+    }
+  },
   "provider": {
     "nav": {
       "dashboard": "Dashboard",

@@ -19,6 +19,9 @@ import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
 import { getMenuForDates, type MenuDay } from "@/lib/cms/menuDay";
 import { formatDateNO, formatMenuDateNO } from "@/lib/date/format";
 import { weekRangeISO } from "@/lib/date/week";
+import { LP_LOCALE_COOKIE, parseAppLocale } from "@/lib/i18n/middlewareLocale";
+import { loadProfilePreferredLocaleForRequest } from "@/lib/i18n/profileLocale";
+import { resolveAppLocale } from "@/lib/i18n/resolveAppLocale";
 import { supabaseServer } from "@/lib/supabase/server";
 import { systemRoleByEmail } from "@/lib/system/emails";
 import { hasSupabaseSsrAuthCookieInJar } from "@/lib/supabase/ssrSessionCookies";
@@ -406,7 +409,13 @@ function SuperadminWeekPreviewCard({
   );
 }
 
-function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: EmployeePreviewMode }) {
+function SuperadminEmployeePreviewSection({
+  previewMode,
+  displayLocale,
+}: {
+  previewMode: EmployeePreviewMode;
+  displayLocale: Awaited<ReturnType<typeof resolveEmployeeWeekDisplayLocaleForPage>>;
+}) {
   const tabs: { mode: EmployeePreviewMode; label: string; description: string }[] = [
     { mode: "basis", label: "Basis-demo", description: "Salatboks, Påsmurt og Varmmat" },
     { mode: "luxus", label: "Luxus-demo", description: "Alle seks kategorier" },
@@ -454,13 +463,17 @@ function SuperadminEmployeePreviewSection({ previewMode }: { previewMode: Employ
           billingHoldReason={null}
           previewMode={previewMode}
           readOnlyPreview
+          displayLocale={displayLocale}
         />
       </div>
     </section>
   );
 }
 
-async function renderSuperadminWeekPreview(previewMode: EmployeePreviewMode) {
+async function renderSuperadminWeekPreview(
+  previewMode: EmployeePreviewMode,
+  displayLocale: Awaited<ReturnType<typeof resolveEmployeeWeekDisplayLocaleForPage>>,
+) {
   const weekBlocks: SuperadminWeekBlock[] = [
     {
       title: "Denne uken",
@@ -562,10 +575,20 @@ async function renderSuperadminWeekPreview(previewMode: EmployeePreviewMode) {
           ))}
         </div>
 
-        <SuperadminEmployeePreviewSection previewMode={previewMode} />
+        <SuperadminEmployeePreviewSection previewMode={previewMode} displayLocale={displayLocale} />
       </div>
     </section>
   );
+}
+
+async function resolveEmployeeWeekDisplayLocaleForPage() {
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(LP_LOCALE_COOKIE)?.value ?? null;
+  let profileLocale: string | null = null;
+  if (!parseAppLocale(cookieValue)) {
+    profileLocale = (await loadProfilePreferredLocaleForRequest()) ?? null;
+  }
+  return resolveAppLocale({ cookie: cookieValue, profile: profileLocale });
 }
 
 export default async function EmployeeWeekPage({
@@ -593,8 +616,10 @@ export default async function EmployeeWeekPage({
   const metaRole = normalizeRoleDefaultEmployee((data.user.user_metadata as any)?.role);
   const role: Role = (emailRole ?? metaRole) as Role;
 
+  const employeeDisplayLocale = await resolveEmployeeWeekDisplayLocaleForPage();
+
   if (role === "superadmin") {
-    return renderSuperadminWeekPreview(employeePreviewMode);
+    return renderSuperadminWeekPreview(employeePreviewMode, employeeDisplayLocale);
   }
 
   await requireActiveAgreement();
@@ -635,7 +660,7 @@ export default async function EmployeeWeekPage({
             Allergenprofil
           </Link>
         </p>
-        <EmployeeWeekClient canAct={false} billingHoldReason={null} />
+        <EmployeeWeekClient canAct={false} billingHoldReason={null} displayLocale={employeeDisplayLocale} />
       </>
     );
   }
@@ -672,7 +697,7 @@ export default async function EmployeeWeekPage({
             Allergenprofil
           </Link>
         </p>
-        <EmployeeWeekClient canAct={false} billingHoldReason="Mangler service-konfigurasjon for firmaverifisering." />
+        <EmployeeWeekClient canAct={false} billingHoldReason="Mangler service-konfigurasjon for firmaverifisering." displayLocale={employeeDisplayLocale} />
       </>
     );
   }
@@ -719,7 +744,7 @@ export default async function EmployeeWeekPage({
             Allergenprofil
           </Link>
         </p>
-        <EmployeeWeekClient canAct={false} billingHoldReason="Kan ikke verifisere firmastatus akkurat nå." />
+        <EmployeeWeekClient canAct={false} billingHoldReason="Kan ikke verifisere firmastatus akkurat nå." displayLocale={employeeDisplayLocale} />
       </>
     );
   }
@@ -728,7 +753,7 @@ export default async function EmployeeWeekPage({
 
   return (
     <>
-      <EmployeeWeekClient canAct={hold.canAct} billingHoldReason={hold.reason} />
+      <EmployeeWeekClient canAct={hold.canAct} billingHoldReason={hold.reason} displayLocale={employeeDisplayLocale} />
     </>
   );
 }

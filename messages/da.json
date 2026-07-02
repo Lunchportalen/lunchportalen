@@ -18,6 +18,66 @@
     "label": "Vælg sprog",
     "current": "Aktuelt sprog: {language}"
   },
+  "employeeWeekView": {
+    "pageTitle": "Bestil eller afbestil frokost",
+    "changeDeadlineSuffix": "Ændringsfrist kl. 08:00",
+    "originalLanguageNotice": "Menuindhold vises på leverandørens originalsprog. Sprogvalg for medarbejdere kommer senere.",
+    "originalMealNotice": "Rettenavn og beskrivelse vises på leverandørens originalsprog.",
+    "upcomingDays": "Kommende dage",
+    "noMenu": "Ingen menu",
+    "noMenuYetForCategory": "Ingen menu tilføjet endnu for {category}.",
+    "allergensHeading": "Allergener",
+    "allergenUnverifiedNotice": "Allergener ikke bekræftet — kontakt leverandøren",
+    "containsAllergens": "Indeholder {list}",
+    "vegetarian": "Vegetar",
+    "thisWeek": "Denne uge",
+    "nextWeek": "Næste uge",
+    "categories": {
+      "paasmurt": "Smørrebrød",
+      "salat": "Salatboks",
+      "salatboks": "Salatboks",
+      "sushi": "Sushi",
+      "pokebowl": "Poke bowl",
+      "thai": "Thaimad",
+      "thaimat": "Thaimad",
+      "varmrett": "Varm ret",
+      "varmmat": "Varm ret"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "hvete": "Gluten",
+      "melk": "Mælk",
+      "egg": "Æg",
+      "fisk": "Fisk",
+      "skalldyr": "Skaldyr",
+      "krepsdyr": "Skaldyr",
+      "notter": "Nødder",
+      "peanotter": "Peanuts",
+      "soya": "Soja",
+      "selleri": "Selleri",
+      "sennep": "Sennep",
+      "sesam": "Sesam",
+      "sulfitter": "Sulfitter",
+      "sulfitt": "Sulfitter",
+      "lupin": "Lupin",
+      "blotdyr": "Bløddyr"
+    },
+    "status": {
+      "ordered": "Bestilt",
+      "notOrdered": "Ikke bestilt",
+      "cancelled": "Afbestilt",
+      "cutoffPassed": "Frist overskredet",
+      "unavailable": "Ikke tilgængelig"
+    },
+    "actions": {
+      "order": "Bestil",
+      "orderLunch": "Bestil frokost",
+      "cancelLunch": "Afbestil frokost",
+      "change": "Ret",
+      "confirm": "Bekræft",
+      "cancel": "Annuller"
+    }
+  },
   "provider": {
     "nav": {
       "dashboard": "Dashboard",

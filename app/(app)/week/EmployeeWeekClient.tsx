@@ -3,10 +3,17 @@
 import { CheckIcon, ClockIcon, Loader2, MinusIcon } from "lucide-react";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
-import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
 import { addDaysISO, isIsoDate, startOfWeekISO } from "@/lib/date/oslo";
+import {
+  createEmployeeWeekDisplayLabels,
+  resolveEmployeeWeekDisplayLocale,
+  type EmployeeWeekDisplayLabels,
+  type OrderStatusDisplayKey,
+} from "@/lib/i18n/employeeWeekDisplayLabels";
+import type { AppLocale } from "@/lib/i18n/middlewareLocale";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import {
   findRecommendedDateInWindow,
@@ -20,7 +27,6 @@ import {
 } from "@/lib/week/orderPatternsClient";
 import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCard";
 import WeekMenuNotificationToggle from "@/components/week/WeekMenuNotificationToggle";
-import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
 import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
 import { isWeekMenuComingSoon } from "@/lib/week/weekMenuReadiness";
 
@@ -28,6 +34,16 @@ const API_ORDER = "/api/order";
 
 /** STEG 8 — dekorativt livssyklus-ikon (1em, currentColor, aria-hidden). */
 const DS_WEEK_ICON_STROKE = 2;
+
+const EmployeeWeekDisplayContext = createContext<EmployeeWeekDisplayLabels | null>(null);
+
+function useEmployeeWeekDisplay(): EmployeeWeekDisplayLabels {
+  const ctx = useContext(EmployeeWeekDisplayContext);
+  if (!ctx) {
+    return createEmployeeWeekDisplayLabels("nb");
+  }
+  return ctx;
+}
 
 type DsWeekIconVariant = "clock" | "minus" | "check";
 
@@ -480,26 +496,35 @@ function selectedDayLabel(day: DayRow) {
   return formatMenuDateNO(day.date);
 }
 
-export function orderStatusLabel(day: DayRow) {
-  if (!day.isEnabled) return "Ikke tilgjengelig";
-  if (day.orderStatus === "ACTIVE") return "Bestilt";
-  if (day.orderStatus === "CANCELLED") return "Avbestilt";
-  if (day.isLocked && day.lockReason === "CUTOFF") return "Frist passert";
-  if (day.isLocked) return "Ikke tilgjengelig";
-  return "Ikke bestilt";
+export function resolveOrderStatusDisplayKey(day: DayRow): OrderStatusDisplayKey {
+  if (!day.isEnabled) return "unavailable";
+  if (day.orderStatus === "ACTIVE") return "ordered";
+  if (day.orderStatus === "CANCELLED") return "cancelled";
+  if (day.isLocked && day.lockReason === "CUTOFF") return "cutoff_passed";
+  if (day.isLocked) return "unavailable";
+  return "not_ordered";
 }
 
-export function statusPresentation(day: DayRow): { label: string; className: string } {
-  const label = orderStatusLabel(day);
+export function orderStatusLabel(day: DayRow, display?: EmployeeWeekDisplayLabels) {
+  const key = resolveOrderStatusDisplayKey(day);
+  return display?.status(key) ?? createEmployeeWeekDisplayLabels("nb").status(key);
+}
+
+export function statusPresentation(
+  day: DayRow,
+  display?: EmployeeWeekDisplayLabels,
+): { label: string; className: string } {
+  const key = resolveOrderStatusDisplayKey(day);
+  const label = orderStatusLabel(day, display);
   const base = "ds-week-status-pill";
 
-  if (label === "Bestilt") {
+  if (key === "ordered") {
     return { label, className: `${base} is-ordered` };
   }
-  if (label === "Ikke bestilt") {
-    return { label: "Ikke bestilt", className: `${base} is-open` };
+  if (key === "not_ordered") {
+    return { label, className: `${base} is-open` };
   }
-  if (label === "Avbestilt") {
+  if (key === "cancelled") {
     return { label, className: `${base} is-cancelled` };
   }
   return { label, className: `${base} is-locked` };
@@ -701,7 +726,11 @@ type ChoiceHighlightLine =
   /** Full «Valgt: …» tekst uten prefiks «Valgt:» (brukes/emerald-chip). */
   | { mode: "valgt_body"; body: string };
 
-function choiceHighlightLine(day: DayRow, stored: WeekChoiceStored): ChoiceHighlightLine {
+function choiceHighlightLine(
+  day: DayRow,
+  stored: WeekChoiceStored,
+  display?: EmployeeWeekDisplayLabels,
+): ChoiceHighlightLine {
   if (day.orderStatus === "ACTIVE") {
     const ordered = orderedMealDisplayLine(day);
     return ordered ? { mode: "valgt_body", body: ordered } : { mode: "none" };
@@ -712,13 +741,27 @@ function choiceHighlightLine(day: DayRow, stored: WeekChoiceStored): ChoiceHighl
   if (!cat) return { mode: "none" };
   const p = parseStoredSelection(stored ?? null);
   if (variantPickRequired(cat) && !p?.itemKey?.trim()) {
-    return { mode: "variant_pending", categoryLabel: cat.label };
+    return {
+      mode: "variant_pending",
+      categoryLabel: display ? categoryDisplayLabel(cat, display) : cat.label,
+    };
   }
   const body = selectedChoiceSummaryLabel(day, stored);
   return body ? { mode: "valgt_body", body } : { mode: "none" };
 }
 
-export const ALLERGEN_UNVERIFIED_NOTICE = "Allergener ikke bekreftet — kontakt leverandør";
+export const ALLERGEN_UNVERIFIED_NOTICE = createEmployeeWeekDisplayLabels("nb").ui("allergenUnverifiedNotice");
+
+function categoryDisplayLabel(
+  cat: Pick<DayCategory, "category" | "key" | "label">,
+  display: EmployeeWeekDisplayLabels,
+): string {
+  return display.categoryLabel({
+    category: cat.category,
+    key: cat.key,
+    apiLabel: cat.label,
+  });
+}
 
 function WeekAllergenMetaItems({
   allergens,
@@ -727,36 +770,46 @@ function WeekAllergenMetaItems({
   allergens: readonly string[];
   isVegetarian: boolean;
 }) {
+  const display = useEmployeeWeekDisplay();
   const slugs = allergens ?? [];
   return (
     <>
       {slugs.map((slug) => (
         <span key={slug} className="ds-allergen-badge ds-allergen-badge--warning">
           <span aria-hidden="true">⚠ </span>
-          {ALLERGEN_DISPLAY_LABELS[slug] ?? slug}
+          {display.allergenLabel(slug)}
         </span>
       ))}
       {slugs.length === 0 ? (
         <span className="ds-week-insight-pill ds-allergen-unverified-notice" role="status">
           <span aria-hidden="true">ℹ </span>
-          {ALLERGEN_UNVERIFIED_NOTICE}
+          {display.ui("allergenUnverifiedNotice")}
         </span>
       ) : null}
       {isVegetarian ? (
         <span className="ds-vegetarian-badge">
           <span aria-hidden="true">🌿 </span>
-          Vegetar
+          {display.ui("vegetarian")}
         </span>
       ) : null}
     </>
   );
 }
 
-function itemAriaLabel(title: string, allergens: readonly string[], isVegetarian: boolean): string {
-  const allergensText = displayAllergens(allergens as string[]);
+function itemAriaLabel(
+  title: string,
+  allergens: readonly string[],
+  isVegetarian: boolean,
+  display: EmployeeWeekDisplayLabels,
+): string {
+  const allergensText = display.allergensListText(allergens as string[]);
   const parts = [title.trim()];
-  parts.push(allergensText ? `Inneholder ${allergensText}` : ALLERGEN_UNVERIFIED_NOTICE);
-  if (isVegetarian) parts.push("Vegetar");
+  parts.push(
+    allergensText
+      ? display.ui("containsAllergens", { list: allergensText })
+      : display.ui("allergenUnverifiedNotice"),
+  );
+  if (isVegetarian) parts.push(display.ui("vegetarian"));
   return parts.join(". ").replace(/\s+/g, " ").trim();
 }
 
@@ -787,6 +840,7 @@ export function WeekCategoryCards({
   onSelectItem: (categoryKey: string, itemKey: string, itemTitle: string) => void;
   disabled?: boolean;
 }) {
+  const display = useEmployeeWeekDisplay();
   if (isNoTierForDay(day)) return null;
   if (!day.categories.length) return null;
   const cutoffClosed = day.isLocked && day.lockReason === "CUTOFF";
@@ -819,8 +873,11 @@ export function WeekCategoryCards({
 
   let sectionHeading = "";
   if (selectedCat) {
+    const selectedLabel = categoryDisplayLabel(selectedCat, display);
     sectionHeading =
-      itemCount >= 2 ? `Velg variant for ${selectedCat.label}` : `Detaljer for ${selectedCat.label}`;
+      itemCount >= 2
+        ? `Velg variant for ${selectedLabel}`
+        : `Detaljer for ${selectedLabel}`;
   }
 
   const titleDomId = selectedCat ? `week-items-title-${selectedCat.key}` : "week-items-title";
@@ -852,7 +909,7 @@ export function WeekCategoryCards({
                   disabled={disabled || !day.isEnabled || !selectedCat.available}
                   onClick={() => onSelectItem(selectedCat.key, it.key, it.title)}
                   className={`ds-week-surface ds-week-surface--slot ds-week-item-btn${it.isVegetarian ? " ds-week-item-btn--vegetarian" : ""}${isItemSelected ? " is-selected ds-week-item-btn--selected" : ""}`}
-                  aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian)}
+                  aria-label={itemAriaLabel(it.title, it.allergens, it.isVegetarian, display)}
                 >
                   <span className="ds-week-item-btn__title">{it.title}</span>
                   <span className="ds-week-item-btn__meta">
@@ -887,7 +944,7 @@ export function WeekCategoryCards({
             {selectedCat.title ? (
               <h3 className="ds-week-info-card__title">{String(selectedCat.title).trim()}</h3>
             ) : (
-              <h3 className="ds-week-info-card__title">{selectedCat.label}</h3>
+              <h3 className="ds-week-info-card__title">{categoryDisplayLabel(selectedCat, display)}</h3>
             )}
             {selectedCat.description ? (
               <p className="ds-week-info-card__desc">{String(selectedCat.description).trim()}</p>
@@ -898,7 +955,9 @@ export function WeekCategoryCards({
           </div>
         ) : showEmptyMenuPlaceholder ? (
           <p className="ds-week-info-card__placeholder" role="status">
-            Ingen meny lagt inn enda for {selectedCat.label}.
+            {display.ui("noMenuYetForCategory", {
+              category: categoryDisplayLabel(selectedCat, display),
+            })}
           </p>
         ) : null}
       </div>
@@ -908,6 +967,7 @@ export function WeekCategoryCards({
     <div className="week-day__categories" aria-label="Velg kategori">
       {day.categories.map((cat) => {
         const keyLower = cat.key.toLowerCase();
+        const displayLabel = categoryDisplayLabel(cat, display);
         const isOrdered = Boolean(orderedChoiceKey && orderedChoiceKey === keyLower);
         const isSelected = Boolean(selectedKey && selectedKey.toLowerCase() === keyLower);
         const isPendingCat = isSelected && !isOrdered;
@@ -933,27 +993,33 @@ export function WeekCategoryCards({
               aria-pressed={isOrdered || isPendingCat}
               aria-label={
                 slotLocked
-                  ? `${cat.label}, frist passert`
+                  ? `${displayLabel}, frist passert`
                   : slotUnavailable
-                    ? `${cat.label}, ikke tilgjengelig`
+                    ? `${displayLabel}, ikke tilgjengelig`
                     : isOrdered
-                      ? `${cat.label}, bestilt`
+                      ? `${displayLabel}, bestilt`
                       : isPendingCat
-                        ? `${cat.label}, valgt`
-                        : cat.label
+                        ? `${displayLabel}, valgt`
+                        : displayLabel
               }
               title={
-                slotUnavailable ? "Ikke tilgjengelig" : slotLocked ? "Frist passert" : isOrdered ? "Bestilt" : undefined
+                slotUnavailable
+                  ? display.status("unavailable")
+                  : slotLocked
+                    ? display.status("cutoff_passed")
+                    : isOrdered
+                      ? display.status("ordered")
+                      : undefined
               }
             >
-              <span className="week-category-card__label">{cat.label}</span>
+              <span className="week-category-card__label">{displayLabel}</span>
               {slotLocked ? (
                 <span className="week-category-card__state-label">
                   <ClockIcon className="week-category-card__state-icon" aria-hidden />
-                  Frist passert
+                  {display.status("cutoff_passed")}
                 </span>
               ) : slotUnavailable ? (
-                <span className="week-category-card__state-label">Ikke tilgjengelig</span>
+                <span className="week-category-card__state-label">{display.status("unavailable")}</span>
               ) : null}
             </button>
             {isPendingCat ? expandSection : null}
@@ -999,6 +1065,8 @@ type Props = {
   billingHoldReason?: string | null;
   previewMode?: PreviewMode;
   readOnlyPreview?: boolean;
+  /** Display-only locale for employee week labels (never sent to menu/order APIs). */
+  displayLocale?: AppLocale;
   /**
    * Begrenset til readOnlyPreview: overstyr hvilke datoer kalender-demo bruker
    * og hvilken dato «Oslo today» markers som (stabile Vitest/UI-harness).
@@ -1143,6 +1211,7 @@ const WeekDayCardMobile = memo(
     onToggleOrderedPicker,
     weekMenuComingSoon,
   }: MobileCardProps) {
+    const display = useEmployeeWeekDisplay();
     const ordered = day.orderStatus === "ACTIVE";
     const lifecycle = weekDayLifecycleState(day);
     const mealLine = orderedMealDisplayLine(day);
@@ -1160,14 +1229,14 @@ const WeekDayCardMobile = memo(
     const canOrderClick = canOrderWithChoice(day, canAct, globalBusy, storedChoice);
     const primaryTitle = primaryOrderButtonTitle(day, storedChoice, readOnlyPreview);
     const categories = getTierCategories(day);
-    const highlightLine = choiceHighlightLine(day, storedChoice ?? null);
+    const highlightLine = choiceHighlightLine(day, storedChoice ?? null, display);
     const mobileChoiceLine =
       highlightLine.mode === "variant_pending"
         ? `Velg variant for ${highlightLine.categoryLabel}`
         : highlightLine.mode === "valgt_body" && day.orderStatus !== "ACTIVE"
           ? `Valgt: ${highlightLine.body}`
           : undefined;
-    const status = statusPresentation(day);
+    const status = statusPresentation(day, display);
 
     return (
       <div
@@ -1345,7 +1414,7 @@ const WeekDayCardMobile = memo(
                     Behandler…
                   </>
                 ) : (
-                  "Avbestill lunsj"
+                  display.ui("actions.cancelLunch")
                 )}
               </button>
               {readOnlyPreview ? <ReadOnlyPreviewHint /> : <CutoffSafetyHint day={day} />}
@@ -1366,7 +1435,7 @@ const WeekDayCardMobile = memo(
                     Behandler…
                   </>
                 ) : (
-                  "Bestill lunsj"
+                  display.ui("actions.orderLunch")
                 )}
               </button>
               {readOnlyPreview ? <ReadOnlyPreviewHint /> : <CutoffSafetyHint day={day} />}
@@ -1405,9 +1474,14 @@ export default function EmployeeWeekClient({
   billingHoldReason,
   previewMode = "basis",
   readOnlyPreview = false,
+  displayLocale,
   previewHarness = null,
 }: Props) {
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const weekDisplay = useMemo(
+    () => createEmployeeWeekDisplayLabels(resolveEmployeeWeekDisplayLocale(displayLocale)),
+    [displayLocale],
+  );
   const previewHarnessCalendarKey = (previewHarness?.calendarDates ?? []).join("|");
 
   const previewRowsResolved = useMemo(
@@ -2189,6 +2263,7 @@ export default function EmployeeWeekClient({
     : false;
 
   return (
+    <EmployeeWeekDisplayContext.Provider value={weekDisplay}>
     <div
       className={`mx-auto w-full px-4 py-6 motion-safe:transition-opacity motion-safe:duration-300 ${
         readOnlyPreview
@@ -2226,21 +2301,26 @@ export default function EmployeeWeekClient({
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-800">Ansattflate</p>
         ) : null}
         <h1 className={`text-3xl font-semibold tracking-[-0.035em] text-neutral-950 md:text-5xl${readOnlyPreview ? " mt-2" : ""}`}>
-          Bestill eller avbestill lunsj
+          {weekDisplay.ui("pageTitle")}
         </h1>
         {companyName ? (
           <p className="mt-3 max-w-md text-base leading-7 text-neutral-600">
-            {companyName} · Endringsfrist kl. 08:00
+            {companyName} · {weekDisplay.ui("changeDeadlineSuffix")}
           </p>
         ) : (
           <p className="mt-3 max-w-md text-base leading-7 text-neutral-600">
-            Endringsfrist kl. 08:00
+            {weekDisplay.ui("changeDeadlineSuffix")}
           </p>
         )}
         {!readOnlyPreview ? (
-          <p className="mt-2 max-w-md text-sm leading-6 text-neutral-500" role="note">
-            Menyinnhold vises på leverandørens originalspråk. Språkvalg for ansatte kommer senere.
-          </p>
+          <>
+            <p className="mt-2 max-w-md text-sm leading-6 text-neutral-500" role="note">
+              {weekDisplay.ui("originalLanguageNotice")}
+            </p>
+            <p className="mt-1 max-w-md text-sm leading-6 text-neutral-500" role="note">
+              {weekDisplay.ui("originalMealNotice")}
+            </p>
+          </>
         ) : null}
       </header>
 
@@ -2388,10 +2468,12 @@ export default function EmployeeWeekClient({
 
       {upcomingDays.length > 0 ? (
         <section className="pb-2">
-          <h2 className="mb-3 text-left text-lg font-bold tracking-[-0.02em] text-neutral-950">Kommende dager</h2>
-          <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label="Kommende dager">
+          <h2 className="mb-3 text-left text-lg font-bold tracking-[-0.02em] text-neutral-950">
+            {weekDisplay.ui("upcomingDays")}
+          </h2>
+          <div className={`space-y-2 ${globalBusy ? "pointer-events-none opacity-[0.92]" : ""}`} aria-label={weekDisplay.ui("upcomingDays")}>
             {upcomingDays.map((day) => {
-              const { label: statusLabel, className: statusClass } = statusPresentation(day);
+              const { label: statusLabel, className: statusClass } = statusPresentation(day, weekDisplay);
               return (
                 <button
                   key={day.date}
@@ -2418,5 +2500,6 @@ export default function EmployeeWeekClient({
       ) : null}
 
     </div>
+    </EmployeeWeekDisplayContext.Provider>
   );
 }

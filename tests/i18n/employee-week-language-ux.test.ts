@@ -30,11 +30,12 @@ describe("employee week language UX", () => {
     expect(src).toContain("showLocaleSwitcher={false}");
   });
 
-  test("EmployeeWeekClient explains provider-original menu content", () => {
+  test("EmployeeWeekClient explains provider-original menu content via display labels", () => {
     const src = readSource("app/(app)/week/EmployeeWeekClient.tsx");
-    expect(src).toContain("Menyinnhold vises på leverandørens originalspråk");
-    expect(src).toContain("Språkvalg for ansatte kommer senere");
-    expect(src).not.toMatch(/useTranslations|loadMessagesForLocale/);
+    expect(src).toContain("originalLanguageNotice");
+    expect(src).toContain("originalMealNotice");
+    expect(src).toContain("createEmployeeWeekDisplayLabels");
+    expect(src).not.toMatch(/useTranslations/);
   });
 
   test("provider and admin shells still wire LocaleSwitcher", () => {

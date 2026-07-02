@@ -214,7 +214,8 @@ describe("language-menu separation — employee week language UX (PR B)", () => 
 
   test("employee week client does not promise translated menu content", () => {
     const src = readSource("app/(app)/week/EmployeeWeekClient.tsx");
-    expect(src).toContain("leverandørens originalspråk");
+    expect(src).toContain("originalLanguageNotice");
+    expect(src).toContain("originalMealNotice");
     expect(src).not.toMatch(/oversatt meny|translated menu/i);
   });
 });
@@ -266,5 +267,22 @@ describe("language-menu separation — feature flag safety", () => {
     expect(isMenuProfileResolverEnabled({ [LP_MENU_PROFILE_RESOLVER_ENV]: "true" })).toBe(true);
     const presentationSrc = readSource("lib/provider-menu/providerMenuProfilePresentation.ts");
     expect(presentationSrc).toContain("return { active: false }");
+  });
+});
+
+describe("language-menu separation — PR C employee display fallback", () => {
+  test("employee display labels live in client helper, not menu APIs", () => {
+    expect(fs.existsSync(path.join(ROOT, "lib/i18n/employeeWeekDisplayLabels.ts"))).toBe(true);
+    for (const route of ["app/api/order/window/route.ts", "app/api/week/route.ts"]) {
+      const src = readSource(route);
+      expect(src).not.toContain("employeeWeekDisplayLabels");
+    }
+  });
+
+  test("EmployeeWeekClient passes displayLocale without changing order write body", () => {
+    const src = readSource("app/(app)/week/EmployeeWeekClient.tsx");
+    expect(src).toContain("displayLocale?: AppLocale");
+    expect(src).toContain("choice_key");
+    expect(src).not.toMatch(/choice_key:\s*display\.categoryLabel/);
   });
 });

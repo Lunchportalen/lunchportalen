@@ -18,6 +18,66 @@
     "label": "Välj språk",
     "current": "Aktuellt språk: {language}"
   },
+  "employeeWeekView": {
+    "pageTitle": "Beställ eller avbeställ lunch",
+    "changeDeadlineSuffix": "Ändringsfrist kl. 08:00",
+    "originalLanguageNotice": "Menyinnehållet visas på leverantörens originalspråk. Språkval för anställda kommer senare.",
+    "originalMealNotice": "Rättens namn och beskrivning visas på leverantörens originalspråk.",
+    "upcomingDays": "Kommande dagar",
+    "noMenu": "Ingen meny",
+    "noMenuYetForCategory": "Ingen meny tillagd ännu för {category}.",
+    "allergensHeading": "Allergener",
+    "allergenUnverifiedNotice": "Allergener inte bekräftade — kontakta leverantören",
+    "containsAllergens": "Innehåller {list}",
+    "vegetarian": "Vegetarian",
+    "thisWeek": "Denna vecka",
+    "nextWeek": "Nästa vecka",
+    "categories": {
+      "paasmurt": "Smörgåsar",
+      "salat": "Salladslåda",
+      "salatboks": "Salladslåda",
+      "sushi": "Sushi",
+      "pokebowl": "Poke bowl",
+      "thai": "Thaimat",
+      "thaimat": "Thaimat",
+      "varmrett": "Varmrätt",
+      "varmmat": "Varmrätt"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "hvete": "Gluten",
+      "melk": "Mjölk",
+      "egg": "Ägg",
+      "fisk": "Fisk",
+      "skalldyr": "Skaldjur",
+      "krepsdyr": "Skaldjur",
+      "notter": "Nötter",
+      "peanotter": "Jordnötter",
+      "soya": "Soja",
+      "selleri": "Selleri",
+      "sennep": "Senap",
+      "sesam": "Sesam",
+      "sulfitter": "Sulfiter",
+      "sulfitt": "Sulfiter",
+      "lupin": "Lupin",
+      "blotdyr": "Blötdjur"
+    },
+    "status": {
+      "ordered": "Beställt",
+      "notOrdered": "Inte beställt",
+      "cancelled": "Avbeställt",
+      "cutoffPassed": "Frist passerad",
+      "unavailable": "Inte tillgänglig"
+    },
+    "actions": {
+      "order": "Beställ",
+      "orderLunch": "Beställ lunch",
+      "cancelLunch": "Avbeställ lunch",
+      "change": "Ändra",
+      "confirm": "Bekräfta",
+      "cancel": "Avbryt"
+    }
+  },
   "provider": {
     "nav": {
       "dashboard": "Dashboard",

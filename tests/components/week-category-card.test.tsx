@@ -5,6 +5,9 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
 import { WeekCategoryCards, ALLERGEN_UNVERIFIED_NOTICE, type DayRow } from "@/app/(app)/week/EmployeeWeekClient";
+import { createEmployeeWeekDisplayLabels } from "@/lib/i18n/employeeWeekDisplayLabels";
+
+const nbDisplay = createEmployeeWeekDisplayLabels("nb");
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -106,7 +109,10 @@ describe("WeekCategoryCards — bestilt / pending / nøytral", () => {
       storedChoice: "varmrett",
     });
 
-    const ordered = categoryCardButton(container, "Varmrett");
+    const ordered = categoryCardButton(
+      container,
+      nbDisplay.categoryLabel({ category: "varmrett", key: "varmrett", apiLabel: "Varmrett" }),
+    );
     expect(ordered.classList.contains("is-ordered")).toBe(true);
     expect(ordered.classList.contains("is-selected")).toBe(false);
     expect(ordered.getAttribute("aria-pressed")).toBe("true");
@@ -214,8 +220,13 @@ describe("WeekCategoryCards — kort og expand-panel", () => {
 
     const { container } = await renderWeekCategoryCards({ day, storedChoice: "varmrett" });
 
-    const card = categoryCardButton(container, "Varmrett");
-    expect(card.querySelector(".week-category-card__label")?.textContent).toBe("Varmrett");
+    const displayLabel = nbDisplay.categoryLabel({
+      category: "varmrett",
+      key: "varmrett",
+      apiLabel: "Varmrett",
+    });
+    const card = categoryCardButton(container, displayLabel);
+    expect(card.querySelector(".week-category-card__label")?.textContent).toBe(displayLabel);
     expect(card.querySelector(".week-category-card__title")).toBeNull();
     expect(card.querySelector(".week-category-card__desc")).toBeNull();
   });
@@ -292,7 +303,12 @@ describe("WeekCategoryCards — kort og expand-panel", () => {
     const { container } = await renderWeekCategoryCards({ day, storedChoice: "pokebowl" });
 
     const status = container.querySelector('[role="status"]');
-    expect(status?.textContent).toMatch(/Ingen meny lagt inn enda for Pokebowl/);
+    const pokeLabel = nbDisplay.categoryLabel({
+      category: "pokebowl",
+      key: "pokebowl",
+      apiLabel: "Pokebowl",
+    });
+    expect(status?.textContent).toBe(`Ingen meny lagt inn enda for ${pokeLabel}.`);
   });
 
   test("klikk på kategori kaller onSelectCategory", async () => {
