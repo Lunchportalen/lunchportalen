@@ -111,6 +111,22 @@ export default function ProviderOperationsForm({
             ))}
           </select>
           <p className="ds-provider-ops__hint">{t("localeHint")}</p>
+          <p className="ds-provider-ops__hint">{t("uiLocaleSeparation")}</p>
+        </div>
+
+        <div className="ds-provider-ops__field ds-provider-ops__field--full">
+          <p className="ds-label">{t("marketProfileLabel")}</p>
+          <p className="ds-body">
+            {initial.menuProfileId
+              ? t("marketProfileValue", { profileId: initial.menuProfileId })
+              : t("marketProfileUnset")}
+          </p>
+          <ul className="ds-body ds-provider-ops__notices">
+            <li>{t("marketChangeImpact")}</li>
+            <li>{t("marketChangeCatalogPreserved")}</li>
+            <li>{t("marketChangeResetRequired")}</li>
+            <li>{t("marketChangeEmployeeRuntime")}</li>
+          </ul>
         </div>
       </div>
 

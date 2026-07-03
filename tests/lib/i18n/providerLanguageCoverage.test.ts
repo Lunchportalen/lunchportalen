@@ -143,14 +143,24 @@ describe("provider language coverage (pre-merge PR #343)", () => {
     expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(9);
   });
 
-  it("operational language label clarifies separate menu/currency control (nb)", async () => {
+  it("operational language label clarifies market/menu profile persistence (nb)", async () => {
     const messages = (await loadMessagesForLocale("nb")) as {
-      provider: { settings: { operations: { localeLabel: string; localeHint: string } } };
+      provider: {
+        settings: {
+          operations: {
+            localeLabel: string;
+            localeHint: string;
+            uiLocaleSeparation: string;
+            marketChangeImpact: string;
+          };
+        };
+      };
     };
-    expect(messages.provider.settings.operations.localeLabel).toBe("Administrasjonsspråk");
+    expect(messages.provider.settings.operations.localeLabel).toBe("Marked og administrasjonsspråk");
     expect(messages.provider.settings.operations.localeLabel).not.toBe("Språk");
     expect(messages.provider.settings.operations.localeHint).toMatch(/menyprofil/i);
-    expect(messages.provider.settings.operations.localeHint).toMatch(/valuta/i);
+    expect(messages.provider.settings.operations.uiLocaleSeparation).toMatch(/sidefeltet/i);
+    expect(messages.provider.settings.operations.marketChangeImpact).toMatch(/fremtidige menyforslag/i);
   });
 
   it("LocaleSwitcher iterates APP_LOCALES in registry order", () => {
