@@ -288,28 +288,52 @@ Employees must **never** query `menu_content_translations` directly. Future SMAR
 
 ### SMART-1 non-goals (still locked)
 
-- No provider approval API/UI (SMART-2)
 - No employee `/week` overlay (SMART-3)
 - No LocaleSwitcher re-enable
 - No order write path changes
 - No `LP_MENU_PROFILE_*` activation
 - No G5d.8 / cutover / source-of-truth switch / auto-rollout
 
-**Next phase:** SMART-2 — provider translation approval API/UI (explicit owner GO required)
+**Provider approval API/UI:** implemented in SMART-2 (provider-scoped only).
+
+**Next phase:** SMART-3 — employee approved translation display (explicit owner GO required)
 
 ---
 
-## 6. Provider approval workflow (SMART-2 — design only)
+## 6. Provider approval workflow (SMART-2 — implemented)
 
-Minimal future flow:
+**Status:** Provider-scoped API + UI on `/leverandor/meny/oversettelser`. Employee runtime **not** wired.
 
-1. Provider sees original text (from Sanity)
-2. Provider sees suggested translation (optional AI or manual draft — open decision)
-3. Provider can edit, approve, or reject
-4. **Approved** only becomes employee-visible (via server read model)
-5. Rejected / draft / suggested remain provider-only
-6. Original menu text in Sanity is **never mutated** by approval — overlay only
-7. Provider chooses supported employee locales (field location TBD — see open decisions)
+| Surface | Path / contract |
+|---------|-----------------|
+| **API list/create** | `GET/POST /api/provider/menu-translations` |
+| **API patch** | `PATCH /api/provider/menu-translations/[id]` — `save_draft`, `approve`, `reject`, `mark_stale` |
+| **Helper** | `lib/smart-menu/providerTranslationApproval.ts` |
+| **UI** | `/leverandor/meny/oversettelser` |
+
+**Provider can:**
+
+- List own `menu_content_translations` rows (filters: locale, status, source_kind, source_ref, field)
+- Create/upsert manual rows (source_ref + original_text + optional translated_text)
+- Save draft, approve, reject, mark stale
+- See hash mismatch warning (`stale` workflow)
+
+**Server rules (locked):**
+
+- `provider_id` from server provider scope — never from client
+- `original_text_hash` computed server-side (`hashOriginalText`)
+- `approved_by` / `approved_at` set server-side on approve only
+- Reject keeps `translated_text` for audit; clears approval metadata
+- No DELETE in SMART-2 (405)
+- DTO always includes `employeeVisible: false`
+
+**Still not live for employees:**
+
+- Approved translations are **stored** but **not shown** in `/week` until SMART-3 server read model
+- Draft / suggested / rejected / stale never employee-visible (`isEmployeeVisibleTranslation`)
+- No Sanity mutation, no AI auto-translation, no order identity changes
+
+**Manual row strategy (SMART-2):** Provider admin creates rows with stable `source_ref` + original text. Automatic Sanity/menuDay extraction deferred.
 
 ---
 
@@ -383,7 +407,7 @@ Orders **never** use:
 |-------|-------|---------|--------|-------|------------------|-------|
 | **SMART-0** | Design doc + invariant tests | None | None | None | None | **Merged** PR #390 |
 | **SMART-1** | `menu_content_translations` migration + RLS + pure helpers + governance tests | **None** | Yes — migration only | None | Low | migration review, governance tests |
-| **SMART-2** | Provider approval API + UI | Provider routes | RLS enforce | None | Low | + provider E2E |
+| **SMART-2** | Provider approval API + UI | Provider routes only | Uses existing RLS table | None | Low — provider-scoped metadata | provider API/UI tests + Golden Path |
 | **SMART-3** | Employee approved overlay in `/week` read model; re-enable LocaleSwitcher with honest behavior | Employee read | Read approved only | None | **Medium** — touch `/week` | golden-path, week-visual |
 | **SMART-4** | Provider menu profile selection for future publish | Provider admin | `menu_profile_id` write | `LP_MENU_PROFILE_*` per phase GO | **Medium** — publish path | publish shadow tests |
 | **SMART-5** | `resolveCommercialCurrency` + agreement wiring | Billing display | Optional columns | Commercial flags TBD | **High** — commercial | commercial-hardcodes-guard |
@@ -449,6 +473,14 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 
 **SMART-1 DB housekeeping:** see [smart-menu-smart-1-db-evidence.md](./smart-menu-smart-1-db-evidence.md). Staging (uigx) and production migrate verified (run [28614693722](https://github.com/Lunchportalen/lunchportalen/actions/runs/28614693722)); RLS golden snapshot refreshed. Employee translations are **not** live.
 
-**Do not start SMART-2, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-1 merge.**
+**SMART-2 is complete when:**
 
-**READY FOR SMART-2 only after SMART-1 is merged and owner gives explicit GO.**
+- Provider API/UI merged on `main`
+- `tests/governance/smart-menu-provider-approval-contracts.test.ts` passes
+- Provider can approve/reject/draft rows scoped to own provider
+- Employee `/week` unchanged; `employeeVisible` remains false in provider DTO
+- Golden Path tests pass
+
+**Do not start SMART-3, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-2 merge.**
+
+**READY FOR SMART-3 only after SMART-2 is merged and owner gives explicit GO.**
