@@ -80,7 +80,8 @@ describe("SMART-2 — employee runtime not wired", () => {
     const panel = readSource(UI_PANEL);
     const page = readSource(UI_PAGE);
     expect(helper).toMatch(/employeeVisible:\s*false/);
-    expect(panel).toMatch(/SMART-3/);
+    expect(panel).toMatch(/godkjente oversettelser/i);
+    expect(panel).toMatch(/menu-translations\/sources/);
     expect(panel).not.toMatch(/employee translations are live/i);
     expect(page).not.toMatch(/employee translations are live/i);
   });
