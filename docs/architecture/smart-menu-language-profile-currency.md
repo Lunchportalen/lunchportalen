@@ -534,6 +534,40 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 - Order identity unchanged; Golden Path passes
 - No `LP_MENU_PROFILE_*` activation; no G5d.8/cutover
 
-**Do not start SMART-4, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-3 merge.**
+**Do not start SMART-4 menu profile runtime, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-3 merge.**
 
-**READY FOR SMART-4 only after SMART-3 is merged and owner gives explicit GO.**
+**READY FOR SMART-4 (source extraction / locale coverage QA) only after SMART-3 is merged, Phase A staging static-category parity is GREEN, and owner gives explicit GO.**
+
+---
+
+## 16. SMART-4 — source extraction / locale coverage / QA hardening
+
+**Status:** Provider-side only — no employee runtime identity change, no Sanity mutation, no AI auto-approve.
+
+| Deliverable | Scope |
+|-------------|--------|
+| `lib/smart-menu/menuTranslationSources.ts` | Extract stable translation candidates from provider catalog / order-window shaped data |
+| `lib/smart-menu/translationCoverage.ts` | Locale + source_kind coverage summaries |
+| `GET /api/provider/menu-translations/sources` | Provider-scoped read-only candidates + coverage |
+| Provider UI `/leverandor/meny/oversettelser` | Coverage table, missing/stale source QA, honest fallback copy |
+
+**Rules (locked):**
+
+- Source extraction is **provider/admin-side only** — extracted candidates are **not** employee-visible by themselves.
+- Provider approval still required before employee display.
+- Employee-visible overlay requires: `status = approved` **and** locale match **and** `original_text_hash` match **and** non-empty `translated_text`.
+- Draft / suggested / rejected / stale / missing / blank translated_text → employee sees **original provider text** (fallback).
+- `source_ref` must match runtime refs: meal = `item.key`, category = category slug at runtime, allergen = normalized token.
+- Partial coverage is **expected** — no claim that all menu text is translated.
+- No AI translation, no auto-approve, no Sanity mutation, no order identity change, no currency/profile runtime, no employee price/commercial exposure.
+- No `LP_MENU_PROFILE_*` activation; no G5d.8 / cutover / source-of-truth switch / auto-rollout.
+
+**Not claimed:**
+
+- No automatic translations
+- No claim that all menu text is always translated
+- Currency resolver is live
+- Provider menu profile runtime is live
+- G5d.8 / cutover not started
+
+**Materialize POST:** Not enabled in SMART-4 — providers create draft rows manually or via existing SMART-2 POST until a safe materialize flow is explicitly approved.

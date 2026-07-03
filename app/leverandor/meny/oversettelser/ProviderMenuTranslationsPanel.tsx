@@ -25,6 +25,39 @@ type TranslationRow = {
   employeeVisible: false;
 };
 
+type LocaleCoverageSummary = {
+  locale: string;
+  totalCandidates: number;
+  employeeVisible: number;
+  missing: number;
+  draft: number;
+  suggested: number;
+  rejected: number;
+  stale: number;
+  blankTranslated: number;
+  coveragePercent: number;
+};
+
+type SourceCandidate = {
+  source_kind: string;
+  source_ref: string;
+  field: string;
+  original_text: string;
+  original_text_hash: string;
+};
+
+type SourcesReport = {
+  candidateCount: number;
+  coverage: {
+    totalCandidates: number;
+    locales: LocaleCoverageSummary[];
+    staleCount: number;
+    missingCount: number;
+  };
+  missingCandidates: SourceCandidate[];
+  staleCandidates: SourceCandidate[];
+};
+
 type Props = {
   canWrite: boolean;
 };
@@ -40,7 +73,9 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
   const [rows, setRows] = useState<TranslationRow[]>([]);
+  const [sourcesReport, setSourcesReport] = useState<SourcesReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sourcesLoading, setSourcesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filterLocale, setFilterLocale] = useState("");
@@ -81,9 +116,42 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
     }
   }, [query]);
 
+  const loadSources = useCallback(async () => {
+    setSourcesLoading(true);
+    try {
+      const res = await fetch("/api/provider/menu-translations/sources", { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setSourcesReport(null);
+        return;
+      }
+      setSourcesReport(json.data ?? null);
+    } catch {
+      setSourcesReport(null);
+    } finally {
+      setSourcesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSources();
+  }, [loadSources]);
+
   useEffect(() => {
     void loadRows();
   }, [loadRows]);
+
+  function createRowFromCandidate(candidate: SourceCandidate) {
+    setCreateForm({
+      sourceKind: candidate.source_kind,
+      sourceRef: candidate.source_ref,
+      field: candidate.field,
+      locale: "en",
+      originalText: candidate.original_text,
+      translatedText: "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   async function patchRow(id: string, body: Record<string, unknown>) {
     setBusyId(id);
@@ -99,6 +167,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
         throw new Error(json.message ?? "Kunne ikke oppdatere oversettelse.");
       }
       await loadRows();
+      await loadSources();
     } catch (e) {
       setError(String((e as Error)?.message ?? e));
     } finally {
@@ -129,6 +198,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
       }
       setCreateForm((prev) => ({ ...prev, sourceRef: "", originalText: "", translatedText: "" }));
       await loadRows();
+      await loadSources();
     } catch (e) {
       setError(String((e as Error)?.message ?? e));
     } finally {
@@ -140,13 +210,95 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
     <div className="ds-provider-translations">
       <section className="ds-card ds-section">
         <p className="ds-body">
-          Kun godkjente oversettelser vil senere kunne vises til ansatte. Utkast og forslag vises aldri
+          Kun godkjente oversettelser vises til ansatte. Utkast, forslag og avviste rader vises aldri
           til ansatte.
         </p>
         <p className="ds-body ds-muted">
-          Ansatte ser fortsatt leverandørens originaltekst frem til SMART-3.
+          Delvis dekning er normalt. Mangler eller utdatert hash faller tilbake til leverandørens
+          originaltekst — dette endrer ikke bestillingsnøkler, pakke eller pris for ansatte.
+        </p>
+        <p className="ds-body ds-muted">
+          Kilde-referanser: måltid = <code>item.key</code>, kategori = kategori-slug (f.eks. paasmurt,
+          salat), allergen = normalisert token.
         </p>
       </section>
+
+      <section className="ds-card ds-section">
+        <h2 className="ds-h3">Dekning per språk</h2>
+        {sourcesLoading ? <p className="ds-body">Laster kilder…</p> : null}
+        {!sourcesLoading && sourcesReport?.coverage?.locales?.length ? (
+          <div className="ds-table-wrap">
+            <table className="ds-table">
+              <thead>
+                <tr>
+                  <th>Språk</th>
+                  <th>Dekning</th>
+                  <th>Godkjent synlig</th>
+                  <th>Mangler</th>
+                  <th>Utkast</th>
+                  <th>Utdatert</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sourcesReport.coverage.locales.map((locale) => (
+                  <tr key={locale.locale}>
+                    <td>{locale.locale}</td>
+                    <td>{locale.coveragePercent}%</td>
+                    <td>{locale.employeeVisible}</td>
+                    <td>{locale.missing}</td>
+                    <td>{locale.draft + locale.suggested}</td>
+                    <td>{locale.stale + locale.blankTranslated}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+        {!sourcesLoading && !sourcesReport?.coverage?.locales?.length ? (
+          <p className="ds-body">Ingen kilder funnet i katalogen ennå.</p>
+        ) : null}
+      </section>
+
+      {!sourcesLoading &&
+      sourcesReport &&
+      (sourcesReport.missingCandidates.length > 0 || sourcesReport.staleCandidates.length > 0) ? (
+        <section className="ds-card ds-section">
+          <h2 className="ds-h3">Kilder uten godkjent oversettelse</h2>
+          {sourcesReport.missingCandidates.length > 0 ? (
+            <>
+              <p className="ds-body ds-muted">
+                {sourcesReport.missingCandidates.length} kilder mangler rad på minst ett mål-språk.
+              </p>
+              <ul className="ds-body">
+                {sourcesReport.missingCandidates.slice(0, 12).map((candidate) => (
+                  <li key={`${candidate.source_kind}:${candidate.source_ref}:${candidate.field}`}>
+                    {candidate.source_kind} · {candidate.source_ref} · {candidate.field} —{" "}
+                    {candidate.original_text}
+                    {canWrite ? (
+                      <>
+                        {" "}
+                        <button
+                          type="button"
+                          className="ds-btn ds-btn-link"
+                          onClick={() => void createRowFromCandidate(candidate)}
+                        >
+                          Opprett utkast
+                        </button>
+                      </>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {sourcesReport.staleCandidates.length > 0 ? (
+            <p className="ds-body ds-error" role="status">
+              {sourcesReport.staleCandidates.length} kilder har hash-avvik — ansatte ser originaltekst
+              til raden er godkjent på nytt.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="ds-card ds-section">
         <div className="ds-provider-translations-filters">
@@ -195,8 +347,8 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
         <section className="ds-card ds-section">
           <h2 className="ds-h3">Ny oversettelsesrad</h2>
           <p className="ds-body ds-muted">
-            Opprett manuell rad med kilde-referanse og originaltekst. Automatisk import fra Sanity kommer
-            senere.
+            Opprett manuell rad med kilde-referanse og originaltekst, eller bruk «Opprett utkast» fra
+            kildelisten over.
           </p>
           <div className="ds-provider-translations-create-grid">
             <label className="ds-field">
@@ -247,7 +399,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
                 className="ds-input"
                 value={createForm.sourceRef}
                 onChange={(e) => setCreateForm((prev) => ({ ...prev, sourceRef: e.target.value }))}
-                placeholder="sanity:meal-id eller stabil nøkkel"
+                placeholder="item.key, kategori-slug eller allergen-token"
               />
             </label>
             <label className="ds-field ds-field-span-2">

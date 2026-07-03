@@ -15,9 +15,10 @@ describe("Provider menu translations page", () => {
 
     expect(page).toMatch(/Menyoversettelser/);
     expect(page).toMatch(/ansatte ser ennå/i);
-    expect(panel).toMatch(/SMART-3/);
     expect(panel).toMatch(/Kun godkjente oversettelser/);
-    expect(panel).toMatch(/Ansatte ser fortsatt leverandørens originaltekst/);
+    expect(panel).toMatch(/Dekning per språk/);
+    expect(panel).toMatch(/menu-translations\/sources/);
+    expect(panel).toMatch(/Delvis dekning er normalt/);
     expect(panel).toMatch(/Godkjenn/);
     expect(panel).toMatch(/Avvis/);
     expect(panel).toMatch(/Lagre utkast/);
