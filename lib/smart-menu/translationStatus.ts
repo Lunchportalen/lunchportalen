@@ -4,31 +4,21 @@
  */
 import { createHash } from "node:crypto";
 
-export const MENU_CONTENT_SOURCE_KINDS = [
-  "menu_day",
-  "menu_day_item",
-  "category_label",
-  "allergen_label",
-] as const;
+export {
+  EMPLOYEE_VISIBLE_TRANSLATION_STATUS,
+  MENU_CONTENT_FIELDS,
+  MENU_CONTENT_SOURCE_KINDS,
+  MENU_CONTENT_TRANSLATION_STATUSES,
+  type MenuContentField,
+  type MenuContentSourceKind,
+  type MenuContentTranslationStatus,
+} from "@/lib/smart-menu/translationStatusConstants";
 
-export type MenuContentSourceKind = (typeof MENU_CONTENT_SOURCE_KINDS)[number];
-
-export const MENU_CONTENT_FIELDS = ["title", "description", "label"] as const;
-
-export type MenuContentField = (typeof MENU_CONTENT_FIELDS)[number];
-
-export const MENU_CONTENT_TRANSLATION_STATUSES = [
-  "missing",
-  "draft",
-  "suggested",
-  "approved",
-  "rejected",
-  "stale",
-] as const;
-
-export type MenuContentTranslationStatus = (typeof MENU_CONTENT_TRANSLATION_STATUSES)[number];
-
-export const EMPLOYEE_VISIBLE_TRANSLATION_STATUS: MenuContentTranslationStatus = "approved";
+import {
+  EMPLOYEE_VISIBLE_TRANSLATION_STATUS,
+  MENU_CONTENT_TRANSLATION_STATUSES,
+  type MenuContentTranslationStatus,
+} from "@/lib/smart-menu/translationStatusConstants";
 
 const NON_EMPLOYEE_VISIBLE_STATUSES = new Set<MenuContentTranslationStatus>([
   "missing",

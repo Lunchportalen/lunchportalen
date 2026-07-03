@@ -236,3 +236,28 @@ describe("Protected Golden Path — SMART-1 additive migration (metadata only)",
     expect(readSource("lib/orders/rpcWrite.ts")).not.toMatch(/menu_content_translations/);
   });
 });
+
+describe("Protected Golden Path — SMART-2 provider approval (no employee/order wiring)", () => {
+  const SMART2_PATHS = [
+    "app/api/provider/menu-translations/route.ts",
+    "app/api/provider/menu-translations/[id]/route.ts",
+    "lib/smart-menu/providerTranslationApproval.ts",
+  ] as const;
+
+  it("SMART-2 provider approval stays provider-scoped — no Golden Path runtime wiring", () => {
+    for (const rel of SMART2_PATHS) {
+      const src = readSource(rel);
+      expect(src).not.toMatch(/lp_order_set/);
+      expect(src).not.toMatch(/menuDayPayload/);
+      expect(src).not.toMatch(/app\/\(app\)\/week/);
+      expect(src).toMatch(/employeeTranslationsLive:\s*false|employeeVisible:\s*false/);
+    }
+    for (const route of [
+      "app/api/week/route.ts",
+      "app/api/order/window/route.ts",
+      "app/api/orders/route.ts",
+    ]) {
+      expect(readSource(route)).not.toMatch(/menu_content_translations/);
+    }
+  });
+});

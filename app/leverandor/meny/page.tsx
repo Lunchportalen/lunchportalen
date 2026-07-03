@@ -4,6 +4,7 @@ export const revalidate = 0;
 
 import "server-only";
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
@@ -95,6 +96,18 @@ export default async function LeverandorMenyPage() {
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
+      {canSaveMappingDraft ? (
+        <section className="ds-card ds-section">
+          <h2 className="ds-h3">Menyoversettelser</h2>
+          <p className="ds-body">
+            Godkjenn oversatte menytekster for ansatte senere. Ansatte ser fortsatt originaltekst frem
+            til SMART-3.
+          </p>
+          <Link href="/leverandor/meny/oversettelser" className="ds-btn ds-btn-primary">
+            Åpne menyoversettelser
+          </Link>
+        </section>
+      ) : null}
       {canEdit ? (
         <ProviderMenuBuilder
           workspacePresentation={workspacePresentation}

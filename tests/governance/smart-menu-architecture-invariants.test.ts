@@ -168,7 +168,8 @@ describe("SMART-0 — smart-menu architecture design doc", () => {
 
   test("design doc ends with next-phase gate — explicit owner GO", () => {
     const doc = readDoc();
-    expect(doc).toMatch(/READY FOR SMART-[12] only after SMART-[01] is merged/i);
+    expect(doc).toMatch(/READY FOR SMART-1.*only after SMART-0 is merged/i);
+    expect(doc).toMatch(/READY FOR SMART-3.*only after SMART-2 is merged/i);
     expect(doc).toMatch(/explicit GO/i);
   });
 
