@@ -343,10 +343,11 @@ describe("language-menu separation — Phase 2 provider menu profile persistence
     expect(src).not.toMatch(/\/api\/order\/window|lp_order_set/);
   });
 
-  test("order/window route unchanged by Phase 2 persistence module", () => {
-    const windowSrc = readSource("app/api/order/window/route.ts");
-    expect(windowSrc).not.toMatch(/localeMenuProfileMapping|saveProviderOperationalSettings/);
-    expect(windowSrc).not.toMatch(/provider_settings\.menu_profile_id/);
+  test("order/window route applies profile label overlay when resolver enabled", () => {
+    const src = readSource("app/api/order/window/route.ts");
+    expect(src).toContain("overlayProfileLabelsOnOrderWindowCategories");
+    expect(src).toContain("resolveActiveMenuProfileForRuntime");
+    expect(src).not.toMatch(/menu_profile_id.*choice_key|choice_key.*menu_profile_id/);
   });
 
   test("localeMenuProfileMapping covers all nine APP_LOCALES", () => {

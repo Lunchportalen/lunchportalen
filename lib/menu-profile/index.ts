@@ -84,3 +84,21 @@ export {
   resolveMenuProfileIdFromProviderLocale,
 } from "@/lib/menu-profile/localeMenuProfileMapping";
 export type { ProviderLocaleMarketMapping } from "@/lib/menu-profile/localeMenuProfileMapping";
+
+export {
+  buildProfileRuntimeCategoryLabels,
+  buildProfileRuntimeCategoryLabelsFromResolver,
+  buildProfileWarmDishSuggestions,
+  isProfileMenuRuntimeEnabled,
+  overlayProfileLabelsOnOrderWindowCategories,
+  profileCategoryKeyForRuntimeCategory,
+  profileLabelForCategoryKey,
+  resolveActiveMenuProfileForRuntime,
+  resolveFallbackMenuProfile,
+  resolveRuntimeCategoryDisplayLabel,
+} from "@/lib/menu-profile/profileMenuRuntime";
+export type {
+  OrderWindowCategoryLike,
+  ProfileRuntimeCategoryLabels,
+  ProfileWarmDishSuggestion,
+} from "@/lib/menu-profile/profileMenuRuntime";
