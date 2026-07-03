@@ -85,10 +85,16 @@ export function categoryRowForCategory(
   return null;
 }
 
-export function categoryLabelFromCatalog(catalog: ProviderMenuCatalogSnapshot, category: Category): string {
+export function categoryLabelFromCatalog(
+  catalog: ProviderMenuCatalogSnapshot,
+  category: Category,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
+): string {
   const row = categoryRowForCategory(catalog, category);
   const title = String(row?.title ?? "").trim();
   if (title) return title;
+  const profileLabel = profileCategoryLabels?.[category];
+  if (profileLabel) return profileLabel;
   return CATEGORY_LABELS[category];
 }
 

@@ -27,6 +27,9 @@ import {
   loadAndResolveProviderMenuProfile,
   loadProviderSettingsMenuProfileRow,
 } from "@/lib/providers/loadProviderSettingsMenuProfile";
+import {
+  buildProfileRuntimeCategoryLabelsFromResolver,
+} from "@/lib/menu-profile/profileMenuRuntime";
 import { menuProfileResolverHostEnv } from "@/lib/providers/providerMenuProfileDiagnostic";
 
 export default async function LeverandorMenyPage() {
@@ -94,6 +97,11 @@ export default async function LeverandorMenyPage() {
   const mappingDraftSaveEnabled =
     runtimeMappingProposal.active && isMenuProfileMappingDraftSaveUiEnabled(menuProfileEnv);
 
+  const profileCategoryLabels = buildProfileRuntimeCategoryLabelsFromResolver(
+    menuProfileResolver,
+    menuProfileEnv,
+  );
+
   return (
     <div className="ds-provider-meny-page lp-editor-page">
       {canSaveMappingDraft ? (
@@ -113,6 +121,7 @@ export default async function LeverandorMenyPage() {
           runtimeMappingProposal={runtimeMappingProposal}
           mappingDraftSaveEnabled={mappingDraftSaveEnabled}
           canSaveMappingDraft={canSaveMappingDraft}
+          profileCategoryLabels={profileCategoryLabels ?? undefined}
         />
       ) : (
         <section className="ds-card ds-provider-meny-card">

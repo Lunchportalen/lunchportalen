@@ -76,6 +76,7 @@ type ProviderMenuBuilderProps = {
   runtimeMappingProposal?: ProviderMenuRuntimeMappingProposalProps;
   mappingDraftSaveEnabled?: boolean;
   canSaveMappingDraft?: boolean;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
 };
 
 type MenuWeekResponse = {
@@ -177,6 +178,7 @@ export default function ProviderMenuBuilder({
   runtimeMappingProposal = { active: false },
   mappingDraftSaveEnabled = false,
   canSaveMappingDraft = false,
+  profileCategoryLabels,
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
@@ -203,8 +205,8 @@ export default function ProviderMenuBuilder({
   const tierPrice = prices?.[tier];
   const workspaceCategories = useMemo(() => providerWorkspaceCategories(catalog, tier), [catalog, tier]);
   const weekMetrics = useMemo(
-    () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories, catalog),
-    [slots, weekDates, tier, workspaceCategories, catalog],
+    () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories, catalog, profileCategoryLabels),
+    [slots, weekDates, tier, workspaceCategories, catalog, profileCategoryLabels],
   );
 
   /** Cockpit display-only — varmrett publish state (aligned with day-card badges). */
@@ -212,12 +214,12 @@ export default function ProviderMenuBuilder({
     let publishedDays = 0;
     let draftDays = 0;
     for (const date of weekDates) {
-      const shared = summarizeSharedVarmrettDay(slots, date, catalog);
+      const shared = summarizeSharedVarmrettDay(slots, date, catalog, profileCategoryLabels);
       if (shared.statusChip === "published") publishedDays += 1;
       else if (shared.statusChip === "draft") draftDays += 1;
     }
     return { publishedDays, draftDays };
-  }, [slots, weekDates]);
+  }, [slots, weekDates, catalog, profileCategoryLabels]);
 
   const nextStepHint = useMemo(() => {
     const weekdayKeys = weekDates.map((_, idx) => WEEKDAY_KEYS[idx]!).filter(Boolean);
@@ -481,6 +483,7 @@ export default function ProviderMenuBuilder({
           variantLabel: selected.variantLabel ?? null,
           editorFocus: selected.editorFocus,
           catalog,
+          profileCategoryLabels,
         })
       : null;
 
