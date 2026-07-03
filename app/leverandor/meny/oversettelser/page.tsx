@@ -6,6 +6,7 @@ import "server-only";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
@@ -25,20 +26,18 @@ export default async function LeverandorMenyOversettelserPage() {
   if (!canView) redirect("/leverandor");
 
   const canWrite = await hasProviderRole(auth.user.id, provider.id, "provider_admin");
+  const t = await getTranslations("provider.menu.translationsPage");
 
   return (
     <div className="ds-container">
       <header className="ds-provider-topbar">
         <div>
-          <p className="ds-eyebrow">Meny</p>
-          <h1 className="ds-h2">Menyoversettelser</h1>
-          <p className="ds-lead">
-            Godkjenn og administrer oversatte menytekster for {provider.name}. Dette påvirker ikke hva
-            ansatte ser ennå.
-          </p>
+          <p className="ds-eyebrow">{t("eyebrow")}</p>
+          <h1 className="ds-h2">{t("title")}</h1>
+          <p className="ds-lead">{t("lead", { providerName: provider.name })}</p>
         </div>
         <Link href="/leverandor/meny" className="ds-btn">
-          Tilbake til meny
+          {t("backToMenu")}
         </Link>
       </header>
       <ProviderMenuTranslationsPanel canWrite={canWrite} />

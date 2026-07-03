@@ -132,7 +132,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Endast visning",
-        "readOnlyLead": "Du har inte behörighet att redigera menyn. Kontakta leverantörsadministratören för redigeringsåtkomst."
+        "readOnlyLead": "Du har inte behörighet att redigera menyn. Kontakta leverantörsadministratören för redigeringsåtkomst.",
+        "translationsPromoTitle": "Menyöversättningar",
+        "translationsPromoLead": "Godkänn översatta menytexter för medarbetare senare. Medarbetare ser fortfarande originaltext tills SMART-3.",
+        "translationsPromoCta": "Öppna menyöversättningar"
       },
       "header": {
         "eyebrow": "Menyredigerare",
@@ -635,6 +638,94 @@
         "emptyPanel": {
           "selectDay": "Välj en dag i veckoplanen för att redigera katalogval."
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Meny",
+        "title": "Menyöversättningar",
+        "lead": "Godkänn och hantera översatta menytexter för {providerName}. Detta påverkar inte vad medarbetare ser ännu.",
+        "backToMenu": "Tillbaka till meny"
+      },
+      "translations": {
+        "introApproved": "Endast godkända översättningar visas för medarbetare. Utkast, förslag och avvisade rader visas aldrig för medarbetare.",
+        "introPartialCoverage": "Delvis täckning är normalt. Saknade eller inaktuella hash faller tillbaka till leverantörens originaltext — detta ändrar inte beställningsnycklar, paket eller pris för medarbetare.",
+        "introSourceRefs": "Källreferenser: måltid = item.key, kategori = kategori-slug (t.ex. paasmurt, salat), allergen = normaliserat token.",
+        "introSources": "Källor hämtas från katalog och aktivt menyfönster (publicerade menuDay-rader). Varmrätt/menu_day-källor visas när de finns i aktivt menyfönster.",
+        "coverageTitle": "Täckning per språk",
+        "loadingSources": "Laddar källor…",
+        "noSources": "Inga källor hittades i katalogen ännu.",
+        "coverageTable": {
+          "locale": "Språk",
+          "coverage": "Täckning",
+          "employeeVisible": "Godkänd synlig",
+          "missing": "Saknas",
+          "draft": "Utkast",
+          "stale": "Inaktuell"
+        },
+        "missingTitle": "Källor utan godkänd översättning",
+        "missingCount": "{count} källor saknar rad för minst ett målspråk.",
+        "createDraftFromSource": "Skapa utkast",
+        "staleWarning": "{count} källor har hash-avvikelse — medarbetare ser originaltext tills raden godkänns igen.",
+        "filters": {
+          "locale": "Språk",
+          "status": "Status",
+          "all": "Alla"
+        },
+        "status": {
+          "missing": "Saknas",
+          "draft": "Utkast",
+          "suggested": "Förslag",
+          "approved": "Godkänd",
+          "rejected": "Avvisad",
+          "stale": "Inaktuell"
+        },
+        "createTitle": "Ny översättningsrad",
+        "createLead": "Skapa manuell rad med källreferens och originaltext, eller använd «Skapa utkast» från källistan ovan.",
+        "form": {
+          "sourceKind": "Källa",
+          "field": "Fält",
+          "locale": "Språk",
+          "sourceRef": "Källreferens",
+          "sourceRefPlaceholder": "item.key, kategori-slug eller allergen-token",
+          "originalText": "Originaltext",
+          "translatedTextOptional": "Översatt text (valfritt)"
+        },
+        "saveDraft": "Spara utkast",
+        "listTitle": "Översättningar",
+        "loading": "Laddar…",
+        "emptyList": "Inga översättningsrader ännu. Skapa en rad manuellt, eller vänta tills import från menykällor är tillgänglig.",
+        "listTable": {
+          "source": "Källa",
+          "field": "Fält",
+          "locale": "Språk",
+          "original": "Original",
+          "translated": "Översatt",
+          "status": "Status",
+          "updated": "Uppdaterad",
+          "actions": "Åtgärd"
+        },
+        "hashMismatch": "Hash avviker — markera inaktuell vid behov",
+        "approve": "Godkänn",
+        "reject": "Avvisa",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Kunde inte hämta översättningar.",
+          "updateFailed": "Kunde inte uppdatera översättning.",
+          "createFailed": "Kunde inte skapa översättning."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Medarbetare kan bara beställa när företaget har aktivt avtal och menyn är publicerad.",
+        "date": "Datum",
+        "plan": "Plan",
+        "category": "Kategori",
+        "mealTitle": "Rättens namn",
+        "description": "Beskrivning",
+        "allergens": "Allergener (valfritt, kommaseparerat)",
+        "allergensPlaceholder": "T.ex. mjölk, vete",
+        "savingDraft": "Sparar…",
+        "saveDraft": "Spara utkast",
+        "publishing": "Publicerar…",
+        "publishMenu": "Publicera meny"
       }
     },
     "banner": {
