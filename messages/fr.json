@@ -132,7 +132,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Lecture seule",
-        "readOnlyLead": "Vous n'avez pas l'autorisation de modifier le menu. Contactez l'administrateur fournisseur."
+        "readOnlyLead": "Vous n'avez pas l'autorisation de modifier le menu. Contactez l'administrateur fournisseur.",
+        "translationsPromoTitle": "Traductions du menu",
+        "translationsPromoLead": "Approuvez les textes traduits pour les employés plus tard. Les employés voient encore le texte original jusqu'à SMART-3.",
+        "translationsPromoCta": "Ouvrir les traductions du menu"
       },
       "header": {
         "eyebrow": "Éditeur de menu",
@@ -635,6 +638,94 @@
         "emptyPanel": {
           "selectDay": "Sélectionnez un jour dans le plan de la semaine pour modifier les choix du catalogue."
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Traductions du menu",
+        "lead": "Approuvez et gérez les textes traduits pour {providerName}. Cela ne change pas encore ce que voient les employés.",
+        "backToMenu": "Retour au menu"
+      },
+      "translations": {
+        "introApproved": "Seules les traductions approuvées sont visibles pour les employés. Les brouillons, suggestions et lignes rejetées ne sont jamais visibles pour les employés.",
+        "introPartialCoverage": "Une couverture partielle est normale. En cas d'absence ou de hash obsolète, le texte original du fournisseur est utilisé — cela ne modifie pas les clés de commande, le forfait ni le prix pour les employés.",
+        "introSourceRefs": "Références source : repas = item.key, catégorie = slug de catégorie (p. ex. paasmurt, salat), allergène = jeton normalisé.",
+        "introSources": "Les sources proviennent du catalogue et de la fenêtre de menu active (lignes menuDay publiées). Les sources plat chaud/menu_day apparaissent lorsqu'elles sont présentes dans la fenêtre active.",
+        "coverageTitle": "Couverture par langue",
+        "loadingSources": "Chargement des sources…",
+        "noSources": "Aucune source trouvée dans le catalogue pour l'instant.",
+        "coverageTable": {
+          "locale": "Langue",
+          "coverage": "Couverture",
+          "employeeVisible": "Approuvé visible",
+          "missing": "Manquant",
+          "draft": "Brouillon",
+          "stale": "Obsolète"
+        },
+        "missingTitle": "Sources sans traduction approuvée",
+        "missingCount": "{count} sources n'ont pas de ligne pour au moins une langue cible.",
+        "createDraftFromSource": "Créer un brouillon",
+        "staleWarning": "{count} sources ont une discordance de hash — les employés voient le texte original jusqu'à nouvelle approbation de la ligne.",
+        "filters": {
+          "locale": "Langue",
+          "status": "Statut",
+          "all": "Tous"
+        },
+        "status": {
+          "missing": "Manquant",
+          "draft": "Brouillon",
+          "suggested": "Suggéré",
+          "approved": "Approuvé",
+          "rejected": "Rejeté",
+          "stale": "Obsolète"
+        },
+        "createTitle": "Nouvelle ligne de traduction",
+        "createLead": "Créez une ligne manuelle avec référence source et texte original, ou utilisez « Créer un brouillon » depuis la liste des sources ci-dessus.",
+        "form": {
+          "sourceKind": "Source",
+          "field": "Champ",
+          "locale": "Langue",
+          "sourceRef": "Référence source",
+          "sourceRefPlaceholder": "item.key, slug de catégorie ou jeton allergène",
+          "originalText": "Texte original",
+          "translatedTextOptional": "Texte traduit (optionnel)"
+        },
+        "saveDraft": "Enregistrer le brouillon",
+        "listTitle": "Traductions",
+        "loading": "Chargement…",
+        "emptyList": "Aucune ligne de traduction pour l'instant. Créez une ligne manuellement ou attendez l'import depuis les sources du menu.",
+        "listTable": {
+          "source": "Source",
+          "field": "Champ",
+          "locale": "Langue",
+          "original": "Original",
+          "translated": "Traduit",
+          "status": "Statut",
+          "updated": "Mis à jour",
+          "actions": "Actions"
+        },
+        "hashMismatch": "Discordance de hash — marquer obsolète si nécessaire",
+        "approve": "Approuver",
+        "reject": "Rejeter",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Impossible de charger les traductions.",
+          "updateFailed": "Impossible de mettre à jour la traduction.",
+          "createFailed": "Impossible de créer la traduction."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Les employés ne peuvent commander que lorsque l'entreprise a un accord actif et que le menu est publié.",
+        "date": "Date",
+        "plan": "Forfait",
+        "category": "Catégorie",
+        "mealTitle": "Nom du plat",
+        "description": "Description",
+        "allergens": "Allergènes (optionnel, séparés par des virgules)",
+        "allergensPlaceholder": "P. ex. lait, blé",
+        "savingDraft": "Enregistrement…",
+        "saveDraft": "Enregistrer le brouillon",
+        "publishing": "Publication…",
+        "publishMenu": "Publier le menu"
       }
     },
     "banner": {

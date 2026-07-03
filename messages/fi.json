@@ -132,7 +132,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Vain katselu",
-        "readOnlyLead": "Sinulla ei ole oikeutta muokata menua. Ota yhteyttä toimittajan ylläpitäjään saadaksesi muokkausoikeuden."
+        "readOnlyLead": "Sinulla ei ole oikeutta muokata menua. Ota yhteyttä toimittajan ylläpitäjään saadaksesi muokkausoikeuden.",
+        "translationsPromoTitle": "Menun käännökset",
+        "translationsPromoLead": "Hyväksy käännettyjä menu-tekstejä työntekijöille myöhemmin. Työntekijät näkevät edelleen alkuperäistekstin ennen SMART-3:aa.",
+        "translationsPromoCta": "Avaa menun käännökset"
       },
       "header": {
         "eyebrow": "Menueditori",
@@ -635,6 +638,94 @@
         "emptyPanel": {
           "selectDay": "Valitse päivä viikkosuunnitelmasta muokataksesi katalogivalintoja."
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Menun käännökset",
+        "lead": "Hyväksy ja hallitse käännettyjä menu-tekstejä toimittajalle {providerName}. Tämä ei vielä muuta työntekijöiden näkymää.",
+        "backToMenu": "Takaisin menuun"
+      },
+      "translations": {
+        "introApproved": "Vain hyväksytyt käännökset näytetään työntekijöille. Luonnokset, ehdotukset ja hylätyt rivit eivät koskaan näy työntekijöille.",
+        "introPartialCoverage": "Osittainen kattavuus on normaalia. Puuttuva tai vanhentunut hash palaa palveluntarjoajan alkuperäiseen tekstiin — tämä ei muuta tilausavaimia, pakettia tai hintaa työntekijöille.",
+        "introSourceRefs": "Lähdereferenssit: ateria = item.key, kategoria = kategoria-slug (esim. paasmurt, salat), allergeeni = normalisoitu token.",
+        "introSources": "Lähteet haetaan katalogista ja aktiivisesta menuikkunasta (julkaistut menuDay-rivit). Lämpimän aterian/menu_day-lähteet näkyvät, kun ne ovat aktiivisessa menuikkunassa.",
+        "coverageTitle": "Kattavuus kielittäin",
+        "loadingSources": "Ladataan lähteitä…",
+        "noSources": "Katalogista ei löytynyt lähteitä vielä.",
+        "coverageTable": {
+          "locale": "Kieli",
+          "coverage": "Kattavuus",
+          "employeeVisible": "Hyväksytty näkyvissä",
+          "missing": "Puuttuu",
+          "draft": "Luonnos",
+          "stale": "Vanhentunut"
+        },
+        "missingTitle": "Lähteet ilman hyväksyttyä käännöstä",
+        "missingCount": "{count} lähteeltä puuttuu rivi vähintään yhdelle kohdekielelle.",
+        "createDraftFromSource": "Luo luonnos",
+        "staleWarning": "{count} lähteellä on hash-ero — työntekijät näkevät alkuperäistekstin, kunnes rivi hyväksytään uudelleen.",
+        "filters": {
+          "locale": "Kieli",
+          "status": "Tila",
+          "all": "Kaikki"
+        },
+        "status": {
+          "missing": "Puuttuu",
+          "draft": "Luonnos",
+          "suggested": "Ehdotus",
+          "approved": "Hyväksytty",
+          "rejected": "Hylätty",
+          "stale": "Vanhentunut"
+        },
+        "createTitle": "Uusi käännösrivi",
+        "createLead": "Luo manuaalinen rivi lähdeviitteellä ja alkuperäistekstillä, tai käytä «Luo luonnos» yllä olevasta lähdelistasta.",
+        "form": {
+          "sourceKind": "Lähde",
+          "field": "Kenttä",
+          "locale": "Kieli",
+          "sourceRef": "Lähdeviite",
+          "sourceRefPlaceholder": "item.key, kategoria-slug tai allergeenitoken",
+          "originalText": "Alkuperäisteksti",
+          "translatedTextOptional": "Käännetty teksti (valinnainen)"
+        },
+        "saveDraft": "Tallenna luonnos",
+        "listTitle": "Käännökset",
+        "loading": "Ladataan…",
+        "emptyList": "Ei käännösrivejä vielä. Luo rivi manuaalisesti tai odota tuontia menu-lähteistä.",
+        "listTable": {
+          "source": "Lähde",
+          "field": "Kenttä",
+          "locale": "Kieli",
+          "original": "Alkuperäinen",
+          "translated": "Käännetty",
+          "status": "Tila",
+          "updated": "Päivitetty",
+          "actions": "Toiminnot"
+        },
+        "hashMismatch": "Hash-ero — merkitse vanhentuneeksi tarvittaessa",
+        "approve": "Hyväksy",
+        "reject": "Hylkää",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Käännöksiä ei voitu ladata.",
+          "updateFailed": "Käännöstä ei voitu päivittää.",
+          "createFailed": "Käännöstä ei voitu luoda."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Työntekijät voivat tilata vain, kun yrityksellä on aktiivinen sopimus ja menu on julkaistu.",
+        "date": "Päivämäärä",
+        "plan": "Paketti",
+        "category": "Kategoria",
+        "mealTitle": "Ruoan nimi",
+        "description": "Kuvaus",
+        "allergens": "Allergeenit (valinnainen, pilkulla erotettu)",
+        "allergensPlaceholder": "Esim. maito, vehnä",
+        "savingDraft": "Tallennetaan…",
+        "saveDraft": "Tallenna luonnos",
+        "publishing": "Julkaistaan…",
+        "publishMenu": "Julkaise menu"
       }
     },
     "orders": {
