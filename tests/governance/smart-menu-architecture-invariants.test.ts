@@ -180,8 +180,8 @@ describe("SMART-0 — smart-menu architecture design doc", () => {
   test("design doc ends with next-phase gate — explicit owner GO", () => {
     const doc = readDoc();
     expect(doc).toMatch(/READY FOR SMART-1.*only after SMART-0 is merged/i);
-    expect(doc).toMatch(/READY FOR SMART-4.*only after SMART-3 is merged/i);
-    expect(doc).toMatch(/explicit GO/i);
+    expect(doc).toMatch(/SMART-4 \(source extraction.*is complete when/i);
+    expect(doc).toMatch(/Do not start menu profile runtime.*explicit GO/i);
   });
 
   test("design doc contains no obvious secrets", () => {
