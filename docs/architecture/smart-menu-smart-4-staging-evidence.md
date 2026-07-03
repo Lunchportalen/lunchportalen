@@ -160,7 +160,7 @@ This document records **staging verification evidence only**. No order write-pat
 | SMART-4 on staging | **GO** — provider sources API + UI QA verified |
 | Production SMART-4 | **Not verified in this doc** — staging-only evidence |
 | Menu profile runtime / G5d.8 / cutover / SOT / auto-rollout | **Do not start** without explicit owner GO |
-| Next optional work | Wire order-window sources into server report (separate PR); establish `main` → `staging` promote checklist |
+| Next optional work | Wire order-window sources into server report (separate PR); use [staging-sync-routine.md](../operations/staging-sync-routine.md) after each staging-relevant `main` merge |
 
 ---
 
