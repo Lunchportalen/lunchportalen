@@ -7,7 +7,7 @@ import {
   MENU_CONTENT_FIELDS,
   MENU_CONTENT_SOURCE_KINDS,
   MENU_CONTENT_TRANSLATION_STATUSES,
-} from "@/lib/smart-menu/translationStatus";
+} from "@/lib/smart-menu/translationStatusConstants";
 
 type TranslationRow = {
   id: string;
