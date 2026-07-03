@@ -9,6 +9,8 @@ export type ProviderOperationalSettings = {
   kitchenEmail: string | null;
   deliveryEmail: string | null;
   locale: string;
+  menuProfileId: string | null;
+  defaultCountryCode: string;
 };
 
 /**
@@ -38,8 +40,8 @@ const PROVIDER_LOCALE_LABELS: Record<string, string> = {
 };
 
 /**
- * Kontrollert allowlist. provider_settings.locale er foreløpig inert i runtime,
- * men verdien valideres slik at fremtidig språkstøtte kan stole på den.
+ * Kontrollert allowlist. Operational locale styrer lagret marked/menyprofil (Phase 2).
+ * Employee runtime bruker fortsatt ikke menyprofil før Phase 3 / flag cutover.
  * Rekkefølge følger {@link APP_LOCALES} (Norsk først, deretter alfabetisk etter visningsnavn).
  */
 export const PROVIDER_LOCALE_OPTIONS: ProviderLocaleOption[] = PROVIDER_INTL_LOCALES.map((value) => ({

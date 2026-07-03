@@ -22,6 +22,8 @@ export async function loadProviderOperationalSettings(
     kitchenEmail: null,
     deliveryEmail: null,
     locale: DEFAULT_PROVIDER_LOCALE,
+    menuProfileId: null,
+    defaultCountryCode: "NO",
   };
 
   const pid = String(providerId ?? "").trim();
@@ -31,18 +33,21 @@ export async function loadProviderOperationalSettings(
     const admin = supabaseAdmin();
     const { data, error } = await (admin as any)
       .from("provider_settings")
-      .select("operations_email, kitchen_email, delivery_email, locale")
+      .select("operations_email, kitchen_email, delivery_email, locale, menu_profile_id, default_country_code")
       .eq("provider_id", pid)
       .maybeSingle();
 
     if (error || !data) return empty;
 
     const locale = String(data.locale ?? "").trim();
+    const country = String(data.default_country_code ?? "NO").trim().toUpperCase();
     return {
       operationsEmail: data.operations_email ?? null,
       kitchenEmail: data.kitchen_email ?? null,
       deliveryEmail: data.delivery_email ?? null,
       locale: isSupportedProviderLocale(locale) ? locale : DEFAULT_PROVIDER_LOCALE,
+      menuProfileId: data.menu_profile_id ?? null,
+      defaultCountryCode: country.length === 2 ? country : "NO",
     };
   } catch {
     return empty;
