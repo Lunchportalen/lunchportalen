@@ -50,6 +50,7 @@ function todayIso(): string {
 
 export default function ProviderMenuEditor() {
   const t = useTranslations("provider.menu");
+  const tLegacy = useTranslations("provider.menu.legacyEditor");
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [category, setCategory] = useState<Category>("varmrett");
   const [status, setStatus] = useState<FormStatus>("idle");
@@ -120,15 +121,13 @@ export default function ProviderMenuEditor() {
 
   return (
     <section className="ds-card ds-provider-meny-card">
-      <p className="ds-body">
-        For at ansatte skal kunne bestille må firmaet ha aktiv avtale, og menyen må være publisert.
-      </p>
+      <p className="ds-body">{tLegacy("intro")}</p>
 
       <form className="lp-demo-form ds-provider-meny-form" onSubmit={onPublish} noValidate>
-        <label htmlFor="menu-date">Dato</label>
+        <label htmlFor="menu-date">{tLegacy("date")}</label>
         <input id="menu-date" name="date" type="date" required defaultValue={todayIso()} />
 
-        <label htmlFor="menu-tier">Plan</label>
+        <label htmlFor="menu-tier">{tLegacy("plan")}</label>
         <select
           id="menu-tier"
           name="tier"
@@ -143,7 +142,7 @@ export default function ProviderMenuEditor() {
           ))}
         </select>
 
-        <label htmlFor="menu-category">Kategori</label>
+        <label htmlFor="menu-category">{tLegacy("category")}</label>
         <select
           id="menu-category"
           name="category"
@@ -158,19 +157,19 @@ export default function ProviderMenuEditor() {
           ))}
         </select>
 
-        <label htmlFor="menu-meal-title">Rettens navn</label>
+        <label htmlFor="menu-meal-title">{tLegacy("mealTitle")}</label>
         <input id="menu-meal-title" name="mealTitle" type="text" required maxLength={120} />
 
-        <label htmlFor="menu-description">Beskrivelse</label>
+        <label htmlFor="menu-description">{tLegacy("description")}</label>
         <textarea id="menu-description" name="description" rows={4} required maxLength={4000} />
 
-        <label htmlFor="menu-allergens">Allergener (valgfritt, kommaseparert)</label>
+        <label htmlFor="menu-allergens">{tLegacy("allergens")}</label>
         <textarea
           id="menu-allergens"
           name="allergensText"
           rows={2}
           maxLength={2000}
-          placeholder="F.eks. melk, hvete"
+          placeholder={tLegacy("allergensPlaceholder")}
         />
 
         {message ? (
@@ -201,10 +200,10 @@ export default function ProviderMenuEditor() {
               if (form) startTransition(() => submit("draft", form));
             }}
           >
-            {pending && status === "loading" ? "Lagrer…" : "Lagre utkast"}
+            {pending && status === "loading" ? tLegacy("savingDraft") : tLegacy("saveDraft")}
           </button>
           <button type="submit" className="ds-btn ds-btn--primary" disabled={pending || status === "loading"}>
-            {pending && status === "loading" ? "Publiserer…" : "Publiser meny"}
+            {pending && status === "loading" ? tLegacy("publishing") : tLegacy("publishMenu")}
           </button>
         </div>
       </form>

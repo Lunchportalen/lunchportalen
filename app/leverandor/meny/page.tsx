@@ -98,13 +98,10 @@ export default async function LeverandorMenyPage() {
     <div className="ds-provider-meny-page lp-editor-page">
       {canSaveMappingDraft ? (
         <section className="ds-card ds-section">
-          <h2 className="ds-h3">Menyoversettelser</h2>
-          <p className="ds-body">
-            Godkjenn oversatte menytekster for ansatte senere. Ansatte ser fortsatt originaltekst frem
-            til SMART-3.
-          </p>
+          <h2 className="ds-h3">{t("translationsPromoTitle")}</h2>
+          <p className="ds-body">{t("translationsPromoLead")}</p>
           <Link href="/leverandor/meny/oversettelser" className="ds-btn ds-btn-primary">
-            Åpne menyoversettelser
+            {t("translationsPromoCta")}
           </Link>
         </section>
       ) : null}

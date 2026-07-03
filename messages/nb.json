@@ -1285,7 +1285,98 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Kun visning",
-        "readOnlyLead": "Du har ikke tilgang til å redigere meny. Kontakt leverandøradministrator for å få redigeringstilgang."
+        "readOnlyLead": "Du har ikke tilgang til å redigere meny. Kontakt leverandøradministrator for å få redigeringstilgang.",
+        "translationsPromoTitle": "Menyoversettelser",
+        "translationsPromoLead": "Godkjenn oversatte menytekster for ansatte senere. Ansatte ser fortsatt originaltekst frem til SMART-3.",
+        "translationsPromoCta": "Åpne menyoversettelser"
+      },
+      "translationsPage": {
+        "eyebrow": "Meny",
+        "title": "Menyoversettelser",
+        "lead": "Godkjenn og administrer oversatte menytekster for {providerName}. Dette påvirker ikke hva ansatte ser ennå.",
+        "backToMenu": "Tilbake til meny"
+      },
+      "translations": {
+        "introApproved": "Kun godkjente oversettelser vises til ansatte. Utkast, forslag og avviste rader vises aldri til ansatte.",
+        "introPartialCoverage": "Delvis dekning er normalt. Mangler eller utdatert hash faller tilbake til leverandørens originaltekst — dette endrer ikke bestillingsnøkler, pakke eller pris for ansatte.",
+        "introSourceRefs": "Kilde-referanser: måltid = item.key, kategori = kategori-slug (f.eks. paasmurt, salat), allergen = normalisert token.",
+        "introSources": "Kilder hentes fra katalog og aktivt menyvindu (publiserte menuDay-rader). Varmrett/menu_day-kilder vises når de finnes i aktivt menyvindu.",
+        "coverageTitle": "Dekning per språk",
+        "loadingSources": "Laster kilder…",
+        "noSources": "Ingen kilder funnet i katalogen ennå.",
+        "coverageTable": {
+          "locale": "Språk",
+          "coverage": "Dekning",
+          "employeeVisible": "Godkjent synlig",
+          "missing": "Mangler",
+          "draft": "Utkast",
+          "stale": "Utdatert"
+        },
+        "missingTitle": "Kilder uten godkjent oversettelse",
+        "missingCount": "{count} kilder mangler rad på minst ett mål-språk.",
+        "createDraftFromSource": "Opprett utkast",
+        "staleWarning": "{count} kilder har hash-avvik — ansatte ser originaltekst til raden er godkjent på nytt.",
+        "filters": {
+          "locale": "Språk",
+          "status": "Status",
+          "all": "Alle"
+        },
+        "status": {
+          "missing": "Mangler",
+          "draft": "Utkast",
+          "suggested": "Forslag",
+          "approved": "Godkjent",
+          "rejected": "Avvist",
+          "stale": "Utdatert"
+        },
+        "createTitle": "Ny oversettelsesrad",
+        "createLead": "Opprett manuell rad med kilde-referanse og originaltekst, eller bruk «Opprett utkast» fra kildelisten over.",
+        "form": {
+          "sourceKind": "Kilde",
+          "field": "Felt",
+          "locale": "Språk",
+          "sourceRef": "Kilde-referanse",
+          "sourceRefPlaceholder": "item.key, kategori-slug eller allergen-token",
+          "originalText": "Originaltekst",
+          "translatedTextOptional": "Oversatt tekst (valgfritt)"
+        },
+        "saveDraft": "Lagre utkast",
+        "listTitle": "Oversettelser",
+        "loading": "Laster…",
+        "emptyList": "Ingen oversettelsesrader ennå. Opprett en rad manuelt, eller vent til import fra menykilder er tilgjengelig.",
+        "listTable": {
+          "source": "Kilde",
+          "field": "Felt",
+          "locale": "Språk",
+          "original": "Original",
+          "translated": "Oversatt",
+          "status": "Status",
+          "updated": "Oppdatert",
+          "actions": "Handling"
+        },
+        "hashMismatch": "Hash avviker — marker utdatert ved behov",
+        "approve": "Godkjenn",
+        "reject": "Avvis",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Kunne ikke hente oversettelser.",
+          "updateFailed": "Kunne ikke oppdatere oversettelse.",
+          "createFailed": "Kunne ikke opprette oversettelse."
+        }
+      },
+      "legacyEditor": {
+        "intro": "For at ansatte skal kunne bestille må firmaet ha aktiv avtale, og menyen må være publisert.",
+        "date": "Dato",
+        "plan": "Plan",
+        "category": "Kategori",
+        "mealTitle": "Rettens navn",
+        "description": "Beskrivelse",
+        "allergens": "Allergener (valgfritt, kommaseparert)",
+        "allergensPlaceholder": "F.eks. melk, hvete",
+        "savingDraft": "Lagrer…",
+        "saveDraft": "Lagre utkast",
+        "publishing": "Publiserer…",
+        "publishMenu": "Publiser meny"
       },
       "header": {
         "eyebrow": "Meny-editor",

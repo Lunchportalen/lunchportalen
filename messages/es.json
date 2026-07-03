@@ -132,7 +132,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Solo lectura",
-        "readOnlyLead": "No tiene permiso para editar el menú. Contacte al administrador del proveedor."
+        "readOnlyLead": "No tiene permiso para editar el menú. Contacte al administrador del proveedor.",
+        "translationsPromoTitle": "Traducciones del menú",
+        "translationsPromoLead": "Apruebe textos traducidos para empleados más adelante. Los empleados siguen viendo el texto original hasta SMART-3.",
+        "translationsPromoCta": "Abrir traducciones del menú"
       },
       "header": {
         "eyebrow": "Editor de menú",
@@ -635,6 +638,94 @@
         "emptyPanel": {
           "selectDay": "Seleccione un día en el plan semanal para editar las opciones del catálogo."
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menú",
+        "title": "Traducciones del menú",
+        "lead": "Apruebe y gestione textos traducidos para {providerName}. Esto aún no cambia lo que ven los empleados.",
+        "backToMenu": "Volver al menú"
+      },
+      "translations": {
+        "introApproved": "Solo las traducciones aprobadas se muestran a los empleados. Los borradores, sugerencias y filas rechazadas nunca se muestran a los empleados.",
+        "introPartialCoverage": "La cobertura parcial es normal. Si falta hash o está obsoleto, se usa el texto original del proveedor — esto no cambia claves de pedido, paquete ni precio para empleados.",
+        "introSourceRefs": "Referencias de origen: comida = item.key, categoría = slug de categoría (p. ej. paasmurt, salat), alérgeno = token normalizado.",
+        "introSources": "Las fuentes provienen del catálogo y de la ventana de menú activa (filas menuDay publicadas). Las fuentes de plato caliente/menu_day aparecen cuando están en la ventana activa.",
+        "coverageTitle": "Cobertura por idioma",
+        "loadingSources": "Cargando fuentes…",
+        "noSources": "Aún no se encontraron fuentes en el catálogo.",
+        "coverageTable": {
+          "locale": "Idioma",
+          "coverage": "Cobertura",
+          "employeeVisible": "Aprobado visible",
+          "missing": "Falta",
+          "draft": "Borrador",
+          "stale": "Obsoleto"
+        },
+        "missingTitle": "Fuentes sin traducción aprobada",
+        "missingCount": "{count} fuentes no tienen fila para al menos un idioma de destino.",
+        "createDraftFromSource": "Crear borrador",
+        "staleWarning": "{count} fuentes tienen discrepancia de hash — los empleados ven el texto original hasta que la fila se apruebe de nuevo.",
+        "filters": {
+          "locale": "Idioma",
+          "status": "Estado",
+          "all": "Todos"
+        },
+        "status": {
+          "missing": "Falta",
+          "draft": "Borrador",
+          "suggested": "Sugerido",
+          "approved": "Aprobado",
+          "rejected": "Rechazado",
+          "stale": "Obsoleto"
+        },
+        "createTitle": "Nueva fila de traducción",
+        "createLead": "Cree una fila manual con referencia de origen y texto original, o use «Crear borrador» desde la lista de fuentes arriba.",
+        "form": {
+          "sourceKind": "Origen",
+          "field": "Campo",
+          "locale": "Idioma",
+          "sourceRef": "Referencia de origen",
+          "sourceRefPlaceholder": "item.key, slug de categoría o token de alérgeno",
+          "originalText": "Texto original",
+          "translatedTextOptional": "Texto traducido (opcional)"
+        },
+        "saveDraft": "Guardar borrador",
+        "listTitle": "Traducciones",
+        "loading": "Cargando…",
+        "emptyList": "Aún no hay filas de traducción. Cree una fila manualmente o espere a que esté disponible la importación desde fuentes del menú.",
+        "listTable": {
+          "source": "Origen",
+          "field": "Campo",
+          "locale": "Idioma",
+          "original": "Original",
+          "translated": "Traducido",
+          "status": "Estado",
+          "updated": "Actualizado",
+          "actions": "Acciones"
+        },
+        "hashMismatch": "Discrepancia de hash — marque como obsoleto si es necesario",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "No se pudieron cargar las traducciones.",
+          "updateFailed": "No se pudo actualizar la traducción.",
+          "createFailed": "No se pudo crear la traducción."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Los empleados solo pueden pedir cuando la empresa tiene un acuerdo activo y el menú está publicado.",
+        "date": "Fecha",
+        "plan": "Plan",
+        "category": "Categoría",
+        "mealTitle": "Nombre del plato",
+        "description": "Descripción",
+        "allergens": "Alérgenos (opcional, separados por comas)",
+        "allergensPlaceholder": "P. ej. leche, trigo",
+        "savingDraft": "Guardando…",
+        "saveDraft": "Guardar borrador",
+        "publishing": "Publicando…",
+        "publishMenu": "Publicar menú"
       }
     },
     "banner": {

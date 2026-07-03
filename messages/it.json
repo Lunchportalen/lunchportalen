@@ -1296,7 +1296,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Sola lettura",
-        "readOnlyLead": "Vous n'avez pas l'autorisation de modifier le menu. Contatti l'administrateur fournisseur."
+        "readOnlyLead": "Non hai l'autorizzazione a modificare il menu. Contatta l'amministratore del fornitore.",
+        "translationsPromoTitle": "Traduzioni menu",
+        "translationsPromoLead": "Approva testi tradotti per i dipendenti in seguito. I dipendenti vedono ancora il testo originale fino a SMART-3.",
+        "translationsPromoCta": "Apri traduzioni menu"
       },
       "header": {
         "eyebrow": "Editor Menu",
@@ -1799,6 +1802,94 @@
           "basedOnLuxus": "Basato su Luxus",
           "ownEnterprise": "Enterprise proprio"
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Traduzioni menu",
+        "lead": "Approva e gestisci testi tradotti per {providerName}. Questo non cambia ancora ciò che vedono i dipendenti.",
+        "backToMenu": "Torna al menu"
+      },
+      "translations": {
+        "introApproved": "Solo le traduzioni approvate sono visibili ai dipendenti. Bozze, suggerimenti e righe rifiutate non sono mai visibili ai dipendenti.",
+        "introPartialCoverage": "Una copertura parziale è normale. Hash mancante o obsoleto ripiega sul testo originale del fornitore — questo non modifica chiavi ordine, pacchetto o prezzo per i dipendenti.",
+        "introSourceRefs": "Riferimenti sorgente: pasto = item.key, categoria = slug categoria (es. paasmurt, salat), allergene = token normalizzato.",
+        "introSources": "Le sorgenti provengono dal catalogo e dalla finestra menu attiva (righe menuDay pubblicate). Le sorgenti piatto caldo/menu_day compaiono quando presenti nella finestra attiva.",
+        "coverageTitle": "Copertura per lingua",
+        "loadingSources": "Caricamento sorgenti…",
+        "noSources": "Nessuna sorgente trovata nel catalogo.",
+        "coverageTable": {
+          "locale": "Lingua",
+          "coverage": "Copertura",
+          "employeeVisible": "Approvato visibile",
+          "missing": "Mancante",
+          "draft": "Bozza",
+          "stale": "Obsoleto"
+        },
+        "missingTitle": "Sorgenti senza traduzione approvata",
+        "missingCount": "{count} sorgenti non hanno una riga per almeno una lingua di destinazione.",
+        "createDraftFromSource": "Crea bozza",
+        "staleWarning": "{count} sorgenti hanno discrepanza hash — i dipendenti vedono il testo originale finché la riga non viene riapprovata.",
+        "filters": {
+          "locale": "Lingua",
+          "status": "Stato",
+          "all": "Tutti"
+        },
+        "status": {
+          "missing": "Mancante",
+          "draft": "Bozza",
+          "suggested": "Suggerito",
+          "approved": "Approvato",
+          "rejected": "Rifiutato",
+          "stale": "Obsoleto"
+        },
+        "createTitle": "Nuova riga traduzione",
+        "createLead": "Crea una riga manuale con riferimento sorgente e testo originale, oppure usa «Crea bozza» dall'elenco sorgenti sopra.",
+        "form": {
+          "sourceKind": "Sorgente",
+          "field": "Campo",
+          "locale": "Lingua",
+          "sourceRef": "Riferimento sorgente",
+          "sourceRefPlaceholder": "item.key, slug categoria o token allergene",
+          "originalText": "Testo originale",
+          "translatedTextOptional": "Testo tradotto (opzionale)"
+        },
+        "saveDraft": "Salva bozza",
+        "listTitle": "Traduzioni",
+        "loading": "Caricamento…",
+        "emptyList": "Nessuna riga traduzione ancora. Crea una riga manualmente o attendi l'import dalle sorgenti menu.",
+        "listTable": {
+          "source": "Sorgente",
+          "field": "Campo",
+          "locale": "Lingua",
+          "original": "Originale",
+          "translated": "Tradotto",
+          "status": "Stato",
+          "updated": "Aggiornato",
+          "actions": "Azioni"
+        },
+        "hashMismatch": "Discrepanza hash — segna obsoleto se necessario",
+        "approve": "Approva",
+        "reject": "Rifiuta",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Impossibile caricare le traduzioni.",
+          "updateFailed": "Impossibile aggiornare la traduzione.",
+          "createFailed": "Impossibile creare la traduzione."
+        }
+      },
+      "legacyEditor": {
+        "intro": "I dipendenti possono ordinare solo quando l'azienda ha un accordo attivo e il menu è pubblicato.",
+        "date": "Data",
+        "plan": "Piano",
+        "category": "Categoria",
+        "mealTitle": "Nome del piatto",
+        "description": "Descrizione",
+        "allergens": "Allergeni (opzionale, separati da virgola)",
+        "allergensPlaceholder": "Es. latte, grano",
+        "savingDraft": "Salvataggio…",
+        "saveDraft": "Salva bozza",
+        "publishing": "Pubblicazione…",
+        "publishMenu": "Pubblica menu"
       }
     }
   }

@@ -132,7 +132,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Nur Ansicht",
-        "readOnlyLead": "Sie haben keine Berechtigung, das Menü zu bearbeiten. Wenden Sie sich an den Lieferantenadministrator."
+        "readOnlyLead": "Sie haben keine Berechtigung, das Menü zu bearbeiten. Wenden Sie sich an den Lieferantenadministrator.",
+        "translationsPromoTitle": "Menüübersetzungen",
+        "translationsPromoLead": "Übersetzte Menütexte für Mitarbeitende später freigeben. Mitarbeitende sehen bis SMART-3 weiterhin Originaltext.",
+        "translationsPromoCta": "Menüübersetzungen öffnen"
       },
       "header": {
         "eyebrow": "Menü-Editor",
@@ -635,6 +638,94 @@
         "emptyPanel": {
           "selectDay": "Wählen Sie einen Tag im Wochenplan, um Katalogauswahlen zu bearbeiten."
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menü",
+        "title": "Menüübersetzungen",
+        "lead": "Übersetzte Menütexte für {providerName} freigeben und verwalten. Dies ändert noch nicht, was Mitarbeitende sehen.",
+        "backToMenu": "Zurück zum Menü"
+      },
+      "translations": {
+        "introApproved": "Nur freigegebene Übersetzungen werden Mitarbeitenden angezeigt. Entwürfe, Vorschläge und abgelehnte Zeilen werden Mitarbeitenden nie angezeigt.",
+        "introPartialCoverage": "Teilweise Abdeckung ist normal. Fehlende oder veraltete Hash-Werte fallen auf den Originaltext des Anbieters zurück — dies ändert keine Bestellschlüssel, Paket oder Preis für Mitarbeitende.",
+        "introSourceRefs": "Quellenreferenzen: Mahlzeit = item.key, Kategorie = Kategorie-Slug (z. B. paasmurt, salat), Allergen = normalisiertes Token.",
+        "introSources": "Quellen stammen aus Katalog und aktivem Menüfenster (veröffentlichte menuDay-Zeilen). Warmgericht/menu_day-Quellen erscheinen, wenn sie im aktiven Menüfenster vorhanden sind.",
+        "coverageTitle": "Abdeckung pro Sprache",
+        "loadingSources": "Quellen werden geladen…",
+        "noSources": "Noch keine Quellen im Katalog gefunden.",
+        "coverageTable": {
+          "locale": "Sprache",
+          "coverage": "Abdeckung",
+          "employeeVisible": "Freigegeben sichtbar",
+          "missing": "Fehlt",
+          "draft": "Entwurf",
+          "stale": "Veraltet"
+        },
+        "missingTitle": "Quellen ohne freigegebene Übersetzung",
+        "missingCount": "{count} Quellen fehlt eine Zeile für mindestens eine Zielsprache.",
+        "createDraftFromSource": "Entwurf erstellen",
+        "staleWarning": "{count} Quellen haben Hash-Abweichung — Mitarbeitende sehen Originaltext, bis die Zeile erneut freigegeben wird.",
+        "filters": {
+          "locale": "Sprache",
+          "status": "Status",
+          "all": "Alle"
+        },
+        "status": {
+          "missing": "Fehlt",
+          "draft": "Entwurf",
+          "suggested": "Vorschlag",
+          "approved": "Freigegeben",
+          "rejected": "Abgelehnt",
+          "stale": "Veraltet"
+        },
+        "createTitle": "Neue Übersetzungszeile",
+        "createLead": "Manuelle Zeile mit Quellenreferenz und Originaltext erstellen, oder «Entwurf erstellen» aus der Quellenliste oben verwenden.",
+        "form": {
+          "sourceKind": "Quelle",
+          "field": "Feld",
+          "locale": "Sprache",
+          "sourceRef": "Quellenreferenz",
+          "sourceRefPlaceholder": "item.key, Kategorie-Slug oder Allergen-Token",
+          "originalText": "Originaltext",
+          "translatedTextOptional": "Übersetzter Text (optional)"
+        },
+        "saveDraft": "Entwurf speichern",
+        "listTitle": "Übersetzungen",
+        "loading": "Wird geladen…",
+        "emptyList": "Noch keine Übersetzungszeilen. Zeile manuell erstellen oder warten, bis Import aus Menüquellen verfügbar ist.",
+        "listTable": {
+          "source": "Quelle",
+          "field": "Feld",
+          "locale": "Sprache",
+          "original": "Original",
+          "translated": "Übersetzt",
+          "status": "Status",
+          "updated": "Aktualisiert",
+          "actions": "Aktionen"
+        },
+        "hashMismatch": "Hash-Abweichung — bei Bedarf als veraltet markieren",
+        "approve": "Freigeben",
+        "reject": "Ablehnen",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Übersetzungen konnten nicht geladen werden.",
+          "updateFailed": "Übersetzung konnte nicht aktualisiert werden.",
+          "createFailed": "Übersetzung konnte nicht erstellt werden."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Mitarbeitende können nur bestellen, wenn das Unternehmen eine aktive Vereinbarung hat und das Menü veröffentlicht ist.",
+        "date": "Datum",
+        "plan": "Plan",
+        "category": "Kategorie",
+        "mealTitle": "Gerichtname",
+        "description": "Beschreibung",
+        "allergens": "Allergene (optional, kommagetrennt)",
+        "allergensPlaceholder": "Z. B. Milch, Weizen",
+        "savingDraft": "Wird gespeichert…",
+        "saveDraft": "Entwurf speichern",
+        "publishing": "Wird veröffentlicht…",
+        "publishMenu": "Menü veröffentlichen"
       }
     },
     "orders": {
