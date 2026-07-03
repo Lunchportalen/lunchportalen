@@ -376,7 +376,7 @@ Employees must **never** query `menu_content_translations` directly. Future SMAR
 
 **Honest UX:** Partial coverage allowed — mixed translated/original content. No claim that all menu text is always translated.
 
-**Runtime evidence:** See [smart-menu-smart-3-runtime-evidence.md](./smart-menu-smart-3-runtime-evidence.md) — Production PASS (2026-07-03); staging deployment behind `main` at time of archive.
+**Runtime evidence:** See [smart-menu-smart-3-runtime-evidence.md](./smart-menu-smart-3-runtime-evidence.md) — **Production PASS** and **Staging PASS** (2026-07-03). Evidence doc contains verification details. SMART-3 is **display-only** (employee locale → approved overlay text; order identity unchanged). **SMART-4** / source extraction automation is **not started**.
 
 **Next phase:** SMART-4 — provider menu profile selection (explicit owner GO required)
 
