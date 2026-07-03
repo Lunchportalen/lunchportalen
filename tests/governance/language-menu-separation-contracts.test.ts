@@ -68,12 +68,23 @@ function assertSourceFreeOfPatterns(relPath: string, patterns: RegExp[], label: 
   }
 }
 
-describe("language-menu separation — employee menu APIs ignore UI locale", () => {
-  for (const route of MENU_IDENTITY_ROUTES) {
-    test(`${route} does not read UI locale for menu identity`, () => {
-      assertSourceFreeOfPatterns(route, LOCALE_INPUT_PATTERNS, "menu identity route");
-    });
-  }
+describe("language-menu separation — employee menu APIs ignore UI locale for identity", () => {
+  test("app/api/week/route.ts does not read UI locale for menu identity", () => {
+    assertSourceFreeOfPatterns("app/api/week/route.ts", LOCALE_INPUT_PATTERNS, "menu identity route");
+  });
+
+  test("app/api/orders/route.ts does not read UI locale for menu identity", () => {
+    assertSourceFreeOfPatterns("app/api/orders/route.ts", LOCALE_INPUT_PATTERNS, "menu identity route");
+  });
+
+  test("app/api/order/window/route.ts uses display locale only via SMART-3 overlay helper", () => {
+    const src = readSource("app/api/order/window/route.ts");
+    expect(src).toContain("overlayApprovedTranslationsOnOrderWindowDays");
+    expect(src).toContain("employeeApprovedTranslations");
+    expect(src).not.toMatch(/\bresolveAppLocale\b/);
+    expect(src).toMatch(/choice_key/);
+    expect(src).toMatch(/selectedItemKey|item_key/);
+  });
 
   test("i18n request config does not import menu/week/order runtime", () => {
     const src = readSource("i18n/request.ts");
@@ -204,18 +215,19 @@ describe("language-menu separation — employee forbidden commercial/runtime fie
   });
 });
 
-describe("language-menu separation — employee week language UX (PR B)", () => {
-  test("employee HeaderShell does not expose active LocaleSwitcher", () => {
+describe("language-menu separation — employee week language UX (SMART-3)", () => {
+  test("employee HeaderShell exposes LocaleSwitcher", () => {
     const headerShell = readSource("components/nav/HeaderShell.tsx");
-    expect(headerShell).toContain('navVariantKey !== "employee"');
+    expect(headerShell).toMatch(/showLocaleSwitcher\s*=\s*true/);
     const headerView = readSource("components/nav/HeaderShellView.tsx");
     expect(headerView).toMatch(/showLocaleSwitcher\s*\?\s*<LocaleSwitcher/);
   });
 
-  test("employee week client does not promise translated menu content", () => {
+  test("employee week client explains approved translation display honestly", () => {
     const src = readSource("app/(app)/week/EmployeeWeekClient.tsx");
-    expect(src).toContain("leverandørens originalspråk");
-    expect(src).not.toMatch(/oversatt meny|translated menu/i);
+    expect(src).toMatch(/godkjente menytekster/i);
+    expect(src).toMatch(/Originaltekst vises ellers/i);
+    expect(src).toMatch(/endrer ikke meny, pakke, pris eller bestilling/i);
   });
 });
 

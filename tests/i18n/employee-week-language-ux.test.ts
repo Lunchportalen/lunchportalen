@@ -1,5 +1,5 @@
 /**
- * PR B — employee /week must not advertise UI locale switching before employee i18n ships.
+ * PR B → SMART-3 — employee /week language UX with approved translation overlay.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -13,9 +13,9 @@ function readSource(relPath: string): string {
 }
 
 describe("employee week language UX", () => {
-  test("HeaderShell hides LocaleSwitcher for employee nav variant", () => {
+  test("HeaderShell enables LocaleSwitcher for employee nav variant (SMART-3)", () => {
     const src = readSource("components/nav/HeaderShell.tsx");
-    expect(src).toContain('navVariantKey !== "employee"');
+    expect(src).toMatch(/showLocaleSwitcher\s*=\s*true/);
     expect(src).toContain("showLocaleSwitcher");
   });
 
@@ -25,15 +25,15 @@ describe("employee week language UX", () => {
     expect(src).toMatch(/showLocaleSwitcher\s*\?\s*<LocaleSwitcher/);
   });
 
-  test("EmployeeLayout client shell hides LocaleSwitcher", () => {
+  test("EmployeeLayout client shell enables LocaleSwitcher", () => {
     const src = readSource("components/layout/EmployeeLayout.tsx");
-    expect(src).toContain("showLocaleSwitcher={false}");
+    expect(src).toContain("showLocaleSwitcher={true}");
   });
 
-  test("EmployeeWeekClient explains provider-original menu content", () => {
+  test("EmployeeWeekClient explains approved translation behavior honestly", () => {
     const src = readSource("app/(app)/week/EmployeeWeekClient.tsx");
-    expect(src).toContain("Menyinnhold vises på leverandørens originalspråk");
-    expect(src).toContain("Språkvalg for ansatte kommer senere");
+    expect(src).toMatch(/godkjente menytekster/i);
+    expect(src).toMatch(/Originaltekst vises ellers/i);
     expect(src).not.toMatch(/useTranslations|loadMessagesForLocale/);
   });
 
@@ -42,8 +42,10 @@ describe("employee week language UX", () => {
     expect(readSource("app/admin/AdminTopbar.tsx")).toContain("<LocaleSwitcher");
   });
 
-  test("employee menu APIs still ignore UI locale (no regression)", () => {
-    for (const route of ["app/api/order/window/route.ts", "app/api/week/route.ts"]) {
+  test("order/window uses display locale via SMART-3 overlay — week/orders unchanged", () => {
+    const windowSrc = readSource("app/api/order/window/route.ts");
+    expect(windowSrc).toContain("overlayApprovedTranslationsOnOrderWindowDays");
+    for (const route of ["app/api/week/route.ts"]) {
       const src = readSource(route);
       expect(src).not.toMatch(/\blp_locale\b/);
       expect(src).not.toMatch(/\bresolveAppLocale\b/);

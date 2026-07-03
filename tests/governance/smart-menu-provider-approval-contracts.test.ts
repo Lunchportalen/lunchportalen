@@ -109,12 +109,12 @@ describe("SMART-2 — scope guards", () => {
     expect(isMenuProfileRuntimeCompatibilityHookEnabled({})).toBe(false);
   });
 
-  test("design doc documents SMART-2 without live employee overlay", () => {
+  test("design doc documents SMART-2 provider scope without claiming all employee menu is translated", () => {
     const doc = readSource(DESIGN_DOC);
     expect(doc).toMatch(/SMART-2/);
     expect(doc).toMatch(/SMART-3/);
     expect(doc).not.toMatch(/employee translations are live/i);
-    expect(doc).not.toMatch(/LocaleSwitcher re-enabled/i);
+    expect(doc).toMatch(/No claim that all menu text is always translated/i);
   });
 
   test("PR #389 remains superseded in design doc", () => {

@@ -337,7 +337,50 @@ Employees must **never** query `menu_content_translations` directly. Future SMAR
 
 ---
 
-## 7. Menu profile source of truth (SMART-4 — design only)
+## 7. Employee approved translation display (SMART-3 — implemented)
+
+**Status:** Server read model in `lib/smart-menu/employeeApprovedTranslations.ts` wired into `GET /api/order/window`. LocaleSwitcher re-enabled for employees with honest copy.
+
+| Surface | Path / contract |
+|---------|-----------------|
+| **Read model** | `lib/smart-menu/employeeApprovedTranslations.ts` |
+| **Employee data** | `GET /api/order/window` — display overlay on `days[].categories` + day header fields |
+| **Locale** | `lp_locale` cookie → `profiles.preferred_locale` → `nb` (display only) |
+| **UI** | `/week` — `EmployeeWeekClient` + `HeaderShell` LocaleSwitcher |
+
+**Employee sees approved overlay when:**
+
+- `status = approved`
+- `locale` matches employee UI locale
+- `original_text_hash` matches current original text (`isEmployeeVisibleTranslation`)
+- `translated_text` non-empty
+
+**Otherwise:** provider original text from Sanity/publish pipeline.
+
+**Never employee-visible:** draft, suggested, rejected, stale, translation metadata (`approved_by`, hash, row id).
+
+**Display-only changes:** `title`, `description`, `label`, allergen label strings in `/api/order/window` payload.
+
+**Unchanged (Protected Golden Path):**
+
+- `choice_key`, `item_key` / `itemKey`, `category` slug, `planTier`, `date`, cutoff, order write body
+- No Sanity mutation, no AI, no `LP_MENU_PROFILE_*`, no currency/profile runtime
+- Provider API DTO still reports `employeeVisible: false` / `employeeTranslationsLive: false` (provider admin view)
+
+**Source ref conventions (SMART-3):**
+
+- `menu_day_item` → `item.key`
+- `category_label` → category slug (`varmrett`, `paasmurt`, …)
+- `menu_day` → `{isoDate}:{categorySlug|header}`
+- `allergen_label` → normalized allergen token
+
+**Honest UX:** Partial coverage allowed — mixed translated/original content. No claim that all menu text is always translated.
+
+**Next phase:** SMART-4 — provider menu profile selection (explicit owner GO required)
+
+---
+
+## 8. Menu profile source of truth (SMART-4 — design only)
 
 | Priority | Source |
 |----------|--------|
@@ -355,7 +398,7 @@ Employees must **never** query `menu_content_translations` directly. Future SMAR
 
 ---
 
-## 8. Currency source of truth (SMART-5 — design only)
+## 9. Currency source of truth (SMART-5 — design only)
 
 ```ts
 // Future — not implemented in SMART-0
@@ -379,7 +422,7 @@ resolveCommercialCurrency(scope: {
 
 ---
 
-## 9. Order identity invariant (Protected Golden Path)
+## 10. Order identity invariant (Protected Golden Path)
 
 Orders **always** use:
 
@@ -401,14 +444,14 @@ Orders **never** use:
 
 ---
 
-## 10. PR sequence
+## 11. PR sequence
 
 | Phase | Scope | Runtime | DB/RLS | Flags | Golden Path risk | Gates |
 |-------|-------|---------|--------|-------|------------------|-------|
 | **SMART-0** | Design doc + invariant tests | None | None | None | None | **Merged** PR #390 |
 | **SMART-1** | `menu_content_translations` migration + RLS + pure helpers + governance tests | **None** | Yes — migration only | None | Low | migration review, governance tests |
 | **SMART-2** | Provider approval API + UI | Provider routes only | Uses existing RLS table | None | Low — provider-scoped metadata | provider API/UI tests + Golden Path |
-| **SMART-3** | Employee approved overlay in `/week` read model; re-enable LocaleSwitcher with honest behavior | Employee read | Read approved only | None | **Medium** — touch `/week` | golden-path, week-visual |
+| **SMART-3** | Employee approved overlay in `/week` read model; re-enable LocaleSwitcher with honest behavior | Employee read | Read approved only | None | **Medium** — touch `/week` | **Merged** (PR TBD) |
 | **SMART-4** | Provider menu profile selection for future publish | Provider admin | `menu_profile_id` write | `LP_MENU_PROFILE_*` per phase GO | **Medium** — publish path | publish shadow tests |
 | **SMART-5** | `resolveCommercialCurrency` + agreement wiring | Billing display | Optional columns | Commercial flags TBD | **High** — commercial | commercial-hardcodes-guard |
 | **SMART-6** | End-to-end golden tests across translation + profile + currency | Full | Full | Per GO | **High** | `test:golden-path` 91/91 |
@@ -417,7 +460,7 @@ Each phase requires explicit owner GO. No auto-rollout between phases.
 
 ---
 
-## 11. PR #389 handling
+## 12. PR #389 handling
 
 | Decision | Detail |
 |----------|--------|
@@ -430,7 +473,7 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 
 ---
 
-## 12. P0 safeguards
+## 13. P0 safeguards
 
 | Safeguard | Enforcement |
 |-----------|-------------|
@@ -448,7 +491,7 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 
 ---
 
-## 13. Open decisions (defer beyond SMART-0)
+## 14. Open decisions (defer beyond SMART-0)
 
 | Topic | Options | Recommended default |
 |-------|---------|---------------------|
@@ -460,7 +503,7 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 
 ---
 
-## 14. Recommendation
+## 15. Recommendation
 
 **SMART-0:** merged (PR #390 @ `0ba9c0a8`).
 
@@ -478,9 +521,17 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 - Provider API/UI merged on `main`
 - `tests/governance/smart-menu-provider-approval-contracts.test.ts` passes
 - Provider can approve/reject/draft rows scoped to own provider
-- Employee `/week` unchanged; `employeeVisible` remains false in provider DTO
 - Golden Path tests pass
 
-**Do not start SMART-3, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-2 merge.**
+**SMART-3 is complete when:**
 
-**READY FOR SMART-3 only after SMART-2 is merged and owner gives explicit GO.**
+- `lib/smart-menu/employeeApprovedTranslations.ts` merged
+- `GET /api/order/window` applies approved overlay (display only)
+- LocaleSwitcher re-enabled with honest employee copy
+- `tests/governance/smart-menu-employee-translation-contracts.test.ts` passes
+- Order identity unchanged; Golden Path passes
+- No `LP_MENU_PROFILE_*` activation; no G5d.8/cutover
+
+**Do not start SMART-4, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-3 merge.**
+
+**READY FOR SMART-4 only after SMART-3 is merged and owner gives explicit GO.**

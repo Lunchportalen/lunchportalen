@@ -252,12 +252,33 @@ describe("Protected Golden Path — SMART-2 provider approval (no employee/order
       expect(src).not.toMatch(/app\/\(app\)\/week/);
       expect(src).toMatch(/employeeTranslationsLive:\s*false|employeeVisible:\s*false/);
     }
-    for (const route of [
-      "app/api/week/route.ts",
-      "app/api/order/window/route.ts",
-      "app/api/orders/route.ts",
-    ]) {
+    for (const route of ["app/api/week/route.ts", "app/api/orders/route.ts"]) {
       expect(readSource(route)).not.toMatch(/menu_content_translations/);
     }
+  });
+});
+
+describe("Protected Golden Path — SMART-3 employee display overlay only", () => {
+  it("SMART-3 overlay is display-only — order identity and write path unchanged", () => {
+    const overlay = readSource("lib/smart-menu/employeeApprovedTranslations.ts");
+    expect(overlay).toContain("isEmployeeVisibleTranslation");
+    expect(overlay).not.toMatch(/lp_order_set/);
+    expect(overlay).not.toMatch(/menuDayPayload/);
+
+    const windowRoute = readSource("app/api/order/window/route.ts");
+    expect(windowRoute).toContain("overlayApprovedTranslationsOnOrderWindowDays");
+    expect(windowRoute).not.toMatch(/\bmenu_content_translations\b/);
+
+    for (const rel of [
+      "lib/orders/rpcWrite.ts",
+      "lib/orders/resolveOrderDayItemPersist.ts",
+      "app/api/orders/set/route.ts",
+    ]) {
+      expect(readSource(rel)).not.toMatch(/employeeApprovedTranslations/);
+    }
+
+    const weekClient = readSource("app/(app)/week/EmployeeWeekClient.tsx");
+    expect(weekClient).toMatch(/choice_key|itemKey/);
+    expect(weekClient).not.toMatch(/translated_text/);
   });
 });
