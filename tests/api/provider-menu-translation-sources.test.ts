@@ -65,6 +65,8 @@ function authedViewer(providerId = PROVIDER_A) {
     },
     missingCandidates: [],
     staleCandidates: [],
+    sourceTotals: { catalog: 1, orderWindow: 0, combined: 1 },
+    candidateKinds: ["menu_day_item"],
     employeeTranslationsLive: false,
   });
 }

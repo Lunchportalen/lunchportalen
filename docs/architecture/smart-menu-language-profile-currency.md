@@ -582,4 +582,4 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 
 **Materialize POST:** Not enabled in SMART-4 — providers create draft rows manually or via existing SMART-2 POST until a safe materialize flow is explicitly approved.
 
-**Known gap (documented in evidence):** Server report is catalog-only; order-window / `menu_day` extraction helpers exist but are not wired into `loadProviderTranslationSourcesReport` until a follow-up PR.
+**Server report (SMART-4 follow-up):** `loadProviderTranslationSourcesReport` merges **catalog** (`lunchCategory`) and **order-window** (published `menuDay` via `getMenuForRange`) candidates. Deduped by `source_kind` + `source_ref` + `field`. Employee runtime and order identity unchanged.

@@ -221,6 +221,10 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
           Kilde-referanser: måltid = <code>item.key</code>, kategori = kategori-slug (f.eks. paasmurt,
           salat), allergen = normalisert token.
         </p>
+        <p className="ds-body ds-muted">
+          Kilder hentes fra katalog og aktivt menyvindu (publiserte menuDay-rader). Varmrett/menu_day-kilder
+          vises når de finnes i aktivt menyvindu.
+        </p>
       </section>
 
       <section className="ds-card ds-section">

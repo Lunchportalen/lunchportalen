@@ -17,6 +17,7 @@ const SMART4_FILES = [
   "lib/smart-menu/menuTranslationSources.ts",
   "lib/smart-menu/translationCoverage.ts",
   "lib/smart-menu/providerTranslationSources.ts",
+  "lib/smart-menu/providerOrderWindowSourceDays.ts",
   "app/api/provider/menu-translations/sources/route.ts",
 ] as const;
 
@@ -42,6 +43,7 @@ describe("SMART-4 — artifacts exist", () => {
     expect(src).toMatch(/getProviderAdminContext/);
     expect(src).toMatch(/hasProviderRole/);
     expect(src).toMatch(/employeeTranslationsLive:\s*false/);
+    expect(src).toMatch(/sourceTotals|candidateKinds/);
     expect(src).toMatch(/METHOD_NOT_ALLOWED|405/);
     expect(src).not.toMatch(/requireSanityWrite/);
   });
@@ -53,6 +55,7 @@ describe("SMART-4 — scope guards", () => {
       "lib/smart-menu/menuTranslationSources.ts",
       "lib/smart-menu/translationCoverage.ts",
       "lib/smart-menu/providerTranslationSources.ts",
+      "lib/smart-menu/providerOrderWindowSourceDays.ts",
     ]) {
       const src = readSource(rel);
       expect(src).not.toMatch(/lp_order_set/);
@@ -88,6 +91,7 @@ describe("SMART-4 — scope guards", () => {
     const panel = readSource("app/leverandor/meny/oversettelser/ProviderMenuTranslationsPanel.tsx");
     expect(panel).toMatch(/menu-translations\/sources/);
     expect(panel).toMatch(/Dekning per språk|Kilder uten godkjent oversettelse/);
+    expect(panel).toMatch(/Katalog og aktivt menyvindu|aktivt menyvindu/i);
     expect(panel).not.toMatch(/auto-approve|AI-oversett|OpenAI/i);
   });
 });
