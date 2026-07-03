@@ -1,8 +1,9 @@
 # SMART-3 — Runtime evidence (employee approved translation display)
 
-**Status:** Evidence archived · docs-only · **SMART-3 runtime verified on Production**  
+**Status:** Evidence archived · docs-only · **SMART-3 runtime verified on Production and Staging**  
 **Date:** 2026-07-03  
 **SMART-3 merge SHA:** `dbf3dc41d8bf6fc28df123336feb0f5e2761c0c1` (PR #395)  
+**Evidence merge SHA:** `82474c47d4c62714b02648f200b8062171874bcc` (PR #396)  
 **Operator:** Cursor agent (local Playwright + provider API smoke; no runtime code changes in this archive)
 
 This document records **runtime verification evidence only**. No order write-path, provider publish, DB migration, flag, or cutover work is included.
@@ -43,22 +44,123 @@ This document records **runtime verification evidence only**. No order write-pat
 | Environment | URL | Deployed commit | SMART-3 verification |
 |-------------|-----|-----------------|----------------------|
 | **Production** | `https://app.lunchportalen.no` | `dbf3dc41d8bf6fc28df123336feb0f5e2761c0c1` | **PASS** |
-| **Staging** | `https://staging.app.lunchportalen.no` | `5ce7d51f…` (branch `staging`, 2026-06-14) | **NOT RUN** — deployment behind `main`; does not include SMART-3 |
+| **Staging** | `https://staging.app.lunchportalen.no` | `82474c47d4c62714b02648f200b8062171874bcc` | **PASS** |
 
-### 3.1 Staging diagnosis (2026-07-03)
+**Historical note (2026-07-03 early):** Staging was initially behind `main` at `5ce7d51f` (SMART-3 not deployed). After `main` → `staging` promote and redeploy, staging smoke was re-run and **PASS** — see §3.1.
+
+### 3.1 Staging verification — PASS
+
+**Timestamp:** 2026-07-03T09:26:15Z (approx.)  
+**Staging URL:** `https://staging.app.lunchportalen.no`  
+**Staging commit:** `82474c47d4c62714b02648f200b8062171874bcc`  
+**Includes SMART-3:** **YES** — `dbf3dc41d8bf6fc28df123336feb0f5e2761c0c1` is ancestor of staging HEAD  
+**Includes evidence merge:** **YES** — PR #396 / `82474c47`
+
+#### Provider / test setup (anonymized)
+
+| Field | Value |
+|-------|-------|
+| Method | Provider REST API + employee API (`/api/order/window`); Playwright UI probe for LocaleSwitcher |
+| Provider tenant | Melhus Catering AS (fixture provider A) |
+| Provider admin | `kitchen-a@smoke.lunchportalen.no` (hash `3b1d957cb370`) |
+| Employee | `smoke-test@lunchportalen.no` (hash `691029b926f8`) |
+| Company | Company A (agreements-test fixture) |
+| Employee locale | `en` via `lp_locale` cookie |
+| Production touched | **NO** |
+
+#### Seed method (staging-only)
+
+| Step | Result |
+|------|--------|
+| `seed-provider-ab-fixture.mjs` | **PASS** — provider A/B fixture on uigx |
+| `seed-smoke-menu-fixture.mjs` | **PASS** — menu_service_days for fixture company |
+| Provider menu publish (`POST /api/provider/menu-days`) | **PASS** — `2026-07-06` varmrett published |
+| Sanity patch (`menuDay-2026-07-06-BASIS-varmrett` item) | **PASS** — stable `item.key` for smoke |
+
+#### Approved translation row (test, anonymized)
+
+| Field | Value |
+|-------|-------|
+| `source_kind` | `menu_day_item` |
+| `source_ref` | `smart3-smoke-item` (runtime `item.key`) |
+| `field` | `title` |
+| `locale` | `en` |
+| `original_text` | `SMART3 Smoke Original` |
+| `translated_text` | `STAGING SMART3 APPROVED TRANSLATION` |
+| Status flow | `draft` → `approved` → `rejected` (cleanup) |
+| Approval | Via SMART-2 provider API (`POST` create + `PATCH` approve); `approved_by` / `approved_at` server-derived |
+| Post-cleanup approved rows for `smart3-smoke-item` | **0** |
+
+#### Positive case — approved translation display
 
 | Check | Result |
 |-------|--------|
-| DNS | **PASS** — `staging.app.lunchportalen.no` → `cname.vercel-dns.com` |
-| TLS / HTTPS | **PASS** — responds |
-| `/api/health` without bypass | **HTML** (Vercel deployment protection page) — not JSON |
-| `/api/health` with automation bypass | **PASS** — JSON 200, but commit `5ce7d51f` |
-| `origin/staging` contains `dbf3dc41` | **FAIL** — ancestor check negative |
-| Classification | **B — DEPLOYMENT_MISSING (for SMART-3)** / stale staging branch |
+| `GET /api/order/window?weekOffset=1` with `lp_locale=en` | **PASS** — 200, 1 item |
+| Translated title visible | **PASS** — `STAGING SMART3 APPROVED TRANSLATION` |
+| `itemKey` / `choice_key` unchanged | **PASS** — `smart3-smoke-item` / `varmmat` |
+| LocaleSwitcher + honest copy on `/week` | **PASS** |
 
-**Staging blocker (ops, not SMART-3 code):** merge `main` → `staging` (or promote current `main` to staging deployment) and redeploy on Vercel so staging runs `dbf3dc41` or newer. No env mutation or application code change required for the fix itself.
+#### Fallback cases
 
-**Earlier verification note:** Production smoke initially reported staging as unreachable/timeout; root cause is deployment protection HTML without bypass plus slow cold start (~18s with bypass).
+| Case | Staging result | Notes |
+|------|----------------|-------|
+| Wrong locale (`sv`, no approved row) | **PASS** — original text | |
+| Missing translation (other item) | **SKIP** — only one item in window | |
+| Draft (before approve) | **PASS** — original text | |
+| Rejected (after cleanup) | **PASS** — original text | |
+| Stale | **NOT_TESTED** | Safety |
+| Hash mismatch | **NOT_TESTED** | Covered by unit/governance tests |
+| Fail-closed overlay error | **NOT_SIMULATED** | Safety — unit tests assert overlay failure returns original `days` |
+
+#### Network payload — identity and leakage
+
+| Check | Result |
+|-------|--------|
+| `choice_key` unchanged | **PASS** — `varmmat` |
+| `item_key` / `itemKey` unchanged | **PASS** — `smart3-smoke-item` |
+| Category slug unchanged | **PASS** — `varmrett` |
+| `planTier` / tier stable | **PASS** — `BASIS` |
+| `date` unchanged | **PASS** — `2026-07-06` |
+| No `approved_by` / `approved_at` | **PASS** |
+| No `original_text_hash` / hash / status / row id | **PASS** |
+| No price / currency / MVA / commission / provision | **PASS** |
+
+#### Order submission
+
+| Check | Result |
+|-------|--------|
+| New test order on staging | **NOT_RUN** |
+| Order identity from window payload | **PASS** — keys stable; translated text is display-only |
+
+#### DB / RLS / cleanup
+
+| Check | Result |
+|-------|--------|
+| DB writes | **Staging-only** — uigx fixture tenant |
+| Cleanup | **PASS** — approved row rejected; **0** approved rows left for `smart3-smoke-item` |
+
+#### Logs / errors (staging)
+
+| Check | Result |
+|-------|--------|
+| `/api/order/window` 500 | **None observed** |
+| Overlay crash | **None** |
+| Auth loop | **None** |
+
+#### Staging known risks
+
+1. **Staging Sanity `lunchCategory` docs** are not visible in the `perspective: "published"` CDN read path on the staging dataset — static categories (`paasmurt`, etc.) may show empty until published-perspective alignment is resolved.
+2. **Smoke item** was provided through a **`menuDay` / `varmrett` patch** with stable `item.key` — full static-category parity on staging is **not proven**.
+3. **Source ref alignment** remains important — provider rows must match runtime `item.key`.
+4. **Mixed translated/original UI** is expected for partial coverage.
+
+#### Staging invariants (unchanged)
+
+- SMART-3 is **display-only** — employee locale controls display text only
+- **Provider approval required** — unapproved / hash mismatch / missing → fallback to original
+- **Order identity unchanged** — `choice_key`, `item_key`, category slug, tier, date
+- **No price / currency / MVA / commission / provision** exposure in employee payload
+- **Production not touched** · **flags OFF** · **G5d.8 / cutover NOT STARTED** · **PR #389 OPEN** · **SMART-4 NOT STARTED**
 
 ---
 
@@ -192,8 +294,8 @@ Full Vercel log review not performed (dashboard-only).
 ## 13. Known risks
 
 1. **Source ref alignment** — provider manual rows must use same refs as runtime (`item.key`, etc.); mismatch → original by design.
-2. **Partial translation coverage** — mixed UI expected.
-3. **Staging behind main** — SMART-3 cannot be verified on staging until `staging` branch is promoted.
+2. **Partial translation coverage** — mixed translated/original UI expected.
+3. **Staging static-category parity** — `lunchCategory` docs on staging Sanity dataset may not appear in published-perspective CDN reads; smoke used `menuDay`/`varmrett` item patch instead.
 4. **Deployment protection** — health checks without Vercel automation bypass return HTML, not JSON.
 
 ---
@@ -203,7 +305,7 @@ Full Vercel log review not performed (dashboard-only).
 | Item | Recommendation |
 |------|----------------|
 | Production SMART-3 display | **GO** — runtime verified |
-| Staging | **Separate ops task** — merge `main` → `staging`, redeploy, then re-run SMART-3 staging smoke |
+| Staging SMART-3 display | **GO** — runtime verified (see §3.1); static-category parity remains a separate staging ops concern |
 | SMART-4 | **Do not start** without explicit owner GO |
 | PR #389 | Keep OPEN until explicit decision |
 | Flags / G5d.8 / cutover | **Do not activate** |
