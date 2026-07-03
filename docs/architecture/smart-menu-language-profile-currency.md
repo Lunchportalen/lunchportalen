@@ -376,6 +376,8 @@ Employees must **never** query `menu_content_translations` directly. Future SMAR
 
 **Honest UX:** Partial coverage allowed — mixed translated/original content. No claim that all menu text is always translated.
 
+**Runtime evidence:** See [smart-menu-smart-3-runtime-evidence.md](./smart-menu-smart-3-runtime-evidence.md) — Production PASS (2026-07-03); staging deployment behind `main` at time of archive.
+
 **Next phase:** SMART-4 — provider menu profile selection (explicit owner GO required)
 
 ---
@@ -451,7 +453,7 @@ Orders **never** use:
 | **SMART-0** | Design doc + invariant tests | None | None | None | None | **Merged** PR #390 |
 | **SMART-1** | `menu_content_translations` migration + RLS + pure helpers + governance tests | **None** | Yes — migration only | None | Low | migration review, governance tests |
 | **SMART-2** | Provider approval API + UI | Provider routes only | Uses existing RLS table | None | Low — provider-scoped metadata | provider API/UI tests + Golden Path |
-| **SMART-3** | Employee approved overlay in `/week` read model; re-enable LocaleSwitcher with honest behavior | Employee read | Read approved only | None | **Medium** — touch `/week` | **Merged** (PR TBD) |
+| **SMART-3** | Employee approved overlay in `/week` read model; re-enable LocaleSwitcher with honest behavior | Employee read | Read approved only | None | **Medium** — touch `/week` | **Merged** (PR #395 @ `dbf3dc41`) |
 | **SMART-4** | Provider menu profile selection for future publish | Provider admin | `menu_profile_id` write | `LP_MENU_PROFILE_*` per phase GO | **Medium** — publish path | publish shadow tests |
 | **SMART-5** | `resolveCommercialCurrency` + agreement wiring | Billing display | Optional columns | Commercial flags TBD | **High** — commercial | commercial-hardcodes-guard |
 | **SMART-6** | End-to-end golden tests across translation + profile + currency | Full | Full | Per GO | **High** | `test:golden-path` 91/91 |
