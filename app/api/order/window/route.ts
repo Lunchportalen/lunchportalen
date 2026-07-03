@@ -43,6 +43,10 @@ import { ORDER_TABLE_SLOT_DEFAULT } from "@/lib/orders/rpcWrite";
 import { foldOrdersByDate } from "@/lib/orders/pickCanonicalOrderPerDate";
 import { pickOrderColumns } from "@/lib/orders/projection";
 import { loadOperativeClosedDatesReasonsInRange } from "@/lib/orders/orderWriteGuard";
+import {
+  overlayApprovedTranslationsOnOrderWindowDays,
+  resolveEmployeeDisplayLocaleFromRequest,
+} from "@/lib/smart-menu/employeeApprovedTranslations";
 
 /* =========================================================
    Types
@@ -1003,6 +1007,25 @@ export async function GET(req: NextRequest) {
       })
     );
 
+    let daysOut = days;
+    if (menuScope.mode === "scoped") {
+      try {
+        const displayLocale = await resolveEmployeeDisplayLocaleFromRequest(req);
+        daysOut = await overlayApprovedTranslationsOnOrderWindowDays({
+          days,
+          providerId: menuScope.providerId,
+          locale: displayLocale,
+        });
+      } catch (e: any) {
+        opsLog("window.translationOverlay.failed", {
+          rid,
+          company_id: sc.company_id,
+          detail: String(e?.message ?? e),
+        });
+        daysOut = days;
+      }
+    }
+
     const osloHourForUrgency = Number(
       new Intl.DateTimeFormat("en-GB", {
         timeZone: "Europe/Oslo",
@@ -1056,7 +1079,7 @@ export async function GET(req: NextRequest) {
         /** Klient skal skille «ingen CMS-data» fra «CMS-kall feilet». */
         menuSanityFetchFailed,
 
-        days,
+        days: daysOut,
       },
       200
     );

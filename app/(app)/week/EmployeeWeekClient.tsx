@@ -2239,7 +2239,8 @@ export default function EmployeeWeekClient({
         )}
         {!readOnlyPreview ? (
           <p className="mt-2 max-w-md text-sm leading-6 text-neutral-500" role="note">
-            Menyinnhold vises på leverandørens originalspråk. Språkvalg for ansatte kommer senere.
+            Språkvalg oversetter godkjente menytekster der leverandøren har godkjent oversettelse.
+            Originaltekst vises ellers. Språkvalg endrer ikke meny, pakke, pris eller bestilling.
           </p>
         ) : null}
       </header>

@@ -159,17 +159,28 @@ describe("SMART-0 — smart-menu architecture design doc", () => {
     }
   });
 
-  test("design doc documents SMART-1 migration without live employee translations", () => {
+  test("design doc documents SMART-1 migration without claiming all employee menu is always translated", () => {
     const doc = readDoc();
     expect(doc).toMatch(/20260728120000_menu_content_translations\.sql/);
     expect(doc).toMatch(/Employee direct access: denied|No direct table access/i);
     expect(doc).not.toMatch(/employee translations are live/i);
+    expect(doc).toMatch(/No claim that all menu text is always translated/i);
+  });
+
+  test("design doc documents SMART-3 employee overlay without order identity change", () => {
+    const doc = readDoc();
+    expect(doc).toMatch(/SMART-3/);
+    expect(doc).toMatch(/employeeApprovedTranslations/);
+    expect(doc).toMatch(/isEmployeeVisibleTranslation/);
+    expect(doc).toMatch(/display only|Display-only/i);
+    expect(doc).toMatch(/choice_key/);
+    expect(doc).toMatch(/No claim that all menu text is always translated/i);
   });
 
   test("design doc ends with next-phase gate — explicit owner GO", () => {
     const doc = readDoc();
     expect(doc).toMatch(/READY FOR SMART-1.*only after SMART-0 is merged/i);
-    expect(doc).toMatch(/READY FOR SMART-3.*only after SMART-2 is merged/i);
+    expect(doc).toMatch(/READY FOR SMART-4.*only after SMART-3 is merged/i);
     expect(doc).toMatch(/explicit GO/i);
   });
 

@@ -45,7 +45,7 @@ export default async function HeaderShell(props: {
     innerGridClassName?.trim() ||
     "mx-auto grid w-full max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-4 py-3 md:py-4";
 
-  const showLocaleSwitcher = navVariantKey !== "employee";
+  const showLocaleSwitcher = true;
 
   return (
     <HeaderShellView
