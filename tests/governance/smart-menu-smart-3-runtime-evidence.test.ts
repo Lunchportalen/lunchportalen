@@ -99,6 +99,8 @@ describe("SMART-3 — runtime evidence housekeeping", () => {
     expect(doc).toMatch(/Production PASS/i);
     expect(doc).toMatch(/Staging PASS/i);
     expect(doc).toMatch(/display-only/i);
-    expect(doc).toMatch(/SMART-4.*not started|not started.*SMART-4/i);
+    expect(doc).toMatch(/smart-menu-smart-4-staging-evidence\.md/);
+    expect(doc).toMatch(/PR #398/);
+    expect(doc).toMatch(/d017709a/);
   });
 });

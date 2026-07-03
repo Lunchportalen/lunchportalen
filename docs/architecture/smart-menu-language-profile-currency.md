@@ -376,9 +376,11 @@ Employees must **never** query `menu_content_translations` directly. Future SMAR
 
 **Honest UX:** Partial coverage allowed — mixed translated/original content. No claim that all menu text is always translated.
 
-**Runtime evidence:** See [smart-menu-smart-3-runtime-evidence.md](./smart-menu-smart-3-runtime-evidence.md) — **Production PASS** and **Staging PASS** (2026-07-03). Evidence doc contains verification details. SMART-3 is **display-only** (employee locale → approved overlay text; order identity unchanged). **SMART-4** / source extraction automation is **not started**.
+**Runtime evidence:** See [smart-menu-smart-3-runtime-evidence.md](./smart-menu-smart-3-runtime-evidence.md) — **Production PASS** and **Staging PASS** (2026-07-03). Evidence doc contains verification details. SMART-3 is **display-only** (employee locale → approved overlay text; order identity unchanged).
 
-**Next phase:** SMART-4 — provider menu profile selection (explicit owner GO required)
+**SMART-4 (source extraction / locale coverage QA):** **Merged** (PR #398 @ `d017709a`). Staging evidence: [smart-menu-smart-4-staging-evidence.md](./smart-menu-smart-4-staging-evidence.md) — **Staging PASS** (2026-07-03). Provider-side only; employee runtime identity unchanged.
+
+**Next phase:** Menu profile runtime / G5d.8 / cutover (explicit owner GO required)
 
 ---
 
@@ -534,15 +536,23 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 - Order identity unchanged; Golden Path passes
 - No `LP_MENU_PROFILE_*` activation; no G5d.8/cutover
 
-**Do not start SMART-4 menu profile runtime, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-3 merge.**
+**SMART-4 (source extraction / locale coverage QA) is complete when:**
 
-**READY FOR SMART-4 (source extraction / locale coverage QA) only after SMART-3 is merged, Phase A staging static-category parity is GREEN, and owner gives explicit GO.**
+- PR #398 merged on `main` @ `d017709ad8811219293c601183b88f0ed943d2a5`
+- `GET /api/provider/menu-translations/sources` provider-scoped read-only report
+- Provider UI coverage table + honest fallback copy on `/leverandor/meny/oversettelser`
+- Staging evidence archived — see [smart-menu-smart-4-staging-evidence.md](./smart-menu-smart-4-staging-evidence.md)
+- Golden Path + governance tests pass; no `LP_MENU_PROFILE_*` activation
+
+**Do not start menu profile runtime, G5d.8, cutover, source-of-truth switch, auto-rollout, or PR #389 merge until owner gives explicit GO after SMART-4 merge.**
 
 ---
 
 ## 16. SMART-4 — source extraction / locale coverage / QA hardening
 
-**Status:** Provider-side only — no employee runtime identity change, no Sanity mutation, no AI auto-approve.
+**Status:** **Merged** (PR #398 @ `d017709a`) · provider-side only — no employee runtime identity change, no Sanity mutation, no AI auto-approve.
+
+**Staging evidence:** [smart-menu-smart-4-staging-evidence.md](./smart-menu-smart-4-staging-evidence.md) — **Staging PASS** (2026-07-03).
 
 | Deliverable | Scope |
 |-------------|--------|
@@ -571,3 +581,5 @@ PR #389 branch: `fix/employee-week-display-i18n-fallback` — client `createEmpl
 - G5d.8 / cutover not started
 
 **Materialize POST:** Not enabled in SMART-4 — providers create draft rows manually or via existing SMART-2 POST until a safe materialize flow is explicitly approved.
+
+**Known gap (documented in evidence):** Server report is catalog-only; order-window / `menu_day` extraction helpers exist but are not wired into `loadProviderTranslationSourcesReport` until a follow-up PR.
