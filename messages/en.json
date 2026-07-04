@@ -1558,9 +1558,6 @@
           "prefix": "Allergens: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Open sandwich · Salad box · Today's warm dish",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Same warm dish + added value",
           "notSeparateProduction": "Not a separate production dish",
           "sharedWarmDishHint": "One shared warm dish"
         },

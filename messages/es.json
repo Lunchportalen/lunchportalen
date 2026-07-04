@@ -644,9 +644,6 @@
           "prefix": "Alérgenos: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Bocadillo · Ensalada · Plato caliente del día",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Mismo plato caliente + valor añadido",
           "notSeparateProduction": "No es plato de producción separado",
           "sharedWarmDishHint": "Un plato caliente común"
         },

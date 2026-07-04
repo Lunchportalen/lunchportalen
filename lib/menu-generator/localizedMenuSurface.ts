@@ -9,8 +9,10 @@ import { getMenuProfile } from "@/lib/menu-profile/registry";
 import type { MenuProfileResolverResult } from "@/lib/menu-profile/types";
 import {
   buildLocalizedRuntimeCategoryLabels,
+  buildPackageCardMenuTerms,
   getLocalizedCategoryLabel,
   LUNCH_CATEGORY_KEY_TO_FIXED_KEY,
+  type PackageCardMenuTerms,
 } from "@/lib/menu-generator/localizedCategoryLabels";
 import { getFixedDishesByCategory } from "@/lib/menu-generator/localizedFixedDishBanks";
 import { isLocalizedFixedMenuGeneratorEnabled } from "@/lib/menu-generator/featureFlag";
@@ -40,6 +42,7 @@ export type LocalizedMenuSurfacePresentation =
       country: string;
       categoryLabels: Partial<Record<Category, string>>;
       catalogOverlay: ProviderMenuCatalogSnapshot;
+      packageCardMenuTerms: PackageCardMenuTerms;
       fallbackWarning: string | null;
     };
 
@@ -138,6 +141,7 @@ export function buildLocalizedMenuSurfacePresentation(input: {
   const profile = getMenuProfile(runtimeProfile.menuProfileId);
   const categoryLabels = buildLocalizedRuntimeCategoryLabels(runtimeProfile.menuLocale);
   const catalogOverlay = buildLocalizedCatalogOverlay(runtimeProfile.menuLocale);
+  const packageCardMenuTerms = buildPackageCardMenuTerms(runtimeProfile.menuLocale);
 
   return {
     active: true,
@@ -147,6 +151,7 @@ export function buildLocalizedMenuSurfacePresentation(input: {
     country: runtimeProfile.country,
     categoryLabels,
     catalogOverlay,
+    packageCardMenuTerms,
     fallbackWarning: runtimeProfile.fallbackWarning,
   };
 }

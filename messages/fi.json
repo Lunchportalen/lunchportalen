@@ -644,9 +644,6 @@
           "prefix": "Allergeenit: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Voileipä · Salaatirasia · Päivän lämmin ruoka",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Sama lämmin ruoka + lisäarvo",
           "notSeparateProduction": "Ei erillinen tuotantoannos",
           "sharedWarmDishHint": "Yksi yhteinen lämmin ruoka"
         },

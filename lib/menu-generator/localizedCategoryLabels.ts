@@ -159,3 +159,29 @@ export function buildLocalizedRuntimeCategoryLabels(
 export function isSupportedMenuLocaleForLabels(value: unknown): value is MenuLocale {
   return typeof value === "string" && (SUPPORTED_MENU_LOCALES as readonly string[]).includes(value.trim());
 }
+
+export type PackageCardMenuTerms = {
+  basisIncludes: string;
+  luxusIncludes: string;
+  enterpriseIncludes: string;
+};
+
+function joinMenuTerms(parts: readonly string[]): string {
+  return parts.filter((part) => part.trim().length > 0).join(" · ");
+}
+
+/** Package/tier card menu terms — provider menuLocale only (not UI locale). */
+export function buildPackageCardMenuTerms(menuLocale: MenuLocale): PackageCardMenuTerms {
+  const labels = getLocalizedCategoryLabels(menuLocale);
+  const basisIncludes = joinMenuTerms([labels.sandwich, labels.salad, labels.hotMeal]);
+  const luxusIncludes = joinMenuTerms([
+    labels.sandwich,
+    labels.salad,
+    labels.hotMeal,
+    labels.sushi,
+    labels.poke,
+    labels.asian,
+  ]);
+  const enterpriseIncludes = joinMenuTerms([luxusIncludes, labels.premiumUpgrade]);
+  return { basisIncludes, luxusIncludes, enterpriseIncludes };
+}

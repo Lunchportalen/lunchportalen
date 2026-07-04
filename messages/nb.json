@@ -1561,9 +1561,6 @@
           "selectDay": "Velg en dag i ukeplanen for å redigere katalogvalg."
         },
         "packageCard": {
-          "basisIncludes": "Påsmurt · Salatboks · Dagens varmrett",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Samme varmrett + ekstra verdi",
           "notSeparateProduction": "Ikke egen produksjonsrett",
           "sharedWarmDishHint": "Én felles varmrett"
         }
