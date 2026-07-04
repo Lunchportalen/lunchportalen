@@ -36,6 +36,8 @@ const RUNTIME_HOOK_FLAG_ALLOWED_PATHS = [
   G5D7C_HOOK_UNIT_TEST_PATH,
   G5D8_CONTROL_TEST_PATH,
   G5D7C_WEEK_API_TEST_PATH,
+  "lib/providers/providerMenuProfileDiagnostic.ts",
+  "tests/lib/providers/providerMenuProfileDiagnostic.test.ts",
   "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts",
 ];
 
