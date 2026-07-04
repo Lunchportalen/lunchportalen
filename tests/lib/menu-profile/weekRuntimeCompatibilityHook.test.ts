@@ -116,10 +116,12 @@ describe("G5d.7c — hook boundary behavior", () => {
       expect.objectContaining({
         rid: "rid_on",
         boundary: "app/api/week/route.ts",
+        phase: "G5d.8",
         selectedSource: "current",
         fallbackToCurrent: true,
         candidateOrderable: false,
         sourceOfTruthChanged: false,
+        compatibilityStatus: "fail_closed",
       }),
     );
     spy.mockRestore();

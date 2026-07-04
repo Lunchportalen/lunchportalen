@@ -43,6 +43,21 @@ function readinessLabel(readiness: string): string {
   return readiness;
 }
 
+function stopRiskTone(risk: string): "go" | "watch" | "stop" | "muted" {
+  if (risk === "none") return "go";
+  if (risk === "watch") return "watch";
+  if (risk === "stop") return "stop";
+  return "muted";
+}
+
+function compatibilityStatusLabel(status: string): string {
+  if (status === "inactive") return "Inaktiv";
+  if (status === "observing") return "Observerer";
+  if (status === "fail_closed") return "Fail-closed";
+  if (status === "blocked") return "Blokkert";
+  return status;
+}
+
 export default function SuperadminMenuProfilesClient({ data }: Props) {
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SuperadminMenuProfileProviderDetail | null>(null);
@@ -92,6 +107,9 @@ export default function SuperadminMenuProfilesClient({ data }: Props) {
             <SuperadminBadge tone={data.resolverFlagOn ? "live" : "muted"}>
               Resolver {data.resolverFlagOn ? "ON" : "OFF"}
             </SuperadminBadge>
+            <SuperadminBadge tone={data.compatibilityHook.hookFlag === "ON" ? "watch" : "muted"}>
+              G5d.8 hook {data.compatibilityHook.hookFlag}
+            </SuperadminBadge>
             <span className="text-xs opacity-70">
               Sjekket: <time dateTime={data.checkedAt}>{formatWhen(data.checkedAt)}</time>
             </span>
@@ -113,6 +131,57 @@ export default function SuperadminMenuProfilesClient({ data }: Props) {
           { label: "Advarsler", value: data.totals.warnings, numeric: true },
         ]}
       />
+
+      <SuperadminSection
+        title="G5d.8 compatibility hook"
+        lead="Read-only observasjon av runtime compatibility hook. Ingen flaggaktivering, ingen kildebytte og ingen automatisk utrulling fra denne siden."
+        bodyVariant="proof"
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <dl className="grid gap-2 text-sm">
+            <div>
+              <dt className="text-xs uppercase text-neutral-500">Hook</dt>
+              <dd>{data.compatibilityHook.hookFlag === "ON" ? "Aktiv" : "Inaktiv"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase text-neutral-500">Compatibility status</dt>
+              <dd>{compatibilityStatusLabel(data.compatibilityHook.compatibilityStatus)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase text-neutral-500">Selected source</dt>
+              <dd>{data.compatibilityHook.selectedSource}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase text-neutral-500">Stop-condition risk</dt>
+              <dd>
+                <SuperadminBadge tone={stopRiskTone(data.compatibilityHook.stopConditionRisk)}>
+                  {data.compatibilityHook.stopConditionRisk.toUpperCase()}
+                </SuperadminBadge>
+              </dd>
+            </div>
+          </dl>
+          <div className="text-sm">
+            {data.compatibilityHook.hookFlag === "OFF" ? (
+              <p className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-neutral-700">
+                Hook er av — employee runtime er uendret. Aktivering krever egen owner GO og staging/preview-verifikasjon.
+              </p>
+            ) : null}
+            {data.compatibilityHook.warnings.map((warning) => (
+              <p
+                key={warning}
+                className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900"
+              >
+                {warning}
+              </p>
+            ))}
+            {data.compatibilityHook.messages.slice(0, 3).map((message) => (
+              <p key={message} className="text-neutral-600">
+                {message}
+              </p>
+            ))}
+          </div>
+        </div>
+      </SuperadminSection>
 
       <SuperadminSection
         title="Menyprofil-register (9 profiler)"
@@ -265,6 +334,14 @@ export default function SuperadminMenuProfilesClient({ data }: Props) {
                 <div>
                   <dt className="text-xs uppercase text-neutral-500">Kilde</dt>
                   <dd>{detail.health.resolveSource ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase text-neutral-500">G5d.8 hook</dt>
+                  <dd>{detail.compatibilityHook.hookFlag === "ON" ? "Aktiv" : "Inaktiv"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase text-neutral-500">Compatibility status</dt>
+                  <dd>{compatibilityStatusLabel(detail.compatibilityHook.compatibilityStatus)}</dd>
                 </div>
               </dl>
               <div className="text-sm">

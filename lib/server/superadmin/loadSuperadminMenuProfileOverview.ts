@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  buildG5d8GlobalControl,
+  buildG5d8ProviderControl,
+  type G5d8RuntimeCompatibilityControl,
+} from "@/lib/menu-profile/g5d8RuntimeCompatibilityControl";
 import { menuProfileResolverHostEnv } from "@/lib/providers/providerMenuProfileDiagnostic";
 import {
   loadProviderSettingsMenuProfileRow,
@@ -24,6 +29,7 @@ const WARM_DISH_GENERATION_AUDIT_ACTION = "provider.menu_profile.warm_dish.gener
 export type SuperadminMenuProfileOverviewData = {
   checkedAt: string;
   resolverFlagOn: boolean;
+  compatibilityHook: G5d8RuntimeCompatibilityControl;
   registry: SuperadminMenuProfileRegistryRow[];
   providers: SuperadminMenuProfileOverviewRow[];
   totals: {
@@ -38,6 +44,7 @@ export type SuperadminMenuProfileProviderDetail = {
   providerId: string;
   providerName: string;
   health: ProviderMenuProfileHealth;
+  compatibilityHook: G5d8RuntimeCompatibilityControl;
 };
 
 function safeStr(v: unknown) {
@@ -184,6 +191,11 @@ export async function loadSuperadminMenuProfileOverview(): Promise<SuperadminMen
   return {
     checkedAt: new Date().toISOString(),
     resolverFlagOn: overviewRows.some((row) => row.resolverStatus === "ON"),
+    compatibilityHook: buildG5d8GlobalControl(env, {
+      resolverFlagOn: overviewRows.some((row) => row.resolverStatus === "ON"),
+      warningProviders: overviewRows.filter((row) => row.readiness === "warning" || row.mismatch).length,
+      profileFailProviders: overviewRows.filter((row) => row.profileResolved === "FAIL").length,
+    }),
     registry: buildSuperadminMenuProfileRegistryRows(),
     providers: overviewRows,
     totals: {
@@ -232,5 +244,12 @@ export async function loadSuperadminMenuProfileProviderDetail(
     providerId: pid,
     providerName: safeStr((provider as { name?: string }).name) || "Ukjent leverandør",
     health,
+    compatibilityHook: buildG5d8ProviderControl(env, {
+      profileResolved: health.profileResolved,
+      fallbackActive: health.fallbackActive,
+      resolveSource: health.resolveSource,
+      readiness: health.readiness,
+      warning: health.warning,
+    }),
   };
 }
