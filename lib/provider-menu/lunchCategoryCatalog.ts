@@ -90,11 +90,12 @@ export function categoryLabelFromCatalog(
   category: Category,
   profileCategoryLabels?: Partial<Record<Category, string>>,
 ): string {
+  const profileLabel = profileCategoryLabels?.[category];
+  if (profileLabel) return profileLabel;
+
   const row = categoryRowForCategory(catalog, category);
   const title = String(row?.title ?? "").trim();
   if (title) return title;
-  const profileLabel = profileCategoryLabels?.[category];
-  if (profileLabel) return profileLabel;
   return CATEGORY_LABELS[category];
 }
 
