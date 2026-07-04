@@ -1734,9 +1734,14 @@
         "profileCategoryLabel": "Profilkategori"
       },
       "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Aktiv menyprofil",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Varmrettforslag følger denne profilen. Eksisterende innhold og publiserte dager endres ikke automatisk.",
         "title": "Profilbaserte varmrettforslag",
         "description": "Nye varmrettforslag og standardgenerering følger aktiv menyprofil. Eksisterende innhold og publiserte dager endres ikke automatisk.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} forslag",
+        "resolveMeta": "Profilkilde: {source}",
+        "bankSuggestionsLabel": "Fem forslag fra profilbank",
         "generateWeek": "Generer uke fra profilbank",
         "generating": "Genererer …",
         "generateHint": "Fyller kun tomme, ulåste dager som utkast. Leverandørinnhold og publiserte dager hoppes over."

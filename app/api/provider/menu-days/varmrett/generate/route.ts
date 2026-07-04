@@ -7,6 +7,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 
 import { getAuthContext } from "@/lib/auth/getAuthContext";
+import { writeAudit } from "@/lib/audit/log";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
@@ -132,6 +133,30 @@ export async function POST(req: NextRequest) {
   for (const date of plan.skippedDates) {
     if (!skipped.includes(date)) skipped.push(date);
   }
+
+  void writeAudit({
+    actor_user_id: userId,
+    actor_role: "kitchen",
+    action: "provider.menu_profile.warm_dish.generate",
+    severity: "info",
+    company_id: null,
+    target_type: "provider",
+    target_id: provider.id,
+    target_label: provider.name ?? provider.id,
+    before: null,
+    after: {
+      weekStart,
+      profileId: plan.profileId,
+      source: plan.source,
+      appliedDates: applied,
+      skippedDates: [...new Set(skipped)],
+      errorCount: errors.length,
+    },
+    meta: {
+      surface: "provider.menu.generate",
+      rid,
+    },
+  });
 
   return jsonOk(
     rid,

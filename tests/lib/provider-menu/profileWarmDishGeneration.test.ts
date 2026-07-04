@@ -77,16 +77,17 @@ describe("resolveProfileWarmDishGenerationContext", () => {
     expect(buildProviderMenuWarmDishGenerationPresentation(resolver, {})).toEqual({ active: false });
   });
 
-  it("is active when resolver ON and profile has warm dish bank", () => {
+  it("extended warm dish generation presentation includes bank suggestions and fallback flags", () => {
     const resolver = resolveMenuProfileForProvider({
-      menuProfileId: "danish_office_lunch",
+      menuProfileId: "norwegian_company_lunch",
       env: ENV_ON,
     });
-    const ctx = resolveProfileWarmDishGenerationContext(resolver, ENV_ON);
-    expect(ctx.active).toBe(true);
-    if (!ctx.active) return;
-    expect(ctx.profileId).toBe("danish_office_lunch");
-    expect(ctx.seedCount).toBeGreaterThanOrEqual(5);
+    const presentation = buildProviderMenuWarmDishGenerationPresentation(resolver, ENV_ON);
+    expect(presentation.active).toBe(true);
+    if (!presentation.active) return;
+    expect(presentation.activeProfileTitle).toBeTruthy();
+    expect(presentation.bankSuggestions.length).toBe(5);
+    expect(presentation.generationEnabled).toBe(true);
   });
 });
 
@@ -190,6 +191,9 @@ describe("profileWarmDishGeneration — safety boundaries", () => {
       const src = readFileSync(join(process.cwd(), rel), "utf8");
       expect(src).not.toMatch(/lp_order_set/);
       expect(src).not.toMatch(/schemaTypes|defineType/);
+      if (rel.includes("generate/route")) {
+        expect(src).toMatch(/provider\.menu_profile\.warm_dish\.generate/);
+      }
     }
   });
 });

@@ -26,10 +26,11 @@ export default function ProviderMenuProfileWarmDishGenerationBanner({
       aria-labelledby="lp-editor-profile-warm-dish-generation-title"
     >
       <header className="lp-editor-profile-warm-dish-generation__head">
+        <p className="lp-editor-profile-warm-dish-generation__eyebrow">{t("activeProfileEyebrow")}</p>
         <h3 id="lp-editor-profile-warm-dish-generation-title" className="lp-editor-profile-warm-dish-generation__title">
-          {t("title")}
+          {t("activeProfileTitle", { profileName: presentation.activeProfileTitle })}
         </h3>
-        <p className="lp-editor-profile-warm-dish-generation__description">{t("description")}</p>
+        <p className="lp-editor-profile-warm-dish-generation__description">{t("followsProfileLead")}</p>
         <p className="lp-editor-profile-warm-dish-generation__meta">
           {t("profileMeta", {
             profileId: presentation.profileId,
@@ -39,7 +40,33 @@ export default function ProviderMenuProfileWarmDishGenerationBanner({
             seedCount: presentation.seedCount,
           })}
         </p>
+        <p className="lp-editor-profile-warm-dish-generation__meta">
+          {t("resolveMeta", { source: presentation.resolveSource })}
+        </p>
       </header>
+
+      {presentation.fallbackWarning ? (
+        <p
+          className="lp-editor-profile-warm-dish-generation__warning"
+          data-testid="provider-menu-profile-warm-dish-fallback-warning"
+          role="status"
+        >
+          {presentation.fallbackWarning}
+        </p>
+      ) : null}
+
+      {presentation.bankSuggestions.length > 0 ? (
+        <div className="lp-editor-profile-warm-dish-generation__suggestions">
+          <p className="lp-editor-profile-warm-dish-generation__suggestions-label">{t("bankSuggestionsLabel")}</p>
+          <ul className="lp-editor-profile-warm-dish-generation__suggestions-list">
+            {presentation.bankSuggestions.map((item) => (
+              <li key={item.id} className="lp-editor-profile-warm-dish-generation__suggestion">
+                {item.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {canGenerate && onGenerateWeek ? (
         <div className="lp-editor-profile-warm-dish-generation__actions">
