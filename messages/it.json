@@ -1657,9 +1657,14 @@
         "profileCategoryLabel": "Categoria profilo"
       },
       "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
         "title": "Suggerimenti piatti caldi basati sul profilo",
         "description": "I nuovi suggerimenti e la generazione predefinita seguono il profilo menu attivo. I contenuti esistenti e i giorni pubblicati non vengono modificati automaticamente.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggerimenti",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
         "generateWeek": "Genera settimana dalla banca profilo",
         "generating": "Generazione …",
         "generateHint": "Compila solo giorni vuoti e sbloccati come bozze. Contenuti del fornitore e giorni pubblicati vengono ignorati."

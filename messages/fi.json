@@ -411,9 +411,14 @@
         "profileCategoryLabel": "Profilikategoria"
       },
       "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
         "title": "Profiilipohjaiset lämpimän aterian ehdotukset",
         "description": "Uudet ehdotukset ja oletusgenerointi noudattavat aktiivista menu-profiilia. Olemassa olevaa sisältöä ja julkaistuja päiviä ei muuteta automaattisesti.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} ehdotusta",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
         "generateWeek": "Generoi viikko profiilipankista",
         "generating": "Generoidaan …",
         "generateHint": "Täyttää vain tyhjät, lukitsemattomat päivät luonnoksina. Toimittajan sisältö ja julkaistut päivät ohitetaan."

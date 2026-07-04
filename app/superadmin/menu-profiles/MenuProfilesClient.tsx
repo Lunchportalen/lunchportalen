@@ -86,7 +86,7 @@ export default function SuperadminMenuProfilesClient({ data }: Props) {
         variant="command"
         eyebrow="SUPERSMART"
         title="Menyprofil-kontroll"
-        lead="Read-only oversikt over resolver, profilhelse og siste generering per leverandør. Ingen flaggendring eller auto-rollout fra denne siden."
+        lead="Read-only oversikt over resolver, profilhelse og siste generering per leverandør. Ingen flaggendring eller automatisk utrulling fra denne siden."
         meta={
           <>
             <SuperadminBadge tone={data.resolverFlagOn ? "live" : "muted"}>

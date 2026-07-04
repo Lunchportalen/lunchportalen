@@ -411,9 +411,14 @@
         "profileCategoryLabel": "Profilkategori"
       },
       "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
         "title": "Profilbaserade varmrättsförslag",
         "description": "Nya varmrättsförslag och standardgenerering följer aktiv menyprofil. Befintligt innehåll och publicerade dagar ändras inte automatiskt.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} förslag",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
         "generateWeek": "Generera vecka från profilbank",
         "generating": "Genererar …",
         "generateHint": "Fyller endast tomma, olåsta dagar som utkast. Leverantörsinnehåll och publicerade dagar hoppas över."
