@@ -9,6 +9,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import ProviderMenuBuilder from "@/components/providers/ProviderMenuBuilder";
+import ProviderMenuGeneratorPreviewPanel from "@/components/providers/ProviderMenuGeneratorPreviewPanel";
+import { buildProviderMenuGeneratorPreviewPresentation } from "@/lib/provider-menu/providerMenuGeneratorPresentation";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
@@ -107,8 +109,16 @@ export default async function LeverandorMenyPage() {
     menuProfileEnv,
   );
 
+  const generatorPreviewPresentation = buildProviderMenuGeneratorPreviewPresentation({
+    providerId: provider.id,
+    settingsRow: menuProfileRow,
+    resolverResult: menuProfileResolver,
+    env: menuProfileEnv,
+  });
+
   return (
     <div className="ds-provider-meny-page lp-editor-page">
+      <ProviderMenuGeneratorPreviewPanel presentation={generatorPreviewPresentation} />
       {canSaveMappingDraft ? (
         <section className="ds-card ds-section">
           <h2 className="ds-h3">{t("translationsPromoTitle")}</h2>

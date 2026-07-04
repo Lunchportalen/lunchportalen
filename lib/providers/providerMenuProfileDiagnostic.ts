@@ -61,6 +61,8 @@ export type ProviderMenuProfileDiagnostic =
   | ProviderMenuProfileDiagnosticError
   | ProviderMenuProfileDiagnosticLegacy;
 
+import { LP_LOCALIZED_FIXED_MENU_GENERATOR_ENV } from "@/lib/menu-generator/featureFlag";
+
 /** Host env bag for menu profile feature flags (server wiring only). */
 export function menuProfileResolverHostEnv(): Readonly<Record<string, string | undefined>> {
   return {
@@ -72,6 +74,7 @@ export function menuProfileResolverHostEnv(): Readonly<Record<string, string | u
     [LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV]: process.env.LP_MENU_PROFILE_MAPPING_DRAFT_API,
     [LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV]:
       process.env.LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK,
+    [LP_LOCALIZED_FIXED_MENU_GENERATOR_ENV]: process.env.LP_LOCALIZED_FIXED_MENU_GENERATOR,
   };
 }
 
