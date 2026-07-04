@@ -24,13 +24,19 @@ const G5D7C_WEEK_HOOK_BOUNDARY_PATHS = [
   G5D7C_WEEK_HOOK_BOUNDARY_PATH,
 ] as const;
 
+const G5D8_CONTROL_PATH = "lib/menu-profile/g5d8RuntimeCompatibilityControl.ts";
+const G5D8_CONTROL_TEST_PATH = "tests/lib/menu-profile/g5d8RuntimeCompatibilityControl.test.ts";
+
 const RUNTIME_HOOK_FLAG_ALLOWED_PATHS = [
   "lib/menu-profile/featureFlag.ts",
+  G5D8_CONTROL_PATH,
   ...G5D7C_WEEK_HOOK_BOUNDARY_PATHS,
   FUTURE_HOOK_HELPER_PATH,
   FUTURE_HOOK_TEST_PATH,
   G5D7C_HOOK_UNIT_TEST_PATH,
+  G5D8_CONTROL_TEST_PATH,
   G5D7C_WEEK_API_TEST_PATH,
+  "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts",
 ];
 
 const G5D7_GOVERNANCE_ALLOWED_PATHS = [
@@ -45,6 +51,9 @@ const G5D7_GOVERNANCE_ALLOWED_PATHS = [
   G5D7C_WEEK_HOOK_ROUTE_PATH,
   G5D7C_HOOK_UNIT_TEST_PATH,
   G5D7C_WEEK_API_TEST_PATH,
+  G5D8_CONTROL_PATH,
+  G5D8_CONTROL_TEST_PATH,
+  "docs/runbooks/g5d8-planning.md",
 ];
 
 const FUTURE_HOOK_ALLOWED_RUNTIME_PATHS = [
