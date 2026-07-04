@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
     if (!skipped.includes(date)) skipped.push(date);
   }
 
-  void writeAudit({
+  await writeAudit({
     actor_user_id: userId,
     actor_role: "kitchen",
     action: "provider.menu_profile.warm_dish.generate",
