@@ -507,8 +507,11 @@ describe("Protected Golden Path — SUPERSMART provider menu profile runtime", (
 
     const possibleGenerationFiles = [
       "lib/provider-menu/generateWeekMenu.ts",
+      "lib/provider-menu/profileWarmDishGeneration.ts",
       "lib/provider-menu/varmrettSharedWrite.ts",
       "lib/provider-menu/varmrettSharedRead.ts",
+      "app/api/provider/menu-days/varmrett/generate/route.ts",
+      "app/api/provider/menu-days/varmrett/suggestions/route.ts",
     ].filter(exists);
 
     for (const rel of possibleGenerationFiles) {

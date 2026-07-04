@@ -228,6 +228,7 @@
         "copySourceEmpty": "Ingen {tier}-menu at kopiere for denne dag/kategori.",
         "publishConfirmRequired": "{warning} Bekræft for at publicere alligevel.",
         "resetVarmrettFailed": "Kunne ikke nulstille varmret.",
+        "generateProfileWeekFailed": "Kunne ikke generere uge fra profilbank.",
         "unauthorized": "Ikke logget ind.",
         "forbidden": "Du har ikke adgang til menuen.",
         "badRequest": "Ugyldig anmodning.",
@@ -241,6 +242,7 @@
         "published": "Menu publiceret.",
         "draftSaved": "Kladde gemt.",
         "resetVarmrett": "Varmret nulstillet til genereret.",
+        "profileWeekGenerated": "Genererede varmret for {count} dag(e) fra profilbank.",
         "copiedFromTier": "Kopieret fra {tier}. Tilføj Enterprise-opgradering før publicering."
       },
       "price": {
@@ -407,6 +409,14 @@
         "presentationOnly": "Kun præsentation",
         "packagesLabel": "Pakker",
         "profileCategoryLabel": "Profilkategori"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Profilbaserede varmretforslag",
+        "description": "Nye varmretforslag og standardgenerering følger aktiv menuprofil. Eksisterende indhold og publicerede dage ændres ikke automatisk.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} forslag",
+        "generateWeek": "Generer uge fra profilbank",
+        "generating": "Genererer …",
+        "generateHint": "Udfylder kun tomme, ulåste dage som kladde. Leverandørindhold og publicerede dage springes over."
       },
       "workspaceWarmDishPreview": {
         "title": "Varmretbank for menuprofil",

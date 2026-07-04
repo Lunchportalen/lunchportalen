@@ -228,6 +228,7 @@
         "copySourceEmpty": "Ingen {tier}-meny att kopiera för den här dagen/kategorin.",
         "publishConfirmRequired": "{warning} Bekräfta för att publicera ändå.",
         "resetVarmrettFailed": "Kunde inte återställa varmrätt.",
+        "generateProfileWeekFailed": "Kunde inte generera vecka från profilbank.",
         "unauthorized": "Inte inloggad.",
         "forbidden": "Du har inte åtkomst till menyn.",
         "badRequest": "Ogiltig begäran.",
@@ -241,6 +242,7 @@
         "published": "Meny publicerad.",
         "draftSaved": "Utkast sparat.",
         "resetVarmrett": "Varmrätt återställd till genererad.",
+        "profileWeekGenerated": "Genererade varmrätter för {count} dag(ar) från profilbank.",
         "copiedFromTier": "Kopierad från {tier}. Lägg till Enterprise-uppgradering före publicering."
       },
       "price": {
@@ -407,6 +409,14 @@
         "presentationOnly": "Endast presentation",
         "packagesLabel": "Paket",
         "profileCategoryLabel": "Profilkategori"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Profilbaserade varmrättsförslag",
+        "description": "Nya varmrättsförslag och standardgenerering följer aktiv menyprofil. Befintligt innehåll och publicerade dagar ändras inte automatiskt.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} förslag",
+        "generateWeek": "Generera vecka från profilbank",
+        "generating": "Genererar …",
+        "generateHint": "Fyller endast tomma, olåsta dagar som utkast. Leverantörsinnehåll och publicerade dagar hoppas över."
       },
       "workspaceWarmDishPreview": {
         "title": "Varmrättsbank för menyprofil",

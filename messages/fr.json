@@ -228,6 +228,7 @@
         "copySourceEmpty": "Aucun menu {tier} à copier pour ce jour/cette catégorie.",
         "publishConfirmRequired": "{warning} Confirmez pour publier quand même.",
         "resetVarmrettFailed": "Impossible de réinitialiser le plat chaud.",
+        "generateProfileWeekFailed": "Impossible de générer la semaine depuis la banque de profil.",
         "unauthorized": "Non connecté.",
         "forbidden": "Vous n'avez pas accès au menu.",
         "badRequest": "Requête invalide.",
@@ -241,6 +242,7 @@
         "published": "Menu publié.",
         "draftSaved": "Brouillon enregistré.",
         "resetVarmrett": "Plat chaud réinitialisé au contenu généré.",
+        "profileWeekGenerated": "Plats chauds générés pour {count} jour(s) depuis la banque de profil.",
         "copiedFromTier": "Copié depuis {tier}. Ajoutez l'upgrade Enterprise avant de publier."
       },
       "price": {
@@ -407,6 +409,14 @@
         "presentationOnly": "Présentation uniquement",
         "packagesLabel": "Forfaits",
         "profileCategoryLabel": "Catégorie profil"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Suggestions de plats chauds selon le profil",
+        "description": "Les nouvelles suggestions et la génération par défaut suivent le profil menu actif. Le contenu existant et les jours publiés ne sont pas modifiés automatiquement.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggestions",
+        "generateWeek": "Générer la semaine depuis la banque de profil",
+        "generating": "Génération …",
+        "generateHint": "Remplit uniquement les jours vides et déverrouillés en brouillon. Le contenu fournisseur et les jours publiés sont ignorés."
       },
       "workspaceWarmDishPreview": {
         "title": "Banque de plats chauds pour le profil menu",

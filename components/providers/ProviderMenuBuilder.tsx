@@ -65,6 +65,8 @@ import type { ProviderMenuRuntimeMappingProposalProps } from "@/lib/provider-men
 import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
 import ProviderMenuProfileFixedCategoriesPanel from "@/components/providers/ProviderMenuProfileFixedCategoriesPanel";
 import ProviderMenuProfileWarmDishPreviewPanel from "@/components/providers/ProviderMenuProfileWarmDishPreviewPanel";
+import type { ProviderMenuWarmDishGenerationPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishGeneration";
+import ProviderMenuProfileWarmDishGenerationBanner from "@/components/providers/ProviderMenuProfileWarmDishGenerationBanner";
 import ProviderMenuRuntimeMappingProposalPanel from "@/components/providers/ProviderMenuRuntimeMappingProposalPanel";
 
 import "@/app/styles/ds/provider-menu-editor.css";
@@ -73,6 +75,7 @@ type ProviderMenuBuilderProps = {
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
   fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
   warmDishPreviewPresentation?: MenuProfileWarmDishPreviewPresentationProps;
+  warmDishGenerationPresentation?: ProviderMenuWarmDishGenerationPresentation;
   runtimeMappingProposal?: ProviderMenuRuntimeMappingProposalProps;
   mappingDraftSaveEnabled?: boolean;
   canSaveMappingDraft?: boolean;
@@ -171,10 +174,19 @@ function translateNextStepAction(
   return translate(`workspace.nextStep.${action.key}`);
 }
 
+type WarmDishSuggestionRow = {
+  date: string;
+  mealTitle: string;
+  description: string;
+  allergens: string[];
+  seedKey: string;
+};
+
 export default function ProviderMenuBuilder({
   workspacePresentation = { active: false },
   fixedCategoryPresentation = { active: false },
   warmDishPreviewPresentation = { active: false },
+  warmDishGenerationPresentation = { active: false },
   runtimeMappingProposal = { active: false },
   mappingDraftSaveEnabled = false,
   canSaveMappingDraft = false,
@@ -184,6 +196,7 @@ export default function ProviderMenuBuilder({
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
   const warmDishPreview = warmDishPreviewPresentation.active ? warmDishPreviewPresentation : null;
+  const warmDishGeneration = warmDishGenerationPresentation.active ? warmDishGenerationPresentation : null;
   const runtimeMapping = runtimeMappingProposal.active ? runtimeMappingProposal : null;
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
@@ -200,6 +213,8 @@ export default function ProviderMenuBuilder({
   const [confirmWarnings, setConfirmWarnings] = useState(false);
   const [pending, startTransition] = useTransition();
   const [loading, setLoading] = useState(true);
+  const [generatingWeek, setGeneratingWeek] = useState(false);
+  const [warmDishSuggestions, setWarmDishSuggestions] = useState<Record<string, WarmDishSuggestionRow>>({});
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
   const tierPrice = prices?.[tier];
@@ -273,9 +288,44 @@ export default function ProviderMenuBuilder({
     }
   }, [weekStart, t]);
 
+  const loadWarmDishSuggestions = useCallback(async () => {
+    if (!warmDishGeneration) {
+      setWarmDishSuggestions({});
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/provider/menu-days/varmrett/suggestions?weekStart=${encodeURIComponent(weekStart)}`,
+        { credentials: "same-origin", headers: { Accept: "application/json" } },
+      );
+      const json = (await res.json()) as {
+        ok?: boolean;
+        data?: {
+          active?: boolean;
+          suggestions?: WarmDishSuggestionRow[];
+        };
+      };
+      if (!res.ok || !json.ok || !json.data?.active || !Array.isArray(json.data.suggestions)) {
+        setWarmDishSuggestions({});
+        return;
+      }
+      const next: Record<string, WarmDishSuggestionRow> = {};
+      for (const row of json.data.suggestions) {
+        next[row.date] = row;
+      }
+      setWarmDishSuggestions(next);
+    } catch {
+      setWarmDishSuggestions({});
+    }
+  }, [warmDishGeneration, weekStart]);
+
   useEffect(() => {
     void loadWeek();
   }, [loadWeek]);
+
+  useEffect(() => {
+    void loadWarmDishSuggestions();
+  }, [loadWarmDishSuggestions]);
 
   useEffect(() => {
     if (loading || selected || weekDates.length === 0) return;
@@ -307,6 +357,8 @@ export default function ProviderMenuBuilder({
       setForm({ ...existing });
     } else if (sel.category === "varmrett" && sel.editorFocus === "varmrett") {
       const shared = resolveSharedVarmrettSlot(slots, sel.date);
+      const suggestion = warmDishSuggestions[sel.date];
+      const hasContent = menuSlotHasContent(shared);
       existing = {
         ...existing,
         mealTitle: shared.mealTitle || existing.mealTitle,
@@ -314,6 +366,14 @@ export default function ProviderMenuBuilder({
         allergensText: shared.allergensText || existing.allergensText,
         estimatedCostPerPortion: shared.estimatedCostPerPortion ?? existing.estimatedCostPerPortion,
       };
+      if (!hasContent && suggestion) {
+        existing = {
+          ...existing,
+          mealTitle: suggestion.mealTitle,
+          description: suggestion.description,
+          allergensText: suggestion.allergens.join(", "),
+        };
+      }
       setForm({ ...existing, category: "varmrett", tier });
     } else {
       const shared = resolveSharedVarmrettSlot(slots, sel.date);
@@ -453,6 +513,35 @@ export default function ProviderMenuBuilder({
     await loadWeek();
   }
 
+  async function generateProfileWeek() {
+    if (!warmDishGeneration) return;
+    setError(null);
+    setMessage(null);
+    setGeneratingWeek(true);
+    try {
+      const res = await fetch("/api/provider/menu-days/varmrett/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ weekStart }),
+      });
+      const json = (await res.json()) as MenuWeekResponse & {
+        data?: { appliedDates?: string[]; skippedDates?: string[] };
+      };
+      if (!res.ok || !json.ok) {
+        setError(resolveProviderMenuApiError(t, json, "generateProfileWeekFailed"));
+        return;
+      }
+      const applied = json.data?.appliedDates?.length ?? 0;
+      setMessage(t("success.profileWeekGenerated", { count: String(applied) }));
+      await loadWeek();
+      await loadWarmDishSuggestions();
+    } catch {
+      setError(t("errors.generateProfileWeekFailed"));
+    } finally {
+      setGeneratingWeek(false);
+    }
+  }
+
   const varmrettEditorState = useMemo(() => {
     if (!selected?.date || selected.category !== "varmrett") {
       return { providerOverride: false, hasGeneratedBaseline: false, orderLocked: false, autoFilled: false };
@@ -561,6 +650,17 @@ export default function ProviderMenuBuilder({
 
       {profilePresentation && workspaceView === "week" ? (
         <ProviderMenuProfilePresentationBanner presentation={profilePresentation} />
+      ) : null}
+
+      {warmDishGeneration && workspaceView === "week" ? (
+        <ProviderMenuProfileWarmDishGenerationBanner
+          presentation={warmDishGeneration}
+          canGenerate
+          generating={generatingWeek}
+          onGenerateWeek={() => {
+            void generateProfileWeek();
+          }}
+        />
       ) : null}
 
       {fixedCategories && workspaceView === "week" ? (

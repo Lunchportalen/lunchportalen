@@ -227,6 +227,7 @@
         "saveFailed": "Menü konnte nicht gespeichert werden.",
         "copySourceEmpty": "Kein {tier}-Menü zum Kopieren für diesen Tag/diese Kategorie.",
         "resetVarmrettFailed": "Tagesgericht konnte nicht zurückgesetzt werden.",
+        "generateProfileWeekFailed": "Woche konnte nicht aus der Profilbank generiert werden.",
         "publishConfirmRequired": "{warning} Bestätigen, um trotzdem zu veröffentlichen.",
         "unauthorized": "Nicht angemeldet.",
         "forbidden": "Sie haben keinen Zugriff auf das Menü.",
@@ -241,6 +242,7 @@
         "published": "Menü veröffentlicht.",
         "draftSaved": "Entwurf gespeichert.",
         "resetVarmrett": "Tagesgericht auf generiert zurückgesetzt.",
+        "profileWeekGenerated": "Tagesgerichte für {count} Tag(e) aus Profilbank generiert.",
         "copiedFromTier": "Von {tier} kopiert. Enterprise-Upgrade vor Veröffentlichung hinzufügen."
       },
       "price": {
@@ -407,6 +409,14 @@
         "presentationOnly": "Nur Präsentation",
         "packagesLabel": "Pakete",
         "profileCategoryLabel": "Profilkategorie"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Profilbasierte Tagesgerichtvorschläge",
+        "description": "Neue Tagesgerichtvorschläge und Standardgenerierung folgen dem aktiven Menüprofil. Bestehende Inhalte und veröffentlichte Tage werden nicht automatisch geändert.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} Vorschläge",
+        "generateWeek": "Woche aus Profilbank generieren",
+        "generating": "Generiere …",
+        "generateHint": "Füllt nur leere, nicht gesperrte Tage als Entwürfe. Anbieterinhalte und veröffentlichte Tage werden übersprungen."
       },
       "workspaceWarmDishPreview": {
         "title": "Warmgericht-Bank für Menüprofil",

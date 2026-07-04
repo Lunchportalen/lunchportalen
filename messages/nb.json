@@ -1476,6 +1476,7 @@
         "saveFailed": "Kunne ikke lagre meny.",
         "copySourceEmpty": "Ingen {tier}-meny å kopiere for denne dagen/kategorien.",
         "resetVarmrettFailed": "Kunne ikke tilbakestille varmrett.",
+        "generateProfileWeekFailed": "Kunne ikke generere uke fra profilbank.",
         "publishConfirmRequired": "{warning} Bekreft for å publisere likevel.",
         "unauthorized": "Ikke innlogget.",
         "forbidden": "Du har ikke tilgang til meny.",
@@ -1490,6 +1491,7 @@
         "published": "Meny publisert.",
         "draftSaved": "Utkast lagret.",
         "resetVarmrett": "Varmrett tilbakestilt til generert.",
+        "profileWeekGenerated": "Genererte varmrett for {count} dag(er) fra profilbank.",
         "copiedFromTier": "Kopiert fra {tier}. Legg til Enterprise-upgrade før publisering."
       },
       "validation": {
@@ -1730,6 +1732,14 @@
         "presentationOnly": "Kun presentasjon",
         "packagesLabel": "Pakker",
         "profileCategoryLabel": "Profilkategori"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Profilbaserte varmrettforslag",
+        "description": "Nye varmrettforslag og standardgenerering følger aktiv menyprofil. Eksisterende innhold og publiserte dager endres ikke automatisk.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} forslag",
+        "generateWeek": "Generer uke fra profilbank",
+        "generating": "Genererer …",
+        "generateHint": "Fyller kun tomme, ulåste dager som utkast. Leverandørinnhold og publiserte dager hoppes over."
       },
       "workspaceWarmDishPreview": {
         "title": "Varmrettbank for menyprofil",
