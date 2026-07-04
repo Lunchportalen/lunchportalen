@@ -411,9 +411,14 @@
         "profileCategoryLabel": "Profilkategorie"
       },
       "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
         "title": "Profilbasierte Tagesgerichtvorschläge",
         "description": "Neue Tagesgerichtvorschläge und Standardgenerierung folgen dem aktiven Menüprofil. Bestehende Inhalte und veröffentlichte Tage werden nicht automatisch geändert.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} Vorschläge",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
         "generateWeek": "Woche aus Profilbank generieren",
         "generating": "Generiere …",
         "generateHint": "Füllt nur leere, nicht gesperrte Tage als Entwürfe. Anbieterinhalte und veröffentlichte Tage werden übersprungen."

@@ -20,6 +20,7 @@ const SECONDARY_NAV = [
   { label: "Kontrolltårn", href: "/superadmin/control-tower" },
   { label: "Operasjoner", href: "/superadmin/operations" },
   { label: "Global", href: "/superadmin/global" },
+  { label: "Menyprofiler", href: "/superadmin/menu-profiles" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
