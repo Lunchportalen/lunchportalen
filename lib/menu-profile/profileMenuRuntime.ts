@@ -207,8 +207,12 @@ export type ProfileWarmDishSuggestion = {
   isPreviewOnly: boolean;
 };
 
-export function buildProfileWarmDishSuggestions(profile: MenuProfile): ProfileWarmDishSuggestion[] {
+export function buildProfileWarmDishSuggestions(
+  profile: MenuProfile,
+  options?: { generation?: boolean },
+): ProfileWarmDishSuggestion[] {
   const seeds = getWarmDishBankSeedsForProfile(profile.id);
+  const previewOnly = options?.generation !== true;
   return seeds.map((seed: WarmDishBankSeed) => ({
     id: `profile-warm-dish:${profile.id}:${seed.key}`,
     profileId: profile.id,
@@ -218,8 +222,14 @@ export function buildProfileWarmDishSuggestions(profile: MenuProfile): ProfileWa
     suggestedTags: [...(seed.tags ?? [])],
     suggestedTiers: ["BASIS", "LUXUS", "ENTERPRISE"],
     isVegetarian: seed.tags?.includes("vegetarian") === true,
-    isPreviewOnly: true,
+    isPreviewOnly: previewOnly,
   }));
+}
+
+export function buildProfileWarmDishGenerationSuggestions(
+  profile: MenuProfile,
+): ProfileWarmDishSuggestion[] {
+  return buildProfileWarmDishSuggestions(profile, { generation: true });
 }
 
 export function resolveFallbackMenuProfile(): MenuProfile {

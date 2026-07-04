@@ -228,6 +228,7 @@
         "copySourceEmpty": "No hay menú {tier} para copiar en este día/categoría.",
         "publishConfirmRequired": "{warning} Confirme para publicar de todos modos.",
         "resetVarmrettFailed": "No se pudo restablecer el plato caliente.",
+        "generateProfileWeekFailed": "No se pudo generar la semana desde el banco de perfil.",
         "unauthorized": "No ha iniciado sesión.",
         "forbidden": "No tiene acceso al menú.",
         "badRequest": "Solicitud no válida.",
@@ -241,6 +242,7 @@
         "published": "Menú publicado.",
         "draftSaved": "Borrador guardado.",
         "resetVarmrett": "Plato caliente restablecido al generado.",
+        "profileWeekGenerated": "Platos calientes generados para {count} día(s) desde el banco de perfil.",
         "copiedFromTier": "Copiado desde {tier}. Añada el upgrade Enterprise antes de publicar."
       },
       "price": {
@@ -407,6 +409,14 @@
         "presentationOnly": "Solo presentación",
         "packagesLabel": "Paquetes",
         "profileCategoryLabel": "Categoría de perfil"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Sugerencias de plato caliente según perfil",
+        "description": "Las nuevas sugerencias y la generación predeterminada siguen el perfil de menú activo. El contenido existente y los días publicados no se cambian automáticamente.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} sugerencias",
+        "generateWeek": "Generar semana desde banco de perfil",
+        "generating": "Generando …",
+        "generateHint": "Rellena solo días vacíos y desbloqueados como borrador. Se omiten contenido del proveedor y días publicados."
       },
       "workspaceWarmDishPreview": {
         "title": "Banco de platos calientes para perfil de menú",

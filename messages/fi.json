@@ -227,6 +227,7 @@
         "saveFailed": "Menua ei voitu tallentaa.",
         "copySourceEmpty": "Ei {tier}-menua kopioitavaksi tälle päivälle/kategorialle.",
         "resetVarmrettFailed": "Lämmintä ateriaa ei voitu palauttaa.",
+        "generateProfileWeekFailed": "Viikkoa ei voitu luoda profiilipankista.",
         "publishConfirmRequired": "{warning} Vahvista julkaistaksesi silti.",
         "unauthorized": "Et ole kirjautunut sisään.",
         "forbidden": "Sinulla ei ole oikeutta menuun.",
@@ -241,6 +242,7 @@
         "published": "Menu julkaistu.",
         "draftSaved": "Luonnos tallennettu.",
         "resetVarmrett": "Lämmin ateria palautettu luotuun.",
+        "profileWeekGenerated": "Luotiin lämpimiä aterioita {count} päivälle profiilipankista.",
         "copiedFromTier": "Kopioitu tasosta {tier}. Lisää Enterprise-päivitys ennen julkaisua."
       },
       "price": {
@@ -407,6 +409,14 @@
         "presentationOnly": "Vain esittely",
         "packagesLabel": "Paketit",
         "profileCategoryLabel": "Profilikategoria"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Profiilipohjaiset lämpimän aterian ehdotukset",
+        "description": "Uudet ehdotukset ja oletusgenerointi noudattavat aktiivista menu-profiilia. Olemassa olevaa sisältöä ja julkaistuja päiviä ei muuteta automaattisesti.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} ehdotusta",
+        "generateWeek": "Generoi viikko profiilipankista",
+        "generating": "Generoidaan …",
+        "generateHint": "Täyttää vain tyhjät, lukitsemattomat päivät luonnoksina. Toimittajan sisältö ja julkaistut päivät ohitetaan."
       },
       "workspaceWarmDishPreview": {
         "title": "Lämmin ruoka -pankki valikkoprofiilille",

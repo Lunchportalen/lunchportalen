@@ -25,6 +25,7 @@ export const PROVIDER_MENU_ERROR_KEYS = [
   "loadFailed",
   "saveFailed",
   "resetVarmrettFailed",
+  "generateProfileWeekFailed",
   "unauthorized",
   "forbidden",
   "badRequest",

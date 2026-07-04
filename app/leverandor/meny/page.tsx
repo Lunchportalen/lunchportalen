@@ -15,6 +15,7 @@ import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { buildProviderMenuWorkspacePresentation } from "@/lib/provider-menu/providerMenuProfilePresentation";
 import { buildProviderMenuFixedCategoryPresentation } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
 import { buildProviderMenuWarmDishPreviewPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishPreview";
+import { buildProviderMenuWarmDishGenerationPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishGeneration";
 import { buildProviderMenuRuntimeMappingProposalPresentation } from "@/lib/provider-menu/providerMenuRuntimeMappingProposal";
 import { getMarketDefaults } from "@/lib/menu-profile/marketDefaults";
 import type { CurrencyCode } from "@/lib/menu-profile/types";
@@ -64,6 +65,10 @@ export default async function LeverandorMenyPage() {
   const warmDishPreviewPresentation = buildProviderMenuWarmDishPreviewPresentation(
     menuProfileResolver,
     menuProfileRow?.defaultCurrency ?? getMarketDefaults("NO").defaultCurrency,
+    menuProfileEnv,
+  );
+  const warmDishGenerationPresentation = buildProviderMenuWarmDishGenerationPresentation(
+    menuProfileResolver,
     menuProfileEnv,
   );
 
@@ -118,6 +123,7 @@ export default async function LeverandorMenyPage() {
           workspacePresentation={workspacePresentation}
           fixedCategoryPresentation={fixedCategoryPresentation}
           warmDishPreviewPresentation={warmDishPreviewPresentation}
+          warmDishGenerationPresentation={warmDishGenerationPresentation}
           runtimeMappingProposal={runtimeMappingProposal}
           mappingDraftSaveEnabled={mappingDraftSaveEnabled}
           canSaveMappingDraft={canSaveMappingDraft}

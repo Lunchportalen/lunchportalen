@@ -1399,6 +1399,7 @@
         "saveFailed": "Impossibile salvare il Menu.",
         "copySourceEmpty": "Nessun Menu {tier} da copiare per questo giorno/categoria.",
         "resetVarmrettFailed": "Impossibile ripristinare il piatto caldo del giorno.",
+        "generateProfileWeekFailed": "Impossibile generare la settimana dalla banca profilo.",
         "publishConfirmRequired": "{warning} Conferma per pubblicare comunque.",
         "unauthorized": "Accesso non eseguito",
         "forbidden": "Non hai accesso al Menu.",
@@ -1413,6 +1414,7 @@
         "published": "Menu pubblicato.",
         "draftSaved": "Bozza salvata.",
         "resetVarmrett": "Piatto caldo del giorno ripristinato al contenuto generato.",
+        "profileWeekGenerated": "Piatti caldi generati per {count} giorno/i dalla banca profilo.",
         "copiedFromTier": "Copiati depuis {tier}. Ajoutez l'upgrade Enterprise avant de publier."
       },
       "validation": {
@@ -1653,6 +1655,14 @@
         "presentationOnly": "Solo presentazione",
         "packagesLabel": "Pacchetti",
         "profileCategoryLabel": "Categoria profilo"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Suggerimenti piatti caldi basati sul profilo",
+        "description": "I nuovi suggerimenti e la generazione predefinita seguono il profilo menu attivo. I contenuti esistenti e i giorni pubblicati non vengono modificati automaticamente.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggerimenti",
+        "generateWeek": "Genera settimana dalla banca profilo",
+        "generating": "Generazione …",
+        "generateHint": "Compila solo giorni vuoti e sbloccati come bozze. Contenuti del fornitore e giorni pubblicati vengono ignorati."
       },
       "workspaceWarmDishPreview": {
         "title": "Banca piatti caldi per profilo menu",

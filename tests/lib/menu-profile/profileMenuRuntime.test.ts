@@ -5,6 +5,7 @@ import { LP_MENU_PROFILE_RESOLVER_ENV } from "@/lib/menu-profile/featureFlag";
 import { getMenuProfile } from "@/lib/menu-profile/registry";
 import {
   buildProfileRuntimeCategoryLabels,
+  buildProfileWarmDishGenerationSuggestions,
   buildProfileWarmDishSuggestions,
   isProfileMenuRuntimeEnabled,
   overlayProfileLabelsOnOrderWindowCategories,
@@ -41,6 +42,12 @@ describe("profileMenuRuntime — all nine profiles", () => {
       expect(suggestions).toHaveLength(5);
       expect(suggestions.every((s) => s.isPreviewOnly)).toBe(true);
     }
+  });
+
+  it("generation suggestions are not preview-only", () => {
+    const suggestions = buildProfileWarmDishGenerationSuggestions(getMenuProfile("german_business_lunch"));
+    expect(suggestions).toHaveLength(5);
+    expect(suggestions.every((s) => s.isPreviewOnly === false)).toBe(true);
   });
 });
 

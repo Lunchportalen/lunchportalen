@@ -1476,6 +1476,7 @@
         "saveFailed": "Could not save menu.",
         "copySourceEmpty": "No {tier} menu to copy for this day/category.",
         "resetVarmrettFailed": "Could not reset hot meal.",
+        "generateProfileWeekFailed": "Could not generate week from profile bank.",
         "publishConfirmRequired": "{warning} Confirm to publish anyway.",
         "unauthorized": "Not signed in.",
         "forbidden": "You do not have access to the menu.",
@@ -1490,6 +1491,7 @@
         "published": "Menu published.",
         "draftSaved": "Draft saved.",
         "resetVarmrett": "Hot meal reset to generated.",
+        "profileWeekGenerated": "Generated hot meals for {count} day(s) from profile bank.",
         "copiedFromTier": "Copied from {tier}. Add Enterprise upgrade before publishing."
       },
       "validation": {
@@ -1730,6 +1732,14 @@
         "presentationOnly": "Presentation only",
         "packagesLabel": "Packages",
         "profileCategoryLabel": "Profile category"
+      },
+      "workspaceWarmDishGeneration": {
+        "title": "Profile-based hot meal suggestions",
+        "description": "New hot meal suggestions and default generation follow the active menu profile. Existing content and published days are not changed automatically.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggestions",
+        "generateWeek": "Generate week from profile bank",
+        "generating": "Generating …",
+        "generateHint": "Fills only empty, unlocked days as drafts. Provider content and published days are skipped."
       },
       "workspaceWarmDishPreview": {
         "title": "Warm dish bank for menu profile",
