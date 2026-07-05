@@ -13,8 +13,8 @@ import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import {
   applyLocalizedGeneratedWeekMenu,
-  parseApplyLocalizedGeneratedWeekMenuBody,
 } from "@/lib/menu-generator/applyLocalizedGeneratedWeekMenu";
+import { parseApplyLocalizedGeneratedWeekMenuBody } from "@/lib/menu-generator/applyLocalizedGeneratedWeekMenuBody";
 import { buildApplyIdempotencyKey } from "@/lib/menu-generator/applyTypes";
 import { resolveProviderMenuRuntimeProfile } from "@/lib/menu-generator/resolveProviderMenuRuntimeProfile";
 import { menuProfileResolverHostEnv } from "@/lib/providers/providerMenuProfileDiagnostic";
@@ -141,6 +141,8 @@ export async function POST(req: NextRequest) {
       generatorVersion: result.generatorVersion,
       idempotencyKey: result.idempotencyKey,
       errorCode: result.errorCode ?? null,
+      catalogUpdateConfirmed: Boolean(parsed.input.catalogUpdateConfirmationToken),
+      replaceCatalogConfirmationPhrase: parsed.input.replaceCatalogConfirmationPhrase ?? null,
     },
     meta: {
       surface: "provider.menu.localized_generator.apply",
@@ -154,6 +156,8 @@ export async function POST(req: NextRequest) {
     const status =
       result.errorCode === "published_days_exist"
         ? 409
+        : result.errorCode === "catalog_update_requires_confirmation"
+          ? 422
         : result.errorCode === "sanity_write_failed"
           ? 503
           : 422;

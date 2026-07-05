@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 
 import type { ProviderMenuGeneratorPreviewPresentation } from "@/lib/provider-menu/providerMenuGeneratorPresentation";
 import type { ApplyOverwriteMode } from "@/lib/menu-generator/applyTypes";
+import { CATALOG_REPLACE_CONFIRMATION_PHRASE } from "@/lib/menu-generator/applyCatalogSafety";
 import { LOCALIZED_MENU_GENERATOR_VERSION } from "@/lib/menu-generator/applyTypes";
 import { startOfWeekISO } from "@/lib/date/oslo";
 
@@ -16,6 +17,7 @@ type CategoryDiff = {
   addedItems: string[];
   changedItems: string[];
   blockedReason: string | null;
+  warnings?: string[];
   itemChanges?: Array<{ slug: string; title: string; change: string }>;
 };
 
@@ -24,6 +26,9 @@ type ApplyResponse = {
   mode: "dry_run" | "apply";
   generatorVersion: string;
   categoryScope: string;
+  overwriteMode?: ApplyOverwriteMode;
+  idempotencyKey?: string;
+  catalogUpdateConfirmationToken?: string;
   capabilities?: {
     canApplyFullMenu: boolean;
     supportedCategories: string[];
@@ -53,7 +58,7 @@ type ApplyResponse = {
   blockedReasons: string[];
   errorCode?: string;
   message?: string;
-  audit?: { appliedDates: string[]; appliedCatalogCategories: string[] };
+  audit?: { appliedDates: string[]; appliedCatalogCategories: string[]; dryRun?: boolean };
 };
 
 type Props = {
@@ -61,11 +66,30 @@ type Props = {
   canApply: boolean;
 };
 
-const OVERWRITE_MODES: { value: ApplyOverwriteMode; label: string }[] = [
-  { value: "stop_if_published_exists", label: "Stopp hvis publisert dag finnes" },
-  { value: "create_missing_only", label: "Opprett kun manglende utkast" },
-  { value: "replace_drafts_only", label: "Erstatt kun utkast" },
-  { value: "stop_if_any_day_exists", label: "Stopp hvis uke allerede har innhold" },
+const OVERWRITE_MODES: { value: ApplyOverwriteMode; label: string; description: string }[] = [
+  {
+    value: "create_missing_only_strict",
+    label: "Trygg modus (anbefalt)",
+    description: "Oppretter bare manglende utkast og kategorier. Eksisterende katalogvalg oppdateres ikke.",
+  },
+  {
+    value: "create_future_menu_days_only",
+    label: "Kun fremtidige varmrett-utkast",
+    description: "Oppretter bare manglende varmrett-dager. Katalogkategorier hoppes over.",
+  },
+  {
+    value: "create_missing_only",
+    label: "Opprett manglende (legacy — kan oppdatere katalog)",
+    description: "Legacy-modus. Kan oppdatere eksisterende katalogvalg ved uke-aggregert merge.",
+  },
+  {
+    value: "replace_catalog_with_confirmation",
+    label: "Erstatt katalog (krever bekreftelse)",
+    description: "Oppdaterer eksisterende katalogvalg. Krever forhåndsvisning og eksplisitt bekreftelse.",
+  },
+  { value: "stop_if_published_exists", label: "Stopp hvis publisert dag finnes", description: "" },
+  { value: "replace_drafts_only", label: "Erstatt kun utkast", description: "" },
+  { value: "stop_if_any_day_exists", label: "Stopp hvis uke allerede har innhold", description: "" },
 ];
 
 function badgeClass(status: string): string {
@@ -77,35 +101,52 @@ function badgeClass(status: string): string {
   return "lp-gen-apply-badge--neutral";
 }
 
+function catalogWouldUpdate(result: ApplyResponse | null): boolean {
+  return (result?.summary.updatedCategories ?? 0) > 0;
+}
+
 export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply }: Props) {
   const [weekStart, setWeekStart] = useState(presentation.weekStart);
-  const [overwriteMode, setOverwriteMode] = useState<ApplyOverwriteMode>("stop_if_published_exists");
+  const [overwriteMode, setOverwriteMode] = useState<ApplyOverwriteMode>("create_missing_only_strict");
   const [dryRunResult, setDryRunResult] = useState<ApplyResponse | null>(null);
   const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [replacePhrase, setReplacePhrase] = useState("");
   const [pending, startTransition] = useTransition();
 
   const mondayWeekStart = useMemo(() => startOfWeekISO(weekStart), [weekStart]);
+  const isStrictMode = overwriteMode === "create_missing_only_strict" || overwriteMode === "create_future_menu_days_only";
+  const isReplaceCatalogMode = overwriteMode === "replace_catalog_with_confirmation";
 
   const callApply = useCallback(
     async (dryRun: boolean) => {
       setError(null);
+      const body: Record<string, unknown> = {
+        weekStart: mondayWeekStart,
+        packageTier: "LUXUS",
+        overwriteMode,
+        categoryScope: "all_supported",
+        dryRun,
+      };
+      if (!dryRun && dryRunResult?.idempotencyKey) {
+        body.idempotencyKey = dryRunResult.idempotencyKey;
+      }
+      if (!dryRun && isReplaceCatalogMode) {
+        body.catalogUpdateConfirmationToken = dryRunResult?.catalogUpdateConfirmationToken ?? "";
+        body.replaceCatalogConfirmationPhrase = replacePhrase.trim();
+      }
+
       const res = await fetch("/api/provider/menu-generator/apply-week", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({
-          weekStart: mondayWeekStart,
-          packageTier: "LUXUS",
-          overwriteMode,
-          categoryScope: "all_supported",
-          dryRun,
-        }),
+        body: JSON.stringify(body),
       });
       const json = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         data?: ApplyResponse;
         message?: string;
+        error?: string;
       };
       const data = json.data ?? (json as ApplyResponse);
       if (!res.ok || json.ok === false) {
@@ -115,11 +156,12 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
       }
       return data;
     },
-    [mondayWeekStart, overwriteMode],
+    [mondayWeekStart, overwriteMode, dryRunResult, isReplaceCatalogMode, replacePhrase],
   );
 
   const onDryRun = () => {
     startTransition(async () => {
+      setReplacePhrase("");
       const data = await callApply(true);
       if (data) {
         setDryRunResult(data);
@@ -145,7 +187,13 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
       (result?.summary.createdCategories ?? 0) +
       (result?.summary.updatedCategories ?? 0) >
     0;
+  const catalogUpdateBlocked =
+    isStrictMode && catalogWouldUpdate(dryRunResult);
+  const replacePhraseOk = !isReplaceCatalogMode || replacePhrase.trim() === CATALOG_REPLACE_CONFIRMATION_PHRASE;
+  const replaceTokenReady = !isReplaceCatalogMode || Boolean(dryRunResult?.catalogUpdateConfirmationToken);
   const ready = presentation.fixedDishBankStatus.meetsMinimums;
+
+  const skippedCategories = result?.catalogCategories.filter((c) => c.status.includes("skip")) ?? [];
 
   return (
     <div className="lp-gen-apply" data-testid="provider-menu-generator-apply">
@@ -155,6 +203,12 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
         Publiserte dager overskrives ikke. Menyinnhold følger providerens menyprofil, ikke brukerens UI-språk.
         Faste kategorier oppdateres som ukens katalogutkast, ikke som egne per-dag-kategorier.
       </p>
+
+      {isStrictMode ? (
+        <p className="ds-body" data-testid="apply-safe-mode-notice">
+          Trygg modus: oppretter bare manglende utkast/kategorier. Eksisterende katalogvalg oppdateres ikke.
+        </p>
+      ) : null}
 
       <dl className="ds-kv-grid">
         <div>
@@ -207,6 +261,7 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
               setWeekStart(startOfWeekISO(e.target.value));
               setDryRunResult(null);
               setApplyResult(null);
+              setReplacePhrase("");
             }}
             disabled={!canApply || pending}
           />
@@ -220,8 +275,10 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
               setOverwriteMode(e.target.value as ApplyOverwriteMode);
               setDryRunResult(null);
               setApplyResult(null);
+              setReplacePhrase("");
             }}
             disabled={!canApply || pending}
+            data-testid="apply-overwrite-mode"
           >
             {OVERWRITE_MODES.map((m) => (
               <option key={m.value} value={m.value}>
@@ -231,6 +288,17 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
           </select>
         </label>
       </div>
+
+      {OVERWRITE_MODES.find((m) => m.value === overwriteMode)?.description ? (
+        <p className="ds-body ds-muted">{OVERWRITE_MODES.find((m) => m.value === overwriteMode)?.description}</p>
+      ) : null}
+
+      {isReplaceCatalogMode ? (
+        <p className="lp-gen-apply-warnings" role="alert" data-testid="replace-catalog-warning">
+          Advarsel: Denne modusen kan oppdatere eksisterende katalogvalg. Kjør forhåndsvisning og bekreft nøyaktig
+          tekst før apply.
+        </p>
+      ) : null}
 
       <div className="lp-gen-apply-actions">
         <button
@@ -246,24 +314,63 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
           type="button"
           className="ds-btn ds-btn-primary"
           onClick={() => setConfirmOpen(true)}
-          disabled={!canApply || pending || !dryRunResult || !wouldMutate || blocked || !ready}
+          disabled={
+            !canApply ||
+            pending ||
+            !dryRunResult ||
+            !wouldMutate ||
+            blocked ||
+            !ready ||
+            catalogUpdateBlocked ||
+            (isReplaceCatalogMode &&
+              catalogWouldUpdate(dryRunResult) &&
+              (!replacePhraseOk || !replaceTokenReady))
+          }
           data-testid="generator-apply-btn"
         >
           Bruk denne ukemenyen som utkast
         </button>
       </div>
 
+      {catalogUpdateBlocked ? (
+        <p className="lp-gen-apply-warnings" role="alert" data-testid="catalog-update-blocked">
+          Forhåndsvisningen viser katalogoppdateringer. I trygg modus er apply blokkert. Velg «Erstatt katalog
+          (krever bekreftelse)» hvis du bevisst vil oppdatere eksisterende katalogvalg.
+        </p>
+      ) : null}
+
       {confirmOpen ? (
         <div className="lp-gen-apply-confirm" role="dialog" aria-modal="true" data-testid="generator-apply-confirm">
           <p className="ds-body">
-            Dette oppretter/oppdaterer menyutkast for alle støttede kategorier. Det publiserer ikke automatisk og
-            påvirker ikke eksisterende ordre. Publiserte dager overskrives ikke.
+            Dette oppretter/oppdaterer menyutkast for støttede kategorier. Det publiserer ikke automatisk og påvirker
+            ikke eksisterende ordre. Publiserte dager overskrives ikke.
           </p>
+          {isReplaceCatalogMode ? (
+            <>
+              <p className="lp-gen-apply-warnings" role="alert">
+                Du oppdaterer eksisterende katalogvalg. Skriv nøyaktig: «{CATALOG_REPLACE_CONFIRMATION_PHRASE}»
+              </p>
+              <label className="ds-field">
+                <span className="ds-label">Bekreftelse</span>
+                <input
+                  className="ds-input"
+                  value={replacePhrase}
+                  onChange={(e) => setReplacePhrase(e.target.value)}
+                  data-testid="replace-catalog-confirmation-input"
+                />
+              </label>
+            </>
+          ) : null}
           <div className="lp-gen-apply-actions">
             <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setConfirmOpen(false)}>
               Avbryt
             </button>
-            <button type="button" className="ds-btn ds-btn-primary" onClick={onApply}>
+            <button
+              type="button"
+              className="ds-btn ds-btn-primary"
+              onClick={onApply}
+              disabled={isReplaceCatalogMode && !replacePhraseOk}
+            >
               Bekreft apply
             </button>
           </div>
@@ -291,11 +398,25 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
             <li>Dager oppdateres: {result.summary.updatedDraftDays}</li>
             <li>Kategorier opprettes: {result.summary.createdCategories}</li>
             <li>Kategorier oppdateres: {result.summary.updatedCategories}</li>
+            <li>Kategorier hoppes over: {result.summary.skippedExistingCategories}</li>
             <li>Items generert: {result.summary.totalGeneratedItems}</li>
             <li>Publisert blokkert: {result.summary.blockedPublishedCategories}</li>
             <li>Schema unsupported: {result.summary.unsupportedCategories}</li>
             <li>Uendret: {result.summary.unchangedCategories}</li>
           </ul>
+
+          {skippedCategories.length ? (
+            <>
+              <h5 className="ds-h4">Hoppet over (eksisterende katalog)</h5>
+              <ul className="ds-list" data-testid="skipped-catalog-categories">
+                {skippedCategories.map((cat) => (
+                  <li key={cat.categoryKey}>
+                    {cat.displayName}: {cat.providerLabel}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
 
           {unsupported ? (
             <p className="ds-body" role="status" data-testid="unsupported-categories-notice">

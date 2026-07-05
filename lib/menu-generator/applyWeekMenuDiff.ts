@@ -7,6 +7,7 @@ import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import { isVarmrettDateLocked, type ProviderOrderLockState } from "@/lib/provider-menu/providerMenuOrderLock";
 import { WEEKDAY_KEYS } from "@/lib/providers/providerMenuPackageSurface";
 import type { ApplyOverwriteMode } from "@/lib/menu-generator/applyTypes";
+import { isCreateMissingDayMode } from "@/lib/menu-generator/applyCatalogSafety";
 import { normalizeAllergenListForCompare } from "@/lib/menu-generator/allergenMenuDayFormat";
 
 export type VarmrettApplyDayStatus =
@@ -160,8 +161,8 @@ function resolveDayStatus(input: {
   }
 
   if (input.existingState === "draft") {
-    if (input.overwriteMode === "create_missing_only") {
-      return { status: "skipped_existing", warnings: ["Utkast finnes — create_missing_only hopper over."] };
+    if (isCreateMissingDayMode(input.overwriteMode)) {
+      return { status: "skipped_existing", warnings: ["Utkast finnes — eksisterende dag hoppes over."] };
     }
     if (input.contentMatches) {
       return { status: "unchanged", warnings: ["Ingen endring i utkast."] };
