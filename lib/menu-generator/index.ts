@@ -90,3 +90,25 @@ export {
   mergeCatalogWithLocalizedOverlay,
 } from "@/lib/menu-generator/localizedMenuSurface";
 export type { LocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
+
+export {
+  LOCALIZED_MENU_GENERATOR_VERSION,
+  APPLY_OVERWRITE_MODES,
+  DEFAULT_APPLY_OVERWRITE_MODE,
+  buildApplyIdempotencyKey,
+  isSupportedApplyMenuLocale,
+} from "@/lib/menu-generator/applyTypes";
+export type {
+  ApplyDayDiff,
+  ApplyDayStatus,
+  ApplyErrorCode,
+  ApplyLocalizedGeneratedWeekMenuInput,
+  ApplyLocalizedGeneratedWeekMenuResult,
+  ApplyOverwriteMode,
+  ApplySummary,
+} from "@/lib/menu-generator/applyTypes";
+
+export { buildApplyWeekDiff, dryRunSummaryFromDays, summarizeApplyDays, wouldMutateInDryRun } from "@/lib/menu-generator/applyWeekMenuDiff";
+export { mapGeneratedWeekToApplyTargets, enterpriseHotMealIdentityStable } from "@/lib/menu-generator/applyWeekMenuMapper";
+export { formatAllergensForMenuDay } from "@/lib/menu-generator/allergenMenuDayFormat";
+export { applyLocalizedGeneratedWeekMenu, parseApplyLocalizedGeneratedWeekMenuBody } from "@/lib/menu-generator/applyLocalizedGeneratedWeekMenu";

@@ -2,11 +2,14 @@
 
 import type { ProviderMenuGeneratorPreviewPresentation } from "@/lib/provider-menu/providerMenuGeneratorPresentation";
 
+import ProviderMenuGeneratorApplyFlow from "@/components/providers/ProviderMenuGeneratorApplyFlow";
+
 type Props = {
   presentation: ProviderMenuGeneratorPreviewPresentation;
+  canApply?: boolean;
 };
 
-export default function ProviderMenuGeneratorPreviewPanel({ presentation }: Props) {
+export default function ProviderMenuGeneratorPreviewPanel({ presentation, canApply = false }: Props) {
   if (!presentation.active) return null;
 
   const { employeeSafePreview, providerPreview, fixedDishBankStatus } = presentation;
@@ -43,7 +46,7 @@ export default function ProviderMenuGeneratorPreviewPanel({ presentation }: Prop
           </dd>
         </div>
         <div>
-          <dt>Uke</dt>
+          <dt>Uke (forhåndsvisning)</dt>
           <dd>{presentation.weekStart}</dd>
         </div>
       </dl>
@@ -71,6 +74,8 @@ export default function ProviderMenuGeneratorPreviewPanel({ presentation }: Prop
       ) : (
         <p className="ds-body">Ingen valg for valgt uke.</p>
       )}
+
+      <ProviderMenuGeneratorApplyFlow presentation={presentation} canApply={canApply} />
     </section>
   );
 }
