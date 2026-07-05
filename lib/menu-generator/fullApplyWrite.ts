@@ -10,6 +10,10 @@ import { lunchCategoryKeyForFixed } from "@/lib/menu-generator/applyCapabilities
 import type { FullApplyCategoryDiff } from "@/lib/menu-generator/fullApplyDiff";
 import type { FullApplyMenuItem } from "@/lib/menu-generator/fullApplyDomain";
 import type { ApplyOverwriteMode } from "@/lib/menu-generator/applyTypes";
+import {
+  isStrictCatalogOverwriteMode,
+  catalogOverwriteSkipsAllCategories,
+} from "@/lib/menu-generator/applyCatalogSafety";
 import type { FixedCategoryKey } from "@/lib/menu-generator/types";
 import {
   persistProviderMenuCatalog,
@@ -60,7 +64,9 @@ function mergeCatalogItems(
       });
       continue;
     }
-    if (prev && overwriteMode === "create_missing_only") continue;
+    if (prev && (overwriteMode === "create_missing_only" || isStrictCatalogOverwriteMode(overwriteMode))) {
+      continue;
+    }
 
     byKey.set(slug, {
       key: slug,
@@ -71,7 +77,7 @@ function mergeCatalogItems(
     });
   }
 
-  if (overwriteMode === "create_missing_only") {
+  if (overwriteMode === "create_missing_only" || isStrictCatalogOverwriteMode(overwriteMode)) {
     return [...byKey.values()].map((item) => toCatalogWriteItem(item, existingKeySet));
   }
 
@@ -109,6 +115,10 @@ export async function applyCatalogCategories(input: {
   const errors: Array<{ categoryKey: FixedCategoryKey; error: string }> = [];
 
   for (const diff of input.catalogDiffs) {
+    if (catalogOverwriteSkipsAllCategories(input.overwriteMode)) {
+      continue;
+    }
+
     if (
       diff.status !== "would_create_category" &&
       diff.status !== "would_update_category" &&

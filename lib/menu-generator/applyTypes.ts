@@ -12,7 +12,10 @@ import { SUPPORTED_MENU_LOCALES } from "@/lib/menu-generator/types";
 export const LOCALIZED_MENU_GENERATOR_VERSION = "2.0.0";
 
 export const APPLY_OVERWRITE_MODES = [
+  "create_missing_only_strict",
+  "create_future_menu_days_only",
   "create_missing_only",
+  "replace_catalog_with_confirmation",
   "replace_drafts_only",
   "stop_if_any_day_exists",
   "stop_if_published_exists",
@@ -20,7 +23,8 @@ export const APPLY_OVERWRITE_MODES = [
 
 export type ApplyOverwriteMode = (typeof APPLY_OVERWRITE_MODES)[number];
 
-export const DEFAULT_APPLY_OVERWRITE_MODE: ApplyOverwriteMode = "stop_if_published_exists";
+/** Production-safe default — never updates existing provider catalog categories. */
+export const DEFAULT_APPLY_OVERWRITE_MODE: ApplyOverwriteMode = "create_missing_only_strict";
 
 export const APPLY_CATEGORY_SCOPES = [
   "all_supported",
@@ -43,6 +47,8 @@ export type ApplyLocalizedGeneratedWeekMenuInput = {
   categoryScope: ApplyCategoryScope;
   dryRun: boolean;
   idempotencyKey: string;
+  catalogUpdateConfirmationToken?: string | null;
+  replaceCatalogConfirmationPhrase?: string | null;
   providerSlug?: string | null;
 };
 
@@ -71,6 +77,7 @@ export type ApplyLocalizedGeneratedWeekMenuResult = {
     skippedDates: string[];
     errorCount: number;
   };
+  catalogUpdateConfirmationToken?: string;
   errorCode?: ApplyErrorCode;
   message?: string;
 };
@@ -87,6 +94,7 @@ export type ApplyErrorCode =
   | "unsupported_category_schema"
   | "sanity_write_failed"
   | "idempotency_conflict"
+  | "catalog_update_requires_confirmation"
   | "validation_failed";
 
 export function isSupportedApplyMenuLocale(value: string): value is MenuLocale {

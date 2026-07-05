@@ -6,6 +6,10 @@ import type { ProviderMenuDayRow } from "@/lib/provider-menu/loadProviderMenuDay
 import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { categoryFromLunchCategoryKey, categoryRowForCategory } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { lunchCategoryKeyForFixed } from "@/lib/menu-generator/applyCapabilities";
+import {
+  catalogOverwriteSkipsAllCategories,
+  isStrictCatalogOverwriteMode,
+} from "@/lib/menu-generator/applyCatalogSafety";
 import { buildApplyWeekDiff, type ApplyGeneratedVarmrettState } from "@/lib/menu-generator/applyWeekMenuDiff";
 import type { ApplyOverwriteMode } from "@/lib/menu-generator/applyTypes";
 import type { FullApplyMenuItem, FullLocalizedGeneratedWeekMenuDraft } from "@/lib/menu-generator/fullApplyDomain";
@@ -195,15 +199,37 @@ function diffCatalogItems(
   }
 
   let status: FullApplyCategoryStatus = "unchanged";
-  if (addedItems.length && !existing.length) status = "would_create_category";
-  else if (addedItems.length || changedItems.length) {
+
+  if (catalogOverwriteSkipsAllCategories(overwriteMode)) {
+    status = generated.length ? "would_skip_existing_category" : "unchanged";
+  } else if (isStrictCatalogOverwriteMode(overwriteMode)) {
+    if (existing.length > 0) {
+      status = "would_skip_existing_category";
+    } else if (generated.length) {
+      status = "would_create_category";
+    }
+  } else if (addedItems.length && !existing.length) {
+    status = "would_create_category";
+  } else if (addedItems.length || changedItems.length) {
     status = overwriteMode === "replace_drafts_only" ? "would_replace_draft_category" : "would_update_category";
   } else if (unchangedItems.length && !addedItems.length && !changedItems.length) {
     status = overwriteMode === "create_missing_only" && existing.length ? "would_skip_existing_category" : "unchanged";
   }
 
-  if (overwriteMode === "create_missing_only" && existing.length && addedItems.length === 0 && changedItems.length === 0) {
+  if (
+    overwriteMode === "create_missing_only" &&
+    existing.length &&
+    addedItems.length === 0 &&
+    changedItems.length === 0
+  ) {
     status = "would_skip_existing_category";
+  }
+
+  const warnings: string[] = [];
+  if (catalogOverwriteSkipsAllCategories(overwriteMode) && generated.length) {
+    warnings.push("Katalogkategorier hoppes over (kun fremtidige menuDay-utkast).");
+  } else if (isStrictCatalogOverwriteMode(overwriteMode) && existing.length > 0) {
+    warnings.push("Eksisterende katalogvalg oppdateres ikke i trygg modus.");
   }
 
   return {
@@ -219,7 +245,7 @@ function diffCatalogItems(
     changedItems,
     unchangedItems,
     itemChanges,
-    warnings: [],
+    warnings,
     blockedReason: null,
     providerLabel: providerLabelForStatus(status),
   };
