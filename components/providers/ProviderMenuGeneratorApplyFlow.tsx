@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 
 import type { ProviderMenuGeneratorPreviewPresentation } from "@/lib/provider-menu/providerMenuGeneratorPresentation";
 import type { ApplyOverwriteMode } from "@/lib/menu-generator/applyTypes";
-import { CATALOG_REPLACE_CONFIRMATION_PHRASE } from "@/lib/menu-generator/applyCatalogSafety";
+import { CATALOG_REPLACE_CONFIRMATION_PHRASE } from "@/lib/menu-generator/applyCatalogSafetyConstants";
 import { LOCALIZED_MENU_GENERATOR_VERSION } from "@/lib/menu-generator/applyTypes";
 import { startOfWeekISO } from "@/lib/date/oslo";
 

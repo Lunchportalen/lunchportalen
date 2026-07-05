@@ -1,14 +1,16 @@
 /**
- * Catalog apply safety — strict modes and replace-with-confirmation tokens.
+ * Catalog apply safety — strict modes and replace-with-confirmation tokens (server).
  */
+
+import "server-only";
 
 import { createHash } from "node:crypto";
 
 import type { FullApplyCategoryDiff } from "@/lib/menu-generator/fullApplyDiff";
 import type { ApplyErrorCode, ApplyOverwriteMode } from "@/lib/menu-generator/applyTypes";
+import { CATALOG_REPLACE_CONFIRMATION_PHRASE } from "@/lib/menu-generator/applyCatalogSafetyConstants";
 
-export const CATALOG_REPLACE_CONFIRMATION_PHRASE =
-  "Jeg forstår at dette oppdaterer eksisterende katalogvalg";
+export { CATALOG_REPLACE_CONFIRMATION_PHRASE };
 
 export function isStrictCatalogOverwriteMode(mode: ApplyOverwriteMode): boolean {
   return mode === "create_missing_only_strict";

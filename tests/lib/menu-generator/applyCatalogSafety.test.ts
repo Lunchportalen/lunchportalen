@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildCatalogUpdateConfirmationToken,
   catalogDiffWouldUpdateExisting,
-  CATALOG_REPLACE_CONFIRMATION_PHRASE,
   enforceCatalogUpdatePolicy,
   isStrictCatalogOverwriteMode,
   verifyCatalogUpdateConfirmationToken,
 } from "@/lib/menu-generator/applyCatalogSafety";
+import { CATALOG_REPLACE_CONFIRMATION_PHRASE } from "@/lib/menu-generator/applyCatalogSafetyConstants";
 import { buildFullApplyDiff } from "@/lib/menu-generator/fullApplyDiff";
 import { buildFullLocalizedWeekMenuDraft } from "@/lib/menu-generator/fullApplyDomain";
 import { resolveEconomyConfigForCountry } from "@/lib/menu-generator/countryEconomyDefaults";
