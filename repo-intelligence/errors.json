@@ -154,15 +154,18 @@
       "description": "Table \"provider_settings\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
         "lib/providers/loadProviderOperationalSettings.ts",
+        "lib/providers/loadProviderSettingsMenuProfile.ts",
         "lib/providers/providerNotificationRecipients.ts",
-        "lib/providers/saveProviderOperationalSettings.ts"
+        "lib/providers/saveProviderOperationalSettings.ts",
+        "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts"
       ],
       "type": "table_not_in_database_ts"
     },
     {
       "description": "Table \"provider_price_rules\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/providers/providerMenuPriceConfig.ts"
+        "lib/providers/providerMenuPriceConfig.ts",
+        "lib/providers/providerMenuPricePreview.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -212,6 +215,10 @@
     },
     {
       "description": "fetch() references /api/backoffice/content/pages/${encodeURIComponent(parentId)}${query} but no matching app/api/**/route.ts found at conventional path.",
+      "type": "fetch_reference_unresolved"
+    },
+    {
+      "description": "fetch() references /api/provider/menu-translations${query} but no matching app/api/**/route.ts found at conventional path.",
       "type": "fetch_reference_unresolved"
     },
     {

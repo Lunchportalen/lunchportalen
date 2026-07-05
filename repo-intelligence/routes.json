@@ -992,6 +992,13 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/leverandor/meny/oversettelser/page.tsx",
+      "url_path": "/leverandor/meny/oversettelser",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/leverandor/omrader/page.tsx",
       "url_path": "/leverandor/omrader",
       "uses_tables": []
@@ -1369,6 +1376,13 @@
       "fetch_urls": [],
       "file": "app/superadmin/invoices/reconcile/page.tsx",
       "url_path": "/superadmin/invoices/reconcile",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/menu-profiles/page.tsx",
+      "url_path": "/superadmin/menu-profiles",
       "uses_tables": []
     },
     {
