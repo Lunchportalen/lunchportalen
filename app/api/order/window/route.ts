@@ -200,6 +200,7 @@ const MENU_DAY_CATEGORY_TO_ORDER_CHOICE: Record<Category, string> = {
   sushi: "sushi",
   pokebowl: "pokebowl",
   thai: "thaimat",
+  vegetarian: "vegetarian",
   varmrett: "varmmat",
 };
 
@@ -210,6 +211,7 @@ function categoryForOrderChoice(choiceKey: string): Category | null {
   if (normalized === "sushi") return "sushi";
   if (normalized === "pokebowl") return "pokebowl";
   if (normalized === "thaimat" || normalized === "thai") return "thai";
+  if (normalized === "vegetarian" || normalized === "vegetar" || normalized === "vegetarisk") return "vegetarian";
   if (normalized === "varmmat" || normalized === "varmrett") return "varmrett";
   return null;
 }

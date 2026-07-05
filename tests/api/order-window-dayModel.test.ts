@@ -142,8 +142,8 @@ describe("order/window – buildDayModel", () => {
     const luxus = buildMenuDayCategories({ planTier: "LUXUS", menus: [] });
     const enterprise = buildMenuDayCategories({ planTier: "ENTERPRISE", menus: [] });
 
-    expect(luxus).toHaveLength(6);
-    expect(enterprise).toHaveLength(6);
+    expect(luxus).toHaveLength(7);
+    expect(enterprise).toHaveLength(7);
     expect(luxus.every((c) => c.available === false)).toBe(true);
   });
 

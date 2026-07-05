@@ -30,6 +30,7 @@ export type MenuApplyCapabilities = {
 const FIXED_TO_LUNCH: Partial<Record<FixedCategoryKey, EditableLunchCategoryKey>> = {
   sandwich: "paasmurt",
   salad: "salatboks",
+  vegetarian: "vegetarian",
   sushi: "sushi",
   poke: "pokebowl",
   asian: "thaimat",
@@ -70,17 +71,6 @@ function capabilityFor(categoryKey: FixedCategoryKey): CategoryApplyCapability {
     };
   }
 
-  if (categoryKey === "vegetarian") {
-    return {
-      categoryKey,
-      supported: false,
-      writeTarget: "unsupported",
-      lunchCategoryKey: null,
-      publishedProtection: false,
-      reason: "Ingen eksisterende lunchCategory/menuDay-kategori for vegetarian — krever schema-endring.",
-    };
-  }
-
   return {
     categoryKey,
     supported: false,
@@ -111,18 +101,13 @@ export function resolveMenuApplyCapabilities(): MenuApplyCapabilities {
   }
 
   const warnings: string[] = [];
-  if (unsupportedCategories.includes("vegetarian")) {
-    warnings.push(
-      "Vegetarian genereres i preview men kan ikke applyes — vises som blocked_schema_unsupported.",
-    );
-  }
   warnings.push(
-    "Faste kategorier (sandwich/salad/sushi/poke/asian) applyes via provider lunchCategory-katalog (uke-aggregert).",
+    "Faste kategorier (sandwich/salad/vegetarian/sushi/poke/asian) applyes via provider lunchCategory-katalog (uke-aggregert).",
   );
   warnings.push("hotMeal applyes som varmrett menuDay-utkast per ukedag.");
 
   return {
-    canApplyFullMenu: supportedCategories.length >= 6,
+    canApplyFullMenu: unsupportedCategories.length === 0,
     supportedCategories,
     unsupportedCategories,
     writeTargets,

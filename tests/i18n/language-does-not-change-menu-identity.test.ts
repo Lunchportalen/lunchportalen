@@ -126,7 +126,7 @@ describe("language does not change package / tier entitlement", () => {
     for (const locale of APP_LOCALES) {
       resolveAppLocale({ cookie: locale, profile: "nb" });
       expect(PLAN_CATEGORIES.BASIS).toEqual(["paasmurt", "salat", "varmrett"]);
-      expect(PLAN_CATEGORIES.LUXUS).toHaveLength(6);
+      expect(PLAN_CATEGORIES.LUXUS).toHaveLength(7);
       expect(PLAN_CATEGORIES.ENTERPRISE).toEqual(PLAN_CATEGORIES.LUXUS);
     }
   });

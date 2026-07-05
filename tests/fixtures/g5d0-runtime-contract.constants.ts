@@ -6,6 +6,7 @@ export const CANONICAL_CATEGORIES = [
   "sushi",
   "pokebowl",
   "thai",
+  "vegetarian",
   "varmrett",
 ] as const;
 
@@ -15,6 +16,7 @@ export const CANONICAL_LUNCH_CATEGORY_KEYS = [
   "sushi",
   "pokebowl",
   "thaimat",
+  "vegetarian",
   "varmrett",
 ] as const;
 
@@ -24,6 +26,7 @@ export const CANONICAL_ORDER_CHOICE_KEYS = [
   "sushi",
   "pokebowl",
   "thaimat",
+  "vegetarian",
   "varmmat",
 ] as const;
 
@@ -33,6 +36,7 @@ export const EDITABLE_CATALOG_KEYS = [
   "sushi",
   "pokebowl",
   "thaimat",
+  "vegetarian",
 ] as const;
 
 /** MenuProfile / presentation keys that must not reach runtime payloads in G5d.0. */

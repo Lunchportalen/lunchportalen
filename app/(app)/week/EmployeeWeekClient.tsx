@@ -98,7 +98,7 @@ type DayCategoryItemApi = {
 
 type DayCategory = {
   key: string;
-  category: "paasmurt" | "salat" | "sushi" | "pokebowl" | "thai" | "varmrett" | null;
+  category: "paasmurt" | "salat" | "sushi" | "pokebowl" | "thai" | "vegetarian" | "varmrett" | null;
   label: string;
   title: string | null;
   description: string | null;

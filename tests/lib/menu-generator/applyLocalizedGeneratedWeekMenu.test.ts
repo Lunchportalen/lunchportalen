@@ -8,8 +8,9 @@ import { buildFullLocalizedWeekMenuDraft } from "@/lib/menu-generator/fullApplyD
 import { buildFullApplyDiff, fullApplyWouldMutate } from "@/lib/menu-generator/fullApplyDiff";
 import { enterpriseHotMealIdentityStable } from "@/lib/menu-generator/applyWeekMenuMapper";
 import { resolveEconomyConfigForCountry } from "@/lib/menu-generator/countryEconomyDefaults";
-import { getLocalizedCategoryLabel } from "@/lib/menu-generator/localizedCategoryLabels";
+import type { MenuLocale } from "@/lib/menu-generator/types";
 import { FIXED_CATEGORY_KEYS } from "@/lib/menu-generator/types";
+import { getLocalizedCategoryLabel } from "@/lib/menu-generator/localizedCategoryLabels";
 import { EMPTY_PROVIDER_MENU_CATALOG } from "@/lib/provider-menu/lunchCategoryCatalog";
 import type { ProviderMenuDayRow } from "@/lib/provider-menu/loadProviderMenuDays";
 import type { ProviderOrderLockState } from "@/lib/provider-menu/providerMenuOrderLock";
@@ -54,12 +55,15 @@ function fullDiff(locale: string, profileId: string, country: string, existing: 
 }
 
 describe("full localized week menu apply", () => {
-  it("capability resolver marks vegetarian unsupported", () => {
+  it("capability resolver marks all 8 categories supported", () => {
     const caps = resolveMenuApplyCapabilities();
     expect(caps.supportedCategories).toContain("sandwich");
     expect(caps.supportedCategories).toContain("hotMeal");
-    expect(caps.unsupportedCategories).toContain("vegetarian");
-    expect(caps.categories.vegetarian.writeTarget).toBe("unsupported");
+    expect(caps.supportedCategories).toContain("vegetarian");
+    expect(caps.unsupportedCategories).toHaveLength(0);
+    expect(caps.canApplyFullMenu).toBe(true);
+    expect(caps.categories.vegetarian.writeTarget).toBe("lunchCategory");
+    expect(caps.categories.vegetarian.lunchCategoryKey).toBe("vegetarian");
   });
 
   it("builds idempotency key with categoryScope", () => {
@@ -84,10 +88,12 @@ describe("full localized week menu apply", () => {
     expect(fullApplyWouldMutate(diff)).toBe(true);
   });
 
-  it("vegetarian appears as blocked_schema_unsupported", () => {
+  it("vegetarian is included in full dryRun as supported catalog category", () => {
     const diff = fullDiff("nb-NO", "norwegian_company_lunch", "NO");
     const veg = diff.catalogCategories.find((c) => c.categoryKey === "vegetarian");
-    expect(veg?.status).toBe("blocked_schema_unsupported");
+    expect(veg?.status).not.toBe("blocked_schema_unsupported");
+    expect(veg?.displayName).toBe("Vegetar");
+    expect(diff.summary.unsupportedCategories).toBe(0);
   });
 
   it("varmrett-only path still works for hotMeal days", () => {
@@ -241,5 +247,24 @@ describe("full localized week menu apply", () => {
     expect(serialized.includes("Salatboks")).toBe(false);
     expect(serialized.includes("Ost & Skinke")).toBe(false);
     expect(serialized.includes("Kylling karri")).toBe(false);
+    const veg = draft.catalogCategories.find((c) => c.categoryKey === "vegetarian");
+    expect(veg?.displayName).toBe("Vegetarisch");
+  });
+
+  it("all 9 locales expose localized vegetarian category label", () => {
+    const expected: Record<string, string> = {
+      "nb-NO": "Vegetar",
+      "sv-SE": "Vegetariskt",
+      "da-DK": "Vegetarisk",
+      "fi-FI": "Kasvis",
+      "de-DE": "Vegetarisch",
+      "en-GB": "Vegetarian",
+      "fr-FR": "Végétarien",
+      "es-ES": "Vegetariano",
+      "it-IT": "Vegetariano",
+    };
+    for (const [locale, label] of Object.entries(expected)) {
+      expect(getLocalizedCategoryLabel(locale as MenuLocale, "vegetarian")).toBe(label);
+    }
   });
 });

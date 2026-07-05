@@ -69,7 +69,7 @@ describe("providerMenuWorkspace", () => {
   });
 
   it("Luxus workspace has six categories", () => {
-    expect(providerWorkspaceCategories(CATALOG, "LUXUS")).toHaveLength(6);
+    expect(providerWorkspaceCategories(CATALOG, "LUXUS")).toHaveLength(7);
   });
 
   it("varmrett editor context is tier-agnostic", () => {

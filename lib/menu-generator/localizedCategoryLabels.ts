@@ -112,6 +112,7 @@ export const RUNTIME_CATEGORY_TO_FIXED_KEY: Partial<Record<Category, FixedCatego
   sushi: "sushi",
   pokebowl: "poke",
   thai: "asian",
+  vegetarian: "vegetarian",
 };
 
 /** Sanity lunchCategory row key → generator FixedCategoryKey. */
@@ -122,6 +123,7 @@ export const LUNCH_CATEGORY_KEY_TO_FIXED_KEY: Record<string, FixedCategoryKey> =
   sushi: "sushi",
   pokebowl: "poke",
   thaimat: "asian",
+  vegetarian: "vegetarian",
 };
 
 export function getLocalizedCategoryLabels(menuLocale: MenuLocale): LocalizedCategoryLabelMap {
@@ -181,6 +183,7 @@ export function buildPackageCardMenuTerms(menuLocale: MenuLocale): PackageCardMe
     labels.sushi,
     labels.poke,
     labels.asian,
+    labels.vegetarian,
   ]);
   const enterpriseIncludes = joinMenuTerms([luxusIncludes, labels.premiumUpgrade]);
   return { basisIncludes, luxusIncludes, enterpriseIncludes };

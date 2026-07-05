@@ -23,6 +23,7 @@ export const EDITABLE_LUNCH_CATEGORY_KEYS = [
   "sushi",
   "pokebowl",
   "thaimat",
+  "vegetarian",
 ] as const;
 
 export type EditableLunchCategoryKey = (typeof EDITABLE_LUNCH_CATEGORY_KEYS)[number];
@@ -65,6 +66,7 @@ export function categoryFromLunchCategoryKey(k: string | null | undefined): Cate
   if (s === "sushi") return "sushi";
   if (s === "pokebowl") return "pokebowl";
   if (s === "thaimat") return "thai";
+  if (s === "vegetarian") return "vegetarian";
   if (s === "varmrett") return "varmrett";
   return null;
 }

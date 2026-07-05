@@ -62,16 +62,17 @@ describe("providerMenuTierContract", () => {
     expect(rows[0]?.status).toBe("missing_warm_dish");
   });
 
-  it("Luxus includes all six categories from Sanity", () => {
+  it("Luxus includes all seven categories from Sanity", () => {
     expect(providerWorkspaceCategories(CATALOG, "LUXUS")).toEqual([
       "paasmurt",
       "salat",
       "sushi",
       "pokebowl",
       "thai",
+      "vegetarian",
       "varmrett",
     ]);
-    expect(LUXUS_WORKSPACE_CATEGORIES).toHaveLength(6);
+    expect(LUXUS_WORKSPACE_CATEGORIES).toHaveLength(7);
   });
 
   it("Luxus Sushi uses Sanity package title", () => {
@@ -93,7 +94,7 @@ describe("providerMenuTierContract", () => {
   });
 
   it("Enterprise includes all six categories", () => {
-    expect(providerWorkspaceCategories(CATALOG, "ENTERPRISE")).toHaveLength(6);
+    expect(providerWorkspaceCategories(CATALOG, "ENTERPRISE")).toHaveLength(7);
     expect(ENTERPRISE_WORKSPACE_CATEGORIES).toEqual(LUXUS_WORKSPACE_CATEGORIES);
   });
 
@@ -192,8 +193,8 @@ describe("providerMenuTierContract", () => {
 
   it("package switch keeps tier-specific categories (contract fallback)", () => {
     expect(workspaceCategoriesForTier("BASIS")).toHaveLength(3);
-    expect(workspaceCategoriesForTier("LUXUS")).toHaveLength(6);
-    expect(workspaceCategoriesForTier("ENTERPRISE")).toHaveLength(6);
+    expect(workspaceCategoriesForTier("LUXUS")).toHaveLength(7);
+    expect(workspaceCategoriesForTier("ENTERPRISE")).toHaveLength(7);
   });
 
   it("Enterprise tier model defines premium price", () => {
@@ -203,7 +204,7 @@ describe("providerMenuTierContract", () => {
   });
 
   it("catalog has six category contracts", () => {
-    expect(PROVIDER_MENU_CATEGORY_CONTRACTS).toHaveLength(6);
+    expect(PROVIDER_MENU_CATEGORY_CONTRACTS).toHaveLength(7);
   });
 });
 

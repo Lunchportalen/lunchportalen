@@ -28,7 +28,7 @@ import type { ProviderSettingsMenuProfileRow } from "@/lib/providers/loadProvide
 
 const PLAN_TIERS: PlanTier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
 
-const PREMIUM_LUNCH_KEYS = new Set<string>(["sushi", "pokebowl", "thaimat"]);
+const PREMIUM_LUNCH_KEYS = new Set<string>(["sushi", "pokebowl", "thaimat", "vegetarian"]);
 
 const MAX_DISH_BANK_ITEMS_PER_CATEGORY = 12;
 

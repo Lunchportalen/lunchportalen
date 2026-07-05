@@ -191,7 +191,7 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
         <p className="ds-body ds-muted" data-testid="apply-capabilities">
           Støttede kategorier: {result.capabilities.supportedCategories.join(", ")}
           {result.capabilities.unsupportedCategories.length
-            ? ` · Blokkert schema: ${result.capabilities.unsupportedCategories.join(", ")} (vegetarian krever schema-støtte)`
+            ? ` · Blokkert schema: ${result.capabilities.unsupportedCategories.join(", ")}`
             : null}
         </p>
       ) : null}

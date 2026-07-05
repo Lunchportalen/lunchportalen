@@ -6,6 +6,7 @@ const CATEGORY_KEYS = [
   "sushi",
   "pokebowl",
   "thaimat",
+  "vegetarian",
   "varmrett",
 ] as const;
 
