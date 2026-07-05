@@ -1481,9 +1481,6 @@
           "prefix": "Allergeni: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Tartine · Salade · Piatto caldo del giorno",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Stesso piatto caldo del giorno + valore aggiunto",
           "notSeparateProduction": "Non è un piatto di produzione separato",
           "sharedWarmDishHint": "Un piatto caldo del giorno condiviso"
         },

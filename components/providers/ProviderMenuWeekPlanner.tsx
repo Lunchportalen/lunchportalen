@@ -32,6 +32,7 @@ type Props = {
   slots: Record<string, ResolvedProviderMenuSlot>;
   selected: WeekSelection | null;
   orderCountsByDate: Record<string, number>;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
   onSelect: (sel: WeekSelection) => void;
 };
 
@@ -67,6 +68,7 @@ export default function ProviderMenuWeekPlanner({
   slots,
   selected,
   orderCountsByDate,
+  profileCategoryLabels,
   onSelect,
 }: Props) {
   const t = useTranslations("provider.menu");
@@ -87,7 +89,15 @@ export default function ProviderMenuWeekPlanner({
         {weekDates.map((date, idx) => {
           const weekdayKey = WEEKDAY_KEYS[idx]!;
           const weekdayLabel = weekdayLabels[weekdayKey] ?? date;
-          const card = summarizeDayCard(slots, date, tier, weekdayLabel, categories, catalog);
+          const card = summarizeDayCard(
+            slots,
+            date,
+            tier,
+            weekdayLabel,
+            categories,
+            catalog,
+            profileCategoryLabels,
+          );
           const varmrett = card.varmrett;
           const varmrettRow = varmrett.rows[0];
           const varmrettMissing = varmrett.statusChip === "missing";

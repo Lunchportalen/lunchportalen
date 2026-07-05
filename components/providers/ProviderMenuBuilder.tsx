@@ -68,6 +68,9 @@ import ProviderMenuProfileWarmDishPreviewPanel from "@/components/providers/Prov
 import type { ProviderMenuWarmDishGenerationPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishGeneration";
 import ProviderMenuProfileWarmDishGenerationBanner from "@/components/providers/ProviderMenuProfileWarmDishGenerationBanner";
 import ProviderMenuRuntimeMappingProposalPanel from "@/components/providers/ProviderMenuRuntimeMappingProposalPanel";
+import ProviderMenuLocalizedSurfaceBanner from "@/components/providers/ProviderMenuLocalizedSurfaceBanner";
+import { mergeCatalogWithLocalizedOverlay } from "@/lib/menu-generator/localizedMenuSurface";
+import type { LocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
 
 import "@/app/styles/ds/provider-menu-editor.css";
 
@@ -80,6 +83,7 @@ type ProviderMenuBuilderProps = {
   mappingDraftSaveEnabled?: boolean;
   canSaveMappingDraft?: boolean;
   profileCategoryLabels?: Partial<Record<Category, string>>;
+  localizedMenuSurface?: LocalizedMenuSurfacePresentation;
 };
 
 type MenuWeekResponse = {
@@ -191,8 +195,10 @@ export default function ProviderMenuBuilder({
   mappingDraftSaveEnabled = false,
   canSaveMappingDraft = false,
   profileCategoryLabels,
+  localizedMenuSurface = { active: false },
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
+  const localizedSurface = localizedMenuSurface.active ? localizedMenuSurface : null;
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
   const warmDishPreview = warmDishPreviewPresentation.active ? warmDishPreviewPresentation : null;
@@ -218,10 +224,25 @@ export default function ProviderMenuBuilder({
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
   const tierPrice = prices?.[tier];
-  const workspaceCategories = useMemo(() => providerWorkspaceCategories(catalog, tier), [catalog, tier]);
+  const displayCatalog = useMemo(() => {
+    if (!localizedSurface) return catalog;
+    return mergeCatalogWithLocalizedOverlay(catalog, localizedSurface.catalogOverlay);
+  }, [catalog, localizedSurface]);
+  const workspaceCategories = useMemo(
+    () => providerWorkspaceCategories(displayCatalog, tier),
+    [displayCatalog, tier],
+  );
   const weekMetrics = useMemo(
-    () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories, catalog, profileCategoryLabels),
-    [slots, weekDates, tier, workspaceCategories, catalog, profileCategoryLabels],
+    () =>
+      summarizeWeekMetrics(
+        slots,
+        weekDates,
+        tier,
+        workspaceCategories,
+        displayCatalog,
+        profileCategoryLabels,
+      ),
+    [slots, weekDates, tier, workspaceCategories, displayCatalog, profileCategoryLabels],
   );
 
   /** Cockpit display-only — varmrett publish state (aligned with day-card badges). */
@@ -229,18 +250,18 @@ export default function ProviderMenuBuilder({
     let publishedDays = 0;
     let draftDays = 0;
     for (const date of weekDates) {
-      const shared = summarizeSharedVarmrettDay(slots, date, catalog, profileCategoryLabels);
+      const shared = summarizeSharedVarmrettDay(slots, date, displayCatalog, profileCategoryLabels);
       if (shared.statusChip === "published") publishedDays += 1;
       else if (shared.statusChip === "draft") draftDays += 1;
     }
     return { publishedDays, draftDays };
-  }, [slots, weekDates, catalog, profileCategoryLabels]);
+  }, [slots, weekDates, displayCatalog, profileCategoryLabels]);
 
   const nextStepHint = useMemo(() => {
     const weekdayKeys = weekDates.map((_, idx) => WEEKDAY_KEYS[idx]!).filter(Boolean);
-    const action = resolveNextStepAction(slots, weekDates, tier, weekMetrics, weekdayKeys, catalog);
+    const action = resolveNextStepAction(slots, weekDates, tier, weekMetrics, weekdayKeys, displayCatalog);
     return translateNextStepAction(action, t);
-  }, [slots, weekDates, tier, weekMetrics, catalog, t]);
+  }, [slots, weekDates, tier, weekMetrics, displayCatalog, t]);
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -571,7 +592,7 @@ export default function ProviderMenuBuilder({
           category: selected.category,
           variantLabel: selected.variantLabel ?? null,
           editorFocus: selected.editorFocus,
-          catalog,
+          catalog: displayCatalog,
           profileCategoryLabels,
         })
       : null;
@@ -583,7 +604,7 @@ export default function ProviderMenuBuilder({
 
   const catalogVariant =
     selected?.variantKey && selected.category
-      ? catalogVariantByKey(catalog, selected.category, selected.variantKey)
+      ? catalogVariantByKey(displayCatalog, selected.category, selected.variantKey)
       : null;
 
   const enterpriseWarnings =
@@ -618,7 +639,7 @@ export default function ProviderMenuBuilder({
 
   const categoryVariantLabels =
     selected && !selected.variantKey && !isSanityDrivenCategory(selected.category)
-      ? summarizeCategoryDay(slots, selected.date, tier, selected.category, catalog).rows.map((r) => r.title)
+      ? summarizeCategoryDay(slots, selected.date, tier, selected.category, displayCatalog, profileCategoryLabels).rows.map((r) => r.title)
       : undefined;
 
   const categoryOnly = Boolean(
@@ -647,6 +668,10 @@ export default function ProviderMenuBuilder({
         workspaceView={workspaceView}
         onWorkspaceViewChange={setWorkspaceView}
       />
+
+      {localizedSurface && workspaceView === "week" ? (
+        <ProviderMenuLocalizedSurfaceBanner presentation={localizedSurface} />
+      ) : null}
 
       {profilePresentation && workspaceView === "week" ? (
         <ProviderMenuProfilePresentationBanner presentation={profilePresentation} />
@@ -725,11 +750,12 @@ export default function ProviderMenuBuilder({
               </header>
               <ProviderMenuWeekPlanner
                 tier={tier}
-                catalog={catalog}
+                catalog={displayCatalog}
                 weekDates={weekDates}
                 slots={slots}
                 selected={selected}
                 orderCountsByDate={orderCountsByDate}
+                profileCategoryLabels={profileCategoryLabels}
                 onSelect={openSelection}
               />
               <div className="lp-editor-panels lp-editor-panels--stack">
@@ -771,8 +797,10 @@ export default function ProviderMenuBuilder({
                   {selected ? (
                     <ProviderMenuCatalogEditor
                       tier={tier}
-                      catalog={catalog}
+                      catalog={displayCatalog}
                       onCatalogSaved={setCatalog}
+                      profileCategoryLabels={profileCategoryLabels}
+                      localizedSurfaceActive={Boolean(localizedSurface)}
                       initialOpenCategoryKey={catalogPanelCategoryKey}
                       panelMode
                     />
@@ -787,13 +815,16 @@ export default function ProviderMenuBuilder({
           ) : (
             <ProviderMenuCatalogView
               tier={tier}
-              catalog={catalog}
+              catalog={displayCatalog}
+              sanityCatalog={localizedSurface ? catalog : undefined}
               onCatalogSaved={setCatalog}
               workspacePresentation={workspacePresentation}
               fixedCategoryPresentation={fixedCategoryPresentation}
               runtimeMappingProposal={runtimeMappingProposal}
               mappingDraftSaveEnabled={mappingDraftSaveEnabled}
               canSaveMappingDraft={canSaveMappingDraft}
+              profileCategoryLabels={profileCategoryLabels}
+              localizedSurface={localizedSurface}
             />
           )}
         </div>

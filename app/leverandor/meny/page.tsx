@@ -33,6 +33,7 @@ import {
 import {
   buildProfileRuntimeCategoryLabelsFromResolver,
 } from "@/lib/menu-profile/profileMenuRuntime";
+import { buildLocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
 import { menuProfileResolverHostEnv } from "@/lib/providers/providerMenuProfileDiagnostic";
 
 export default async function LeverandorMenyPage() {
@@ -104,10 +105,16 @@ export default async function LeverandorMenyPage() {
   const mappingDraftSaveEnabled =
     runtimeMappingProposal.active && isMenuProfileMappingDraftSaveUiEnabled(menuProfileEnv);
 
-  const profileCategoryLabels = buildProfileRuntimeCategoryLabelsFromResolver(
-    menuProfileResolver,
-    menuProfileEnv,
-  );
+  const localizedMenuSurface = buildLocalizedMenuSurfacePresentation({
+    providerId: provider.id,
+    settingsRow: menuProfileRow,
+    resolverResult: menuProfileResolver,
+    env: menuProfileEnv,
+  });
+
+  const profileCategoryLabels = localizedMenuSurface.active
+    ? localizedMenuSurface.categoryLabels
+    : buildProfileRuntimeCategoryLabelsFromResolver(menuProfileResolver, menuProfileEnv);
 
   const generatorPreviewPresentation = buildProviderMenuGeneratorPreviewPresentation({
     providerId: provider.id,
@@ -138,6 +145,7 @@ export default async function LeverandorMenyPage() {
           mappingDraftSaveEnabled={mappingDraftSaveEnabled}
           canSaveMappingDraft={canSaveMappingDraft}
           profileCategoryLabels={profileCategoryLabels ?? undefined}
+          localizedMenuSurface={localizedMenuSurface}
         />
       ) : (
         <section className="ds-card ds-provider-meny-card">

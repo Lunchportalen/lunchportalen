@@ -644,9 +644,6 @@
           "prefix": "Allergener: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Påsmörgås · Salladslåda · Dagens varmrätt",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Samma varmrätt + extra värde",
           "notSeparateProduction": "Inte egen produktionsrätt",
           "sharedWarmDishHint": "En gemensam varmrätt"
         },

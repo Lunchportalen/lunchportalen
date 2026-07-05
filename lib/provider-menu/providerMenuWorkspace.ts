@@ -468,11 +468,12 @@ export function summarizeDayCard(
   weekdayLabel: string,
   categories: Category[],
   catalog: ProviderMenuCatalogSnapshot,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
 ): DayCardSummary {
   const summaries = categories
     .filter((c) => c !== "varmrett")
-    .map((c) => summarizeCategoryDay(slots, date, tier, c, catalog));
-  const varmrett = summarizeSharedVarmrettDay(slots, date, catalog);
+    .map((c) => summarizeCategoryDay(slots, date, tier, c, catalog, profileCategoryLabels));
+  const varmrett = summarizeSharedVarmrettDay(slots, date, catalog, profileCategoryLabels);
   const enterpriseUpgrade = tier === "ENTERPRISE" ? summarizeEnterpriseUpgradeDay(slots, date) : null;
 
   let dayStatus: WorkspaceStatusChip = "fixed";

@@ -644,9 +644,6 @@
           "prefix": "Allergener: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Pålæg · Salatboks · Dagens varmret",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Samme varmret + ekstra værdi",
           "notSeparateProduction": "Ikke egen produktionsret",
           "sharedWarmDishHint": "Én fælles varmret"
         },

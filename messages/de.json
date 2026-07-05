@@ -644,9 +644,6 @@
           "prefix": "Allergene: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Belegtes Brot · Salatbox · Tageswarmgericht",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Gleiches Warmgericht + Mehrwert",
           "notSeparateProduction": "Kein eigenes Produktionsgericht",
           "sharedWarmDishHint": "Ein gemeinsames Warmgericht"
         },

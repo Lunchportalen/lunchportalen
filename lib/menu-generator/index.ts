@@ -73,3 +73,20 @@ export {
 export type { ProviderAdminWeekMenu } from "@/lib/menu-generator/providerAdminMapper";
 
 export { ALL_LOCALE_BANKS } from "@/lib/menu-generator/dishBanks/localeData";
+
+export {
+  buildLocalizedRuntimeCategoryLabels,
+  buildPackageCardMenuTerms,
+  getLocalizedCategoryLabel,
+  getLocalizedCategoryLabels,
+  LUNCH_CATEGORY_KEY_TO_FIXED_KEY,
+  RUNTIME_CATEGORY_TO_FIXED_KEY,
+} from "@/lib/menu-generator/localizedCategoryLabels";
+export type { PackageCardMenuTerms } from "@/lib/menu-generator/localizedCategoryLabels";
+
+export {
+  buildLocalizedCatalogOverlay,
+  buildLocalizedMenuSurfacePresentation,
+  mergeCatalogWithLocalizedOverlay,
+} from "@/lib/menu-generator/localizedMenuSurface";
+export type { LocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
