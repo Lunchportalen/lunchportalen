@@ -41,7 +41,7 @@ test.describe("Provider meny visual regression @provider-meny-visual", () => {
     // Fixture stub (not live Sanity): Tue override+locked day from buildProviderMenyVisualMenuDaysResponse()
     await expect(page.getByText("Kyllinggryte")).toBeVisible();
     await expect(page.getByText(/14 porsjoner/)).toBeVisible();
-    await expect(page.getByText(/Vegetar/)).toBeVisible();
+    await expect(page.locator(".lp-editor-prem .lp-editor-day__catrow-label").first()).toContainText("Vegetar");
 
     await expect(providerMenyEditorRootLocator(page)).toHaveScreenshot(
       `provider-meny-enterprise-${testInfo.project.name}.png`,
