@@ -29,6 +29,7 @@ describe("menuCategoryCanonical", () => {
       "sushi",
       "pokebowl",
       "thai",
+      "vegetarian",
       "varmrett",
     ]);
   });
@@ -40,6 +41,7 @@ describe("menuCategoryCanonical", () => {
       "sushi",
       "pokebowl",
       "thai",
+      "vegetarian",
       "varmrett",
     ]);
   });

@@ -4,7 +4,7 @@
  */
 
 /** product_categories.name values (syncMenuServiceDayItems LUNCH_CATEGORY_KEY_TO_DB_NAME). */
-const PRODUCT_CATEGORY_NAMES = ["Paasmurt", "Salatboks", "Sushi", "Pokebowl", "Thaimat", "Varmrett"] as const;
+const PRODUCT_CATEGORY_NAMES = ["Paasmurt", "Salatboks", "Sushi", "Pokebowl", "Thaimat", "Vegetarian", "Varmrett"] as const;
 
 /** Slugs from product_categories.name (same transform as lp_order_set). */
 export function productCategoryNameToMsdiSlug(name: string): string {
@@ -25,6 +25,7 @@ export function choiceKeyToMsdiCategorySlug(choiceRaw: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9æøå]+/g, "");
   if (slug === "varmmat") return "varmrett";
+  if (slug === "vegetar" || slug === "vegetarisk") return "vegetarian";
   return slug;
 }
 

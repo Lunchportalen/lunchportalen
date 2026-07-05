@@ -125,7 +125,7 @@ export default async function LeverandorMenyPage() {
 
   return (
     <div className="ds-provider-meny-page lp-editor-page">
-      <ProviderMenuGeneratorPreviewPanel presentation={generatorPreviewPresentation} />
+      <ProviderMenuGeneratorPreviewPanel presentation={generatorPreviewPresentation} canApply={canEdit} />
       {canSaveMappingDraft ? (
         <section className="ds-card ds-section">
           <h2 className="ds-h3">{t("translationsPromoTitle")}</h2>

@@ -278,7 +278,7 @@ export function summarizeEnterpriseUpgradeDay(
   };
 }
 
-const PREMIUM_CATEGORIES: Category[] = ["sushi", "pokebowl", "thai"];
+const PREMIUM_CATEGORIES: Category[] = ["sushi", "pokebowl", "thai", "vegetarian"];
 const FIXED_CATEGORIES: Category[] = ["paasmurt", "salat"];
 
 export type WeekWorkspaceMetrics = {

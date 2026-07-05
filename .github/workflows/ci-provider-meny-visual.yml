@@ -84,6 +84,9 @@ jobs:
       PLAYWRIGHT_BASE_URL: "http://localhost:3000"
       LP_DEBUG_AUTH: "1"
       LP_E2E_EXTERNAL_SERVER: "1"
+      # Visual regression uses fixture-stubbed menu-days; keep menu-profile panels OFF for determinism.
+      LP_MENU_PROFILE_RESOLVER: "false"
+      LP_LOCALIZED_FIXED_MENU_GENERATOR: "false"
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}

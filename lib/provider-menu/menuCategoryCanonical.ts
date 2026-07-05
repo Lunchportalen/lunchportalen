@@ -10,6 +10,7 @@ export const PROVIDER_MENU_CATEGORY_ORDER: readonly Category[] = [
   "sushi",
   "pokebowl",
   "thai",
+  "vegetarian",
   "varmrett",
 ] as const;
 
@@ -27,6 +28,9 @@ const CATEGORY_ALIASES: Record<string, Category> = {
   "pokébowl": "pokebowl",
   thai: "thai",
   thaimat: "thai",
+  vegetarian: "vegetarian",
+  vegetar: "vegetarian",
+  vegetarisk: "vegetarian",
   varmrett: "varmrett",
   varmmat: "varmrett",
   warm_meal: "varmrett",

@@ -69,9 +69,10 @@ describe("lunchCategory catalog parity (editor ≡ employee/order)", () => {
       "sushi",
       "pokebowl",
       "thai",
+      "vegetarian",
       "varmrett",
     ]);
-    expect(workspaceCategoriesFromCatalog(catalog, "ENTERPRISE")).toHaveLength(6);
+    expect(workspaceCategoriesFromCatalog(catalog, "ENTERPRISE")).toHaveLength(7);
     expect(catalogVariantsForTier(catalog, "LUXUS").some((v) => v.category === "sushi")).toBe(true);
   });
 

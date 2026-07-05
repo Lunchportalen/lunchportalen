@@ -47,6 +47,7 @@ function categoryFromLunchCategoryDocKey(k: string | null): Category | null {
   if (s === "sushi") return "sushi";
   if (s === "pokebowl") return "pokebowl";
   if (s === "thaimat") return "thai";
+  if (s === "vegetarian") return "vegetarian";
   if (s === "varmrett") return "varmrett";
   return null;
 }
@@ -207,7 +208,7 @@ export function providerLunchCategoryDocId(providerId: string, categoryKey: stri
 export function categoryTiersForEditableKey(categoryKey: string): PlanTier[] {
   const k = categoryKey.trim().toLowerCase();
   if (k === "paasmurt" || k === "salatboks") return ["BASIS", "LUXUS", "ENTERPRISE"];
-  if (k === "sushi" || k === "pokebowl" || k === "thaimat") return ["LUXUS", "ENTERPRISE"];
+  if (k === "sushi" || k === "pokebowl" || k === "thaimat" || k === "vegetarian") return ["LUXUS", "ENTERPRISE"];
   return [];
 }
 
