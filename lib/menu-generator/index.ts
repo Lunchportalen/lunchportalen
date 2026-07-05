@@ -94,21 +94,39 @@ export type { LocalizedMenuSurfacePresentation } from "@/lib/menu-generator/loca
 export {
   LOCALIZED_MENU_GENERATOR_VERSION,
   APPLY_OVERWRITE_MODES,
+  APPLY_CATEGORY_SCOPES,
   DEFAULT_APPLY_OVERWRITE_MODE,
+  DEFAULT_APPLY_CATEGORY_SCOPE,
   buildApplyIdempotencyKey,
   isSupportedApplyMenuLocale,
 } from "@/lib/menu-generator/applyTypes";
 export type {
-  ApplyDayDiff,
-  ApplyDayStatus,
+  ApplyCategoryScope,
   ApplyErrorCode,
   ApplyLocalizedGeneratedWeekMenuInput,
   ApplyLocalizedGeneratedWeekMenuResult,
   ApplyOverwriteMode,
-  ApplySummary,
 } from "@/lib/menu-generator/applyTypes";
 
-export { buildApplyWeekDiff, dryRunSummaryFromDays, summarizeApplyDays, wouldMutateInDryRun } from "@/lib/menu-generator/applyWeekMenuDiff";
+export { resolveMenuApplyCapabilities, lunchCategoryKeyForFixed } from "@/lib/menu-generator/applyCapabilities";
+export type { MenuApplyCapabilities, CategoryApplyCapability } from "@/lib/menu-generator/applyCapabilities";
+
+export { buildFullLocalizedWeekMenuDraft } from "@/lib/menu-generator/fullApplyDomain";
+export type { FullLocalizedGeneratedWeekMenuDraft, FullApplyMenuItem } from "@/lib/menu-generator/fullApplyDomain";
+
+export { buildFullApplyDiff, fullApplyWouldMutate } from "@/lib/menu-generator/fullApplyDiff";
+export type { FullApplySummary, FullApplyCategoryDiff, FullApplyDayDiff } from "@/lib/menu-generator/fullApplyDiff";
+
+export { applyCatalogCategories } from "@/lib/menu-generator/fullApplyWrite";
+
+export {
+  buildApplyWeekDiff,
+  summarizeApplyDays,
+  dryRunSummaryFromDays,
+  wouldMutateInDryRun,
+} from "@/lib/menu-generator/applyWeekMenuDiff";
+export type { ApplyGeneratedVarmrettState, VarmrettDayDiff } from "@/lib/menu-generator/applyWeekMenuDiff";
+
 export { mapGeneratedWeekToApplyTargets, enterpriseHotMealIdentityStable } from "@/lib/menu-generator/applyWeekMenuMapper";
-export { formatAllergensForMenuDay } from "@/lib/menu-generator/allergenMenuDayFormat";
+export { formatAllergensForMenuDay, formatAllergensForCatalog } from "@/lib/menu-generator/allergenMenuDayFormat";
 export { applyLocalizedGeneratedWeekMenu, parseApplyLocalizedGeneratedWeekMenuBody } from "@/lib/menu-generator/applyLocalizedGeneratedWeekMenu";

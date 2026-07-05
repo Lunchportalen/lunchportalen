@@ -1,14 +1,15 @@
 /**
- * Localized fixed menu generator — provider-controlled apply contract.
- * Draft-only writes via existing varmrett menuDay path. No order impact.
+ * Localized fixed menu generator — provider-controlled full-menu apply contract.
  */
 
 import type { PlanTier } from "@/lib/cms/menuDayContract";
+import type { MenuApplyCapabilities } from "@/lib/menu-generator/applyCapabilities";
+import type { FullApplyDayDiff, FullApplyCategoryDiff, FullApplySummary } from "@/lib/menu-generator/fullApplyDiff";
 import type { MenuLocale } from "@/lib/menu-generator/types";
 import type { MenuProfileId } from "@/lib/menu-profile/types";
 import { SUPPORTED_MENU_LOCALES } from "@/lib/menu-generator/types";
 
-export const LOCALIZED_MENU_GENERATOR_VERSION = "1.0.0";
+export const LOCALIZED_MENU_GENERATOR_VERSION = "2.0.0";
 
 export const APPLY_OVERWRITE_MODES = [
   "create_missing_only",
@@ -21,56 +22,15 @@ export type ApplyOverwriteMode = (typeof APPLY_OVERWRITE_MODES)[number];
 
 export const DEFAULT_APPLY_OVERWRITE_MODE: ApplyOverwriteMode = "stop_if_published_exists";
 
-export type ApplyDayStatus =
-  | "would_create"
-  | "created"
-  | "would_update_draft"
-  | "updated_draft"
-  | "skipped_existing"
-  | "skipped_published"
-  | "blocked_published"
-  | "unchanged"
-  | "failed";
+export const APPLY_CATEGORY_SCOPES = [
+  "all_supported",
+  "fixed_categories_only",
+  "hotMeal_only",
+] as const;
 
-export type ApplyExistingDayState = "missing" | "draft" | "published" | "order_locked";
+export type ApplyCategoryScope = (typeof APPLY_CATEGORY_SCOPES)[number];
 
-export type ApplyMenuDayDiffField = {
-  field: "mealTitle" | "description" | "allergens";
-  before: string;
-  after: string;
-};
-
-export type ApplyGeneratedVarmrettState = {
-  mealTitle: string;
-  description: string;
-  allergensText: string;
-  itemKey: string;
-  slug: string;
-  hotMealBaseItemKey: string | null;
-  isPremiumUpgrade: boolean;
-};
-
-export type ApplyDayDiff = {
-  date: string;
-  weekday: string;
-  status: ApplyDayStatus;
-  existingState: ApplyExistingDayState;
-  generatedState: ApplyGeneratedVarmrettState | null;
-  diff: ApplyMenuDayDiffField[];
-  warnings: string[];
-  providerLabel: string;
-};
-
-export type ApplySummary = {
-  createdDraftDays: number;
-  updatedDraftDays: number;
-  skippedExistingDays: number;
-  skippedPublishedDays: number;
-  blockedPublishedDays: number;
-  unchangedDays: number;
-  totalGeneratedDays: number;
-  failedDays: number;
-};
+export const DEFAULT_APPLY_CATEGORY_SCOPE: ApplyCategoryScope = "all_supported";
 
 export type ApplyLocalizedGeneratedWeekMenuInput = {
   providerId: string;
@@ -80,6 +40,7 @@ export type ApplyLocalizedGeneratedWeekMenuInput = {
   menuProfileId: MenuProfileId;
   packageTier: PlanTier;
   overwriteMode: ApplyOverwriteMode;
+  categoryScope: ApplyCategoryScope;
   dryRun: boolean;
   idempotencyKey: string;
   providerSlug?: string | null;
@@ -92,17 +53,21 @@ export type ApplyLocalizedGeneratedWeekMenuResult = {
   weekStart: string;
   menuLocale: MenuLocale;
   menuProfileId: MenuProfileId;
+  categoryScope: ApplyCategoryScope;
   generatorVersion: string;
   overwriteMode: ApplyOverwriteMode;
   idempotencyKey: string;
-  summary: ApplySummary;
-  days: ApplyDayDiff[];
+  capabilities: MenuApplyCapabilities;
+  summary: FullApplySummary;
+  days: FullApplyDayDiff[];
+  catalogCategories: FullApplyCategoryDiff[];
   warnings: string[];
   blockedReasons: string[];
   audit: {
     action: string;
     dryRun: boolean;
     appliedDates: string[];
+    appliedCatalogCategories: string[];
     skippedDates: string[];
     errorCount: number;
   };
@@ -118,6 +83,8 @@ export type ApplyErrorCode =
   | "provider_profile_missing"
   | "published_days_exist"
   | "schema_mapping_failed"
+  | "unsupported_category_scope"
+  | "unsupported_category_schema"
   | "sanity_write_failed"
   | "idempotency_conflict"
   | "validation_failed";
@@ -132,6 +99,7 @@ export function buildApplyIdempotencyKey(input: {
   menuLocale: MenuLocale;
   menuProfileId: MenuProfileId;
   overwriteMode: ApplyOverwriteMode;
+  categoryScope: ApplyCategoryScope;
   packageTier: PlanTier;
   generatorVersion?: string;
 }): string {
@@ -141,6 +109,7 @@ export function buildApplyIdempotencyKey(input: {
     input.weekStart,
     input.menuLocale,
     input.menuProfileId,
+    input.categoryScope,
     input.overwriteMode,
     input.packageTier,
     version,

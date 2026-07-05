@@ -6,16 +6,59 @@ import type { ProviderMenuDayRow } from "@/lib/provider-menu/loadProviderMenuDay
 import { menuSlotHasContent } from "@/lib/provider-menu/menuCategoryCanonical";
 import { isVarmrettDateLocked, type ProviderOrderLockState } from "@/lib/provider-menu/providerMenuOrderLock";
 import { WEEKDAY_KEYS } from "@/lib/providers/providerMenuPackageSurface";
-import type {
-  ApplyDayDiff,
-  ApplyDayStatus,
-  ApplyExistingDayState,
-  ApplyGeneratedVarmrettState,
-  ApplyMenuDayDiffField,
-  ApplyOverwriteMode,
-  ApplySummary,
-} from "@/lib/menu-generator/applyTypes";
+import type { ApplyOverwriteMode } from "@/lib/menu-generator/applyTypes";
 import { normalizeAllergenListForCompare } from "@/lib/menu-generator/allergenMenuDayFormat";
+
+export type VarmrettApplyDayStatus =
+  | "would_create"
+  | "created"
+  | "would_update_draft"
+  | "updated_draft"
+  | "skipped_existing"
+  | "skipped_published"
+  | "blocked_published"
+  | "unchanged"
+  | "failed";
+
+export type VarmrettExistingDayState = "missing" | "draft" | "published" | "order_locked";
+
+export type ApplyGeneratedVarmrettState = {
+  mealTitle: string;
+  description: string;
+  allergensText: string;
+  itemKey: string;
+  slug: string;
+  hotMealBaseItemKey: string | null;
+  isPremiumUpgrade: boolean;
+};
+
+export type VarmrettMenuDayDiffField = {
+  field: "mealTitle" | "description" | "allergens";
+  before: string;
+  after: string;
+};
+
+export type VarmrettDayDiff = {
+  date: string;
+  weekday: string;
+  status: VarmrettApplyDayStatus;
+  existingState: VarmrettExistingDayState;
+  generatedState: ApplyGeneratedVarmrettState | null;
+  diff: VarmrettMenuDayDiffField[];
+  warnings: string[];
+  providerLabel: string;
+};
+
+export type VarmrettApplySummary = {
+  createdDraftDays: number;
+  updatedDraftDays: number;
+  skippedExistingDays: number;
+  skippedPublishedDays: number;
+  blockedPublishedDays: number;
+  unchangedDays: number;
+  totalGeneratedDays: number;
+  failedDays: number;
+};
 
 const WEEKDAY_LABELS: Record<string, string> = {
   mon: "Mandag",
@@ -46,7 +89,7 @@ export function resolveVarmrettExistingState(
   rows: readonly ProviderMenuDayRow[],
   date: string,
   lockState: ProviderOrderLockState,
-): ApplyExistingDayState {
+): VarmrettExistingDayState {
   if (isVarmrettDateLocked(lockState, date)) return "order_locked";
   const row = canonicalVarmrettRow(rows, date);
   if (!row || !menuSlotHasContent(row)) return "missing";
@@ -57,8 +100,8 @@ export function resolveVarmrettExistingState(
 function buildContentDiff(
   existing: ProviderMenuDayRow | null,
   generated: ApplyGeneratedVarmrettState,
-): ApplyMenuDayDiffField[] {
-  const diffs: ApplyMenuDayDiffField[] = [];
+): VarmrettMenuDayDiffField[] {
+  const diffs: VarmrettMenuDayDiffField[] = [];
   const beforeTitle = existing?.mealTitle?.trim() ?? "";
   const beforeDesc = existing?.description?.trim() ?? "";
   const beforeAllergens = normalizeAllergenListForCompare(existing?.allergens ?? []);
@@ -87,13 +130,13 @@ function contentMatches(existing: ProviderMenuDayRow | null, generated: ApplyGen
 }
 
 function resolveDayStatus(input: {
-  existingState: ApplyExistingDayState;
+  existingState: VarmrettExistingDayState;
   overwriteMode: ApplyOverwriteMode;
   hasGenerated: boolean;
   contentMatches: boolean;
   dryRun: boolean;
   weekBlocked: boolean;
-}): { status: ApplyDayStatus; warnings: string[] } {
+}): { status: VarmrettApplyDayStatus; warnings: string[] } {
   const warnings: string[] = [];
 
   if (!input.hasGenerated) {
@@ -137,7 +180,7 @@ export function buildApplyWeekDiff(input: {
   overwriteMode: ApplyOverwriteMode;
   dryRun: boolean;
   lockState: ProviderOrderLockState;
-}): { days: ApplyDayDiff[]; blockedReasons: string[]; warnings: string[] } {
+}): { days: VarmrettDayDiff[]; blockedReasons: string[]; warnings: string[] } {
   const blockedReasons: string[] = [];
   const warnings: string[] = [];
 
@@ -163,7 +206,7 @@ export function buildApplyWeekDiff(input: {
     );
   }
 
-  const days: ApplyDayDiff[] = input.dates.map((date) => {
+  const days: VarmrettDayDiff[] = input.dates.map((date) => {
     const generated = input.varmrettByDate.get(date) ?? null;
     const existingState = resolveVarmrettExistingState(input.existingRows, date, input.lockState);
     const canonical = canonicalVarmrettRow(input.existingRows, date);
@@ -205,8 +248,8 @@ export function buildApplyWeekDiff(input: {
   return { days, blockedReasons, warnings: [...new Set(warnings)] };
 }
 
-export function summarizeApplyDays(days: readonly ApplyDayDiff[]): ApplySummary {
-  const count = (pred: (d: ApplyDayDiff) => boolean) => days.filter(pred).length;
+export function summarizeApplyDays(days: readonly VarmrettDayDiff[]): VarmrettApplySummary {
+  const count = (pred: (d: VarmrettDayDiff) => boolean) => days.filter(pred).length;
   return {
     createdDraftDays: count((d) => d.status === "created"),
     updatedDraftDays: count((d) => d.status === "updated_draft"),
@@ -219,8 +262,8 @@ export function summarizeApplyDays(days: readonly ApplyDayDiff[]): ApplySummary 
   };
 }
 
-export function dryRunSummaryFromDays(days: readonly ApplyDayDiff[]): ApplySummary {
-  const count = (pred: (d: ApplyDayDiff) => boolean) => days.filter(pred).length;
+export function dryRunSummaryFromDays(days: readonly VarmrettDayDiff[]): VarmrettApplySummary {
+  const count = (pred: (d: VarmrettDayDiff) => boolean) => days.filter(pred).length;
   return {
     createdDraftDays: count((d) => d.status === "would_create"),
     updatedDraftDays: count((d) => d.status === "would_update_draft"),
@@ -233,18 +276,18 @@ export function dryRunSummaryFromDays(days: readonly ApplyDayDiff[]): ApplySumma
   };
 }
 
-export function actionableApplyDates(days: readonly ApplyDayDiff[]): string[] {
+export function actionableApplyDates(days: readonly VarmrettDayDiff[]): string[] {
   return days
     .filter((d) => d.status === "created" || d.status === "updated_draft" || d.status === "would_create" || d.status === "would_update_draft")
     .map((d) => d.date);
 }
 
-export function pendingApplyDates(days: readonly ApplyDayDiff[]): string[] {
+export function pendingApplyDates(days: readonly VarmrettDayDiff[]): string[] {
   return days
     .filter((d) => d.status === "would_create" || d.status === "would_update_draft")
     .map((d) => d.date);
 }
 
-export function wouldMutateInDryRun(days: readonly ApplyDayDiff[]): boolean {
+export function wouldMutateInDryRun(days: readonly VarmrettDayDiff[]): boolean {
   return days.some((d) => d.status === "would_create" || d.status === "would_update_draft");
 }

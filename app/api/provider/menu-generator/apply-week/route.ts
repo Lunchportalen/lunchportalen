@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
       menuLocale: runtimeProfile.menuLocale,
       menuProfileId: runtimeProfile.menuProfileId,
       overwriteMode: parsed.input.overwriteMode,
+      categoryScope: parsed.input.categoryScope,
       packageTier: parsed.input.packageTier,
     });
 
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest) {
       menuProfileId: runtimeProfile.menuProfileId,
       packageTier: parsed.input.packageTier,
       overwriteMode: parsed.input.overwriteMode,
+      categoryScope: parsed.input.categoryScope,
       dryRun: parsed.input.dryRun,
       idempotencyKey,
       providerSlug: provider.slug,
@@ -131,10 +133,11 @@ export async function POST(req: NextRequest) {
       menuLocale: result.menuLocale,
       menuProfileId: result.menuProfileId,
       overwriteMode: result.overwriteMode,
+      categoryScope: result.categoryScope,
       dryRun: result.audit.dryRun,
       summary: result.summary,
       appliedDates: result.audit.appliedDates,
-      skippedDates: result.audit.skippedDates,
+      appliedCatalogCategories: result.audit.appliedCatalogCategories,
       generatorVersion: result.generatorVersion,
       idempotencyKey: result.idempotencyKey,
       errorCode: result.errorCode ?? null,

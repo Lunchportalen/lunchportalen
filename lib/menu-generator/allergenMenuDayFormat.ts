@@ -1,7 +1,8 @@
 /**
- * Map generator allergen codes to menuDay allergen strings (locale-aware display).
+ * Map generator allergen codes to menuDay / lunchCategory allergen strings.
  */
 
+import { LUNCH_CATEGORY_ALLERGENS } from "@/lib/provider-menu/lunchCategoryCatalog";
 import type { AllergenCode, MenuLocale } from "@/lib/menu-generator/types";
 
 const ALLERGEN_LABELS_NB: Record<AllergenCode, string> = {
@@ -70,4 +71,28 @@ export function normalizeAllergenListForCompare(values: readonly string[]): stri
     .filter(Boolean)
     .sort()
     .join("|");
+}
+
+/** Generator AllergenCode → lunchCategory allowlist slug. */
+const GENERATOR_TO_CATALOG_ALLERGEN: Partial<Record<AllergenCode, string>> = {
+  gluten: "hvete",
+  melk: "melk",
+  egg: "egg",
+  fisk: "fisk",
+  skalldyr: "krepsdyr",
+  soya: "soya",
+  sesam: "sesam",
+  sennep: "sennep",
+  nøtter: "kasjunott",
+  peanøtter: "peanotter",
+};
+
+export function formatAllergensForCatalog(allergens: readonly AllergenCode[]): string[] {
+  const allow = new Set<string>(LUNCH_CATEGORY_ALLERGENS);
+  const out: string[] = [];
+  for (const code of allergens) {
+    const mapped = GENERATOR_TO_CATALOG_ALLERGEN[code] ?? code;
+    if (allow.has(mapped) && !out.includes(mapped)) out.push(mapped);
+  }
+  return out;
 }

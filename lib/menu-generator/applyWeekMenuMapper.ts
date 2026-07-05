@@ -5,7 +5,7 @@
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import { generateProviderWeekMenu } from "@/lib/menu-generator/generateProviderWeekMenu";
 import { formatAllergensForMenuDay } from "@/lib/menu-generator/allergenMenuDayFormat";
-import type { ApplyGeneratedVarmrettState } from "@/lib/menu-generator/applyTypes";
+import type { ApplyGeneratedVarmrettState } from "@/lib/menu-generator/applyWeekMenuDiff";
 import type {
   EconomyConfig,
   FixedCategoryKey,
