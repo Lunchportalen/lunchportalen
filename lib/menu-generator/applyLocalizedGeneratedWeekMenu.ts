@@ -32,7 +32,7 @@ import { isLocalizedFixedMenuGeneratorPanelEnabled } from "@/lib/menu-generator/
 import { resolveProviderMenuRuntimeProfile } from "@/lib/menu-generator/resolveProviderMenuRuntimeProfile";
 import type { FixedCategoryKey } from "@/lib/menu-generator/types";
 import type { EnvLike } from "@/lib/menu-profile/featureFlag";
-import { buildMenuCatalogSnapshot } from "@/lib/provider-menu/providerMenuCatalogReadModel";
+import { resolveApplyMenuCatalogSnapshot } from "@/lib/provider-menu/providerMenuCatalogReadModel";
 import { loadProviderMenuDaysForDates } from "@/lib/provider-menu/loadProviderMenuDays";
 import { loadProviderOrderLockState } from "@/lib/provider-menu/providerMenuOrderLock";
 import { writeGeneratedSharedVarmrettForProvider } from "@/lib/provider-menu/varmrettSharedWrite";
@@ -169,7 +169,7 @@ export async function applyLocalizedGeneratedWeekMenu(
     providerSlug: input.providerSlug ?? ctx.providerSlug ?? null,
   });
   const catalogRows = await fetchLunchCategoryRowsForProvider(input.providerId);
-  const catalog = buildMenuCatalogSnapshot(catalogRows);
+  const catalog = await resolveApplyMenuCatalogSnapshot(catalogRows);
 
   const diff = buildFullApplyDiff({
     draft,
