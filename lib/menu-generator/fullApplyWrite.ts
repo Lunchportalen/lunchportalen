@@ -18,11 +18,33 @@ import {
 import type { ProviderMenuCatalogSnapshot } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { categoryFromLunchCategoryKey, categoryRowForCategory } from "@/lib/provider-menu/lunchCategoryCatalog";
 
+function toCatalogWriteItem(
+  item: {
+    key: string;
+    title: string;
+    description?: string | null;
+    allergens?: string[] | null;
+    isVegetarian?: boolean | null;
+  },
+  existingKeySet: Set<string>,
+): MenuCatalogWriteInput["items"][number] {
+  const normalizedKey = item.key.toLowerCase();
+  return {
+    // Existing catalog keys must be preserved; new localized generator dishes get slug-from-title.
+    key: existingKeySet.has(normalizedKey) ? item.key : "",
+    title: item.title,
+    description: item.description ?? "",
+    allergens: item.allergens ?? [],
+    isVegetarian: item.isVegetarian,
+  };
+}
+
 function mergeCatalogItems(
   existing: Array<{ key: string; title: string; description?: string | null; allergens?: string[] | null; isVegetarian?: boolean | null }>,
   generated: FullApplyMenuItem[],
   overwriteMode: ApplyOverwriteMode,
 ): MenuCatalogWriteInput["items"] {
+  const existingKeySet = new Set(existing.map((e) => e.key.toLowerCase()));
   const byKey = new Map(existing.map((e) => [e.key.toLowerCase(), e]));
 
   for (const gen of generated) {
@@ -50,13 +72,7 @@ function mergeCatalogItems(
   }
 
   if (overwriteMode === "create_missing_only") {
-    return [...byKey.values()].map((item) => ({
-      key: item.key,
-      title: item.title,
-      description: item.description ?? "",
-      allergens: item.allergens ?? [],
-      isVegetarian: item.isVegetarian,
-    }));
+    return [...byKey.values()].map((item) => toCatalogWriteItem(item, existingKeySet));
   }
 
   const generatedSlugs = new Set(generated.map((g) => g.sourceDishSlug.toLowerCase()));
@@ -78,13 +94,7 @@ function mergeCatalogItems(
     }
   }
 
-  return merged.map((item) => ({
-    key: item.key,
-    title: item.title,
-    description: item.description ?? "",
-    allergens: item.allergens ?? [],
-    isVegetarian: item.isVegetarian,
-  }));
+  return merged.map((item) => toCatalogWriteItem(item, existingKeySet));
 }
 
 export async function applyCatalogCategories(input: {

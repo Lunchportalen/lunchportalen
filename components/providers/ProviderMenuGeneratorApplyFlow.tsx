@@ -153,6 +153,7 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
       <p className="ds-body ds-muted">
         Dette lager menyutkast. Dette publiserer ikke automatisk. Dette påvirker ikke eksisterende ordre.
         Publiserte dager overskrives ikke. Menyinnhold følger providerens menyprofil, ikke brukerens UI-språk.
+        Faste kategorier oppdateres som ukens katalogutkast, ikke som egne per-dag-kategorier.
       </p>
 
       <dl className="ds-kv-grid">
@@ -190,7 +191,7 @@ export default function ProviderMenuGeneratorApplyFlow({ presentation, canApply 
         <p className="ds-body ds-muted" data-testid="apply-capabilities">
           Støttede kategorier: {result.capabilities.supportedCategories.join(", ")}
           {result.capabilities.unsupportedCategories.length
-            ? ` · Blokkert schema: ${result.capabilities.unsupportedCategories.join(", ")}`
+            ? ` · Blokkert schema: ${result.capabilities.unsupportedCategories.join(", ")} (vegetarian krever schema-støtte)`
             : null}
         </p>
       ) : null}
