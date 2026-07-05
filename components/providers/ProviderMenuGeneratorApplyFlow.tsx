@@ -37,7 +37,7 @@ type ApplyResponse = {
 };
 
 type Props = {
-  presentation: ProviderMenuGeneratorPreviewPresentation;
+  presentation: Extract<ProviderMenuGeneratorPreviewPresentation, { active: true }>;
   canApply: boolean;
   initialWeekStart?: string;
 };
@@ -61,8 +61,6 @@ export default function ProviderMenuGeneratorApplyFlow({
   canApply,
   initialWeekStart,
 }: Props) {
-  if (!presentation.active) return null;
-
   const defaultWeek = initialWeekStart ?? presentation.weekStart;
   const [weekStart, setWeekStart] = useState(defaultWeek);
   const [overwriteMode, setOverwriteMode] = useState<ApplyOverwriteMode>("stop_if_published_exists");
