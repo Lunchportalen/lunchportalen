@@ -46,6 +46,8 @@ export type ProviderLunchCategoryRow = {
   title?: string | null;
   allowedPlanTiers?: string[] | null;
   items?: ProviderLunchCategoryItemRow[] | null;
+  /** Provider-scoped lunchCategory doc exists for this category key. */
+  isProviderScoped?: boolean;
 };
 
 export type ProviderMenuCatalogSnapshot = {

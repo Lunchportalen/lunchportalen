@@ -117,6 +117,7 @@ function diffCatalogItems(
   generated: FullApplyMenuItem[],
   overwriteMode: ApplyOverwriteMode,
   schemaUnsupported: boolean,
+  isProviderScoped = false,
 ): FullApplyCategoryDiff {
   const categoryKey = generated[0]?.categoryKey ?? ("sandwich" as FixedCategoryKey);
   const displayName = generated[0] ? generated[0].title : categoryKey;
@@ -203,7 +204,7 @@ function diffCatalogItems(
   if (catalogOverwriteSkipsAllCategories(overwriteMode)) {
     status = generated.length ? "would_skip_existing_category" : "unchanged";
   } else if (isStrictCatalogOverwriteMode(overwriteMode)) {
-    if (existing.length > 0) {
+    if (isProviderScoped || existing.length > 0) {
       status = "would_skip_existing_category";
     } else if (generated.length) {
       status = "would_create_category";
@@ -305,6 +306,7 @@ export function buildFullApplyDiff(input: {
 
     const runtimeCategory = categoryFromLunchCategoryKey(lunchKey);
     const row = runtimeCategory ? categoryRowForCategory(input.catalog, runtimeCategory) : null;
+    const isProviderScoped = row?.isProviderScoped === true;
     const existing = (row?.items ?? []).map((i) => ({
       key: i.key,
       title: i.title,
@@ -312,7 +314,7 @@ export function buildFullApplyDiff(input: {
       allergens: i.allergens ?? [],
     }));
 
-    const diff = diffCatalogItems(existing, catDraft.items, input.overwriteMode, false);
+    const diff = diffCatalogItems(existing, catDraft.items, input.overwriteMode, false, isProviderScoped);
     diff.displayName = catDraft.displayName;
     diff.categoryKey = catDraft.categoryKey;
     catalogCategories.push(diff);
