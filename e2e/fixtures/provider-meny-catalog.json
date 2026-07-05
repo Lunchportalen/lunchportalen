@@ -122,6 +122,20 @@
       ]
     },
     {
+      "key": "vegetarian",
+      "title": "Vegetar",
+      "allowedPlanTiers": ["LUXUS", "ENTERPRISE"],
+      "items": [
+        {
+          "key": "linsegryte",
+          "title": "Linsegryte",
+          "allergens": [],
+          "isVegetarian": true,
+          "allowedPlanTiers": ["LUXUS", "ENTERPRISE"]
+        }
+      ]
+    },
+    {
       "key": "varmrett",
       "title": "Varmrett",
       "allowedPlanTiers": ["BASIS", "LUXUS", "ENTERPRISE"],
