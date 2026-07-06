@@ -288,7 +288,7 @@ async function loadLocaleInventoryRows(
       providerSettingsComplete: Boolean(settingsOk),
       providerAdminAuthExists: authExists,
       providerMembershipExists: membershipExists,
-      automationCredsAvailable: protectedId,
+      automationCredsAvailable: protectedId || (authExists && membershipExists),
       sanityProviderMirrorExists: mirrorFlags.sanityProviderMirrorExists,
       providerRefResolves: mirrorFlags.providerRefResolves,
       globalSanityTemplatesOk: globalTemplatesOk,
