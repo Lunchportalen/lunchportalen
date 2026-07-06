@@ -4,6 +4,7 @@
  * Never mutates protected Melhus / Swedish Lunch Pilot providers.
  */
 
+import { storeOperatorLocalCredentials } from "@/lib/provider-onboarding/operatorLocalCredentials";
 import {
   PHASE_C_PROTECTED_PROVIDER_IDS,
   PHASE_C_PROTECTED_PROVIDER_SLUGS,
@@ -38,7 +39,13 @@ export type ProviderOnboardingExecuteAdapters = {
   provisionProviderAdmin: (input: {
     providerId: string;
     adminEmail: string;
-  }) => Promise<{ userId: string; passwordIssued: boolean }>;
+    providerName: string;
+  }) => Promise<{
+    userId: string;
+    passwordIssued: boolean;
+    /** Inviter-set only; never printed — stored under .operator-local/ */
+    temporaryPassword?: string;
+  }>;
   ensureProviderMembership: (input: {
     providerId: string;
     userId: string;
@@ -144,8 +151,22 @@ export async function executeProviderOnboardingApply(args: {
   const admin = await adapters.provisionProviderAdmin({
     providerId,
     adminEmail: summary.adminEmail,
+    providerName: summary.providerName,
   });
   stepsCompleted.push("provider_admin_auth");
+
+  const inviterSetPassword =
+    (typeof admin.temporaryPassword === "string" && admin.temporaryPassword.trim()) ||
+    process.env.PHASE_C_INVITER_SET_ADMIN_PASSWORD?.trim() ||
+    "";
+  if (inviterSetPassword) {
+    storeOperatorLocalCredentials({
+      providerId,
+      adminEmail: summary.adminEmail,
+      temporaryPassword: inviterSetPassword,
+    });
+    stepsCompleted.push("operator_local_credentials");
+  }
 
   await adapters.ensureProviderMembership({
     providerId,
@@ -189,6 +210,6 @@ export async function executeProviderOnboardingApply(args: {
     massExpansionStarted: false,
     passwordPrinted: false,
     message:
-      "Provider onboarded. Menu apply is NOT run. Store credentials in operator-local env. Run generator dryRun and confirm safeToApply=true before any scoped apply GO.",
+      "Provider onboarded. Menu apply is NOT run. Operator credentials stay local under .operator-local/ when inviter-set (never printed). Run generator dryRun and confirm safeToApply=true before any scoped apply GO.",
   };
 }

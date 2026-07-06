@@ -362,11 +362,49 @@ export async function runPhaseCOnboardCli(
   }
 
   const writeAdapters = deps.createLiveWriteAdapters();
-  const executed = await executeProviderOnboardingApply({
+  const executeApply = deps.executeApply ?? executeProviderOnboardingApply;
+  const executed = await executeApply({
     input,
     snapshot: resolved.snapshot,
     adapters: writeAdapters,
   });
+
+  if (executed.passwordPrinted !== false) {
+    return {
+      exitCode: 2,
+      writes: 0,
+      body: {
+        status: "APPLY_GATED",
+        reasonCode: "PASSWORD_PRINT_FORBIDDEN",
+        message:
+          "Apply result signaled credential disclosure; runAborted with zero writes.",
+        confirmationAccepted: true,
+        providerId: input.providerId,
+        adminEmail: input.adminEmail,
+        runAborted: true,
+        passwordPrinted: false,
+        ...common,
+      },
+    };
+  }
+  if (/\bpassword\s*[:=]/i.test(executed.message)) {
+    return {
+      exitCode: 2,
+      writes: 0,
+      body: {
+        status: "APPLY_GATED",
+        reasonCode: "PASSWORD_PRINT_FORBIDDEN",
+        message:
+          "Apply result message contained a credential-shaped field; runAborted with zero writes.",
+        confirmationAccepted: true,
+        providerId: input.providerId,
+        adminEmail: input.adminEmail,
+        runAborted: true,
+        passwordPrinted: false,
+        ...common,
+      },
+    };
+  }
 
   return {
     exitCode: executed.ok ? 0 : 1,
@@ -381,10 +419,11 @@ export async function runPhaseCOnboardCli(
       published: executed.published,
       sotStarted: executed.sotStarted,
       massExpansionStarted: executed.massExpansionStarted,
-      passwordPrinted: executed.passwordPrinted,
+      // Hard guarantee for CLI surfaces / transcript capture.
+      passwordPrinted: false,
       message: executed.message,
       credentialsLocalFileHint:
-        ".operator-local/<admin-local-part>-admin.credentials (never commit; never print)",
+        ".operator-local/<admin-email-local-part>.credentials (never commit; never print)",
       ...common,
       writes: executed.writesPerformed ? executed.stepsCompleted.length : 0,
       liveWrites: executed.writesPerformed,

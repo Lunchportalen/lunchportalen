@@ -13,6 +13,9 @@ pnpm-debug.log*
 .env.local
 .env.*.local
 
+# Phase C operator-local provider admin credentials (never commit)
+.operator-local/
+
 # === .env hardening (Sprint AB Gr 8 — 2026-05-25) ===
 # All .env-files except templates
 .env.local.*

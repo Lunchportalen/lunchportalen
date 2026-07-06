@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { createClient as createSanityClient } from "@sanity/client";
-import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 import {
   fetchSanityProviderMirrorSnapshot,
@@ -33,10 +33,24 @@ function assertNotProtected(providerId: string, slug: string): void {
   }
 }
 
-function storeOperatorPasswordLocally(slug: string, email: string, password: string): string {
+function sanitizeCredentialToken(value: string): string {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "provider-admin";
+}
+
+/** Operator-local credential file path for an admin email (local-part). Never print contents. */
+export function operatorLocalCredentialsPathForEmail(adminEmail: string): string {
+  const localPart = sanitizeCredentialToken(String(adminEmail ?? "").split("@")[0] ?? "provider-admin");
+  return path.resolve(process.cwd(), ".operator-local", `${localPart}.credentials`);
+}
+
+function storeOperatorPasswordLocally(email: string, password: string): string {
   const dir = path.resolve(process.cwd(), ".operator-local");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { mode: 0o700 });
-  const file = path.join(dir, `${slug}-admin.credentials`);
+  const file = operatorLocalCredentialsPathForEmail(email);
   // Values never go to stdout/stderr. File is operator-local only (gitignored by convention).
   fs.writeFileSync(
     file,
@@ -201,10 +215,7 @@ export function createLiveWriteAdapters(args: {
     async provisionProviderAdmin(input) {
       assertNotProtected(input.providerId, "");
       const password = resolvePassword(operatorEnv, input.adminEmail);
-      const fileToken = String(input.adminEmail.split("@")[0] ?? "provider-admin")
-        .toLowerCase()
-        .replace(/[^a-z0-9-]+/g, "-");
-      storeOperatorPasswordLocally(fileToken, input.adminEmail, password);
+      const adminDisplayName = `${String(input.providerName ?? "Provider").trim() || "Provider"} Admin`;
 
       const created = await admin.auth.admin.createUser({
         email: input.adminEmail,
@@ -212,8 +223,8 @@ export function createLiveWriteAdapters(args: {
         email_confirm: true,
         user_metadata: {
           role: "provider_admin",
-          full_name: "Danish Lunch Pilot Admin",
-          name: "Danish Lunch Pilot Admin",
+          full_name: adminDisplayName,
+          name: adminDisplayName,
         },
       });
       if (created.error) throw new Error(`createUser: ${created.error.message}`);
@@ -225,7 +236,7 @@ export function createLiveWriteAdapters(args: {
         {
           id: userId,
           email: input.adminEmail,
-          full_name: "Danish Lunch Pilot Admin",
+          full_name: adminDisplayName,
           role: "provider_admin",
           company_id: null,
           location_id: null,
@@ -236,6 +247,9 @@ export function createLiveWriteAdapters(args: {
         { onConflict: "id" },
       );
       if (profileErr) throw new Error(`profiles upsert: ${profileErr.message}`);
+
+      // Store only after successful provision. Never print password/token values.
+      storeOperatorPasswordLocally(input.adminEmail, password);
 
       return { userId, passwordIssued: true };
     },
@@ -302,9 +316,12 @@ export function createLiveWriteAdapters(args: {
   };
 }
 
-/** Load operator-local password file without printing contents. */
-export function loadOperatorLocalPassword(slug: string): string | null {
-  const file = path.resolve(process.cwd(), ".operator-local", `${slug}-admin.credentials`);
+/**
+ * Load operator-local password by admin email without printing contents.
+ * For explicit operator follow-up scripts only — never call from CLI output paths.
+ */
+export function loadOperatorLocalPassword(adminEmail: string): string | null {
+  const file = operatorLocalCredentialsPathForEmail(adminEmail);
   if (!fs.existsSync(file)) return null;
   const text = fs.readFileSync(file, "utf8");
   const line = text
