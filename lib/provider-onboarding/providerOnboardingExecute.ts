@@ -1,6 +1,6 @@
 /**
  * Phase C provider onboarding execute — adapter-driven.
- * Never creates menuDays, never publishes, never starts SOT/auto-rollout.
+ * Never creates menuDays, never publishes, never starts SOT / mass expansion.
  * Never mutates protected Melhus / Swedish Lunch Pilot providers.
  */
 
@@ -59,7 +59,7 @@ export type ProviderOnboardingExecuteResult = {
   menuDaysCreated: false;
   published: false;
   sotStarted: false;
-  autoRolloutStarted: false;
+  massExpansionStarted: false;
   passwordPrinted: false;
   message: string;
 };
@@ -99,7 +99,7 @@ export async function executeProviderOnboardingApply(args: {
       menuDaysCreated: false,
       published: false,
       sotStarted: false,
-      autoRolloutStarted: false,
+      massExpansionStarted: false,
       passwordPrinted: false,
       message: "Onboarding apply blocked by preflight.",
     };
@@ -170,7 +170,7 @@ export async function executeProviderOnboardingApply(args: {
       menuDaysCreated: false,
       published: false,
       sotStarted: false,
-      autoRolloutStarted: false,
+      massExpansionStarted: false,
       passwordPrinted: false,
       message: mirror.message ?? "Sanity provider mirror verification failed.",
     };
@@ -186,7 +186,7 @@ export async function executeProviderOnboardingApply(args: {
     menuDaysCreated: false,
     published: false,
     sotStarted: false,
-    autoRolloutStarted: false,
+    massExpansionStarted: false,
     passwordPrinted: false,
     message:
       "Provider onboarded. Menu apply is NOT run. Store credentials in operator-local env. Run generator dryRun and confirm safeToApply=true before any scoped apply GO.",

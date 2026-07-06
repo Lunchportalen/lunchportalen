@@ -82,7 +82,7 @@ describe("executeProviderOnboardingApply", () => {
     expect(result.menuDaysCreated).toBe(false);
     expect(result.published).toBe(false);
     expect(result.sotStarted).toBe(false);
-    expect(result.autoRolloutStarted).toBe(false);
+    expect(result.massExpansionStarted).toBe(false);
     expect(result.passwordPrinted).toBe(false);
     expect(adapters.syncProviderToSanity).toHaveBeenCalledWith("new-provider-id");
   });

@@ -299,7 +299,7 @@ export function buildProviderOnboardingPlan(
     willCreateMenuDays: false,
     willPublish: false,
     willStartSot: false,
-    willStartAutoRollout: false,
+    willStartMassExpansion: false,
     protectedProvidersUntouched: true,
     inputSummary: {
       providerName: normalize(input.providerName),
@@ -333,7 +333,7 @@ export function serializeProviderOnboardingPlan(
     willCreateMenuDays: plan.willCreateMenuDays,
     willPublish: plan.willPublish,
     willStartSot: plan.willStartSot,
-    willStartAutoRollout: plan.willStartAutoRollout,
+    willStartMassExpansion: plan.willStartMassExpansion,
     protectedProvidersUntouched: plan.protectedProvidersUntouched,
     inputSummary: plan.inputSummary,
     confirmationPhraseRequired: PHASE_C_ONBOARD_CONFIRMATION_PHRASE,
@@ -346,7 +346,7 @@ export function serializeProviderOnboardingPlan(
       "evidence archive PR",
       "separate scoped GO before menu apply",
     ],
-    sot: "NO-GO",
-    autoRollout: "NO-GO",
+    sotGate: "NO-GO",
+    massExpansionGate: "NO-GO",
   };
 }

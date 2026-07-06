@@ -7,7 +7,7 @@
  *   --apply     requires --confirm=ONBOARD_PROVIDER_APPLY
  *               live writes require PHASE_C_ALLOW_LIVE_ONBOARD=1 + scoped GO
  *
- * Never creates menuDays, never publishes, never starts SOT/auto-rollout.
+ * Never creates menuDays, never publishes, never starts SOT / mass expansion.
  * Never mutates Melhus or Swedish Lunch Pilot.
  *
  * Usage examples:

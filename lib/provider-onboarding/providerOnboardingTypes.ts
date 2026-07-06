@@ -99,7 +99,7 @@ export type ProviderOnboardingPlanResult = {
   willCreateMenuDays: false;
   willPublish: false;
   willStartSot: false;
-  willStartAutoRollout: false;
+  willStartMassExpansion: false;
   protectedProvidersUntouched: true;
   inputSummary: {
     providerName: string;

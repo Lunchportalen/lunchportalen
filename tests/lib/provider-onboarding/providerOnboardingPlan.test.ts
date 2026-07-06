@@ -78,7 +78,7 @@ describe("buildProviderOnboardingPlan", () => {
     expect(plan.willCreateMenuDays).toBe(false);
     expect(plan.willPublish).toBe(false);
     expect(plan.willStartSot).toBe(false);
-    expect(plan.willStartAutoRollout).toBe(false);
+    expect(plan.willStartMassExpansion).toBe(false);
     expect(plan.safeToOnboardApply).toBe(false);
     expect(plan.rollbackPlan.length).toBeGreaterThan(0);
   });
