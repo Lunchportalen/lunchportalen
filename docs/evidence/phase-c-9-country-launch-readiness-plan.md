@@ -72,10 +72,14 @@ Protected: onboarding factory **must not** mutate Melhus or Swedish Lunch Pilot.
 Factory:
 
 - Planner: `lib/provider-onboarding/providerOnboardingPlan.ts`
+- Live-read snapshot: `lib/provider-onboarding/liveReadSnapshot.ts` (read-only)
 - Execute adapters: `lib/provider-onboarding/providerOnboardingExecute.ts`
 - CLI: `scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs`
+- Official dryRun: **must** use `--snapshot-source live` (default). Fixture is tests-only.
+- Live dryRun does **not** require `PHASE_C_ALLOW_LIVE_ONBOARD=1`.
 - Confirmation phrase: `ONBOARD_PROVIDER_APPLY`
 - Live writes: **gated** (`PHASE_C_ALLOW_LIVE_ONBOARD=1` + scoped GO + approved adapters)
+- da-DK apply GO is blocked until official CLI live dryRun PASS is archived.
 
 Write surface (apply mode only):
 
@@ -126,33 +130,10 @@ Rollback / deactivation plan is always emitted by the planner (membership deacti
 
 ## 6. Exact next scoped GO prompt (da-DK)
 
+**Prerequisite:** official CLI live dryRun PASS archived (this control fix). Apply GO remains separate.
+
 ```text
-GO Phase C provider onboarding — Danish Lunch Pilot (da-DK)
-
-SCOPE:
-- One provider only: Danish Lunch Pilot
-- locale=da-DK
-- menuProfileId=danish_office_lunch
-- country=DK
-- currency=DKK
-- timezone=Europe/Copenhagen
-- recommended slug=danish-lunch-pilot
-- safeFutureWeek for later generator dryRun=2031-11-03
-
-ALLOWED:
-1) Factory --dry-run then --apply with confirm=ONBOARD_PROVIDER_APPLY under PHASE_C_ALLOW_LIVE_ONBOARD=1
-2) provider + organizations mirror + provider_settings + provider_admin + membership
-3) syncProviderToSanity + read-only verify
-
-FORBIDDEN:
-- menu apply
-- menuDays create
-- publish
-- SOT
-- auto-rollout
-- mutation of Melhus or Swedish Lunch Pilot
-- near-term weeks
-- order write-path / lp_order_set / DB-RLS migrations
+GO Phase C da-DK provider onboarding apply-only — Danish Lunch Pilot (slug=danish-lunch-pilot, locale=da-DK, menuProfileId=danish_office_lunch, country=DK, currency=DKK, timezone=Europe/Copenhagen, adminEmail=danish-lunch-pilot-admin@lunchportalen.no, confirm=ONBOARD_PROVIDER_APPLY). Allowed: provider/org/settings/auth/membership + syncProviderToSanity + read-only verify. Forbidden: menuDays, publish, generator apply, SOT, mass expansion, Melhus/Swedish mutation.
 ```
 
 After onboarding PASS: generator dryRun only → evidence archive → separate GO for menu apply.

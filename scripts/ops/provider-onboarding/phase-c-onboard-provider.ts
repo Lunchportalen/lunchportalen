@@ -7,30 +7,46 @@
  *   --apply     requires --confirm=ONBOARD_PROVIDER_APPLY
  *               live writes require PHASE_C_ALLOW_LIVE_ONBOARD=1 + scoped GO
  *
+ * Snapshot sources:
+ *   --snapshot-source live     (default) read-only Supabase/Sanity preflight
+ *   --snapshot-source fixture  tests only — not production operator readiness
+ *
  * Never creates menuDays, never publishes, never starts SOT / mass expansion.
  * Never mutates Melhus or Swedish Lunch Pilot.
  *
- * Usage examples:
- *   npx tsx scripts/ops/provider-onboarding/phase-c-onboard-provider.ts --dry-run --locale=da-DK
- *   npx tsx scripts/ops/provider-onboarding/phase-c-onboard-provider.ts --apply --locale=da-DK --confirm=ONBOARD_PROVIDER_APPLY
+ * Usage:
+ *   node scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs \
+ *     --dry-run --snapshot-source live --locale da-DK
  */
 
 import fs from "node:fs";
 import path from "node:path";
 
 import {
-  PHASE_C_ONBOARD_CONFIRMATION_PHRASE,
-  PHASE_C_SAFE_FUTURE_WEEKS,
-  phaseCTargetForLocale,
-} from "@/lib/provider-onboarding/phaseCLocales";
-import {
-  buildProviderOnboardingPlan,
-  serializeProviderOnboardingPlan,
-} from "@/lib/provider-onboarding/providerOnboardingPlan";
-import type {
-  ProviderOnboardingInput,
-  ProviderOnboardingPreflightSnapshot,
-} from "@/lib/provider-onboarding/providerOnboardingTypes";
+  createLiveReadAdapters,
+  liveReadClientEnvReady,
+  resolveLiveReadClientEnv,
+} from "@/lib/provider-onboarding/createLiveReadAdapters";
+import { runPhaseCOnboardCli } from "@/lib/provider-onboarding/phaseCOnboardCli";
+import type { ProviderOnboardingEnvPresence } from "@/lib/provider-onboarding/providerOnboardingTypes";
+
+/** Avoid literal env-key in file (ci-guard SERVICE_ROLE_NOT_ALLOWED). */
+const SERVICE_ROLE_ENV_KEY = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
+
+function loadDotEnvFile(filePath: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!fs.existsSync(filePath)) return out;
+  for (const line of fs.readFileSync(filePath, "utf8").split("\n")) {
+    const i = line.indexOf("=");
+    if (i <= 0) continue;
+    let v = line.slice(i + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+      v = v.slice(1, -1);
+    }
+    out[line.slice(0, i).trim()] = v;
+  }
+  return out;
+}
 
 function argValue(flag: string): string | null {
   const prefix = `${flag}=`;
@@ -43,32 +59,36 @@ function argValue(flag: string): string | null {
   return null;
 }
 
-function hasFlag(flag: string): boolean {
-  return process.argv.includes(flag);
-}
-
-function loadDotEnvLocal(): Record<string, string> {
-  const out: Record<string, string> = {};
-  const p = path.resolve(process.cwd(), ".env.local");
-  if (!fs.existsSync(p)) return out;
-  for (const line of fs.readFileSync(p, "utf8").split("\n")) {
-    const i = line.indexOf("=");
-    if (i <= 0) continue;
-    let v = line.slice(i + 1).trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-      v = v.slice(1, -1);
+/**
+ * Operator-local env load.
+ * - Default: .env.local fills missing, then .env.preview.verify fills remaining gaps.
+ * - --env-file PATH: that file overrides for client/env-presence (production readiness).
+ * Values never printed.
+ */
+function loadOperatorEnv(): Record<string, string | undefined> {
+  const merged: Record<string, string | undefined> = { ...process.env };
+  for (const file of [".env.local", ".env.preview.verify"]) {
+    const loaded = loadDotEnvFile(path.resolve(process.cwd(), file));
+    for (const [k, v] of Object.entries(loaded)) {
+      if (!merged[k]) merged[k] = v;
     }
-    out[line.slice(0, i).trim()] = v;
   }
-  return out;
+
+  const envFile = argValue("--env-file") ?? argValue("--envFile");
+  if (envFile) {
+    const loaded = loadDotEnvFile(path.resolve(process.cwd(), envFile));
+    if (Object.keys(loaded).length === 0) {
+      throw new Error(`--env-file not found or empty: ${envFile}`);
+    }
+    for (const [k, v] of Object.entries(loaded)) {
+      merged[k] = v;
+    }
+  }
+  return merged;
 }
 
-/** Avoid literal env-key in file (ci-guard SERVICE_ROLE_NOT_ALLOWED). */
-const SERVICE_ROLE_ENV_KEY = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
-
-function envPresence(): ProviderOnboardingPreflightSnapshot["envPresence"] {
-  const local = loadDotEnvLocal();
-  const get = (k: string) => Boolean(process.env[k] || local[k]);
+function envPresence(env: Record<string, string | undefined>): ProviderOnboardingEnvPresence {
+  const get = (k: string) => Boolean(env[k]);
   return {
     hasSupabaseServiceRole: get(SERVICE_ROLE_ENV_KEY),
     hasSanityReadToken: get("SANITY_READ_TOKEN") || get("SANITY_API_TOKEN"),
@@ -80,121 +100,34 @@ function envPresence(): ProviderOnboardingPreflightSnapshot["envPresence"] {
   };
 }
 
-function emptySnapshot(): ProviderOnboardingPreflightSnapshot {
-  return {
-    existingProviders: [],
-    existingAdminEmails: [],
-    providersByLocale: [],
-    globalTemplateKeys: [],
-    envPresence: envPresence(),
-  };
-}
-
-function buildInput(): ProviderOnboardingInput {
-  const dryRun = hasFlag("--dry-run");
-  const apply = hasFlag("--apply");
-  if (dryRun === apply) {
-    throw new Error("Specify exactly one of --dry-run or --apply");
-  }
-
-  const locale = argValue("--locale") ?? "";
-  const target = phaseCTargetForLocale(locale);
-  if (!target) {
-    throw new Error(`Unknown or unsupported Phase C locale: ${locale}`);
-  }
-
-  return {
-    providerName: argValue("--name") ?? target.recommendedProviderName,
-    providerSlug: argValue("--slug") ?? target.recommendedProviderSlug,
-    locale: target.locale,
-    menuProfileId: argValue("--menu-profile-id") ?? target.menuProfileId,
-    country: argValue("--country") ?? target.country,
-    currency: argValue("--currency") ?? target.currency,
-    timezone: argValue("--timezone") ?? target.timezone,
-    adminEmail:
-      argValue("--admin-email") ??
-      `${target.recommendedProviderSlug}-admin@lunchportalen.no`,
-    safeFutureWeek:
-      argValue("--week") ?? PHASE_C_SAFE_FUTURE_WEEKS[target.locale] ?? "2031-11-03",
-    mode: apply ? "apply" : "dry_run",
-    operatorConfirmationPhrase: argValue("--confirm"),
-  };
-}
-
 async function main() {
-  const input = buildInput();
-  // Planner-only snapshot in this CLI entry. Live conflict/mirror reads belong to scoped GO sessions.
-  const snapshot = emptySnapshot();
-  const plan = buildProviderOnboardingPlan(input, snapshot);
-  const body = serializeProviderOnboardingPlan(plan);
-
-  if (input.mode === "dry_run") {
-    console.log(
-      JSON.stringify(
-        {
-          status: plan.ok ? "DRY_RUN_OK" : "DRY_RUN_BLOCKED",
-          liveWrites: false,
-          note: "Dry-run only. No provider/org/settings/auth/mirror writes performed.",
-          ...body,
-        },
-        null,
-        2,
-      ),
-    );
-    process.exit(plan.ok ? 0 : 1);
+  const operatorEnv = loadOperatorEnv();
+  const envFileOverride = Boolean(argValue("--env-file") ?? argValue("--envFile"));
+  // When --env-file is set, force-hydrate so production readiness is not masked by prior process.env.
+  for (const [k, v] of Object.entries(operatorEnv)) {
+    if (v == null) continue;
+    if (envFileOverride || process.env[k] == null) process.env[k] = v;
   }
 
-  // Apply mode: require confirmation + explicit live gate.
-  if (input.operatorConfirmationPhrase !== PHASE_C_ONBOARD_CONFIRMATION_PHRASE) {
-    console.log(
-      JSON.stringify(
-        {
-          status: "APPLY_BLOCKED",
-          liveWrites: false,
-          message: `Missing confirmation phrase ${PHASE_C_ONBOARD_CONFIRMATION_PHRASE}`,
-          ...body,
-        },
-        null,
-        2,
-      ),
-    );
-    process.exit(1);
-  }
+  const presence = envPresence(operatorEnv);
+  const clientCfg = resolveLiveReadClientEnv(operatorEnv);
 
-  if (process.env.PHASE_C_ALLOW_LIVE_ONBOARD !== "1") {
-    console.log(
-      JSON.stringify(
-        {
-          status: "APPLY_GATED",
-          liveWrites: false,
-          message:
-            "Live onboarding apply is gated. Set PHASE_C_ALLOW_LIVE_ONBOARD=1 only under scoped GO. Plan validated only.",
-          confirmationAccepted: true,
-          ...body,
-        },
-        null,
-        2,
-      ),
-    );
-    process.exit(2);
-  }
+  const result = await runPhaseCOnboardCli(process.argv.slice(2), {
+    envPresence: presence,
+    liveOnboardFlag: operatorEnv.PHASE_C_ALLOW_LIVE_ONBOARD === "1",
+    liveAdaptersEnabled: false,
+    createLiveAdapters: () => {
+      if (!liveReadClientEnvReady(clientCfg)) {
+        throw new Error(
+          "LIVE_READ_MISSING_ENV: Live-read dryRun requires Supabase service-role and Sanity read token env presence (values never printed). Use --snapshot-source fixture only in tests.",
+        );
+      }
+      return createLiveReadAdapters(clientCfg);
+    },
+  });
 
-  // Live execute path remains intentionally unimplemented in this CLI entry until a scoped GO
-  // wires production adapters. Refuse rather than partially write.
-  console.log(
-    JSON.stringify(
-      {
-        status: "APPLY_REFUSED_NO_LIVE_ADAPTER",
-        liveWrites: false,
-        message:
-          "PHASE_C_ALLOW_LIVE_ONBOARD=1 set, but live adapters are intentionally not enabled in this control release. Use a scoped GO runbook session to wire approved adapters.",
-        ...body,
-      },
-      null,
-      2,
-    ),
-  );
-  process.exit(3);
+  console.log(JSON.stringify(result.body, null, 2));
+  process.exit(result.exitCode);
 }
 
 main().catch((error) => {
@@ -203,8 +136,10 @@ main().catch((error) => {
       {
         status: "ERROR",
         liveWrites: false,
+        writes: 0,
         message: String(error?.message ?? error),
         secretsRedacted: true,
+        passwordPrinted: false,
       },
       null,
       2,
