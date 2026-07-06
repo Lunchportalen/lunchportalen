@@ -30,6 +30,12 @@ import { applyCatalogCategories } from "@/lib/menu-generator/fullApplyWrite";
 import { buildApplyWeekDiff, summarizeApplyDays } from "@/lib/menu-generator/applyWeekMenuDiff";
 import { isLocalizedFixedMenuGeneratorPanelEnabled } from "@/lib/menu-generator/featureFlag";
 import { resolveProviderMenuRuntimeProfile } from "@/lib/menu-generator/resolveProviderMenuRuntimeProfile";
+import {
+  fetchSanityProviderMirrorSnapshot,
+  runProviderMirrorPreflight,
+  type ProviderMirrorPreflightResult,
+  type ProviderMirrorSnapshot,
+} from "@/lib/menu-generator/providerMirrorPreflight";
 import type { FixedCategoryKey } from "@/lib/menu-generator/types";
 import type { EnvLike } from "@/lib/menu-profile/featureFlag";
 import { resolveApplyMenuCatalogSnapshot } from "@/lib/provider-menu/providerMenuCatalogReadModel";
@@ -45,11 +51,50 @@ export type ApplyLocalizedGeneratedWeekMenuContext = {
   settingsRow: ProviderSettingsMenuProfileRow | null;
   resolverResult: MenuProfileResolverResult | null;
   sanityClient: SanityClient | null;
+  /** Read-only Sanity client for provider mirror preflight (dryRun + apply). */
+  sanityReadClient?: Pick<SanityClient, "fetch"> | null;
   providerSlug?: string | null;
+  /** Test hook — overrides Sanity mirror fetch. */
+  fetchProviderMirror?: (providerId: string) => Promise<ProviderMirrorSnapshot | null>;
 };
 
 import { parseApplyLocalizedGeneratedWeekMenuBody } from "@/lib/menu-generator/applyLocalizedGeneratedWeekMenuBody";
 export { parseApplyLocalizedGeneratedWeekMenuBody };
+
+async function resolveProviderMirrorPreflight(
+  ctx: ApplyLocalizedGeneratedWeekMenuContext,
+  input: ApplyLocalizedGeneratedWeekMenuInput,
+): Promise<ProviderMirrorPreflightResult> {
+  const fetchMirror =
+    ctx.fetchProviderMirror ??
+    (async (providerId: string) => {
+      const client = ctx.sanityReadClient ?? ctx.sanityClient;
+      if (!client) return null;
+      return fetchSanityProviderMirrorSnapshot(client.fetch.bind(client), providerId);
+    });
+
+  return runProviderMirrorPreflight({
+    providerId: input.providerId,
+    expectedSlug: input.providerSlug ?? ctx.providerSlug ?? null,
+    mode: input.dryRun ? "dry_run" : "apply",
+    fetchMirror,
+  });
+}
+
+function withMirrorPreflightFields(
+  result: ApplyLocalizedGeneratedWeekMenuResult,
+  preflight: ProviderMirrorPreflightResult,
+): ApplyLocalizedGeneratedWeekMenuResult {
+  return {
+    ...result,
+    applyBlocked: preflight.applyBlocked,
+    safeToApply: preflight.safeToApply,
+    providerMirrorPreflight: preflight,
+    blockedReasons: preflight.applyBlocked
+      ? [...result.blockedReasons, preflight.message]
+      : result.blockedReasons,
+  };
+}
 
 function emptyResult(
   input: ApplyLocalizedGeneratedWeekMenuInput,
@@ -219,8 +264,22 @@ export async function applyLocalizedGeneratedWeekMenu(
       : {}),
   };
 
+  const mirrorPreflight = await resolveProviderMirrorPreflight(ctx, input);
+
   if (input.dryRun) {
-    return baseResult;
+    return withMirrorPreflightFields(baseResult, mirrorPreflight);
+  }
+
+  if (mirrorPreflight.applyBlocked && mirrorPreflight.errorCode) {
+    return fail(mirrorPreflight.errorCode, mirrorPreflight.message, {
+      days: diff.days,
+      catalogCategories: diff.catalogCategories,
+      summary: diff.summary,
+      idempotencyKey,
+      applyBlocked: true,
+      safeToApply: false,
+      providerMirrorPreflight: mirrorPreflight,
+    });
   }
 
   const catalogPolicyError = enforceCatalogUpdatePolicy({
@@ -334,7 +393,7 @@ export async function applyLocalizedGeneratedWeekMenu(
   void summarizeApplyDays(workingVarmrett.days);
 
   return {
-    ...baseResult,
+    ...withMirrorPreflightFields(baseResult, mirrorPreflight),
     ok: errors.length === 0,
     mode: "apply",
     audit: {

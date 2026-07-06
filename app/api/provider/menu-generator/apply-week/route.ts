@@ -19,7 +19,7 @@ import { buildApplyIdempotencyKey } from "@/lib/menu-generator/applyTypes";
 import { resolveProviderMenuRuntimeProfile } from "@/lib/menu-generator/resolveProviderMenuRuntimeProfile";
 import { menuProfileResolverHostEnv } from "@/lib/providers/providerMenuProfileDiagnostic";
 import { loadAndResolveProviderMenuProfile, loadProviderSettingsMenuProfileRow } from "@/lib/providers/loadProviderSettingsMenuProfile";
-import { requireSanityWrite } from "@/lib/sanity/client";
+import { requireSanityWrite, sanity } from "@/lib/sanity/client";
 
 const WRITE_ROLE = "provider_kitchen" as const;
 
@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
       settingsRow,
       resolverResult: resolver,
       sanityClient,
+      sanityReadClient: sanity,
       providerSlug: provider.slug,
     },
     {
@@ -158,9 +159,14 @@ export async function POST(req: NextRequest) {
         ? 409
         : result.errorCode === "catalog_update_requires_confirmation"
           ? 422
-        : result.errorCode === "sanity_write_failed"
-          ? 503
-          : 422;
+          : result.errorCode === "sanity_write_failed"
+            ? 503
+            : result.errorCode === "provider_mirror_missing" ||
+                result.errorCode === "provider_mirror_id_mismatch" ||
+                result.errorCode === "provider_mirror_slug_mismatch" ||
+                result.errorCode === "provider_ref_unresolved"
+              ? 422
+              : 422;
     return jsonErr(rid, result.message ?? "Apply feilet.", status, result.errorCode, result.errorCode);
   }
 
