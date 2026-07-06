@@ -116,6 +116,7 @@ async function main() {
     envPresence: presence,
     liveOnboardFlag: operatorEnv.PHASE_C_ALLOW_LIVE_ONBOARD === "1",
     liveAdaptersEnabled: false,
+    liveReadEnvMeta: clientCfg.meta,
     createLiveAdapters: () => {
       if (!liveReadClientEnvReady(clientCfg)) {
         throw new Error(

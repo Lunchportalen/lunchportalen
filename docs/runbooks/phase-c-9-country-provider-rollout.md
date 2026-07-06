@@ -85,6 +85,8 @@ Rules:
 - Empty snapshot is **never** used silently for production-like dryRun.
 - Fixture snapshot is for unit tests only.
 - da-DK apply GO is **blocked** until official CLI live dryRun PASS is archived.
+- Production Supabase inventory is always paired with **production** Sanity dataset (operator packs that mix `NEXT_PUBLIC_SANITY_DATASET=staging` with production Supabase are auto-aligned; output includes `liveReadEnv`).
+- Mirror id/slug evaluation uses the same PR #430 `providerMirrorPreflight` rules (normalized id/slug). No fake READY.
 
 ### DryRun mode
 

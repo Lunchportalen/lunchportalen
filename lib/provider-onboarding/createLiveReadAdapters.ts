@@ -7,6 +7,11 @@ import { createClient as createSanityClient } from "@sanity/client";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import {
+  fetchSanityProviderMirrorSnapshot,
+  validateProviderMirrorForGeneratorApply,
+  type ProviderMirrorSnapshot,
+} from "@/lib/menu-generator/providerMirrorPreflight";
+import {
   PHASE_C_LAUNCH_LOCALES,
   PHASE_C_PROTECTED_PROVIDER_IDS,
 } from "@/lib/provider-onboarding/phaseCLocales";
@@ -16,6 +21,21 @@ import type { PhaseCLocaleInventoryInput } from "@/lib/provider-onboarding/phase
 /** Avoid literal env-key in file (ci-guard SERVICE_ROLE_NOT_ALLOWED). */
 const SERVICE_ROLE_ENV_KEY = ["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_");
 
+/**
+ * Lunchportalen RC production Supabase project ref.
+ * Operator env packs historically mix this URL with Sanity dataset=staging.
+ */
+const PRODUCTION_SUPABASE_REF = "hkpokyapzarefrgqzkos";
+
+export type LiveReadSupabaseEnvClass = "production" | "non_production" | "unknown";
+
+export type LiveReadEnvMeta = {
+  supabaseEnvClass: LiveReadSupabaseEnvClass;
+  sanityDataset: string;
+  /** True when dataset was corrected from a non-production value for production Supabase. */
+  datasetAlignedToProduction: boolean;
+};
+
 export type LiveReadClientEnv = {
   supabaseUrl: string | null;
   supabaseServiceRole: string | null;
@@ -23,19 +43,81 @@ export type LiveReadClientEnv = {
   sanityDataset: string | null;
   sanityApiVersion: string | null;
   sanityReadToken: string | null;
+  meta: LiveReadEnvMeta;
 };
+
+export function classifySupabaseEnv(url: string | null | undefined): LiveReadSupabaseEnvClass {
+  const u = String(url ?? "");
+  if (!u) return "unknown";
+  if (u.includes(PRODUCTION_SUPABASE_REF)) return "production";
+  return "non_production";
+}
+
+/**
+ * Pair Supabase + Sanity for inventory truth.
+ * Production Supabase inventory must read production Sanity mirrors (PR #430 parity).
+ * Mixed packs (.env.preview.verify) otherwise falsely report BLOCKED_SANITY_MIRROR
+ * for production-verified providers that only exist on production dataset.
+ */
+export function alignLiveReadSanityDataset(args: {
+  supabaseUrl: string | null;
+  sanityDataset: string | null;
+}): { sanityDataset: string; meta: LiveReadEnvMeta } {
+  const supabaseEnvClass = classifySupabaseEnv(args.supabaseUrl);
+  const requested = String(args.sanityDataset ?? "production").trim() || "production";
+  let sanityDataset = requested;
+  let datasetAlignedToProduction = false;
+
+  if (supabaseEnvClass === "production" && sanityDataset !== "production") {
+    sanityDataset = "production";
+    datasetAlignedToProduction = true;
+  }
+
+  return {
+    sanityDataset,
+    meta: { supabaseEnvClass, sanityDataset, datasetAlignedToProduction },
+  };
+}
+
+/**
+ * Map a Sanity mirror snapshot with the same rules as PR #430 generator preflight.
+ * No writes. No fake READY.
+ */
+export function evaluateInventoryProviderMirror(args: {
+  providerId: string;
+  providerSlug: string;
+  mirror: ProviderMirrorSnapshot | null;
+}): { sanityProviderMirrorExists: boolean; providerRefResolves: boolean } {
+  const preflight = validateProviderMirrorForGeneratorApply({
+    providerId: args.providerId,
+    expectedSlug: args.providerSlug,
+    mirror: args.mirror,
+    mode: "dry_run",
+  });
+  return {
+    sanityProviderMirrorExists: Boolean(args.mirror?.sanityId),
+    providerRefResolves: preflight.ok,
+  };
+}
 
 export function resolveLiveReadClientEnv(
   env: Record<string, string | undefined> = process.env,
 ): LiveReadClientEnv {
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || null;
+  const aligned = alignLiveReadSanityDataset({
+    supabaseUrl,
+    sanityDataset: env.NEXT_PUBLIC_SANITY_DATASET || env.SANITY_DATASET || "production",
+  });
+
   return {
-    supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || null,
+    supabaseUrl,
     supabaseServiceRole: env[SERVICE_ROLE_ENV_KEY] || null,
     sanityProjectId: env.NEXT_PUBLIC_SANITY_PROJECT_ID || env.SANITY_PROJECT_ID || null,
-    sanityDataset: env.NEXT_PUBLIC_SANITY_DATASET || env.SANITY_DATASET || "production",
+    sanityDataset: aligned.sanityDataset,
     sanityApiVersion: env.NEXT_PUBLIC_SANITY_API_VERSION || "2024-01-01",
     sanityReadToken:
       env.SANITY_READ_TOKEN || env.SANITY_API_TOKEN || env.SANITY_WRITE_TOKEN || null,
+    meta: aligned.meta,
   };
 }
 
@@ -168,15 +250,16 @@ async function loadLocaleInventoryRows(
       authExists = Boolean(profile?.id);
     }
 
-    const mirror = (await sanity.fetch(
-      `*[_type == "provider" && _id == $id][0]{_id,"slug":slug.current}`,
-      { id: provider.id },
-    )) as { _id?: string; slug?: string } | null;
-
-    const mirrorOk =
-      Boolean(mirror?._id) &&
-      mirror?._id === provider.id &&
-      mirror?.slug === provider.slug;
+    // PR #430 parity: same fetch + normalize rules as generator providerMirrorPreflight.
+    const mirror = await fetchSanityProviderMirrorSnapshot(
+      (query, params) => sanity.fetch(query, params),
+      provider.id,
+    );
+    const mirrorFlags = evaluateInventoryProviderMirror({
+      providerId: provider.id,
+      providerSlug: provider.slug,
+      mirror,
+    });
 
     const cats = (await sanity.fetch(
       `count(*[_type == "lunchCategory" && defined(provider) && provider._ref == $pid])`,
@@ -206,8 +289,8 @@ async function loadLocaleInventoryRows(
       providerAdminAuthExists: authExists,
       providerMembershipExists: membershipExists,
       automationCredsAvailable: protectedId,
-      sanityProviderMirrorExists: Boolean(mirror?._id),
-      providerRefResolves: mirrorOk,
+      sanityProviderMirrorExists: mirrorFlags.sanityProviderMirrorExists,
+      providerRefResolves: mirrorFlags.providerRefResolves,
       globalSanityTemplatesOk: globalTemplatesOk,
       providerScopedCatalogDocs: cats ?? 0,
       existingFutureMenuDays: days ?? 0,

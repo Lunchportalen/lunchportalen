@@ -8,6 +8,7 @@ import {
   PHASE_C_SAFE_FUTURE_WEEKS,
   phaseCTargetForLocale,
 } from "@/lib/provider-onboarding/phaseCLocales";
+import type { LiveReadEnvMeta } from "@/lib/provider-onboarding/createLiveReadAdapters";
 import {
   buildFixturePreflightSnapshot,
   buildLiveReadPreflightSnapshot,
@@ -37,6 +38,8 @@ export type PhaseCOnboardCliDeps = {
     envPresence: ProviderOnboardingEnvPresence;
     candidateAdminEmails: string[];
   }) => Promise<LiveReadSnapshotResult>;
+  /** Non-secret live-read env pairing metadata. */
+  liveReadEnvMeta?: LiveReadEnvMeta;
   /** When true, apply would attempt execute (always false in official CLI today). */
   liveAdaptersEnabled?: boolean;
   liveOnboardFlag?: boolean;
@@ -279,6 +282,7 @@ export async function runPhaseCOnboardCli(
       globalSanityTemplatesOk: row.globalSanityTemplatesOk,
     })),
     envPresence: resolved.snapshot.envPresence,
+    liveReadEnv: deps.liveReadEnvMeta ?? null,
     exactNextGoPrompt: exactNextGoPrompt(input),
     note:
       resolved.snapshotSource === "live"
