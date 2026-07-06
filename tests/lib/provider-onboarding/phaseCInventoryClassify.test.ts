@@ -75,4 +75,63 @@ describe("classifyPhaseCLocaleInventory", () => {
     });
     expect(row.classification).toBe("BLOCKED_SANITY_MIRROR");
   });
+
+  it("classifies slug mismatch mirror as BLOCKED_SANITY_MIRROR", () => {
+    const row = buildPhaseCLocaleInventoryRow({
+      ...base,
+      locale: "sv-SE",
+      menuProfileId: "swedish_lunch",
+      country: "SE",
+      currency: "SEK",
+      timezone: "Europe/Stockholm",
+      providerExists: true,
+      providerId: "a08e4742-c89d-48c5-a6a8-cf8532179083",
+      providerSlug: "swedish-lunch-pilot",
+      organizationMirrorExists: true,
+      providerSettingsComplete: true,
+      providerAdminAuthExists: true,
+      providerMembershipExists: true,
+      automationCredsAvailable: true,
+      sanityProviderMirrorExists: true,
+      providerRefResolves: false,
+      latestApplyOrDryRunEvidence: "PR #430/#431 production smoke",
+    });
+    expect(row.classification).toBe("BLOCKED_SANITY_MIRROR");
+  });
+
+  it("classifies Swedish Lunch Pilot complete row as READY_FOR_SCOPED_APPLY", () => {
+    const row = buildPhaseCLocaleInventoryRow({
+      ...base,
+      locale: "sv-SE",
+      menuProfileId: "swedish_lunch",
+      country: "SE",
+      currency: "SEK",
+      timezone: "Europe/Stockholm",
+      providerExists: true,
+      providerId: "a08e4742-c89d-48c5-a6a8-cf8532179083",
+      providerSlug: "swedish-lunch-pilot",
+      organizationMirrorExists: true,
+      providerSettingsComplete: true,
+      providerAdminAuthExists: true,
+      providerMembershipExists: true,
+      automationCredsAvailable: true,
+      sanityProviderMirrorExists: true,
+      providerRefResolves: true,
+      providerScopedCatalogDocs: 8,
+      existingFutureMenuDays: 5,
+      latestApplyOrDryRunEvidence: "PR #430/#431 production smoke",
+    });
+    expect(row.classification).toBe("READY_FOR_SCOPED_APPLY");
+    expect(row.canDryRunToday).toBe(true);
+    expect(row.canApplyAfterGo).toBe(true);
+  });
+
+  it("classifies da-DK without provider as BLOCKED_PROVIDER", () => {
+    const row = buildPhaseCLocaleInventoryRow({
+      ...base,
+      locale: "da-DK",
+      globalSanityTemplatesOk: true,
+    });
+    expect(row.classification).toBe("BLOCKED_PROVIDER");
+  });
 });

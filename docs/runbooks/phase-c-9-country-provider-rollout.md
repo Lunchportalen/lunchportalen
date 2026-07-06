@@ -47,22 +47,57 @@ Planner/tests:
 CLI:
 
 ```bash
-# Plan only (no writes)
-node scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs --dry-run --locale=da-DK
+# Authoritative operator dryRun — live read-only snapshot (default)
+# Production readiness: pass --env-file .env.preview.verify (overrides local staging env).
+# Prefer --flag=value for names with spaces (PowerShell-safe).
+node scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs \
+  --dry-run \
+  --snapshot-source=live \
+  --env-file=.env.preview.verify \
+  --providerName="Danish Lunch Pilot" \
+  --providerSlug=danish-lunch-pilot \
+  --locale=da-DK \
+  --menuProfileId=danish_office_lunch \
+  --country=DK \
+  --currency=DKK \
+  --timezone=Europe/Copenhagen \
+  --adminEmail=danish-lunch-pilot-admin@lunchportalen.no \
+  --safeFutureWeek=2031-11-03
 
 # Apply mode validates confirmation, but live writes stay GATED unless scoped GO sets:
 # PHASE_C_ALLOW_LIVE_ONBOARD=1 and approved live adapters are enabled.
-node scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs --apply --locale=da-DK --confirm=ONBOARD_PROVIDER_APPLY
+node scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs \
+  --apply --locale=da-DK --confirm=ONBOARD_PROVIDER_APPLY
 ```
+
+### Snapshot sources
+
+| Source | Use |
+|--------|-----|
+| `live` (**default** for `--dry-run`) | Read-only Supabase + Sanity preflight. Authoritative for operator readiness. |
+| `fixture` | Tests / CI only. **Not** production operator readiness. |
+
+Rules:
+
+- Official production-like dryRun **must** use `--snapshot-source live` (or omit the flag — default is live).
+- Live dryRun is **read-only** (providers / settings / auth email presence / global templates / inventory).
+- Live dryRun does **not** require `PHASE_C_ALLOW_LIVE_ONBOARD=1`.
+- Empty snapshot is **never** used silently for production-like dryRun.
+- Fixture snapshot is for unit tests only.
+- da-DK apply GO is **blocked** until official CLI live dryRun PASS is archived.
+- Production Supabase inventory is always paired with **production** Sanity dataset (operator packs that mix `NEXT_PUBLIC_SANITY_DATASET=staging` with production Supabase are auto-aligned; output includes `liveReadEnv`).
+- Mirror id/slug evaluation uses the same PR #430 `providerMirrorPreflight` rules (normalized id/slug). No fake READY.
 
 ### DryRun mode
 
-- No writes
+- No writes (`writes=0`, `liveWrites=false`)
+- Live-read validates provider slug/name/email conflicts against real state
+- Live-read validates global Sanity templates
 - Validates locale/profile/country/currency/timezone mapping
-- Validates conflicts (slug/name/email)
-- Validates global templates
 - Validates required env presence **without printing values**
 - Emits write plan + rollback/deactivation plan as JSON
+- Emits `localeClassificationBeforeOnboarding` (da-DK = `BLOCKED_PROVIDER` before onboarding)
+- Emits `exactNextGoPrompt`
 - `willCreateMenuDays=false`, `willPublish=false`, `willStartSot=false`
 
 ### Apply mode (onboarding only — not menu apply)

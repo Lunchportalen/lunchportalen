@@ -3,3 +3,6 @@ export * from "@/lib/provider-onboarding/phaseCInventoryClassify";
 export * from "@/lib/provider-onboarding/providerOnboardingTypes";
 export * from "@/lib/provider-onboarding/providerOnboardingPlan";
 export * from "@/lib/provider-onboarding/providerOnboardingExecute";
+export * from "@/lib/provider-onboarding/liveReadSnapshot";
+export * from "@/lib/provider-onboarding/createLiveReadAdapters";
+export * from "@/lib/provider-onboarding/phaseCOnboardCli";
