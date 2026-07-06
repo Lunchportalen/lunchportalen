@@ -464,19 +464,25 @@ Archive each production session to `docs/evidence/` (docs-only PR) with:
 |-------|--------|
 | A — Canary complete | **PASS** (Melhus · nb-NO) |
 | B — Single provider apply | **PASS** (Melhus weeks + Swedish Lunch Pilot sv-SE week `2031-09-01` — evidence #425–#428) |
-| C — Multi-provider rollout | **NOT STARTED** |
-| D — SOT activation | **NOT STARTED** |
-| E — Auto-rollout | **DEFERRED** |
+| C — Multi-provider rollout control | **IN PROGRESS** — factory/runbook/readiness plan; **no live onboarding without scoped GO** |
+| D — SOT activation | **NOT STARTED** · **NO-GO** |
+| E — Auto-rollout | **DEFERRED** · **NO-GO** |
+
+Provider mirror preflight (PR #430) + production smoke (PR #431) are archived. Phase C onboarding is controlled via:
+
+- [`docs/runbooks/phase-c-9-country-provider-rollout.md`](phase-c-9-country-provider-rollout.md)
+- [`docs/evidence/phase-c-9-country-launch-readiness-plan.md`](../evidence/phase-c-9-country-launch-readiness-plan.md)
+- `lib/provider-onboarding/*` + `scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs`
 
 ---
 
 ## 9. Recommended next steps (each requires separate GO)
 
-1. **New provider onboarding** — follow §1.7–§1.8 and §3.1 steps 0–1 (`syncProviderToSanity` before first dryRun/apply).
-2. **Production dryRun re-check** after any deploy touching `lib/menu-generator/**` or `lib/cms/lunchCategory.ts` (no apply).
-3. **9-locale staging matrix** — complete §4 checklist on staging for all markets.
-4. **Next provider production dryRun/apply** — read-only dryRun first; far-future week; separate scoped GO for apply.
-5. **SOT design doc** — define cutover flag, publish coupling, and employee materialization contract (plan only until GO).
+1. **Phase C provider onboarding** — factory `--dry-run` then gated `--apply` for next locale (`da-DK` first). Includes mandatory `syncProviderToSanity`.
+2. **Generator dryRun** — require `providerMirrorPreflight.ok=true`, `safeToApply=true`, `applyBlocked=false`.
+3. **Evidence archive** after onboarding and after dryRun.
+4. **Menu apply** — separate scoped GO only (one provider · one far-future week).
+5. **SOT design doc** — plan only until all 9 locales pass gates and explicit SOT GO.
 6. **Do not** start SOT, auto-rollout, or additional production applies without explicit operator GO.
 
 ---
@@ -488,7 +494,11 @@ Archive each production session to `docs/evidence/` (docs-only PR) with:
 | [`docs/evidence/localized-generator-production-evidence.md`](../evidence/localized-generator-production-evidence.md) | Production verification archive |
 | [`docs/evidence/phase-b-provider-2-sv-se-onboarding-evidence.md`](../evidence/phase-b-provider-2-sv-se-onboarding-evidence.md) | Provider #2 sv-SE onboarding + dryRun (#427) |
 | [`docs/evidence/phase-b-sv-se-production-apply-evidence.md`](../evidence/phase-b-sv-se-production-apply-evidence.md) | First non-nb production apply + mirror prerequisite (#428) |
-| [`lib/cms/syncProviderToSanity.ts`](../../lib/cms/syncProviderToSanity.ts) | Sanity provider mirror upsert (manual entry until wired) |
+| [`docs/evidence/pr430-production-smoke-evidence.md`](../evidence/pr430-production-smoke-evidence.md) | Provider mirror preflight production smoke (#431) |
+| [`docs/runbooks/phase-c-9-country-provider-rollout.md`](phase-c-9-country-provider-rollout.md) | Phase C operator rollout control |
+| [`docs/evidence/phase-c-9-country-launch-readiness-plan.md`](../evidence/phase-c-9-country-launch-readiness-plan.md) | Phase C readiness matrix + next GO prompt |
+| [`lib/cms/syncProviderToSanity.ts`](../../lib/cms/syncProviderToSanity.ts) | Sanity provider mirror upsert (mandatory before first apply) |
+| [`lib/provider-onboarding/`](../../lib/provider-onboarding/) | Phase C onboarding planner/execute contracts |
 | [`docs/runbooks/g5d8-planning.md`](g5d8-planning.md) | G5d.8 / compatibility SOT boundary (separate track) |
 | [`docs/PROTECTED_GOLDEN_PATH.md`](../PROTECTED_GOLDEN_PATH.md) | Order write-path lock |
 | [`AGENTS.md`](../../AGENTS.md) | Enterprise law · fail-closed · RC gates |
