@@ -1,8 +1,8 @@
 # Localized fixed menu generator — SOT and rollout readiness plan
 
 **Status:** PLAN ONLY · **SOT NOT STARTED** · **auto-rollout NOT STARTED**  
-**Date:** 2026-07-05  
-**Main HEAD (planning audit):** `2e15cb06` — localized generator production evidence (#421)  
+**Date:** 2026-07-06  
+**Main HEAD (planning audit):** `5db00381` — Phase B sv-SE production apply evidence (#428)  
 **Production code commit (generator chain):** `325afbce` — dryRun idempotency (#420)  
 **Evidence archive:** [`docs/evidence/localized-generator-production-evidence.md`](../evidence/localized-generator-production-evidence.md)
 
@@ -69,6 +69,37 @@ At `325afbce`: `createdDraftDays=0`, vegetarian `would_skip_existing_category`, 
 4. `replace_catalog_with_confirmation` requires explicit phrase + confirmation token — never default.
 5. **No SOT / auto-rollout** has started; employee order path remains on existing materialization contracts until separate GO.
 
+### 1.7 Provider onboarding prerequisites (before first generator apply)
+
+Before the **first** localized generator apply for a **new** provider, the following must exist and resolve:
+
+| Prerequisite | Required | Notes |
+|--------------|----------|-------|
+| Supabase `providers` row | Yes | `id`, `name`, `slug`, `status` |
+| `organizations` mirror row | Yes | Same `id` as provider · `type=provider` |
+| `provider_settings` row | Yes | `locale`, `menu_profile_id`, country, currency, timezone |
+| `provider_admin` membership + auth | Yes | Provider-scoped login for `/leverandor/meny` and apply route |
+| **Sanity provider mirror document** | **Yes** | `_id` == Supabase `providers.id` · see §1.8 |
+| Profile resolves | Yes | `menuLocale`, `menuProfileId`, country, currency via resolver |
+
+**Do not** proceed to production apply until all rows above exist **and** Sanity provider mirror is verified read-only.
+
+### 1.8 Sanity provider mirror requirement
+
+`menuDay` and provider-scoped `lunchCategory` documents reference `provider._ref` in Sanity. If the provider mirror document is missing, apply can fail **before any menuDays are created** (often HTTP 500 with empty body on production apply route).
+
+| Item | Requirement |
+|------|-------------|
+| **When** | **Before first generator apply** for any new provider |
+| **How** | Run `syncProviderToSanity` (`lib/cms/syncProviderToSanity.ts`) — upserts Sanity `provider` doc from Supabase row |
+| **Nature** | Provider **metadata mirror** only — not menu content |
+| **Verification** | Read-only GROQ: `*[_type == "provider" && _id == $providerId][0]{_id,name,"slug":slug.current}` must return doc |
+| **Identity** | Sanity `_id` and slug must match Supabase `providers.id` and `providers.slug` |
+
+**Production learning (2026-07-06):** Swedish Lunch Pilot first apply attempt failed because Sanity provider mirror was missing. Mirror was synced from Supabase; apply then succeeded. See §3.4 and evidence PRs #427 / #428.
+
+**Onboarding checklist addition:** `syncProviderToSanity` is mandatory between provider auth setup and first dryRun/apply.
+
 ---
 
 ## 2. Hard gates before SOT
@@ -116,12 +147,26 @@ Per provider before first apply:
 
 | Check | Required |
 |-------|----------|
+| Supabase provider + organizations mirror + `provider_settings` | Yes |
+| `provider_admin` membership/auth | Yes |
+| **Sanity provider mirror document** | **Yes** — verified read-only before apply |
 | `provider_settings.menuProfileId` set | Yes |
 | `provider_settings.locale` matches profile market | Yes |
 | `LP_MENU_PROFILE_RESOLVER` resolves profile | Yes |
+| Profile resolves: `menuLocale`, `menuProfileId`, country, currency | Yes |
 | Existing catalog snapshot documented | Yes |
 | Far-future week selected (no live orders on target week) | Yes |
 | DryRun PASS with `unsupportedCategories=[]` | Yes |
+
+**STOP** (fail-closed) if any of:
+
+| Stop condition | Action |
+|----------------|--------|
+| Sanity provider mirror missing | Sync via `syncProviderToSanity`; re-verify read-only; **do not apply** |
+| Provider slug/id mismatch between Supabase and Sanity mirror | Fix mirror; **STOP** |
+| `providerRef` cannot resolve in Sanity | **STOP** — apply will fail on `menuDay` / catalog writes |
+| dryRun requires metadata that does not exist | **STOP** — fix onboarding prerequisites first |
+| `would_update` on existing provider catalog in strict mode | **STOP** — separate GO required |
 
 ### 2.6 Locale-specific readiness
 
@@ -135,43 +180,61 @@ All 9 locales must pass checklist in §4 before that market's providers enter ro
 
 ### 3.1 Rollout sequence (per provider)
 
+**Safe onboarding → apply order** (each step must PASS before the next):
+
 ```
-1. Pre-snapshot
-   - order count (provider-scoped)
+0. Onboarding (Supabase + auth)
+   - create provider in Supabase (e.g. lp_provider_create)
+   - create organizations mirror row
+   - upsert provider_settings (locale, menuProfileId, country, currency, timezone)
+   - create provider_admin membership + auth user
+
+1. Sanity provider mirror (mandatory before apply)
+   - syncProviderToSanity(providerId)
+   - verify read-only: Sanity provider doc exists; _id == providers.id; slug matches
+
+2. Pre-snapshot (read-only)
+   - order count (global + provider-scoped)
    - provider lunchCategory docs + _rev
-   - menuDay docs for target week
+   - menuDay docs for target week (expect 0 on clean week)
    - /api/week + /api/order/window (employee spot-check if applicable)
 
-2. dryRun (mandatory)
+3. dryRun-only (mandatory — clean far-future week)
    - overwriteMode: create_missing_only_strict
    - categoryScope: all_supported
    - dryRun: true
-   - Expected: catalog updates=0 for existing catalogs; only missing categories/days would_create
+   - Expected: unsupportedCategories=[]; catalog updates=0 for existing catalogs
+   - Archive dryRun/onboarding evidence (docs PR)
 
-3. Operator GO review
+4. Operator GO review
    - Review dryRun diff summary
    - Confirm week is far-future OR explicitly approved near-term GO
    - Confirm no catalog would_update
+   - Separate scoped GO required for apply
 
-4. Apply (single session, single idempotencyKey)
+5. Apply (single session, single idempotencyKey)
    - dryRun: false
-   - Same inputs as dryRun
+   - Same inputs as pre-apply dryRun
    - No blind retry — read Sanity before any retry
 
-5. Read-back
+6. Read-back
    - Sanity: created docs, tier count (15 for 5-day varmrett), draft flags
    - Catalog _rev unchanged for skipped categories
+   - Localized labels on provider menu surface
 
-6. Post-apply dryRun (idempotency)
+7. Post-apply dryRun (idempotency)
    - createdDraftDays=0
    - existing categories skipped_existing
-   - vegetarian != would_create_category
+   - vegetarian != would_create_category (when catalog was created in apply)
 
-7. Safety regression
+8. Safety regression + evidence archive
    - order count unchanged
    - employee APIs PASS
    - no economy/metadata leak
+   - archive apply evidence (docs PR)
 ```
+
+**First-time provider rule:** Steps 0 → 1 → 3 (dryRun) must complete **before** any step 5 apply GO. Step 1 is **not optional** — missing mirror caused production apply failure in sv-SE session (§3.4).
 
 ### 3.2 Apply mode policy
 
@@ -188,6 +251,24 @@ All 9 locales must pass checklist in §4 before that market's providers enter ro
 - No scheduled/cron apply
 - No auto-rollout coupling (`runMenuWeekRollout*` remains forbidden)
 - No publish as part of apply (publish is separate workflow)
+- **SOT remains NO-GO** until separate design GO
+- **Auto-rollout remains NO-GO** — no cron/batch until separate product GO
+- Employee economy and internal metadata must remain hidden on employee APIs
+- Order write-path and **`lp_order_set`** must remain untouched
+
+### 3.4 Evidence reference — sv-SE provider #2 (first non-nb apply)
+
+| Item | Reference |
+|------|-----------|
+| Onboarding + dryRun evidence | PR [#427](https://github.com/Lunchportalen/lunchportalen/pull/427) · [`phase-b-provider-2-sv-se-onboarding-evidence.md`](../evidence/phase-b-provider-2-sv-se-onboarding-evidence.md) |
+| Production apply evidence | PR [#428](https://github.com/Lunchportalen/lunchportalen/pull/428) · [`phase-b-sv-se-production-apply-evidence.md`](../evidence/phase-b-sv-se-production-apply-evidence.md) |
+| Provider | Swedish Lunch Pilot · `a08e4742-c89d-48c5-a6a8-cf8532179083` · `sv-SE` / `swedish_lunch` |
+| Week applied | `2031-09-01` → `2031-09-05` (far-future drafts only) |
+| **Learning** | First apply attempt **failed** — missing Sanity provider mirror (HTTP 500, empty body) |
+| **Fix** | Provider mirror synced from Supabase before retry; apply then **PASS** |
+| Apply RID | `prov_mapply_mr8g5iyz_5qaxbt6yyyjwxcge` |
+
+**Operator takeaway:** Always run `syncProviderToSanity` and verify mirror read-only **before** first generator apply for any new provider.
 
 ---
 
@@ -379,8 +460,8 @@ Archive each production session to `docs/evidence/` (docs-only PR) with:
 
 | Phase | Status |
 |-------|--------|
-| A — Canary complete | **PASS** |
-| B — Single provider apply (beyond canary) | **NOT AUTHORIZED** |
+| A — Canary complete | **PASS** (Melhus · nb-NO) |
+| B — Single provider apply | **PASS** (Melhus weeks + Swedish Lunch Pilot sv-SE week `2031-09-01` — evidence #425–#428) |
 | C — Multi-provider rollout | **NOT STARTED** |
 | D — SOT activation | **NOT STARTED** |
 | E — Auto-rollout | **DEFERRED** |
@@ -389,11 +470,12 @@ Archive each production session to `docs/evidence/` (docs-only PR) with:
 
 ## 9. Recommended next steps (each requires separate GO)
 
-1. **Production dryRun re-check** after any deploy touching `lib/menu-generator/**` or `lib/cms/lunchCategory.ts` (no apply).
-2. **9-locale staging matrix** — complete §4 checklist on staging for all markets.
-3. **Second provider production dryRun** — read-only, far-future week, before any new apply.
-4. **SOT design doc** — define cutover flag, publish coupling, and employee materialization contract (plan only until GO).
-5. **Do not** start SOT, auto-rollout, or additional production applies without explicit operator GO.
+1. **New provider onboarding** — follow §1.7–§1.8 and §3.1 steps 0–1 (`syncProviderToSanity` before first dryRun/apply).
+2. **Production dryRun re-check** after any deploy touching `lib/menu-generator/**` or `lib/cms/lunchCategory.ts` (no apply).
+3. **9-locale staging matrix** — complete §4 checklist on staging for all markets.
+4. **Next provider production dryRun/apply** — read-only dryRun first; far-future week; separate scoped GO for apply.
+5. **SOT design doc** — define cutover flag, publish coupling, and employee materialization contract (plan only until GO).
+6. **Do not** start SOT, auto-rollout, or additional production applies without explicit operator GO.
 
 ---
 
@@ -402,6 +484,9 @@ Archive each production session to `docs/evidence/` (docs-only PR) with:
 | Document | Role |
 |----------|------|
 | [`docs/evidence/localized-generator-production-evidence.md`](../evidence/localized-generator-production-evidence.md) | Production verification archive |
+| [`docs/evidence/phase-b-provider-2-sv-se-onboarding-evidence.md`](../evidence/phase-b-provider-2-sv-se-onboarding-evidence.md) | Provider #2 sv-SE onboarding + dryRun (#427) |
+| [`docs/evidence/phase-b-sv-se-production-apply-evidence.md`](../evidence/phase-b-sv-se-production-apply-evidence.md) | First non-nb production apply + mirror prerequisite (#428) |
+| [`lib/cms/syncProviderToSanity.ts`](../../lib/cms/syncProviderToSanity.ts) | Sanity provider mirror upsert (manual entry until wired) |
 | [`docs/runbooks/g5d8-planning.md`](g5d8-planning.md) | G5d.8 / compatibility SOT boundary (separate track) |
 | [`docs/PROTECTED_GOLDEN_PATH.md`](../PROTECTED_GOLDEN_PATH.md) | Order write-path lock |
 | [`AGENTS.md`](../../AGENTS.md) | Enterprise law · fail-closed · RC gates |
