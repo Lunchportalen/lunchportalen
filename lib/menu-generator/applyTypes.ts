@@ -4,6 +4,7 @@
 
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import type { MenuApplyCapabilities } from "@/lib/menu-generator/applyCapabilities";
+import type { ProviderMirrorPreflightPayload } from "@/lib/menu-generator/providerMirrorPreflight";
 import type { FullApplyDayDiff, FullApplyCategoryDiff, FullApplySummary } from "@/lib/menu-generator/fullApplyDiff";
 import type { MenuLocale } from "@/lib/menu-generator/types";
 import type { MenuProfileId } from "@/lib/menu-profile/types";
@@ -80,6 +81,10 @@ export type ApplyLocalizedGeneratedWeekMenuResult = {
   catalogUpdateConfirmationToken?: string;
   errorCode?: ApplyErrorCode;
   message?: string;
+  /** True when mirror/settings block real apply (dryRun may still show plan). */
+  applyBlocked?: boolean;
+  safeToApply?: boolean;
+  providerMirrorPreflight?: ProviderMirrorPreflightPayload;
 };
 
 export type ApplyErrorCode =
@@ -95,7 +100,11 @@ export type ApplyErrorCode =
   | "sanity_write_failed"
   | "idempotency_conflict"
   | "catalog_update_requires_confirmation"
-  | "validation_failed";
+  | "validation_failed"
+  | "provider_mirror_missing"
+  | "provider_mirror_id_mismatch"
+  | "provider_mirror_slug_mismatch"
+  | "provider_ref_unresolved";
 
 export function isSupportedApplyMenuLocale(value: string): value is MenuLocale {
   return (SUPPORTED_MENU_LOCALES as readonly string[]).includes(value);

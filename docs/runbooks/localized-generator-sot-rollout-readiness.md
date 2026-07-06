@@ -100,6 +100,8 @@ Before the **first** localized generator apply for a **new** provider, the follo
 
 **Onboarding checklist addition:** `syncProviderToSanity` is mandatory between provider auth setup and first dryRun/apply.
 
+**Code enforcement (main @ #429+):** Localized generator apply/dryRun runs read-only provider mirror preflight in code. Missing or mismatched mirror returns structured blocker (`provider_mirror_*`) — apply stops before Sanity writes (no HTTP 500 empty body). dryRun sets `applyBlocked=true` and `safeToApply=false`; operator must verify `safeToApply=true` before scoped apply GO. Apply route does **not** auto-sync mirror to production Sanity.
+
 ---
 
 ## 2. Hard gates before SOT
