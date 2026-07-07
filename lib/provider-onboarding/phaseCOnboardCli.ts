@@ -16,6 +16,10 @@ import {
   type LiveReadSnapshotResult,
 } from "@/lib/provider-onboarding/liveReadSnapshot";
 import {
+  executeProviderOnboardingApply,
+  type ProviderOnboardingExecuteAdapters,
+} from "@/lib/provider-onboarding/providerOnboardingExecute";
+import {
   buildProviderOnboardingPlan,
   serializeProviderOnboardingPlan,
 } from "@/lib/provider-onboarding/providerOnboardingPlan";
@@ -40,15 +44,19 @@ export type PhaseCOnboardCliDeps = {
   }) => Promise<LiveReadSnapshotResult>;
   /** Non-secret live-read env pairing metadata. */
   liveReadEnvMeta?: LiveReadEnvMeta;
-  /** When true, apply would attempt execute (always false in official CLI today). */
+  /** When true and liveOnboardFlag, apply may execute live write adapters. */
   liveAdaptersEnabled?: boolean;
   liveOnboardFlag?: boolean;
+  /** Build write adapters only under full apply gates. */
+  createLiveWriteAdapters?: () => ProviderOnboardingExecuteAdapters;
+  /** Test override for apply execution. */
+  executeApply?: typeof executeProviderOnboardingApply;
 };
 
 export type PhaseCOnboardCliResult = {
   exitCode: number;
   body: Record<string, unknown>;
-  writes: 0;
+  writes: number;
 };
 
 function stripQuotes(value: string): string {
@@ -328,29 +336,99 @@ export async function runPhaseCOnboardCli(
     };
   }
 
-  if (!deps.liveAdaptersEnabled) {
+  if (!deps.liveAdaptersEnabled || !deps.createLiveWriteAdapters) {
     return {
       exitCode: 3,
       writes: 0,
       body: {
         status: "APPLY_REFUSED_NO_LIVE_ADAPTER",
         message:
-          "PHASE_C_ALLOW_LIVE_ONBOARD=1 set, but live apply adapters are intentionally not enabled in this control release. Use a scoped GO runbook session to wire approved adapters.",
+          "PHASE_C_ALLOW_LIVE_ONBOARD=1 set, but live apply adapters are not enabled. Scoped GO must wire approved adapters.",
         confirmationAccepted: true,
         ...common,
       },
     };
   }
 
-  // Explicit refuse — official CLI never executes apply writes in this release.
+  if (!plan.ok) {
+    return {
+      exitCode: 1,
+      writes: 0,
+      body: {
+        status: "APPLY_BLOCKED",
+        message: "Onboarding apply blocked by preflight.",
+        confirmationAccepted: true,
+        ...common,
+      },
+    };
+  }
+
+  const writeAdapters = deps.createLiveWriteAdapters();
+  const executeApply = deps.executeApply ?? executeProviderOnboardingApply;
+  const executed = await executeApply({
+    input,
+    snapshot: resolved.snapshot,
+    adapters: writeAdapters,
+  });
+
+  if (executed.passwordPrinted !== false) {
+    return {
+      exitCode: 2,
+      writes: 0,
+      body: {
+        status: "APPLY_GATED",
+        reasonCode: "PASSWORD_PRINT_FORBIDDEN",
+        message:
+          "Apply result signaled credential disclosure; runAborted with zero writes.",
+        confirmationAccepted: true,
+        providerId: executed.providerId ?? null,
+        adminEmail: input.adminEmail,
+        runAborted: true,
+        passwordPrinted: false,
+        ...common,
+      },
+    };
+  }
+  if (/\bpassword\s*[:=]/i.test(executed.message)) {
+    return {
+      exitCode: 2,
+      writes: 0,
+      body: {
+        status: "APPLY_GATED",
+        reasonCode: "PASSWORD_PRINT_FORBIDDEN",
+        message:
+          "Apply result message contained a credential-shaped field; runAborted with zero writes.",
+        confirmationAccepted: true,
+        providerId: executed.providerId ?? null,
+        adminEmail: input.adminEmail,
+        runAborted: true,
+        passwordPrinted: false,
+        ...common,
+      },
+    };
+  }
+
   return {
-    exitCode: 3,
-    writes: 0,
+    exitCode: executed.ok ? 0 : 1,
+    writes: executed.writesPerformed ? 1 : 0,
     body: {
-      status: "APPLY_REFUSED_NO_LIVE_ADAPTER",
-      message: "Live apply adapters are not enabled in official CLI entry.",
+      status: executed.ok ? "APPLY_OK" : "APPLY_FAILED",
       confirmationAccepted: true,
+      providerId: executed.providerId,
+      stepsCompleted: executed.stepsCompleted,
+      writesPerformed: executed.writesPerformed,
+      menuDaysCreated: executed.menuDaysCreated,
+      published: executed.published,
+      sotStarted: executed.sotStarted,
+      massExpansionStarted: executed.massExpansionStarted,
+      // Hard guarantee for CLI surfaces / transcript capture.
+      passwordPrinted: false,
+      message: executed.message,
+      credentialsLocalFileHint:
+        ".operator-local/<admin-email-local-part>.credentials (never commit; never print)",
       ...common,
+      writes: executed.writesPerformed ? executed.stepsCompleted.length : 0,
+      liveWrites: executed.writesPerformed,
     },
   };
 }

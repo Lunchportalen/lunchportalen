@@ -27,6 +27,7 @@ import {
   liveReadClientEnvReady,
   resolveLiveReadClientEnv,
 } from "@/lib/provider-onboarding/createLiveReadAdapters";
+import { createLiveWriteAdapters } from "@/lib/provider-onboarding/createLiveWriteAdapters";
 import { runPhaseCOnboardCli } from "@/lib/provider-onboarding/phaseCOnboardCli";
 import type { ProviderOnboardingEnvPresence } from "@/lib/provider-onboarding/providerOnboardingTypes";
 
@@ -111,11 +112,14 @@ async function main() {
 
   const presence = envPresence(operatorEnv);
   const clientCfg = resolveLiveReadClientEnv(operatorEnv);
+  const liveOnboardFlag = operatorEnv.PHASE_C_ALLOW_LIVE_ONBOARD === "1";
+  // Live write adapters only when explicit GO flag is set.
+  const liveAdaptersEnabled = liveOnboardFlag;
 
   const result = await runPhaseCOnboardCli(process.argv.slice(2), {
     envPresence: presence,
-    liveOnboardFlag: operatorEnv.PHASE_C_ALLOW_LIVE_ONBOARD === "1",
-    liveAdaptersEnabled: false,
+    liveOnboardFlag,
+    liveAdaptersEnabled,
     liveReadEnvMeta: clientCfg.meta,
     createLiveAdapters: () => {
       if (!liveReadClientEnvReady(clientCfg)) {
@@ -125,6 +129,13 @@ async function main() {
       }
       return createLiveReadAdapters(clientCfg);
     },
+    createLiveWriteAdapters: liveAdaptersEnabled
+      ? () =>
+          createLiveWriteAdapters({
+            cfg: clientCfg,
+            operatorEnv,
+          })
+      : undefined,
   });
 
   console.log(JSON.stringify(result.body, null, 2));

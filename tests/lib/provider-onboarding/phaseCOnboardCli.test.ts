@@ -285,4 +285,44 @@ describe("runPhaseCOnboardCli", () => {
       ),
     ).toBe(true);
   });
+
+  it("apply refuses when execute signals passwordPrinted", async () => {
+    const result = await runPhaseCOnboardCli(
+      [
+        "--apply",
+        "--snapshot-source",
+        "fixture",
+        "--locale",
+        "da-DK",
+        "--confirm",
+        PHASE_C_ONBOARD_CONFIRMATION_PHRASE,
+      ],
+      {
+        envPresence: ENV_OK,
+        liveOnboardFlag: true,
+        liveAdaptersEnabled: true,
+        createLiveWriteAdapters: () => ({}) as never,
+        executeApply: async () =>
+          ({
+            ok: true,
+            providerId: "prov-1",
+            plan: {} as never,
+            stepsCompleted: ["create_provider"],
+            writesPerformed: true,
+            menuDaysCreated: false,
+            published: false,
+            sotStarted: false,
+            massExpansionStarted: false,
+            passwordPrinted: true,
+            message: "provider onboarded",
+          }) as never,
+      },
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.body.status).toBe("APPLY_GATED");
+    expect(result.body.reasonCode).toBe("PASSWORD_PRINT_FORBIDDEN");
+    expect(result.body.passwordPrinted).toBe(false);
+    expect(result.writes).toBe(0);
+    expect(JSON.stringify(result.body)).not.toMatch(/password\s*[:=]/i);
+  });
 });
