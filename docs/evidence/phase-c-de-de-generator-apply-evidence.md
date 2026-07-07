@@ -89,6 +89,7 @@
 
 ## 4. Apply
 
+- Apply status: PASS — CLASS B
 - RID: `prov_mapply_mrb1icb6_wmdjrvxv3vdxwv61`
 - HTTP: 200
 - ok: true
