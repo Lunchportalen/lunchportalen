@@ -49,6 +49,8 @@ export type PhaseCOnboardCliDeps = {
   liveOnboardFlag?: boolean;
   /** Build write adapters only under full apply gates. */
   createLiveWriteAdapters?: () => ProviderOnboardingExecuteAdapters;
+  /** Test override for apply execution. */
+  executeApply?: typeof executeProviderOnboardingApply;
 };
 
 export type PhaseCOnboardCliResult = {
@@ -379,7 +381,7 @@ export async function runPhaseCOnboardCli(
         message:
           "Apply result signaled credential disclosure; runAborted with zero writes.",
         confirmationAccepted: true,
-        providerId: input.providerId,
+        providerId: executed.providerId ?? null,
         adminEmail: input.adminEmail,
         runAborted: true,
         passwordPrinted: false,
@@ -397,7 +399,7 @@ export async function runPhaseCOnboardCli(
         message:
           "Apply result message contained a credential-shaped field; runAborted with zero writes.",
         confirmationAccepted: true,
-        providerId: input.providerId,
+        providerId: executed.providerId ?? null,
         adminEmail: input.adminEmail,
         runAborted: true,
         passwordPrinted: false,
