@@ -7,7 +7,7 @@
 - ProviderId: `c482495c-d209-4f21-a5de-e1daf5318f90`
 - Slug: `french-lunch-pilot`
 - Locale/profile: `fr-FR` / `french_dejeuner`
-- Week: `2031-12-01 -> 2031-12-05`
+- Week: `2031-12-01 → 2031-12-05`
 - Far-future week
 - Single provider
 - Single scoped apply
@@ -195,6 +195,8 @@
 
 ## 6. Post-Apply DryRun
 
+- Idempotency:
+  - PASS
 - createdDraftDays:
   - 0
 - updatedDraftDays:
@@ -231,9 +233,9 @@
 ## 8. Safety
 
 - Orders:
-  - 17 -> 17
+  - 17 → 17
 - Provider count:
-  - 7 -> 7 after generator apply
+  - 7 → 7 after generator apply
 - Order write-path:
   - untouched
 - lp_order_set:
