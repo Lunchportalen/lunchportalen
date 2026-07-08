@@ -165,16 +165,16 @@ PASS:
 - Phase D leakage: none detected.
 - Approved/publish metadata exposure: none detected.
 - Order mutation: none.
-- Secrets printed: no.
-- Session committed: no.
+- Secrets/session/cookies/tokens printed: no.
+- Secrets/session/cookies/tokens committed: no.
 
 Safety snapshot:
 
-- Orders: 17 -> 17.
-- Phase C generated menuDays: 120 -> 120.
-- Phase C provider catalog docs: 8 -> 8.
-- Phase D menuDays: 0 -> 0.
-- Phase D catalog docs: 0 -> 0.
+- Orders: 17 → 17.
+- Phase C generated menuDays: 120 → 120.
+- Phase C provider catalog docs: 8 → 8.
+- Phase D menuDays: 0 → 0.
+- Phase D catalog docs: 0 → 0.
 
 ## 10. Release Safety
 
@@ -214,7 +214,7 @@ PASS:
 - SOT recommendation:
   - do not start SOT.
   - SOT remains separate future GO.
-- Phase D: source-controlled, not production-applied.
+- Phase D is source-controlled, not production-applied.
 - Live launch dependency on Phase D: none.
 - Required next action: merge this docs-only evidence PR.
 - Exact next GO prompt: `GO merge PR #[PR_NUMBER] — final Phase C rollout summary/readiness audit`
