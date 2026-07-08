@@ -5,6 +5,7 @@ import React from "react";
 import { addDaysISO, osloTodayISODate } from "@/lib/date/oslo";
 import { formatDateNO } from "@/lib/date/format";
 import type { DemandForecastOutput } from "@/lib/ai/demandEngine";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type DemandForecastApi = {
   forDate: string;
@@ -32,6 +33,9 @@ type Totals = {
   luxus: number;
   total: number;
 };
+
+const BASIS_LABEL = getTierDisplayLabel("BASIS", "nb-NO");
+const LUXUS_LABEL = getTierDisplayLabel("LUXUS", "nb-NO");
 
 type Employee = {
   user_id: string;
@@ -331,8 +335,8 @@ export default function KitchenView(props: KitchenViewProps = {}) {
           <div className="mt-4 rounded-2xl border border-[rgb(var(--lp-border))] bg-white p-4 shadow-[var(--lp-shadow-soft)]">
             <h2 className="text-lg font-extrabold text-slate-900">Oppsummering</h2>
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">Basis: {report.totals.basis}</span>
-              <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">Luxus: {report.totals.luxus}</span>
+              <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">{BASIS_LABEL}: {report.totals.basis}</span>
+              <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">{LUXUS_LABEL}: {report.totals.luxus}</span>
               <span className="rounded-xl bg-[rgb(var(--lp-surface-2))] px-3 py-2">Totalt: {report.totals.total}</span>
             </div>
             {report.mode === "week" ? (
@@ -354,7 +358,7 @@ export default function KitchenView(props: KitchenViewProps = {}) {
                 <header className="border-b border-[rgb(var(--lp-divider))] pb-2">
                   <h3 className="text-base font-extrabold text-slate-900">{day.date}</h3>
                   <p className="mt-1 text-sm text-[rgb(var(--lp-muted))]">
-                    Basis {day.totals.basis} - Luxus {day.totals.luxus} - Totalt {day.totals.total}
+                    {BASIS_LABEL} {day.totals.basis} - {LUXUS_LABEL} {day.totals.luxus} - Totalt {day.totals.total}
                   </p>
                 </header>
 
@@ -364,7 +368,7 @@ export default function KitchenView(props: KitchenViewProps = {}) {
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <h4 className="text-sm font-extrabold text-slate-900">{slot.slot}</h4>
                         <div className="text-xs text-[rgb(var(--lp-muted))]">
-                          Basis {slot.totals.basis} - Luxus {slot.totals.luxus} - Totalt {slot.totals.total}
+                          {BASIS_LABEL} {slot.totals.basis} - {LUXUS_LABEL} {slot.totals.luxus} - Totalt {slot.totals.total}
                         </div>
                       </div>
 

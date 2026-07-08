@@ -185,7 +185,7 @@ describe("providerMenuProfileFixedCategories (G5b)", () => {
 
     const bowl = presentation.categories.find((c) => c.profileCategoryKey === "bowl");
     expect(bowl?.packageTiers).toEqual(["LUXUS", "ENTERPRISE"]);
-    expect(bowl?.packageTierLabels).toEqual(["Luxus", "Enterprise"]);
+    expect(bowl?.packageTierLabels).toEqual(["Premium", "Enterprise"]);
   });
 });
 

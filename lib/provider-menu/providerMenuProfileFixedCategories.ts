@@ -17,6 +17,7 @@ import type {
   MenuProfileResolverResult,
   PackageKey,
 } from "@/lib/menu-profile/types";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 export type MenuProfileFixedCategoryStatusKey =
   | "activeInCurrentCatalog"
@@ -70,7 +71,7 @@ function packageTiersForCategory(profile: MenuProfile, categoryKey: string): {
     const pkg = profile.packageModel[pkgKey];
     if (pkg.categoryKeys.includes(categoryKey)) {
       tiers.push(PACKAGE_KEY_TO_TIER[pkgKey]);
-      labels.push(pkg.label);
+      labels.push(getTierDisplayLabel(PACKAGE_KEY_TO_TIER[pkgKey], profile.locale));
     }
   }
   return { tiers, labels };

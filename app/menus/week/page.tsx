@@ -6,6 +6,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { weekRangeISO, weekRangeISOFrom } from "@/lib/date/week";
 import { getMenuForDatesAdmin, type SanityMenuDay } from "@/lib/cms/menuDay";
 import { formatMenuDateNO } from "@/lib/date/format";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 function isISODate(d: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d);
@@ -109,7 +110,11 @@ export default async function MenusWeekPage(props: {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                  {menu?.tier ? <span className="lp-chip">{menu.tier}</span> : null}
+                  {menu?.tier ? (
+                    <span className="lp-chip">
+                      {getTierDisplayLabelSafe(menu.tier, "nb-NO", { debugWithCode: true, fallbackMode: "raw" })}
+                    </span>
+                  ) : null}
                   {status.chips.map((c) => (
                     <span key={c.label} className={chipClass(c.kind)}>
                       {c.label}

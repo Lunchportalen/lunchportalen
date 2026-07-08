@@ -3,9 +3,11 @@
 // STATUS: KEEP
 
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { formatDateNO } from "@/lib/date/format";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 type MyOrder = {
   id?: string | null;
@@ -37,6 +39,7 @@ function isActive(order: MyOrder | null) {
 }
 
 export default function MyLunchCard() {
+  const locale = useLocale();
   const router = useRouter();
   const [data, setData] = useState<ApiResp | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +110,9 @@ export default function MyLunchCard() {
             Cut-off {cutoff.time} · {cutoff.locked ? "Låst" : "Åpen"}
           </div>
         </div>
-        <div className="text-xs text-[rgb(var(--lp-muted))]">Tier: {tierToday ?? "—"}</div>
+        <div className="text-xs text-[rgb(var(--lp-muted))]">
+          Plan: {getTierDisplayLabelSafe(tierToday, locale)}
+        </div>
       </div>
 
       <div className="text-sm text-[rgb(var(--lp-text))]">

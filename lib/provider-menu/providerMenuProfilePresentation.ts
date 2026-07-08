@@ -11,6 +11,7 @@ import type {
   MenuProfileResolverResult,
   PackageKey,
 } from "@/lib/menu-profile/types";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 export type ProviderMenuProfilePresentationMeta = {
   profileId: string;
@@ -90,12 +91,13 @@ function buildTierContext(profile: MenuProfile, tier: PlanTier): string {
   const packageKey = TIER_TO_PACKAGE_KEY[tier];
   const pkg = profile.packageModel[packageKey];
   const labels = packageCategoryLabels(profile, pkg.categoryKeys);
+  const tierLabel = getTierDisplayLabel(tier, profile.locale);
 
   if (tier === "ENTERPRISE" && profile.enterpriseUpgradeModel) {
-    return `${pkg.label}: ${labels.join(", ")}. ${profile.enterpriseUpgradeModel.description}`;
+    return `${tierLabel}: ${labels.join(", ")}. ${profile.enterpriseUpgradeModel.description}`;
   }
 
-  return `${pkg.label}: ${labels.join(", ")}.`;
+  return `${tierLabel}: ${labels.join(", ")}.`;
 }
 
 export function buildMenuProfileWorkspacePresentation(
@@ -112,7 +114,7 @@ export function buildMenuProfileWorkspacePresentation(
 
   const packageTiers = (Object.keys(PACKAGE_KEY_TO_TIER) as PackageKey[]).map((packageKey) => ({
     tier: PACKAGE_KEY_TO_TIER[packageKey],
-    title: profile.packageModel[packageKey].label,
+    title: getTierDisplayLabel(PACKAGE_KEY_TO_TIER[packageKey], profile.locale),
     text: buildPackageTierText(profile, packageKey),
   }));
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { LocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type Props = {
   presentation: Extract<LocalizedMenuSurfacePresentation, { active: true }>;
@@ -24,15 +25,15 @@ export default function ProviderMenuLocalizedSurfaceBanner({ presentation }: Pro
       </p>
       <dl className="lp-editor-profile-presentation__packages" data-testid="provider-menu-package-terms">
         <div>
-          <dt>Basis</dt>
+          <dt>{getTierDisplayLabel("BASIS", presentation.menuLocale)}</dt>
           <dd data-testid="package-card-basis-includes">{packageCardMenuTerms.basisIncludes}</dd>
         </div>
         <div>
-          <dt>Luxus</dt>
+          <dt>{getTierDisplayLabel("LUXUS", presentation.menuLocale)}</dt>
           <dd data-testid="package-card-luxus-includes">{packageCardMenuTerms.luxusIncludes}</dd>
         </div>
         <div>
-          <dt>Enterprise</dt>
+          <dt>{getTierDisplayLabel("ENTERPRISE", presentation.menuLocale)}</dt>
           <dd data-testid="package-card-enterprise-includes">{packageCardMenuTerms.enterpriseIncludes}</dd>
         </div>
       </dl>

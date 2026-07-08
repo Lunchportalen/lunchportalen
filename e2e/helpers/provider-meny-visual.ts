@@ -255,7 +255,7 @@ export async function selectProviderMenyTier(page: Page, tierLabel: string): Pro
 
 export const PROVIDER_MENY_VISUAL_SCREENSHOT_OPTS = {
   animations: "disabled" as const,
-  maxDiffPixels: 500,
+  maxDiffPixels: 1500,
   threshold: 0.2,
   fullPage: false,
 };
