@@ -57,6 +57,18 @@ const stripeChargeDryRunMigrationPath = path.join(
   "migrations",
   "20260806120000_stripe_charge_dry_run.sql",
 );
+const stripePaymentWebhookMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260808120000_stripe_payment_webhook_accounting.sql",
+);
+const paymentRecoveryMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260809120000_payment_recovery_policy.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -92,6 +104,14 @@ function finalInvoiceSql() {
 
 function stripeChargeDryRunSql() {
   return fs.readFileSync(stripeChargeDryRunMigrationPath, "utf8");
+}
+
+function stripePaymentWebhookSql() {
+  return fs.readFileSync(stripePaymentWebhookMigrationPath, "utf8");
+}
+
+function paymentRecoverySql() {
+  return fs.readFileSync(paymentRecoveryMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -555,5 +575,74 @@ describe("global billing engine migration contract", () => {
     expect(sql).not.toContain("send_email");
     expect(sql).not.toContain("last4");
     expect(sql).not.toContain("provider_payment_method_id");
+  });
+
+  it("extends Stripe webhook idempotency for payment accounting events without raw payload", () => {
+    const sql = stripePaymentWebhookSql();
+
+    for (const eventType of [
+      "payment_intent.succeeded",
+      "payment_intent.payment_failed",
+      "payment_intent.processing",
+      "payment_intent.requires_action",
+      "charge.succeeded",
+      "charge.failed",
+    ]) {
+      expect(sql).toContain(eventType);
+    }
+
+    expect(sql).toContain("status IN ('processed', 'ignored', 'unmatched', 'failed')");
+    expect(sql).toContain("No raw Stripe payload");
+    expect(sql).not.toContain("payload jsonb");
+    expect(sql).not.toContain("card_number");
+    expect(sql).not.toContain("cvv");
+  });
+
+  it("adds retry and grace-period policy fields without executing retries", () => {
+    const sql = paymentRecoverySql();
+
+    for (const field of [
+      "retry_count integer NOT NULL DEFAULT 0",
+      "max_retry_count integer NOT NULL DEFAULT 3",
+      "next_retry_at timestamptz NULL",
+      "grace_period_until timestamptz NULL",
+      "last_payment_error_code text NULL",
+      "last_payment_error_message_safe text NULL",
+      "payment_blocked_reason text NULL",
+    ]) {
+      expect(sql).toContain(field);
+    }
+
+    expect(sql).not.toContain("paymentIntents.create");
+    expect(sql).not.toContain("send_email");
+    expect(sql).not.toContain("provider_status = 'SUSPENDED'");
+  });
+
+  it("defines read-only recovery status with retry eligibility and suspension signal", () => {
+    const sql = paymentRecoverySql();
+
+    expect(sql).toContain("CREATE OR REPLACE FUNCTION public.lp_billing_payment_recovery_status");
+    expect(sql).toContain("retry_eligible boolean");
+    expect(sql).toContain("requires_payment_method_update boolean");
+    expect(sql).toContain("can_retry_now boolean");
+    expect(sql).toContain("should_notify_provider boolean");
+    expect(sql).toContain("should_suspend boolean");
+    expect(sql).toContain("safe_failure_code text");
+    expect(sql).toContain("safe_failure_message text");
+    expect(sql).toContain("LANGUAGE sql");
+    expect(sql).toContain("STABLE");
+  });
+
+  it("applies payment recovery policy for failed/action_required/processing/paid states", () => {
+    const sql = paymentRecoverySql();
+
+    expect(sql).toContain("IF v_status = 'failed'");
+    expect(sql).toContain("retry_count = least(retry_count + 1, max_retry_count)");
+    expect(sql).toContain("next_retry_at = CASE");
+    expect(sql).toContain("grace_period_until = coalesce(grace_period_until, now() + make_interval(days => 14))");
+    expect(sql).toContain("ELSIF v_status = 'action_required'");
+    expect(sql).toContain("payment_method_action_required");
+    expect(sql).toContain("ELSIF v_status = 'processing'");
+    expect(sql).toContain("ELSIF v_status = 'paid'");
   });
 });
