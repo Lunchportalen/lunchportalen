@@ -21,6 +21,12 @@ const readinessMigrationPath = path.join(
   "migrations",
   "20260731120000_billing_readiness_observability.sql",
 );
+const correctionMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260801120000_commission_correction_negative_ledger.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -32,6 +38,10 @@ function wiringSql() {
 
 function readinessSql() {
   return fs.readFileSync(readinessMigrationPath, "utf8");
+}
+
+function correctionSql() {
+  return fs.readFileSync(correctionMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -228,5 +238,50 @@ describe("global billing engine migration contract", () => {
     expect(sql).toContain("private.lp_billing_record_readiness_event_unchecked");
     expect(sql).toContain("ON CONFLICT (idempotency_key) DO NOTHING");
     expect(sql).toContain("public.tg_billing_snapshot_order_item");
+  });
+
+  it("defines append-only negative commission correction policy from completed ledger only", () => {
+    const sql = correctionSql();
+
+    expect(sql).toContain("public.lp_billing_post_negative_commission_for_order");
+    expect(sql).toContain("WHERE cl.order_id = p_order_id");
+    expect(sql).toContain("AND cl.event_type = 'ORDER_COMPLETED'");
+    expect(sql).toContain("-abs(v_completed.commission_basis_amount_minor)");
+    expect(sql).toContain("-abs(v_completed.commission_amount_exact)");
+    expect(sql).toContain("ON CONFLICT (idempotency_key) DO NOTHING");
+    expect(sql).not.toContain("FROM public.provider_price_rules");
+    expect(sql).not.toContain("JOIN public.provider_price_rules");
+    expect(sql).not.toContain("FROM public.menu_service_day_items");
+    expect(sql).not.toContain("JOIN public.menu_service_day_items");
+  });
+
+  it("uses explicit negative ledger idempotency keys per event type", () => {
+    const sql = correctionSql();
+
+    expect(sql).toContain("commission:ORDER_CANCELLED:");
+    expect(sql).toContain("commission:ORDER_REFUNDED:");
+    expect(sql).toContain("commission:ORDER_CORRECTED:");
+    expect(sql).toContain("commission:CREDIT_NOTE:");
+    expect(sql).toContain("NEGATIVE_COMMISSION_REASON_REQUIRED");
+    expect(sql).toContain("NEGATIVE_COMMISSION_REFERENCE_REQUIRED");
+  });
+
+  it("records diagnostic no-op when correction is attempted without completed ledger", () => {
+    const sql = correctionSql();
+
+    expect(sql).toContain("private.lp_billing_record_ledger_skip_unchecked");
+    expect(sql).toContain("'LEDGER_SKIPPED'");
+    expect(sql).toContain("ARRAY['completed_ledger_missing']::text[]");
+    expect(sql).toContain("RETURN 0;");
+  });
+
+  it("does not auto-hook cancellation/refund/payment in correction phase", () => {
+    const sql = correctionSql().toLowerCase();
+
+    expect(sql).not.toContain("create trigger");
+    expect(sql).not.toContain("stripe");
+    expect(sql).not.toContain("payment_intent");
+    expect(sql).not.toContain("refund.create");
+    expect(sql).not.toContain("invoice_deliveries");
   });
 });
