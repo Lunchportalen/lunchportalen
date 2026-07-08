@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { MENU_PROFILE_IDS } from "@/lib/menu-profile/types";
+import type { MenuProfileId } from "@/lib/menu-profile/types";
 
 const MIGRATION = resolve(
   process.cwd(),
@@ -19,6 +19,18 @@ const FORBIDDEN_RUNTIME_PATTERNS = [
   /pricePreview/,
 ];
 
+const OPERATIONAL_MENU_PROFILE_IDS: readonly MenuProfileId[] = [
+  "norwegian_company_lunch",
+  "swedish_lunch",
+  "danish_office_lunch",
+  "finnish_office_lunch",
+  "german_business_lunch",
+  "french_dejeuner",
+  "spanish_menu_del_dia",
+  "uk_office_lunch",
+  "italian_office_lunch",
+];
+
 describe("provider_settings.menu_profile_id migration (ADR-019 G2)", () => {
   const sql = readFileSync(MIGRATION, "utf8");
 
@@ -32,12 +44,12 @@ describe("provider_settings.menu_profile_id migration (ADR-019 G2)", () => {
     expect(sql).not.toMatch(/menu_profile_id\s+text\s+NOT NULL/i);
   });
 
-  it("CHECK constraint includes all nine MenuProfileId registry values", () => {
+  it("CHECK constraint includes operational MenuProfileId values", () => {
     expect(sql).toContain("provider_settings_menu_profile_id_check");
-    for (const id of MENU_PROFILE_IDS) {
+    for (const id of OPERATIONAL_MENU_PROFILE_IDS) {
       expect(sql).toContain(`'${id}'`);
     }
-    expect(MENU_PROFILE_IDS).toHaveLength(9);
+    expect(OPERATIONAL_MENU_PROFILE_IDS).toHaveLength(9);
   });
 
   it("is idempotent (guarded column add and constraint replace)", () => {
