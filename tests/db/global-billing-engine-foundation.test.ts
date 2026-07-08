@@ -39,6 +39,12 @@ const stripeSetupMigrationPath = path.join(
   "migrations",
   "20260803120000_stripe_setup_intent_onboarding.sql",
 );
+const invoiceDryRunMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260804120000_invoice_close_dry_run.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -62,6 +68,10 @@ function paymentReadinessSql() {
 
 function stripeSetupSql() {
   return fs.readFileSync(stripeSetupMigrationPath, "utf8");
+}
+
+function invoiceDryRunSql() {
+  return fs.readFileSync(invoiceDryRunMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -366,5 +376,66 @@ describe("global billing engine migration contract", () => {
     expect(sql).not.toContain("payload jsonb");
     expect(sql).not.toContain("payment_intent");
     expect(sql).not.toContain("charge_id");
+  });
+
+  it("defines read-only invoice close dry-run output contract", () => {
+    const sql = invoiceDryRunSql();
+
+    for (const field of [
+      "ledger_rows_count integer",
+      "positive_basis_amount_minor bigint",
+      "negative_basis_amount_minor bigint",
+      "net_basis_amount_minor bigint",
+      "positive_commission_amount_exact numeric",
+      "negative_commission_amount_exact numeric",
+      "net_commission_amount_exact numeric",
+      "rounded_commission_amount_minor bigint",
+      "rounding_adjustment_minor numeric",
+      "recipient_emails_snapshot_preview jsonb",
+      "has_mixed_currency boolean",
+      "has_closed_period_conflict boolean",
+      "credit_note_required_count integer",
+      "can_close boolean",
+      "can_charge boolean",
+    ]) {
+      expect(sql).toContain(field);
+    }
+  });
+
+  it("invoice dry-run sums commission ledger only and includes negative events", () => {
+    const sql = invoiceDryRunSql();
+
+    expect(sql).toContain("FROM public.commission_ledger cl");
+    expect(sql).toContain("CASE WHEN commission_basis_amount_minor > 0");
+    expect(sql).toContain("CASE WHEN commission_basis_amount_minor < 0");
+    expect(sql).toContain("CASE WHEN commission_amount_exact > 0");
+    expect(sql).toContain("CASE WHEN commission_amount_exact < 0");
+    expect(sql).not.toContain("provider_price_rules");
+    expect(sql).not.toContain("menu_service_day_items");
+    expect(sql).not.toContain("order_items oi");
+  });
+
+  it("invoice dry-run blocks mixed currency, closed periods, and credit-note candidates", () => {
+    const sql = invoiceDryRunSql();
+
+    expect(sql).toContain("period_mixed_currency");
+    expect(sql).toContain("period_already_closed_or_invoiced");
+    expect(sql).toContain("credit_note_policy_required");
+    expect(sql).toContain("cp.status IN ('closed', 'invoiced', 'paid')");
+    expect(sql).toContain("count(DISTINCT currency)");
+  });
+
+  it("invoice dry-run has no side effects, charge, send, or Stripe behavior", () => {
+    const sql = invoiceDryRunSql().toLowerCase();
+
+    expect(sql).toContain("language sql");
+    expect(sql).toContain("stable");
+    expect(sql).not.toContain("insert into public.commission_periods");
+    expect(sql).not.toContain("insert into public.provider_commission_invoices");
+    expect(sql).not.toContain("insert into public.invoice_deliveries");
+    expect(sql).not.toContain("payment_intent");
+    expect(sql).not.toContain("stripe.");
+    expect(sql).not.toContain("stripe_");
+    expect(sql).not.toContain("send_email");
   });
 });
