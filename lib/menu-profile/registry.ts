@@ -480,7 +480,7 @@ function dormantPhaseDOfficeLunchProfile(input: {
     market,
     locale,
     name,
-    description: `Phase D source-only dormant profile. ${riskNote} No provider apply, Sanity write, generator apply, publish, SOT, or auto-rollout is enabled by this profile.`,
+    description: `Phase D source-only dormant profile. ${riskNote} No provider apply, Sanity write, generator apply, publish, SOT, or rollout automation is enabled by this profile.`,
     fixedChoiceCategories: [
       fixedChoice("sandwiches", sandwichLabel),
       fixedChoice("salads", saladLabel),

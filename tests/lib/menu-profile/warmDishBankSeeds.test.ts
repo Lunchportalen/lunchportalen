@@ -18,12 +18,12 @@ const ROOT = path.resolve(import.meta.dirname, "../../..");
 const MENU_PROFILE_DIR = path.join(ROOT, "lib/menu-profile");
 const SERVER_ONLY_MENU_PROFILE_FILES = new Set(["runtimeMappingDraftPersistence.server.ts"]);
 
-const EXPECTED_MARKETS = ["NO", "SE", "DK", "FI", "DE", "FR", "ES", "UK", "IT"] as const;
+const EXPECTED_MARKETS = MARKET_CODES;
 
 describe("warmDishBankSeeds (ADR-019 G0.2 — inert)", () => {
-  it("has warm dish bank entries for all nine profile markets", () => {
+  it("has warm dish bank entries for all profile markets", () => {
     const seeds = listWarmDishBankSeeds();
-    expect(seeds.length).toBe(45);
+    expect(seeds.length).toBe(MENU_PROFILE_IDS.length * 5);
 
     for (const market of EXPECTED_MARKETS) {
       const marketSeeds = getWarmDishBankSeedsForMarket(market);

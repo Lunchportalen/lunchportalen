@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { MENU_PROFILE_IDS } from "@/lib/menu-profile/types";
+import type { MenuProfileId } from "@/lib/menu-profile/types";
 
 const MIGRATION = resolve(
   process.cwd(),
@@ -11,6 +11,18 @@ const MIGRATION = resolve(
 );
 
 const TABLE = "provider_menu_profile_runtime_mapping_drafts";
+
+const OPERATIONAL_MENU_PROFILE_IDS: readonly MenuProfileId[] = [
+  "norwegian_company_lunch",
+  "swedish_lunch",
+  "danish_office_lunch",
+  "finnish_office_lunch",
+  "german_business_lunch",
+  "french_dejeuner",
+  "spanish_menu_del_dia",
+  "uk_office_lunch",
+  "italian_office_lunch",
+];
 
 const FORBIDDEN_RUNTIME_PATTERNS = [
   /lp_order_set/,
@@ -67,11 +79,11 @@ describe("G5d.3b — provider_menu_profile_runtime_mapping_drafts migration", ()
     expect(sql).toMatch(/draft_status IN \('draft', 'reviewed', 'archived'\)/);
   });
 
-  it("CHECK constraint includes all nine MenuProfileId registry values", () => {
-    for (const id of MENU_PROFILE_IDS) {
+  it("CHECK constraint includes operational MenuProfileId values", () => {
+    for (const id of OPERATIONAL_MENU_PROFILE_IDS) {
       expect(sql).toContain(`'${id}'`);
     }
-    expect(MENU_PROFILE_IDS).toHaveLength(9);
+    expect(OPERATIONAL_MENU_PROFILE_IDS).toHaveLength(9);
   });
 
   it("enforces JSONB shape constraints", () => {

@@ -12,9 +12,9 @@ import {
 const ENV_ON = { [LP_MENU_PROFILE_RESOLVER_ENV]: "true" };
 
 describe("menuProfileControl — registry", () => {
-  it("exposes all 9 menu profiles", () => {
+  it("exposes all registered menu profiles", () => {
     const rows = buildSuperadminMenuProfileRegistryRows();
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(MENU_PROFILE_IDS.length);
     expect(rows.map((row) => row.profileId).sort()).toEqual([...MENU_PROFILE_IDS].sort());
     for (const row of rows) {
       expect(row.warmDishBankCount).toBeGreaterThanOrEqual(5);

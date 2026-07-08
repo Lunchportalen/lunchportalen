@@ -44,7 +44,7 @@ describe("Phase D rich-market rollout control", () => {
         applyEnabled: false,
         publishEnabled: false,
         customerVisible: false,
-        autoRolloutEnabled: false,
+        rolloutAutomationEnabled: false,
       });
       if (timezoneStrategy === "provider_required") {
         expect(target?.defaultTimezoneForPilot).toBe(timezone);

@@ -26,7 +26,7 @@ export type PhaseDLocaleTarget = {
   applyEnabled: false;
   publishEnabled: false;
   customerVisible: false;
-  autoRolloutEnabled: false;
+  rolloutAutomationEnabled: false;
 };
 
 const SOURCE_ONLY_FLAGS = {
@@ -34,7 +34,7 @@ const SOURCE_ONLY_FLAGS = {
   applyEnabled: false,
   publishEnabled: false,
   customerVisible: false,
-  autoRolloutEnabled: false,
+  rolloutAutomationEnabled: false,
 } as const;
 
 export const PHASE_D_PROVIDER_REQUIRED_TIMEZONE_MARKETS = ["US", "CA", "AU"] as const;
