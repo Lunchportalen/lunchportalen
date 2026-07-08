@@ -33,6 +33,12 @@ const paymentReadinessMigrationPath = path.join(
   "migrations",
   "20260802120000_payment_invoice_readiness_policy.sql",
 );
+const stripeSetupMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260803120000_stripe_setup_intent_onboarding.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -52,6 +58,10 @@ function correctionSql() {
 
 function paymentReadinessSql() {
   return fs.readFileSync(paymentReadinessMigrationPath, "utf8");
+}
+
+function stripeSetupSql() {
+  return fs.readFileSync(stripeSetupMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -342,5 +352,19 @@ describe("global billing engine migration contract", () => {
     expect(sql).not.toContain("send_email");
     expect(sql).not.toContain("stripe_");
     expect(sql).not.toContain("payment_intent");
+  });
+
+  it("adds Stripe setup webhook idempotency without raw payload or charge state", () => {
+    const sql = stripeSetupSql();
+
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS public.stripe_billing_webhook_events");
+    expect(sql).toContain("stripe_billing_webhook_events_event_id_uniq");
+    expect(sql).toContain("'checkout.session.completed'");
+    expect(sql).toContain("'setup_intent.succeeded'");
+    expect(sql).toContain("'payment_method.attached'");
+    expect(sql).toContain("No raw Stripe payload");
+    expect(sql).not.toContain("payload jsonb");
+    expect(sql).not.toContain("payment_intent");
+    expect(sql).not.toContain("charge_id");
   });
 });
