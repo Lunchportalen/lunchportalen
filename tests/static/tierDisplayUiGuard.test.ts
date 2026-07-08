@@ -24,6 +24,12 @@ const guardedFiles = [
   "components/onboarding/PlanStep.tsx",
 ];
 
+const hardcodedTierValueLabelPatterns = [
+  /\{\s*value:\s*"BASIS"\s*,\s*label:\s*"Basis"\s*\}/,
+  /\{\s*value:\s*"LUXUS"\s*,\s*label:\s*"Luxus"\s*\}/,
+  /\{\s*value:\s*"ENTERPRISE"\s*,\s*label:\s*"Enterprise"\s*\}/,
+];
+
 describe("tier display UI guard", () => {
   it("keeps customer/provider UI on the centralized tier display helper", () => {
     for (const file of guardedFiles) {
@@ -39,5 +45,14 @@ describe("tier display UI guard", () => {
     expect(read("components/admin/AgreementBlock.tsx")).not.toContain("d.tier : \"Ikke i avtalen\"");
     expect(read("components/admin/AgreementBlock.tsx")).not.toContain("d.tier : \"—\"");
     expect(read("app/menus/week/page.tsx")).not.toContain("{menu.tier}</span>");
+  });
+
+  it("blocks hardcoded value/label tier maps in customer/provider UI", () => {
+    for (const file of guardedFiles) {
+      const source = read(file);
+      for (const pattern of hardcodedTierValueLabelPatterns) {
+        expect(source, `${file} should render tier labels through the centralized helper`).not.toMatch(pattern);
+      }
+    }
   });
 });

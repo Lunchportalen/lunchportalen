@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { DayKey, Tier } from "@/lib/agreements/normalize";
 import type { InvoiceMethod } from "@/lib/providers/providerCustomerBilling";
@@ -13,13 +13,12 @@ import {
 } from "@/lib/providers/providerCustomerActionErrors";
 
 import type { ProviderAgreementReadModel } from "@/lib/providers/providerCustomerAgreementTypes";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 const WEEKDAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
-
-const PLANS: Array<{ value: Tier; label: string }> = [
-  { value: "BASIS", label: "Basis" },
-  { value: "LUXUS", label: "Luxus" },
-  { value: "ENTERPRISE", label: "Enterprise" },
+const PLAN_VALUES: Tier[] = [
+  "BASIS",
+  "LUXUS", "ENTERPRISE",
 ];
 
 type DayEditorState = Record<DayKey, { enabled: boolean; plan: Tier }>;
@@ -74,6 +73,7 @@ export default function ProviderCustomerAgreementEditDialog(props: {
 }) {
   const { open, companyId, companyName, onClose, onDone } = props;
   const apiUrl = `/api/provider/customers/${encodeURIComponent(companyId)}/agreement`;
+  const locale = useLocale();
   const tEdit = useTranslations("provider.customers.dialogs.agreementEdit");
   const tAgreement = useTranslations("provider.customers.agreement");
   const tDialog = useTranslations("provider.customers.dialogs");
@@ -345,17 +345,17 @@ export default function ProviderCustomerAgreementEditDialog(props: {
                         {tAgreement(`weekdays.${dayKey}`)}
                       </label>
                       <div className={`flex flex-wrap gap-1 ${row.enabled ? "" : "opacity-40 pointer-events-none"}`}>
-                        {PLANS.map((p) => (
-                          <label key={p.value} className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs">
+                        {PLAN_VALUES.map((plan) => (
+                          <label key={plan} className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs">
                             <input
                               type="radio"
                               name={`plan-${dayKey}`}
-                              value={p.value}
-                              checked={row.plan === p.value}
-                              onChange={() => setDayPlan(dayKey, p.value)}
+                              value={plan}
+                              checked={row.plan === plan}
+                              onChange={() => setDayPlan(dayKey, plan)}
                               disabled={pending || !row.enabled}
                             />
-                            {p.label}
+                            {getTierDisplayLabel(plan, locale)}
                           </label>
                         ))}
                       </div>
