@@ -27,6 +27,12 @@ const correctionMigrationPath = path.join(
   "migrations",
   "20260801120000_commission_correction_negative_ledger.sql",
 );
+const paymentReadinessMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260802120000_payment_invoice_readiness_policy.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -42,6 +48,10 @@ function readinessSql() {
 
 function correctionSql() {
   return fs.readFileSync(correctionMigrationPath, "utf8");
+}
+
+function paymentReadinessSql() {
+  return fs.readFileSync(paymentReadinessMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -200,7 +210,8 @@ describe("global billing engine migration contract", () => {
     expect(sql).toContain("public.is_platform_admin()");
     expect(sql).toContain("auth.role() = 'service_role'");
     expect(sql).not.toContain("provider_payment_method_id");
-    expect(sql).not.toContain("last4");
+    expect(sql).not.toContain("pm.last4");
+    expect(sql).not.toMatch(/\blast4\s+AS\b/i);
     expect(sql).not.toContain("card_number");
     expect(sql).not.toContain("cvv");
   });
@@ -283,5 +294,53 @@ describe("global billing engine migration contract", () => {
     expect(sql).not.toContain("payment_intent");
     expect(sql).not.toContain("refund.create");
     expect(sql).not.toContain("invoice_deliveries");
+  });
+
+  it("defines payment setup, charge, and invoice-period readiness without exposing secrets", () => {
+    const sql = paymentReadinessSql();
+
+    expect(sql).toContain("CREATE OR REPLACE FUNCTION public.lp_billing_payment_readiness");
+    expect(sql).toContain("payment_setup_ready boolean");
+    expect(sql).toContain("payment_charge_ready boolean");
+    expect(sql).toContain("invoice_period_ready boolean");
+    expect(sql).toContain("blocking_readiness_events_count integer");
+    expect(sql).toContain("has_raw_card_data boolean");
+    expect(sql).toContain("false AS has_raw_card_data");
+    expect(sql).not.toContain("provider_payment_method_id,");
+    expect(sql).not.toContain("pm.last4");
+    expect(sql).not.toMatch(/\blast4\s+AS\b/i);
+    expect(sql).not.toContain("card_number");
+    expect(sql).not.toContain("cvv");
+    expect(sql).not.toContain("raw payment payload text");
+  });
+
+  it("hardens payment method metadata statuses and avoids raw card storage", () => {
+    const sql = paymentReadinessSql();
+
+    expect(sql).toContain("DROP CONSTRAINT payment_methods_status_chk");
+    expect(sql).toContain("status IN ('active', 'verified', 'chargeable', 'replaced', 'expired', 'failed', 'detached')");
+    expect(sql).toContain("No PAN, CVV/CVC, raw payment payload");
+  });
+
+  it("models blocking readiness events for payment cutover", () => {
+    const sql = paymentReadinessSql();
+
+    expect(sql).toContain("ADD COLUMN IF NOT EXISTS is_blocking boolean NOT NULL DEFAULT true");
+    expect(sql).toContain("ADD COLUMN IF NOT EXISTS resolved_at timestamptz NULL");
+    expect(sql).toContain("blocking_readiness_events");
+    expect(sql).toContain("blocking_events = 0");
+  });
+
+  it("defines invoice and credit-note readiness policy without sending invoices", () => {
+    const sql = paymentReadinessSql().toLowerCase();
+
+    expect(sql).toContain("period_mixed_currency");
+    expect(sql).toContain("period_already_closed_or_invoiced");
+    expect(sql).toContain("credit_note_policy_required");
+    expect(sql).toContain("closed/invoiced/paid periods are not rewritten");
+    expect(sql).toContain("recipient snapshot is locked at invoice creation");
+    expect(sql).not.toContain("send_email");
+    expect(sql).not.toContain("stripe_");
+    expect(sql).not.toContain("payment_intent");
   });
 });
