@@ -12,6 +12,16 @@ const VAT_BY_MARKET: Readonly<Record<MarketCode, number>> = {
   ES: 10 / 100,
   UK: 20 / 100,
   IT: 10 / 100,
+  US: 0,
+  CA: 0,
+  NL: 9 / 100,
+  BE: 12 / 100,
+  AT: 10 / 100,
+  CH: 8.1 / 100,
+  IE: 13.5 / 100,
+  LU: 8 / 100,
+  AU: 10 / 100,
+  SG: 9 / 100,
 };
 
 function costBasisForCurrency(currency: CurrencyCode): number {
@@ -21,6 +31,11 @@ function costBasisForCurrency(currency: CurrencyCode): number {
   if (currency === "DKK") return 65;
   if (currency === "EUR") return 8.5;
   if (currency === "GBP") return 7.5;
+  if (currency === "USD") return 9.5;
+  if (currency === "CAD") return 12;
+  if (currency === "CHF") return 10;
+  if (currency === "AUD") return 13;
+  if (currency === "SGD") return 12;
   return 85;
 }
 
@@ -69,6 +84,16 @@ export function resolveEconomyConfigForCountry(countryCode: string): EconomyConf
     GB: "UK",
     UK: "UK",
     IT: "IT",
+    US: "US",
+    CA: "CA",
+    NL: "NL",
+    BE: "BE",
+    AT: "AT",
+    CH: "CH",
+    IE: "IE",
+    LU: "LU",
+    AU: "AU",
+    SG: "SG",
   };
   const market = marketMap[normalized] ?? "NO";
   return resolveEconomyConfigForMarket(market);

@@ -18,6 +18,18 @@ const EXPECTED: Record<string, Record<TierCode, string>> = {
   "fr-FR": { BASIS: "Essentiel", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
   "es-ES": { BASIS: "Básico", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
   "it-IT": { BASIS: "Base", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "en-US": { BASIS: "Basic", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "en-CA": { BASIS: "Basic", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "nl-NL": { BASIS: "Basis", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "nl-BE": { BASIS: "Basis", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "fr-BE": { BASIS: "Essentiel", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "de-AT": { BASIS: "Basis", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "de-CH": { BASIS: "Basis", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "fr-CH": { BASIS: "Essentiel", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "en-IE": { BASIS: "Basic", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "fr-LU": { BASIS: "Essentiel", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "en-AU": { BASIS: "Basic", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
+  "en-SG": { BASIS: "Basic", LUXUS: "Premium", ENTERPRISE: "Enterprise" },
 };
 
 describe("tier display labels", () => {
@@ -33,6 +45,7 @@ describe("tier display labels", () => {
     expect(getTierDisplayLabel("LUXUS", "nb")).toBe("Luksus");
     expect(getTierDisplayLabel("BASIS", "es")).toBe("Básico");
     expect(getTierDisplayLabel("LUXUS", "it")).toBe("Premium");
+    expect(getTierDisplayLabel("BASIS", "nl")).toBe("Basis");
   });
 
   it("falls back to en-GB for unknown locales", () => {

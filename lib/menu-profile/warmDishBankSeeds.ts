@@ -353,6 +353,18 @@ const SEEDS_BY_PROFILE: Readonly<Record<MenuProfileId, readonly WarmDishBankSeed
   spanish_menu_del_dia: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "spanish_menu_del_dia"),
   uk_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "uk_office_lunch"),
   italian_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "italian_office_lunch"),
+  us_office_lunch: [],
+  canadian_office_lunch: [],
+  dutch_office_lunch: [],
+  belgian_dutch_office_lunch: [],
+  belgian_french_office_lunch: [],
+  austrian_office_lunch: [],
+  swiss_german_office_lunch: [],
+  swiss_french_office_lunch: [],
+  irish_office_lunch: [],
+  luxembourg_office_lunch: [],
+  australian_office_lunch: [],
+  singapore_office_lunch: [],
 };
 
 export function toWarmDishDefinition(seedEntry: WarmDishBankSeed): WarmDishDefinition {

@@ -11,7 +11,19 @@ type SupportedTierLocale =
   | "de-DE"
   | "fr-FR"
   | "es-ES"
-  | "it-IT";
+  | "it-IT"
+  | "en-US"
+  | "en-CA"
+  | "nl-NL"
+  | "nl-BE"
+  | "fr-BE"
+  | "de-AT"
+  | "de-CH"
+  | "fr-CH"
+  | "en-IE"
+  | "fr-LU"
+  | "en-AU"
+  | "en-SG";
 
 const DEFAULT_LOCALE: SupportedTierLocale = "en-GB";
 
@@ -63,6 +75,66 @@ const TIER_DISPLAY_LABELS: Record<SupportedTierLocale, Record<TierCode, string>>
     LUXUS: "Premium",
     ENTERPRISE: "Enterprise",
   },
+  "en-US": {
+    BASIS: "Basic",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "en-CA": {
+    BASIS: "Basic",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "nl-NL": {
+    BASIS: "Basis",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "nl-BE": {
+    BASIS: "Basis",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "fr-BE": {
+    BASIS: "Essentiel",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "de-AT": {
+    BASIS: "Basis",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "de-CH": {
+    BASIS: "Basis",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "fr-CH": {
+    BASIS: "Essentiel",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "en-IE": {
+    BASIS: "Basic",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "fr-LU": {
+    BASIS: "Essentiel",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "en-AU": {
+    BASIS: "Basic",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "en-SG": {
+    BASIS: "Basic",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
 };
 
 const LOCALE_ALIASES: Record<string, SupportedTierLocale> = {
@@ -85,6 +157,19 @@ const LOCALE_ALIASES: Record<string, SupportedTierLocale> = {
   "es-es": "es-ES",
   it: "it-IT",
   "it-it": "it-IT",
+  "en-us": "en-US",
+  "en-ca": "en-CA",
+  nl: "nl-NL",
+  "nl-nl": "nl-NL",
+  "nl-be": "nl-BE",
+  "fr-be": "fr-BE",
+  "de-at": "de-AT",
+  "de-ch": "de-CH",
+  "fr-ch": "fr-CH",
+  "en-ie": "en-IE",
+  "fr-lu": "fr-LU",
+  "en-au": "en-AU",
+  "en-sg": "en-SG",
 };
 
 function normalizeLocale(locale: unknown): SupportedTierLocale {
