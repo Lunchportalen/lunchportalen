@@ -51,6 +51,12 @@ const finalInvoiceMigrationPath = path.join(
   "migrations",
   "20260805120000_final_commission_invoice_creation.sql",
 );
+const stripeChargeDryRunMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260806120000_stripe_charge_dry_run.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -82,6 +88,10 @@ function invoiceDryRunSql() {
 
 function finalInvoiceSql() {
   return fs.readFileSync(finalInvoiceMigrationPath, "utf8");
+}
+
+function stripeChargeDryRunSql() {
+  return fs.readFileSync(stripeChargeDryRunMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -488,5 +498,62 @@ describe("global billing engine migration contract", () => {
     expect(sql).not.toContain("stripe.");
     expect(sql).not.toContain("stripe_");
     expect(sql).not.toContain("send_email");
+  });
+
+  it("defines read-only Stripe charge dry-run output contract", () => {
+    const sql = stripeChargeDryRunSql();
+
+    for (const field of [
+      "provider_invoice_id uuid",
+      "amount_minor bigint",
+      "payment_provider text",
+      "payment_provider_customer_id_present boolean",
+      "default_payment_method_present boolean",
+      "default_payment_method_status text",
+      "payment_charge_ready boolean",
+      "invoice_payment_status text",
+      "can_create_payment_intent boolean",
+      "can_confirm_charge boolean",
+      "stripe_preview_metadata jsonb",
+    ]) {
+      expect(sql).toContain(field);
+    }
+  });
+
+  it("Stripe charge dry-run blocks unsafe invoice/payment states", () => {
+    const sql = stripeChargeDryRunSql();
+
+    for (const requirement of [
+      "billing_profile_missing",
+      "payment_provider_not_stripe",
+      "payment_customer_missing",
+      "payment_method_missing",
+      "payment_method_not_chargeable",
+      "invoice_already_paid",
+      "invoice_payment_in_progress",
+      "invoice_void",
+      "amount_not_positive",
+      "currency_mismatch_billing_profile",
+      "payment_charge_readiness_failed",
+    ]) {
+      expect(sql).toContain(requirement);
+    }
+  });
+
+  it("Stripe charge dry-run metadata is safe and has no side effects", () => {
+    const sql = stripeChargeDryRunSql().toLowerCase();
+
+    expect(sql).toContain("lunchportalen_commission_invoice");
+    expect(sql).toContain("can_confirm_charge");
+    expect(sql).toContain("false");
+    expect(sql).not.toContain("paymentmethods.retrieve");
+    expect(sql).not.toContain("payment_intents.create");
+    expect(sql).not.toContain(".confirm");
+    expect(sql).not.toContain(".capture");
+    expect(sql).not.toContain("insert into public.invoice_deliveries");
+    expect(sql).not.toContain("update public.provider_commission_invoices");
+    expect(sql).not.toContain("send_email");
+    expect(sql).not.toContain("last4");
+    expect(sql).not.toContain("provider_payment_method_id");
   });
 });
