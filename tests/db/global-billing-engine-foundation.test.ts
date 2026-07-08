@@ -9,9 +9,19 @@ const migrationPath = path.join(
   "migrations",
   "20260729120000_global_billing_engine_foundation.sql",
 );
+const wiringMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260730120000_order_billing_snapshot_ledger_wiring.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
+}
+
+function wiringSql() {
+  return fs.readFileSync(wiringMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -120,5 +130,41 @@ describe("global billing engine migration contract", () => {
     expect(sql).toContain("JOIN public.markets m ON m.id = coalesce(p_market_id, obp.market_id)");
     expect(sql).not.toContain("coalesce(m.locale, ps.locale, 'nb-NO')");
     expect(sql).not.toContain("coalesce(nullif(o.currency_code, ''), obp.billing_currency, ps.default_currency, 'NOK')");
+  });
+
+  it("wires snapshots from inserted order_items without using current menu or provider price rules", () => {
+    const sql = wiringSql();
+
+    expect(sql).toContain("CREATE TRIGGER billing_snapshot_order_item_after_insert");
+    expect(sql).toContain("AFTER INSERT ON public.order_items");
+    expect(sql).toContain("private.lp_billing_create_order_line_snapshot_unchecked(NEW.id)");
+    expect(sql).toContain("oi.unit_price_cents_ex_vat");
+    expect(sql).toContain("oi.line_subtotal_cents_ex_vat");
+    expect(sql).toContain("oi.line_vat_cents");
+    expect(sql).toContain("oi.line_total_cents_inc_vat");
+    expect(sql).not.toContain("FROM public.provider_price_rules");
+    expect(sql).not.toContain("JOIN public.provider_price_rules");
+    expect(sql).not.toContain("FROM public.menu_service_day_items");
+    expect(sql).not.toContain("JOIN public.menu_service_day_items");
+  });
+
+  it("posts delivered commission through one shared idempotent helper for both status paths", () => {
+    const sql = wiringSql();
+
+    expect(sql).toContain("private.lp_billing_post_delivered_commission_unchecked");
+    expect(sql).toContain("p_event_type <> 'ORDER_COMPLETED'");
+    expect(sql).toContain("concat('commission:ORDER_COMPLETED:', v_snapshot.order_id, ':', v_snapshot.order_line_id)");
+    expect(sql).toContain("ON CONFLICT (idempotency_key) DO NOTHING");
+    expect(sql).toContain("'order delivered via provider status'");
+    expect(sql).toContain("'order delivered via batch status'");
+  });
+
+  it("does not build payment provider, invoice sending, or UI in the order billing wiring phase", () => {
+    const sql = wiringSql().toLowerCase();
+
+    expect(sql).not.toContain("stripe");
+    expect(sql).not.toContain("payment_intent");
+    expect(sql).not.toContain("send_email");
+    expect(sql).not.toContain("invoice_deliveries");
   });
 });
