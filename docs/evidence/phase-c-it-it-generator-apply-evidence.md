@@ -6,7 +6,7 @@
 - ProviderId: `50eb1ebc-d1a9-4f6e-9737-a0415fddeaaa`
 - Slug: `italian-lunch-pilot`
 - Locale/profile: `it-IT` / `italian_office_lunch`
-- Week: `2031-12-15` -> `2031-12-19`
+- Week: `2031-12-15` → `2031-12-19`
 - Far-future week
 - Single provider
 - Single scoped apply
@@ -96,12 +96,13 @@
 - RID: `prov_mapply_mrc3dvfy_m1irw3gje6m45wd3`
 - HTTP: 200
 - `ok`: true
+- Apply status: PASS — CLASS B
 - mode: apply
 - Applied exactly once: yes
 - Retry: no
 - Created menuDay drafts:
   - 15
-  - 5 weekdays x BASIS / ENTERPRISE / LUXUS internal tier codes
+  - 5 weekdays × BASIS / ENTERPRISE / LUXUS internal tier codes
 - Created provider catalog docs:
   - 1
   - provider-scoped category doc
@@ -179,8 +180,8 @@
 - No `approved_by` / `approved_at` / `translated_text` / `original_text_hash` leak
 
 ## 9. Safety
-- Orders: 17 -> 17
-- Provider count: 9 -> 9 after generator apply
+- Orders: 17 → 17
+- Provider count: 9 → 9 after generator apply
 - Order write-path: untouched
 - `lp_order_set`: untouched
 - DB/RLS: unchanged
