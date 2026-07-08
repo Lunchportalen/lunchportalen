@@ -82,8 +82,9 @@ BEGIN
   END IF;
 
   IF v_provider_id IS NULL THEN
-    RAISE EXCEPTION
-      'R4C_PROVIDER_PRICE_SEED_FAILED: Melhus Catering AS (slug melhus-catering) not found in public.providers';
+    RAISE NOTICE
+      'provider_price_rules_market_unique_index: Melhus Catering AS (slug melhus-catering) not found in public.providers; skipping optional local seed';
+    RETURN;
   END IF;
 
   INSERT INTO public.provider_price_rules (
