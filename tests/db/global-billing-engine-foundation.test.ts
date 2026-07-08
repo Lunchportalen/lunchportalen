@@ -45,6 +45,12 @@ const invoiceDryRunMigrationPath = path.join(
   "migrations",
   "20260804120000_invoice_close_dry_run.sql",
 );
+const finalInvoiceMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260805120000_final_commission_invoice_creation.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -72,6 +78,10 @@ function stripeSetupSql() {
 
 function invoiceDryRunSql() {
   return fs.readFileSync(invoiceDryRunMigrationPath, "utf8");
+}
+
+function finalInvoiceSql() {
+  return fs.readFileSync(finalInvoiceMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -432,6 +442,47 @@ describe("global billing engine migration contract", () => {
     expect(sql).toContain("stable");
     expect(sql).not.toContain("insert into public.commission_periods");
     expect(sql).not.toContain("insert into public.provider_commission_invoices");
+    expect(sql).not.toContain("insert into public.invoice_deliveries");
+    expect(sql).not.toContain("payment_intent");
+    expect(sql).not.toContain("stripe.");
+    expect(sql).not.toContain("stripe_");
+    expect(sql).not.toContain("send_email");
+  });
+
+  it("creates final internal commission invoice from dry-run result only", () => {
+    const sql = finalInvoiceSql();
+
+    expect(sql).toContain("CREATE OR REPLACE FUNCTION public.lp_billing_create_commission_invoice");
+    expect(sql).toContain("FROM public.lp_billing_invoice_close_dry_run");
+    expect(sql).toContain("IF NOT coalesce(v_dry.can_close, false)");
+    expect(sql).toContain("INSERT INTO public.commission_periods");
+    expect(sql).toContain("INSERT INTO public.provider_commission_invoices");
+    expect(sql).toContain("'provider_commission_invoice.final_created'");
+  });
+
+  it("final invoice creation is idempotent per provider period currency and key", () => {
+    const sql = finalInvoiceSql();
+
+    expect(sql).toContain("commission-invoice:");
+    expect(sql).toContain("ON CONFLICT (provider_id, period_start, period_end, currency) DO NOTHING");
+    expect(sql).toContain("ON CONFLICT (commission_period_id) DO NOTHING");
+    expect(sql).toContain("created_new boolean");
+  });
+
+  it("final invoice creation snapshots recipients and immutable totals", () => {
+    const sql = finalInvoiceSql();
+
+    expect(sql).toContain("sent_to_emails_snapshot");
+    expect(sql).toContain("v_dry.recipient_emails_snapshot_preview");
+    expect(sql).toContain("v_dry.rounded_commission_amount_minor");
+    expect(sql).toContain("v_dry.net_commission_amount_exact");
+    expect(sql).toContain("v_dry.currency");
+    expect(sql).toContain("'pending'");
+  });
+
+  it("final invoice creation does not charge, send, create deliveries, or Stripe objects", () => {
+    const sql = finalInvoiceSql().toLowerCase();
+
     expect(sql).not.toContain("insert into public.invoice_deliveries");
     expect(sql).not.toContain("payment_intent");
     expect(sql).not.toContain("stripe.");
