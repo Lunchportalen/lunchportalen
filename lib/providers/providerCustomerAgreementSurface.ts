@@ -1,3 +1,5 @@
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
+
 // lib/providers/providerCustomerAgreementSurface.ts
 // Provider-facing helpers for agreement section on /leverandor/kunder/[id] — i18n via translator.
 
@@ -71,17 +73,11 @@ export function agreementDeliveryDaysDisplay(
   };
 }
 
-const TIER_LABELS: Record<string, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
-
 /** Avtalenivå fra data — kontraktnavn, ikke UI-oversettelse. */
-export function agreementTierLabel(tier: unknown, t: ProviderAgreementTranslate): string {
+export function agreementTierLabel(tier: unknown, t: ProviderAgreementTranslate, locale: unknown = "nb-NO"): string {
   const raw = String(tier ?? "").trim().toUpperCase();
   if (!raw) return t("packageMissing");
-  return TIER_LABELS[raw] ?? t("packageMissing");
+  return getTierDisplayLabelSafe(raw, locale, { fallbackMode: "blank" }) || t("packageMissing");
 }
 
 const KNOWN_TIERS = new Set(["BASIS", "LUXUS", "ENTERPRISE"]);
@@ -90,6 +86,7 @@ export function agreementPackageLabel(
   dayMenus: ReadonlyArray<{ day: string; plan: string }> | null | undefined,
   fallbackTier: unknown,
   t: ProviderAgreementTranslate,
+  locale: unknown = "nb-NO",
 ): string {
   const menus = Array.isArray(dayMenus) ? dayMenus : [];
   const activePlans = menus
@@ -99,10 +96,10 @@ export function agreementPackageLabel(
   if (activePlans.length > 0) {
     const unique = new Set(activePlans);
     if (unique.size > 1) return t("packageMix");
-    return agreementTierLabel(activePlans[0], t);
+    return agreementTierLabel(activePlans[0], t, locale);
   }
 
-  return agreementTierLabel(fallbackTier, t);
+  return agreementTierLabel(fallbackTier, t, locale);
 }
 
 export function agreementPackageIsMissing(

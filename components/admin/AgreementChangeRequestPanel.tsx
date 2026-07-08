@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 
 import { Card } from "@/components/ui/card";
 import type { DayKey, Tier } from "@/lib/admin/agreement/types";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 const DAY_OPTIONS: Array<{ key: DayKey; label: string }> = [
   { key: "mon", label: "Mandag" },
@@ -14,9 +15,9 @@ const DAY_OPTIONS: Array<{ key: DayKey; label: string }> = [
 ];
 
 const PACKAGE_OPTIONS: Array<{ value: Tier; label: string }> = [
-  { value: "BASIS", label: "Basis" },
-  { value: "LUXUS", label: "Luxus" },
-  { value: "ENTERPRISE", label: "Enterprise" },
+  { value: "BASIS", label: getTierDisplayLabel("BASIS", "nb-NO") },
+  { value: "LUXUS", label: getTierDisplayLabel("LUXUS", "nb-NO") },
+  { value: "ENTERPRISE", label: getTierDisplayLabel("ENTERPRISE", "nb-NO") },
 ];
 
 type Props = {

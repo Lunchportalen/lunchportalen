@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import {
@@ -13,6 +13,7 @@ import {
   type ProviderMenuCatalogSnapshot,
 } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { resolveProviderMenuCatalogApiError } from "@/lib/providers/providerMenuActionErrors";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type CatalogItemDraft = {
   key?: string;
@@ -23,12 +24,6 @@ type CatalogItemDraft = {
 };
 
 const PREMIUM_CATEGORY_KEYS = new Set<EditableLunchCategoryKey>(["sushi", "pokebowl", "thaimat"]);
-
-const TIER_DISPLAY_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
 
 function tierBadgeForCategoryKey(
   key: EditableLunchCategoryKey,
@@ -289,6 +284,7 @@ function CatalogAccordionEditor({
   localizedSurfaceActive?: boolean;
 }) {
   const t = useTranslations("provider.menu");
+  const locale = useLocale();
   const visibleCategoryKeys = useMemo(
     () => (filterByTier ? editableCategoryKeysForTier(catalog, tier) : EDITABLE_LUNCH_CATEGORY_KEYS),
     [catalog, tier, filterByTier],
@@ -369,7 +365,7 @@ function CatalogAccordionEditor({
   if (filterByTier && visibleCategoryKeys.length === 0) {
     return (
       <p className="ds-body" role="status">
-        {t("catalog.noEditableCategories", { tier: TIER_DISPLAY_LABELS[tier] ?? tier })}
+        {t("catalog.noEditableCategories", { tier: getTierDisplayLabel(tier, locale) })}
       </p>
     );
   }
@@ -447,6 +443,7 @@ function CatalogLegacyEditor({
   profileCategoryLabels?: Partial<Record<Category, string>>;
 }) {
   const t = useTranslations("provider.menu");
+  const locale = useLocale();
   const editableKeys = useMemo(() => editableCategoryKeysForTier(catalog, tier), [catalog, tier]);
 
   const [categoryKey, setCategoryKey] = useState<string>(editableKeys[0] ?? "paasmurt");
@@ -516,7 +513,7 @@ function CatalogLegacyEditor({
   if (editableKeys.length === 0) {
     return (
       <p className="ds-body" role="status">
-        {t("catalog.noEditableCategories", { tier: TIER_DISPLAY_LABELS[tier] ?? tier })}
+        {t("catalog.noEditableCategories", { tier: getTierDisplayLabel(tier, locale) })}
       </p>
     );
   }

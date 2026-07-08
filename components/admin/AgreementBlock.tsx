@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getCurrentAgreementState } from "@/lib/agreement/currentAgreement";
 import { osloTodayISODate, OSLO_TZ, addDaysISO } from "@/lib/date/oslo";
 import SupportReportButton from "@/components/admin/SupportReportButton";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 type AdminCounts = {
   employeesTotal: number;
@@ -231,7 +232,7 @@ export default async function AgreementBlock(props: {
                     : "bg-neutral-200 text-neutral-500",
                 ].join(" ")}
               >
-                {d.enabled && d.tier ? d.tier : "Ikke i avtalen"}
+                {d.enabled && d.tier ? getTierDisplayLabelSafe(d.tier, "nb-NO") : "Ikke i avtalen"}
               </div>
               {d.enabled && hasPrice ? (
                 <div className="mt-2 text-xs font-semibold text-[rgb(var(--lp-fg))]">{money(agreementState.pricePerCuvertNok)}</div>
@@ -255,7 +256,9 @@ export default async function AgreementBlock(props: {
             >
               <div className="text-xs font-semibold text-[rgb(var(--lp-muted))]">{d.label}</div>
               <div className="mt-2 text-sm font-semibold text-[rgb(var(--lp-fg))]">{d.enabled ? "Aktiv" : "Ikke i avtalen"}</div>
-              <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">{d.enabled && d.tier ? d.tier : "—"}</div>
+              <div className="mt-1 text-xs text-[rgb(var(--lp-muted))]">
+                {d.enabled && d.tier ? getTierDisplayLabelSafe(d.tier, "nb-NO") : "—"}
+              </div>
             </div>
           ))}
         </div>

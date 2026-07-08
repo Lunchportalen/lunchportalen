@@ -4,6 +4,7 @@ import { getDesignSettings } from "@/lib/cms/design/getDesignSettings";
 import { getOverlayBySlug } from "@/lib/cms/public/getOverlayByKey";
 import { APP_OVERLAYS } from "@/lib/cms/overlays/registry";
 import { renderOverlaySlot } from "@/lib/public/blocks/renderOverlaySlot";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type Status = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING";
 
@@ -249,7 +250,7 @@ export default async function DashboardPage() {
         <div style={{ display: "grid", gap: 12 }}>
           <Panel title="Avtale">
             <div style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.7 }}>
-              Plan: <span style={{ color: "var(--text)", fontWeight: 650 }}>Luxus</span>
+              Plan: <span style={{ color: "var(--text)", fontWeight: 650 }}>{getTierDisplayLabel("LUXUS", "nb-NO")}</span>
               <br />
               Levering: Man–Fre
               <br />

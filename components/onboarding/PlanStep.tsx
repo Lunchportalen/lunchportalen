@@ -2,6 +2,7 @@
 
 import type { PlanKey } from "@/lib/onboarding/types";
 import { PLAN_PRICES_EX_VAT } from "@/lib/onboarding/types";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type Props = {
   selected: PlanKey | null;
@@ -38,7 +39,7 @@ export default function PlanStep({ selected, onSelect, error, cmsPrices }: Props
               : "border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface))] hover:bg-white",
           ].join(" ")}
         >
-          <div className="text-lg font-semibold text-[rgb(var(--lp-fg))]">Basis</div>
+          <div className="text-lg font-semibold text-[rgb(var(--lp-fg))]">{getTierDisplayLabel("BASIS", "nb-NO")}</div>
           <div className="mt-1 text-2xl font-semibold text-[rgb(var(--lp-fg))]">
             {basisPrice} kr <span className="text-sm font-normal text-[rgb(var(--lp-muted))]">eks. mva</span>
           </div>
@@ -59,7 +60,7 @@ export default function PlanStep({ selected, onSelect, error, cmsPrices }: Props
               : "border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface))] hover:bg-white",
           ].join(" ")}
         >
-          <div className="text-lg font-semibold text-[rgb(var(--lp-fg))]">Luxus</div>
+          <div className="text-lg font-semibold text-[rgb(var(--lp-fg))]">{getTierDisplayLabel("LUXUS", "nb-NO")}</div>
           <div className="mt-1 text-2xl font-semibold text-[rgb(var(--lp-fg))]">
             {luxusPrice} kr <span className="text-sm font-normal text-[rgb(var(--lp-muted))]">eks. mva</span>
           </div>

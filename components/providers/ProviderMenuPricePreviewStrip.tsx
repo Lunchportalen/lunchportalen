@@ -10,16 +10,11 @@ import {
   type ProviderMenuPricePreviewDisplayPayload,
 } from "@/lib/providers/providerMenuPricePreviewDisplay";
 import { formatPriceAmount } from "@/lib/providers/providerMenuPriceDisplay";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type Props = {
   tier: PlanTier;
   pricePreview: ProviderMenuPricePreviewDisplayPayload | null;
-};
-
-const TIER_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
 };
 
 export default function ProviderMenuPricePreviewStrip({ tier, pricePreview }: Props) {
@@ -59,7 +54,7 @@ export default function ProviderMenuPricePreviewStrip({ tier, pricePreview }: Pr
         <p className="lp-editor-preview-strip__title">{t("title")}</p>
         <p className="lp-editor-preview-strip__subtitle">{t("subtitle")}</p>
         <p className="lp-editor-preview-strip__meta">
-          <span className="lp-editor-preview-strip__tier">{TIER_LABELS[tier]}</span>
+          <span className="lp-editor-preview-strip__tier">{getTierDisplayLabel(tier, locale)}</span>
           {" · "}
           {formatPriceAmount(tierPreview.amountExVat, intlLocale, {
             minimumFractionDigits: 0,

@@ -3,6 +3,7 @@
 import { CheckIcon, ClockIcon, Loader2, MinusIcon } from "lucide-react";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
+import { useLocale } from "next-intl";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { formatDateNO, formatMenuDateNO, formatWeekdayNO } from "@/lib/date/format";
@@ -22,6 +23,7 @@ import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCa
 import WeekMenuNotificationToggle from "@/components/week/WeekMenuNotificationToggle";
 import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
 import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 import { isWeekMenuComingSoon } from "@/lib/week/weekMenuReadiness";
 
 const API_ORDER = "/api/order";
@@ -405,18 +407,16 @@ export function tierChoiceLimit(tier: DayRow["tier"]) {
   return 0;
 }
 
-function tierLabel(day: DayRow) {
+function tierLabel(day: DayRow, locale: string) {
   const limit = tierChoiceLimit(day.tier);
-  if (day.tier === "ENTERPRISE") return `Enterprise - ${limit} valg`;
-  if (day.tier === "LUXUS") return `Luxus - ${limit} valg`;
-  if (day.tier === "BASIS") return `Basis - ${limit} valg`;
+  if (day.tier === "ENTERPRISE" || day.tier === "LUXUS" || day.tier === "BASIS") {
+    return `${getTierDisplayLabel(day.tier, locale)} - ${limit} valg`;
+  }
   return "Ikke tilgjengelig";
 }
 
-function tierPillText(tier: DayRow["tier"]) {
-  if (tier === "ENTERPRISE") return "Enterprise";
-  if (tier === "LUXUS") return "Luxus";
-  if (tier === "BASIS") return "Basis";
+function tierPillText(tier: DayRow["tier"], locale: string) {
+  if (tier === "ENTERPRISE" || tier === "LUXUS" || tier === "BASIS") return getTierDisplayLabel(tier, locale);
   return "Ikke tilgjengelig";
 }
 
@@ -427,8 +427,8 @@ export function tierPillClass(tier: DayRow["tier"]) {
   return "ds-tier-pill is-unavailable";
 }
 
-function TierPill({ tier }: { tier: DayRow["tier"] }) {
-  return <span className={tierPillClass(tier)}>{tierPillText(tier)}</span>;
+function TierPill({ tier, locale }: { tier: DayRow["tier"]; locale: string }) {
+  return <span className={tierPillClass(tier)}>{tierPillText(tier, locale)}</span>;
 }
 
 function isNoTierForDay(day: DayRow) {
@@ -1195,7 +1195,7 @@ const WeekDayCardMobile = memo(
           className="cursor-pointer rounded-card outline-none transition-colors duration-100 active:bg-bg-soft focus-visible:ring-2 focus-visible:ring-neutral-900/40"
         >
           <div className="flex flex-wrap items-center justify-start gap-2">
-            <TierPill tier={day.tier} />
+            <TierPill tier={day.tier} locale={locale} />
             <span className={status.className}>{status.label}</span>
             {cutoffClosed ? <CutoffPassedBadge /> : null}
             {readOnlyPreview ? (
@@ -1407,6 +1407,7 @@ export default function EmployeeWeekClient({
   readOnlyPreview = false,
   previewHarness = null,
 }: Props) {
+  const locale = useLocale();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const previewHarnessCalendarKey = (previewHarness?.calendarDates ?? []).join("|");
 
@@ -2407,7 +2408,7 @@ export default function EmployeeWeekClient({
                       {formatMenuDateNO(day.date)}
                     </span>
                     <span className="mt-1 inline-flex">
-                      <TierPill tier={day.tier} />
+                      <TierPill tier={day.tier} locale={locale} />
                     </span>
                   </span>
                   <span className={`${statusClass} shrink-0`}>{statusLabel}</span>

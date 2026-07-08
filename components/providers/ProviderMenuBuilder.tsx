@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 import ProviderMenuCatalogView from "@/components/providers/ProviderMenuCatalogView";
@@ -71,6 +71,7 @@ import ProviderMenuRuntimeMappingProposalPanel from "@/components/providers/Prov
 import ProviderMenuLocalizedSurfaceBanner from "@/components/providers/ProviderMenuLocalizedSurfaceBanner";
 import { mergeCatalogWithLocalizedOverlay } from "@/lib/menu-generator/localizedMenuSurface";
 import type { LocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 import "@/app/styles/ds/provider-menu-editor.css";
 
@@ -118,12 +119,6 @@ type MenuWeekResponse = {
 };
 
 type WorkspaceView = "week" | "catalog";
-
-const TIER_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
 
 function shiftWeekStart(weekStart: string, deltaWeeks: number): string {
   return addDaysISO(weekStart, deltaWeeks * 7);
@@ -198,6 +193,7 @@ export default function ProviderMenuBuilder({
   localizedMenuSurface = { active: false },
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
+  const locale = useLocale();
   const localizedSurface = localizedMenuSurface.active ? localizedMenuSurface : null;
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
@@ -426,7 +422,7 @@ export default function ProviderMenuBuilder({
     if (!form || !selected) return;
     const sourceSlot = resolveProviderMenuSlot(slots, selected.date, source, selected.category);
     if (!menuSlotHasContent(sourceSlot) && sourceSlot.status === "empty") {
-      setError(t("errors.copySourceEmpty", { tier: TIER_LABELS[source] }));
+      setError(t("errors.copySourceEmpty", { tier: getTierDisplayLabel(source, locale) }));
       return;
     }
     setForm({
@@ -441,7 +437,7 @@ export default function ProviderMenuBuilder({
       status: "draft",
       contentSource: "draft",
     });
-    setMessage(t("success.copiedFromTier", { tier: TIER_LABELS[source] }));
+    setMessage(t("success.copiedFromTier", { tier: getTierDisplayLabel(source, locale) }));
   }
 
   async function save(status: "draft" | "published") {
@@ -585,7 +581,7 @@ export default function ProviderMenuBuilder({
     selected && form
       ? buildEditorContext({
           tier,
-          tierLabel: TIER_LABELS[tier],
+          tierLabel: getTierDisplayLabel(tier, locale),
           weekdayLabel: weekdayLabelForDate(selected.date, weekDates, t),
           weekdayKey: weekdayKeyForDate(selected.date, weekDates),
           date: selected.date,
@@ -711,7 +707,7 @@ export default function ProviderMenuBuilder({
       {workspaceView === "week" ? (
         <ProviderMenuStatusRow
           weekStart={weekStart}
-          tierLabel={TIER_LABELS[tier]}
+          tierLabel={getTierDisplayLabel(tier, locale)}
           metrics={weekMetrics}
           varmrettPublishedDays={cockpitVarmrettDisplay.publishedDays}
           varmrettDraftDays={cockpitVarmrettDisplay.draftDays}

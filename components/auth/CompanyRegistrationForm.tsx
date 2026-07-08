@@ -10,6 +10,7 @@ import {
   type RegistrationWeekday,
   type WeekdayMealTiers,
 } from "@/lib/registration/weekdayMealTiers";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type RegisterResponse = {
   ok?: boolean;
@@ -282,9 +283,9 @@ export default function CompanyRegistrationForm({
   const employeesTooLow = Number.isFinite(asInt(state.employeesCount)) && asInt(state.employeesCount) < 20;
   const selectedTierValues = Object.values(state.weekdayTiers);
   const lunchModel = selectedTierValues.every((tier) => tier === "LUXUS")
-    ? "Luxus"
+    ? getTierDisplayLabel("LUXUS", "nb-NO")
     : selectedTierValues.every((tier) => tier === "BASIS")
-      ? "Basis"
+      ? getTierDisplayLabel("BASIS", "nb-NO")
       : "Blandet plan";
   const deliveryWindow =
     state.deliveryWindowFrom || state.deliveryWindowTo
@@ -495,8 +496,8 @@ export default function CompanyRegistrationForm({
                     }))
                   }
                 >
-                  <option value="BASIS">Basis</option>
-                  <option value="LUXUS">Luxus</option>
+                  <option value="BASIS">{getTierDisplayLabel("BASIS", "nb-NO")}</option>
+                  <option value="LUXUS">{getTierDisplayLabel("LUXUS", "nb-NO")}</option>
                 </select>
               </label>
             ))}
