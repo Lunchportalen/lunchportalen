@@ -15,6 +15,12 @@ const wiringMigrationPath = path.join(
   "migrations",
   "20260730120000_order_billing_snapshot_ledger_wiring.sql",
 );
+const readinessMigrationPath = path.join(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260731120000_billing_readiness_observability.sql",
+);
 
 function migrationSql() {
   return fs.readFileSync(migrationPath, "utf8");
@@ -22,6 +28,10 @@ function migrationSql() {
 
 function wiringSql() {
   return fs.readFileSync(wiringMigrationPath, "utf8");
+}
+
+function readinessSql() {
+  return fs.readFileSync(readinessMigrationPath, "utf8");
 }
 
 describe("global billing engine migration contract", () => {
@@ -166,5 +176,57 @@ describe("global billing engine migration contract", () => {
     expect(sql).not.toContain("payment_intent");
     expect(sql).not.toContain("send_email");
     expect(sql).not.toContain("invoice_deliveries");
+  });
+
+  it("defines a provider-scoped billing readiness RPC without exposing payment secrets", () => {
+    const sql = readinessSql();
+
+    expect(sql).toContain("CREATE OR REPLACE FUNCTION public.lp_billing_provider_readiness");
+    expect(sql).toContain("snapshot_ready boolean");
+    expect(sql).toContain("ledger_ready boolean");
+    expect(sql).toContain("invoice_ready boolean");
+    expect(sql).toContain("missing_requirements text[]");
+    expect(sql).toContain("public.can_access_provider(p.id)");
+    expect(sql).toContain("public.is_platform_admin()");
+    expect(sql).toContain("auth.role() = 'service_role'");
+    expect(sql).not.toContain("provider_payment_method_id");
+    expect(sql).not.toContain("last4");
+    expect(sql).not.toContain("card_number");
+    expect(sql).not.toContain("cvv");
+  });
+
+  it("tracks precise readiness requirements without Norway/NOK fallback", () => {
+    const sql = readinessSql();
+
+    for (const requirement of [
+      "organization_missing",
+      "billing_profile_missing",
+      "market_missing",
+      "billing_currency_missing",
+      "billing_timezone_missing",
+      "legal_country_code_missing",
+      "tax_country_code_missing",
+      "active_commission_rule_missing",
+      "invoice_recipient_missing",
+      "payment_customer_missing",
+      "payment_method_missing",
+    ]) {
+      expect(sql).toContain(requirement);
+    }
+
+    expect(sql).not.toContain("'NOK'");
+    expect(sql).not.toContain("'NO'");
+    expect(sql).not.toContain("'Europe/Oslo'");
+  });
+
+  it("records idempotent fail-closed snapshot skip diagnostics", () => {
+    const sql = readinessSql();
+
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS public.billing_readiness_events");
+    expect(sql).toContain("'SNAPSHOT_SKIPPED'");
+    expect(sql).toContain("billing_readiness_events_idempotency_key_uniq");
+    expect(sql).toContain("private.lp_billing_record_readiness_event_unchecked");
+    expect(sql).toContain("ON CONFLICT (idempotency_key) DO NOTHING");
+    expect(sql).toContain("public.tg_billing_snapshot_order_item");
   });
 });
