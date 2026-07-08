@@ -230,6 +230,13 @@ export async function chargeProviderCommissionInvoice(
       })
       .eq("id", providerInvoiceId);
 
+    await admin.rpc("lp_billing_apply_payment_recovery_policy", {
+      p_provider_invoice_id: providerInvoiceId,
+      p_payment_status: invoicePaymentStatus,
+      p_failure_code: null,
+      p_failure_message_safe: null,
+    });
+
     await admin.from("billing_audit_log").insert({
       organization_id: invoice.provider_id,
       actor_user_id: input.actorUserId || null,
@@ -275,6 +282,13 @@ export async function chargeProviderCommissionInvoice(
         payment_status: failure.code === "authentication_required" ? "action_required" : "failed",
       })
       .eq("id", providerInvoiceId);
+
+    await admin.rpc("lp_billing_apply_payment_recovery_policy", {
+      p_provider_invoice_id: providerInvoiceId,
+      p_payment_status: failure.code === "authentication_required" ? "action_required" : "failed",
+      p_failure_code: failure.code,
+      p_failure_message_safe: failure.message,
+    });
 
     return {
       ok: true,

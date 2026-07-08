@@ -43,8 +43,10 @@ function makeAdminMock(overrides?: Partial<Tables>, rpcResult?: Row) {
     ...(overrides ?? {}),
   };
 
-  const rpc = vi.fn(async () => ({
-    data: rpcResult ?? {
+  const rpc = vi.fn(async (name: string) => {
+    if (name === "lp_billing_apply_payment_recovery_policy") return { data: null, error: null };
+    return {
+      data: rpcResult ?? {
       provider_invoice_id: INVOICE_ID,
       provider_id: PROVIDER_ID,
       organization_id: ORG_ID,
@@ -72,8 +74,9 @@ function makeAdminMock(overrides?: Partial<Tables>, rpcResult?: Row) {
       idempotency_key: "idem-1",
       created_new: false,
     },
-    error: null,
-  }));
+      error: null,
+    };
+  });
 
   function table(name: string) {
     const filters: Array<[string, any]> = [];
@@ -181,6 +184,9 @@ describe("stripeProviderCharge", () => {
     expect(rows.provider_commission_invoices[0].payment_status).toBe("paid");
     expect(rows.provider_commission_invoices[0].payment_provider_payment_intent_id).toBe("pi_123");
     expect(JSON.stringify(rows)).not.toContain("4242424242424242");
+    expect(admin.rpc).toHaveBeenCalledWith("lp_billing_apply_payment_recovery_policy", expect.objectContaining({
+      p_payment_status: "paid",
+    }));
   });
 
   it("blocks when dry-run cannot create payment intent", async () => {
@@ -240,6 +246,10 @@ describe("stripeProviderCharge", () => {
     expect(rows.billing_payment_attempts[0].status).toBe("failed");
     expect(rows.billing_payment_attempts[0].failure_code).toBe("card_declined");
     expect(rows.provider_commission_invoices[0].payment_status).toBe("failed");
+    expect(admin.rpc).toHaveBeenCalledWith("lp_billing_apply_payment_recovery_policy", expect.objectContaining({
+      p_payment_status: "failed",
+      p_failure_code: "card_declined",
+    }));
   });
 
   it("stores requires_action without automatic retry", async () => {
@@ -256,5 +266,9 @@ describe("stripeProviderCharge", () => {
     });
     expect(rows.billing_payment_attempts[0].status).toBe("requires_action");
     expect(rows.provider_commission_invoices[0].payment_status).toBe("action_required");
+    expect(admin.rpc).toHaveBeenCalledWith("lp_billing_apply_payment_recovery_policy", expect.objectContaining({
+      p_payment_status: "action_required",
+      p_failure_code: "authentication_required",
+    }));
   });
 });
