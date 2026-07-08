@@ -75,6 +75,8 @@
 
 ## 4. Official DryRun
 
+- DryRun status:
+  - PASS
 - CLI:
   - `phase-c-onboard-provider.mjs --dry-run --snapshot-source live --env-file .env.preview.verify --locale es-ES`
 - Exit:
