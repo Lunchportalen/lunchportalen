@@ -446,6 +446,246 @@ const ITALIAN_OFFICE_LUNCH: MenuProfile = {
   ),
 };
 
+function dormantPhaseDOfficeLunchProfile(input: {
+  id: MenuProfileId;
+  market: MenuProfile["market"];
+  locale: string;
+  name: string;
+  sandwichLabel: string;
+  saladLabel: string;
+  warmLunchLabel: string;
+  bowlLabel: string;
+  flexibleLabel: string;
+  enterpriseLabel: string;
+  enterpriseDescription: string;
+  riskNote: string;
+}): MenuProfile {
+  const {
+    id,
+    market,
+    locale,
+    name,
+    sandwichLabel,
+    saladLabel,
+    warmLunchLabel,
+    bowlLabel,
+    flexibleLabel,
+    enterpriseLabel,
+    enterpriseDescription,
+    riskNote,
+  } = input;
+
+  return {
+    id,
+    market,
+    locale,
+    name,
+    description: `Phase D source-only dormant profile. ${riskNote} No provider apply, Sanity write, generator apply, publish, SOT, or rollout automation is enabled by this profile.`,
+    fixedChoiceCategories: [
+      fixedChoice("sandwiches", sandwichLabel),
+      fixedChoice("salads", saladLabel),
+      warmDishCategory("hot_lunch", warmLunchLabel, "One shared warm lunch per delivery day."),
+      fixedChoice("bowls", bowlLabel),
+      fixedChoice("flexible_option", flexibleLabel),
+      upgradeCategory(enterpriseLabel, enterpriseDescription),
+    ],
+    packageModel: {
+      basis: packageDef("basis", "Basis", ["sandwiches", "salads", "hot_lunch"]),
+      luxus: packageDef("luxus", "Luxus", ["sandwiches", "salads", "hot_lunch", "bowls", "flexible_option"]),
+      enterprise: packageDef(
+        "enterprise",
+        "Enterprise",
+        ["sandwiches", "salads", "hot_lunch", "bowls", "flexible_option", "enterprise_upgrade"],
+        { enterpriseUpgrade: true },
+      ),
+    },
+    warmDishBank: warmDishDefinitionsForProfile(id),
+    warmDishRules: DEFAULT_WARM_DISH_RULES,
+    autoPublishRules: DEFAULT_AUTO_PUBLISH_RULES,
+    enterpriseUpgradeModel: enterpriseUpgradeModel(enterpriseLabel, enterpriseDescription),
+  };
+}
+
+const US_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "us_office_lunch",
+  market: "US",
+  locale: "en-US",
+  name: "US office lunch",
+  sandwichLabel: "Sandwiches",
+  saladLabel: "Salads",
+  warmLunchLabel: "Hot lunch",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexible option",
+  enterpriseLabel: "Enterprise upgrade",
+  enterpriseDescription: "Same hot lunch with premium add-ons in the week plan.",
+  riskNote: "State/local sales tax and provider-specific timezone must be resolved before apply.",
+});
+
+const CANADIAN_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "canadian_office_lunch",
+  market: "CA",
+  locale: "en-CA",
+  name: "Canadian office lunch",
+  sandwichLabel: "Sandwiches",
+  saladLabel: "Salads",
+  warmLunchLabel: "Hot lunch",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexible option",
+  enterpriseLabel: "Enterprise upgrade",
+  enterpriseDescription: "Same hot lunch with premium add-ons in the week plan.",
+  riskNote: "Province tax/timezone review required; fr-CA is not included in this batch.",
+});
+
+const DUTCH_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "dutch_office_lunch",
+  market: "NL",
+  locale: "nl-NL",
+  name: "Nederlandse kantoor lunch",
+  sandwichLabel: "Broodjes",
+  saladLabel: "Salades",
+  warmLunchLabel: "Warme lunch",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexibele optie",
+  enterpriseLabel: "Enterprise-upgrade",
+  enterpriseDescription: "Dezelfde warme lunch met premium toevoegingen in de weekplanning.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
+const BELGIAN_DUTCH_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "belgian_dutch_office_lunch",
+  market: "BE",
+  locale: "nl-BE",
+  name: "Belgische kantoor lunch (NL)",
+  sandwichLabel: "Broodjes",
+  saladLabel: "Salades",
+  warmLunchLabel: "Warme lunch",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexibele optie",
+  enterpriseLabel: "Enterprise-upgrade",
+  enterpriseDescription: "Dezelfde warme lunch met premium toevoegingen in de weekplanning.",
+  riskNote: "Belgian dual-locale rollout must coordinate nl-BE/fr-BE; EU VAT/compliance review required.",
+});
+
+const BELGIAN_FRENCH_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "belgian_french_office_lunch",
+  market: "BE",
+  locale: "fr-BE",
+  name: "Déjeuner bureau belge (FR)",
+  sandwichLabel: "Sandwichs",
+  saladLabel: "Salades",
+  warmLunchLabel: "Plat chaud",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Option flexible",
+  enterpriseLabel: "Upgrade Enterprise",
+  enterpriseDescription: "Même plat chaud avec compléments premium dans le planning hebdomadaire.",
+  riskNote: "Belgian dual-locale rollout must coordinate fr-BE/nl-BE; EU VAT/compliance review required.",
+});
+
+const AUSTRIAN_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "austrian_office_lunch",
+  market: "AT",
+  locale: "de-AT",
+  name: "Österreichischer Bürolunch",
+  sandwichLabel: "Belegte Brote",
+  saladLabel: "Salate",
+  warmLunchLabel: "Warme Mahlzeit",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexible Option",
+  enterpriseLabel: "Enterprise-Upgrade",
+  enterpriseDescription: "Dieselbe warme Mahlzeit mit Premium-Ergänzungen im Wochenplan.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
+const SWISS_GERMAN_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "swiss_german_office_lunch",
+  market: "CH",
+  locale: "de-CH",
+  name: "Schweizer Bürolunch (DE)",
+  sandwichLabel: "Sandwiches",
+  saladLabel: "Salate",
+  warmLunchLabel: "Warme Mahlzeit",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexible Option",
+  enterpriseLabel: "Enterprise-Upgrade",
+  enterpriseDescription: "Dieselbe warme Mahlzeit mit Premium-Ergänzungen im Wochenplan.",
+  riskNote: "CHF and multilingual Swiss rollout require de-CH/fr-CH coordination.",
+});
+
+const SWISS_FRENCH_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "swiss_french_office_lunch",
+  market: "CH",
+  locale: "fr-CH",
+  name: "Déjeuner bureau suisse (FR)",
+  sandwichLabel: "Sandwichs",
+  saladLabel: "Salades",
+  warmLunchLabel: "Plat chaud",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Option flexible",
+  enterpriseLabel: "Upgrade Enterprise",
+  enterpriseDescription: "Même plat chaud avec compléments premium dans le planning hebdomadaire.",
+  riskNote: "CHF and multilingual Swiss rollout require fr-CH/de-CH coordination.",
+});
+
+const IRISH_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "irish_office_lunch",
+  market: "IE",
+  locale: "en-IE",
+  name: "Irish office lunch",
+  sandwichLabel: "Sandwiches",
+  saladLabel: "Salads",
+  warmLunchLabel: "Hot lunch",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexible option",
+  enterpriseLabel: "Enterprise upgrade",
+  enterpriseDescription: "Same hot lunch with premium add-ons in the week plan.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
+const LUXEMBOURG_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "luxembourg_office_lunch",
+  market: "LU",
+  locale: "fr-LU",
+  name: "Déjeuner bureau Luxembourg",
+  sandwichLabel: "Sandwichs",
+  saladLabel: "Salades",
+  warmLunchLabel: "Plat chaud",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Option flexible",
+  enterpriseLabel: "Upgrade Enterprise",
+  enterpriseDescription: "Même plat chaud avec compléments premium dans le planning hebdomadaire.",
+  riskNote: "Small multilingual enterprise market; EU VAT/compliance review required.",
+});
+
+const AUSTRALIAN_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "australian_office_lunch",
+  market: "AU",
+  locale: "en-AU",
+  name: "Australian office lunch",
+  sandwichLabel: "Sandwiches",
+  saladLabel: "Salads",
+  warmLunchLabel: "Hot lunch",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexible option",
+  enterpriseLabel: "Enterprise upgrade",
+  enterpriseDescription: "Same hot lunch with premium add-ons in the week plan.",
+  riskNote: "GST assumptions and provider-specific timezone must be resolved before apply.",
+});
+
+const SINGAPORE_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "singapore_office_lunch",
+  market: "SG",
+  locale: "en-SG",
+  name: "Singapore office lunch",
+  sandwichLabel: "Sandwiches",
+  saladLabel: "Salads",
+  warmLunchLabel: "Hot lunch",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Flexible option",
+  enterpriseLabel: "Enterprise upgrade",
+  enterpriseDescription: "Same hot lunch with premium add-ons in the week plan.",
+  riskNote: "City-state SGD market; GST/commercial assumptions must be verified before apply.",
+});
+
 export const MENU_PROFILE_REGISTRY: Readonly<Record<MenuProfileId, MenuProfile>> = {
   norwegian_company_lunch: NORWEGIAN_COMPANY_LUNCH,
   swedish_lunch: SWEDISH_LUNCH,
@@ -456,6 +696,18 @@ export const MENU_PROFILE_REGISTRY: Readonly<Record<MenuProfileId, MenuProfile>>
   spanish_menu_del_dia: SPANISH_MENU_DEL_DIA,
   uk_office_lunch: UK_OFFICE_LUNCH,
   italian_office_lunch: ITALIAN_OFFICE_LUNCH,
+  us_office_lunch: US_OFFICE_LUNCH,
+  canadian_office_lunch: CANADIAN_OFFICE_LUNCH,
+  dutch_office_lunch: DUTCH_OFFICE_LUNCH,
+  belgian_dutch_office_lunch: BELGIAN_DUTCH_OFFICE_LUNCH,
+  belgian_french_office_lunch: BELGIAN_FRENCH_OFFICE_LUNCH,
+  austrian_office_lunch: AUSTRIAN_OFFICE_LUNCH,
+  swiss_german_office_lunch: SWISS_GERMAN_OFFICE_LUNCH,
+  swiss_french_office_lunch: SWISS_FRENCH_OFFICE_LUNCH,
+  irish_office_lunch: IRISH_OFFICE_LUNCH,
+  luxembourg_office_lunch: LUXEMBOURG_OFFICE_LUNCH,
+  australian_office_lunch: AUSTRALIAN_OFFICE_LUNCH,
+  singapore_office_lunch: SINGAPORE_OFFICE_LUNCH,
 };
 
 export function isSupportedMenuProfile(profileId: string): profileId is MenuProfileId {
