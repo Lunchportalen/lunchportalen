@@ -45,7 +45,7 @@ describe("SystemStatus agreement labels", () => {
           },
         }),
       ),
-    ).toBe("Blandet (3 dager Basis, 2 dager Luxus) · Aktiv");
+    ).toBe("Blandet (3 dager Basis, 2 dager Luksus) · Aktiv");
   });
 
   test("blandet tier med ENTERPRISE", () => {
@@ -61,7 +61,7 @@ describe("SystemStatus agreement labels", () => {
           },
         }),
       ),
-    ).toBe("Blandet (2 dager Basis, 1 dag Luxus, 2 dager Enterprise) · Aktiv");
+    ).toBe("Blandet (2 dager Basis, 1 dag Luksus, 2 dager Enterprise) · Aktiv");
   });
 
   test("ingen aktiv", () => {
@@ -98,7 +98,7 @@ describe("SystemStatus agreement labels", () => {
       }),
     );
 
-    expect(label).toContain("1 dag Luxus");
-    expect(label).not.toContain("1 dager Luxus");
+    expect(label).toContain("1 dag Luksus");
+    expect(label).not.toContain("1 dager Luksus");
   });
 });
