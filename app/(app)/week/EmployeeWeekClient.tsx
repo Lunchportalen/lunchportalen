@@ -1099,6 +1099,7 @@ function WeekConfirmModal({
 
 type RowBase = {
   day: DayRow;
+  locale: string;
   canAct: boolean;
   globalBusy: boolean;
   busyThis: boolean;
@@ -1126,6 +1127,7 @@ type MobileCardProps = RowBase & {
 const WeekDayCardMobile = memo(
   function WeekDayCardMobile({
     day,
+    locale,
     canAct,
     globalBusy,
     busyThis,
@@ -2368,6 +2370,7 @@ export default function EmployeeWeekClient({
         <section className="mb-7">
           <WeekDayCardMobile
             day={activeDay}
+            locale={locale}
             canAct={canAct}
             globalBusy={globalBusy}
             busyThis={busyDate === activeDay.date}
