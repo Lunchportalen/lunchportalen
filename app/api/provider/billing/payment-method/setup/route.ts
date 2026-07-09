@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     cancelPath: safeStr(body.cancelPath) || null,
   });
 
-  if (!result.ok) {
+  if (result.ok === false) {
     const status = result.code === "BILLING_PROFILE_NOT_FOUND" ? 409 : result.code === "STRIPE_NOT_CONFIGURED" ? 503 : 502;
     return jsonErr(rid, result.message, status, result.code);
   }

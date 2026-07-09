@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const raw = await req.text();
 
   const result = await handleProviderStripeSetupWebhook(raw, signature);
-  if (!result.ok) {
+  if (result.ok === false) {
     const status = result.code === "INVALID_SIGNATURE" ? 400 : 500;
     return jsonErr(rid, result.message, status, result.code);
   }

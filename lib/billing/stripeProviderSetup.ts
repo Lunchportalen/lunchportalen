@@ -24,6 +24,10 @@ export type StartProviderStripeSetupResult =
   | { ok: true; url: string; sessionId: string; customerId: string }
   | { ok: false; code: string; message: string };
 
+export type EnsureProviderStripeCustomerResult =
+  | { ok: true; customerId: string }
+  | { ok: false; code: string; message: string };
+
 function trimEnv(key: string): string {
   return String(process.env[key] ?? "").trim();
 }
@@ -72,7 +76,7 @@ function cardMetadata(pm: Stripe.PaymentMethod): {
 export async function ensureProviderStripeCustomer(
   providerId: string,
   deps?: StripeSetupDeps,
-): Promise<{ ok: true; customerId: string } | { ok: false; code: string; message: string }> {
+): Promise<EnsureProviderStripeCustomerResult> {
   const pid = safeStr(providerId);
   if (!pid) return { ok: false, code: "PROVIDER_ID_REQUIRED", message: "Provider mangler." };
 
@@ -134,7 +138,7 @@ export async function createProviderPaymentSetupSession(
   if (!stripe) return { ok: false, code: "STRIPE_NOT_CONFIGURED", message: "Stripe er ikke konfigurert." };
 
   const customer = await ensureProviderStripeCustomer(providerId, deps);
-  if (!customer.ok) return customer;
+  if (customer.ok === false) return customer;
 
   const session = await stripe.checkout.sessions.create({
     mode: "setup",

@@ -14,7 +14,7 @@ function safeStr(value: unknown): string {
 
 export async function POST(req: NextRequest) {
   const auth = await scopeOr401(req);
-  if (!auth.ok) return auth.response ?? auth.res;
+  if (auth.ok === false) return auth.response;
 
   const deny = requireRoleOr403(auth.ctx, "api.superadmin.billing.stripe-charge.POST", ["superadmin"]);
   if (deny) return deny;
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     actorUserId: auth.ctx.scope.userId,
   });
 
-  if (!result.ok) {
+  if (result.ok === false) {
     return jsonErr(auth.ctx.rid, result.message, 409, result.code, {
       missingRequirements: result.missingRequirements ?? [],
     });
