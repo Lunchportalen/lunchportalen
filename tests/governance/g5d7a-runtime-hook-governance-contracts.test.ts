@@ -318,6 +318,8 @@ describe("G5d.7a/7c — runtime hook flag and employee proposed flag guards", ()
         const r = rel(filePath);
         if (!/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env|md)$/.test(r)) continue;
         if (r.includes("node_modules/") || r.includes(".next/")) continue;
+        // Generated repo inventory indexes source symbols; it is not runtime wiring.
+        if (r.startsWith("repo-intelligence/")) continue;
         if (isG5d7GovernanceAllowedPath(r)) continue;
         if (isRuntimeHookFlagAllowedPath(r)) continue;
         const src = fs.readFileSync(filePath, "utf8");
@@ -339,6 +341,8 @@ describe("G5d.7a/7c — runtime hook flag and employee proposed flag guards", ()
         const r = rel(filePath);
         if (!/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env|md)$/.test(r)) continue;
         if (r.includes("node_modules/") || r.includes(".next/")) continue;
+        // Generated repo inventory indexes source symbols; it is not runtime wiring.
+        if (r.startsWith("repo-intelligence/")) continue;
         if (isG5d7GovernanceAllowedPath(r)) continue;
         const src = fs.readFileSync(filePath, "utf8");
         if (src.includes(token)) {
