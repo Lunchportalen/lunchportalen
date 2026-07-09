@@ -7,8 +7,13 @@ import {
   htmlLangForAppLocale,
   intlLocaleForAppLocale,
   isAppLocale,
+  isSupportedMarketLocale,
   parseAppLocale,
+  SUPPORTED_MARKET_LOCALES,
 } from "@/lib/i18n/localeRegistry";
+import { getMarketDefaults } from "@/lib/menu-profile/marketDefaults";
+import { isSupportedMenuProfile } from "@/lib/menu-profile/registry";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 describe("localeRegistry", () => {
   it("contains all nine app locales in stable display order (nb first, then alphabetical)", () => {
@@ -64,6 +69,70 @@ describe("localeRegistry", () => {
     for (const locale of APP_LOCALES) {
       expect(isAppLocale(locale)).toBe(true);
       expect(parseAppLocale(locale)).toBe(locale);
+    }
+  });
+
+  it("keeps routed UI app locales separate from 21 market locales", () => {
+    expect(APP_LOCALES).toHaveLength(9);
+    expect(SUPPORTED_MARKET_LOCALES).toHaveLength(21);
+    expect(SUPPORTED_MARKET_LOCALES.map((entry) => entry.locale)).toEqual([
+      "nb-NO",
+      "sv-SE",
+      "da-DK",
+      "fi-FI",
+      "en-GB",
+      "de-DE",
+      "fr-FR",
+      "es-ES",
+      "it-IT",
+      "en-US",
+      "en-CA",
+      "nl-NL",
+      "nl-BE",
+      "fr-BE",
+      "de-AT",
+      "de-CH",
+      "fr-CH",
+      "en-IE",
+      "fr-LU",
+      "en-AU",
+      "en-SG",
+    ]);
+  });
+
+  it("has complete market locale identity for all 21 entries", () => {
+    const codes = SUPPORTED_MARKET_LOCALES.map((entry) => entry.locale);
+    expect(new Set(codes).size).toBe(codes.length);
+
+    for (const entry of SUPPORTED_MARKET_LOCALES) {
+      expect(isSupportedMarketLocale(entry.locale)).toBe(true);
+      expect(entry.nativeLabel).toBeTruthy();
+      expect(entry.norwegianLabel).toBeTruthy();
+      expect(entry.englishLabel).toBeTruthy();
+      expect(isAppLocale(entry.fallbackAppLocale)).toBe(true);
+      expect(entry.market).toBeTruthy();
+      expect(entry.countryCode).toBeTruthy();
+      expect(entry.currency).toBeTruthy();
+      expect(entry.timezone).toBeTruthy();
+      expect(isSupportedMenuProfile(entry.menuProfileId)).toBe(true);
+    }
+  });
+
+  it("aligns supported market locales with market defaults where they are the default locale", () => {
+    for (const entry of SUPPORTED_MARKET_LOCALES) {
+      const defaults = getMarketDefaults(entry.market as never);
+      expect(defaults.defaultCurrency).toBe(entry.currency);
+      if (defaults.defaultLocale === entry.locale) {
+        expect(defaults.defaultMenuProfileId).toBe(entry.menuProfileId);
+      }
+    }
+  });
+
+  it("has tier display labels for every supported market locale", () => {
+    for (const entry of SUPPORTED_MARKET_LOCALES) {
+      expect(getTierDisplayLabel("BASIS", entry.locale)).toBeTruthy();
+      expect(getTierDisplayLabel("LUXUS", entry.locale)).toBeTruthy();
+      expect(getTierDisplayLabel("ENTERPRISE", entry.locale)).toBe("Enterprise");
     }
   });
 });
