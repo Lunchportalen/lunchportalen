@@ -83,4 +83,17 @@ describe("SMART-4 — menuTranslationSources", () => {
     const keys = new Set(merged.map((c) => translationSourceCandidateKey(c)));
     expect(keys.size).toBe(merged.length);
   });
+
+  it("deduplicates catalog and order-window lists when same source key appears", () => {
+    const shared = {
+      provider_id: PROVIDER_ID,
+      source_kind: "category_label" as const,
+      source_ref: "salat",
+      field: "label" as const,
+      original_text: "Salat",
+      original_text_hash: hashOriginalText("Salat"),
+    };
+    const merged = mergeTranslationSourceCandidates([shared], [shared]);
+    expect(merged).toHaveLength(1);
+  });
 });

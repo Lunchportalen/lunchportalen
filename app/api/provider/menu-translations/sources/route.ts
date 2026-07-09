@@ -53,6 +53,8 @@ export async function GET(_req: NextRequest) {
       coverage: report.coverage,
       missingCandidates: report.missingCandidates,
       staleCandidates: report.staleCandidates,
+      sourceTotals: report.sourceTotals,
+      candidateKinds: report.candidateKinds,
       sourceRefGuidance: {
         mealItem: "item.key",
         category: "category slug/key at runtime (e.g. paasmurt, salat)",
