@@ -33,6 +33,8 @@ export type PhaseCLocaleClassification =
   | "BLOCKED_UNKNOWN";
 
 export type ProviderOnboardingInput = {
+  /** Existing provider id when re-running a scoped apply; absent for new-provider plans. */
+  providerId?: string | null;
   providerName: string;
   providerSlug: string;
   locale: string;

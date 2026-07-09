@@ -1,5 +1,3 @@
-import type { ErrorEvent, Event } from "@sentry/core";
-
 const SENSITIVE_EXTRA_KEYS = new Set([
   "password",
   "token",
@@ -50,7 +48,16 @@ export function shouldEnableSentry(): boolean {
   return Boolean(resolveSentryDsn());
 }
 
-function scrubEventPayload(event: Event): void {
+type SentryEventLike = {
+  request?: { cookies?: unknown; headers?: Record<string, unknown> };
+  user?: { email?: unknown; ip_address?: unknown; username?: unknown };
+  extra?: Record<string, unknown>;
+  contexts?: Record<string, unknown>;
+  message?: unknown;
+  exception?: { values?: Array<{ value?: unknown }> };
+};
+
+function scrubEventPayload(event: SentryEventLike): void {
   if (event.request) {
     delete event.request.cookies;
     if (event.request.headers) {
@@ -89,9 +96,8 @@ function scrubEventPayload(event: Event): void {
   }
 }
 
-export function scrubSentryEvent<T extends Event>(event: T): T | null {
-  const errEvent = event as ErrorEvent;
-  const message = String(errEvent.message ?? errEvent.exception?.values?.[0]?.value ?? "");
+export function scrubSentryEvent<T extends SentryEventLike>(event: T): T | null {
+  const message = String(event.message ?? event.exception?.values?.[0]?.value ?? "");
   if (message && IGNORE_ERROR_PATTERNS.some((re) => re.test(message))) {
     return null;
   }
@@ -100,20 +106,24 @@ export function scrubSentryEvent<T extends Event>(event: T): T | null {
   return event;
 }
 
-export function buildSentryInitOptions() {
+// Keep this structural: Sentry types can be duplicated by package manager installs.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function buildSentryInitOptions(): any {
   const environment = resolveSentryEnvironment();
   const enabled = shouldEnableSentry();
   const isProduction = environment === "production";
 
-  return {
+  const options = {
     dsn: resolveSentryDsn(),
     enabled,
     environment,
     sendDefaultPii: false,
     tracesSampleRate: isProduction ? 0.1 : 1.0,
-    beforeSend(event: ErrorEvent) {
+    beforeSend(event: SentryEventLike) {
       return scrubSentryEvent(event);
     },
     ignoreErrors: IGNORE_ERROR_PATTERNS.map(String),
   };
+
+  return options;
 }

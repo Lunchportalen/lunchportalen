@@ -340,8 +340,9 @@ BEGIN
   END IF;
 
   IF v_provider_id IS NULL THEN
-    RAISE EXCEPTION
-      'PROVIDER_CONFIG_SEED_FAILED: Melhus Catering AS (slug melhus-catering) not found in public.providers';
+    RAISE NOTICE
+      'provider_config_foundation: Melhus Catering AS (slug melhus-catering) not found in public.providers; skipping optional local seed';
+    RETURN;
   END IF;
 
   IF NOT EXISTS (
