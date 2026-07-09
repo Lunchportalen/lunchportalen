@@ -24,6 +24,42 @@ export {
 } from "@/lib/menu-generator/featureFlag";
 
 export {
+  LP_LOCALIZED_GENERATOR_SOT_ENABLED_ENV,
+  LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST_ENV,
+  LP_LOCALIZED_GENERATOR_SOT_DRY_RUN_ENV,
+  LP_LOCALIZED_GENERATOR_AUTO_ROLLOUT_ENABLED_ENV,
+  isLocalizedGeneratorSotEnabled,
+  isLocalizedGeneratorSotDryRunEnabled,
+  isLocalizedGeneratorAutoRolloutEnabled,
+  parseLocalizedGeneratorSotProviderAllowlist,
+  isProviderInLocalizedGeneratorSotAllowlist,
+  isLocalizedGeneratorSotEligibleForProvider,
+} from "@/lib/menu-generator/sotFeatureFlag";
+
+export {
+  LOCALIZED_GENERATOR_SOT_PHASE,
+  LOCALIZED_GENERATOR_SOT_V1_MSDI_SNAPSHOT_MODE,
+  resolveLocalizedGeneratorSotDecision,
+  toLocalizedGeneratorSotOpsLogPayload,
+} from "@/lib/menu-generator/localizedGeneratorSotResolver";
+export type {
+  LocalizedGeneratorSotDecision,
+  LocalizedGeneratorSotDecisionReason,
+  LocalizedGeneratorSotResolverInput,
+  LocalizedGeneratorSotSelectedSource,
+} from "@/lib/menu-generator/localizedGeneratorSotResolver";
+
+export {
+  buildLocalizedGeneratorSotInactiveControl,
+  buildLocalizedGeneratorSotProviderControl,
+  toLocalizedGeneratorSotControlOpsLog,
+} from "@/lib/menu-generator/localizedGeneratorSotControl";
+export type {
+  LocalizedGeneratorSotControlStatus,
+  LocalizedGeneratorSotRuntimeControl,
+} from "@/lib/menu-generator/localizedGeneratorSotControl";
+
+export {
   resolveEconomyConfigForCountry,
   resolveEconomyConfigForMarket,
 } from "@/lib/menu-generator/countryEconomyDefaults";

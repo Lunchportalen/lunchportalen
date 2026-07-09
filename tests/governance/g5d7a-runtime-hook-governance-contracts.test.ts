@@ -55,6 +55,13 @@ const G5D7_GOVERNANCE_ALLOWED_PATHS = [
   G5D7C_WEEK_API_TEST_PATH,
   G5D8_CONTROL_PATH,
   G5D8_CONTROL_TEST_PATH,
+  "lib/menu-generator/sotFeatureFlag.ts",
+  "lib/menu-generator/localizedGeneratorSotResolver.ts",
+  "lib/menu-generator/localizedGeneratorSotControl.ts",
+  "tests/lib/menu-generator/localizedGeneratorSotFeatureFlag.test.ts",
+  "tests/lib/menu-generator/localizedGeneratorSotResolver.test.ts",
+  "tests/governance/localized-generator-sot-runtime-hook-governance-contracts.test.ts",
+  "docs/engineering/localized-generator-sot-cutover-implementation-plan.md",
   "docs/runbooks/g5d8-planning.md",
 ];
 
