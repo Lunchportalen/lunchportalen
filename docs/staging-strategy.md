@@ -132,6 +132,7 @@ Kreves **som minimum**:
 
 1. **Supabase:** Opprett/obruk **ÉN aktiv `staging`** branch (ny eller re‑aktivisert eksisterende) — **persistert**, TTL unntatt i policy. PR‑isolate branching **utsett** til etter dokumentert ROI.  
 2. **Vercel:** Strategi **A**: **Production** + **`staging`** deploy branch auto‑bygg + behold **preview** for PR‑smoke. Frem til DNS: standard `*.vercel.app`‑URL med **staging‑env‑vars**.  
+   **Operasjon:** Etter merge til `main` som skal verifiseres på staging — kjør manuell fast-forward `origin/main` → `origin/staging`. Se [staging-sync-routine.md](operations/staging-sync-routine.md). Dette er **ikke** production promote og **ikke** auto-rollout.  
 3. **Sanity:** Opprett **`staging`** datasett i **`4udoq5d8`**, **egen write‑token** + **SANITY_WEBHOOK_SECRET staging**. Aldri staging mot `production`‑dataset uten dokumentert QA‑pause.  
 4. **Domene:** `staging.app.lunchportalen.no` (**CNAME** → Vercel anbefalt mål leveres ved DNS‑oppsett).  
 5. **Data:** **Variant C** — `scripts/seed-staging.ts` (B3f) med syntetikk; **null** art. 9 felter.
