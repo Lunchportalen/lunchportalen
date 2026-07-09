@@ -10,6 +10,7 @@ import {
   formatPriceAmount,
   type ProviderMenuPriceView,
 } from "@/lib/providers/providerMenuPriceDisplay";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type Props = {
   tier: PlanTier;
@@ -20,12 +21,6 @@ type Props = {
   onNextWeek: () => void;
   workspaceView: "week" | "catalog";
   onWorkspaceViewChange: (view: "week" | "catalog") => void;
-};
-
-const TIER_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
 };
 
 export default function ProviderMenuCommandHeader({
@@ -90,7 +85,7 @@ export default function ProviderMenuCommandHeader({
                 className={`lp-editor-tier-lens__btn${active ? " is-active" : ""}`}
                 onClick={() => onTierChange(planTier)}
               >
-                {TIER_LABELS[planTier]}
+                {getTierDisplayLabel(planTier, locale)}
                 <small>{price ? `${price.priceExVatNok} kr` : "—"}</small>
               </button>
             );
@@ -100,7 +95,7 @@ export default function ProviderMenuCommandHeader({
 
       {tierPrice && !isCatalogView ? (
         <p className="lp-editor-priceline-compact" aria-label={t("header.priceLineAria")}>
-          <strong>{TIER_LABELS[tier]}</strong>
+          <strong>{getTierDisplayLabel(tier, locale)}</strong>
           {" · "}
           {formatPriceAmount(tierPrice.priceExVatNok, intlLocale, {
             minimumFractionDigits: 0,

@@ -32,19 +32,6 @@ import type {
 
 export type SnapshotSource = "live" | "fixture";
 
-type PhaseCApplyResult = {
-  ok: boolean;
-  providerId: string | null;
-  stepsCompleted: string[];
-  writesPerformed: boolean;
-  menuDaysCreated: false | number;
-  published: false;
-  sotStarted: false | boolean;
-  massExpansionStarted: false | boolean;
-  passwordPrinted: false | boolean;
-  message: string;
-};
-
 export type PhaseCOnboardCliDeps = {
   envPresence: ProviderOnboardingEnvPresence;
   /** Build live adapters only when snapshotSource=live. */
@@ -62,12 +49,8 @@ export type PhaseCOnboardCliDeps = {
   liveOnboardFlag?: boolean;
   /** Build write adapters only under full apply gates. */
   createLiveWriteAdapters?: () => ProviderOnboardingExecuteAdapters;
-  /** Optional test seam; production uses executeProviderOnboardingApply. */
-  executeApply?: (args: {
-    input: ProviderOnboardingInput;
-    snapshot: ProviderOnboardingPreflightSnapshot;
-    adapters: ProviderOnboardingExecuteAdapters;
-  }) => Promise<PhaseCApplyResult>;
+  /** Test override for apply execution. */
+  executeApply?: typeof executeProviderOnboardingApply;
 };
 
 export type PhaseCOnboardCliResult = {
@@ -398,7 +381,7 @@ export async function runPhaseCOnboardCli(
         message:
           "Apply result signaled credential disclosure; runAborted with zero writes.",
         confirmationAccepted: true,
-        providerId: input.providerId,
+        providerId: executed.providerId ?? null,
         adminEmail: input.adminEmail,
         runAborted: true,
         passwordPrinted: false,
@@ -416,7 +399,7 @@ export async function runPhaseCOnboardCli(
         message:
           "Apply result message contained a credential-shaped field; runAborted with zero writes.",
         confirmationAccepted: true,
-        providerId: input.providerId,
+        providerId: executed.providerId ?? null,
         adminEmail: input.adminEmail,
         runAborted: true,
         passwordPrinted: false,

@@ -12,6 +12,7 @@ import {
 } from "@/lib/cms/design/designContract";
 import { getDesignSettings } from "@/lib/cms/design/getDesignSettings";
 import { homePricingCopyFromCms } from "@/lib/cms/marketingMeals";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 export type HomePricingSectionProps = {
   title?: string;
@@ -27,10 +28,12 @@ export async function HomePricingSection({ title, intro, designSettings }: HomeP
   const ds = designSettings ?? (await getDesignSettings());
   const merged = mergeFullDesign(null, ds, "pricing");
   const pricingCopy = await homePricingCopyFromCms();
+  const basisLabel = getTierDisplayLabel("BASIS", "nb-NO");
+  const luxusLabel = getTierDisplayLabel("LUXUS", "nb-NO");
   const h2 = title?.trim() || "To nivå – tydelig avtale";
   const lead =
     intro?.trim() ||
-    "Avtalen settes av firma/admin. Mange velger en kombinasjon (f.eks. 4 dager Basis og 1 dag Luxus).";
+    `Avtalen settes av firma/admin. Mange velger en kombinasjon (f.eks. 4 dager ${basisLabel} og 1 dag ${luxusLabel}).`;
 
   return (
     <section className={marketingSectionClassString(merged)} aria-label="Prisnivå">
@@ -42,7 +45,7 @@ export async function HomePricingSection({ title, intro, designSettings }: HomeP
 
         <div className="lp-pricing">
           <div className={pricingPlanSurfaceClassString(false, undefined, ds)}>
-            <div className="lp-pill">Basis</div>
+            <div className="lp-pill">{basisLabel}</div>
             <h3 className={mergedHeadingClassString(merged, "h3")}>Stabil hverdag</h3>
             <p className={merged.typography.body === "compact" ? "lp-p-sm" : "lp-p"}>{pricingCopy.basisLine}</p>
             <div className="lp-price">
@@ -55,7 +58,7 @@ export async function HomePricingSection({ title, intro, designSettings }: HomeP
               <li>Forutsigbar firmalunsj</li>
             </ul>
             <Link className="lp-btn lp-btn-primary lp-btn-block lp-neon" href="/start?intent=register&source=pricing-starter">
-              Velg Basis
+              Velg {basisLabel}
             </Link>
           </div>
 
@@ -70,7 +73,7 @@ export async function HomePricingSection({ title, intro, designSettings }: HomeP
               />
             </div>
 
-            <div className="lp-pill hot">Luxus</div>
+            <div className="lp-pill hot">{luxusLabel}</div>
             <h3 className={mergedHeadingClassString(merged, "h3")}>Mer variasjon</h3>
             <p className={merged.typography.body === "compact" ? "lp-p-sm" : "lp-p"}>{pricingCopy.luxusLine}</p>
             <div className="lp-price">
@@ -83,7 +86,7 @@ export async function HomePricingSection({ title, intro, designSettings }: HomeP
               <li>Avbestilling før kl. 08:00</li>
             </ul>
             <Link className="lp-btn lp-btn-primary lp-btn-block lp-neon" href="/start?intent=register&source=pricing-luxus">
-              Velg Luxus
+              Velg {luxusLabel}
             </Link>
           </div>
         </div>

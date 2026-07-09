@@ -10,6 +10,7 @@ import {
   slotHeading,
 } from "@/lib/kitchen/buildProductionHierarchy";
 import { osloTodayISODate } from "@/lib/date/oslo";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 import Link from "next/link";
 
 import KitchenEmployeeAllergenExtra from "@/components/kitchen/KitchenEmployeeAllergenExtra";
@@ -632,7 +633,7 @@ export default function KitchenProductionPanel({ dateISO, onDateISOChange }: Kit
                                   </span>
                                   {row.tier ? (
                                     <span className="rounded-full border border-[rgb(var(--lp-border))] bg-[rgb(var(--lp-surface-2))] px-3 py-1 text-xs text-slate-700">
-                                      {row.tier === "BASIS" ? "Basis" : "Luxus"}
+                                      {getTierDisplayLabelSafe(row.tier, "nb-NO")}
                                     </span>
                                   ) : null}
                                 </div>

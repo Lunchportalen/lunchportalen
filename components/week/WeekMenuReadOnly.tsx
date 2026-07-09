@@ -3,8 +3,10 @@
 // STATUS: KEEP — henter neste uke via GET /api/week (menuDay), ikke Sanity weekPlan.
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { formatDateNO, formatWeekdayNO } from "@/lib/date/format";
 import { unwrapJsonOkData } from "@/lib/http/unwrapClientJson";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 type DayRow = {
   date: string;
@@ -17,6 +19,7 @@ type DayRow = {
 };
 
 export default function WeekMenuReadOnly() {
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState<DayRow[]>([]);
   const [weekStart, setWeekStart] = useState<string | null>(null);
@@ -56,7 +59,12 @@ export default function WeekMenuReadOnly() {
         const mapped: DayRow[] = list.map((d: any) => ({
           date: String(d?.date ?? "").slice(0, 10),
           weekday: String(d?.weekday ?? ""),
-          tier: d?.tier === "LUXUS" ? "LUXUS" : "BASIS",
+          tier:
+            d?.tier === "ENTERPRISE"
+              ? "ENTERPRISE"
+              : d?.tier === "LUXUS"
+                ? "LUXUS"
+                : "BASIS",
           title: d?.title != null ? String(d.title).trim() : null,
           description: d?.description != null ? String(d.description) : null,
           allergens: Array.isArray(d?.allergens) ? (d.allergens as unknown[]).map((x) => String(x)) : [],
@@ -139,7 +147,7 @@ export default function WeekMenuReadOnly() {
                   : "bg-white/60 ring-[rgb(var(--lp-border))]",
               ].join(" ")}
             >
-              {d.tier === "LUXUS" ? "Luxus" : "Basis"}
+              {getTierDisplayLabelSafe(d.tier, locale)}
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   CATEGORY_LABELS,
@@ -11,6 +11,7 @@ import {
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
 import { resolveProviderMenuApiError } from "@/lib/providers/providerMenuActionErrors";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 type FormStatus = "idle" | "loading" | "saved" | "published" | "error";
 
@@ -34,12 +35,6 @@ type MenuDayApiResponse = {
   error?: string;
 };
 
-const TIER_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
-
 function todayIso(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -49,6 +44,7 @@ function todayIso(): string {
 }
 
 export default function ProviderMenuEditor() {
+  const locale = useLocale();
   const t = useTranslations("provider.menu");
   const tLegacy = useTranslations("provider.menu.legacyEditor");
   const [tier, setTier] = useState<PlanTier>("BASIS");
@@ -137,7 +133,7 @@ export default function ProviderMenuEditor() {
         >
           {PLAN_TIERS.map((t) => (
             <option key={t} value={t}>
-              {TIER_LABELS[t]}
+              {getTierDisplayLabelSafe(t, locale)}
             </option>
           ))}
         </select>
@@ -184,7 +180,7 @@ export default function ProviderMenuEditor() {
               <strong>{result.mealTitle}</strong>
             </p>
             <p className="ds-body ds-provider-meny-result__meta">
-              {result.date} · {TIER_LABELS[result.tier as PlanTier] ?? result.tier} ·{" "}
+              {result.date} · {getTierDisplayLabelSafe(result.tier, locale)} ·{" "}
               {CATEGORY_LABELS[result.category as Category] ?? result.category}
             </p>
           </div>

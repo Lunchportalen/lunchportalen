@@ -12,6 +12,7 @@ import {
   deriveCompanylessRegistrationPresentation,
   loadCompanyRegistrationsInbox,
 } from "@/lib/server/superadmin/loadCompanyRegistrationsInbox";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 import RegistrationDecisionActions from "./RegistrationDecisionActions";
 
 function safeStr(v: unknown) {
@@ -45,7 +46,9 @@ function planLabel(plan: Record<string, string> | null) {
     ["Tor", plan.thu],
     ["Fre", plan.fri],
   ];
-  return days.map(([day, tier]) => `${day}: ${safeStr(tier).toUpperCase() || "—"}`).join(" · ");
+  return days
+    .map(([day, tier]) => `${day}: ${getTierDisplayLabelSafe(tier, "nb-NO", { debugWithCode: true })}`)
+    .join(" · ");
 }
 
 export default async function SuperadminRegistrationsInboxPage() {

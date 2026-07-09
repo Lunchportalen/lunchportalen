@@ -1,0 +1,234 @@
+# Phase C it-IT Generator Apply Evidence
+
+## 1. Scope
+- Phase C it-IT generator apply-only
+- Provider: Italian Lunch Pilot
+- ProviderId: `50eb1ebc-d1a9-4f6e-9737-a0415fddeaaa`
+- Slug: `italian-lunch-pilot`
+- Locale/profile: `it-IT` / `italian_office_lunch`
+- Week: `2031-12-15` → `2031-12-19`
+- Far-future week
+- Single provider
+- Single scoped apply
+- `categoryScope=all_supported`
+- `overwriteMode=create_missing_only_strict`
+- No publish
+- No SOT
+- No auto-rollout
+- No batch apply
+- No publish-as-apply
+- No onboarding apply
+
+## 2. Execution Context
+- Generator execution HEAD: `f454f62b`
+- Archive base HEAD: `9da6ba72`
+- Note:
+  - PR #454 localized tier display labels after generator apply.
+  - Internal tier codes remain unchanged.
+  - Evidence keeps raw tier codes for audit/release traceability.
+
+## 3. Preflight
+- `liveReadEnv`: Production Supabase + production Sanity aligned
+- Provider readiness:
+  - ACTIVE
+  - org mirror OK
+  - settings OK: `it-IT` / `italian_office_lunch` / `IT` / `EUR` / `Europe/Rome`
+  - admin auth OK
+  - provider_admin membership OK
+  - Sanity mirror OK
+  - providerRef resolves
+  - `providerMirrorPreflight.ok=true`
+- Inventory:
+  - all Phase C locales now READY
+  - `nb-NO` / `sv-SE` READY_FOR_SCOPED_APPLY
+  - `da-DK` / `fi-FI` / `en-GB` / `de-DE` / `fr-FR` / `es-ES` / `it-IT` READY_FOR_DRYRUN
+- Provider count before: 9
+- Orders before: 17
+- Target week before: 0 menuDays
+- Catalog snapshot before: 0 provider-scoped docs
+- Global templates:
+  - 7 docs
+  - revHash 320
+- Protected providers:
+  - Melhus 226 menuDays unchanged
+  - Swedish Lunch Pilot 15 menuDays unchanged
+  - Danish Lunch Pilot 15 menuDays unchanged
+  - Finnish Lunch Pilot 15 menuDays unchanged
+  - UK Lunch Pilot 15 menuDays unchanged
+  - German Lunch Pilot 15 menuDays unchanged
+  - French Lunch Pilot 15 menuDays unchanged
+  - Spanish Lunch Pilot 15 menuDays unchanged
+
+## 4. Pre-Apply DryRun
+- RID: `prov_mapply_mrc3cvy5_f7qr6ur6fwqmtc4p`
+- HTTP: 200
+- `ok`: true
+- providerMirrorPreflight:
+  - `ok=true`
+  - `safeToApply=true`
+  - `applyBlocked=false`
+- locale: `it-IT`
+- menuProfileId: `italian_office_lunch`
+- unsupportedCategories: 0
+- mutation performed: false
+- post-readback: 0 menuDays/catalog docs
+- Italian labels/content:
+  - Panini
+  - Insalate
+  - Piatti caldi
+  - Sushi
+  - Poké bowl
+  - Asiatico
+  - Vegetariano
+- Content examples:
+  - Piadina prosciutto
+  - Insalata tonno
+  - Penne all’arrabbiata
+  - Minestrone
+- Norwegian fallback:
+  - none in customer titles
+  - internal/operator `varmrett` warning only
+- forbiddenHits: none
+- Employee economy exposure: none
+- Employee metadata exposure: none
+
+## 5. Apply
+- RID: `prov_mapply_mrc3dvfy_m1irw3gje6m45wd3`
+- HTTP: 200
+- `ok`: true
+- Apply status: PASS — CLASS B
+- mode: apply
+- Applied exactly once: yes
+- Retry: no
+- Created menuDay drafts:
+  - 15
+  - 5 weekdays × BASIS / ENTERPRISE / LUXUS internal tier codes
+- Created provider catalog docs:
+  - 1
+  - provider-scoped category doc
+- Updated catalog docs: 0
+- Published docs changed: 0
+- Extra docs created: none beyond expected target-week drafts + provider catalog doc
+- Publish: not run
+- SOT: not started
+- Auto-rollout: not started
+
+## 6. Read-Back
+- Unique weekdays: 5
+- Tier structure:
+  - BASIS
+  - ENTERPRISE
+  - LUXUS
+- Draft status:
+  - all unpublished operational drafts
+  - `approvedForPublish=false`
+  - `customerVisible=false`
+- providerRef:
+  - `50eb1ebc-d1a9-4f6e-9737-a0415fddeaaa`
+  - all match
+- Locale/profile: `it-IT` / `italian_office_lunch`
+- Italian content:
+  - Penne all’arrabbiata
+  - Minestrone
+  - Salmone al forno
+  - Saltimbocca alla romana
+- Italian labels/catalog items:
+  - Zuppa di lenticchie
+  - Pasta al pesto
+  - Frittata di verdure
+  - Gnocchi al pomodoro
+- Allergens:
+  - present on menuDays/catalog items
+  - systemic allergen tokens include Gluten, Fisk, Melk, hvete, kasjunott
+- Norwegian fallback:
+  - none in customer-facing provider menu surface
+  - internal/operator labels only, systemic
+- Tier display:
+  - Internal codes remain BASIS / ENTERPRISE / LUXUS
+  - Customer/provider display labels are handled by PR #454
+- Melhus: untouched
+- Swedish Lunch Pilot: untouched
+- Danish Lunch Pilot: untouched
+- Finnish Lunch Pilot: untouched
+- UK Lunch Pilot: untouched
+- German Lunch Pilot: untouched
+- French Lunch Pilot: untouched
+- Spanish Lunch Pilot: untouched
+- Global templates: unchanged
+
+## 7. Post-Apply DryRun
+- createdDraftDays: 0
+- updatedDraftDays: 0
+- catalog updates: 0
+- unsupportedCategories: 0
+- duplicates: none
+- safeToApply: true
+- applyBlocked: false
+- mutation: none
+
+## 8. Employee/API
+- `/api/week`:
+  - 200
+  - PASS
+- `/api/order/window`:
+  - 200
+  - PASS
+- Economy exposure: none
+- Metadata exposure: none
+- No Italian provider leak into unrelated employee surface
+- No price/currency/VAT/commission/invoice/margin/cost leak
+- No `approved_by` / `approved_at` / `translated_text` / `original_text_hash` leak
+
+## 9. Safety
+- Orders: 17 → 17
+- Provider count: 9 → 9 after generator apply
+- Order write-path: untouched
+- `lp_order_set`: untouched
+- DB/RLS: unchanged
+- Production flags: unchanged
+- Production Sanity changed only by:
+  - 15 it-IT target-week draft menuDays
+  - 1 it-IT provider-scoped category doc
+- MenuDays: only expected it-IT target-week drafts
+- Catalog docs: only expected it-IT provider-scoped doc
+- Publish: not run
+- SOT: not started
+- Auto-rollout: not started
+- Batch apply: not run
+- Publish-as-apply: not run
+- Protected providers:
+  - no Melhus mutation
+  - no Swedish mutation
+  - no Danish mutation
+  - no Finnish mutation
+  - no UK mutation
+  - no German mutation
+  - no French mutation
+  - no Spanish mutation
+- Rollback:
+  - not needed
+  - not performed
+
+## 10. Known Risk
+- No customer-facing content risk observed.
+- Internal/system labels are operator-facing/systemic and consistent with prior locales:
+  - `varmrett`
+  - Vegetar
+  - allergen tokens
+- Customer-facing content is Italian.
+- Customer/provider tier labels are now locale-aware via PR #454.
+- Far-future unpublished drafts only.
+- Customer-invisible.
+- menuDay IDs are deterministic operational drafts, not published customer menu.
+- Some allergens may live on catalog items rather than top-level menuDay docs.
+- No further generator applies without separate scoped GO.
+- SOT remains NO-GO.
+- Auto-rollout remains NO-GO.
+
+## 11. Next Action
+- Archive this evidence first.
+- Then Phase C localized provider rollout has all nine target locales onboarded/generated and evidence-archived.
+- After merge, run final Phase C rollout summary/readiness audit under separate GO.
+- Do not start SOT.
+- Do not auto-rollout.
+- Do not run more generator applies without separate GO.

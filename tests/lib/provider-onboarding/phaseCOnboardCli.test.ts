@@ -302,18 +302,20 @@ describe("runPhaseCOnboardCli", () => {
         liveOnboardFlag: true,
         liveAdaptersEnabled: true,
         createLiveWriteAdapters: () => ({}) as never,
-        executeApply: async () => ({
-          ok: true,
-          providerId: "prov-1",
-          stepsCompleted: ["create_provider"],
-          writesPerformed: true,
-          menuDaysCreated: 0,
-          published: false,
-          sotStarted: true,
-          massExpansionStarted: true,
-          passwordPrinted: true,
-          message: "provider onboarded",
-        }),
+        executeApply: async () =>
+          ({
+            ok: true,
+            providerId: "prov-1",
+            plan: {} as never,
+            stepsCompleted: ["create_provider"],
+            writesPerformed: true,
+            menuDaysCreated: false,
+            published: false,
+            sotStarted: false,
+            massExpansionStarted: false,
+            passwordPrinted: true,
+            message: "provider onboarded",
+          }) as never,
       },
     );
     expect(result.exitCode).toBe(2);

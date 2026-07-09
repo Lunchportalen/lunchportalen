@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { NormalizedAgreement, PlanTier, TierByDay, WeekdayKey } from "@/lib/agreements/types";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type ApiOk = { ok: true; rid?: string; agreement: NormalizedAgreement | null };
 type ApiErr = { ok: false; rid?: string; error: string; message?: string; detail?: any };
@@ -423,14 +424,14 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
                 onClick={() => setPlanTier("BASIS")}
                 className={`rounded-xl border px-3 py-2 text-sm ${planTier === "BASIS" ? "bg-neutral-900 text-white" : "hover:bg-neutral-50"}`}
               >
-                BASIS
+                {getTierDisplayLabel("BASIS", "nb-NO")}
               </button>
               <button
                 type="button"
                 onClick={() => setPlanTier("LUXUS")}
                 className={`rounded-xl border px-3 py-2 text-sm ${planTier === "LUXUS" ? "bg-neutral-900 text-white" : "hover:bg-neutral-50"}`}
               >
-                LUXUS
+                {getTierDisplayLabel("LUXUS", "nb-NO")}
               </button>
             </div>
           </div>
@@ -465,7 +466,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
                           v === "BASIS" ? "bg-neutral-900 text-white" : "hover:bg-neutral-50"
                         }`}
                       >
-                        BASIS
+                        {getTierDisplayLabel("BASIS", "nb-NO")}
                       </button>
 
                       <button
@@ -475,7 +476,7 @@ export default function AgreementClient({ companyId }: { companyId: string }) {
                           v === "LUXUS" ? "bg-neutral-900 text-white" : "hover:bg-neutral-50"
                         }`}
                       >
-                        LUXUS
+                        {getTierDisplayLabel("LUXUS", "nb-NO")}
                       </button>
                     </div>
                   </div>

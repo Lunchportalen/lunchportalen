@@ -20,12 +20,7 @@ import {
 import { formatDateNO } from "@/lib/date/format";
 import { isSanityDrivenCategory } from "@/lib/provider-menu/providerMenuTierContract";
 import { intlLocaleForAppLocale, isAppLocale } from "@/lib/i18n/localeRegistry";
-
-const TIER_SOURCE_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 const LUXUS_PRICE_EX_VAT = 130;
 const ENTERPRISE_PRICE_EX_VAT = 170;
@@ -300,7 +295,7 @@ export default function ProviderMenuEditorPanel({
           <div className="lp-editor-econ" aria-label={t("editor.economy.ariaLabel")}>
             <div className="lp-editor-econ__row">
               <span className="lp-editor-econ__lbl">
-                {t("editor.economy.tierPrice", { tier: TIER_SOURCE_LABELS[tier] })}
+                {t("editor.economy.tierPrice", { tier: getTierDisplayLabel(tier, locale) })}
               </span>
               <span>{formatPriceExVatLabel(margin.priceExVatNok, priceExVatSuffix, intlLocale)}</span>
             </div>
@@ -648,7 +643,7 @@ export default function ProviderMenuEditorPanel({
                   {t("editor.enterprise.buildFromLuxus")}
                 </button>
                 <button type="button" className="ds-btn ds-btn--ghost" onClick={onCopyFromBasis}>
-                  {t("editor.enterprise.buildFromTier", { tier: TIER_SOURCE_LABELS.BASIS })}
+                  {t("editor.enterprise.buildFromTier", { tier: getTierDisplayLabel("BASIS", locale) })}
                 </button>
               </div>
 
@@ -665,8 +660,8 @@ export default function ProviderMenuEditorPanel({
                     }
                   >
                     <option value="">{t("editor.enterprise.none")}</option>
-                    <option value="BASIS">{TIER_SOURCE_LABELS.BASIS}</option>
-                    <option value="LUXUS">{TIER_SOURCE_LABELS.LUXUS}</option>
+                    <option value="BASIS">{getTierDisplayLabel("BASIS", locale)}</option>
+                    <option value="LUXUS">{getTierDisplayLabel("LUXUS", locale)}</option>
                   </select>
                 </label>
                 <label className="lp-editor-inspector__field">

@@ -5,6 +5,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import { displayLabelForMealTypeKey } from "@/lib/cms/mealTypeDisplayFallback";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type Mode = "day" | "week";
 type Totals = { basis: number; luxus: number; total: number };
@@ -53,6 +54,9 @@ type ReportOk = {
 
 type ReportErr = { ok: false; rid?: string; error?: string; message?: string; detail?: any };
 
+const BASIS_LABEL = getTierDisplayLabel("BASIS", "nb-NO");
+const LUXUS_LABEL = getTierDisplayLabel("LUXUS", "nb-NO");
+
 function safeStr(v: any) {
   return String(v ?? "").trim();
 }
@@ -74,7 +78,7 @@ function flagLabel(f: string) {
     case "missing_delivery_window":
       return "Mangler leveringsvindu";
     case "unknown_tier":
-      return "Ukjent nivå (Basis/Luxus)";
+      return `Ukjent nivå (${BASIS_LABEL}/${LUXUS_LABEL})`;
     case "missing_choice":
       return "Mangler menyvalg (day_choices)";
     case "missing_variant":
@@ -200,11 +204,11 @@ export default function KitchenReportClient() {
 
               <div className="lp-totals">
                 <div className="lp-totalBox">
-                  <div className="lp-label">Basis</div>
+                  <div className="lp-label">{BASIS_LABEL}</div>
                   <div className="lp-num">{data.grandTotals.basis}</div>
                 </div>
                 <div className="lp-totalBox">
-                  <div className="lp-label">Luxus</div>
+                  <div className="lp-label">{LUXUS_LABEL}</div>
                   <div className="lp-num">{data.grandTotals.luxus}</div>
                 </div>
                 <div className="lp-totalBox">
@@ -221,13 +225,13 @@ export default function KitchenReportClient() {
                 <div>
                   <h2 className="lp-h2">{c.companyName}</h2>
                   <div className="lp-muted">
-                    Sum: Basis {c.totals.basis} · Luxus {c.totals.luxus} · Totalt {c.totals.total}
+                    Sum: {BASIS_LABEL} {c.totals.basis} · {LUXUS_LABEL} {c.totals.luxus} · Totalt {c.totals.total}
                   </div>
                 </div>
 
                 <div className="lp-badges">
-                  <div className="lp-badge">Basis: {c.totals.basis}</div>
-                  <div className="lp-badge">Luxus: {c.totals.luxus}</div>
+                  <div className="lp-badge">{BASIS_LABEL}: {c.totals.basis}</div>
+                  <div className="lp-badge">{LUXUS_LABEL}: {c.totals.luxus}</div>
                   <div className="lp-badge">Totalt: {c.totals.total}</div>
                 </div>
               </div>
@@ -249,8 +253,8 @@ export default function KitchenReportClient() {
                         </div>
 
                         <div className="lp-badges">
-                          <div className="lp-badge">Basis: {loc.totals.basis}</div>
-                          <div className="lp-badge">Luxus: {loc.totals.luxus}</div>
+                          <div className="lp-badge">{BASIS_LABEL}: {loc.totals.basis}</div>
+                          <div className="lp-badge">{LUXUS_LABEL}: {loc.totals.luxus}</div>
                           <div className="lp-badge">Totalt: {loc.totals.total}</div>
                         </div>
                       </div>

@@ -485,7 +485,7 @@ describe("ProviderMenuBuilder i18n", () => {
     expect(html).toContain("Ukeplan");
     expect(html).toContain("Faste valg");
     expect(html).toContain("Basis");
-    expect(html).toContain("Luxus");
+    expect(html).toContain("Luksus");
     expect(html).toContain("Enterprise");
   });
 
@@ -494,8 +494,8 @@ describe("ProviderMenuBuilder i18n", () => {
     expect(html).toContain("Menu editor");
     expect(html).toContain("Week plan");
     expect(html).toContain("Fixed choices");
-    expect(html).toContain("Basis");
-    expect(html).toContain("Luxus");
+    expect(html).toContain("Basic");
+    expect(html).toContain("Premium");
     expect(html).toContain("Enterprise");
     expect(html).not.toContain("Meny-editor");
   });
@@ -504,7 +504,7 @@ describe("ProviderMenuBuilder i18n", () => {
     const html = await renderProviderMenuBuilder("es");
     expect(html).toContain("Editor de menú");
     expect(html).toContain("Plan semanal");
-    expect(html).toContain("Basis");
+    expect(html).toContain("Básico");
     expect(html).not.toContain("Meny-editor");
   });
 

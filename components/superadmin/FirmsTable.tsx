@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { CompanyStatus, FirmsQueryResult, FirmsSortKey, SortDir } from "@/lib/superadmin/types";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 function cx(...a: Array<string | false | null | undefined>) {
   return a.filter(Boolean).join(" ");
@@ -43,10 +44,11 @@ function StatusPill({ status }: { status: CompanyStatus }) {
 }
 
 function PlanPill({ plan }: { plan: string }) {
-  const p = String(plan ?? "").toUpperCase();
-  if (p === "BASIS") return <span className="lp-chip lp-chip-neutral">BASIS</span>;
-  if (p === "LUXUS") return <span className="lp-chip lp-chip-neutral">LUXUS</span>;
-  return <span className="lp-chip lp-chip-neutral">{p || "—"}</span>;
+  return (
+    <span className="lp-chip lp-chip-neutral">
+      {getTierDisplayLabelSafe(plan, "nb-NO", { debugWithCode: true, fallbackMode: "raw" })}
+    </span>
+  );
 }
 
 function fmtBinding(v: unknown) {

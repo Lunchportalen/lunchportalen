@@ -107,7 +107,7 @@ describe("agreementTierLabel — kontraktnavn, ikke UI-oversettelse", () => {
   it("mapper kjente nivåer fra data", async () => {
     const t = await loadAgreementTranslator("nb");
     expect(agreementTierLabel("BASIS", t)).toBe("Basis");
-    expect(agreementTierLabel("LUXUS", t)).toBe("Luxus");
+    expect(agreementTierLabel("LUXUS", t)).toBe("Luksus");
     expect(agreementTierLabel("ENTERPRISE", t)).toBe("Enterprise");
   });
 
@@ -163,7 +163,7 @@ describe("buildAgreementDisplay — komplett displaymodell", () => {
       locations,
       t,
     );
-    expect(d.dayMenusLines).toEqual(["Mandag · Basis", "Tirsdag · Luxus"]);
+    expect(d.dayMenusLines).toEqual(["Mandag · Basis", "Tirsdag · Luksus"]);
     expect(d.dayMenusLabel).toContain("Mandag · Basis");
     expect(d.packageLabel).toBe("Mix");
   });
@@ -247,9 +247,9 @@ describe("agreementPackageLabel — per-dag nivå i avtalekort", () => {
     ).toBe("Basis");
   });
 
-  it("kun Luxus viser Avtalenivå: Luxus", async () => {
+  it("kun Luksus viser Avtalenivå: Luksus", async () => {
     const t = await loadAgreementTranslator("nb");
-    expect(agreementPackageLabel([{ day: "wed", plan: "LUXUS" }], "BASIS", t)).toBe("Luxus");
+    expect(agreementPackageLabel([{ day: "wed", plan: "LUXUS" }], "BASIS", t)).toBe("Luksus");
   });
 
   it("kun Enterprise viser Avtalenivå: Enterprise", async () => {
@@ -300,7 +300,7 @@ describe("agreementPackageLabel — per-dag nivå i avtalekort", () => {
 
   it("uten dayMenus bruker agreements.tier fallback", async () => {
     const t = await loadAgreementTranslator("nb");
-    expect(agreementPackageLabel(null, "LUXUS", t)).toBe("Luxus");
+    expect(agreementPackageLabel(null, "LUXUS", t)).toBe("Luksus");
     expect(agreementPackageLabel([], "ENTERPRISE", t)).toBe("Enterprise");
   });
 });
