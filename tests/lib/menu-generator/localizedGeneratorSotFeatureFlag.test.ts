@@ -5,6 +5,7 @@ import {
   isLocalizedGeneratorSotDryRunEnabled,
   isLocalizedGeneratorSotEligibleForProvider,
   isLocalizedGeneratorSotEnabled,
+  isLocalizedGeneratorSotMsdiLocalizedMappingEnabled,
   isProviderInLocalizedGeneratorSotAllowlist,
   parseLocalizedGeneratorSotProviderAllowlist,
 } from "@/lib/menu-generator/sotFeatureFlag";
@@ -74,5 +75,19 @@ describe("localized generator SOT auto-rollout boundary", () => {
     };
     expect(isLocalizedGeneratorAutoRolloutEnabled(env)).toBe(true);
     expect(isLocalizedGeneratorSotEnabled(env)).toBe(true);
+  });
+
+  it("MSDI mapping flag is default OFF and independent of master SOT", () => {
+    expect(isLocalizedGeneratorSotMsdiLocalizedMappingEnabled({})).toBe(false);
+    expect(
+      isLocalizedGeneratorSotMsdiLocalizedMappingEnabled({
+        LP_LOCALIZED_GENERATOR_SOT_ENABLED: "true",
+      }),
+    ).toBe(false);
+    expect(
+      isLocalizedGeneratorSotMsdiLocalizedMappingEnabled({
+        LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED: "1",
+      }),
+    ).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { syncMenuServiceDayItemsAfterMenuDayPublish } from "@/lib/menu-publish/syncMenuServiceDayItems";
@@ -50,6 +50,8 @@ function basisLunchRows(items: unknown[] = []) {
     },
   ];
 }
+
+const DANISH_PILOT = "799ba3a2-a127-48a0-87b7-87944a2f42a3";
 
 type Seed = {
   locations: Array<{ id: string; company_id: string }>;
@@ -120,6 +122,12 @@ function createChain(table: string, seed: Seed, upserts: unknown[]) {
           error: null,
         });
       }
+      if (table === "provider_settings") {
+        return Promise.resolve({
+          data: { default_country_code: "DK", default_currency: "DKK" },
+          error: null,
+        });
+      }
       return Promise.resolve({ data: null, error: null });
     },
     upsert(rows: unknown) {
@@ -143,6 +151,11 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
   beforeEach(() => {
     mockFetchLunchCategoryRowsForProvider.mockReset();
     (sanityServer.fetch as unknown as { mockReset: () => void }).mockReset();
+    vi.unstubAllEnvs();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   const seed: Seed = {
@@ -355,5 +368,67 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
 
     expect(stats.msdiRowsUpserted).toBe(0);
     expect(admin.getUpserts()).toHaveLength(0);
+  });
+
+  it("bruker localized SOT MSDI mapping når flagg er ON (DKK, ikke legacy 9000)", async () => {
+    vi.stubEnv("LP_LOCALIZED_GENERATOR_SOT_ENABLED", "true");
+    vi.stubEnv("LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST", DANISH_PILOT);
+    vi.stubEnv("LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED", "true");
+
+    mockFetchLunchCategoryRowsForProvider.mockResolvedValue(
+      basisLunchRows([{ title: "Ost & Skinke", description: "Klassiker", allergens: ["melk"] }]),
+    );
+    (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
+      async (q: string) => {
+        if (q.includes("menuDay")) {
+          return {
+            mealTitle: "Kylling i karry",
+            meal: { title: "Kylling", description: "Med ris", allergens: ["soya"] },
+          };
+        }
+        return null;
+      },
+    );
+
+    const admin = makeAdmin({ ...seed, companyProviderId: DANISH_PILOT });
+    const stats = await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
+      serviceDate: "2026-05-18",
+      locationIds: ["loc1"],
+      providerId: DANISH_PILOT,
+    });
+
+    expect(stats.msdiRowsUpserted).toBe(3);
+    const rows = admin.getUpserts()[0] as Array<Record<string, unknown>>;
+    for (const row of rows) {
+      expect(row.offered_price_cents_ex_vat).not.toBe(9000);
+      expect(row.vat_rate_snapshot).toBe(0.25);
+    }
+    const varmrett = rows.find((r) => r.product_id === "pr3");
+    expect(String(varmrett?.product_name_snapshot)).toContain("Kylling i karry");
+  });
+
+  it("forblir legacy tier-product når SOT MSDI mapping flagg er OFF", async () => {
+    mockFetchLunchCategoryRowsForProvider.mockResolvedValue(basisLunchRows());
+    (sanityServer.fetch as unknown as { mockImplementation: (fn: unknown) => void }).mockImplementation(
+      async (q: string) => {
+        if (q.includes("menuDay")) {
+          return { mealTitle: "Dagens varmrett", meal: null };
+        }
+        return null;
+      },
+    );
+
+    const admin = makeAdmin(seed);
+    await syncMenuServiceDayItemsAfterMenuDayPublish(admin, {
+      serviceDate: "2026-05-18",
+      locationIds: ["loc1"],
+      providerId: PROVIDER_A,
+    });
+
+    const rows = admin.getUpserts()[0] as Array<Record<string, unknown>>;
+    for (const row of rows) {
+      expect(row.offered_price_cents_ex_vat).toBe(9000);
+      expect(row.vat_rate_snapshot).toBe(0.15);
+    }
   });
 });

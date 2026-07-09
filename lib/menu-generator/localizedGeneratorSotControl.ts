@@ -22,7 +22,7 @@ export type LocalizedGeneratorSotControlStatus =
   | "blocked";
 
 export type LocalizedGeneratorSotRuntimeControl = {
-  phase: "F0";
+  phase: "F1";
   sotFlag: "ON" | "OFF";
   dryRunFlag: "ON" | "OFF";
   allowlistCount: number;
@@ -51,7 +51,7 @@ function dryRunFlagLabel(env: EnvLike): "ON" | "OFF" {
 
 export function buildLocalizedGeneratorSotInactiveControl(env: EnvLike = {}): LocalizedGeneratorSotRuntimeControl {
   return {
-    phase: "F0",
+    phase: "F1",
     sotFlag: sotFlagLabel(env),
     dryRunFlag: dryRunFlagLabel(env),
     allowlistCount: parseLocalizedGeneratorSotProviderAllowlist(env).length,
@@ -82,7 +82,7 @@ export function buildLocalizedGeneratorSotProviderControl(
       : "blocked";
 
   return {
-    phase: "F0",
+    phase: "F1",
     sotFlag: "ON",
     dryRunFlag: decision.dryRun ? "ON" : "OFF",
     allowlistCount: parseLocalizedGeneratorSotProviderAllowlist(env).length,

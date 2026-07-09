@@ -27,9 +27,11 @@ export {
   LP_LOCALIZED_GENERATOR_SOT_ENABLED_ENV,
   LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST_ENV,
   LP_LOCALIZED_GENERATOR_SOT_DRY_RUN_ENV,
+  LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED_ENV,
   LP_LOCALIZED_GENERATOR_AUTO_ROLLOUT_ENABLED_ENV,
   isLocalizedGeneratorSotEnabled,
   isLocalizedGeneratorSotDryRunEnabled,
+  isLocalizedGeneratorSotMsdiLocalizedMappingEnabled,
   isLocalizedGeneratorAutoRolloutEnabled,
   parseLocalizedGeneratorSotProviderAllowlist,
   isProviderInLocalizedGeneratorSotAllowlist,
@@ -45,9 +47,25 @@ export {
 export type {
   LocalizedGeneratorSotDecision,
   LocalizedGeneratorSotDecisionReason,
+  LocalizedGeneratorSotDryRunMsdiPreview,
+  LocalizedGeneratorSotMsdiSnapshotMode,
   LocalizedGeneratorSotResolverInput,
   LocalizedGeneratorSotSelectedSource,
 } from "@/lib/menu-generator/localizedGeneratorSotResolver";
+
+export {
+  LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE,
+  buildMsdiLocalizedMappingDryRunPreview,
+  mapMsdiLocalizedItemSnapshot,
+} from "@/lib/menu-generator/sotMsdiItemMapping";
+export type {
+  MsdiLocalizedItemMappingInput,
+  MsdiLocalizedItemMappingResult,
+  VarmrettMenuProjection,
+} from "@/lib/menu-generator/sotMsdiItemMapping";
+
+export { resolveMsdiLocalizedMappingPolicy } from "@/lib/menu-generator/sotMsdiMappingPolicy";
+export type { MsdiLocalizedMappingPolicy } from "@/lib/menu-generator/sotMsdiMappingPolicy";
 
 export {
   buildLocalizedGeneratorSotInactiveControl,
