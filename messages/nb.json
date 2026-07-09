@@ -794,8 +794,16 @@
         "kitchenEmailHint": "Brukes for produksjonsgrunnlag og kjøkkenvarsler.",
         "deliveryEmailLabel": "Leveringsepost",
         "deliveryEmailHint": "Brukes for leveringsrelaterte varsler og meldinger når ordre er klare for levering.",
-        "localeLabel": "Administrasjonsspråk",
-        "localeHint": "Styrer standardspråk for leverandørens egne driftsflater når språkstøtte er tilgjengelig. Matinnhold, menyprofil, priser og valuta styres separat.",
+        "localeLabel": "Marked og administrasjonsspråk",
+        "localeHint": "Styrer lagret marked og menyprofil for dette cateringfirmaet. Påvirker ikke ansatt bestillingsvindu før neste fase.",
+        "uiLocaleSeparation": "Språk i sidefeltet endrer bare grensesnittspråk. Marked og menyprofil lagres her under driftsinnstillinger.",
+        "marketProfileLabel": "Aktiv menyprofil",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Ingen menyprofil lagret ennå — velges automatisk ved lagring av marked.",
+        "marketChangeImpact": "Endring av marked påvirker fremtidige menyforslag og genererte retter.",
+        "marketChangeCatalogPreserved": "Eksisterende katalog og publiserte bestillinger overskrives ikke.",
+        "marketChangeResetRequired": "For å bygge ny katalog fra markedsprofil kreves en egen tilbakestilling.",
+        "marketChangeEmployeeRuntime": "Ansatte får leverandørens menyprofil når runtime aktiveres i neste fase.",
         "save": "Lagre driftsinnstillinger",
         "saving": "Lagrer…",
         "saved": "Driftsinnstillinger lagret.",
@@ -1285,7 +1293,98 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Kun visning",
-        "readOnlyLead": "Du har ikke tilgang til å redigere meny. Kontakt leverandøradministrator for å få redigeringstilgang."
+        "readOnlyLead": "Du har ikke tilgang til å redigere meny. Kontakt leverandøradministrator for å få redigeringstilgang.",
+        "translationsPromoTitle": "Menyoversettelser",
+        "translationsPromoLead": "Godkjenn oversatte menytekster for ansatte senere. Ansatte ser fortsatt originaltekst frem til SMART-3.",
+        "translationsPromoCta": "Åpne menyoversettelser"
+      },
+      "translationsPage": {
+        "eyebrow": "Meny",
+        "title": "Menyoversettelser",
+        "lead": "Godkjenn og administrer oversatte menytekster for {providerName}. Dette påvirker ikke hva ansatte ser ennå.",
+        "backToMenu": "Tilbake til meny"
+      },
+      "translations": {
+        "introApproved": "Kun godkjente oversettelser vises til ansatte. Utkast, forslag og avviste rader vises aldri til ansatte.",
+        "introPartialCoverage": "Delvis dekning er normalt. Mangler eller utdatert hash faller tilbake til leverandørens originaltekst — dette endrer ikke bestillingsnøkler, pakke eller pris for ansatte.",
+        "introSourceRefs": "Kilde-referanser: måltid = item.key, kategori = kategori-slug (f.eks. paasmurt, salat), allergen = normalisert token.",
+        "introSources": "Kilder hentes fra katalog og aktivt menyvindu (publiserte menuDay-rader). Varmrett/menu_day-kilder vises når de finnes i aktivt menyvindu.",
+        "coverageTitle": "Dekning per språk",
+        "loadingSources": "Laster kilder…",
+        "noSources": "Ingen kilder funnet i katalogen ennå.",
+        "coverageTable": {
+          "locale": "Språk",
+          "coverage": "Dekning",
+          "employeeVisible": "Godkjent synlig",
+          "missing": "Mangler",
+          "draft": "Utkast",
+          "stale": "Utdatert"
+        },
+        "missingTitle": "Kilder uten godkjent oversettelse",
+        "missingCount": "{count} kilder mangler rad på minst ett mål-språk.",
+        "createDraftFromSource": "Opprett utkast",
+        "staleWarning": "{count} kilder har hash-avvik — ansatte ser originaltekst til raden er godkjent på nytt.",
+        "filters": {
+          "locale": "Språk",
+          "status": "Status",
+          "all": "Alle"
+        },
+        "status": {
+          "missing": "Mangler",
+          "draft": "Utkast",
+          "suggested": "Forslag",
+          "approved": "Godkjent",
+          "rejected": "Avvist",
+          "stale": "Utdatert"
+        },
+        "createTitle": "Ny oversettelsesrad",
+        "createLead": "Opprett manuell rad med kilde-referanse og originaltekst, eller bruk «Opprett utkast» fra kildelisten over.",
+        "form": {
+          "sourceKind": "Kilde",
+          "field": "Felt",
+          "locale": "Språk",
+          "sourceRef": "Kilde-referanse",
+          "sourceRefPlaceholder": "item.key, kategori-slug eller allergen-token",
+          "originalText": "Originaltekst",
+          "translatedTextOptional": "Oversatt tekst (valgfritt)"
+        },
+        "saveDraft": "Lagre utkast",
+        "listTitle": "Oversettelser",
+        "loading": "Laster…",
+        "emptyList": "Ingen oversettelsesrader ennå. Opprett en rad manuelt, eller vent til import fra menykilder er tilgjengelig.",
+        "listTable": {
+          "source": "Kilde",
+          "field": "Felt",
+          "locale": "Språk",
+          "original": "Original",
+          "translated": "Oversatt",
+          "status": "Status",
+          "updated": "Oppdatert",
+          "actions": "Handling"
+        },
+        "hashMismatch": "Hash avviker — marker utdatert ved behov",
+        "approve": "Godkjenn",
+        "reject": "Avvis",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Kunne ikke hente oversettelser.",
+          "updateFailed": "Kunne ikke oppdatere oversettelse.",
+          "createFailed": "Kunne ikke opprette oversettelse."
+        }
+      },
+      "legacyEditor": {
+        "intro": "For at ansatte skal kunne bestille må firmaet ha aktiv avtale, og menyen må være publisert.",
+        "date": "Dato",
+        "plan": "Plan",
+        "category": "Kategori",
+        "mealTitle": "Rettens navn",
+        "description": "Beskrivelse",
+        "allergens": "Allergener (valgfritt, kommaseparert)",
+        "allergensPlaceholder": "F.eks. melk, hvete",
+        "savingDraft": "Lagrer…",
+        "saveDraft": "Lagre utkast",
+        "publishing": "Publiserer…",
+        "publishMenu": "Publiser meny"
       },
       "header": {
         "eyebrow": "Meny-editor",
@@ -1377,6 +1476,7 @@
         "saveFailed": "Kunne ikke lagre meny.",
         "copySourceEmpty": "Ingen {tier}-meny å kopiere for denne dagen/kategorien.",
         "resetVarmrettFailed": "Kunne ikke tilbakestille varmrett.",
+        "generateProfileWeekFailed": "Kunne ikke generere uke fra profilbank.",
         "publishConfirmRequired": "{warning} Bekreft for å publisere likevel.",
         "unauthorized": "Ikke innlogget.",
         "forbidden": "Du har ikke tilgang til meny.",
@@ -1391,6 +1491,7 @@
         "published": "Meny publisert.",
         "draftSaved": "Utkast lagret.",
         "resetVarmrett": "Varmrett tilbakestilt til generert.",
+        "profileWeekGenerated": "Genererte varmrett for {count} dag(er) fra profilbank.",
         "copiedFromTier": "Kopiert fra {tier}. Legg til Enterprise-upgrade før publisering."
       },
       "validation": {
@@ -1460,9 +1561,6 @@
           "selectDay": "Velg en dag i ukeplanen for å redigere katalogvalg."
         },
         "packageCard": {
-          "basisIncludes": "Påsmurt · Salatboks · Dagens varmrett",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Samme varmrett + ekstra verdi",
           "notSeparateProduction": "Ikke egen produksjonsrett",
           "sharedWarmDishHint": "Én felles varmrett"
         }
@@ -1631,6 +1729,19 @@
         "presentationOnly": "Kun presentasjon",
         "packagesLabel": "Pakker",
         "profileCategoryLabel": "Profilkategori"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Aktiv menyprofil",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Varmrettforslag følger denne profilen. Eksisterende innhold og publiserte dager endres ikke automatisk.",
+        "title": "Profilbaserte varmrettforslag",
+        "description": "Nye varmrettforslag og standardgenerering følger aktiv menyprofil. Eksisterende innhold og publiserte dager endres ikke automatisk.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} forslag",
+        "resolveMeta": "Profilkilde: {source}",
+        "bankSuggestionsLabel": "Fem forslag fra profilbank",
+        "generateWeek": "Generer uke fra profilbank",
+        "generating": "Genererer …",
+        "generateHint": "Fyller kun tomme, ulåste dager som utkast. Leverandørinnhold og publiserte dager hoppes over."
       },
       "workspaceWarmDishPreview": {
         "title": "Varmrettbank for menyprofil",

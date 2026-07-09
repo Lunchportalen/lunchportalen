@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   approveProviderRegistration,
@@ -9,6 +9,7 @@ import {
 } from "@/app/leverandor/registreringer/actions";
 import type { ProviderRegistrationRow } from "@/lib/providers/loadProviderRegistrations";
 import { resolveProviderRegistrationActionError } from "@/lib/providers/providerRegistrationActionErrors";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 export type RegistrationApproveDialogProps = {
   open: boolean;
@@ -32,6 +33,7 @@ export default function RegistrationApproveDialog({
   const [mode, setMode] = useState<"approve" | "reject">("approve");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const locale = useLocale();
   const tDialog = useTranslations("provider.registrations.dialogs");
   const tErrors = useTranslations("provider.registrations.errors");
 
@@ -120,8 +122,8 @@ export default function RegistrationApproveDialog({
               value={tier}
               onChange={(e) => setTier(e.target.value as "BASIS" | "LUXUS")}
             >
-              <option value="BASIS">BASIS</option>
-              <option value="LUXUS">LUXUS</option>
+              <option value="BASIS">{getTierDisplayLabel("BASIS", locale)}</option>
+              <option value="LUXUS">{getTierDisplayLabel("LUXUS", locale)}</option>
             </select>
           </div>
         ) : (

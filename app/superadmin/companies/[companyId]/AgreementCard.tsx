@@ -4,6 +4,7 @@ import type { ContractOverview } from "@/lib/agreements/contractBindingCompute";
 import type { AgreementDocumentOverview } from "@/lib/agreements/buildAgreementDocumentOverview";
 import { formatDateNO, formatDateTimeNO } from "@/lib/date/format";
 import { isIsoDate } from "@/lib/date/oslo";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 type AgreementSnapshot = {
   id: string;
@@ -185,11 +186,10 @@ export default function AgreementCard({ companyId, initialAgreement, contractOve
             <div>
               <div className="text-xs text-[rgb(var(--lp-muted))]">Plan</div>
               <div className="font-medium">
-                {contractOverview.plan_tier === "LUXUS"
-                  ? "LUXUS"
-                  : contractOverview.plan_tier === "BASIS"
-                    ? "BASIS"
-                    : contractOverview.plan_tier || "—"}
+                {getTierDisplayLabelSafe(contractOverview.plan_tier, "nb-NO", {
+                  debugWithCode: true,
+                  fallbackMode: "raw",
+                })}
               </div>
             </div>
           </div>
@@ -209,11 +209,12 @@ export default function AgreementCard({ companyId, initialAgreement, contractOve
             <div>
               <div className="text-xs text-[rgb(var(--lp-muted))]">Tier</div>
               <div className="font-medium">
-                {normalizeTier(initialAgreement.tier ?? null) === "LUXUS"
-                  ? "LUXUS"
-                  : normalizeTier(initialAgreement.tier ?? null) === "BASIS"
-                    ? "BASIS"
-                    : "Ikke satt"}
+                {normalizeTier(initialAgreement.tier ?? null)
+                  ? getTierDisplayLabelSafe(initialAgreement.tier, "nb-NO", {
+                      debugWithCode: true,
+                      fallbackMode: "raw",
+                    })
+                  : "Ikke satt"}
               </div>
             </div>
             <div>

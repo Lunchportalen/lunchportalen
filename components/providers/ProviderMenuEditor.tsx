@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   CATEGORY_LABELS,
@@ -11,6 +11,7 @@ import {
   type PlanTier,
 } from "@/lib/cms/menuDayContract";
 import { resolveProviderMenuApiError } from "@/lib/providers/providerMenuActionErrors";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 type FormStatus = "idle" | "loading" | "saved" | "published" | "error";
 
@@ -34,12 +35,6 @@ type MenuDayApiResponse = {
   error?: string;
 };
 
-const TIER_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
-
 function todayIso(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -49,7 +44,9 @@ function todayIso(): string {
 }
 
 export default function ProviderMenuEditor() {
+  const locale = useLocale();
   const t = useTranslations("provider.menu");
+  const tLegacy = useTranslations("provider.menu.legacyEditor");
   const [tier, setTier] = useState<PlanTier>("BASIS");
   const [category, setCategory] = useState<Category>("varmrett");
   const [status, setStatus] = useState<FormStatus>("idle");
@@ -120,15 +117,13 @@ export default function ProviderMenuEditor() {
 
   return (
     <section className="ds-card ds-provider-meny-card">
-      <p className="ds-body">
-        For at ansatte skal kunne bestille må firmaet ha aktiv avtale, og menyen må være publisert.
-      </p>
+      <p className="ds-body">{tLegacy("intro")}</p>
 
       <form className="lp-demo-form ds-provider-meny-form" onSubmit={onPublish} noValidate>
-        <label htmlFor="menu-date">Dato</label>
+        <label htmlFor="menu-date">{tLegacy("date")}</label>
         <input id="menu-date" name="date" type="date" required defaultValue={todayIso()} />
 
-        <label htmlFor="menu-tier">Plan</label>
+        <label htmlFor="menu-tier">{tLegacy("plan")}</label>
         <select
           id="menu-tier"
           name="tier"
@@ -138,12 +133,12 @@ export default function ProviderMenuEditor() {
         >
           {PLAN_TIERS.map((t) => (
             <option key={t} value={t}>
-              {TIER_LABELS[t]}
+              {getTierDisplayLabelSafe(t, locale)}
             </option>
           ))}
         </select>
 
-        <label htmlFor="menu-category">Kategori</label>
+        <label htmlFor="menu-category">{tLegacy("category")}</label>
         <select
           id="menu-category"
           name="category"
@@ -158,19 +153,19 @@ export default function ProviderMenuEditor() {
           ))}
         </select>
 
-        <label htmlFor="menu-meal-title">Rettens navn</label>
+        <label htmlFor="menu-meal-title">{tLegacy("mealTitle")}</label>
         <input id="menu-meal-title" name="mealTitle" type="text" required maxLength={120} />
 
-        <label htmlFor="menu-description">Beskrivelse</label>
+        <label htmlFor="menu-description">{tLegacy("description")}</label>
         <textarea id="menu-description" name="description" rows={4} required maxLength={4000} />
 
-        <label htmlFor="menu-allergens">Allergener (valgfritt, kommaseparert)</label>
+        <label htmlFor="menu-allergens">{tLegacy("allergens")}</label>
         <textarea
           id="menu-allergens"
           name="allergensText"
           rows={2}
           maxLength={2000}
-          placeholder="F.eks. melk, hvete"
+          placeholder={tLegacy("allergensPlaceholder")}
         />
 
         {message ? (
@@ -185,7 +180,7 @@ export default function ProviderMenuEditor() {
               <strong>{result.mealTitle}</strong>
             </p>
             <p className="ds-body ds-provider-meny-result__meta">
-              {result.date} · {TIER_LABELS[result.tier as PlanTier] ?? result.tier} ·{" "}
+              {result.date} · {getTierDisplayLabelSafe(result.tier, locale)} ·{" "}
               {CATEGORY_LABELS[result.category as Category] ?? result.category}
             </p>
           </div>
@@ -201,10 +196,10 @@ export default function ProviderMenuEditor() {
               if (form) startTransition(() => submit("draft", form));
             }}
           >
-            {pending && status === "loading" ? "Lagrer…" : "Lagre utkast"}
+            {pending && status === "loading" ? tLegacy("savingDraft") : tLegacy("saveDraft")}
           </button>
           <button type="submit" className="ds-btn ds-btn--primary" disabled={pending || status === "loading"}>
-            {pending && status === "loading" ? "Publiserer…" : "Publiser meny"}
+            {pending && status === "loading" ? tLegacy("publishing") : tLegacy("publishMenu")}
           </button>
         </div>
       </form>

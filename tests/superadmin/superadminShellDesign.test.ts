@@ -38,6 +38,7 @@ describe("Superadmin shell design system", () => {
       "/superadmin/agreements",
       "/superadmin/system",
       "/superadmin/pilot-control",
+      "/superadmin/menu-profiles",
       "/superadmin/audit",
       "/superadmin/tripletex",
       "/superadmin/control-tower",
@@ -85,6 +86,12 @@ describe("Superadmin shell design system", () => {
       expect(src).not.toContain("lp_order_set");
       expect(src).not.toContain("lp_order_advance_status");
     }
+  });
+
+  it("Menyprofil-kontroll bruker SuperadminPageShell i klient", () => {
+    const client = readSource("app/superadmin/menu-profiles/MenuProfilesClient.tsx");
+    expect(client).toContain("SuperadminPageShell");
+    expect(client).toContain("ordreskrivebane");
   });
 
   it("Audit tabell bruker bred HTML-table med break-all (ikke vertikal grid-ID)", () => {

@@ -82,6 +82,10 @@ function trimMeta(m: Record<string, unknown> | undefined): Record<string, unknow
   if (!m) return {};
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(m)) {
+    if ((k === "before" || k === "after") && (v === null || (typeof v === "object" && !Array.isArray(v)))) {
+      out[k] = v;
+      continue;
+    }
     if (typeof v === "string") out[k] = v.length > 500 ? `${v.slice(0, 500)}…` : v;
     else if (typeof v === "number" || typeof v === "boolean" || v === null) out[k] = v;
     else if (typeof v === "object" && v !== null && !Array.isArray(v)) out[k] = "[object]";

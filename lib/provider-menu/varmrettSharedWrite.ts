@@ -46,6 +46,17 @@ function safeTrimField(value: unknown, max = 4000): string {
   return String(value ?? "").trim().slice(0, max);
 }
 
+function parseAllergensFromText(text: string | null | undefined): string[] | undefined {
+  const raw = safeTrimField(text, 2000);
+  if (!raw) return undefined;
+  const parts = raw
+    .split(/[,;\n]+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .slice(0, 32);
+  return parts.length ? parts : undefined;
+}
+
 function getWeekdaysMonFri(weekStartISO: string): string[] {
   return [0, 1, 2, 3, 4].map((i) => addDaysISO(weekStartISO, i));
 }
@@ -155,7 +166,12 @@ async function writeVarmrettDateAllTiers(
   providerId: string,
   shared: VarmrettSharedInput,
   rowsForDate: ExtendedRow[],
-  opts?: { providerOverride?: boolean; preserveBaseline?: GeneratedBaseline | null; lockState?: ProviderOrderLockState },
+  opts?: {
+    providerOverride?: boolean;
+    preserveBaseline?: GeneratedBaseline | null;
+    lockState?: ProviderOrderLockState;
+    profileGenerated?: boolean;
+  },
 ): Promise<{ ok: true; warnings: string[] } | { ok: false; error: string; field?: string }> {
   const lockState = opts?.lockState ?? (await loadProviderOrderLockState(providerId));
   const canonical = rowsForDate.find((r) => r.tier === "BASIS") ?? rowsForDate[0];
@@ -180,6 +196,14 @@ async function writeVarmrettDateAllTiers(
   const warnings: string[] = [];
   const baseline =
     opts?.preserveBaseline ??
+    (opts?.profileGenerated
+      ? {
+          mealTitle: shared.mealTitle,
+          description: shared.description,
+          allergens: parseAllergensFromText(shared.allergensText),
+          estimatedCostPerPortion: shared.estimatedCostPerPortion ?? undefined,
+        }
+      : null) ??
     resolveBaselineForRow(rowsForDate.find((r) => r.generatedBaseline?.mealTitle || r.autoFilled)) ??
     resolveBaselineForRow(rowsForDate[0]);
 
@@ -194,7 +218,8 @@ async function writeVarmrettDateAllTiers(
 
     const patch = {
       ...payloadResult.payload,
-      providerOverride: opts?.providerOverride ?? true,
+      providerOverride: opts?.profileGenerated ? false : (opts?.providerOverride ?? true),
+      ...(opts?.profileGenerated ? { autoFilled: true } : {}),
       ...(baseline ? { generatedBaseline: baseline } : {}),
     };
 
@@ -321,6 +346,35 @@ export async function resetSharedVarmrettToBaseline(
     ok: true,
     date,
     status,
+    reconciledDates: [],
+    warnings: writeResult.warnings.length ? writeResult.warnings : undefined,
+  };
+}
+
+export async function writeGeneratedSharedVarmrettForProvider(
+  client: SanityClient,
+  providerId: string,
+  input: VarmrettSharedInput,
+  opts?: { providerSlug?: string | null },
+): Promise<VarmrettSharedWriteResult> {
+  const date = safeTrimField(input.date, 10);
+  const lockState = await loadProviderOrderLockState(providerId);
+  const rows = (await loadProviderMenuDaysForDates(providerId, [date], {
+    providerSlug: opts?.providerSlug ?? null,
+  })) as ExtendedRow[];
+
+  const writeResult = await writeVarmrettDateAllTiers(client, providerId, input, rows, {
+    profileGenerated: true,
+    lockState,
+  });
+  if (writeResult.ok === false) {
+    return { ok: false, error: writeResult.error, field: writeResult.field };
+  }
+
+  return {
+    ok: true,
+    date,
+    status: input.status,
     reconciledDates: [],
     warnings: writeResult.warnings.length ? writeResult.warnings : undefined,
   };

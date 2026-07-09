@@ -794,8 +794,16 @@
         "kitchenEmailHint": "Used for production basis and kitchen alerts.",
         "deliveryEmailLabel": "Delivery email",
         "deliveryEmailHint": "Used for delivery-related alerts and messages when orders are ready for delivery.",
-        "localeLabel": "Administration language",
-        "localeHint": "Sets the default language for the provider's operational surfaces when language support is available. Menu content, menu profile, prices and currency are controlled separately.",
+        "localeLabel": "Market and administration language",
+        "localeHint": "Controls the stored market and menu profile for this catering company. Does not affect the employee order window until the next phase.",
+        "uiLocaleSeparation": "The sidebar language only changes interface text. Market and menu profile are saved here under operational settings.",
+        "marketProfileLabel": "Active menu profile",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "No menu profile saved yet — selected automatically when you save the market.",
+        "marketChangeImpact": "Changing market affects future menu suggestions and generated dishes.",
+        "marketChangeCatalogPreserved": "Existing catalog and published orders are not overwritten.",
+        "marketChangeResetRequired": "Building a new catalog from a market profile requires a separate reset.",
+        "marketChangeEmployeeRuntime": "Employees will receive the provider menu profile when runtime is enabled in the next phase.",
         "save": "Save operational settings",
         "saving": "Saving…",
         "saved": "Operational settings saved.",
@@ -1285,7 +1293,98 @@
     "menu": {
       "page": {
         "readOnlyTitle": "View only",
-        "readOnlyLead": "You do not have permission to edit the menu. Contact your provider administrator for edit access."
+        "readOnlyLead": "You do not have permission to edit the menu. Contact your provider administrator for edit access.",
+        "translationsPromoTitle": "Menu translations",
+        "translationsPromoLead": "Approve translated menu text for employees later. Employees still see original text until SMART-3.",
+        "translationsPromoCta": "Open menu translations"
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Menu translations",
+        "lead": "Approve and manage translated menu text for {providerName}. This does not change what employees see yet.",
+        "backToMenu": "Back to menu"
+      },
+      "translations": {
+        "introApproved": "Only approved translations are shown to employees. Draft, suggested and rejected rows are never shown to employees.",
+        "introPartialCoverage": "Partial coverage is normal. Missing or stale hash falls back to the provider's original text — this does not change order keys, package or price for employees.",
+        "introSourceRefs": "Source refs: meal = item.key, category = category slug (e.g. paasmurt, salat), allergen = normalized token.",
+        "introSources": "Sources come from catalog and active menu window (published menuDay rows). Hot meal/menu_day sources appear when present in the active menu window.",
+        "coverageTitle": "Coverage by language",
+        "loadingSources": "Loading sources…",
+        "noSources": "No sources found in catalog yet.",
+        "coverageTable": {
+          "locale": "Language",
+          "coverage": "Coverage",
+          "employeeVisible": "Approved visible",
+          "missing": "Missing",
+          "draft": "Draft",
+          "stale": "Stale"
+        },
+        "missingTitle": "Sources without approved translation",
+        "missingCount": "{count} sources missing a row for at least one target language.",
+        "createDraftFromSource": "Create draft",
+        "staleWarning": "{count} sources have hash mismatch — employees see original text until the row is approved again.",
+        "filters": {
+          "locale": "Language",
+          "status": "Status",
+          "all": "All"
+        },
+        "status": {
+          "missing": "Missing",
+          "draft": "Draft",
+          "suggested": "Suggested",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "stale": "Stale"
+        },
+        "createTitle": "New translation row",
+        "createLead": "Create a manual row with source ref and original text, or use «Create draft» from the source list above.",
+        "form": {
+          "sourceKind": "Source",
+          "field": "Field",
+          "locale": "Language",
+          "sourceRef": "Source reference",
+          "sourceRefPlaceholder": "item.key, category slug or allergen token",
+          "originalText": "Original text",
+          "translatedTextOptional": "Translated text (optional)"
+        },
+        "saveDraft": "Save draft",
+        "listTitle": "Translations",
+        "loading": "Loading…",
+        "emptyList": "No translation rows yet. Create a row manually, or wait until import from menu sources is available.",
+        "listTable": {
+          "source": "Source",
+          "field": "Field",
+          "locale": "Language",
+          "original": "Original",
+          "translated": "Translated",
+          "status": "Status",
+          "updated": "Updated",
+          "actions": "Actions"
+        },
+        "hashMismatch": "Hash mismatch — mark stale if needed",
+        "approve": "Approve",
+        "reject": "Reject",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Could not load translations.",
+          "updateFailed": "Could not update translation.",
+          "createFailed": "Could not create translation."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Employees can order only when the company has an active agreement and the menu is published.",
+        "date": "Date",
+        "plan": "Plan",
+        "category": "Category",
+        "mealTitle": "Dish name",
+        "description": "Description",
+        "allergens": "Allergens (optional, comma-separated)",
+        "allergensPlaceholder": "E.g. milk, wheat",
+        "savingDraft": "Saving…",
+        "saveDraft": "Save draft",
+        "publishing": "Publishing…",
+        "publishMenu": "Publish menu"
       },
       "header": {
         "eyebrow": "Menu editor",
@@ -1377,6 +1476,7 @@
         "saveFailed": "Could not save menu.",
         "copySourceEmpty": "No {tier} menu to copy for this day/category.",
         "resetVarmrettFailed": "Could not reset hot meal.",
+        "generateProfileWeekFailed": "Could not generate week from profile bank.",
         "publishConfirmRequired": "{warning} Confirm to publish anyway.",
         "unauthorized": "Not signed in.",
         "forbidden": "You do not have access to the menu.",
@@ -1391,6 +1491,7 @@
         "published": "Menu published.",
         "draftSaved": "Draft saved.",
         "resetVarmrett": "Hot meal reset to generated.",
+        "profileWeekGenerated": "Generated hot meals for {count} day(s) from profile bank.",
         "copiedFromTier": "Copied from {tier}. Add Enterprise upgrade before publishing."
       },
       "validation": {
@@ -1457,9 +1558,6 @@
           "prefix": "Allergens: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Open sandwich · Salad box · Today's warm dish",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Same warm dish + added value",
           "notSeparateProduction": "Not a separate production dish",
           "sharedWarmDishHint": "One shared warm dish"
         },
@@ -1631,6 +1729,19 @@
         "presentationOnly": "Presentation only",
         "packagesLabel": "Packages",
         "profileCategoryLabel": "Profile category"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "title": "Profile-based hot meal suggestions",
+        "description": "New hot meal suggestions and default generation follow the active menu profile. Existing content and published days are not changed automatically.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggestions",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
+        "generateWeek": "Generate week from profile bank",
+        "generating": "Generating …",
+        "generateHint": "Fills only empty, unlocked days as drafts. Provider content and published days are skipped."
       },
       "workspaceWarmDishPreview": {
         "title": "Warm dish bank for menu profile",

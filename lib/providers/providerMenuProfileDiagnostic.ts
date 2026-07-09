@@ -7,6 +7,7 @@ import {
   LP_MENU_PROFILE_FIXED_CATEGORIES_ENV,
   LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV,
   LP_MENU_PROFILE_RESOLVER_ENV,
+  LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV,
   LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV,
   LP_MENU_PROFILE_WARM_DISH_PREVIEW_ENV,
 } from "@/lib/menu-profile/featureFlag";
@@ -60,6 +61,8 @@ export type ProviderMenuProfileDiagnostic =
   | ProviderMenuProfileDiagnosticError
   | ProviderMenuProfileDiagnosticLegacy;
 
+import { LP_LOCALIZED_FIXED_MENU_GENERATOR_ENV } from "@/lib/menu-generator/featureFlag";
+
 /** Host env bag for menu profile feature flags (server wiring only). */
 export function menuProfileResolverHostEnv(): Readonly<Record<string, string | undefined>> {
   return {
@@ -69,6 +72,9 @@ export function menuProfileResolverHostEnv(): Readonly<Record<string, string | u
     [LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL_ENV]:
       process.env.LP_MENU_PROFILE_RUNTIME_MAPPING_PROPOSAL,
     [LP_MENU_PROFILE_MAPPING_DRAFT_API_ENV]: process.env.LP_MENU_PROFILE_MAPPING_DRAFT_API,
+    [LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV]:
+      process.env.LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK,
+    [LP_LOCALIZED_FIXED_MENU_GENERATOR_ENV]: process.env.LP_LOCALIZED_FIXED_MENU_GENERATOR,
   };
 }
 

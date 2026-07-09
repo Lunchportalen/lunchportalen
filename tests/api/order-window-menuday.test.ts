@@ -10,16 +10,16 @@ describe("/api/order/window menuDay categories", () => {
     expect(categories.map((c) => c.key)).toEqual(["paasmurt", "salatboks", "varmmat"]);
   });
 
-  test("LUXUS company gets six categories", () => {
+  test("LUXUS company gets seven categories", () => {
     const categories = buildMenuDayCategories({ planTier: "LUXUS", menus: [] });
 
-    expect(categories.map((c) => c.category)).toEqual(["paasmurt", "salat", "sushi", "pokebowl", "thai", "varmrett"]);
+    expect(categories.map((c) => c.category)).toEqual(["paasmurt", "salat", "sushi", "pokebowl", "thai", "vegetarian", "varmrett"]);
   });
 
-  test("ENTERPRISE company gets six categories", () => {
+  test("ENTERPRISE company gets seven categories", () => {
     const categories = buildMenuDayCategories({ planTier: "ENTERPRISE", menus: [] });
 
-    expect(categories.map((c) => c.category)).toEqual(["paasmurt", "salat", "sushi", "pokebowl", "thai", "varmrett"]);
+    expect(categories.map((c) => c.category)).toEqual(["paasmurt", "salat", "sushi", "pokebowl", "thai", "vegetarian", "varmrett"]);
   });
 
   test("date without menuDay data exposes unavailable categories", () => {

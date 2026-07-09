@@ -9,12 +9,15 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import ProviderMenuBuilder from "@/components/providers/ProviderMenuBuilder";
+import ProviderMenuGeneratorPreviewPanel from "@/components/providers/ProviderMenuGeneratorPreviewPanel";
+import { buildProviderMenuGeneratorPreviewPresentation } from "@/lib/provider-menu/providerMenuGeneratorPresentation";
 import { hasProviderRole } from "@/lib/auth/provider";
 import { getProviderAdminContext } from "@/lib/auth/providerContext";
 import { getAuthContext } from "@/lib/auth/getAuthContext";
 import { buildProviderMenuWorkspacePresentation } from "@/lib/provider-menu/providerMenuProfilePresentation";
 import { buildProviderMenuFixedCategoryPresentation } from "@/lib/provider-menu/providerMenuProfileFixedCategories";
 import { buildProviderMenuWarmDishPreviewPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishPreview";
+import { buildProviderMenuWarmDishGenerationPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishGeneration";
 import { buildProviderMenuRuntimeMappingProposalPresentation } from "@/lib/provider-menu/providerMenuRuntimeMappingProposal";
 import { getMarketDefaults } from "@/lib/menu-profile/marketDefaults";
 import type { CurrencyCode } from "@/lib/menu-profile/types";
@@ -27,6 +30,10 @@ import {
   loadAndResolveProviderMenuProfile,
   loadProviderSettingsMenuProfileRow,
 } from "@/lib/providers/loadProviderSettingsMenuProfile";
+import {
+  buildProfileRuntimeCategoryLabelsFromResolver,
+} from "@/lib/menu-profile/profileMenuRuntime";
+import { buildLocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
 import { menuProfileResolverHostEnv } from "@/lib/providers/providerMenuProfileDiagnostic";
 
 export default async function LeverandorMenyPage() {
@@ -63,6 +70,10 @@ export default async function LeverandorMenyPage() {
     menuProfileRow?.defaultCurrency ?? getMarketDefaults("NO").defaultCurrency,
     menuProfileEnv,
   );
+  const warmDishGenerationPresentation = buildProviderMenuWarmDishGenerationPresentation(
+    menuProfileResolver,
+    menuProfileEnv,
+  );
 
   const defaultCurrency: CurrencyCode =
     (menuProfileRow?.defaultCurrency as CurrencyCode | undefined) ??
@@ -94,17 +105,33 @@ export default async function LeverandorMenyPage() {
   const mappingDraftSaveEnabled =
     runtimeMappingProposal.active && isMenuProfileMappingDraftSaveUiEnabled(menuProfileEnv);
 
+  const localizedMenuSurface = buildLocalizedMenuSurfacePresentation({
+    providerId: provider.id,
+    settingsRow: menuProfileRow,
+    resolverResult: menuProfileResolver,
+    env: menuProfileEnv,
+  });
+
+  const profileCategoryLabels = localizedMenuSurface.active
+    ? localizedMenuSurface.categoryLabels
+    : buildProfileRuntimeCategoryLabelsFromResolver(menuProfileResolver, menuProfileEnv);
+
+  const generatorPreviewPresentation = buildProviderMenuGeneratorPreviewPresentation({
+    providerId: provider.id,
+    settingsRow: menuProfileRow,
+    resolverResult: menuProfileResolver,
+    env: menuProfileEnv,
+  });
+
   return (
     <div className="ds-provider-meny-page lp-editor-page">
+      <ProviderMenuGeneratorPreviewPanel presentation={generatorPreviewPresentation} canApply={canEdit} />
       {canSaveMappingDraft ? (
         <section className="ds-card ds-section">
-          <h2 className="ds-h3">Menyoversettelser</h2>
-          <p className="ds-body">
-            Godkjenn oversatte menytekster for ansatte senere. Ansatte ser fortsatt originaltekst frem
-            til SMART-3.
-          </p>
+          <h2 className="ds-h3">{t("translationsPromoTitle")}</h2>
+          <p className="ds-body">{t("translationsPromoLead")}</p>
           <Link href="/leverandor/meny/oversettelser" className="ds-btn ds-btn-primary">
-            Åpne menyoversettelser
+            {t("translationsPromoCta")}
           </Link>
         </section>
       ) : null}
@@ -113,9 +140,12 @@ export default async function LeverandorMenyPage() {
           workspacePresentation={workspacePresentation}
           fixedCategoryPresentation={fixedCategoryPresentation}
           warmDishPreviewPresentation={warmDishPreviewPresentation}
+          warmDishGenerationPresentation={warmDishGenerationPresentation}
           runtimeMappingProposal={runtimeMappingProposal}
           mappingDraftSaveEnabled={mappingDraftSaveEnabled}
           canSaveMappingDraft={canSaveMappingDraft}
+          profileCategoryLabels={profileCategoryLabels ?? undefined}
+          localizedMenuSurface={localizedMenuSurface}
         />
       ) : (
         <section className="ds-card ds-provider-meny-card">

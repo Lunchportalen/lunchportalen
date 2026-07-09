@@ -4,6 +4,7 @@ import AdminTechnicalDetails from "@/components/admin/AdminTechnicalDetails";
 import type { AgreementPageData, DayKey } from "@/lib/admin/agreement/types";
 import { formatDateNO, formatDateTimeNO } from "@/lib/date/format";
 import type { CompanyOperationalBrief } from "@/lib/server/admin/loadCompanyOperationalBrief";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
 
@@ -125,7 +126,7 @@ export default function AgreementDeliveryBasisView({
                     <div className="font-semibold text-neutral-900">{DAY_LABELS[dayKey]}</div>
                     <div className="mt-1 text-xs text-neutral-600">{active ? "Leveringsdag" : "Ikke leveringsdag"}</div>
                     <div className="mt-1 text-xs font-medium text-neutral-800">
-                      {day?.tier ? (day.tier === "LUXUS" ? "Luxus" : day.tier === "ENTERPRISE" ? "Enterprise" : "Basis") : "—"}
+                      {getTierDisplayLabelSafe(day?.tier, "nb-NO")}
                     </div>
                     {!active && day?.reasonIfInactive ? (
                       <div className="mt-1 text-[11px] text-neutral-600">{day.reasonIfInactive}</div>

@@ -52,7 +52,8 @@ describe("provider shell UI locale", () => {
 
   it("operational provider locale remains separate from app UI locale", () => {
     const shared = readFileSync(join(process.cwd(), "lib/providers/operationalSettingsShared.ts"), "utf8");
-    expect(shared).toContain("provider_settings.locale er foreløpig inert i runtime");
+    expect(shared).toContain("Operational locale styrer lagret marked/menyprofil (Phase 2)");
+    expect(shared).toContain("Employee runtime bruker fortsatt ikke menyprofil");
     const market = readFileSync(join(process.cwd(), "lib/commercial/marketConfigs.ts"), "utf8");
     expect(market).toContain("UI locale");
   });

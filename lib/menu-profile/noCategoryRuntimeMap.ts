@@ -39,6 +39,11 @@ const NO_PROFILE_CATEGORY_RUNTIME_MAP: Readonly<Record<string, NoCategoryRuntime
     runtimeLunchCategoryKey: "thaimat",
     runtimeOrderChoiceKey: "thaimat",
   },
+  vegetarian: {
+    runtimeCategoryKey: "vegetarian",
+    runtimeLunchCategoryKey: "vegetarian",
+    runtimeOrderChoiceKey: "vegetarian",
+  },
   varmrett: {
     runtimeCategoryKey: "varmrett",
     runtimeLunchCategoryKey: "varmrett",

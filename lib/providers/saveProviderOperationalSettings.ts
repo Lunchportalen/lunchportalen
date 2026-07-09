@@ -10,6 +10,10 @@ import {
   normalizeOperationalEmail,
 } from "@/lib/providers/operationalSettingsShared";
 import {
+  isValidPersistedMenuProfileId,
+  resolveMarketMenuProfileFromProviderLocale,
+} from "@/lib/menu-profile/localeMenuProfileMapping";
+import {
   mapOperationalEmailErrorKey,
   settingsOperationsFailure,
   type ProviderSettingsOperationsErrorKey,
@@ -76,6 +80,11 @@ export async function saveProviderOperationalSettings(
     return { ok: false, errorKey: "invalidLocale", field: "locale" };
   }
 
+  const marketProfile = resolveMarketMenuProfileFromProviderLocale(locale);
+  if (!isValidPersistedMenuProfileId(marketProfile.menuProfileId)) {
+    return { ok: false, errorKey: "invalidLocale", field: "locale" };
+  }
+
   try {
     const admin = supabaseAdmin();
     const { error } = await (admin as any)
@@ -86,7 +95,10 @@ export async function saveProviderOperationalSettings(
           operations_email: operations.value,
           kitchen_email: kitchen.value,
           delivery_email: delivery.value,
-          locale,
+          locale: marketProfile.intlLocale,
+          menu_profile_id: marketProfile.menuProfileId,
+          default_country_code: marketProfile.defaultCountryCode,
+          default_currency: marketProfile.defaultCurrency,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "provider_id" },

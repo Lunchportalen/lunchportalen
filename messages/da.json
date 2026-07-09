@@ -132,7 +132,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Kun visning",
-        "readOnlyLead": "Du har ikke adgang til at redigere menuen. Kontakt leverandøradministrator for redigeringstilgang."
+        "readOnlyLead": "Du har ikke adgang til at redigere menuen. Kontakt leverandøradministrator for redigeringstilgang.",
+        "translationsPromoTitle": "Menuoversættelser",
+        "translationsPromoLead": "Godkend oversatte menutekster til medarbejdere senere. Medarbejdere ser stadig originaltekst indtil SMART-3.",
+        "translationsPromoCta": "Åbn menuoversættelser"
       },
       "header": {
         "eyebrow": "Menueditor",
@@ -225,6 +228,7 @@
         "copySourceEmpty": "Ingen {tier}-menu at kopiere for denne dag/kategori.",
         "publishConfirmRequired": "{warning} Bekræft for at publicere alligevel.",
         "resetVarmrettFailed": "Kunne ikke nulstille varmret.",
+        "generateProfileWeekFailed": "Kunne ikke generere uge fra profilbank.",
         "unauthorized": "Ikke logget ind.",
         "forbidden": "Du har ikke adgang til menuen.",
         "badRequest": "Ugyldig anmodning.",
@@ -238,6 +242,7 @@
         "published": "Menu publiceret.",
         "draftSaved": "Kladde gemt.",
         "resetVarmrett": "Varmret nulstillet til genereret.",
+        "profileWeekGenerated": "Genererede varmret for {count} dag(e) fra profilbank.",
         "copiedFromTier": "Kopieret fra {tier}. Tilføj Enterprise-opgradering før publicering."
       },
       "price": {
@@ -395,11 +400,6 @@
         "banner": "Arbejdsområdet viser menuprofilens struktur. Eksisterende katalogindhold og publicerede menuer ændres ikke i denne fase.",
         "metaLine": "{profileName} · {market} · {locale} · {currency}"
       },
-      "workspaceProfile": {
-        "badge": "Menukprofil (præsentation)",
-        "banner": "Arbejdsområdet viser menuprofilens struktur. Eksisterende katalogindhold og publicerede menuer ændres ikke i denne fase.",
-        "metaLine": "{profileName} · {market} · {locale} · {currency}"
-      },
       "workspaceFixedCategories": {
         "title": "Menuprofilens faste valg",
         "description": "Dette viser menuprofilens faste valg. Kataloget og publicerede menuer ændres ikke før senere cutover.",
@@ -409,6 +409,19 @@
         "presentationOnly": "Kun præsentation",
         "packagesLabel": "Pakker",
         "profileCategoryLabel": "Profilkategori"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "title": "Profilbaserede varmretforslag",
+        "description": "Nye varmretforslag og standardgenerering følger aktiv menuprofil. Eksisterende indhold og publicerede dage ændres ikke automatisk.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} forslag",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
+        "generateWeek": "Generer uge fra profilbank",
+        "generating": "Genererer …",
+        "generateHint": "Udfylder kun tomme, ulåste dage som kladde. Leverandørindhold og publicerede dage springes over."
       },
       "workspaceWarmDishPreview": {
         "title": "Varmretbank for menuprofil",
@@ -631,15 +644,100 @@
           "prefix": "Allergener: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Pålæg · Salatboks · Dagens varmret",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Samme varmret + ekstra værdi",
           "notSeparateProduction": "Ikke egen produktionsret",
           "sharedWarmDishHint": "Én fælles varmret"
         },
         "emptyPanel": {
           "selectDay": "Vælg en dag i ugeplanen for at redigere katalogvalg."
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Menuoversættelser",
+        "lead": "Godkend og administrer oversatte menutekster for {providerName}. Dette påvirker ikke hvad medarbejdere ser endnu.",
+        "backToMenu": "Tilbage til menu"
+      },
+      "translations": {
+        "introApproved": "Kun godkendte oversættelser vises for medarbejdere. Kladder, forslag og afviste rækker vises aldrig for medarbejdere.",
+        "introPartialCoverage": "Delvis dækning er normalt. Mangler eller forældet hash falder tilbage til leverandørens originaltekst — dette ændrer ikke bestillingsnøgler, pakke eller pris for medarbejdere.",
+        "introSourceRefs": "Kildereferencer: måltid = item.key, kategori = kategori-slug (f.eks. paasmurt, salat), allergen = normaliseret token.",
+        "introSources": "Kilder hentes fra katalog og aktivt menuvindue (publicerede menuDay-rækker). Varmret/menu_day-kilder vises når de findes i aktivt menuvindue.",
+        "coverageTitle": "Dækning per sprog",
+        "loadingSources": "Indlæser kilder…",
+        "noSources": "Ingen kilder fundet i kataloget endnu.",
+        "coverageTable": {
+          "locale": "Sprog",
+          "coverage": "Dækning",
+          "employeeVisible": "Godkendt synlig",
+          "missing": "Mangler",
+          "draft": "Kladde",
+          "stale": "Forældet"
+        },
+        "missingTitle": "Kilder uden godkendt oversættelse",
+        "missingCount": "{count} kilder mangler række for mindst ét målsprog.",
+        "createDraftFromSource": "Opret kladde",
+        "staleWarning": "{count} kilder har hash-afvigelse — medarbejdere ser originaltekst indtil rækken godkendes igen.",
+        "filters": {
+          "locale": "Sprog",
+          "status": "Status",
+          "all": "Alle"
+        },
+        "status": {
+          "missing": "Mangler",
+          "draft": "Kladde",
+          "suggested": "Forslag",
+          "approved": "Godkendt",
+          "rejected": "Afvist",
+          "stale": "Forældet"
+        },
+        "createTitle": "Ny oversættelsesrække",
+        "createLead": "Opret manuel række med kilde-referance og originaltekst, eller brug «Opret kladde» fra kildelisten ovenfor.",
+        "form": {
+          "sourceKind": "Kilde",
+          "field": "Felt",
+          "locale": "Sprog",
+          "sourceRef": "Kilde-referance",
+          "sourceRefPlaceholder": "item.key, kategori-slug eller allergen-token",
+          "originalText": "Originaltekst",
+          "translatedTextOptional": "Oversat tekst (valgfrit)"
+        },
+        "saveDraft": "Gem kladde",
+        "listTitle": "Oversættelser",
+        "loading": "Indlæser…",
+        "emptyList": "Ingen oversættelsesrækker endnu. Opret en række manuelt, eller vent til import fra menukilder er tilgængelig.",
+        "listTable": {
+          "source": "Kilde",
+          "field": "Felt",
+          "locale": "Sprog",
+          "original": "Original",
+          "translated": "Oversat",
+          "status": "Status",
+          "updated": "Opdateret",
+          "actions": "Handling"
+        },
+        "hashMismatch": "Hash afviger — marker forældet ved behov",
+        "approve": "Godkend",
+        "reject": "Afvis",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Kunne ikke hente oversættelser.",
+          "updateFailed": "Kunne ikke opdatere oversættelse.",
+          "createFailed": "Kunne ikke oprette oversættelse."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Medarbejdere kan kun bestille når virksomheden har aktiv aftale, og menuen er publiceret.",
+        "date": "Dato",
+        "plan": "Plan",
+        "category": "Kategori",
+        "mealTitle": "Rettenavn",
+        "description": "Beskrivelse",
+        "allergens": "Allergener (valgfrit, kommasepareret)",
+        "allergensPlaceholder": "F.eks. mælk, hvede",
+        "savingDraft": "Gemmer…",
+        "saveDraft": "Gem kladde",
+        "publishing": "Publicerer…",
+        "publishMenu": "Publicer menu"
       }
     },
     "banner": {
@@ -1479,8 +1577,16 @@
         },
         "kitchenEmailHint": "Bruges til produktionsgrundlag og køkkenvarsler.",
         "kitchenEmailLabel": "Køkken-e-mail",
-        "localeLabel": "Administrationssprog",
-        "localeHint": "Styrer standardsprog for leverandørens driftsflader, når sprogunderstøttelse er tilgængelig. Madindhold, menuprofil, priser og valuta styres separat.",
+        "localeLabel": "Marked og administrationssprog",
+        "localeHint": "Styrer lagret marked og menuprofil for dette cateringfirma. Påvirker ikke medarbejdernes bestillingsvindue før næste fase.",
+        "uiLocaleSeparation": "Sprog i sidefeltet ændrer kun grænsefladesprog. Marked og menuprofil gemmes her under driftsindstillinger.",
+        "marketProfileLabel": "Aktiv menuprofil",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Ingen menuprofil gemt endnu — vælges automatisk ved lagring af marked.",
+        "marketChangeImpact": "Ændring af marked påvirker fremtidige menuforslag og genererede retter.",
+        "marketChangeCatalogPreserved": "Eksisterende katalog og publicerede bestillinger overskrives ikke.",
+        "marketChangeResetRequired": "For at opbygge et nyt katalog fra markedsprofil kræves en separat nulstilling.",
+        "marketChangeEmployeeRuntime": "Medarbejdere får leverandørens menuprofil, når runtime aktiveres i næste fase.",
         "locales": {
           "nb-NO": "Norsk (bokmål)",
           "en-GB": "English",

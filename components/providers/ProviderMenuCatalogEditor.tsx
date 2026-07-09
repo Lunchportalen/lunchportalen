@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
-import type { PlanTier } from "@/lib/cms/menuDayContract";
+import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import {
   EDITABLE_LUNCH_CATEGORY_KEYS,
   LUNCH_CATEGORY_ALLERGENS,
@@ -13,6 +13,7 @@ import {
   type ProviderMenuCatalogSnapshot,
 } from "@/lib/provider-menu/lunchCategoryCatalog";
 import { resolveProviderMenuCatalogApiError } from "@/lib/providers/providerMenuActionErrors";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 type CatalogItemDraft = {
   key?: string;
@@ -23,12 +24,6 @@ type CatalogItemDraft = {
 };
 
 const PREMIUM_CATEGORY_KEYS = new Set<EditableLunchCategoryKey>(["sushi", "pokebowl", "thaimat"]);
-
-const TIER_DISPLAY_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
 
 function tierBadgeForCategoryKey(
   key: EditableLunchCategoryKey,
@@ -49,9 +44,13 @@ function itemsForCategory(catalog: ProviderMenuCatalogSnapshot, categoryKey: str
   }));
 }
 
-function categoryLabel(catalog: ProviderMenuCatalogSnapshot, categoryKey: EditableLunchCategoryKey): string {
+function categoryLabel(
+  catalog: ProviderMenuCatalogSnapshot,
+  categoryKey: EditableLunchCategoryKey,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
+): string {
   const cat = categoryFromLunchCategoryKey(categoryKey);
-  return cat ? categoryLabelFromCatalog(catalog, cat) : categoryKey;
+  return cat ? categoryLabelFromCatalog(catalog, cat, profileCategoryLabels) : categoryKey;
 }
 
 function editableCategoryKeysForTier(
@@ -77,6 +76,8 @@ type Props = {
   filterByTier?: boolean;
   /** Hide accordion page title/lead when embedded in ProviderMenuCatalogView. */
   hidePageHeader?: boolean;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
+  localizedSurfaceActive?: boolean;
 };
 
 type CategoryAccordionProps = {
@@ -85,6 +86,7 @@ type CategoryAccordionProps = {
   isOpen: boolean;
   items: CatalogItemDraft[];
   saving: boolean;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
   onToggle: () => void;
   onItemsChange: (items: CatalogItemDraft[]) => void;
   onCancel: () => void;
@@ -190,9 +192,10 @@ function CategoryAccordion({
   onItemsChange,
   onCancel,
   onSave,
+  profileCategoryLabels,
   t,
 }: CategoryAccordionProps & { t: ReturnType<typeof useTranslations<"provider.menu">> }) {
-  const label = categoryLabel(catalog, categoryKey);
+  const label = categoryLabel(catalog, categoryKey, profileCategoryLabels);
   const tierBadge = tierBadgeForCategoryKey(categoryKey, t);
   const lockedCount = items.filter((i) => i.orderLocked).length;
 
@@ -268,6 +271,8 @@ function CatalogAccordionEditor({
   tier,
   filterByTier = false,
   hidePageHeader = false,
+  profileCategoryLabels,
+  localizedSurfaceActive = false,
 }: {
   catalog: ProviderMenuCatalogSnapshot;
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
@@ -275,8 +280,11 @@ function CatalogAccordionEditor({
   tier: PlanTier;
   filterByTier?: boolean;
   hidePageHeader?: boolean;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
+  localizedSurfaceActive?: boolean;
 }) {
   const t = useTranslations("provider.menu");
+  const locale = useLocale();
   const visibleCategoryKeys = useMemo(
     () => (filterByTier ? editableCategoryKeysForTier(catalog, tier) : EDITABLE_LUNCH_CATEGORY_KEYS),
     [catalog, tier, filterByTier],
@@ -357,7 +365,7 @@ function CatalogAccordionEditor({
   if (filterByTier && visibleCategoryKeys.length === 0) {
     return (
       <p className="ds-body" role="status">
-        {t("catalog.noEditableCategories", { tier: TIER_DISPLAY_LABELS[tier] ?? tier })}
+        {t("catalog.noEditableCategories", { tier: getTierDisplayLabel(tier, locale) })}
       </p>
     );
   }
@@ -373,10 +381,18 @@ function CatalogAccordionEditor({
 
       <div className="lp-editor-catalog-isolate">
         <div className="lp-editor-catalog-isolate__body">
-          <b className="lp-editor-catalog-isolate__title">{t("catalog.ownCatalogTitle")}</b>
-          <p className="lp-editor-catalog-isolate__text">{t("catalog.ownCatalogText")}</p>
+          <b className="lp-editor-catalog-isolate__title">
+            {localizedSurfaceActive ? "Lokal rettbank (menuLocale)" : t("catalog.ownCatalogTitle")}
+          </b>
+          <p className="lp-editor-catalog-isolate__text">
+            {localizedSurfaceActive
+              ? "Faste valg vises fra provider menuLocale. Eksisterende Sanity-katalog brukes fortsatt ved ordre-vindu inntil migrering."
+              : t("catalog.ownCatalogText")}
+          </p>
         </div>
-        <span className="lp-editor-catalog-isolate__pill">{t("catalog.isolated")}</span>
+        <span className="lp-editor-catalog-isolate__pill">
+          {localizedSurfaceActive ? "Lokalisert" : t("catalog.isolated")}
+        </span>
       </div>
 
       <div className="lp-editor-catalog-accordion">
@@ -390,6 +406,7 @@ function CatalogAccordionEditor({
               isOpen={openKey === key}
               items={items}
               saving={saving && openKey === key}
+              profileCategoryLabels={profileCategoryLabels}
               t={t}
               onToggle={() => toggleCategory(key)}
               onItemsChange={(next) => setDrafts((prev) => ({ ...prev, [key]: next }))}
@@ -418,12 +435,15 @@ function CatalogLegacyEditor({
   tier,
   catalog,
   onCatalogSaved,
+  profileCategoryLabels,
 }: {
   tier: PlanTier;
   catalog: ProviderMenuCatalogSnapshot;
   onCatalogSaved: (catalog: ProviderMenuCatalogSnapshot) => void;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
 }) {
   const t = useTranslations("provider.menu");
+  const locale = useLocale();
   const editableKeys = useMemo(() => editableCategoryKeysForTier(catalog, tier), [catalog, tier]);
 
   const [categoryKey, setCategoryKey] = useState<string>(editableKeys[0] ?? "paasmurt");
@@ -440,8 +460,8 @@ function CatalogLegacyEditor({
 
   const categoryLabelLegacy = useMemo(() => {
     const cat = categoryFromLunchCategoryKey(categoryKey);
-    return cat ? categoryLabelFromCatalog(catalog, cat) : categoryKey;
-  }, [catalog, categoryKey]);
+    return cat ? categoryLabelFromCatalog(catalog, cat, profileCategoryLabels) : categoryKey;
+  }, [catalog, categoryKey, profileCategoryLabels]);
 
   const toggleAllergen = useCallback((index: number, allergen: string) => {
     setItems((prev) =>
@@ -493,7 +513,7 @@ function CatalogLegacyEditor({
   if (editableKeys.length === 0) {
     return (
       <p className="ds-body" role="status">
-        {t("catalog.noEditableCategories", { tier: TIER_DISPLAY_LABELS[tier] ?? tier })}
+        {t("catalog.noEditableCategories", { tier: getTierDisplayLabel(tier, locale) })}
       </p>
     );
   }
@@ -520,7 +540,7 @@ function CatalogLegacyEditor({
         >
           {editableKeys.map((key) => {
             const cat = categoryFromLunchCategoryKey(key);
-            const label = cat ? categoryLabelFromCatalog(catalog, cat) : key;
+            const label = cat ? categoryLabelFromCatalog(catalog, cat, profileCategoryLabels) : key;
             return (
               <option key={key} value={key}>
                 {label}
@@ -639,6 +659,8 @@ export default function ProviderMenuCatalogEditor({
   panelMode = false,
   filterByTier = false,
   hidePageHeader = false,
+  profileCategoryLabels,
+  localizedSurfaceActive = false,
 }: Props) {
   if (panelMode) {
     return (
@@ -649,11 +671,20 @@ export default function ProviderMenuCatalogEditor({
         tier={tier}
         filterByTier={filterByTier}
         hidePageHeader={hidePageHeader}
+        profileCategoryLabels={profileCategoryLabels}
+        localizedSurfaceActive={localizedSurfaceActive}
       />
     );
   }
 
-  return <CatalogLegacyEditor tier={tier} catalog={catalog} onCatalogSaved={onCatalogSaved} />;
+  return (
+    <CatalogLegacyEditor
+      tier={tier}
+      catalog={catalog}
+      onCatalogSaved={onCatalogSaved}
+      profileCategoryLabels={profileCategoryLabels}
+    />
+  );
 }
 
 export { tierBadgeForCategoryKey, itemsForCategory, categoryLabel, editableCategoryKeysForTier };

@@ -53,6 +53,7 @@ export function summarizeCategoryDay(
   tier: PlanTier,
   category: Category,
   catalog: ProviderMenuCatalogSnapshot,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
 ): CategoryDaySummary {
   const rows = resolveVariantRowsForDay(slots, date, tier, category, catalog);
   const slot = resolveProviderMenuSlot(slots, date, tier, category);
@@ -73,7 +74,7 @@ export function summarizeCategoryDay(
 
   return {
     category,
-    categoryLabel: categoryLabelFromCatalog(catalog, category),
+    categoryLabel: categoryLabelFromCatalog(catalog, category, profileCategoryLabels),
     statusChip,
     statusLabelKey: statusChipLabelKey(statusChip),
     rows,
@@ -114,6 +115,7 @@ export function buildEditorContext(input: {
   variantLabel?: string | null;
   editorFocus?: EditorFocus;
   catalog?: ProviderMenuCatalogSnapshot;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
 }): EditorContext {
   const isSanity = isSanityDrivenCategory(input.category);
   const editorFocus: EditorFocus =
@@ -129,8 +131,8 @@ export function buildEditorContext(input: {
     weekdayKey: input.weekdayKey ?? null,
     date: input.date,
     categoryLabel: input.catalog
-      ? categoryLabelFromCatalog(input.catalog, input.category)
-      : CATEGORY_LABELS[input.category],
+      ? categoryLabelFromCatalog(input.catalog, input.category, input.profileCategoryLabels)
+      : input.profileCategoryLabels?.[input.category] ?? CATEGORY_LABELS[input.category],
     variantLabel: input.variantLabel ?? null,
     editorFocus,
     mode,
@@ -208,6 +210,7 @@ export function summarizeSharedVarmrettDay(
   slots: Record<string, ResolvedProviderMenuSlot>,
   date: string,
   catalog: ProviderMenuCatalogSnapshot,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
 ): CategoryDaySummary {
   const slot = resolveSharedVarmrettSlot(slots, date);
   const hasContent = menuSlotHasContent(slot);
@@ -220,14 +223,14 @@ export function summarizeSharedVarmrettDay(
 
   return {
     category: "varmrett",
-    categoryLabel: categoryLabelFromCatalog(catalog, "varmrett"),
+    categoryLabel: categoryLabelFromCatalog(catalog, "varmrett", profileCategoryLabels),
     statusChip,
     statusLabelKey: statusChipLabelKey(statusChip),
     rows: [
       {
         category: "varmrett",
         variant: null,
-        title: hasContent ? slot.mealTitle.trim() : categoryLabelFromCatalog(catalog, "varmrett"),
+        title: hasContent ? slot.mealTitle.trim() : categoryLabelFromCatalog(catalog, "varmrett", profileCategoryLabels),
         status:
           slot.status === "published"
             ? "published"
@@ -275,7 +278,7 @@ export function summarizeEnterpriseUpgradeDay(
   };
 }
 
-const PREMIUM_CATEGORIES: Category[] = ["sushi", "pokebowl", "thai"];
+const PREMIUM_CATEGORIES: Category[] = ["sushi", "pokebowl", "thai", "vegetarian"];
 const FIXED_CATEGORIES: Category[] = ["paasmurt", "salat"];
 
 export type WeekWorkspaceMetrics = {
@@ -293,6 +296,7 @@ export function summarizeWeekMetrics(
   tier: PlanTier,
   categories: Category[],
   catalog: ProviderMenuCatalogSnapshot,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
 ): WeekWorkspaceMetrics {
   let varmrettFilled = 0;
   let varmrettMissing = 0;
@@ -301,13 +305,13 @@ export function summarizeWeekMetrics(
   let fixedSlots = 0;
 
   for (const date of dates) {
-    const sharedVarmrett = summarizeSharedVarmrettDay(slots, date, catalog);
+    const sharedVarmrett = summarizeSharedVarmrettDay(slots, date, catalog, profileCategoryLabels);
     if (sharedVarmrett.statusChip === "missing") varmrettMissing += 1;
     else varmrettFilled += 1;
 
     for (const category of categories) {
       if (category === "varmrett") continue;
-      const summary = summarizeCategoryDay(slots, date, tier, category, catalog);
+      const summary = summarizeCategoryDay(slots, date, tier, category, catalog, profileCategoryLabels);
       if (summary.statusChip === "published") publishedSlots += 1;
       else if (summary.statusChip === "draft") draftSlots += 1;
       else if (summary.statusChip === "fixed") fixedSlots += 1;
@@ -464,11 +468,12 @@ export function summarizeDayCard(
   weekdayLabel: string,
   categories: Category[],
   catalog: ProviderMenuCatalogSnapshot,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
 ): DayCardSummary {
   const summaries = categories
     .filter((c) => c !== "varmrett")
-    .map((c) => summarizeCategoryDay(slots, date, tier, c, catalog));
-  const varmrett = summarizeSharedVarmrettDay(slots, date, catalog);
+    .map((c) => summarizeCategoryDay(slots, date, tier, c, catalog, profileCategoryLabels));
+  const varmrett = summarizeSharedVarmrettDay(slots, date, catalog, profileCategoryLabels);
   const enterpriseUpgrade = tier === "ENTERPRISE" ? summarizeEnterpriseUpgradeDay(slots, date) : null;
 
   let dayStatus: WorkspaceStatusChip = "fixed";

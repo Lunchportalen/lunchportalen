@@ -317,3 +317,43 @@ describe("language-menu separation — SMART-1 translation model reference", () 
     ).toBe(true);
   });
 });
+
+describe("language-menu separation — Phase 2 provider menu profile persistence (SUPERSMART)", () => {
+  test("LocaleSwitcher persists UI locale only — not provider_settings.menu_profile_id", () => {
+    const src = readSource("components/nav/LocaleSwitcher.tsx");
+    expect(src).toContain("/api/user/locale");
+    expect(src).not.toMatch(/menu_profile_id|saveProviderOperationalSettings|localeMenuProfileMapping/);
+  });
+
+  test("saveProviderOperationalSettings resolves menu_profile_id from operational locale", () => {
+    const src = readSource("lib/providers/saveProviderOperationalSettings.ts");
+    expect(src).toContain("resolveMarketMenuProfileFromProviderLocale");
+    expect(src).toContain("menu_profile_id: marketProfile.menuProfileId");
+    expect(src).toContain("default_country_code: marketProfile.defaultCountryCode");
+    expect(src).not.toMatch(/catalog|resetCatalog|published_orders/);
+    expect(src).not.toMatch(/LP_MENU_PROFILE_/);
+  });
+
+  test("ProviderOperationsForm exposes market/profile copy — not employee runtime", () => {
+    const src = readSource("components/providers/ProviderOperationsForm.tsx");
+    expect(src).toContain("uiLocaleSeparation");
+    expect(src).toContain("marketChangeImpact");
+    expect(src).toContain("marketChangeCatalogPreserved");
+    expect(src).toContain("marketChangeEmployeeRuntime");
+    expect(src).not.toMatch(/\/api\/order\/window|lp_order_set/);
+  });
+
+  test("order/window route applies profile label overlay when resolver enabled", () => {
+    const src = readSource("app/api/order/window/route.ts");
+    expect(src).toContain("overlayProfileLabelsOnOrderWindowCategories");
+    expect(src).toContain("resolveActiveMenuProfileForRuntime");
+    expect(src).not.toMatch(/menu_profile_id.*choice_key|choice_key.*menu_profile_id/);
+  });
+
+  test("localeMenuProfileMapping covers all nine APP_LOCALES", () => {
+    const src = readSource("lib/menu-profile/localeMenuProfileMapping.ts");
+    expect(src).toContain("APP_LOCALE_MENU_PROFILE_MAPPINGS");
+    expect(src).toContain("APP_LOCALES.map");
+    expect(src).toContain('FALLBACK_MARKET: MarketCode = "NO"');
+  });
+});

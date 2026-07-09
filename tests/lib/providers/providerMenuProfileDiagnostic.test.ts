@@ -1,14 +1,19 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
-import { LP_MENU_PROFILE_RESOLVER_ENV } from "@/lib/menu-profile";
+import {
+  LP_MENU_PROFILE_RESOLVER_ENV,
+  LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV,
+} from "@/lib/menu-profile/featureFlag";
 import {
   buildProviderMenuProfileDiagnostic,
   buildProviderMenuProfileLegacyDiagnostic,
+  menuProfileResolverHostEnv,
   type ProviderMenuProfileDiagnostic,
 } from "@/lib/providers/providerMenuProfileDiagnostic";
+import { buildG5d8GlobalControl } from "@/lib/menu-profile/g5d8RuntimeCompatibilityControl";
 import type { ProviderSettingsMenuProfileRow } from "@/lib/providers/loadProviderSettingsMenuProfile";
 import { getMenuProfile } from "@/lib/menu-profile/registry";
 
@@ -126,6 +131,62 @@ describe("providerMenuProfileDiagnostic (ADR-019 G4)", () => {
         resolverResult,
       );
       expect(diagnostic?.kind).toBe("resolved");
+    });
+  });
+
+  describe("menuProfileResolverHostEnv — G5d.8 observability alignment", () => {
+    const originalHook = process.env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV];
+    const originalResolver = process.env[LP_MENU_PROFILE_RESOLVER_ENV];
+
+    afterEach(() => {
+      if (originalHook === undefined) {
+        delete process.env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV];
+      } else {
+        process.env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV] = originalHook;
+      }
+      if (originalResolver === undefined) {
+        delete process.env[LP_MENU_PROFILE_RESOLVER_ENV];
+      } else {
+        process.env[LP_MENU_PROFILE_RESOLVER_ENV] = originalResolver;
+      }
+    });
+
+    it("includes LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK from process.env", () => {
+      process.env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV] = "true";
+      const env = menuProfileResolverHostEnv();
+      expect(env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV]).toBe("true");
+    });
+
+    it("hook OFF → superadmin control inactive", () => {
+      delete process.env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV];
+      process.env[LP_MENU_PROFILE_RESOLVER_ENV] = "true";
+      const control = buildG5d8GlobalControl(menuProfileResolverHostEnv(), {
+        resolverFlagOn: true,
+        warningProviders: 0,
+        profileFailProviders: 0,
+      });
+      expect(control.hookFlag).toBe("OFF");
+      expect(control.active).toBe(false);
+      expect(control.compatibilityStatus).toBe("inactive");
+      expect(control.selectedSource).toBe("current");
+      expect(control.sourceOfTruthChanged).toBe(false);
+      expect(control.autoRollout).toBe(false);
+    });
+
+    it("hook ON → superadmin control observing with selectedSource current", () => {
+      process.env[LP_MENU_PROFILE_RUNTIME_COMPATIBILITY_HOOK_ENV] = "true";
+      process.env[LP_MENU_PROFILE_RESOLVER_ENV] = "true";
+      const control = buildG5d8GlobalControl(menuProfileResolverHostEnv(), {
+        resolverFlagOn: true,
+        warningProviders: 0,
+        profileFailProviders: 0,
+      });
+      expect(control.hookFlag).toBe("ON");
+      expect(control.active).toBe(true);
+      expect(control.compatibilityStatus).toBe("observing");
+      expect(control.selectedSource).toBe("current");
+      expect(control.sourceOfTruthChanged).toBe(false);
+      expect(control.autoRollout).toBe(false);
     });
   });
 

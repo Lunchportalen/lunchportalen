@@ -1,10 +1,5 @@
 import type { AgreementStatusResult, Tier } from "@/lib/auth/agreementStatus";
-
-const TIER_LABELS: Record<Tier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 const TIER_ORDER: Tier[] = ["BASIS", "LUXUS", "ENTERPRISE"];
 
@@ -40,13 +35,13 @@ export function formatAgreementSystemLabel(status: AgreementStatusResult): strin
   }
 
   if (activeTiers.length === 1) {
-    return `${TIER_LABELS[activeTiers[0]]} · ${statusLabel}`;
+    return `${getTierDisplayLabel(activeTiers[0], "nb-NO")} · ${statusLabel}`;
   }
 
   const parts = activeTiers.map((tier) => {
     const count = tierCounts[tier];
     const dayWord = count === 1 ? "dag" : "dager";
-    return `${count} ${dayWord} ${TIER_LABELS[tier]}`;
+    return `${count} ${dayWord} ${getTierDisplayLabel(tier, "nb-NO")}`;
   });
 
   return `Blandet (${parts.join(", ")}) · ${statusLabel}`;
@@ -59,7 +54,7 @@ export function formatSystemPaymentLabel() {
 export function formatTierLabel(value: string | null | undefined): string {
   const key = String(value ?? "").trim().toUpperCase();
   if (key === "BASIS" || key === "LUXUS" || key === "ENTERPRISE") {
-    return TIER_LABELS[key];
+    return getTierDisplayLabel(key, "nb-NO");
   }
   return key ? key : "—";
 }

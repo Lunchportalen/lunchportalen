@@ -1,7 +1,7 @@
 export const PLAN_TIERS = ["BASIS", "LUXUS", "ENTERPRISE"] as const;
 export type PlanTier = (typeof PLAN_TIERS)[number];
 
-export const CATEGORIES = ["paasmurt", "salat", "sushi", "pokebowl", "thai", "varmrett"] as const;
+export const CATEGORIES = ["paasmurt", "salat", "sushi", "pokebowl", "thai", "vegetarian", "varmrett"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -10,13 +10,14 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   sushi: "Sushi",
   pokebowl: "Pokébowl",
   thai: "Thai",
+  vegetarian: "Vegetar",
   varmrett: "Varmrett",
 };
 
 export const PLAN_CATEGORIES: Record<PlanTier, Category[]> = {
   BASIS: ["paasmurt", "salat", "varmrett"],
-  LUXUS: ["paasmurt", "salat", "sushi", "pokebowl", "thai", "varmrett"],
-  ENTERPRISE: ["paasmurt", "salat", "sushi", "pokebowl", "thai", "varmrett"],
+  LUXUS: ["paasmurt", "salat", "sushi", "pokebowl", "thai", "vegetarian", "varmrett"],
+  ENTERPRISE: ["paasmurt", "salat", "sushi", "pokebowl", "thai", "vegetarian", "varmrett"],
 };
 
 export const ORDER_CHOICE_KEY_BY_CATEGORY: Record<Category, string> = {
@@ -25,6 +26,7 @@ export const ORDER_CHOICE_KEY_BY_CATEGORY: Record<Category, string> = {
   sushi: "sushi",
   pokebowl: "pokebowl",
   thai: "thaimat",
+  vegetarian: "vegetarian",
   varmrett: "varmmat",
 };
 

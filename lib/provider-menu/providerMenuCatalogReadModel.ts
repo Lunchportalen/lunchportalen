@@ -68,6 +68,7 @@ export function normalizeProviderLunchCategoryRows(raw: unknown): ProviderLunchC
       title: o.title != null ? String(o.title) : null,
       allowedPlanTiers: Array.isArray(o.allowedPlanTiers) ? o.allowedPlanTiers.map((t) => String(t)) : null,
       items,
+      isProviderScoped: o.isProviderScoped === true,
     });
   }
   return out;
@@ -75,6 +76,13 @@ export function normalizeProviderLunchCategoryRows(raw: unknown): ProviderLunchC
 
 export function buildMenuCatalogSnapshot(rows: unknown): ProviderMenuCatalogSnapshot {
   return { rows: normalizeProviderLunchCategoryRows(rows) };
+}
+
+/** Apply/dryRun catalog snapshot — provider-scoped rows preferred over global templates (see fetchLunchCategoryRowsForProvider). */
+export async function resolveApplyMenuCatalogSnapshot(
+  rows: unknown,
+): Promise<ProviderMenuCatalogSnapshot> {
+  return buildMenuCatalogSnapshot(rows);
 }
 
 export function buildMenuCatalogVariants(catalog: ProviderMenuCatalogSnapshot): MenuCatalogVariant[] {

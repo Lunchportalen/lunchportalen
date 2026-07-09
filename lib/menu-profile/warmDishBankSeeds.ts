@@ -27,6 +27,22 @@ function seed(
   };
 }
 
+function phaseDSeedSet(
+  profileId: MenuProfileId,
+  market: MarketCode,
+  locale: string,
+  prefix: string,
+  titles: readonly string[],
+): WarmDishBankSeed[] {
+  return titles.map((title, index) =>
+    seed(profileId, market, locale, `${prefix}-${index + 1}`, title, {
+      tags: ["phase-d-source-only", index === 4 ? "vegetarian" : "office-lunch"],
+      dishType: index === 4 ? "vegetarian" : index === 3 ? "fish" : "hot-lunch",
+      protein: index === 4 ? "vegetarian" : index === 3 ? "fish" : index === 2 ? "beef" : "chicken",
+    }),
+  );
+}
+
 export const WARM_DISH_BANK_SEEDS: readonly WarmDishBankSeed[] = [
   // NO — norwegian_company_lunch
   seed(
@@ -341,6 +357,93 @@ export const WARM_DISH_BANK_SEEDS: readonly WarmDishBankSeed[] = [
     "Parmigiana di melanzane",
     { tags: ["vegetarian"], dishType: "bake", protein: "vegetarian", allergens: ["latte"] },
   ),
+
+  // Phase D — source-only rich-market profile stubs. These are inert seed-bank entries for
+  // deterministic preview/tests only; no provider apply, Sanity write, or publish is implied.
+  ...phaseDSeedSet("us_office_lunch", "US", "en-US", "us-office-lunch", [
+    "Grilled chicken rice bowl",
+    "Turkey chili with cornbread",
+    "Beef brisket lunch plate",
+    "Salmon with roasted potatoes",
+    "Vegetarian mac and greens",
+  ]),
+  ...phaseDSeedSet("canadian_office_lunch", "CA", "en-CA", "canadian-office-lunch", [
+    "Chicken tourtiere-style bowl",
+    "Maple turkey with rice",
+    "Beef stew with root vegetables",
+    "Salmon with dill potatoes",
+    "Vegetarian lentil shepherd's pie",
+  ]),
+  ...phaseDSeedSet("dutch_office_lunch", "NL", "nl-NL", "dutch-office-lunch", [
+    "Kipstoof met rijst",
+    "Gehaktbal met aardappelpuree",
+    "Runderstoof met groenten",
+    "Zalm met dilleaardappelen",
+    "Vegetarische stamppot",
+  ]),
+  ...phaseDSeedSet("belgian_dutch_office_lunch", "BE", "nl-BE", "belgian-dutch-office-lunch", [
+    "Kip met witloof en aardappelen",
+    "Stoofvlees met groenten",
+    "Vol-au-vent met rijst",
+    "Zalm met prei",
+    "Vegetarische groentestoof",
+  ]),
+  ...phaseDSeedSet("belgian_french_office_lunch", "BE", "fr-BE", "belgian-french-office-lunch", [
+    "Poulet aux chicons et pommes de terre",
+    "Carbonnade avec légumes",
+    "Vol-au-vent avec riz",
+    "Saumon aux poireaux",
+    "Ragoût végétarien de légumes",
+  ]),
+  ...phaseDSeedSet("austrian_office_lunch", "AT", "de-AT", "austrian-office-lunch", [
+    "Hendlragout mit Reis",
+    "Rindsgulasch mit Erdäpfeln",
+    "Faschierter Braten mit Gemüse",
+    "Forelle mit Petersilienkartoffeln",
+    "Vegetarische Krautfleckerl",
+  ]),
+  ...phaseDSeedSet("swiss_german_office_lunch", "CH", "de-CH", "swiss-german-office-lunch", [
+    "Pouletgeschnetzeltes mit Reis",
+    "Kalbsragout mit Rösti",
+    "Rindsschmorgericht mit Gemüse",
+    "Lachs mit Kartoffeln",
+    "Vegetarische Älplermagronen",
+  ]),
+  ...phaseDSeedSet("swiss_french_office_lunch", "CH", "fr-CH", "swiss-french-office-lunch", [
+    "Emincé de poulet avec riz",
+    "Ragoût de veau avec rösti",
+    "Bœuf mijoté aux légumes",
+    "Saumon avec pommes de terre",
+    "Macaronis alpins végétariens",
+  ]),
+  ...phaseDSeedSet("irish_office_lunch", "IE", "en-IE", "irish-office-lunch", [
+    "Chicken and leek pie",
+    "Turkey stew with potatoes",
+    "Beef and barley casserole",
+    "Baked cod with mash",
+    "Vegetarian colcannon bake",
+  ]),
+  ...phaseDSeedSet("luxembourg_office_lunch", "LU", "fr-LU", "luxembourg-office-lunch", [
+    "Poulet mijoté avec pommes de terre",
+    "Ragoût de dinde au riz",
+    "Bœuf braisé aux légumes",
+    "Truite avec pommes de terre",
+    "Gratin végétarien",
+  ]),
+  ...phaseDSeedSet("australian_office_lunch", "AU", "en-AU", "australian-office-lunch", [
+    "Chicken schnitzel with salad",
+    "Beef and pumpkin tray bake",
+    "Lamb ragu with pasta",
+    "Barramundi with potatoes",
+    "Vegetarian pumpkin curry",
+  ]),
+  ...phaseDSeedSet("singapore_office_lunch", "SG", "en-SG", "singapore-office-lunch", [
+    "Chicken rice bowl",
+    "Turkey laksa-style noodles",
+    "Beef rendang with rice",
+    "Fish curry with vegetables",
+    "Vegetarian tofu stir-fry",
+  ]),
 ] as const;
 
 const SEEDS_BY_PROFILE: Readonly<Record<MenuProfileId, readonly WarmDishBankSeed[]>> = {
@@ -353,6 +456,18 @@ const SEEDS_BY_PROFILE: Readonly<Record<MenuProfileId, readonly WarmDishBankSeed
   spanish_menu_del_dia: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "spanish_menu_del_dia"),
   uk_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "uk_office_lunch"),
   italian_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "italian_office_lunch"),
+  us_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "us_office_lunch"),
+  canadian_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "canadian_office_lunch"),
+  dutch_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "dutch_office_lunch"),
+  belgian_dutch_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "belgian_dutch_office_lunch"),
+  belgian_french_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "belgian_french_office_lunch"),
+  austrian_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "austrian_office_lunch"),
+  swiss_german_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "swiss_german_office_lunch"),
+  swiss_french_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "swiss_french_office_lunch"),
+  irish_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "irish_office_lunch"),
+  luxembourg_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "luxembourg_office_lunch"),
+  australian_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "australian_office_lunch"),
+  singapore_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "singapore_office_lunch"),
 };
 
 export function toWarmDishDefinition(seedEntry: WarmDishBankSeed): WarmDishDefinition {

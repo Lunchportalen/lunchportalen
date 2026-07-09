@@ -132,7 +132,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Nur Ansicht",
-        "readOnlyLead": "Sie haben keine Berechtigung, das Menü zu bearbeiten. Wenden Sie sich an den Lieferantenadministrator."
+        "readOnlyLead": "Sie haben keine Berechtigung, das Menü zu bearbeiten. Wenden Sie sich an den Lieferantenadministrator.",
+        "translationsPromoTitle": "Menüübersetzungen",
+        "translationsPromoLead": "Übersetzte Menütexte für Mitarbeitende später freigeben. Mitarbeitende sehen bis SMART-3 weiterhin Originaltext.",
+        "translationsPromoCta": "Menüübersetzungen öffnen"
       },
       "header": {
         "eyebrow": "Menü-Editor",
@@ -224,6 +227,7 @@
         "saveFailed": "Menü konnte nicht gespeichert werden.",
         "copySourceEmpty": "Kein {tier}-Menü zum Kopieren für diesen Tag/diese Kategorie.",
         "resetVarmrettFailed": "Tagesgericht konnte nicht zurückgesetzt werden.",
+        "generateProfileWeekFailed": "Woche konnte nicht aus der Profilbank generiert werden.",
         "publishConfirmRequired": "{warning} Bestätigen, um trotzdem zu veröffentlichen.",
         "unauthorized": "Nicht angemeldet.",
         "forbidden": "Sie haben keinen Zugriff auf das Menü.",
@@ -238,6 +242,7 @@
         "published": "Menü veröffentlicht.",
         "draftSaved": "Entwurf gespeichert.",
         "resetVarmrett": "Tagesgericht auf generiert zurückgesetzt.",
+        "profileWeekGenerated": "Tagesgerichte für {count} Tag(e) aus Profilbank generiert.",
         "copiedFromTier": "Von {tier} kopiert. Enterprise-Upgrade vor Veröffentlichung hinzufügen."
       },
       "price": {
@@ -404,6 +409,19 @@
         "presentationOnly": "Nur Präsentation",
         "packagesLabel": "Pakete",
         "profileCategoryLabel": "Profilkategorie"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "title": "Profilbasierte Tagesgerichtvorschläge",
+        "description": "Neue Tagesgerichtvorschläge und Standardgenerierung folgen dem aktiven Menüprofil. Bestehende Inhalte und veröffentlichte Tage werden nicht automatisch geändert.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} Vorschläge",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
+        "generateWeek": "Woche aus Profilbank generieren",
+        "generating": "Generiere …",
+        "generateHint": "Füllt nur leere, nicht gesperrte Tage als Entwürfe. Anbieterinhalte und veröffentlichte Tage werden übersprungen."
       },
       "workspaceWarmDishPreview": {
         "title": "Warmgericht-Bank für Menüprofil",
@@ -626,15 +644,100 @@
           "prefix": "Allergene: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Belegtes Brot · Salatbox · Tageswarmgericht",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Gleiches Warmgericht + Mehrwert",
           "notSeparateProduction": "Kein eigenes Produktionsgericht",
           "sharedWarmDishHint": "Ein gemeinsames Warmgericht"
         },
         "emptyPanel": {
           "selectDay": "Wählen Sie einen Tag im Wochenplan, um Katalogauswahlen zu bearbeiten."
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menü",
+        "title": "Menüübersetzungen",
+        "lead": "Übersetzte Menütexte für {providerName} freigeben und verwalten. Dies ändert noch nicht, was Mitarbeitende sehen.",
+        "backToMenu": "Zurück zum Menü"
+      },
+      "translations": {
+        "introApproved": "Nur freigegebene Übersetzungen werden Mitarbeitenden angezeigt. Entwürfe, Vorschläge und abgelehnte Zeilen werden Mitarbeitenden nie angezeigt.",
+        "introPartialCoverage": "Teilweise Abdeckung ist normal. Fehlende oder veraltete Hash-Werte fallen auf den Originaltext des Anbieters zurück — dies ändert keine Bestellschlüssel, Paket oder Preis für Mitarbeitende.",
+        "introSourceRefs": "Quellenreferenzen: Mahlzeit = item.key, Kategorie = Kategorie-Slug (z. B. paasmurt, salat), Allergen = normalisiertes Token.",
+        "introSources": "Quellen stammen aus Katalog und aktivem Menüfenster (veröffentlichte menuDay-Zeilen). Warmgericht/menu_day-Quellen erscheinen, wenn sie im aktiven Menüfenster vorhanden sind.",
+        "coverageTitle": "Abdeckung pro Sprache",
+        "loadingSources": "Quellen werden geladen…",
+        "noSources": "Noch keine Quellen im Katalog gefunden.",
+        "coverageTable": {
+          "locale": "Sprache",
+          "coverage": "Abdeckung",
+          "employeeVisible": "Freigegeben sichtbar",
+          "missing": "Fehlt",
+          "draft": "Entwurf",
+          "stale": "Veraltet"
+        },
+        "missingTitle": "Quellen ohne freigegebene Übersetzung",
+        "missingCount": "{count} Quellen fehlt eine Zeile für mindestens eine Zielsprache.",
+        "createDraftFromSource": "Entwurf erstellen",
+        "staleWarning": "{count} Quellen haben Hash-Abweichung — Mitarbeitende sehen Originaltext, bis die Zeile erneut freigegeben wird.",
+        "filters": {
+          "locale": "Sprache",
+          "status": "Status",
+          "all": "Alle"
+        },
+        "status": {
+          "missing": "Fehlt",
+          "draft": "Entwurf",
+          "suggested": "Vorschlag",
+          "approved": "Freigegeben",
+          "rejected": "Abgelehnt",
+          "stale": "Veraltet"
+        },
+        "createTitle": "Neue Übersetzungszeile",
+        "createLead": "Manuelle Zeile mit Quellenreferenz und Originaltext erstellen, oder «Entwurf erstellen» aus der Quellenliste oben verwenden.",
+        "form": {
+          "sourceKind": "Quelle",
+          "field": "Feld",
+          "locale": "Sprache",
+          "sourceRef": "Quellenreferenz",
+          "sourceRefPlaceholder": "item.key, Kategorie-Slug oder Allergen-Token",
+          "originalText": "Originaltext",
+          "translatedTextOptional": "Übersetzter Text (optional)"
+        },
+        "saveDraft": "Entwurf speichern",
+        "listTitle": "Übersetzungen",
+        "loading": "Wird geladen…",
+        "emptyList": "Noch keine Übersetzungszeilen. Zeile manuell erstellen oder warten, bis Import aus Menüquellen verfügbar ist.",
+        "listTable": {
+          "source": "Quelle",
+          "field": "Feld",
+          "locale": "Sprache",
+          "original": "Original",
+          "translated": "Übersetzt",
+          "status": "Status",
+          "updated": "Aktualisiert",
+          "actions": "Aktionen"
+        },
+        "hashMismatch": "Hash-Abweichung — bei Bedarf als veraltet markieren",
+        "approve": "Freigeben",
+        "reject": "Ablehnen",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Übersetzungen konnten nicht geladen werden.",
+          "updateFailed": "Übersetzung konnte nicht aktualisiert werden.",
+          "createFailed": "Übersetzung konnte nicht erstellt werden."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Mitarbeitende können nur bestellen, wenn das Unternehmen eine aktive Vereinbarung hat und das Menü veröffentlicht ist.",
+        "date": "Datum",
+        "plan": "Plan",
+        "category": "Kategorie",
+        "mealTitle": "Gerichtname",
+        "description": "Beschreibung",
+        "allergens": "Allergene (optional, kommagetrennt)",
+        "allergensPlaceholder": "Z. B. Milch, Weizen",
+        "savingDraft": "Wird gespeichert…",
+        "saveDraft": "Entwurf speichern",
+        "publishing": "Wird veröffentlicht…",
+        "publishMenu": "Menü veröffentlichen"
       }
     },
     "orders": {
@@ -1282,8 +1385,16 @@
         "kitchenEmailHint": "Für Produktionsgrundlage und Küchenbenachrichtigungen.",
         "deliveryEmailLabel": "Liefer-E-Mail",
         "deliveryEmailHint": "Für lieferbezogene Benachrichtigungen, wenn Bestellungen zur Lieferung bereit sind.",
-        "localeLabel": "Verwaltungssprache",
-        "localeHint": "Legt die Standardsprache für die Betriebsoberflächen des Anbieters fest, wenn Sprachunterstützung verfügbar ist. Speiseinhalte, Menüprofil, Preise und Währung werden separat gesteuert.",
+        "localeLabel": "Markt und Verwaltungssprache",
+        "localeHint": "Steuert gespeichertes Markt- und Menüprofil für dieses Catering-Unternehmen. Beeinflusst das Mitarbeitenden-Bestellfenster erst in der nächsten Phase.",
+        "uiLocaleSeparation": "Die Sprache in der Seitenleiste ändert nur die Oberflächensprache. Markt und Menüprofil werden hier unter Betriebseinstellungen gespeichert.",
+        "marketProfileLabel": "Aktives Menüprofil",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Noch kein Menüprofil gespeichert — wird beim Speichern des Markts automatisch gewählt.",
+        "marketChangeImpact": "Eine Marktänderung beeinflusst künftige Menüvorschläge und generierte Gerichte.",
+        "marketChangeCatalogPreserved": "Bestehender Katalog und veröffentlichte Bestellungen werden nicht überschrieben.",
+        "marketChangeResetRequired": "Ein neuer Katalog aus Marktprofil erfordert eine separate Zurücksetzung.",
+        "marketChangeEmployeeRuntime": "Mitarbeitende erhalten das Menüprofil des Anbieters, wenn Runtime in der nächsten Phase aktiviert wird.",
         "save": "Betriebseinstellungen speichern",
         "saving": "Speichert…",
         "saved": "Betriebseinstellungen gespeichert.",

@@ -57,6 +57,7 @@ export function lunchCategoryKeyFromChoiceKey(choiceKey: string): string | null 
   if (n === "sushi") return "sushi";
   if (n === "pokebowl" || n === "poke") return "pokebowl";
   if (n === "thai" || n === "thaimat") return "thaimat";
+  if (n === "vegetarian" || n === "vegetar" || n === "vegetarisk") return "vegetarian";
   return null;
 }
 

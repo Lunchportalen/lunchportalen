@@ -47,6 +47,11 @@ import {
   overlayApprovedTranslationsOnOrderWindowDays,
   resolveEmployeeDisplayLocaleFromRequest,
 } from "@/lib/smart-menu/employeeApprovedTranslations";
+import {
+  overlayProfileLabelsOnOrderWindowCategories,
+  resolveActiveMenuProfileForRuntime,
+} from "@/lib/menu-profile/profileMenuRuntime";
+import { loadAndResolveProviderMenuProfile } from "@/lib/providers/loadProviderSettingsMenuProfile";
 
 /* =========================================================
    Types
@@ -195,6 +200,7 @@ const MENU_DAY_CATEGORY_TO_ORDER_CHOICE: Record<Category, string> = {
   sushi: "sushi",
   pokebowl: "pokebowl",
   thai: "thaimat",
+  vegetarian: "vegetarian",
   varmrett: "varmmat",
 };
 
@@ -205,6 +211,7 @@ function categoryForOrderChoice(choiceKey: string): Category | null {
   if (normalized === "sushi") return "sushi";
   if (normalized === "pokebowl") return "pokebowl";
   if (normalized === "thaimat" || normalized === "thai") return "thai";
+  if (normalized === "vegetarian" || normalized === "vegetar" || normalized === "vegetarisk") return "vegetarian";
   if (normalized === "varmmat" || normalized === "varmrett") return "varmrett";
   return null;
 }
@@ -1009,10 +1016,26 @@ export async function GET(req: NextRequest) {
 
     let daysOut = days;
     if (menuScope.mode === "scoped") {
+      const menuProfileResolver = await loadAndResolveProviderMenuProfile(
+        menuScope.providerId,
+        process.env,
+      );
+      const activeProfile = resolveActiveMenuProfileForRuntime(menuProfileResolver, process.env);
+      if (activeProfile) {
+        daysOut = days.map((day) => {
+          const categories = (day as { categories?: DayCategory[] }).categories;
+          if (!Array.isArray(categories)) return day;
+          return {
+            ...day,
+            categories: overlayProfileLabelsOnOrderWindowCategories(categories, activeProfile),
+          };
+        });
+      }
+
       try {
         const displayLocale = await resolveEmployeeDisplayLocaleFromRequest(req);
         daysOut = await overlayApprovedTranslationsOnOrderWindowDays({
-          days,
+          days: daysOut,
           providerId: menuScope.providerId,
           locale: displayLocale,
         });
@@ -1022,7 +1045,16 @@ export async function GET(req: NextRequest) {
           company_id: sc.company_id,
           detail: String(e?.message ?? e),
         });
-        daysOut = days;
+        daysOut = activeProfile
+          ? days.map((day) => {
+              const categories = (day as { categories?: DayCategory[] }).categories;
+              if (!Array.isArray(categories)) return day;
+              return {
+                ...day,
+                categories: overlayProfileLabelsOnOrderWindowCategories(categories, activeProfile),
+              };
+            })
+          : days;
       }
     }
 

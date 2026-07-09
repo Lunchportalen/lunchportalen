@@ -74,3 +74,31 @@ export {
   resolveProviderMenuProfileFromSettings,
 } from "@/lib/menu-profile/providerMenuProfileResolver";
 export type { ProviderSettingsMenuProfileInput } from "@/lib/menu-profile/providerMenuProfileResolver";
+
+export {
+  APP_LOCALE_MENU_PROFILE_MAPPINGS,
+  isValidPersistedMenuProfileId,
+  marketToDefaultCountryCode,
+  resolveMarketMenuProfileFromProviderLocale,
+  resolveMenuProfileIdFromAppLocale,
+  resolveMenuProfileIdFromProviderLocale,
+} from "@/lib/menu-profile/localeMenuProfileMapping";
+export type { ProviderLocaleMarketMapping } from "@/lib/menu-profile/localeMenuProfileMapping";
+
+export {
+  buildProfileRuntimeCategoryLabels,
+  buildProfileRuntimeCategoryLabelsFromResolver,
+  buildProfileWarmDishSuggestions,
+  isProfileMenuRuntimeEnabled,
+  overlayProfileLabelsOnOrderWindowCategories,
+  profileCategoryKeyForRuntimeCategory,
+  profileLabelForCategoryKey,
+  resolveActiveMenuProfileForRuntime,
+  resolveFallbackMenuProfile,
+  resolveRuntimeCategoryDisplayLabel,
+} from "@/lib/menu-profile/profileMenuRuntime";
+export type {
+  OrderWindowCategoryLike,
+  ProfileRuntimeCategoryLabels,
+  ProfileWarmDishSuggestion,
+} from "@/lib/menu-profile/profileMenuRuntime";

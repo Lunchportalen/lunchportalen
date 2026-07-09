@@ -8,6 +8,7 @@ import {
   SuperadminEmptyState,
   SuperadminTableSurface,
 } from "@/components/superadmin/shell/SuperadminShell";
+import { getTierDisplayLabelSafe } from "@/lib/tiers/displayLabels";
 
 type AgreementRow = {
   id: string;
@@ -265,7 +266,9 @@ export default function AgreementsClient({ initial }: { initial: Initial }) {
                       </div>
                     </td>
 
-                    <td className="py-3 pr-3">{safeStr(r.tier) || "-"}</td>
+                    <td className="py-3 pr-3">
+                      {getTierDisplayLabelSafe(r.tier, "nb-NO", { debugWithCode: true, fallbackMode: "raw" })}
+                    </td>
                     <td className="py-3 pr-3">
                       {Array.isArray(r.delivery_days) && r.delivery_days.length > 0 ? r.delivery_days.join(", ") : "-"}
                     </td>

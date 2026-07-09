@@ -90,8 +90,9 @@ describe("SMART-4 — scope guards", () => {
   test("provider UI exposes coverage QA without AI or auto-approve", () => {
     const panel = readSource("app/leverandor/meny/oversettelser/ProviderMenuTranslationsPanel.tsx");
     expect(panel).toMatch(/menu-translations\/sources/);
-    expect(panel).toMatch(/Dekning per språk|Kilder uten godkjent oversettelse/);
-    expect(panel).toMatch(/Katalog og aktivt menyvindu|aktivt menyvindu/i);
+    expect(panel).toMatch(/useTranslations\("provider\.menu\.translations"\)/);
+    expect(panel).toMatch(/t\("coverageTitle"\)|t\("missingTitle"\)/);
+    expect(panel).toMatch(/t\("introSources"\)/);
     expect(panel).not.toMatch(/auto-approve|AI-oversett|OpenAI/i);
   });
 });

@@ -23,6 +23,7 @@ export const EDITABLE_LUNCH_CATEGORY_KEYS = [
   "sushi",
   "pokebowl",
   "thaimat",
+  "vegetarian",
 ] as const;
 
 export type EditableLunchCategoryKey = (typeof EDITABLE_LUNCH_CATEGORY_KEYS)[number];
@@ -45,6 +46,8 @@ export type ProviderLunchCategoryRow = {
   title?: string | null;
   allowedPlanTiers?: string[] | null;
   items?: ProviderLunchCategoryItemRow[] | null;
+  /** Provider-scoped lunchCategory doc exists for this category key. */
+  isProviderScoped?: boolean;
 };
 
 export type ProviderMenuCatalogSnapshot = {
@@ -65,6 +68,7 @@ export function categoryFromLunchCategoryKey(k: string | null | undefined): Cate
   if (s === "sushi") return "sushi";
   if (s === "pokebowl") return "pokebowl";
   if (s === "thaimat") return "thai";
+  if (s === "vegetarian") return "vegetarian";
   if (s === "varmrett") return "varmrett";
   return null;
 }
@@ -85,7 +89,14 @@ export function categoryRowForCategory(
   return null;
 }
 
-export function categoryLabelFromCatalog(catalog: ProviderMenuCatalogSnapshot, category: Category): string {
+export function categoryLabelFromCatalog(
+  catalog: ProviderMenuCatalogSnapshot,
+  category: Category,
+  profileCategoryLabels?: Partial<Record<Category, string>>,
+): string {
+  const profileLabel = profileCategoryLabels?.[category];
+  if (profileLabel) return profileLabel;
+
   const row = categoryRowForCategory(catalog, category);
   const title = String(row?.title ?? "").trim();
   if (title) return title;

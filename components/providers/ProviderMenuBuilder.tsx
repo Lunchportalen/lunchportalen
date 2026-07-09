@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import ProviderMenuCatalogEditor from "@/components/providers/ProviderMenuCatalogEditor";
 import ProviderMenuCatalogView from "@/components/providers/ProviderMenuCatalogView";
@@ -65,7 +65,13 @@ import type { ProviderMenuRuntimeMappingProposalProps } from "@/lib/provider-men
 import ProviderMenuProfilePresentationBanner from "@/components/providers/ProviderMenuProfilePresentationBanner";
 import ProviderMenuProfileFixedCategoriesPanel from "@/components/providers/ProviderMenuProfileFixedCategoriesPanel";
 import ProviderMenuProfileWarmDishPreviewPanel from "@/components/providers/ProviderMenuProfileWarmDishPreviewPanel";
+import type { ProviderMenuWarmDishGenerationPresentation } from "@/lib/provider-menu/providerMenuProfileWarmDishGeneration";
+import ProviderMenuProfileWarmDishGenerationBanner from "@/components/providers/ProviderMenuProfileWarmDishGenerationBanner";
 import ProviderMenuRuntimeMappingProposalPanel from "@/components/providers/ProviderMenuRuntimeMappingProposalPanel";
+import ProviderMenuLocalizedSurfaceBanner from "@/components/providers/ProviderMenuLocalizedSurfaceBanner";
+import { mergeCatalogWithLocalizedOverlay } from "@/lib/menu-generator/localizedMenuSurface";
+import type { LocalizedMenuSurfacePresentation } from "@/lib/menu-generator/localizedMenuSurface";
+import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 import "@/app/styles/ds/provider-menu-editor.css";
 
@@ -73,9 +79,12 @@ type ProviderMenuBuilderProps = {
   workspacePresentation?: ProviderMenuWorkspacePresentationProps;
   fixedCategoryPresentation?: MenuProfileFixedCategoryPresentationProps;
   warmDishPreviewPresentation?: MenuProfileWarmDishPreviewPresentationProps;
+  warmDishGenerationPresentation?: ProviderMenuWarmDishGenerationPresentation;
   runtimeMappingProposal?: ProviderMenuRuntimeMappingProposalProps;
   mappingDraftSaveEnabled?: boolean;
   canSaveMappingDraft?: boolean;
+  profileCategoryLabels?: Partial<Record<Category, string>>;
+  localizedMenuSurface?: LocalizedMenuSurfacePresentation;
 };
 
 type MenuWeekResponse = {
@@ -110,12 +119,6 @@ type MenuWeekResponse = {
 };
 
 type WorkspaceView = "week" | "catalog";
-
-const TIER_LABELS: Record<PlanTier, string> = {
-  BASIS: "Basis",
-  LUXUS: "Luxus",
-  ENTERPRISE: "Enterprise",
-};
 
 function shiftWeekStart(weekStart: string, deltaWeeks: number): string {
   return addDaysISO(weekStart, deltaWeeks * 7);
@@ -170,18 +173,32 @@ function translateNextStepAction(
   return translate(`workspace.nextStep.${action.key}`);
 }
 
+type WarmDishSuggestionRow = {
+  date: string;
+  mealTitle: string;
+  description: string;
+  allergens: string[];
+  seedKey: string;
+};
+
 export default function ProviderMenuBuilder({
   workspacePresentation = { active: false },
   fixedCategoryPresentation = { active: false },
   warmDishPreviewPresentation = { active: false },
+  warmDishGenerationPresentation = { active: false },
   runtimeMappingProposal = { active: false },
   mappingDraftSaveEnabled = false,
   canSaveMappingDraft = false,
+  profileCategoryLabels,
+  localizedMenuSurface = { active: false },
 }: ProviderMenuBuilderProps) {
   const t = useTranslations("provider.menu");
+  const locale = useLocale();
+  const localizedSurface = localizedMenuSurface.active ? localizedMenuSurface : null;
   const profilePresentation = workspacePresentation.active ? workspacePresentation : null;
   const fixedCategories = fixedCategoryPresentation.active ? fixedCategoryPresentation : null;
   const warmDishPreview = warmDishPreviewPresentation.active ? warmDishPreviewPresentation : null;
+  const warmDishGeneration = warmDishGenerationPresentation.active ? warmDishGenerationPresentation : null;
   const runtimeMapping = runtimeMappingProposal.active ? runtimeMappingProposal : null;
   const [weekStart, setWeekStart] = useState(todayWeekStart);
   const [tier, setTier] = useState<PlanTier>("BASIS");
@@ -198,13 +215,30 @@ export default function ProviderMenuBuilder({
   const [confirmWarnings, setConfirmWarnings] = useState(false);
   const [pending, startTransition] = useTransition();
   const [loading, setLoading] = useState(true);
+  const [generatingWeek, setGeneratingWeek] = useState(false);
+  const [warmDishSuggestions, setWarmDishSuggestions] = useState<Record<string, WarmDishSuggestionRow>>({});
 
   const weekDates = useMemo(() => weekDatesFromStart(weekStart), [weekStart]);
   const tierPrice = prices?.[tier];
-  const workspaceCategories = useMemo(() => providerWorkspaceCategories(catalog, tier), [catalog, tier]);
+  const displayCatalog = useMemo(() => {
+    if (!localizedSurface) return catalog;
+    return mergeCatalogWithLocalizedOverlay(catalog, localizedSurface.catalogOverlay);
+  }, [catalog, localizedSurface]);
+  const workspaceCategories = useMemo(
+    () => providerWorkspaceCategories(displayCatalog, tier),
+    [displayCatalog, tier],
+  );
   const weekMetrics = useMemo(
-    () => summarizeWeekMetrics(slots, weekDates, tier, workspaceCategories, catalog),
-    [slots, weekDates, tier, workspaceCategories, catalog],
+    () =>
+      summarizeWeekMetrics(
+        slots,
+        weekDates,
+        tier,
+        workspaceCategories,
+        displayCatalog,
+        profileCategoryLabels,
+      ),
+    [slots, weekDates, tier, workspaceCategories, displayCatalog, profileCategoryLabels],
   );
 
   /** Cockpit display-only — varmrett publish state (aligned with day-card badges). */
@@ -212,18 +246,18 @@ export default function ProviderMenuBuilder({
     let publishedDays = 0;
     let draftDays = 0;
     for (const date of weekDates) {
-      const shared = summarizeSharedVarmrettDay(slots, date, catalog);
+      const shared = summarizeSharedVarmrettDay(slots, date, displayCatalog, profileCategoryLabels);
       if (shared.statusChip === "published") publishedDays += 1;
       else if (shared.statusChip === "draft") draftDays += 1;
     }
     return { publishedDays, draftDays };
-  }, [slots, weekDates]);
+  }, [slots, weekDates, displayCatalog, profileCategoryLabels]);
 
   const nextStepHint = useMemo(() => {
     const weekdayKeys = weekDates.map((_, idx) => WEEKDAY_KEYS[idx]!).filter(Boolean);
-    const action = resolveNextStepAction(slots, weekDates, tier, weekMetrics, weekdayKeys, catalog);
+    const action = resolveNextStepAction(slots, weekDates, tier, weekMetrics, weekdayKeys, displayCatalog);
     return translateNextStepAction(action, t);
-  }, [slots, weekDates, tier, weekMetrics, catalog, t]);
+  }, [slots, weekDates, tier, weekMetrics, displayCatalog, t]);
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -271,9 +305,44 @@ export default function ProviderMenuBuilder({
     }
   }, [weekStart, t]);
 
+  const loadWarmDishSuggestions = useCallback(async () => {
+    if (!warmDishGeneration) {
+      setWarmDishSuggestions({});
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/provider/menu-days/varmrett/suggestions?weekStart=${encodeURIComponent(weekStart)}`,
+        { credentials: "same-origin", headers: { Accept: "application/json" } },
+      );
+      const json = (await res.json()) as {
+        ok?: boolean;
+        data?: {
+          active?: boolean;
+          suggestions?: WarmDishSuggestionRow[];
+        };
+      };
+      if (!res.ok || !json.ok || !json.data?.active || !Array.isArray(json.data.suggestions)) {
+        setWarmDishSuggestions({});
+        return;
+      }
+      const next: Record<string, WarmDishSuggestionRow> = {};
+      for (const row of json.data.suggestions) {
+        next[row.date] = row;
+      }
+      setWarmDishSuggestions(next);
+    } catch {
+      setWarmDishSuggestions({});
+    }
+  }, [warmDishGeneration, weekStart]);
+
   useEffect(() => {
     void loadWeek();
   }, [loadWeek]);
+
+  useEffect(() => {
+    void loadWarmDishSuggestions();
+  }, [loadWarmDishSuggestions]);
 
   useEffect(() => {
     if (loading || selected || weekDates.length === 0) return;
@@ -305,6 +374,8 @@ export default function ProviderMenuBuilder({
       setForm({ ...existing });
     } else if (sel.category === "varmrett" && sel.editorFocus === "varmrett") {
       const shared = resolveSharedVarmrettSlot(slots, sel.date);
+      const suggestion = warmDishSuggestions[sel.date];
+      const hasContent = menuSlotHasContent(shared);
       existing = {
         ...existing,
         mealTitle: shared.mealTitle || existing.mealTitle,
@@ -312,6 +383,14 @@ export default function ProviderMenuBuilder({
         allergensText: shared.allergensText || existing.allergensText,
         estimatedCostPerPortion: shared.estimatedCostPerPortion ?? existing.estimatedCostPerPortion,
       };
+      if (!hasContent && suggestion) {
+        existing = {
+          ...existing,
+          mealTitle: suggestion.mealTitle,
+          description: suggestion.description,
+          allergensText: suggestion.allergens.join(", "),
+        };
+      }
       setForm({ ...existing, category: "varmrett", tier });
     } else {
       const shared = resolveSharedVarmrettSlot(slots, sel.date);
@@ -343,7 +422,7 @@ export default function ProviderMenuBuilder({
     if (!form || !selected) return;
     const sourceSlot = resolveProviderMenuSlot(slots, selected.date, source, selected.category);
     if (!menuSlotHasContent(sourceSlot) && sourceSlot.status === "empty") {
-      setError(t("errors.copySourceEmpty", { tier: TIER_LABELS[source] }));
+      setError(t("errors.copySourceEmpty", { tier: getTierDisplayLabel(source, locale) }));
       return;
     }
     setForm({
@@ -358,7 +437,7 @@ export default function ProviderMenuBuilder({
       status: "draft",
       contentSource: "draft",
     });
-    setMessage(t("success.copiedFromTier", { tier: TIER_LABELS[source] }));
+    setMessage(t("success.copiedFromTier", { tier: getTierDisplayLabel(source, locale) }));
   }
 
   async function save(status: "draft" | "published") {
@@ -451,6 +530,35 @@ export default function ProviderMenuBuilder({
     await loadWeek();
   }
 
+  async function generateProfileWeek() {
+    if (!warmDishGeneration) return;
+    setError(null);
+    setMessage(null);
+    setGeneratingWeek(true);
+    try {
+      const res = await fetch("/api/provider/menu-days/varmrett/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ weekStart }),
+      });
+      const json = (await res.json()) as MenuWeekResponse & {
+        data?: { appliedDates?: string[]; skippedDates?: string[] };
+      };
+      if (!res.ok || !json.ok) {
+        setError(resolveProviderMenuApiError(t, json, "generateProfileWeekFailed"));
+        return;
+      }
+      const applied = json.data?.appliedDates?.length ?? 0;
+      setMessage(t("success.profileWeekGenerated", { count: String(applied) }));
+      await loadWeek();
+      await loadWarmDishSuggestions();
+    } catch {
+      setError(t("errors.generateProfileWeekFailed"));
+    } finally {
+      setGeneratingWeek(false);
+    }
+  }
+
   const varmrettEditorState = useMemo(() => {
     if (!selected?.date || selected.category !== "varmrett") {
       return { providerOverride: false, hasGeneratedBaseline: false, orderLocked: false, autoFilled: false };
@@ -473,14 +581,15 @@ export default function ProviderMenuBuilder({
     selected && form
       ? buildEditorContext({
           tier,
-          tierLabel: TIER_LABELS[tier],
+          tierLabel: getTierDisplayLabel(tier, locale),
           weekdayLabel: weekdayLabelForDate(selected.date, weekDates, t),
           weekdayKey: weekdayKeyForDate(selected.date, weekDates),
           date: selected.date,
           category: selected.category,
           variantLabel: selected.variantLabel ?? null,
           editorFocus: selected.editorFocus,
-          catalog,
+          catalog: displayCatalog,
+          profileCategoryLabels,
         })
       : null;
 
@@ -491,7 +600,7 @@ export default function ProviderMenuBuilder({
 
   const catalogVariant =
     selected?.variantKey && selected.category
-      ? catalogVariantByKey(catalog, selected.category, selected.variantKey)
+      ? catalogVariantByKey(displayCatalog, selected.category, selected.variantKey)
       : null;
 
   const enterpriseWarnings =
@@ -526,7 +635,7 @@ export default function ProviderMenuBuilder({
 
   const categoryVariantLabels =
     selected && !selected.variantKey && !isSanityDrivenCategory(selected.category)
-      ? summarizeCategoryDay(slots, selected.date, tier, selected.category, catalog).rows.map((r) => r.title)
+      ? summarizeCategoryDay(slots, selected.date, tier, selected.category, displayCatalog, profileCategoryLabels).rows.map((r) => r.title)
       : undefined;
 
   const categoryOnly = Boolean(
@@ -556,8 +665,23 @@ export default function ProviderMenuBuilder({
         onWorkspaceViewChange={setWorkspaceView}
       />
 
+      {localizedSurface && workspaceView === "week" ? (
+        <ProviderMenuLocalizedSurfaceBanner presentation={localizedSurface} />
+      ) : null}
+
       {profilePresentation && workspaceView === "week" ? (
         <ProviderMenuProfilePresentationBanner presentation={profilePresentation} />
+      ) : null}
+
+      {warmDishGeneration && workspaceView === "week" ? (
+        <ProviderMenuProfileWarmDishGenerationBanner
+          presentation={warmDishGeneration}
+          canGenerate
+          generating={generatingWeek}
+          onGenerateWeek={() => {
+            void generateProfileWeek();
+          }}
+        />
       ) : null}
 
       {fixedCategories && workspaceView === "week" ? (
@@ -583,7 +707,7 @@ export default function ProviderMenuBuilder({
       {workspaceView === "week" ? (
         <ProviderMenuStatusRow
           weekStart={weekStart}
-          tierLabel={TIER_LABELS[tier]}
+          tierLabel={getTierDisplayLabel(tier, locale)}
           metrics={weekMetrics}
           varmrettPublishedDays={cockpitVarmrettDisplay.publishedDays}
           varmrettDraftDays={cockpitVarmrettDisplay.draftDays}
@@ -622,11 +746,12 @@ export default function ProviderMenuBuilder({
               </header>
               <ProviderMenuWeekPlanner
                 tier={tier}
-                catalog={catalog}
+                catalog={displayCatalog}
                 weekDates={weekDates}
                 slots={slots}
                 selected={selected}
                 orderCountsByDate={orderCountsByDate}
+                profileCategoryLabels={profileCategoryLabels}
                 onSelect={openSelection}
               />
               <div className="lp-editor-panels lp-editor-panels--stack">
@@ -668,8 +793,10 @@ export default function ProviderMenuBuilder({
                   {selected ? (
                     <ProviderMenuCatalogEditor
                       tier={tier}
-                      catalog={catalog}
+                      catalog={displayCatalog}
                       onCatalogSaved={setCatalog}
+                      profileCategoryLabels={profileCategoryLabels}
+                      localizedSurfaceActive={Boolean(localizedSurface)}
                       initialOpenCategoryKey={catalogPanelCategoryKey}
                       panelMode
                     />
@@ -684,13 +811,16 @@ export default function ProviderMenuBuilder({
           ) : (
             <ProviderMenuCatalogView
               tier={tier}
-              catalog={catalog}
+              catalog={displayCatalog}
+              sanityCatalog={localizedSurface ? catalog : undefined}
               onCatalogSaved={setCatalog}
               workspacePresentation={workspacePresentation}
               fixedCategoryPresentation={fixedCategoryPresentation}
               runtimeMappingProposal={runtimeMappingProposal}
               mappingDraftSaveEnabled={mappingDraftSaveEnabled}
               canSaveMappingDraft={canSaveMappingDraft}
+              profileCategoryLabels={profileCategoryLabels}
+              localizedSurface={localizedSurface}
             />
           )}
         </div>

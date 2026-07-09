@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
-import { APP_LOCALES } from "@/lib/i18n/localeRegistry";
+import { APP_LOCALES, intlLocaleForAppLocale, type AppLocale } from "@/lib/i18n/localeRegistry";
 import {
   MENU_CONTENT_FIELDS,
   MENU_CONTENT_SOURCE_KINDS,
@@ -62,16 +63,11 @@ type Props = {
   canWrite: boolean;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  missing: "Mangler",
-  draft: "Utkast",
-  suggested: "Forslag",
-  approved: "Godkjent",
-  rejected: "Avvist",
-  stale: "Utdatert",
-};
-
 export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
+  const t = useTranslations("provider.menu.translations");
+  const uiLocale = useLocale() as AppLocale;
+  const dateLocale = intlLocaleForAppLocale(uiLocale);
+
   const [rows, setRows] = useState<TranslationRow[]>([]);
   const [sourcesReport, setSourcesReport] = useState<SourcesReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,6 +86,18 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
     translatedText: "",
   });
 
+  const statusLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        MENU_CONTENT_TRANSLATION_STATUSES.map((status) => [status, t(`status.${status}`)]),
+      ) as Record<string, string>,
+    [t],
+  );
+
+  function statusLabel(status: string): string {
+    return statusLabels[status] ?? status;
+  }
+
   const query = useMemo(() => {
     const params = new URLSearchParams();
     if (filterLocale) params.set("locale", filterLocale);
@@ -105,7 +113,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
       const res = await fetch(`/api/provider/menu-translations${query}`, { cache: "no-store" });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        throw new Error(json.message ?? "Kunne ikke hente oversettelser.");
+        throw new Error(json.message ?? t("errors.loadFailed"));
       }
       setRows(Array.isArray(json.data?.translations) ? json.data.translations : []);
     } catch (e) {
@@ -114,7 +122,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [query, t]);
 
   const loadSources = useCallback(async () => {
     setSourcesLoading(true);
@@ -164,7 +172,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        throw new Error(json.message ?? "Kunne ikke oppdatere oversettelse.");
+        throw new Error(json.message ?? t("errors.updateFailed"));
       }
       await loadRows();
       await loadSources();
@@ -194,7 +202,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        throw new Error(json.message ?? "Kunne ikke opprette oversettelse.");
+        throw new Error(json.message ?? t("errors.createFailed"));
       }
       setCreateForm((prev) => ({ ...prev, sourceRef: "", originalText: "", translatedText: "" }));
       await loadRows();
@@ -209,38 +217,26 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
   return (
     <div className="ds-provider-translations">
       <section className="ds-card ds-section">
-        <p className="ds-body">
-          Kun godkjente oversettelser vises til ansatte. Utkast, forslag og avviste rader vises aldri
-          til ansatte.
-        </p>
-        <p className="ds-body ds-muted">
-          Delvis dekning er normalt. Mangler eller utdatert hash faller tilbake til leverandørens
-          originaltekst — dette endrer ikke bestillingsnøkler, pakke eller pris for ansatte.
-        </p>
-        <p className="ds-body ds-muted">
-          Kilde-referanser: måltid = <code>item.key</code>, kategori = kategori-slug (f.eks. paasmurt,
-          salat), allergen = normalisert token.
-        </p>
-        <p className="ds-body ds-muted">
-          Kilder hentes fra katalog og aktivt menyvindu (publiserte menuDay-rader). Varmrett/menu_day-kilder
-          vises når de finnes i aktivt menyvindu.
-        </p>
+        <p className="ds-body">{t("introApproved")}</p>
+        <p className="ds-body ds-muted">{t("introPartialCoverage")}</p>
+        <p className="ds-body ds-muted">{t("introSourceRefs")}</p>
+        <p className="ds-body ds-muted">{t("introSources")}</p>
       </section>
 
       <section className="ds-card ds-section">
-        <h2 className="ds-h3">Dekning per språk</h2>
-        {sourcesLoading ? <p className="ds-body">Laster kilder…</p> : null}
+        <h2 className="ds-h3">{t("coverageTitle")}</h2>
+        {sourcesLoading ? <p className="ds-body">{t("loadingSources")}</p> : null}
         {!sourcesLoading && sourcesReport?.coverage?.locales?.length ? (
           <div className="ds-table-wrap">
             <table className="ds-table">
               <thead>
                 <tr>
-                  <th>Språk</th>
-                  <th>Dekning</th>
-                  <th>Godkjent synlig</th>
-                  <th>Mangler</th>
-                  <th>Utkast</th>
-                  <th>Utdatert</th>
+                  <th>{t("coverageTable.locale")}</th>
+                  <th>{t("coverageTable.coverage")}</th>
+                  <th>{t("coverageTable.employeeVisible")}</th>
+                  <th>{t("coverageTable.missing")}</th>
+                  <th>{t("coverageTable.draft")}</th>
+                  <th>{t("coverageTable.stale")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -259,7 +255,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
           </div>
         ) : null}
         {!sourcesLoading && !sourcesReport?.coverage?.locales?.length ? (
-          <p className="ds-body">Ingen kilder funnet i katalogen ennå.</p>
+          <p className="ds-body">{t("noSources")}</p>
         ) : null}
       </section>
 
@@ -267,11 +263,11 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
       sourcesReport &&
       (sourcesReport.missingCandidates.length > 0 || sourcesReport.staleCandidates.length > 0) ? (
         <section className="ds-card ds-section">
-          <h2 className="ds-h3">Kilder uten godkjent oversettelse</h2>
+          <h2 className="ds-h3">{t("missingTitle")}</h2>
           {sourcesReport.missingCandidates.length > 0 ? (
             <>
               <p className="ds-body ds-muted">
-                {sourcesReport.missingCandidates.length} kilder mangler rad på minst ett mål-språk.
+                {t("missingCount", { count: sourcesReport.missingCandidates.length })}
               </p>
               <ul className="ds-body">
                 {sourcesReport.missingCandidates.slice(0, 12).map((candidate) => (
@@ -286,7 +282,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
                           className="ds-btn ds-btn-link"
                           onClick={() => void createRowFromCandidate(candidate)}
                         >
-                          Opprett utkast
+                          {t("createDraftFromSource")}
                         </button>
                       </>
                     ) : null}
@@ -297,8 +293,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
           ) : null}
           {sourcesReport.staleCandidates.length > 0 ? (
             <p className="ds-body ds-error" role="status">
-              {sourcesReport.staleCandidates.length} kilder har hash-avvik — ansatte ser originaltekst
-              til raden er godkjent på nytt.
+              {t("staleWarning", { count: sourcesReport.staleCandidates.length })}
             </p>
           ) : null}
         </section>
@@ -307,13 +302,13 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
       <section className="ds-card ds-section">
         <div className="ds-provider-translations-filters">
           <label className="ds-field">
-            <span className="ds-label">Språk</span>
+            <span className="ds-label">{t("filters.locale")}</span>
             <select
               className="ds-input"
               value={filterLocale}
               onChange={(e) => setFilterLocale(e.target.value)}
             >
-              <option value="">Alle</option>
+              <option value="">{t("filters.all")}</option>
               {APP_LOCALES.map((locale) => (
                 <option key={locale} value={locale}>
                   {locale}
@@ -322,16 +317,16 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
             </select>
           </label>
           <label className="ds-field">
-            <span className="ds-label">Status</span>
+            <span className="ds-label">{t("filters.status")}</span>
             <select
               className="ds-input"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="">Alle</option>
+              <option value="">{t("filters.all")}</option>
               {MENU_CONTENT_TRANSLATION_STATUSES.map((status) => (
                 <option key={status} value={status}>
-                  {STATUS_LABELS[status] ?? status}
+                  {statusLabel(status)}
                 </option>
               ))}
             </select>
@@ -349,14 +344,11 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
 
       {canWrite ? (
         <section className="ds-card ds-section">
-          <h2 className="ds-h3">Ny oversettelsesrad</h2>
-          <p className="ds-body ds-muted">
-            Opprett manuell rad med kilde-referanse og originaltekst, eller bruk «Opprett utkast» fra
-            kildelisten over.
-          </p>
+          <h2 className="ds-h3">{t("createTitle")}</h2>
+          <p className="ds-body ds-muted">{t("createLead")}</p>
           <div className="ds-provider-translations-create-grid">
             <label className="ds-field">
-              <span className="ds-label">Kilde</span>
+              <span className="ds-label">{t("form.sourceKind")}</span>
               <select
                 className="ds-input"
                 value={createForm.sourceKind}
@@ -370,7 +362,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
               </select>
             </label>
             <label className="ds-field">
-              <span className="ds-label">Felt</span>
+              <span className="ds-label">{t("form.field")}</span>
               <select
                 className="ds-input"
                 value={createForm.field}
@@ -384,7 +376,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
               </select>
             </label>
             <label className="ds-field">
-              <span className="ds-label">Språk</span>
+              <span className="ds-label">{t("form.locale")}</span>
               <select
                 className="ds-input"
                 value={createForm.locale}
@@ -398,16 +390,16 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
               </select>
             </label>
             <label className="ds-field ds-field-span-2">
-              <span className="ds-label">Kilde-referanse</span>
+              <span className="ds-label">{t("form.sourceRef")}</span>
               <input
                 className="ds-input"
                 value={createForm.sourceRef}
                 onChange={(e) => setCreateForm((prev) => ({ ...prev, sourceRef: e.target.value }))}
-                placeholder="item.key, kategori-slug eller allergen-token"
+                placeholder={t("form.sourceRefPlaceholder")}
               />
             </label>
             <label className="ds-field ds-field-span-2">
-              <span className="ds-label">Originaltekst</span>
+              <span className="ds-label">{t("form.originalText")}</span>
               <textarea
                 className="ds-input"
                 rows={2}
@@ -416,7 +408,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
               />
             </label>
             <label className="ds-field ds-field-span-2">
-              <span className="ds-label">Oversatt tekst (valgfritt)</span>
+              <span className="ds-label">{t("form.translatedTextOptional")}</span>
               <textarea
                 className="ds-input"
                 rows={2}
@@ -431,33 +423,28 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
             disabled={busyId !== null}
             onClick={() => void createRow()}
           >
-            Lagre utkast
+            {t("saveDraft")}
           </button>
         </section>
       ) : null}
 
       <section className="ds-card ds-section">
-        <h2 className="ds-h3">Oversettelser</h2>
-        {loading ? <p className="ds-body">Laster…</p> : null}
-        {!loading && rows.length === 0 ? (
-          <p className="ds-body">
-            Ingen oversettelsesrader ennå. Opprett en rad manuelt, eller vent til import fra menykilder
-            er tilgjengelig.
-          </p>
-        ) : null}
+        <h2 className="ds-h3">{t("listTitle")}</h2>
+        {loading ? <p className="ds-body">{t("loading")}</p> : null}
+        {!loading && rows.length === 0 ? <p className="ds-body">{t("emptyList")}</p> : null}
         {!loading && rows.length > 0 ? (
           <div className="ds-table-wrap">
             <table className="ds-table">
               <thead>
                 <tr>
-                  <th>Kilde</th>
-                  <th>Felt</th>
-                  <th>Språk</th>
-                  <th>Original</th>
-                  <th>Oversatt</th>
-                  <th>Status</th>
-                  <th>Oppdatert</th>
-                  {canWrite ? <th>Handling</th> : null}
+                  <th>{t("listTable.source")}</th>
+                  <th>{t("listTable.field")}</th>
+                  <th>{t("listTable.locale")}</th>
+                  <th>{t("listTable.original")}</th>
+                  <th>{t("listTable.translated")}</th>
+                  <th>{t("listTable.status")}</th>
+                  <th>{t("listTable.updated")}</th>
+                  {canWrite ? <th>{t("listTable.actions")}</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -483,16 +470,16 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
                             }
                           />
                         ) : (
-                          row.translatedText ?? "—"
+                          row.translatedText ?? t("emptyTranslated")
                         )}
                       </td>
                       <td>
-                        {STATUS_LABELS[row.status] ?? row.status}
+                        {statusLabel(row.status)}
                         {!row.hashMatches ? (
-                          <div className="ds-muted">Hash avviker — marker utdatert ved behov</div>
+                          <div className="ds-muted">{t("hashMismatch")}</div>
                         ) : null}
                       </td>
-                      <td>{new Date(row.updatedAt).toLocaleString("nb-NO")}</td>
+                      <td>{new Date(row.updatedAt).toLocaleString(dateLocale)}</td>
                       {canWrite ? (
                         <td className="ds-provider-translations-actions">
                           <button
@@ -506,7 +493,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
                               })
                             }
                           >
-                            Lagre utkast
+                            {t("saveDraft")}
                           </button>
                           <button
                             type="button"
@@ -519,7 +506,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
                               })
                             }
                           >
-                            Godkjenn
+                            {t("approve")}
                           </button>
                           <button
                             type="button"
@@ -527,7 +514,7 @@ export default function ProviderMenuTranslationsPanel({ canWrite }: Props) {
                             disabled={busyId === row.id}
                             onClick={() => void patchRow(row.id, { action: "reject" })}
                           >
-                            Avvis
+                            {t("reject")}
                           </button>
                         </td>
                       ) : null}

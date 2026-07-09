@@ -21,6 +21,7 @@ const MENU_DAY_CATEGORY_TO_ORDER_CHOICE: Record<Category, string> = {
   sushi: "sushi",
   pokebowl: "pokebowl",
   thai: "thaimat",
+  vegetarian: "vegetarian",
   varmrett: "varmmat",
 };
 

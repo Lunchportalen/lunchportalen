@@ -61,6 +61,13 @@ export const CATEGORY_VARIANT_CONTRACT: Record<Category, ProviderMenuCategoryCon
     sanityDriven: false,
     variants: [],
   },
+  vegetarian: {
+    category: "vegetarian",
+    categoryLabel: "Vegetar",
+    lunchCategoryKey: "vegetarian",
+    sanityDriven: false,
+    variants: [],
+  },
   varmrett: {
     category: "varmrett",
     categoryLabel: "Varmrett",
@@ -76,6 +83,7 @@ export const PROVIDER_MENU_CATEGORY_CONTRACTS: readonly ProviderMenuCategoryCont
   CATEGORY_VARIANT_CONTRACT.sushi,
   CATEGORY_VARIANT_CONTRACT.pokebowl,
   CATEGORY_VARIANT_CONTRACT.thai,
+  CATEGORY_VARIANT_CONTRACT.vegetarian,
   CATEGORY_VARIANT_CONTRACT.varmrett,
 ];
 

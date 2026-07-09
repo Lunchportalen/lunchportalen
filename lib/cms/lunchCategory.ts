@@ -5,7 +5,7 @@ import "server-only";
 
 import type { Category, PlanTier } from "@/lib/cms/menuDayContract";
 import type { MenuItemData } from "@/lib/cms/menuDay";
-import { sanity } from "@/lib/sanity/client";
+import { sanityServer } from "@/lib/sanity/server";
 import {
   EDITABLE_LUNCH_CATEGORY_KEYS,
   LUNCH_CATEGORY_ALLERGENS,
@@ -18,6 +18,8 @@ export type LunchCategorySanityRow = {
   allowedPlanTiers?: string[] | null;
   displayOrder?: number | null;
   items?: unknown;
+  /** True when row comes from a provider-scoped lunchCategory doc (not global template). */
+  isProviderScoped?: boolean;
 };
 
 export { EDITABLE_LUNCH_CATEGORY_KEYS, LUNCH_CATEGORY_ALLERGENS, type EditableLunchCategoryKey };
@@ -47,6 +49,7 @@ function categoryFromLunchCategoryDocKey(k: string | null): Category | null {
   if (s === "sushi") return "sushi";
   if (s === "pokebowl") return "pokebowl";
   if (s === "thaimat") return "thai";
+  if (s === "vegetarian") return "vegetarian";
   if (s === "varmrett") return "varmrett";
   return null;
 }
@@ -145,18 +148,22 @@ export function mergeLunchCategoryRowsWithTemplateFallback(
       continue;
     }
     const providerRow = providerByKey.get(k);
-    merged.push(providerRow ?? template);
+    if (providerRow) {
+      merged.push({ ...providerRow, isProviderScoped: true });
+    } else {
+      merged.push(template);
+    }
   }
 
   for (const [k, row] of providerByKey) {
-    if (!seen.has(k)) merged.push(row);
+    if (!seen.has(k)) merged.push({ ...row, isProviderScoped: true });
   }
 
   return merged;
 }
 
 export async function fetchLunchCategoryTemplateRows(): Promise<LunchCategorySanityRow[]> {
-  const rows = await sanity.fetch<LunchCategorySanityRow[]>(
+  const rows = await sanityServer.fetch<LunchCategorySanityRow[]>(
     `*[_type == "lunchCategory" && isActive == true && !defined(provider)] | order(displayOrder asc) ${LUNCH_CATEGORY_ROW_PROJECTION}`,
   );
   return Array.isArray(rows) ? rows : [];
@@ -168,7 +175,7 @@ export async function fetchLunchCategoryRowsForProvider(providerId: string): Pro
 
   const [templates, providerRows] = await Promise.all([
     fetchLunchCategoryTemplateRows(),
-    sanity.fetch<LunchCategorySanityRow[]>(
+    sanityServer.fetch<LunchCategorySanityRow[]>(
       `*[_type == "lunchCategory" && isActive == true && provider._ref == $providerRef] | order(displayOrder asc) ${LUNCH_CATEGORY_ROW_PROJECTION}`,
       { providerRef: pid },
     ),
@@ -207,7 +214,7 @@ export function providerLunchCategoryDocId(providerId: string, categoryKey: stri
 export function categoryTiersForEditableKey(categoryKey: string): PlanTier[] {
   const k = categoryKey.trim().toLowerCase();
   if (k === "paasmurt" || k === "salatboks") return ["BASIS", "LUXUS", "ENTERPRISE"];
-  if (k === "sushi" || k === "pokebowl" || k === "thaimat") return ["LUXUS", "ENTERPRISE"];
+  if (k === "sushi" || k === "pokebowl" || k === "thaimat" || k === "vegetarian") return ["LUXUS", "ENTERPRISE"];
   return [];
 }
 

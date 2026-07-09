@@ -7,8 +7,8 @@ import { CATEGORIES, CATEGORY_LABELS, PLAN_CATEGORIES } from "@/lib/cms/menuDay"
 describe("menuDay plan/category contract", () => {
   it("keeps the canonical category coverage per plan", () => {
     expect(PLAN_CATEGORIES.BASIS).toHaveLength(3);
-    expect(PLAN_CATEGORIES.LUXUS).toHaveLength(6);
-    expect(PLAN_CATEGORIES.ENTERPRISE).toHaveLength(6);
+    expect(PLAN_CATEGORIES.LUXUS).toHaveLength(7);
+    expect(PLAN_CATEGORIES.ENTERPRISE).toHaveLength(7);
   });
 
   it("keeps BASIS categories as a subset of LUXUS", () => {

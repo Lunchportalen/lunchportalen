@@ -19,9 +19,9 @@ const MENU_PROFILE_DIR = path.join(ROOT, "lib/menu-profile");
 const SERVER_ONLY_MENU_PROFILE_FILES = new Set(["runtimeMappingDraftPersistence.server.ts"]);
 
 describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
-  it("listMenuProfiles returns all 9 profiles", () => {
+  it("listMenuProfiles returns every registered profile", () => {
     const profiles = listMenuProfiles();
-    expect(profiles).toHaveLength(9);
+    expect(profiles).toHaveLength(MENU_PROFILE_IDS.length);
     expect(profiles.map((p) => p.id).sort()).toEqual([...MENU_PROFILE_IDS].sort());
   });
 
@@ -30,8 +30,9 @@ describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
     const defaults = getMarketDefaults(profile.market);
 
     expect(profile.market).toBe(defaults.market);
-    expect(profile.locale).toBe(defaults.defaultLocale);
-    expect(defaults.defaultMenuProfileId).toBe(profileId);
+    if (defaults.defaultMenuProfileId === profileId) {
+      expect(profile.locale).toBe(defaults.defaultLocale);
+    }
     expect(defaults.defaultCurrency).toBeTruthy();
   });
 
@@ -172,18 +173,11 @@ describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
     expect(() => assertMenuProfile("")).toThrow(/Unknown menu profile/);
   });
 
-  it("MARKET_DEFAULTS covers all nine markets", () => {
-    expect(Object.keys(MARKET_DEFAULTS).sort()).toEqual([
-      "DE",
-      "DK",
-      "ES",
-      "FI",
-      "FR",
-      "IT",
-      "NO",
-      "SE",
-      "UK",
-    ]);
+  it("MARKET_DEFAULTS covers every registered profile market", () => {
+    const profileMarkets = new Set(listMenuProfiles().map((profile) => profile.market));
+    for (const market of profileMarkets) {
+      expect(MARKET_DEFAULTS[market]).toBeTruthy();
+    }
   });
 
   describe("no runtime coupling", () => {

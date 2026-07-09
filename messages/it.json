@@ -805,8 +805,16 @@
         "kitchenEmailHint": "Utilizzato per la base di produzione e gli avvisi in cucina.",
         "deliveryEmailLabel": "Email di consegna",
         "deliveryEmailHint": "Utilizzato per avvisi e messaggi relativi alla consegna quando gli ordini sono pronti per la consegna.",
-        "localeLabel": "Lingua amministrativa",
-        "localeHint": "Imposta la lingua predefinita per le superfici operative del fornitore quando è disponibile il supporto linguistico. Contenuto menu, profilo menu, prezzi e valuta sono gestiti separatamente.",
+        "localeLabel": "Mercato e lingua amministrativa",
+        "localeHint": "Controlla mercato e profilo menu salvati per questa azienda di catering. Non influisce sulla finestra ordini dipendenti fino alla fase successiva.",
+        "uiLocaleSeparation": "La lingua nella barra laterale cambia solo il testo dell'interfaccia. Mercato e profilo menu si salvano qui nelle impostazioni operative.",
+        "marketProfileLabel": "Profilo menu attivo",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Nessun profilo menu salvato — selezionato automaticamente salvando il mercato.",
+        "marketChangeImpact": "Cambiare mercato influisce su futuri suggerimenti menu e piatti generati.",
+        "marketChangeCatalogPreserved": "Catalogo esistente e ordini pubblicati non vengono sovrascritti.",
+        "marketChangeResetRequired": "Per ricostruire un catalogo dal profilo mercato serve un reset separato.",
+        "marketChangeEmployeeRuntime": "I dipendenti riceveranno il profilo menu del fornitore quando il runtime sarà attivato nella fase successiva.",
         "save": "Salva impostazioni operative",
         "saving": "Salvataggio…",
         "saved": "Impostazioni operative salvate.",
@@ -1296,7 +1304,10 @@
     "menu": {
       "page": {
         "readOnlyTitle": "Sola lettura",
-        "readOnlyLead": "Vous n'avez pas l'autorisation de modifier le menu. Contatti l'administrateur fournisseur."
+        "readOnlyLead": "Non hai l'autorizzazione a modificare il menu. Contatta l'amministratore del fornitore.",
+        "translationsPromoTitle": "Traduzioni menu",
+        "translationsPromoLead": "Approva testi tradotti per i dipendenti in seguito. I dipendenti vedono ancora il testo originale fino a SMART-3.",
+        "translationsPromoCta": "Apri traduzioni menu"
       },
       "header": {
         "eyebrow": "Editor Menu",
@@ -1388,6 +1399,7 @@
         "saveFailed": "Impossibile salvare il Menu.",
         "copySourceEmpty": "Nessun Menu {tier} da copiare per questo giorno/categoria.",
         "resetVarmrettFailed": "Impossibile ripristinare il piatto caldo del giorno.",
+        "generateProfileWeekFailed": "Impossibile generare la settimana dalla banca profilo.",
         "publishConfirmRequired": "{warning} Conferma per pubblicare comunque.",
         "unauthorized": "Accesso non eseguito",
         "forbidden": "Non hai accesso al Menu.",
@@ -1402,6 +1414,7 @@
         "published": "Menu pubblicato.",
         "draftSaved": "Bozza salvata.",
         "resetVarmrett": "Piatto caldo del giorno ripristinato al contenuto generato.",
+        "profileWeekGenerated": "Piatti caldi generati per {count} giorno/i dalla banca profilo.",
         "copiedFromTier": "Copiati depuis {tier}. Ajoutez l'upgrade Enterprise avant de publier."
       },
       "validation": {
@@ -1468,9 +1481,6 @@
           "prefix": "Allergeni: {list}"
         },
         "packageCard": {
-          "basisIncludes": "Tartine · Salade · Piatto caldo del giorno",
-          "luxusIncludes": "Basis + Sushi · Poké · Thai",
-          "enterpriseIncludes": "Stesso piatto caldo del giorno + valore aggiunto",
           "notSeparateProduction": "Non è un piatto di produzione separato",
           "sharedWarmDishHint": "Un piatto caldo del giorno condiviso"
         },
@@ -1643,6 +1653,19 @@
         "packagesLabel": "Pacchetti",
         "profileCategoryLabel": "Categoria profilo"
       },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Active menu profile",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "title": "Suggerimenti piatti caldi basati sul profilo",
+        "description": "I nuovi suggerimenti e la generazione predefinita seguono il profilo menu attivo. I contenuti esistenti e i giorni pubblicati non vengono modificati automaticamente.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggerimenti",
+        "resolveMeta": "Profile source: {source}",
+        "bankSuggestionsLabel": "Five suggestions from profile bank",
+        "generateWeek": "Genera settimana dalla banca profilo",
+        "generating": "Generazione …",
+        "generateHint": "Compila solo giorni vuoti e sbloccati come bozze. Contenuti del fornitore e giorni pubblicati vengono ignorati."
+      },
       "workspaceWarmDishPreview": {
         "title": "Banca piatti caldi per profilo menu",
         "description": "Questi sono suggerimenti basati sul profilo menu selezionato. I suggerimenti non vengono aggiunti al catalogo, al piano settimanale o alla pubblicazione fino a un cutover successivo.",
@@ -1799,6 +1822,94 @@
           "basedOnLuxus": "Basato su Luxus",
           "ownEnterprise": "Enterprise proprio"
         }
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Traduzioni menu",
+        "lead": "Approva e gestisci testi tradotti per {providerName}. Questo non cambia ancora ciò che vedono i dipendenti.",
+        "backToMenu": "Torna al menu"
+      },
+      "translations": {
+        "introApproved": "Solo le traduzioni approvate sono visibili ai dipendenti. Bozze, suggerimenti e righe rifiutate non sono mai visibili ai dipendenti.",
+        "introPartialCoverage": "Una copertura parziale è normale. Hash mancante o obsoleto ripiega sul testo originale del fornitore — questo non modifica chiavi ordine, pacchetto o prezzo per i dipendenti.",
+        "introSourceRefs": "Riferimenti sorgente: pasto = item.key, categoria = slug categoria (es. paasmurt, salat), allergene = token normalizzato.",
+        "introSources": "Le sorgenti provengono dal catalogo e dalla finestra menu attiva (righe menuDay pubblicate). Le sorgenti piatto caldo/menu_day compaiono quando presenti nella finestra attiva.",
+        "coverageTitle": "Copertura per lingua",
+        "loadingSources": "Caricamento sorgenti…",
+        "noSources": "Nessuna sorgente trovata nel catalogo.",
+        "coverageTable": {
+          "locale": "Lingua",
+          "coverage": "Copertura",
+          "employeeVisible": "Approvato visibile",
+          "missing": "Mancante",
+          "draft": "Bozza",
+          "stale": "Obsoleto"
+        },
+        "missingTitle": "Sorgenti senza traduzione approvata",
+        "missingCount": "{count} sorgenti non hanno una riga per almeno una lingua di destinazione.",
+        "createDraftFromSource": "Crea bozza",
+        "staleWarning": "{count} sorgenti hanno discrepanza hash — i dipendenti vedono il testo originale finché la riga non viene riapprovata.",
+        "filters": {
+          "locale": "Lingua",
+          "status": "Stato",
+          "all": "Tutti"
+        },
+        "status": {
+          "missing": "Mancante",
+          "draft": "Bozza",
+          "suggested": "Suggerito",
+          "approved": "Approvato",
+          "rejected": "Rifiutato",
+          "stale": "Obsoleto"
+        },
+        "createTitle": "Nuova riga traduzione",
+        "createLead": "Crea una riga manuale con riferimento sorgente e testo originale, oppure usa «Crea bozza» dall'elenco sorgenti sopra.",
+        "form": {
+          "sourceKind": "Sorgente",
+          "field": "Campo",
+          "locale": "Lingua",
+          "sourceRef": "Riferimento sorgente",
+          "sourceRefPlaceholder": "item.key, slug categoria o token allergene",
+          "originalText": "Testo originale",
+          "translatedTextOptional": "Testo tradotto (opzionale)"
+        },
+        "saveDraft": "Salva bozza",
+        "listTitle": "Traduzioni",
+        "loading": "Caricamento…",
+        "emptyList": "Nessuna riga traduzione ancora. Crea una riga manualmente o attendi l'import dalle sorgenti menu.",
+        "listTable": {
+          "source": "Sorgente",
+          "field": "Campo",
+          "locale": "Lingua",
+          "original": "Originale",
+          "translated": "Tradotto",
+          "status": "Stato",
+          "updated": "Aggiornato",
+          "actions": "Azioni"
+        },
+        "hashMismatch": "Discrepanza hash — segna obsoleto se necessario",
+        "approve": "Approva",
+        "reject": "Rifiuta",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Impossibile caricare le traduzioni.",
+          "updateFailed": "Impossibile aggiornare la traduzione.",
+          "createFailed": "Impossibile creare la traduzione."
+        }
+      },
+      "legacyEditor": {
+        "intro": "I dipendenti possono ordinare solo quando l'azienda ha un accordo attivo e il menu è pubblicato.",
+        "date": "Data",
+        "plan": "Piano",
+        "category": "Categoria",
+        "mealTitle": "Nome del piatto",
+        "description": "Descrizione",
+        "allergens": "Allergeni (opzionale, separati da virgola)",
+        "allergensPlaceholder": "Es. latte, grano",
+        "savingDraft": "Salvataggio…",
+        "saveDraft": "Salva bozza",
+        "publishing": "Pubblicazione…",
+        "publishMenu": "Pubblica menu"
       }
     }
   }

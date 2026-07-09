@@ -57,6 +57,14 @@ export function isMenuProfileWarmDishPreviewPanelEnabled(env: EnvLike = {}): boo
 }
 
 /**
+ * Phase 3B — profile warm dish generation in provider workspace.
+ * Requires resolver ON and resolved menu_profile_id (checked at call site). Default OFF.
+ */
+export function isMenuProfileWarmDishGenerationEnabled(env: EnvLike = {}): boolean {
+  return isMenuProfileResolverEnabled(env);
+}
+
+/**
  * G5d.2 sub-flag — runtime mapping proposal panel (shadow-only).
  * True only when env is exactly "true" or "1". Default OFF.
  */

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 describe("Provider menu translations page", () => {
-  test("explains translations are not employee-live yet", () => {
+  test("explains translations are not employee-live yet via i18n", () => {
     const page = readFileSync(
       resolve("app/leverandor/meny/oversettelser/page.tsx"),
       "utf8",
@@ -13,15 +13,16 @@ describe("Provider menu translations page", () => {
       "utf8",
     );
 
-    expect(page).toMatch(/Menyoversettelser/);
-    expect(page).toMatch(/ansatte ser ennå/i);
-    expect(panel).toMatch(/Kun godkjente oversettelser/);
-    expect(panel).toMatch(/Dekning per språk/);
+    expect(page).toContain('getTranslations("provider.menu.translationsPage")');
+    expect(page).toMatch(/t\("lead"/);
+    expect(panel).toContain('useTranslations("provider.menu.translations")');
+    expect(panel).toMatch(/t\("introApproved"\)/);
+    expect(panel).toMatch(/t\("coverageTitle"\)/);
     expect(panel).toMatch(/menu-translations\/sources/);
-    expect(panel).toMatch(/Delvis dekning er normalt/);
-    expect(panel).toMatch(/Godkjenn/);
-    expect(panel).toMatch(/Avvis/);
-    expect(panel).toMatch(/Lagre utkast/);
+    expect(panel).toMatch(/t\("introPartialCoverage"\)/);
+    expect(panel).toMatch(/t\("approve"\)/);
+    expect(panel).toMatch(/t\("reject"\)/);
+    expect(panel).toMatch(/t\("saveDraft"\)/);
     expect(panel).not.toMatch(/automatic AI|AI translation|AI-oversett/i);
     expect(panel).not.toMatch(/employee translations are live/i);
     expect(panel).not.toMatch(/LocaleSwitcher/i);

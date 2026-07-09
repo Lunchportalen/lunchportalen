@@ -16,10 +16,11 @@ export const LUNCH_CATEGORY_KEY_TO_DB_NAME: Record<string, string> = {
   sushi: "Sushi",
   pokebowl: "Pokebowl",
   thaimat: "Thaimat",
+  vegetarian: "Vegetarian",
   varmrett: "Varmrett",
 };
 
-const ALLOWED_SKUS = ["paasmurt", "salatboks", "sushi", "pokebowl", "thaimat", "varmrett"] as const;
+const ALLOWED_SKUS = ["paasmurt", "salatboks", "sushi", "pokebowl", "thaimat", "vegetarian", "varmrett"] as const;
 
 type LunchCatRow = {
   key: string | null;
