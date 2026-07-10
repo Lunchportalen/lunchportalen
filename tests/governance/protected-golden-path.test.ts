@@ -193,6 +193,16 @@ describe("Protected Golden Path — order identity and write-path locks", () => 
     expect(syncItems).toMatch(/menu_service_day_items/);
   });
 
+  it("11b. MSDI localized SOT mapping stays default-OFF and off order write-path", () => {
+    const syncItems = readSource("lib/menu-publish/syncMenuServiceDayItems.ts");
+    const mapping = readSource("lib/menu-generator/sotMsdiItemMapping.ts");
+
+    expect(syncItems).toContain("isMsdiLocalizedMappingActiveForSync");
+    expect(syncItems).not.toMatch(/lp_order_set/);
+    expect(mapping).not.toMatch(/lp_order_set/);
+    expect(mapping).toContain("LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE");
+  });
+
   it("12. duplicate order contract is documented in idempotency test suite", () => {
     expect(exists("tests/api/orders-idempotency.test.ts")).toBe(true);
 
