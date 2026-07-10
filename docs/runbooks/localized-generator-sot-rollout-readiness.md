@@ -1,10 +1,8 @@
 # Localized fixed menu generator — SOT and rollout readiness plan
 
-**Status:** PLAN ONLY · **SOT NOT STARTED** · **auto-rollout NOT STARTED**  
-**Date:** 2026-07-06  
-**Main HEAD (planning audit):** `5db00381` — Phase B sv-SE production apply evidence (#428)  
-**Production code commit (generator chain):** `325afbce` — dryRun idempotency (#420)  
-**Evidence archive:** [`docs/evidence/localized-generator-production-evidence.md`](../evidence/localized-generator-production-evidence.md)
+**Status:** PLAN + RECONCILED · **SOT runtime CONTAINED OFF** · **auto-rollout NOT STARTED**  
+**Date:** 2026-07-06 (reconciled 2026-07-10)  
+**Truth index:** [`docs/evidence/go-truth-state-reconciliation-2026-07-10.md`](../evidence/go-truth-state-reconciliation-2026-07-10.md)
 
 This runbook defines **enterprise readiness gates** for the next phase: source-of-truth (SOT) planning, provider-by-provider rollout, rollback, observability, and 9-market launch. It is **not** implementation authorization.
 
@@ -20,7 +18,7 @@ This runbook defines **enterprise readiness gates** for the next phase: source-o
 |------|-------|-------|
 | `LP_MENU_PROFILE_RESOLVER` | **ON** | SUPERSMART resolver live |
 | `LP_LOCALIZED_FIXED_MENU_GENERATOR` | **ON** | Generator panel + apply route enabled |
-| SOT / auto-rollout flags | **NONE active** | No cutover flag exists yet for localized generator SOT |
+| SOT / auto-rollout flags | **Code merged (#472–#476); production env OFF** after F4 containment (#478) | Kill-switch: master flag OFF or empty allowlist |
 
 **Do not** activate additional flags without scoped owner GO.
 
@@ -463,12 +461,14 @@ Archive each production session to `docs/evidence/` (docs-only PR) with:
 | Phase | Status |
 |-------|--------|
 | A — Canary complete | **PASS** (Melhus · nb-NO) |
-| B — Single provider apply | **PASS** (Melhus weeks + Swedish Lunch Pilot sv-SE week `2031-09-01` — evidence #425–#428) |
-| C — Multi-provider rollout control | **IN PROGRESS** — factory/runbook/readiness plan; **no live onboarding without scoped GO** |
-| D — SOT activation | **NOT STARTED** · **NO-GO** |
+| B — Single provider apply | **PASS** (Melhus weeks + Swedish Lunch Pilot sv-SE — evidence #425–#428) |
+| C — Multi-provider 9-country | **COMPLETE** — 9 providers · evidence #446–#458 · [`final-phase-c-rollout-summary-readiness-audit.md`](../evidence/final-phase-c-rollout-summary-readiness-audit.md) |
+| D — SOT activation | **PARTIAL · CONTAINED** — F4 (#478); runtime flags removed; F4b (#479) pending verification |
 | E — Auto-rollout | **DEFERRED** · **NO-GO** |
 
-Provider mirror preflight (PR #430) + production smoke (PR #431) are archived. Phase C onboarding is controlled via:
+Authoritative reconciliation: [`docs/evidence/go-truth-state-reconciliation-2026-07-10.md`](../evidence/go-truth-state-reconciliation-2026-07-10.md). Evidence index: [`docs/evidence/README.md`](../evidence/README.md).
+
+Provider mirror preflight (PR #430) + production smoke (PR #431) are archived. Phase C onboarding factory remains available for **new** locales only — all 9 launch locales are onboarded:
 
 - [`docs/runbooks/phase-c-9-country-provider-rollout.md`](phase-c-9-country-provider-rollout.md)
 - [`docs/evidence/phase-c-9-country-launch-readiness-plan.md`](../evidence/phase-c-9-country-launch-readiness-plan.md)
@@ -478,12 +478,10 @@ Provider mirror preflight (PR #430) + production smoke (PR #431) are archived. P
 
 ## 9. Recommended next steps (each requires separate GO)
 
-1. **Phase C provider onboarding** — factory `--dry-run` then gated `--apply` for next locale (`da-DK` first). Includes mandatory `syncProviderToSanity`.
-2. **Generator dryRun** — require `providerMirrorPreflight.ok=true`, `safeToApply=true`, `applyBlocked=false`.
-3. **Evidence archive** after onboarding and after dryRun.
-4. **Menu apply** — separate scoped GO only (one provider · one far-future week).
-5. **SOT design doc** — plan only until all 9 locales pass gates and explicit SOT GO.
-6. **Do not** start SOT, auto-rollout, or additional production applies without explicit operator GO.
+1. **Gate F4b staging verification** — MSDI trigger alignment (#479) read-back; no broad SOT.
+2. **Scoped SOT re-cutover** — Danish pilot only, after F4b PASS + commercial boundary acceptance.
+3. **Truth reconciliation** — maintain [`go-truth-state-reconciliation-2026-07-10.md`](../evidence/go-truth-state-reconciliation-2026-07-10.md) as index when new evidence merges.
+4. **Do not** start broad SOT, auto-rollout, or unscoped production applies without explicit operator GO.
 
 ---
 
@@ -491,7 +489,10 @@ Provider mirror preflight (PR #430) + production smoke (PR #431) are archived. P
 
 | Document | Role |
 |----------|------|
-| [`docs/evidence/localized-generator-production-evidence.md`](../evidence/localized-generator-production-evidence.md) | Production verification archive |
+| [`docs/evidence/go-truth-state-reconciliation-2026-07-10.md`](../evidence/go-truth-state-reconciliation-2026-07-10.md) | **Authoritative truth index** — 21 markets, E2E, billing, SOT gates |
+| [`docs/evidence/README.md`](../evidence/README.md) | Evidence archive index |
+| [`docs/evidence/danish-sot-cutover-f4-evidence.md`](../evidence/danish-sot-cutover-f4-evidence.md) | F4 partial SOT cutover + containment |
+| [`docs/evidence/final-scoped-sot-cutover-readiness-check.md`](../evidence/final-scoped-sot-cutover-readiness-check.md) | Pre-F4 scoped readiness |
 | [`docs/evidence/phase-b-provider-2-sv-se-onboarding-evidence.md`](../evidence/phase-b-provider-2-sv-se-onboarding-evidence.md) | Provider #2 sv-SE onboarding + dryRun (#427) |
 | [`docs/evidence/phase-b-sv-se-production-apply-evidence.md`](../evidence/phase-b-sv-se-production-apply-evidence.md) | First non-nb production apply + mirror prerequisite (#428) |
 | [`docs/evidence/pr430-production-smoke-evidence.md`](../evidence/pr430-production-smoke-evidence.md) | Provider mirror preflight production smoke (#431) |

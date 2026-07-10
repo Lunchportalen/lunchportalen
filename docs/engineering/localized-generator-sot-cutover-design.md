@@ -1,10 +1,11 @@
 # Localized generator SOT cutover design
 
-**Status:** DESIGN ONLY · **SOT NOT STARTED** · **auto-rollout NOT STARTED**
-**Date:** 2026-07-09
-**Main HEAD (design audit):** `3c7dd918` — Complete 21-market locale coverage (#464)
+**Status:** DESIGN + RECONCILED GATES · **SOT runtime CONTAINED OFF** · **auto-rollout NOT STARTED**
+**Date:** 2026-07-09 (gates reconciled 2026-07-10)
+**Main HEAD (reconciliation):** `ae9ec929` — MSDI trigger alignment (#479)
 **Predecessor plan:** [`docs/runbooks/localized-generator-sot-rollout-readiness.md`](../runbooks/localized-generator-sot-rollout-readiness.md)
-**Readiness decision input:** SOT readiness decision audit (read-only, 2026-07-09) — SOT **NO-GO**, 1 of 4 activation gates PASS.
+**Truth index:** [`docs/evidence/go-truth-state-reconciliation-2026-07-10.md`](../evidence/go-truth-state-reconciliation-2026-07-10.md)
+**Readiness decision input:** F4 partial cutover contained (#478); broad SOT **NO-GO** until F4b verified.
 
 This document is the **Gate D design artifact** required by the launch decision matrix (phase **D — SOT activation**). Merging this document does **not** start SOT, does not authorize publish, does not authorize the rollback drill, and does not authorize any production mutation. Every executable step described below requires its own separate, scoped operator GO.
 
@@ -54,16 +55,16 @@ All facts below are backed by merged evidence on main:
 | Phase C localized provider rollout | **Complete and evidence-backed** | [`final-phase-c-rollout-summary-readiness-audit.md`](../evidence/final-phase-c-rollout-summary-readiness-audit.md) (#458) |
 | Locales/providers complete | 9 (nb-NO, sv-SE + da-DK, fi-FI, en-GB, de-DE, fr-FR, es-ES, it-IT) | Phase C evidence chain #446–#455 |
 | Production providers | 9 · orders 17 | Launch decision audit (#459), post-launch monitoring (#462) |
-| Generated Phase C menuDays | 120 — all far-future drafts | `customerVisible=true`: 0 · `approvedForPublish=true`: 0 |
+| Generated Phase C menuDays | 105 remaining (Italian 0 post-rollback) — far-future | **1** Danish doc publish-visible (proof artifact); Italian week deleted in Gate C |
 | Generated Phase C catalog docs | 8 | Final Phase C readiness audit §9 |
 | Global templates | 7 · rev hash length 320 · unchanged | Post-launch monitoring (#462) |
 | Employee/API safety | **PASS** — authenticated 200/ok, anonymous safe 401, no economy/metadata/Phase D leakage | Final Phase C readiness audit §9 |
 | Production launch | **Live and healthy** | Publish evidence (#461), post-launch monitoring (#462) |
 | 21-market locale registry | Merged, source-only | #464 · `lib/i18n/localeRegistry.ts` |
 | Phase D (12 targets) | `SOURCE_ONLY` · 0 production rows/settings/Sanity docs | Final Phase C readiness audit §6–7 |
-| SOT | **NOT STARTED** | SOT readiness decision audit 2026-07-09 |
+| SOT | **PARTIAL · CONTAINED** — F4 (#478); production env flags **removed** post-containment | [`danish-sot-cutover-f4-evidence.md`](../evidence/danish-sot-cutover-f4-evidence.md) |
 | Auto-rollout | **NOT STARTED · DEFERRED** | Readiness runbook §8 |
-| SOT cutover flag in code | **None exists** — no accidental activation path | Repo scan 2026-07-09; readiness runbook §1.1 |
+| SOT cutover flags in code | **Merged** (#472–#476) · **production env OFF** after F4 containment | F1 dry-run #474; reconciliation index |
 | Production flags | `LP_MENU_PROFILE_RESOLVER` ON · `LP_LOCALIZED_FIXED_MENU_GENERATOR` ON · unchanged through launch chain | Readiness runbook §1.1, monitoring (#462) |
 
 ---
@@ -80,18 +81,16 @@ Hard gates before any SOT cutover. Any FAIL → **STOP** (fail-closed).
 
 ### Gate B — Publish workflow proof
 
-- **Status: MISSING. Required before SOT.**
-- **Requires its own separate scoped GO** (production mutation — not authorized by this document).
-- Must prove that **one** scoped generated localized doc can be approved and published safely through the existing publish workflow (see §9 for the plan).
-- Must **not** be a broad rollout publish: exactly one provider, one week, minimal doc set.
-- PASS criteria include correct `approvedForPublish`/`customerVisible` transitions, correct employee visibility semantics, no leakage, and a proven un-publish/rollback boundary.
+- **Status: PASS (archived).**
+- Evidence: PR #469 · [`localized-generator-publish-workflow-proof-evidence.md`](../evidence/localized-generator-publish-workflow-proof-evidence.md).
+- Approval stage: one Danish doc `approvedForPublish=true` · `customerVisible=false`.
+- Visibility stage: PR #471 · [`localized-generator-visibility-materialization-proof-evidence.md`](../evidence/localized-generator-visibility-materialization-proof-evidence.md) — `customerVisible=true` → webhook → 1 `menu_service_days` row.
 
 ### Gate C — Rollback drill
 
-- **Status: MISSING. Required before SOT.**
-- **Requires its own separate scoped GO** (production mutation — not authorized by this document).
-- Must be **draft-only** and scoped: delete only session-created provider-scoped docs with `approvedForPublish=false` and `customerVisible=false` (see §8).
-- Must document the exact rollback boundary and archive evidence, closing the "formal rollback drill not archived" risk carried since the launch readiness review.
+- **Status: PASS (archived).**
+- Evidence: PR #468 · [`localized-generator-rollback-drill-evidence.md`](../evidence/localized-generator-rollback-drill-evidence.md).
+- Draft-only: 15 Italian Lunch Pilot menuDays deleted; globals/Melhus/protected providers unchanged.
 
 ### Gate D — SOT runtime design approval
 
@@ -101,16 +100,16 @@ Hard gates before any SOT cutover. Any FAIL → **STOP** (fail-closed).
 
 ### Gate E — Final SOT readiness audit
 
-- Required **after** Gates B, C and D are all closed.
-- Read-only. No mutation.
-- Must re-verify: production inventory, employee/API safety, publish proof evidence, rollback drill evidence, flag state, Phase D dormancy, order-count stability.
-- Must end with an explicit **GO / NO-GO** statement.
+- **Status: PASS (archived).** PR #470 · [`final-sot-readiness-audit.md`](../evidence/final-sot-readiness-audit.md).
+- Visibility residual closed by PR #471. Superseded for cutover planning by [`final-scoped-sot-cutover-readiness-check.md`](../evidence/final-scoped-sot-cutover-readiness-check.md) (#475).
 
 ### Gate F — SOT cutover GO
 
-- Only after Gates A–E all PASS.
-- Separate explicit operator GO with scoped provider allowlist and rollback plan.
-- Related track: G5d.8 (compatibility SOT boundary, [`docs/runbooks/g5d8-planning.md`](../runbooks/g5d8-planning.md)) carries its own preconditions (byte/schema parity evidence, `canProceedToRuntimeHook` governance) where the employee menu assembly hook is involved; that track must be reconciled at Gate E if the cutover implementation touches it.
+- **Status: PARTIAL · CONTAINED — broad GO remains NO-GO.**
+- F4 scoped cutover attempted (#478): DKK price localized; name/VAT blocked by `tg_menu_service_day_item_snapshot`; production SOT flags **removed** post-containment.
+- F4b (MSDI trigger alignment, #479): code merged; **production re-cutover NO-GO** until staging verification + owner GO.
+- Only after Gates A–E PASS **and** F4b verified: separate explicit operator GO with scoped provider allowlist and rollback plan.
+- Related track: G5d.8 ([`docs/runbooks/g5d8-planning.md`](../runbooks/g5d8-planning.md)) — reconcile at Gate E if cutover touches employee menu assembly hook.
 
 ---
 
@@ -282,17 +281,16 @@ Commands expected to PASS before any SOT cutover (Gate E/F verification set):
 | Item | State |
 |---|---|
 | LIVE production | **Green without SOT** — no launch dependency on SOT |
-| SOT | **NO-GO** until Gates A–E all PASS and Gate F GO is given |
+| SOT | **NO-GO (broad)** — F4 partial contained; F4b verification required before re-attempt |
 | Auto-rollout | **NO-GO · DEFERRED** — separate future product GO |
 | Phase D | **Source-only** — production apply remains NO-GO behind separate scoped GO |
 | Billing / Stripe | **Separate track** — own gates, no coupling to SOT |
 
-Next steps after this design doc merges (each requires its own separate GO, in order):
+Next steps (each requires its own separate GO):
 
-1. **Rollback drill GO** (Gate C — draft-only, scoped, production mutation).
-2. **Publish workflow proof GO** (Gate B — one scoped doc set, production mutation).
-3. **Final SOT readiness audit** (Gate E — read-only, explicit GO/NO-GO).
-4. **SOT cutover GO** (Gate F) — only if all prior gates PASS.
+1. **Gate F4b staging verification** — MSDI trigger alignment (#479) read-back.
+2. **Scoped SOT re-cutover GO** — Danish pilot only, after F4b PASS + owner MSDI/commercial acceptance.
+3. **Truth reconciliation** — [`go-truth-state-reconciliation-2026-07-10.md`](../evidence/go-truth-state-reconciliation-2026-07-10.md) (docs-only).
 
 ---
 

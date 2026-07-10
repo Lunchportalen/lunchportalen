@@ -102,8 +102,13 @@ Drift classification: **no unsafe drift**. All deltas vs earlier evidence are th
 | SOT | **Do not start** |
 | Auto-rollout | **Do not start** |
 
-**Exact recommended next GO prompt (separate GO only):**
+## 10. Supersession (2026-07-10)
 
-```text
-GO scoped visibility-materialization proof for localized generator — one provider/doc only, no SOT, no auto-rollout
-```
+Gate E decision **"READY ONLY IF OWNER ACCEPTS RESIDUAL VISIBILITY RISK"** (§8) is **superseded**:
+
+- Visibility → materialization proof **PASS** — PR #471 · [`localized-generator-visibility-materialization-proof-evidence.md`](./localized-generator-visibility-materialization-proof-evidence.md)
+- Pre-F4 readiness — [`final-scoped-sot-cutover-readiness-check.md`](./final-scoped-sot-cutover-readiness-check.md) (#475)
+- F4 partial cutover + containment — [`danish-sot-cutover-f4-evidence.md`](./danish-sot-cutover-f4-evidence.md) (#478)
+- **Authoritative index** — [`go-truth-state-reconciliation-2026-07-10.md`](./go-truth-state-reconciliation-2026-07-10.md)
+
+Broad SOT remains **NO-GO** until Gate F4b verified. This document remains historical Gate E evidence.
