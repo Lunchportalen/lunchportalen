@@ -52,7 +52,10 @@ export const SECRET_SCAN_PATTERNS = [
   /-----BEGIN (RSA |EC )?PRIVATE KEY-----/,
 ];
 
-export const DOCS_ONLY_ALLOWED_PREFIXES = ["docs/"];
+export const EVIDENCE_PATH_PREFIX = "docs/evidence/";
+
+/** @deprecated use EVIDENCE_PATH_PREFIX for evidence PRs */
+export const DOCS_ONLY_ALLOWED_PREFIXES = [EVIDENCE_PATH_PREFIX];
 
 /** Last verified production migration ledger snapshot (read-only reference). */
 export const PRODUCTION_LEDGER_SNAPSHOT = [

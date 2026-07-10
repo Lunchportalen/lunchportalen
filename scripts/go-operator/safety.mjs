@@ -4,6 +4,7 @@ import path from "node:path";
 import {
   ALWAYS_FORBIDDEN_OPERATIONS,
   DOCS_ONLY_ALLOWED_PREFIXES,
+  EVIDENCE_PATH_PREFIX,
   SECRET_SCAN_PATTERNS,
 } from "./constants.mjs";
 
@@ -60,6 +61,21 @@ export function scanForSecrets(content) {
     }
   }
   return hits;
+}
+
+/**
+ * @param {string} relPath
+ */
+export function assertEvidencePathUnderDocsEvidence(relPath) {
+  const normalized = relPath.replace(/\\/g, "/");
+  if (!normalized.startsWith(EVIDENCE_PATH_PREFIX)) {
+    throw new Error(
+      `GO_OPERATOR_BLOCKED: evidencePath must start with ${EVIDENCE_PATH_PREFIX} (got ${normalized})`,
+    );
+  }
+  if (normalized.includes("..")) {
+    throw new Error(`GO_OPERATOR_BLOCKED: evidencePath must not contain '..' (${normalized})`);
+  }
 }
 
 /**
