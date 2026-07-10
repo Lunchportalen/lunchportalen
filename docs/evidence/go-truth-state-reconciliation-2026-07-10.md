@@ -189,7 +189,7 @@ Visibility proof (#471) and F4 cutover (#478) established:
 | F0 — Runtime hook (default OFF) | **PASS** | #473 |
 | F1 — Dry-run proof | **PASS** | #474 |
 | F — Scoped cutover execution | **PARTIAL · CONTAINED** | #478 — flags removed; partial MSDI preserved |
-| F4b — MSDI trigger alignment | **IN PROGRESS (code)** / **NOT production-active** | #479 merged; re-cutover **NO-GO** |
+| F4b — MSDI trigger alignment | **APPLIED IN PRODUCTION** | #479 merged; migration `20260810120000` in production ledger — see [`f4b-msdi-trigger-apply-readiness-check.md`](./f4b-msdi-trigger-apply-readiness-check.md) |
 | F — Broad SOT cutover GO | **NO-GO** | Awaiting F4b verification + owner GO |
 | Auto-rollout | **NO-GO · DEFERRED** | — |
 
@@ -241,17 +241,17 @@ See [`docs/evidence/README.md`](./README.md) for the full catalog. Key documents
 
 | Priority | Action | Type |
 |----------|--------|------|
-| 1 | Merge this reconciliation PR | docs-only |
-| 2 | Gate F4b — verify MSDI trigger alignment (#479) in staging, then scoped production re-cutover | implementation + GO |
-| 3 | Reconcile `phaseCLocales.ts` coverage field (optional code PR) | code — separate from this docs PR |
-| 4 | Broad SOT cutover GO | **NO-GO** until F4b PASS + owner acceptance of commercial boundary |
+| 1 | Merge F4b readiness evidence PR | docs-only |
+| 2 | **Danish scoped SOT re-cutover verification** — read-back with SOT flags OFF unless explicit GO | read-only first |
+| 3 | Billing migration ledger reconciliation (11 pending) | read-only audit — separate track |
+| 4 | Broad SOT cutover GO | **NO-GO** — SOT runtime OFF |
 | 5 | Auto-rollout | **NO-GO** |
 | 6 | Phase D apply | **NO-GO** |
 
 **Exact next GO prompt (separate GO only):**
 
 ```text
-GO Gate F4b staging verification — MSDI trigger alignment read-back only, no broad SOT, no auto-rollout
+GO Danish scoped SOT re-cutover verification — read-only production read-back first, SOT flags OFF unless explicit scoped GO, no auto-rollout
 ```
 
 ---

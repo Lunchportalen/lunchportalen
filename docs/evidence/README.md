@@ -17,6 +17,7 @@ This directory archives operator evidence for the localized fixed menu generator
 | [`final-scoped-sot-cutover-readiness-check.md`](./final-scoped-sot-cutover-readiness-check.md) | Pre-F4 scoped SOT readiness (#475) |
 | [`final-sot-readiness-audit.md`](./final-sot-readiness-audit.md) | Gate E audit (#470) |
 | [`final-phase-c-rollout-summary-readiness-audit.md`](./final-phase-c-rollout-summary-readiness-audit.md) | Phase C completion (#458) |
+| [`f4b-msdi-trigger-apply-readiness-check.md`](./f4b-msdi-trigger-apply-readiness-check.md) | F4b production apply readiness (read-only) |
 | [`localized-generator-launch-readiness-review.md`](./localized-generator-launch-readiness-review.md) | Launch readiness review |
 
 ---
@@ -31,6 +32,7 @@ This directory archives operator evidence for the localized fixed menu generator
 | Visibility → MSDI | [`localized-generator-visibility-materialization-proof-evidence.md`](./localized-generator-visibility-materialization-proof-evidence.md) | #471 |
 | F1 — Dry-run | [`localized-generator-sot-dry-run-proof-evidence.md`](./localized-generator-sot-dry-run-proof-evidence.md) | #474 |
 | F4 — Scoped cutover | [`danish-sot-cutover-f4-evidence.md`](./danish-sot-cutover-f4-evidence.md) | #478 (partial · contained) |
+| F4b — MSDI trigger | [`f4b-msdi-trigger-apply-readiness-check.md`](./f4b-msdi-trigger-apply-readiness-check.md) | #479 applied in production; apply GO N/A |
 
 ---
 
