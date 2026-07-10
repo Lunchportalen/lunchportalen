@@ -17,6 +17,7 @@ const SOT_FLAG_TOKENS = [
   "LP_LOCALIZED_GENERATOR_SOT_ENABLED",
   "LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST",
   "LP_LOCALIZED_GENERATOR_SOT_DRY_RUN",
+  "LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED",
 ] as const;
 
 const AUTO_ROLLOUT_FLAG = "LP_LOCALIZED_GENERATOR_AUTO_ROLLOUT_ENABLED";
@@ -25,9 +26,15 @@ const SOT_RUNTIME_ALLOWED_PATHS = [
   "lib/menu-generator/sotFeatureFlag.ts",
   "lib/menu-generator/localizedGeneratorSotResolver.ts",
   "lib/menu-generator/localizedGeneratorSotControl.ts",
+  "lib/menu-generator/sotMsdiItemMapping.ts",
+  "lib/menu-generator/sotMsdiMappingPolicy.ts",
   "lib/menu-generator/index.ts",
+  "lib/menu-publish/msdiLocalizedItemSnapshot.ts",
+  "lib/menu-publish/syncMenuServiceDayItems.ts",
   "tests/lib/menu-generator/localizedGeneratorSotFeatureFlag.test.ts",
   "tests/lib/menu-generator/localizedGeneratorSotResolver.test.ts",
+  "tests/lib/menu-generator/sotMsdiItemMapping.test.ts",
+  "tests/sync-menu-service-day-items.test.ts",
   "tests/governance/localized-generator-sot-runtime-hook-governance-contracts.test.ts",
   IMPLEMENTATION_PLAN_DOC,
   "docs/engineering/localized-generator-sot-cutover-design.md",
@@ -164,6 +171,8 @@ describe("Gate F0 — SOT hook not wired to protected surfaces", () => {
       "lib/menu-generator/localizedGeneratorSotResolver.ts",
       "lib/menu-generator/localizedGeneratorSotControl.ts",
       "lib/menu-generator/sotFeatureFlag.ts",
+      "lib/menu-generator/sotMsdiItemMapping.ts",
+      "lib/menu-generator/sotMsdiMappingPolicy.ts",
     ];
     for (const mod of modules) {
       const src = readSource(mod);
@@ -210,7 +219,7 @@ describe("Gate F0 — resolver runtime contracts", () => {
     expect(decision.wouldSelectGenerated).toBe(true);
   });
 
-  test("documents MSDI tier-product global catalog v1 boundary", () => {
+  test("documents MSDI tier-product global catalog v1 boundary when mapping flag OFF", () => {
     const decision = resolveLocalizedGeneratorSotDecision({
       providerId: DANISH_PILOT,
       env: {
@@ -220,6 +229,20 @@ describe("Gate F0 — resolver runtime contracts", () => {
     });
     expect(decision.msdiSnapshotMode).toBe("tier_products_global_catalog");
     expect(decision.msdiLocalizedMappingBlocked).toBe(true);
+  });
+
+  test("localized MSDI mapping ready when mapping flag ON (still legacy serve)", () => {
+    const decision = resolveLocalizedGeneratorSotDecision({
+      providerId: DANISH_PILOT,
+      env: {
+        LP_LOCALIZED_GENERATOR_SOT_ENABLED: "true",
+        LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST: DANISH_PILOT,
+        LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED: "true",
+      },
+    });
+    expect(decision.msdiSnapshotMode).toBe("localized_generated_content");
+    expect(decision.msdiLocalizedMappingBlocked).toBe(false);
+    expect(decision.selectedSource).toBe("legacy");
   });
 });
 
@@ -246,6 +269,8 @@ describe("Gate F0 — billing and order path boundary", () => {
       "lib/menu-generator/localizedGeneratorSotResolver.ts",
       "lib/menu-generator/localizedGeneratorSotControl.ts",
       "lib/menu-generator/sotFeatureFlag.ts",
+      "lib/menu-generator/sotMsdiItemMapping.ts",
+      "lib/menu-generator/sotMsdiMappingPolicy.ts",
     ];
     const forbidden = ["lp_order_set", "invoiceEngine", "tripletex", "Stripe", "provider_invoices"];
     for (const mod of modules) {

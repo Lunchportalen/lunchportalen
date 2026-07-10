@@ -11,6 +11,9 @@ export const LP_LOCALIZED_GENERATOR_SOT_ENABLED_ENV = "LP_LOCALIZED_GENERATOR_SO
 export const LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST_ENV =
   "LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST";
 export const LP_LOCALIZED_GENERATOR_SOT_DRY_RUN_ENV = "LP_LOCALIZED_GENERATOR_SOT_DRY_RUN";
+/** MSDI localized item mapping — default OFF; requires master SOT + allowlist. */
+export const LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED_ENV =
+  "LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED";
 /** Reserved — separate deferred auto-rollout track; not part of SOT cutover. */
 export const LP_LOCALIZED_GENERATOR_AUTO_ROLLOUT_ENABLED_ENV =
   "LP_LOCALIZED_GENERATOR_AUTO_ROLLOUT_ENABLED";
@@ -31,6 +34,11 @@ export function isLocalizedGeneratorSotEnabled(env: EnvLike = {}): boolean {
 /** Dry-run observe-only. Default OFF. Requires master ON at resolver layer. */
 export function isLocalizedGeneratorSotDryRunEnabled(env: EnvLike = {}): boolean {
   return envFlagTruthy(env[LP_LOCALIZED_GENERATOR_SOT_DRY_RUN_ENV]);
+}
+
+/** MSDI localized mapping switch. Default OFF. Requires SOT eligible provider at policy layer. */
+export function isLocalizedGeneratorSotMsdiLocalizedMappingEnabled(env: EnvLike = {}): boolean {
+  return envFlagTruthy(env[LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED_ENV]);
 }
 
 /**

@@ -909,7 +909,7 @@
     "lib/market/context.ts:10:NOK",
     "lib/market/context.ts:17:NOK",
     "lib/menu-publish/syncMenuServiceDayItems.ts:10:VAT_RATE",
-    "lib/menu-publish/syncMenuServiceDayItems.ts:388:VAT_RATE",
+    "lib/menu-publish/syncMenuServiceDayItems.ts:384:VAT_RATE",
     "lib/menu-publish/tierPricing.ts:4:cents_9000",
     "lib/menu-publish/tierPricing.ts:5:cents_13000",
     "lib/menu-publish/tierPricing.ts:6:cents_17000",

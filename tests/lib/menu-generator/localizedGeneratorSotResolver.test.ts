@@ -5,6 +5,9 @@ import {
   buildLocalizedGeneratorSotProviderControl,
 } from "@/lib/menu-generator/localizedGeneratorSotControl";
 import {
+  LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE,
+} from "@/lib/menu-generator/sotMsdiItemMapping";
+import {
   LOCALIZED_GENERATOR_SOT_V1_MSDI_SNAPSHOT_MODE,
   resolveLocalizedGeneratorSotDecision,
 } from "@/lib/menu-generator/localizedGeneratorSotResolver";
@@ -100,7 +103,7 @@ describe("localized generator SOT resolver — boundaries", () => {
     expect(decision.reasons).toContain("auto_rollout_forbidden");
   });
 
-  it("documents MSDI v1 tier-product global catalog boundary and blocks localized mapping", () => {
+  it("documents MSDI v1 tier-product global catalog boundary when mapping flag OFF", () => {
     const decision = resolveLocalizedGeneratorSotDecision({
       providerId: DANISH_PILOT,
       env: {
@@ -110,7 +113,48 @@ describe("localized generator SOT resolver — boundaries", () => {
     });
     expect(decision.msdiSnapshotMode).toBe(LOCALIZED_GENERATOR_SOT_V1_MSDI_SNAPSHOT_MODE);
     expect(decision.msdiLocalizedMappingBlocked).toBe(true);
+    expect(decision.wouldUseMsdiLocalizedMapping).toBe(false);
     expect(decision.reasons).toContain("msdi_v1_tier_products_global_boundary");
+  });
+
+  it("unblocks localized MSDI mapping when mapping flag ON for allowlisted provider", () => {
+    const decision = resolveLocalizedGeneratorSotDecision({
+      providerId: DANISH_PILOT,
+      env: {
+        LP_LOCALIZED_GENERATOR_SOT_ENABLED: "true",
+        LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST: DANISH_PILOT,
+        LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED: "true",
+      },
+    });
+    expect(decision.msdiSnapshotMode).toBe(LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE);
+    expect(decision.msdiLocalizedMappingBlocked).toBe(false);
+    expect(decision.wouldUseMsdiLocalizedMapping).toBe(true);
+    expect(decision.selectedSource).toBe("legacy");
+    expect(decision.canServeGeneratedAsAuthoritative).toBe(false);
+  });
+
+  it("dry-run reports MSDI mapping preview without mutation intent", () => {
+    const decision = resolveLocalizedGeneratorSotDecision({
+      providerId: DANISH_PILOT,
+      env: {
+        LP_LOCALIZED_GENERATOR_SOT_ENABLED: "true",
+        LP_LOCALIZED_GENERATOR_SOT_PROVIDER_ALLOWLIST: DANISH_PILOT,
+        LP_LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_MAPPING_ENABLED: "true",
+        LP_LOCALIZED_GENERATOR_SOT_DRY_RUN: "true",
+      },
+      dryRunMarket: { countryCode: "DK", currency: "DKK" },
+      varmrettProjection: { mealTitle: "Kylling i karry", meal: { title: "Kylling", allergens: ["soya"] } },
+    });
+    expect(decision.dryRun).toBe(true);
+    expect(decision.hasMutationIntent).toBe(false);
+    expect(decision.dryRunMsdiMappingPreview).not.toBeNull();
+    expect(decision.dryRunMsdiMappingPreview?.currency).toBe("DKK");
+    const sample = decision.dryRunMsdiMappingPreview?.sampleVarmrett;
+    expect(sample && "offeredPriceCentsExVat" in sample).toBe(true);
+    if (sample && "offeredPriceCentsExVat" in sample) {
+      expect(sample.offeredPriceCentsExVat).not.toBe(9000);
+      expect(sample.currency).toBe("DKK");
+    }
   });
 });
 

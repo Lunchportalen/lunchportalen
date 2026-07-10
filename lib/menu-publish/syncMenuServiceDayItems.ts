@@ -8,6 +8,11 @@ import { filterLunchCategoryItemsRawForPlanTier } from "@/lib/cms/lunchCategory"
 import { CATEGORY_LABELS, PLAN_CATEGORIES, type Category, type PlanTier } from "@/lib/cms/menuDayContract";
 import { isoDateToAgreementDayKey, normalizeMenuPlanTier } from "@/lib/menu-publish/menuDaySyncShared";
 import { TIER_PRICE_CENTS, VAT_RATE } from "./tierPricing";
+import {
+  fetchProviderMarketForMsdi,
+  isMsdiLocalizedMappingActiveForSync,
+  resolveMsdiLocalizedItemSnapshotForCategory,
+} from "./msdiLocalizedItemSnapshot";
 
 /** Sanity `lunchCategory.key.current` → `product_categories.name` (Supabase seed). */
 export const LUNCH_CATEGORY_KEY_TO_DB_NAME: Record<string, string> = {
@@ -269,6 +274,12 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
     productIdByCategoryAndSku.set(`${catName}|${sku}`, pid);
   }
 
+  const useLocalizedMsdiMapping = isMsdiLocalizedMappingActiveForSync(providerId);
+  const providerMarket = useLocalizedMsdiMapping ? await fetchProviderMarketForMsdi(admin, providerId) : null;
+  if (useLocalizedMsdiMapping && !providerMarket) {
+    throw new Error("MSDI_LOCALIZED_MAPPING_BLOCKED:missing_provider_market");
+  }
+
   const tierCache = new Map<PlanTier, { categories: LunchCatRow[]; varmrett: VarmrettMenuProjection }>();
   const upsertPayload: Array<{
     menu_service_day_id: string;
@@ -350,7 +361,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
       tierCache.set(tier, cached);
     }
 
-    const priceCents = TIER_PRICE_CENTS[tier];
+    const legacyPriceCents = TIER_PRICE_CENTS[tier];
     let ord = 0;
 
     for (const cat of cached.categories) {
@@ -369,7 +380,25 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
       const sortOrder = typeof cat.displayOrder === "number" && Number.isFinite(cat.displayOrder) ? cat.displayOrder : ord;
 
       let productNameSnapshot: string;
-      if (key === "varmrett") {
+      let priceCents = legacyPriceCents;
+      let vatRateSnapshot = VAT_RATE;
+
+      if (useLocalizedMsdiMapping && providerMarket) {
+        const localized = resolveMsdiLocalizedItemSnapshotForCategory({
+          categoryKey: key,
+          categoryTitle: safeTrim(cat.title) || dbCatName,
+          tier,
+          market: providerMarket,
+          varmrettProjection: key === "varmrett" ? cached.varmrett : undefined,
+          staticCategoryItems: key === "varmrett" ? [] : (cat.items ?? []),
+        });
+        if (localized.ok === false) {
+          throw new Error(`MSDI_LOCALIZED_MAPPING_BLOCKED:${localized.blocker}`);
+        }
+        productNameSnapshot = localized.productNameSnapshot;
+        priceCents = localized.offeredPriceCentsExVat;
+        vatRateSnapshot = localized.vatRateSnapshot;
+      } else if (key === "varmrett") {
         productNameSnapshot = formatVarmrettSnapshot(cached.varmrett);
       } else {
         const title = safeTrim(cat.title) || dbCatName;
@@ -385,7 +414,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
         product_name_snapshot: productNameSnapshot,
         unit_name_snapshot: "porsjon",
         offered_price_cents_ex_vat: priceCents,
-        vat_rate_snapshot: VAT_RATE,
+        vat_rate_snapshot: vatRateSnapshot,
         quantity: 1,
         sort_order: sortOrder,
         is_optional: false,
