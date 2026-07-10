@@ -17,6 +17,7 @@ function parseArgs(argv) {
     mode: "read-only",
     allowProductionMutation: false,
     openPr: false,
+    dryPr: false,
     targetProvider: "",
     targetDate: "",
     targetTier: "",
@@ -46,6 +47,12 @@ function parseArgs(argv) {
       out.openPr = true;
     } else if (arg === "--open-pr=false") {
       out.openPr = false;
+    } else if (arg === "--dry-pr") {
+      out.dryPr = true;
+    } else if (arg === "--dry-pr=true") {
+      out.dryPr = true;
+    } else if (arg === "--dry-pr=false") {
+      out.dryPr = false;
     } else if (arg === "--target-provider" && argv[i + 1]) {
       out.targetProvider = argv[++i];
     } else if (arg.startsWith("--target-provider=")) {
@@ -81,6 +88,7 @@ Options:
   --mode read-only|production          (default: read-only)
   --allow-production-mutation=false    (default: false; hard-blocked ops always forbidden)
   --open-pr=false                      (default: false)
+  --dry-pr                             (local/CI: validate PR path without gh/git push)
   --target-provider=<uuid>
   --target-date=<YYYY-MM-DD>
   --target-tier=<BASIS|LUXUS|ENTERPRISE>
@@ -147,11 +155,17 @@ async function main() {
   });
 
   let pr = null;
+  let prSkippedReason = null;
   if (args.openPr) {
     pr = openDocsOnlyPr(root, {
       evidenceRelPath: evidence.relPath,
       task,
+      runId: workspace.head || "local",
+      dryRun: args.dryPr,
     });
+    if (pr && typeof pr === "object" && "prSkippedReason" in pr && pr.prSkippedReason) {
+      prSkippedReason = pr.prSkippedReason;
+    }
   }
 
   const report = {
@@ -167,6 +181,7 @@ async function main() {
     tests: result.tests,
     evidencePath: evidence.relPath,
     pr,
+    ...(prSkippedReason ? { prSkippedReason } : {}),
     completedAt: new Date().toISOString(),
     safety: {
       sot: "NOT_STARTED",
