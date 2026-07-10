@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { syncMenuServiceDayItemsAfterMenuDayPublish } from "@/lib/menu-publish/syncMenuServiceDayItems";
+import { LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE } from "@/lib/menu-generator/sotMsdiItemMapping";
 
 const mockFetchLunchCategoryRowsForProvider = vi.hoisted(() => vi.fn());
 
@@ -402,6 +403,7 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     for (const row of rows) {
       expect(row.offered_price_cents_ex_vat).not.toBe(9000);
       expect(row.vat_rate_snapshot).toBe(0.25);
+      expect(row.snapshot_mode).toBe(LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE);
     }
     const varmrett = rows.find((r) => r.product_id === "pr3");
     expect(String(varmrett?.product_name_snapshot)).toContain("Kylling i karry");
@@ -429,6 +431,7 @@ describe("syncMenuServiceDayItemsAfterMenuDayPublish", () => {
     for (const row of rows) {
       expect(row.offered_price_cents_ex_vat).toBe(9000);
       expect(row.vat_rate_snapshot).toBe(0.15);
+      expect(row.snapshot_mode ?? null).toBeNull();
     }
   });
 });

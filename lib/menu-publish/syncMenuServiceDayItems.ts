@@ -13,6 +13,7 @@ import {
   isMsdiLocalizedMappingActiveForSync,
   resolveMsdiLocalizedItemSnapshotForCategory,
 } from "./msdiLocalizedItemSnapshot";
+import { buildLocalizedSotMsdiUpsertFields } from "./msdiSnapshotMode";
 
 /** Sanity `lunchCategory.key.current` → `product_categories.name` (Supabase seed). */
 export const LUNCH_CATEGORY_KEY_TO_DB_NAME: Record<string, string> = {
@@ -291,6 +292,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
     quantity: number;
     sort_order: number;
     is_optional: boolean;
+    snapshot_mode?: string | null;
   }> = [];
 
   let msdiLocationsSkippedNoTier = 0;
@@ -382,6 +384,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
       let productNameSnapshot: string;
       let priceCents = legacyPriceCents;
       let vatRateSnapshot = VAT_RATE;
+      let snapshotMode: string | null = null;
 
       if (useLocalizedMsdiMapping && providerMarket) {
         const localized = resolveMsdiLocalizedItemSnapshotForCategory({
@@ -395,9 +398,11 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
         if (localized.ok === false) {
           throw new Error(`MSDI_LOCALIZED_MAPPING_BLOCKED:${localized.blocker}`);
         }
-        productNameSnapshot = localized.productNameSnapshot;
-        priceCents = localized.offeredPriceCentsExVat;
-        vatRateSnapshot = localized.vatRateSnapshot;
+        const localizedFields = buildLocalizedSotMsdiUpsertFields(localized);
+        productNameSnapshot = localizedFields.product_name_snapshot;
+        priceCents = localizedFields.offered_price_cents_ex_vat;
+        vatRateSnapshot = localizedFields.vat_rate_snapshot;
+        snapshotMode = localizedFields.snapshot_mode;
       } else if (key === "varmrett") {
         productNameSnapshot = formatVarmrettSnapshot(cached.varmrett);
       } else {
@@ -418,6 +423,7 @@ export async function syncMenuServiceDayItemsAfterMenuDayPublish(
         quantity: 1,
         sort_order: sortOrder,
         is_optional: false,
+        ...(snapshotMode ? { snapshot_mode: snapshotMode } : {}),
       });
     }
   }
