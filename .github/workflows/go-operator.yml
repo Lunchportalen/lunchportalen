@@ -1,0 +1,121 @@
+name: GO Operator
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "GO Operator task"
+        required: true
+        type: choice
+        options:
+          - truth-freeze
+          - f4b-readiness
+          - f4b-production-apply-readiness
+          - sot-dry-run
+          - evidence-pr
+      mode:
+        description: "Execution mode"
+        required: true
+        type: choice
+        default: read-only
+        options:
+          - read-only
+          - production
+      target_provider:
+        description: "Optional target provider UUID"
+        required: false
+        type: string
+        default: ""
+      target_date:
+        description: "Optional target date (YYYY-MM-DD)"
+        required: false
+        type: string
+        default: ""
+      target_tier:
+        description: "Optional target tier"
+        required: false
+        type: choice
+        default: ""
+        options:
+          - ""
+          - BASIS
+          - LUXUS
+          - ENTERPRISE
+      allow_production_mutation:
+        description: "Allow production mutation (hard-blocked ops remain forbidden)"
+        required: true
+        type: boolean
+        default: false
+      open_pr:
+        description: "Open docs-only evidence PR"
+        required: true
+        type: boolean
+        default: false
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+jobs:
+  go_operator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Use Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Workspace gates
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run ci:commercial-hardcodes-guard
+
+      - name: Golden path tests
+        run: npm run test:golden-path
+
+      - name: Unit tests
+        run: npm run test:run
+
+      - name: Run GO Operator
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARGS=(--task "${{ inputs.task }}" --mode "${{ inputs.mode }}" --skip-workspace-gate)
+          if [ "${{ inputs.allow_production_mutation }}" = "true" ]; then
+            ARGS+=(--allow-production-mutation)
+          fi
+          if [ "${{ inputs.open_pr }}" = "true" ]; then
+            ARGS+=(--open-pr)
+          fi
+          if [ -n "${{ inputs.target_provider }}" ]; then
+            ARGS+=(--target-provider "${{ inputs.target_provider }}")
+          fi
+          if [ -n "${{ inputs.target_date }}" ]; then
+            ARGS+=(--target-date "${{ inputs.target_date }}")
+          fi
+          if [ -n "${{ inputs.target_tier }}" ]; then
+            ARGS+=(--target-tier "${{ inputs.target_tier }}")
+          fi
+          node scripts/go-operator.mjs "${ARGS[@]}"
+
+      - name: Upload operator report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-operator-report
+          path: |
+            .go-operator/latest-report.json
+            docs/evidence/${{ inputs.task }}-*.md
+          if-no-files-found: ignore
