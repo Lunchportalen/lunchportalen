@@ -7,7 +7,7 @@ import { LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE } from "@/lib/menu
 
 const MIGRATION = resolve(
   process.cwd(),
-  "supabase/migrations/20260710150000_msdi_localized_sot_snapshot_trigger_alignment.sql",
+  "supabase/migrations/20260810120000_msdi_localized_sot_snapshot_trigger_alignment.sql",
 );
 
 describe("F4b msdi localized SOT snapshot trigger alignment migration", () => {

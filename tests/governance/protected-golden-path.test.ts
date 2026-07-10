@@ -206,7 +206,7 @@ describe("Protected Golden Path — order identity and write-path locks", () => 
 
   it("11c. F4b MSDI trigger alignment migration preserves legacy path and localized snapshot_mode", () => {
     const migrationPath =
-      "supabase/migrations/20260710150000_msdi_localized_sot_snapshot_trigger_alignment.sql";
+      "supabase/migrations/20260810120000_msdi_localized_sot_snapshot_trigger_alignment.sql";
     const syncItems = readSource("lib/menu-publish/syncMenuServiceDayItems.ts");
     const snapshotMode = readSource("lib/menu-publish/msdiSnapshotMode.ts");
 
