@@ -198,9 +198,29 @@ describe("Protected Golden Path — order identity and write-path locks", () => 
     const mapping = readSource("lib/menu-generator/sotMsdiItemMapping.ts");
 
     expect(syncItems).toContain("isMsdiLocalizedMappingActiveForSync");
+    expect(syncItems).toContain("buildLocalizedSotMsdiUpsertFields");
     expect(syncItems).not.toMatch(/lp_order_set/);
     expect(mapping).not.toMatch(/lp_order_set/);
     expect(mapping).toContain("LOCALIZED_GENERATOR_SOT_MSDI_LOCALIZED_SNAPSHOT_MODE");
+  });
+
+  it("11c. F4b MSDI trigger alignment migration preserves legacy path and localized snapshot_mode", () => {
+    const migrationPath =
+      "supabase/migrations/20260710150000_msdi_localized_sot_snapshot_trigger_alignment.sql";
+    const syncItems = readSource("lib/menu-publish/syncMenuServiceDayItems.ts");
+    const snapshotMode = readSource("lib/menu-publish/msdiSnapshotMode.ts");
+
+    expect(exists(migrationPath)).toBe(true);
+
+    const sql = readSource(migrationPath);
+    const triggerBody = sql.split("AS $$")[1]?.split("$$;")[0] ?? "";
+    expect(sql).toContain("tg_menu_service_day_item_snapshot");
+    expect(sql).toContain("localized_generated_content");
+    expect(sql).toContain("new.product_name_snapshot := v_name");
+    expect(triggerBody).not.toContain("lp_order_set");
+
+    expect(syncItems).toContain("snapshot_mode");
+    expect(snapshotMode).toContain("buildLocalizedSotMsdiUpsertFields");
   });
 
   it("12. duplicate order contract is documented in idempotency test suite", () => {
