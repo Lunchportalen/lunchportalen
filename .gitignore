@@ -78,6 +78,9 @@ tmp/
 # Evidence artifacts (generated)
 evidence/
 
+# GO Operator local reports (machine-readable; not repo truth)
+.go-operator/
+
 # Local visual QA captures (screenshots + JSON reports — attach to PR manually)
 docs/visual-qa/
 

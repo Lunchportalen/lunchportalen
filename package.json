@@ -100,7 +100,11 @@
     "seed:dry-run": "tsx scripts/seed/runner/dry-run.ts",
     "k6:live": "node scripts/k6/run.mjs",
     "k6:smoke": "cross-env K6_FASES=smoke node scripts/k6/run.mjs scripts/k6/scenarios/smoke.js",
-    "k6:staging-smoke": "cross-env K6_TAG_ENV=staging K6_FASES=smoke node scripts/k6/run.mjs scripts/k6/scenarios/smoke.js"
+    "k6:staging-smoke": "cross-env K6_TAG_ENV=staging K6_FASES=smoke node scripts/k6/run.mjs scripts/k6/scenarios/smoke.js",
+    "go:truth-freeze": "node scripts/go-operator.mjs --task truth-freeze",
+    "go:f4b-readiness": "node scripts/go-operator.mjs --task f4b-readiness",
+    "go:f4b-apply-readiness": "node scripts/go-operator.mjs --task f4b-production-apply-readiness",
+    "go:evidence-pr": "node scripts/go-operator.mjs --task evidence-pr --open-pr"
   },
   "engines": {
     "node": ">=20.11.0"
