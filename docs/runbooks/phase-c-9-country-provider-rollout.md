@@ -1,38 +1,45 @@
 # Phase C — 9-country provider rollout control
 
-**Status:** CONTROL PLAN · **SOT NO-GO** · **Auto-rollout NO-GO**  
-**Date:** 2026-07-06  
-**Main HEAD (control release):** includes PR #430 provider mirror preflight + PR #431 smoke evidence  
-**Companion evidence:** [`docs/evidence/phase-c-9-country-launch-readiness-plan.md`](../evidence/phase-c-9-country-launch-readiness-plan.md)
+**Status:** **ROLLOUT COMPLETE** · **SOT runtime CONTAINED OFF** · **Auto-rollout NO-GO**  
+**Date:** 2026-07-06 (reconciled 2026-07-10)  
+**Truth index:** [`docs/evidence/go-truth-state-reconciliation-2026-07-10.md`](../evidence/go-truth-state-reconciliation-2026-07-10.md)  
+**Completion evidence:** [`docs/evidence/final-phase-c-rollout-summary-readiness-audit.md`](../evidence/final-phase-c-rollout-summary-readiness-audit.md)
 
-Enterprise operator control for onboarding remaining launch locales. **Not** authorization to apply menu weeks, start SOT, or auto-rollout.
+Enterprise operator control for Phase C launch locales. All 9 locales are onboarded and generator-applied (evidence #446–#458). **Not** authorization for broad SOT, auto-rollout, or unscoped production mutation.
+
+**Planning catalog note:** `lib/provider-onboarding/phaseCLocales.ts` still lists 7 locales as `coverage: pending`. **Production inventory in the final Phase C audit is authoritative** — see reconciliation index §2.
 
 **No secret values, tokens, passwords, connection strings, or private tenant PII are recorded.**
 
 ---
 
-## 1. Rollout order (recommended)
+## 1. Rollout order (complete)
 
-Covered (do not re-onboard / do not mutate):
+All 9 launch locales are **onboarded and generator-applied** (far-future drafts). Do not re-onboard or mutate protected providers.
 
-| Order | Locale | Profile | Provider |
-|------:|--------|---------|----------|
-| — | `nb-NO` | `norwegian_company_lunch` | Melhus Catering AS (protected) |
-| — | `sv-SE` | `swedish_lunch` | Swedish Lunch Pilot (protected) |
+| Order | Locale | Profile | Provider | Status |
+|------:|--------|---------|----------|--------|
+| — | `nb-NO` | `norwegian_company_lunch` | Melhus Catering AS | **Protected · live pilot** |
+| — | `sv-SE` | `swedish_lunch` | Swedish Lunch Pilot | **Protected** |
+| 1 | `da-DK` | `danish_office_lunch` | Danish Lunch Pilot | **Complete** — Gate B/F4 proof target |
+| 2 | `fi-FI` | `finnish_office_lunch` | Finnish Lunch Pilot | **Complete** |
+| 3 | `en-GB` | `uk_office_lunch` | UK Lunch Pilot | **Complete** |
+| 4 | `de-DE` | `german_business_lunch` | German Lunch Pilot | **Complete** |
+| 5 | `fr-FR` | `french_dejeuner` | French Lunch Pilot | **Complete** |
+| 6 | `es-ES` | `spanish_menu_del_dia` | Spanish Lunch Pilot | **Complete** |
+| 7 | `it-IT` | `italian_office_lunch` | Italian Lunch Pilot | **Complete** — Gate C rollback deleted 15 menuDays |
 
-Remaining (Phase C sequence):
+Legacy planning table (safe weeks) retained for operator reference only:
 
-| Order | Locale | Profile | Country/Currency | Safe week (planning) |
-|------:|--------|---------|------------------|----------------------|
-| 1 | `da-DK` | `danish_office_lunch` | DK/DKK | `2031-11-03` |
-| 2 | `fi-FI` | `finnish_office_lunch` | FI/EUR | `2031-11-10` |
-| 3 | `en-GB` | `uk_office_lunch` | GB/GBP | `2031-11-17` |
-| 4 | `de-DE` | `german_business_lunch` | DE/EUR | `2031-11-24` |
-| 5 | `fr-FR` | `french_dejeuner` | FR/EUR | `2031-12-01` |
-| 6 | `es-ES` | `spanish_menu_del_dia` | ES/EUR | `2031-12-08` |
-| 7 | `it-IT` | `italian_office_lunch` | IT/EUR | `2031-12-15` |
-
-Reason: finish Nordic → English market → larger EU language markets.
+| Order | Locale | Safe week (planning) |
+|------:|--------|----------------------|
+| 1 | `da-DK` | `2031-11-03` |
+| 2 | `fi-FI` | `2031-11-10` |
+| 3 | `en-GB` | `2031-11-17` |
+| 4 | `de-DE` | `2031-11-24` |
+| 5 | `fr-FR` | `2031-12-01` |
+| 6 | `es-ES` | `2031-12-08` |
+| 7 | `it-IT` | `2031-12-15` |
 
 ---
 
