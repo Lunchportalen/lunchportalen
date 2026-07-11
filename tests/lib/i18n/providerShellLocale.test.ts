@@ -29,7 +29,8 @@ describe("provider shell UI locale", () => {
     const source = readFileSync(join(process.cwd(), "i18n/request.ts"), "utf8");
     expect(source).toContain("LP_LOCALE_COOKIE");
     expect(source).toContain("resolveAppLocale");
-    expect(source).toContain("loadProfilePreferredLocaleForRequest");
+    // Fase E1: full chain loader (profile + company + market) replaces profile-only loader.
+    expect(source).toContain("loadLocalePreferencesForRequest");
   });
 
   it("root layout remounts NextIntlClientProvider when locale changes", () => {

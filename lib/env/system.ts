@@ -5,8 +5,11 @@
 
 export type SystemRuntimeEnvReport = { ok: true } | { ok: false; missing: string[]; invalid?: string[] };
 
-/** Canonical list of required env for system motor / public health. Add only for verified critical runtime. */
-export const REQUIRED_SYSTEM_RUNTIME_KEYS: readonly string[] = ["SYSTEM_MOTOR_SECRET"];
+/**
+ * Canonical list of required env for system motor / public health. Add only for verified critical runtime.
+ * CRON_SECRET: CRON-001 — cron auth is fail-closed; missing secret must degrade production health.
+ */
+export const REQUIRED_SYSTEM_RUNTIME_KEYS: readonly string[] = ["SYSTEM_MOTOR_SECRET", "CRON_SECRET"];
 
 function isPresent(v: unknown): boolean {
   return typeof v === "string" ? v.trim().length > 0 : Boolean(v);

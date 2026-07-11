@@ -1,4 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+
+// Load local env for the TEST RUNNER process (webServer/Next loads it on its own).
+// Without this, E2E_* credentials in .env.local are invisible to test.skip-guards
+// and every authenticated scenario silently skips.
+dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
+
+// Generic test-user fallback: reuse employee credentials when E2E_TEST_USER_* is unset.
+if (!process.env.E2E_TEST_USER_EMAIL && process.env.E2E_EMPLOYEE_EMAIL) {
+  process.env.E2E_TEST_USER_EMAIL = process.env.E2E_EMPLOYEE_EMAIL;
+  process.env.E2E_TEST_USER_PASSWORD = process.env.E2E_EMPLOYEE_PASSWORD ?? "";
+}
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 

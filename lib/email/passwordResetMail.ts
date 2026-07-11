@@ -1,13 +1,19 @@
-export function buildPasswordResetEmail(link: string): { subject: string; text: string } {
-  const subject = "Tilbakestill passordet ditt i Lunchportalen";
-  const text =
-    "Hei,\n" +
-    "Du ba om å tilbakestille passordet ditt i Lunchportalen.\n\n" +
-    "Bruk lenken under for å velge nytt passord:\n" +
-    `${link}\n\n` +
-    "Lenken er gyldig i 30 minutter. Hvis du ikke ba om dette, kan du se bort fra e-posten.\n\n" +
-    "Vennlig hilsen\n" +
-    "Lunchportalen";
+import { passwordResetCopy } from "@/lib/email/i18n/emailCopy";
+import type { AppLocale } from "@/lib/i18n/middlewareLocale";
 
-  return { subject, text };
+/** Fase E5: locale-aware (default nb; unknown values fall back to nb). */
+export function buildPasswordResetEmail(
+  link: string,
+  locale?: AppLocale | string | null,
+): { subject: string; text: string } {
+  const copy = passwordResetCopy(locale);
+  const text =
+    `${copy.greeting}\n` +
+    `${copy.intro}\n\n` +
+    `${copy.linkLead}\n` +
+    `${link}\n\n` +
+    `${copy.validityNote}\n\n` +
+    copy.signoff;
+
+  return { subject: copy.subject, text };
 }

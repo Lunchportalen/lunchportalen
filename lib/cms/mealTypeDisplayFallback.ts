@@ -17,5 +17,10 @@ export function displayLabelForMealTypeKey(key: string, menu?: { title?: string 
   const k = String(key ?? "")
     .trim()
     .toLowerCase();
-  return MEAL_TYPE_DISPLAY_LABEL_FALLBACK[k] || k;
+  const known = MEAL_TYPE_DISPLAY_LABEL_FALLBACK[k];
+  if (known) return known;
+  // Unknown key: humanize instead of leaking raw Sanity/DB keys (e.g. "veggie_bowl" → "Veggie bowl").
+  if (!k) return "Lunsj";
+  const humanized = k.replace(/[_-]+/g, " ").trim();
+  return humanized.charAt(0).toUpperCase() + humanized.slice(1);
 }

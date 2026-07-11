@@ -1,64 +1,131 @@
 "use server";
 import "server-only";
 
-import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { makeRid } from "@/lib/http/respond";
 import { supabaseServer } from "@/lib/supabase/server";
+import { isSuperadminProfile } from "@/lib/auth/isSuperadminProfile";
+import { logOpsEventBestEffort } from "@/lib/ops/logOpsEvent";
+import {
+  applyCompanyLifecycleStatus,
+  normalizeCompanyLifecycleStatus,
+  type CompanyLifecycleStatus,
+} from "@/lib/server/superadmin/companyLifecycleStatusApply";
 
-export type CompanyStatus = "ACTIVE" | "PAUSED" | "CLOSED" | "PENDING";
+export type CompanyStatus = CompanyLifecycleStatus;
+
+export type SetCompanyStatusResult =
+  | { ok: true; rid: string; companyId: string; status: CompanyStatus; already: boolean }
+  | { ok: false; rid: string; error: string; message: string; status: number };
+
+/**
+ * SEC-004: allowed lifecycle transitions for the superadmin status action.
+ * Mirrors the UI affordances (pending → aktiver/arkiver, active → pause/arkiver,
+ * paused → gjenoppta/arkiver, closed → gjenåpne). Same-status is idempotent no-op.
+ */
+const ALLOWED_TRANSITIONS: Record<CompanyLifecycleStatus, readonly CompanyLifecycleStatus[]> = {
+  PENDING: ["ACTIVE", "PAUSED", "CLOSED"],
+  ACTIVE: ["PAUSED", "CLOSED"],
+  PAUSED: ["ACTIVE", "CLOSED"],
+  CLOSED: ["ACTIVE"],
+};
 
 function safeStr(v: unknown) {
   return String(v ?? "").trim();
 }
 
-function normalizeStatus(v: unknown): CompanyStatus {
-  const s = safeStr(v).toUpperCase();
-  if (s === "ACTIVE" || s === "PAUSED" || s === "CLOSED" || s === "PENDING") return s;
-  return "PENDING";
+function err(rid: string, error: string, message: string, status: number): SetCompanyStatusResult {
+  return { ok: false, rid, error, message, status };
 }
 
 /**
- * setCompanyStatus
- * - Superadmin action: oppdaterer companies.status
- * - Returnerer standard jsonOk/jsonErr med rid
+ * setCompanyStatus (server action) — SEC-004 hardened.
  *
- * NB: RLS/rolle-sjekk håndteres av eksisterende supabaseServer() + policies.
+ * - Explicit superadmin gate (session + profiles.role) — never relies on UI or RLS alone.
+ * - Strict input validation: unknown status is REJECTED (no silent PENDING fallback).
+ * - Transition matrix enforced; idempotent when prev === next.
+ * - Delegates the write to the canonical `applyCompanyLifecycleStatus` path
+ *   (same as POST /api/superadmin/companies/set-status).
+ * - Audit: actor, tenant, before/after, timestamp via `logOpsEventBestEffort`.
  */
-export async function setCompanyStatus(companyId: string, status: CompanyStatus) {
+export async function setCompanyStatus(
+  companyId: string,
+  status: CompanyStatus
+): Promise<SetCompanyStatusResult> {
   const rid = makeRid();
 
   const company_id = safeStr(companyId);
   if (!company_id) {
-    return jsonErr(rid, "Ugyldig companyId.", 400, { code: "BAD_COMPANY_ID" });
+    return err(rid, "BAD_COMPANY_ID", "Ugyldig companyId.", 400);
   }
 
-  const nextStatus = normalizeStatus(status);
+  const nextStatus = normalizeCompanyLifecycleStatus(safeStr(status));
+  if (!nextStatus) {
+    return err(rid, "VALIDATION", "Ugyldig status.", 400);
+  }
 
   try {
     const sb = await supabaseServer();
 
-    const { data, error } = await sb
+    const { data: auth, error: authErr } = await sb.auth.getUser();
+    if (authErr || !auth?.user?.id) {
+      return err(rid, "UNAUTHORIZED", "Ikke innlogget.", 401);
+    }
+
+    const uid = safeStr(auth.user.id);
+    if (!(await isSuperadminProfile(uid))) {
+      return err(rid, "FORBIDDEN", "Ingen tilgang.", 403);
+    }
+
+    const { data: company, error: readErr } = await sb
       .from("companies")
-      .update({ status: nextStatus })
+      .select("id,name,status")
       .eq("id", company_id)
-      .select("id,status")
       .maybeSingle();
 
-    if (error) {
-      return jsonErr(rid, "Kunne ikke oppdatere firmastatus.", 500, {
-        code: "COMPANY_STATUS_UPDATE_FAILED",
-        detail: { message: String((error as any)?.message ?? error) },
+    if (readErr) {
+      return err(rid, "COMPANY_READ_FAILED", "Kunne ikke lese firma.", 500);
+    }
+    if (!company?.id) {
+      return err(rid, "COMPANY_NOT_FOUND", "Firma ikke funnet.", 404);
+    }
+
+    const prevStatus = normalizeCompanyLifecycleStatus(safeStr(company.status)) ?? "PENDING";
+
+    if (prevStatus === nextStatus) {
+      return { ok: true, rid, companyId: company_id, status: nextStatus, already: true };
+    }
+
+    if (!ALLOWED_TRANSITIONS[prevStatus].includes(nextStatus)) {
+      return err(rid, "INVALID_TRANSITION", "Ugyldig statusovergang.", 409);
+    }
+
+    const applied = await applyCompanyLifecycleStatus(sb, rid, company_id, nextStatus);
+    if (applied.ok === false) {
+      const httpStatus = applied.response.status || 500;
+      return err(rid, "COMPANY_STATUS_UPDATE_FAILED", "Kunne ikke oppdatere firmastatus.", httpStatus);
+    }
+
+    if (!applied.already) {
+      await logOpsEventBestEffort(sb, {
+        rid,
+        actor_user_id: uid,
+        actor_email: auth.user.email ?? null,
+        actor_role: "superadmin",
+        action: "COMPANY_STATUS_CHANGED",
+        entity_type: "company",
+        entity_id: company_id,
+        summary: `Company status changed: ${applied.companyName || company_id}`,
+        detail: {
+          from: applied.prev,
+          to: applied.next,
+          via: "superadmin.firms.setCompanyStatus",
+          at: new Date().toISOString(),
+        },
       });
     }
 
-    if (!data?.id) {
-      return jsonErr(rid, "Firma ikke funnet.", 404, { code: "COMPANY_NOT_FOUND" });
-    }
-
-    return jsonOk(rid, { ok: true, rid, company: data }, 200);
-  } catch (e: any) {
-    return jsonErr(rid, "Uventet feil.", 500, {
-      code: "COMPANY_STATUS_EXCEPTION",
-      detail: { message: String(e?.message ?? e) },
-    });
+    return { ok: true, rid, companyId: company_id, status: nextStatus, already: applied.already };
+  } catch {
+    return err(rid, "COMPANY_STATUS_EXCEPTION", "Uventet feil.", 500);
   }
 }
