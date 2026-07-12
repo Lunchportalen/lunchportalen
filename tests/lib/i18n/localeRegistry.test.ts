@@ -16,13 +16,13 @@ import { isSupportedMenuProfile } from "@/lib/menu-profile/registry";
 import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 describe("localeRegistry", () => {
-  it("contains all nine app locales in stable display order (nb first, then alphabetical)", () => {
-    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "sv"]);
+  it("contains all ten app locales in stable display order (nb first, then alphabetical)", () => {
+    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "nl", "sv"]);
     expect(DEFAULT_APP_LOCALE).toBe("nb");
-    expect(APP_LOCALES).toHaveLength(9);
+    expect(APP_LOCALES).toHaveLength(10);
   });
 
-  it("parseAppLocale accepts nb/en/sv/da/fi/de/fr/es/it", () => {
+  it("parseAppLocale accepts nb/en/sv/da/fi/de/fr/es/it/nl", () => {
     for (const locale of APP_LOCALES) {
       expect(parseAppLocale(locale)).toBe(locale);
       expect(parseAppLocale(locale.toUpperCase())).toBe(locale);
@@ -73,7 +73,7 @@ describe("localeRegistry", () => {
   });
 
   it("keeps routed UI app locales separate from 21 market locales", () => {
-    expect(APP_LOCALES).toHaveLength(9);
+    expect(APP_LOCALES).toHaveLength(10);
     expect(SUPPORTED_MARKET_LOCALES).toHaveLength(21);
     expect(SUPPORTED_MARKET_LOCALES.map((entry) => entry.locale)).toEqual([
       "nb-NO",

@@ -10,7 +10,7 @@ import {
   PROVIDER_LOCALE_VALUES,
 } from "@/lib/providers/operationalSettingsShared";
 
-const MESSAGE_LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"] as const;
+const MESSAGE_LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it", "nl"] as const;
 
 /** Distinctly Norwegian UI strings — excludes shared Scandinavian homographs (e.g. Faktura, Meny). */
 const NORWEGIAN_LEAKAGE = [
@@ -123,9 +123,10 @@ function extractPlaceholders(value: string): string[] {
 }
 
 describe("provider language coverage (pre-merge PR #343)", () => {
-  it("APP_LOCALES contains all 9 supported app languages in stable order", () => {
-    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "sv"]);
+  it("APP_LOCALES contains all 10 supported app languages in stable order", () => {
+    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "nl", "sv"]);
     expect(getLocaleLabel("it")).toBe("Italiano");
+    expect(getLocaleLabel("nl")).toBe("Nederlands");
   });
 
   it("PROVIDER_LOCALE_OPTIONS follows APP_LOCALES order", () => {
@@ -138,9 +139,10 @@ describe("provider language coverage (pre-merge PR #343)", () => {
       "fr-FR",
       "it-IT",
       "fi-FI",
+      "nl-NL",
       "sv-SE",
     ]);
-    expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(9);
+    expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(10);
   });
 
   it("operational language label clarifies market/menu profile persistence (nb)", async () => {
@@ -183,13 +185,22 @@ describe("provider language coverage (pre-merge PR #343)", () => {
     expect(messages.provider.settings.menuProfile.statusInactive).toMatch(/Menyprofil/i);
   });
 
-  it("profiles.preferred_locale migration includes all 9 app locales", () => {
-    const sql = readFileSync(
+  it("profiles.preferred_locale migration includes all 10 app locales (nine-locale + Dutch additive)", () => {
+    const nineLocaleSql = readFileSync(
       join(process.cwd(), "supabase/migrations/20260726120000_profiles_preferred_locale_nine_locales.sql"),
       "utf8",
     );
+    const dutchSql = readFileSync(
+      join(process.cwd(), "supabase/migrations/20260815120000_profiles_preferred_locale_add_dutch.sql"),
+      "utf8",
+    );
+    // The additive Dutch migration is the current CHECK; it must list every app locale.
     for (const locale of APP_LOCALES) {
-      expect(sql).toContain(`'${locale}'`);
+      expect(dutchSql, `dutch migration missing '${locale}'`).toContain(`'${locale}'`);
+    }
+    // Historical nine-locale migration still covers the original nine (unchanged).
+    for (const locale of APP_LOCALES.filter((l) => l !== "nl")) {
+      expect(nineLocaleSql).toContain(`'${locale}'`);
     }
   });
 

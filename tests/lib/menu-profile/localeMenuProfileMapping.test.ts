@@ -12,9 +12,9 @@ import {
 } from "@/lib/menu-profile/localeMenuProfileMapping";
 import { isSupportedMenuProfile } from "@/lib/menu-profile/registry";
 
-describe("localeMenuProfileMapping — all nine app locales", () => {
+describe("localeMenuProfileMapping — all ten app locales", () => {
   it("maps each APP_LOCALE to a valid registry menu_profile_id", () => {
-    expect(APP_LOCALE_MENU_PROFILE_MAPPINGS).toHaveLength(9);
+    expect(APP_LOCALE_MENU_PROFILE_MAPPINGS).toHaveLength(10);
 
     for (const mapping of APP_LOCALE_MENU_PROFILE_MAPPINGS) {
       expect(APP_LOCALES).toContain(mapping.appLocale);
@@ -36,7 +36,7 @@ describe("localeMenuProfileMapping — all nine app locales", () => {
     }
   });
 
-  it("resolveMenuProfileIdFromAppLocale covers nb da de en es fr it fi sv", () => {
+  it("resolveMenuProfileIdFromAppLocale covers nb da de en es fr it fi nl sv", () => {
     const expected: Record<(typeof APP_LOCALES)[number], string> = {
       nb: "norwegian_company_lunch",
       da: "danish_office_lunch",
@@ -46,6 +46,7 @@ describe("localeMenuProfileMapping — all nine app locales", () => {
       fr: "french_dejeuner",
       it: "italian_office_lunch",
       fi: "finnish_office_lunch",
+      nl: "dutch_office_lunch",
       sv: "swedish_lunch",
     };
 

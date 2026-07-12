@@ -1596,7 +1596,8 @@
           "de-DE": "Allemand",
           "fr-FR": "Français",
           "es-ES": "Espagnol",
-          "it-IT": "Italien"
+          "it-IT": "Italien",
+          "nl-NL": "Nederlands"
         },
         "operationsEmailHint": "Utilisé comme destinataire principal des alertes de commandes et messages opérationnels.",
         "operationsEmailLabel": "E-mail commandes et opérations",

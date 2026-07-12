@@ -1407,7 +1407,8 @@
           "de-DE": "Saksa",
           "fr-FR": "Ranska",
           "es-ES": "Espanja",
-          "it-IT": "Italia"
+          "it-IT": "Italia",
+          "nl-NL": "Nederlands"
         },
         "errors": {
           "notAuthenticated": "Et ole kirjautunut sisään.",

@@ -87,11 +87,20 @@ describe("SMART-1 — menu_content_translations migration", () => {
     }
   });
 
-  it("locale CHECK aligns with APP_LOCALES registry", () => {
-    for (const locale of APP_LOCALES) {
+  it("locale CHECK aligns with APP_LOCALES registry (nine-locale base + Dutch additive)", () => {
+    // Original migration covers the nine base locales.
+    for (const locale of APP_LOCALES.filter((l) => l !== "nl")) {
       expect(sql).toContain(`'${locale}'`);
     }
-    expect(APP_LOCALES).toHaveLength(9);
+    // Dutch is added by the additive migration so the CHECK matches the 10-locale registry.
+    const dutchSql = readFileSync(
+      resolve(process.cwd(), "supabase/migrations/20260816120000_menu_content_translations_add_dutch.sql"),
+      "utf8",
+    );
+    for (const locale of APP_LOCALES) {
+      expect(dutchSql).toContain(`'${locale}'`);
+    }
+    expect(APP_LOCALES).toHaveLength(10);
   });
 
   it("creates provider, locale/status, source_ref, and approved partial indexes", () => {

@@ -827,7 +827,8 @@
           "de-DE": "Tedesco",
           "fr-FR": "Francese",
           "es-ES": "Spagnolo",
-          "it-IT": "Italiano"
+          "it-IT": "Italiano",
+          "nl-NL": "Nederlands"
         },
         "errors": {
           "notAuthenticated": "Accesso non eseguito",

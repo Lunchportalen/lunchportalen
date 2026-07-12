@@ -4,7 +4,7 @@
  * Stable UI locale order: Norsk first, then alphabetical by native display label.
  * Single source of truth for LocaleSwitcher, APP_LOCALES, and provider operational locales.
  */
-export const APP_LOCALES = ["nb", "da", "de", "en", "es", "fr", "it", "fi", "sv"] as const;
+export const APP_LOCALES = ["nb", "da", "de", "en", "es", "fr", "it", "fi", "nl", "sv"] as const;
 
 export type AppLocale = (typeof APP_LOCALES)[number];
 
@@ -23,6 +23,7 @@ export const LOCALE_REGISTRY: Record<
   fr: { label: "Français", htmlLang: "fr-FR", intl: "fr-FR" },
   es: { label: "Español", htmlLang: "es-ES", intl: "es-ES" },
   it: { label: "Italiano", htmlLang: "it-IT", intl: "it-IT" },
+  nl: { label: "Nederlands", htmlLang: "nl-NL", intl: "nl-NL" },
 };
 
 export function isAppLocale(value: unknown): value is AppLocale {
@@ -207,7 +208,7 @@ export const SUPPORTED_MARKET_LOCALES = [
     nativeLabel: "Nederlands",
     norwegianLabel: "Nederland / nederlandsk",
     englishLabel: "Netherlands / Dutch",
-    fallbackAppLocale: "en",
+    fallbackAppLocale: "nl",
     currency: "EUR",
     timezone: "Europe/Amsterdam",
     menuProfileId: "dutch_office_lunch",
@@ -219,7 +220,7 @@ export const SUPPORTED_MARKET_LOCALES = [
     nativeLabel: "Nederlands",
     norwegianLabel: "Belgia / nederlandsk",
     englishLabel: "Belgium / Dutch",
-    fallbackAppLocale: "en",
+    fallbackAppLocale: "nl",
     currency: "EUR",
     timezone: "Europe/Brussels",
     menuProfileId: "belgian_dutch_office_lunch",

@@ -1407,7 +1407,8 @@
           "de-DE": "Deutsch",
           "fr-FR": "Französisch",
           "es-ES": "Spanisch",
-          "it-IT": "Italienisch"
+          "it-IT": "Italienisch",
+          "nl-NL": "Nederlands"
         },
         "errors": {
           "notAuthenticated": "Nicht angemeldet.",

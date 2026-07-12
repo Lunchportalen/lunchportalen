@@ -816,7 +816,8 @@
           "de-DE": "Deutsch",
           "fr-FR": "Français",
           "es-ES": "Español",
-          "it-IT": "Italiano"
+          "it-IT": "Italiano",
+          "nl-NL": "Nederlands"
         },
         "errors": {
           "notAuthenticated": "Ikke innlogget.",

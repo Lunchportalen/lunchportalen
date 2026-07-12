@@ -1,0 +1,1906 @@
+{
+  "common": {
+    "loading": "Laden …",
+    "save": "Opslaan",
+    "language": "Taal"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Kies taal",
+    "current": "Huidige taal: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "orders": "Bestellingen",
+      "customers": "Klanten",
+      "registrations": "Registraties",
+      "menu": "Menu",
+      "areas": "Gebieden",
+      "invoices": "Facturen",
+      "settings": "Instellingen",
+      "logout": "Afmelden",
+      "logoutPending": "Bezig met afmelden…",
+      "more": "Meer",
+      "comingSoon": "(binnenkort)",
+      "openMenu": "Menu openen",
+      "closeMenu": "Menu sluiten",
+      "providerMenu": "Leveranciersmenu",
+      "sidebarLabel": "Leverancier",
+      "desktopLabel": "Leverancier (desktop)",
+      "mobileLabel": "Hoofdnavigatie (mobiel)",
+      "roleAdmin": "Beheerder",
+      "roleKitchen": "Keuken",
+      "roleDefault": "Leverancier"
+    },
+    "dashboard": {
+      "eyebrow": "Leverancier",
+      "lead": "Overzicht van klanten, contracten en bedrijfsvoering.",
+      "kpiSection": "Kerncijfers",
+      "activeCustomers": "Actieve klanten",
+      "activeCustomersFoot": "Bedrijven met een actieve lunchregeling",
+      "activeAgreements": "Actieve klantcontracten",
+      "activeAgreementsFoot": "Klantcontracten gekoppeld aan actieve bedrijven",
+      "activeAgreementsLinkTitle": "Bekijk actieve zakelijke klanten en contracten",
+      "ordersThisWeek": "Bestellingen deze week",
+      "ordersThisWeekFoot": "Bestellingen in de huidige week",
+      "revenueLast30Days": "Bestelwaarde afgelopen 30 dagen",
+      "revenueLast30DaysFoot": "Totale bestelwaarde",
+      "followUpSection": "Vereist opvolging",
+      "followUpAllClearTitle": "Alles ziet er goed uit",
+      "followUpAllClearText": "Op dit moment geen kritieke opvolgpunten.",
+      "quickActionsSection": "Snelle acties",
+      "recentActivitySection": "Recente activiteit",
+      "activityEmptyTitle": "Nog geen relevante activiteit.",
+      "activityEmptyText": "Zodra klanten zich registreren, contracten worden goedgekeurd of bestellingen binnenkomen, verschijnt dat hier.",
+      "quickActionOrdersTitle": "Bekijk de leveringen van vandaag",
+      "quickActionOrdersText": "Krijg overzicht over bestellingen en productie voor de volgende leverdag.",
+      "quickActionCustomersTitle": "Bekijk klanten",
+      "quickActionCustomersText": "Beheer bedrijven, contracten en leveringsinstellingen.",
+      "quickActionMenuTitle": "Menu en publicatie",
+      "quickActionMenuTextEnabled": "Beheer de menu-inhoud die aan klanten wordt getoond.",
+      "quickActionMenuTextDisabled": "Bekijk de status van menu-inhoud en leveranciersbewerking.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Menubewerking niet ingeschakeld",
+          "text": "Menu-inhoud wordt voorlopig beheerd door Lunchportalen.",
+          "action": "Bekijk menustatus"
+        },
+        "noOrdersThisWeek": {
+          "title": "Geen bestellingen deze week",
+          "text": "Houd het in de gaten wanneer klanten beginnen te bestellen voor komende leveringen.",
+          "action": "Bekijk bestellingen"
+        },
+        "noRevenue30d": {
+          "title": "Geen bestelwaarde afgelopen 30 dagen",
+          "text": "Zodra er bestellingen binnenkomen, verschijnt de totale bestelwaarde hier.",
+          "action": "Bekijk facturen"
+        }
+      },
+      "activity": {
+        "registrationReceived": {
+          "title": "Nieuwe klantregistratie ontvangen",
+          "description": "Een bedrijf heeft zich geregistreerd en wacht op behandeling."
+        },
+        "registrationApproved": {
+          "title": "Klant goedgekeurd",
+          "description": "Een klantregistratie is goedgekeurd en geactiveerd."
+        },
+        "registrationRejected": {
+          "title": "Klantregistratie afgewezen",
+          "description": "Een klantregistratie is behandeld en afgewezen."
+        },
+        "agreementActivated": {
+          "title": "Contract geactiveerd",
+          "description": "Een leveringscontract is geactiveerd."
+        },
+        "agreementUpdated": {
+          "title": "Contract bijgewerkt",
+          "description": "Een leveringscontract is gewijzigd."
+        },
+        "invoiceGenerated": {
+          "title": "Factuurgrondslag gegenereerd",
+          "description": "Een nieuwe factuurgrondslag is klaar voor controle."
+        },
+        "orderReceived": {
+          "title": "Bestelling ontvangen",
+          "description": "Een nieuwe bestelling is geregistreerd."
+        },
+        "orderCancelled": {
+          "title": "Bestelling geannuleerd",
+          "description": "Een bestelling is geannuleerd."
+        },
+        "menuPublished": {
+          "title": "Menu gepubliceerd",
+          "description": "Menu-inhoud is gepubliceerd en zichtbaar voor klanten."
+        },
+        "settingsUpdated": {
+          "title": "Instellingen bijgewerkt",
+          "description": "Leveranciersinstellingen zijn gewijzigd."
+        }
+      }
+    },
+    "orders": {
+      "page": {
+        "eyebrow": "Bestellingen en productie",
+        "heading": "Bestellingen"
+      },
+      "filters": {
+        "dateGroupAria": "Periode",
+        "statusGroupAria": "Status",
+        "groupingAria": "Groepering",
+        "companyLabel": "Bedrijf",
+        "companyAll": "Alle bedrijven",
+        "companyAria": "Filteren op bedrijf",
+        "groupByCompany": "Per bedrijf",
+        "groupByTime": "Per tijd",
+        "date": {
+          "today": "Vandaag",
+          "tomorrow": "Morgen",
+          "week": "Hele week"
+        },
+        "status": {
+          "all": "Alle",
+          "received": "Ontvangen",
+          "production": "Productie",
+          "ready": "Klaar",
+          "delivered": "Geleverd"
+        }
+      },
+      "status": {
+        "received": "Ontvangen",
+        "inProduction": "In productie",
+        "readyForDelivery": "Klaar voor levering",
+        "delivered": "Geleverd",
+        "paused": "Gepauzeerd",
+        "cancelled": "Geannuleerd",
+        "other": "Overig"
+      },
+      "actions": {
+        "startProduction": "Productie starten",
+        "readyForDelivery": "Klaar voor levering",
+        "markDelivered": "Markeer als geleverd",
+        "saving": "Opslaan…"
+      },
+      "empty": {
+        "title": {
+          "today": "Geen bestellingen voor vandaag",
+          "tomorrow": "Geen bestellingen voor morgen",
+          "week": "Geen bestellingen deze week",
+          "filtered": "Geen bestellingen met de gekozen status"
+        },
+        "text": {
+          "default": "Er zijn geen actieve bestellingen voor de gekozen periode.",
+          "filtered": "Er zijn geen bestellingen met de gekozen status in de gekozen periode. Kies «Alle» om alle bestellingen in de periode te zien."
+        },
+        "steps": {
+          "checkMenu": "Controleer of het menu is gepubliceerd voor de betreffende dagen.",
+          "checkWeek": "Bekijk de hele week als je komende leveringen wilt controleren.",
+          "ordersAppear": "Nieuwe bestellingen verschijnen hier als productiegrondslag naarmate ze binnenkomen."
+        }
+      },
+      "card": {
+        "deliveryGroupPrefix": "Levering",
+        "noLines": "Geen regels geregistreerd",
+        "lineQuantity": "{quantity} st · {displayLine}",
+        "allergensPrefix": "Allergenen: {list}",
+        "noteLabel": "Opmerking:",
+        "readOnlyNote": "Alleen-lezen — je hebt leestoegang tot de bestellingen."
+      },
+      "fallbacks": {
+        "unknownProfile": "Onbekend",
+        "unknownProduct": "Gerecht"
+      },
+      "errors": {
+        "notAuthenticated": "Niet ingelogd.",
+        "orderNotFound": "Bestelling niet gevonden.",
+        "kitchenRoleRequired": "Alleen de keukenrol kan de status bijwerken.",
+        "updateFailed": "Kon de status niet bijwerken.",
+        "unknown": "Er is iets misgegaan."
+      }
+    },
+    "customers": {
+      "page": {
+        "eyebrow": "Leverancier",
+        "heading": "Bedrijven",
+        "leadWithProvider": "Beheer zakelijke klanten, contracten en leveringsinstellingen voor {providerName}.",
+        "leadDefault": "Beheer zakelijke klanten, contracten en leveringsinstellingen."
+      },
+      "filters": {
+        "searchLabel": "Zoeken",
+        "searchPlaceholder": "Zoek op bedrijfsnaam",
+        "statusGroupAria": "Statusfilter",
+        "all": "Alle",
+        "active": "Actief",
+        "paused": "Gepauzeerd",
+        "suspended": "Opgeschort",
+        "deleted": "Verwijderd"
+      },
+      "status": {
+        "active": "Actief",
+        "paused": "Gepauzeerd",
+        "suspended": "Opgeschort",
+        "deleted": "Verwijderd"
+      },
+      "table": {
+        "name": "Bedrijf",
+        "orgnr": "KvK-nr.",
+        "status": "Status",
+        "employees": "Medewerkers",
+        "ordersThisWeek": "Bestellingen deze week",
+        "historicalOrders": "Historie",
+        "invoice": "Factuur",
+        "lastUpdated": "Laatst bijgewerkt",
+        "actions": "Acties"
+      },
+      "actions": {
+        "newCustomer": "Nieuwe zakelijke klant",
+        "newCustomerTitle": "Nieuwe zakelijke klanten komen binnen via gecontroleerde registratie.",
+        "openCustomer": "Klant openen",
+        "removeCustomer": "Klant verwijderen",
+        "restoreCustomer": "Klant herstellen"
+      },
+      "empty": {
+        "noResults": {
+          "title": "Geen resultaten",
+          "text": "Probeer een andere bedrijfsnaam of verwijder het filter."
+        },
+        "noStatusMatch": {
+          "title": "Geen bedrijven met de gekozen status",
+          "text": "Wijzig het statusfilter om meer zakelijke klanten te zien."
+        },
+        "noneYet": {
+          "title": "Nog geen bedrijven",
+          "text": "Zodra zakelijke klanten zijn geregistreerd en goedgekeurd, verschijnen ze hier met status, contracten en bestelgrondslag."
+        }
+      },
+      "card": {
+        "mobileMeta": "{employees} medewerkers · {orders} bestellingen deze week · {history} in historie · Factuur: {invoice}",
+        "mobileUpdatedPrefix": "Laatst bijgewerkt",
+        "orgNrPrefix": "KvK-nr.: {orgnr}"
+      },
+      "pagination": {
+        "aria": "Paginering",
+        "prev": "Vorige",
+        "next": "Volgende",
+        "oneCompany": "1 bedrijf",
+        "companies": "{count} bedrijven",
+        "page": "Pagina {current} van {total} ({count} totaal)"
+      },
+      "create": {
+        "heading": "Nieuwe zakelijke klant",
+        "lead": "Direct aanmaken van zakelijke klanten is nog niet beschikbaar. Nieuwe bedrijven in jouw dekkingsgebied komen binnen via Registraties zodra ze interesse tonen, en verschijnen onder Bedrijven na goedkeuring.",
+        "backToCustomers": "Terug naar bedrijven"
+      },
+      "billing": {
+        "method": {
+          "email": "E-mail",
+          "ehf": "EHF",
+          "notSelected": "Niet gekozen"
+        },
+        "recipient": {
+          "notSelected": "Niet gekozen"
+        },
+        "commissionBase": {
+          "taxEx": "excl. btw",
+          "taxInc": "incl. btw",
+          "notAvailable": "Niet beschikbaar"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Niet ingelogd.",
+        "providerAdminRequired": "Alleen een leveranciersbeheerder kan deze actie uitvoeren.",
+        "providerContextMissing": "Geen leverancierskoppeling gevonden voor de ingelogde gebruiker.",
+        "customerNotFound": "Klant niet gevonden.",
+        "invalidCustomer": "Klant-id ontbreekt.",
+        "reasonTooShort": "De motivatie moet minstens 20 tekens bevatten.",
+        "forbidden": "Je hebt geen toegang tot deze klant.",
+        "outOfScope": "De klant behoort niet tot deze leverancier.",
+        "confirmMismatch": "De bevestiging klopt niet.",
+        "hardDeleteBlocked": "De klant kan niet permanent worden verwijderd.",
+        "alreadyArchived": "De klant is al gearchiveerd.",
+        "alreadyActive": "De klant is al actief.",
+        "protectedSystem": "Een systeemorganisatie kan hier niet worden gewijzigd.",
+        "selfCustomer": "De leverancier kan geen klant van zichzelf zijn.",
+        "validationFailed": "Ongeldig verzoek.",
+        "invalidAgreement": "Contractgegevens zijn ongeldig.",
+        "invalidPayload": "Geen geldige wijzigingen opgegeven.",
+        "noActiveAgreement": "De klant heeft geen actief contract.",
+        "updateFailed": "Kon de klant niet bijwerken.",
+        "suspendFailed": "Kon de klant niet opschorten.",
+        "pauseFailed": "Kon de klant niet pauzeren.",
+        "removeFailed": "Kon de klant niet verwijderen.",
+        "restoreFailed": "Kon de klant niet herstellen.",
+        "loadRulesFailed": "Kon de verwijderregels niet laden.",
+        "agreementLoadFailed": "Kon het contract niet laden.",
+        "agreementUpdateFailed": "Kon het contract niet opslaan.",
+        "unknown": "Er is iets misgegaan."
+      },
+      "detail": {
+        "eyebrow": "Klant",
+        "orgnrMissing": "KvK-nr. niet geregistreerd",
+        "contactMissing": "—",
+        "locationMissing": "Bezorgadres niet ingesteld",
+        "agreementStatusMissing": "Geen actief contract",
+        "billingIncomplete": "Factuurgrondslag niet compleet",
+        "vatNotSpecified": "Niet gespecificeerd",
+        "billingPeriodLabel": "Afgelopen 30 dagen",
+        "grossOnlyNote": "De bedragen worden incl. btw getoond omdat de bestelgrondslag geen aparte btw-splitsing bevat.",
+        "completeCommissionNote": "De commissie wordt berekend over de omzet excl. btw.",
+        "identityTitle": "Klantgegevens",
+        "billingBasisTitle": "Factuurgrondslag",
+        "meta": {
+          "orgnr": "KvK-nr.",
+          "invoiceMethod": "Factuurmethode",
+          "agreementLevel": "Contractniveau",
+          "status": "Status"
+        },
+        "kpis": {
+          "employees": "Medewerkers",
+          "activeOrders": "Actieve bestellingen",
+          "orderHistory": "Bestelhistorie",
+          "revenue30Days": "Omzet 30 dagen",
+          "commission5": "Commissie 5%"
+        },
+        "actions": {
+          "editAgreement": "Contract wijzigen",
+          "pause": "Pauzeren",
+          "suspend": "Opschorten",
+          "removeCustomer": "Klant verwijderen",
+          "restore": "Herstellen",
+          "agreementUpdated": "Het contract is bijgewerkt."
+        },
+        "statusBanner": {
+          "suspendedDefault": "De klant is opgeschort.",
+          "pausedDefault": "De klant is gepauzeerd."
+        },
+        "readOnly": "Je hebt leestoegang. Wijzigingen vereisen beheerderstoegang.",
+        "labels": {
+          "orgnr": "KvK-nr.",
+          "contact": "Contact",
+          "email": "E-mail",
+          "phone": "Telefoon",
+          "deliveryAddress": "Bezorgadres",
+          "agreementStatus": "Contractstatus",
+          "period": "Periode",
+          "ordersThisMonth": "Bestelgrondslag",
+          "revenueExVat": "Omzet excl. btw",
+          "vat": "Btw",
+          "revenueIncVat": "Omzet incl. btw",
+          "commissionBase": "Commissiegrondslag",
+          "commission": "Commissie 5%",
+          "commissionRateValue": "5%",
+          "invoiceMethod": "Factuurmethode",
+          "invoiceRecipient": "Factuurontvanger",
+          "billingStatus": "Status"
+        },
+        "billingStatus": {
+          "ready": "Klaar voor factuurgrondslag",
+          "missingVat": "Btw-splitsing ontbreekt",
+          "missingRecipient": "Factuurontvanger ontbreekt",
+          "missingOrders": "Bestelgrondslag ontbreekt"
+        },
+        "badges": {
+          "oneOrderThisMonth": "1 bestelling deze maand",
+          "ordersThisMonth": "{count} bestellingen deze maand",
+          "commissionNotReady": "Commissie niet klaar",
+          "commissionAmount": "{amount} commissie",
+          "oneHistorical": "1 historisch",
+          "historical": "{count} historisch",
+          "ordersSuffix": "bestellingen"
+        },
+        "sections": {
+          "employees": "Medewerkers",
+          "orders": "Bestellingen",
+          "activity": "Activiteit",
+          "employeesEmpty": "Nog geen medewerkers geregistreerd voor deze klant.",
+          "ordersEmpty": "Nog geen bestellingen geregistreerd voor deze klant."
+        },
+        "employeesTable": {
+          "name": "Naam",
+          "email": "E-mail",
+          "role": "Rol"
+        }
+      },
+      "agreement": {
+        "sectionTitle": "Contract",
+        "activeTitle": "Actief klantcontract",
+        "inactiveTitle": "Klantcontract",
+        "deliveryDaysWarning": "Het contract bevat leverdagen buiten de reguliere lunchlevering.",
+        "multipleActiveWarning": "Er zijn meerdere actieve contracten geregistreerd voor deze klant.",
+        "packageMissing": "Nog niet gespecificeerd in de contractweergave",
+        "packageMix": "Mix",
+        "locationMissing": "Bezorgadres niet ingesteld",
+        "notSpecified": "Niet gespecificeerd",
+        "weekdaysRange": "Maandag–vrijdag",
+        "weekdays": {
+          "mon": "Maandag",
+          "tue": "Dinsdag",
+          "wed": "Woensdag",
+          "thu": "Donderdag",
+          "fri": "Vrijdag"
+        },
+        "periodFromTo": "Van {from} tot {to}",
+        "periodFromOpen": "Van {from} · Geen einddatum",
+        "createdAt": "Aangemaakt {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusWeekdaysTier": "Maandag–vrijdag · {tier}",
+        "dayMenusWeekdaysTierLine": "Maandag–vrijdag: {tier}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "status": {
+          "active": "Actief",
+          "pending": "In behandeling",
+          "paused": "Gepauzeerd",
+          "rejected": "Afgewezen",
+          "closed": "Beëindigd",
+          "unknown": "Onbekend"
+        },
+        "labels": {
+          "status": "Status",
+          "created": "Aangemaakt",
+          "period": "Contractperiode",
+          "deliveryDays": "Leverdagen",
+          "dayMenus": "Leverdagen en menu",
+          "location": "Bezorgadres",
+          "package": "Contractniveau"
+        },
+        "empty": {
+          "title": "Geen contract geregistreerd",
+          "text": "Zodra een klantcontract is goedgekeurd, verschijnen leverdagen, locatie en contractinhoud hier."
+        }
+      },
+      "activity": {
+        "empty": {
+          "title": "Nog geen relevante klantactiviteiten om te tonen.",
+          "text": "Zodra de klant zich registreert, bestelt of wordt hersteld, verschijnt dat hier."
+        },
+        "events": {
+          "company_registration_submitted": {
+            "title": "Klantregistratie ontvangen",
+            "summary": "Het bedrijf heeft een contractaanvraag geregistreerd."
+          },
+          "company_registration_approved": {
+            "title": "Klant goedgekeurd",
+            "summary": "De klantregistratie is goedgekeurd en geactiveerd."
+          },
+          "agreement_activated": {
+            "title": "Contract geactiveerd",
+            "summary": "Een leveringscontract is geactiveerd."
+          },
+          "agreement_updated": {
+            "title": "Contract bijgewerkt",
+            "summary": "Een leveringscontract is gewijzigd."
+          },
+          "order_created": {
+            "title": "Bestelling geregistreerd",
+            "summary": "Een nieuwe bestelling is geregistreerd."
+          },
+          "order_received": {
+            "title": "Bestelling geregistreerd",
+            "summary": "Een nieuwe bestelling is geregistreerd."
+          },
+          "order_canceled": {
+            "title": "Bestelling geannuleerd",
+            "summary": "Een bestelling is geannuleerd."
+          },
+          "order_cancelled": {
+            "title": "Bestelling geannuleerd",
+            "summary": "Een bestelling is geannuleerd."
+          },
+          "provider.customer.restore.success": {
+            "title": "Klant hersteld",
+            "summary": "De klantrelatie is weer geactiveerd."
+          },
+          "provider.customer.restore.attempt": {
+            "title": "Herstel gestart",
+            "summary": "Het herstel van de klant is geprobeerd."
+          },
+          "provider.customer.archive.success": {
+            "title": "Klant gearchiveerd",
+            "summary": "De klant is gearchiveerd bij de leverancier."
+          },
+          "provider.customer.hard_delete.success": {
+            "title": "Klant verwijderd",
+            "summary": "De klant is verwijderd uit de leverancierslijst."
+          }
+        }
+      },
+      "lifecycle": {
+        "dialog": {
+          "closeAria": "Dialoog sluiten",
+          "reasonLabel": "Motivatie",
+          "reasonHint": "{current}/{min} tekens",
+          "reasonNeedMore": " — meer tekens nodig",
+          "cancel": "Annuleren",
+          "working": "Bezig…",
+          "suspend": {
+            "title": "{name} opschorten?",
+            "confirm": "Opschorten",
+            "description": "Geef een duidelijke motivatie (minstens 20 tekens)."
+          },
+          "pause": {
+            "title": "{name} pauzeren?",
+            "confirm": "Pauzeren",
+            "description": "Geef een duidelijke motivatie (minstens 20 tekens)."
+          },
+          "delete": {
+            "title": "{name} verwijderen?",
+            "confirm": "Verwijderen",
+            "description": "Deze actie verwijdert de klant zacht. Bestellingen kunnen worden beïnvloed."
+          },
+          "resume": {
+            "title": "{name} herstellen?",
+            "confirm": "Herstellen",
+            "description": "De klant en bijbehorende bestellingen worden hersteld waar mogelijk."
+          }
+        }
+      },
+      "dialogs": {
+        "adminEyebrow": "Klantbeheer",
+        "closeAria": "Sluiten",
+        "cancel": "Annuleren",
+        "working": "Bezig…",
+        "removal": {
+          "loadingRules": "Verwijderregels laden…",
+          "loadingDependencies": "Afhankelijkheden ophalen…",
+          "hardDeleteTitle": "Klant permanent verwijderen",
+          "hardDeleteBlockedTitle": "De klant kan niet permanent worden verwijderd",
+          "archiveTitle": "Klant archiveren",
+          "removeTitle": "Klant verwijderen",
+          "hardDeleteLead": "De klant heeft geen operationele historie en kan na bevestiging permanent worden verwijderd.",
+          "hardDeleteBlockedLead": "Deze klant heeft operationele historie die bewaard moet blijven.",
+          "chooseModeLead": "Kies of de klant wordt gearchiveerd of permanent verwijderd.",
+          "loadRulesFailed": "Kon de verwijderregels niet laden.",
+          "loadRulesFailedHttp": "Kon de verwijderregels niet laden (HTTP {status}).",
+          "actionFailed": "De actie is mislukt.",
+          "confirmLabel": "Bevestiging",
+          "confirmHint": "(typ exact: {hint})",
+          "reasonOptional": "Motivatie (optioneel)",
+          "archiveCustomer": "Klant archiveren",
+          "hardDelete": "Permanent verwijderen",
+          "archiveAction": "Klant archiveren"
+        },
+        "restore": {
+          "title": "Klant herstellen",
+          "lead": "Hiermee wordt de klantrelatie weer geactiveerd zonder de historie te verwijderen.",
+          "confirmLabel": "Bevestiging",
+          "confirmHint": "(typ exact: {hint})",
+          "actionFailed": "Kon de klant niet herstellen.",
+          "successDefault": "De klant is hersteld.",
+          "restoreCustomer": "Klant herstellen"
+        },
+        "agreementEdit": {
+          "title": "Klantcontract wijzigen",
+          "loading": "Contract laden…",
+          "loadFailed": "Kon het contract niet laden.",
+          "saveFailed": "Kon het contract niet opslaan.",
+          "save": "Wijzigingen opslaan",
+          "saving": "Opslaan…",
+          "updated": "Het contract is bijgewerkt.",
+          "updatedWithWarnings": "Het contract is bijgewerkt. {warnings}",
+          "dayMenusLegend": "Menu per leverdag",
+          "dayMenusLead": "Kies welk menu de klant per leverdag krijgt.",
+          "weekdaysOnlyNote": "Lunchlevering van maandag t/m vrijdag. Weekend wordt niet ondersteund.",
+          "locationLegend": "Bezorgadres",
+          "locationName": "Naam van locatie",
+          "address": "Adres",
+          "contactLegend": "Contactpersoon",
+          "name": "Naam",
+          "email": "E-mail",
+          "phone": "Telefoon",
+          "deliveryWindowLegend": "Levertijdvak",
+          "from": "Van",
+          "to": "Tot",
+          "billingLegend": "Facturatie",
+          "invoiceEmail": "E-mail",
+          "invoiceEmailField": "Factuur-e-mail",
+          "ehf": "EHF",
+          "orgnr": "Organisatienummer",
+          "ehfEndpoint": "EHF-endpoint",
+          "billingContact": "Factuurcontact",
+          "statusLegend": "Status",
+          "statusActive": "Actief",
+          "statusPaused": "Gepauzeerd",
+          "deliveryNote": "Instructie voor levering",
+          "reasonOptional": "Motivatie (optioneel, wordt opgeslagen in het auditlogboek)",
+          "validation": {
+            "pickDeliveryDay": "Kies minstens één leverdag.",
+            "pickMenuForDay": "Kies een menu voor {day}.",
+            "invalidEmail": "Ongeldig e-mailadres.",
+            "invoiceEmailRequired": "Factuur-e-mail moet een geldig e-mailadres zijn.",
+            "ehfEndpointRequired": "EHF-endpoint moet worden opgegeven.",
+            "orgnrLength": "Organisatienummer moet 9 cijfers bevatten.",
+            "invalidBillingEmail": "Ongeldige e-mail voor factuurcontact."
+          }
+        }
+      }
+    },
+    "coverage": {
+      "page": {
+        "eyebrow": "Leverancier",
+        "heading": "Dekkingsgebieden",
+        "leadWithProvider": "Dekkingsgebieden bepalen welke bedrijven een aanvraag kunnen sturen naar {providerName}. Gebruik de gebieden om postcodes, minimaal aantal medewerkers en leverdagen af te bakenen.",
+        "leadNoProvider": "Dekkingsgebieden bepalen welke bedrijven een aanvraag kunnen sturen naar de leverancier. Gebruik de gebieden om postcodes, minimaal aantal medewerkers en leverdagen af te bakenen."
+      },
+      "actions": {
+        "newArea": "Nieuw dekkingsgebied",
+        "newAreaTitle": "Voeg een nieuw dekkingsgebied toe voor de leverancier.",
+        "readOnlyNote": "Je hebt leestoegang. Wijzigingen vereisen beheerderstoegang.",
+        "edit": "Bewerken",
+        "activate": "Activeren",
+        "deactivate": "Deactiveren",
+        "deactivateTitle": "Nieuwe bedrijven in dit gebied kunnen de leverancier niet kiezen zolang het gebied is gedeactiveerd. Bestaande contracten wijzigen niet automatisch.",
+        "activateTitle": "Maak het gebied weer beschikbaar voor nieuwe bedrijfsaanvragen.",
+        "cancel": "Annuleren",
+        "closeDrawer": "Sluiten",
+        "createArea": "Gebied aanmaken",
+        "saveChanges": "Wijzigingen opslaan",
+        "saving": "Opslaan…"
+      },
+      "table": {
+        "area": "Gebied",
+        "postalCodes": "Postcodes",
+        "minEmployees": "Min. medewerkers",
+        "deliveryDays": "Leverdagen",
+        "status": "Status"
+      },
+      "summary": {
+        "noneActive": "Geen actieve dekkingsgebieden",
+        "oneActive": "1 actief dekkingsgebied",
+        "manyActive": "{count} actieve dekkingsgebieden",
+        "inactiveSuffix": " · {count} inactief"
+      },
+      "status": {
+        "active": "Actief",
+        "inactive": "Inactief",
+        "paused": "Gepauzeerd",
+        "unknown": "Onbekend"
+      },
+      "weekdays": {
+        "mon": "Ma",
+        "tue": "Di",
+        "wed": "Wo",
+        "thu": "Do",
+        "fri": "Vr",
+        "weekdaysRange": "Maandag–vrijdag"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesRange": "{min}–{max}",
+        "employeesMin": "{min}+",
+        "employeesMax": "≤{max}"
+      },
+      "empty": {
+        "title": "Nog geen dekkingsgebieden",
+        "text": "Voeg een dekkingsgebied toe om te bepalen welke bedrijven een aanvraag kunnen sturen naar de leverancier.",
+        "step1": "Definieer postcodes of gebied.",
+        "step2": "Stel het minimaal aantal medewerkers in.",
+        "step3": "Kies de leverdagen voor het gebied."
+      },
+      "form": {
+        "editTitle": "Gebied bewerken",
+        "createTitle": "Gebied toevoegen",
+        "cityLabel": "Plaats / gebied",
+        "postalFrom": "Postcode van",
+        "postalTo": "Postcode tot",
+        "minEmployees": "Min. medewerkers",
+        "maxEmployees": "Max. medewerkers (optioneel)",
+        "deliveryDaysLegend": "Leverdagen",
+        "activeToggle": "Actief gebied (gebruikt in registratiematching)"
+      },
+      "errors": {
+        "notAuthenticated": "Niet ingelogd.",
+        "providerAdminRequired": "Alleen een leveranciersbeheerder kan gebieden wijzigen.",
+        "forbidden": "Je hebt geen toegang om dit gebied te wijzigen.",
+        "validationFailed": "Ongeldig formulier.",
+        "cityRequired": "Plaats is verplicht.",
+        "invalidPostalFrom": "Van-postcode moet 4 cijfers bevatten.",
+        "invalidPostalTo": "Tot-postcode moet 4 cijfers bevatten.",
+        "invalidPostalRange": "Van-postcode mag niet hoger zijn dan de tot-postcode.",
+        "deliveryDaysRequired": "Kies minstens één dag.",
+        "invalidEmployeeRange": "Min. medewerkers mag niet hoger zijn dan max.",
+        "invalidPostalCode": "Postcode moet 4 cijfers bevatten.",
+        "postalRangeInvalid": "Van-postcode mag niet hoger zijn dan de tot-postcode.",
+        "employeeRangeInvalid": "Ongeldig medewerkersbereik.",
+        "postalOverlap": "Het postcodebereik overlapt met een bestaand actief gebied.",
+        "serviceAreaNotFound": "Het gebied is niet gevonden.",
+        "saveFailed": "Kon het gebied niet opslaan. Probeer opnieuw.",
+        "toggleFailed": "Kon de status niet bijwerken.",
+        "unknown": "Er is iets misgegaan. Probeer opnieuw."
+      }
+    },
+    "settings": {
+      "page": {
+        "eyebrow": "Leverancier",
+        "heading": "Instellingen",
+        "leadWithProvider": "Profiel en contactgegevens voor {providerName}.",
+        "readOnly": "Je hebt leestoegang. Instellingen kunnen alleen door een beheerder worden gewijzigd.",
+        "brandSection": "Logo en merk",
+        "brandIntro": "Upload een logo en kies een gecontroleerde accentkleur. Lunchportalen behoudt lay-out, typografie en productuitstraling.",
+        "logoHeading": "Logo",
+        "logoIntro": "Gebruik een schoon logo met transparante achtergrond. Het logo wordt gecontroleerd getoond in het leveranciersmenu.",
+        "logoNote": "Logo's die niet voldoen aan de visuele standaard van het platform kunnen worden geweigerd.",
+        "colorHeading": "Primaire kleur",
+        "colorIntro": "Kies de accentkleur van de leverancier. De kleur wordt alleen in gecontroleerde details gebruikt.",
+        "operationsSection": "Bedrijfsvoering en meldingen",
+        "operationsIntro": "Voer de e-mailadressen in die bestellingen, keukenlijsten en leveringsmeldingen moeten ontvangen voor deze leverancier. Deze instellingen gelden alleen voor dit cateringbedrijf.",
+        "operationsNote": "Het cateringbedrijf moet zelf de e-mailadressen invoeren die bestellingen, keukenlijsten en leveringsmeldingen ontvangen. Lunchportalen stuurt de operationele e-mails van de leverancier standaard niet naar het platform — ontbrekende e-mail moet hier worden ingevuld.",
+        "accountingSection": "Boekhouding",
+        "accountingIntro": "Koppel Tripletex voor automatische facturatie en betaalstatus.",
+        "tripletexSetup": "Tripletex-instellingen"
+      },
+      "menuProfile": {
+        "heading": "Markt, valuta en menuprofiel",
+        "flagActive": "Geactiveerd via feature flag — alleen weergave, nog geen productwijziging.",
+        "statusInactive": "Het menuprofiel bepaalt nog geen categorieën, publicatie of prijzen.",
+        "statusLabel": "Status",
+        "uiVsProfileExplanation": "De UI-taal vertaalt de interface. Menuprofiel en markt bepalen lokale vaste keuzes, warme-gerechtenbank en valuta. Volledige koppeling komt in de volgende G5-fase.",
+        "profileLabel": "Menuprofiel",
+        "sourceLabel": "Bron",
+        "marketLabel": "Markt",
+        "localeLabel": "Locale",
+        "currencyLabel": "Valuta",
+        "readOnlyNote": "Alleen weergave. Menu-inhoud, valuta en prijzen worden hier niet gewijzigd.",
+        "invalidProfile": "Ongeldig menuprofiel in instellingen: {message}",
+        "sourceProviderSetting": "Leveranciersinstelling",
+        "sourceMarketDefault": "Marktstandaard",
+        "sourceFallbackNoMarket": "Fallback (profiel/markt ontbreekt)",
+        "sourceLegacyDisabled": "Legacy (uitgeschakeld)",
+        "sourceUnknown": "Onbekend",
+        "marketNames": {
+          "NO": "Noorwegen",
+          "SE": "Zweden",
+          "DK": "Denemarken",
+          "FI": "Finland",
+          "DE": "Duitsland",
+          "FR": "Frankrijk",
+          "ES": "Spanje",
+          "UK": "Verenigd Koninkrijk",
+          "IT": "Italië"
+        }
+      },
+      "profile": {
+        "leadWithProvider": "Profiel voor {providerName}",
+        "nameLabel": "Naam",
+        "emailLabel": "Contact-e-mail",
+        "phoneLabel": "Contacttelefoon",
+        "save": "Instellingen opslaan",
+        "saving": "Opslaan…",
+        "saved": "Instellingen opgeslagen.",
+        "errors": {
+          "notAuthenticated": "Niet ingelogd.",
+          "providerNotFound": "Leverancier ontbreekt.",
+          "forbidden": "Geen toegang.",
+          "nameRequired": "Naam is verplicht.",
+          "emailRequired": "Een geldig e-mailadres is verplicht.",
+          "saveFailed": "Kon de instellingen niet opslaan.",
+          "unknown": "Onverwachte fout bij het opslaan."
+        }
+      },
+      "operations": {
+        "operationsEmailLabel": "Bestel- en bedrijfs-e-mail",
+        "operationsEmailHint": "Wordt gebruikt als hoofdontvanger voor bestelmeldingen en bedrijfsberichten.",
+        "kitchenEmailLabel": "Keuken-e-mail",
+        "kitchenEmailHint": "Wordt gebruikt voor productiegrondslag en keukenmeldingen.",
+        "deliveryEmailLabel": "Leverings-e-mail",
+        "deliveryEmailHint": "Wordt gebruikt voor leveringsgerelateerde meldingen en berichten wanneer bestellingen klaar zijn voor levering.",
+        "localeLabel": "Markt en beheertaal",
+        "localeHint": "Bepaalt de opgeslagen markt en het menuprofiel voor dit cateringbedrijf. Beïnvloedt het bestelvenster van medewerkers nog niet tot de volgende fase.",
+        "uiLocaleSeparation": "De taal in de zijbalk wijzigt alleen de interfacetaal. Markt en menuprofiel worden hier opgeslagen onder de bedrijfsinstellingen.",
+        "marketProfileLabel": "Actief menuprofiel",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Nog geen menuprofiel opgeslagen — wordt automatisch gekozen bij het opslaan van de markt.",
+        "marketChangeImpact": "Het wijzigen van de markt beïnvloedt toekomstige menusuggesties en gegenereerde gerechten.",
+        "marketChangeCatalogPreserved": "De bestaande catalogus en gepubliceerde bestellingen worden niet overschreven.",
+        "marketChangeResetRequired": "Om een nieuwe catalogus vanuit het marktprofiel te bouwen is een aparte reset vereist.",
+        "marketChangeEmployeeRuntime": "Medewerkers krijgen het menuprofiel van de leverancier zodra de runtime in de volgende fase wordt geactiveerd.",
+        "save": "Bedrijfsinstellingen opslaan",
+        "saving": "Opslaan…",
+        "saved": "Bedrijfsinstellingen opgeslagen.",
+        "locales": {
+          "nb-NO": "Norsk (bokmål)",
+          "en-GB": "English",
+          "sv-SE": "Svenska",
+          "da-DK": "Dansk",
+          "fi-FI": "Suomi",
+          "de-DE": "Deutsch",
+          "fr-FR": "Français",
+          "es-ES": "Español",
+          "it-IT": "Italiano",
+          "nl-NL": "Nederlands"
+        },
+        "errors": {
+          "notAuthenticated": "Niet ingelogd.",
+          "providerNotFound": "Leverancier ontbreekt.",
+          "forbidden": "Geen toegang.",
+          "invalidEmail": "Ongeldig e-mailadres.",
+          "emailTooLong": "Het e-mailadres is te lang.",
+          "invalidLocale": "Ongeldige taalkeuze.",
+          "saveFailed": "Kon de bedrijfsinstellingen op dit moment niet opslaan.",
+          "unknown": "Kon de bedrijfsinstellingen op dit moment niet opslaan."
+        }
+      },
+      "logo": {
+        "hint": "Aanbevolen: logo in PNG of WebP met transparante achtergrond. Max. 2 MB. Gebruik geen voedselfoto's, banners, schermafbeeldingen, reclamemateriaal of een logo op een rommelige/gekleurde achtergrond.",
+        "upload": "Logo uploaden",
+        "replace": "Logo vervangen",
+        "remove": "Logo verwijderen",
+        "pickFile": "Kies logobestand",
+        "altWithProvider": "Logo voor {providerName}",
+        "uploading": "Uploaden…",
+        "removing": "Verwijderen…",
+        "updated": "Logo bijgewerkt.",
+        "removed": "Logo verwijderd.",
+        "errors": {
+          "notAuthenticated": "Niet ingelogd.",
+          "invalidProvider": "Ongeldige leverancier.",
+          "forbidden": "Geen toegang.",
+          "noFileSelected": "Kies een logobestand.",
+          "unsupportedFileType": "Het logo moet PNG of WebP zijn. Gebruik bij voorkeur een logo met transparante achtergrond.",
+          "fileTooLarge": "Het logo is te groot. Maximale grootte is 2 MB.",
+          "uploadUnavailable": "Uploaden is op dit moment niet beschikbaar.",
+          "uploadFailed": "Kon het logo niet uploaden.",
+          "removeFailed": "Kon het logo niet verwijderen.",
+          "saveFailed": "Kon het logo niet opslaan.",
+          "urlFailed": "Kon de logo-URL niet ophalen.",
+          "unknown": "Onverwachte fout bij het uploaden."
+        }
+      },
+      "brand": {
+        "hexLabel": "HEX-code",
+        "save": "Kleur opslaan",
+        "saving": "Opslaan…",
+        "sampleHint": "Zo wordt de kleur gebruikt: als klein accent in het menu en in details.",
+        "formatHint": "Gebruik HEX-formaat, bijvoorbeeld #F5C518. Bij slecht contrast wordt de standaardkleur gebruikt.",
+        "saved": "Kleur opgeslagen.",
+        "restoredDefault": "Standaardkleur hersteld.",
+        "errors": {
+          "notAuthenticated": "Niet ingelogd.",
+          "invalidProvider": "Ongeldige leverancier.",
+          "forbidden": "Geen toegang.",
+          "invalidHex": "Gebruik HEX-formaat, bijvoorbeeld #F5C518.",
+          "contrastTooWeak": "De kleur heeft te weinig contrast en kan niet worden gebruikt. Kies een donkerdere kleur.",
+          "saveFailed": "Kon de kleur niet opslaan.",
+          "unknown": "Onverwachte fout bij het opslaan."
+        }
+      }
+    },
+    "banner": {
+      "paused": {
+        "title": "De leverancier is gepauzeerd",
+        "defaultReason": "Tijdelijke pauze"
+      },
+      "suspended": {
+        "title": "De leverancier is opgeschort",
+        "defaultReason": "Opgeschort"
+      },
+      "contactPrefix": "Neem contact op met",
+      "contactSuffix": "om dit op te lossen."
+    },
+    "billing": {
+      "page": {
+        "eyebrow": "Leverancier",
+        "heading": "Facturen en afrekening",
+        "subheading": "Overzicht van factuurgrondslag, commissie en afrekening tussen de leverancier en Lunchportalen."
+      },
+      "summary": {
+        "settlementStatus": "Afrekenstatus",
+        "commission": "Commissie",
+        "nextSettlement": "Volgende afrekening",
+        "activateHint": "Neem contact op met Lunchportalen om te activeren.",
+        "commissionPending": "Wordt getoond zodra afrekening is geactiveerd",
+        "nextSettlementNone": "Niet gepland"
+      },
+      "notActivated": {
+        "title": "Afrekening is niet geactiveerd",
+        "text": "Afrekening is voor deze leverancier nog niet geactiveerd. Neem contact op met Lunchportalen om de afrekenafspraak en factuurgrondslag te activeren."
+      },
+      "commissionNote": "Lunchportalen berekent 5% commissie per verkochte portie zodra afrekening is geactiveerd.",
+      "agreement": {
+        "activeEyebrow": "Actieve afrekenafspraak",
+        "netPerMonth": "Netto / maand",
+        "vatLabel": "Btw ({rate}%)",
+        "totalPerMonth": "Totaal / maand",
+        "invoiceSentTo": "Factuur wordt verstuurd naar",
+        "orgNrSuffix": " · KvK-nr. {orgNumber}"
+      },
+      "history": {
+        "title": "Factuurgrondslag en afrekening",
+        "emptyTitle": "Er is nog geen factuurgrondslag gegenereerd",
+        "emptyText": "Zodra afrekening is geactiveerd en de grondslag klaar is, verschijnen factuurgrondslag, commissie, bedrag, status en vervaldatum hier."
+      },
+      "invoice": {
+        "table": {
+          "period": "Periode",
+          "amount": "Bedrag",
+          "status": "Status",
+          "dueDate": "Vervaldatum"
+        },
+        "noNumber": "Zonder nummer",
+        "drawerTitle": "Factuur {number}",
+        "net": "Netto",
+        "vat": "Btw",
+        "total": "Totaal",
+        "status": "Status",
+        "sent": "Verstuurd",
+        "paid": "Betaald",
+        "downloadPdfSoon": "PDF downloaden (binnenkort)",
+        "downloadPdfIntegrationTitle": "Komt met Tripletex"
+      },
+      "status": {
+        "settlement": {
+          "active": "Actief",
+          "notActivated": "Niet geactiveerd"
+        },
+        "invoice": {
+          "DRAFT": "Concept",
+          "SENT": "Verstuurd",
+          "PAID": "Betaald",
+          "OVERDUE": "Vervallen",
+          "VOID": "Geannuleerd",
+          "unknown": "Onbekend"
+        }
+      },
+      "plan": {
+        "SAAS_FIXED": "Vaste maandprijs",
+        "SAAS_PER_COMPANY": "Prijs per bedrijf",
+        "CUSTOM": "Maatwerkafspraak"
+      },
+      "actions": {
+        "details": "Details",
+        "close": "Sluiten",
+        "closeDrawer": "Sluiten"
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "contact": {
+        "editButton": "Factuurcontact wijzigen",
+        "title": "Factuurcontact",
+        "emailLabel": "Factuur-e-mail",
+        "orgLabel": "KvK-nr. (optioneel)",
+        "addressLabel": "Factuuradres (optioneel)",
+        "cancel": "Annuleren",
+        "save": "Opslaan",
+        "saving": "Opslaan…",
+        "saved": "Factuurcontact bijgewerkt.",
+        "saveFailed": "Kon niet opslaan."
+      },
+      "errors": {
+        "notAuthenticated": "Niet ingelogd.",
+        "providerAdminRequired": "Alleen een leveranciersbeheerder kan het factuurcontact wijzigen.",
+        "forbidden": "Je hebt geen toegang.",
+        "invalidEmail": "Ongeldige factuur-e-mail.",
+        "activeSubscriptionNotFound": "Geen actieve licentie om bij te werken.",
+        "saveFailed": "Kon het factuurcontact niet opslaan.",
+        "unknown": "Er is iets misgegaan. Probeer opnieuw."
+      }
+    },
+    "tripletex": {
+      "brand": "Tripletex",
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "status": {
+          "eyebrow": "Tripletex",
+          "heading": "Verbindingsstatus",
+          "subheading": "Overzicht van verbinding, webhook en recente activiteit.",
+          "fallbackHeading": "Tripletex-status",
+          "noAccess": "Geen toegang tot deze leverancier."
+        },
+        "connect": {
+          "heading": "Verbinden met Tripletex",
+          "adminRequired": "Alleen een leveranciersbeheerder kan met Tripletex verbinden.",
+          "degraded": {
+            "heading": "Tripletex vereist aandacht",
+            "body": "De verbinding is verstoord. De herconfiguratieflow komt in TPT-B-7b-edge.",
+            "badge": "Vereist aandacht"
+          },
+          "disconnected": {
+            "heading": "Tripletex is losgekoppeld",
+            "body": "De herstelflow zonder nieuw token komt in TPT-B-7b-edge.",
+            "badge": "Losgekoppeld"
+          }
+        }
+      },
+      "state": {
+        "CONNECTED": "Verbonden",
+        "CONFIGURING": "Configureren…",
+        "DEGRADED": "Vereist aandacht",
+        "DISCONNECTED": "Losgekoppeld",
+        "NOT_CONNECTED": "Niet verbonden"
+      },
+      "activity": {
+        "onboarding_connection_started": "Verbinding gestart",
+        "onboarding_provisioning_completed": "Configuratie voltooid",
+        "onboarding_customer_skipped": "Klant overgeslagen",
+        "onboarding_finalized": "Verbinding voltooid",
+        "onboarding_disconnected": "Tripletex losgekoppeld",
+        "onboarding_reconnect_initiated": "Herstel gestart",
+        "onboarding_test_token": "Verbinding getest",
+        "onboarding_vault_purged": "Inloggegevens verwijderd",
+        "state_change_connected": "Status gewijzigd naar verbonden",
+        "state_change_degraded": "Status gewijzigd naar vereist aandacht",
+        "state_change_disconnected": "Status gewijzigd naar losgekoppeld",
+        "state_change_configuring": "Status gewijzigd naar configureren",
+        "state_change_generic": "Verbindingsstatus gewijzigd"
+      },
+      "status": {
+        "sections": {
+          "resources": "Resources in Tripletex",
+          "webhook": "Webhook",
+          "activity": "Activiteit afgelopen 30 dagen",
+          "actions": "Acties"
+        },
+        "hero": {
+          "configureWebhook": "Webhook configureren →",
+          "continueSetup": "Configuratie voortzetten →",
+          "reconnect": "Opnieuw verbinden →",
+          "reconfigure": "Herconfigureren →",
+          "since": "Sinds {datetime}",
+          "lastHealthCheck": "Laatste gezondheidscontrole: {relative}",
+          "credentialsPurge": "Inloggegevens worden verwijderd op {datetime}",
+          "daysUntilPurge": "over {days} dagen"
+        },
+        "cards": {
+          "products": "Producten",
+          "productsMeta": "Gekoppelde maaltijdproducten",
+          "customers": "Klanten",
+          "customersMeta": "Bedrijfskoppelingen in Tripletex",
+          "vatCodes": "Btw-codes",
+          "vatCodesMeta": "Unieke belastingcodes in gebruik"
+        },
+        "webhook": {
+          "subscriptions": "Geregistreerde abonnementen",
+          "activeCount": "{count} actief in Tripletex",
+          "noneRegistered": "Nog geen geregistreerd",
+          "eventTypes": "Eventtypes",
+          "lastReceived": "Laatst ontvangen",
+          "noEventsYet": "Nog geen gebeurtenissen",
+          "last30Days": "Afgelopen 30 dagen",
+          "eventsCount": "{count} gebeurtenissen",
+          "secretRotated": "Secret geroteerd",
+          "notRotated": "Niet geroteerd",
+          "copy": "Kopiëren",
+          "copied": "Gekopieerd",
+          "copyFailed": "Kon niet kopiëren"
+        },
+        "activityStats": {
+          "invoicesSent": "Facturen verstuurd",
+          "invoicesPaid": "Facturen betaald",
+          "workerFailures": "Mislukte pushes",
+          "webhookEvents": "Webhooks",
+          "recentHeading": "Recente gebeurtenissen",
+          "empty": "Nog geen gebeurtenissen geregistreerd."
+        },
+        "actions": {
+          "adminNote": "Alleen een leveranciersbeheerder kan deze acties uitvoeren.",
+          "testConnection": "Verbinding testen",
+          "rotateSecret": "Webhook-secret roteren",
+          "disconnect": "Loskoppelen →"
+        },
+        "modals": {
+          "close": "Sluiten",
+          "copy": "Kopiëren",
+          "copied": "Gekopieerd",
+          "copyFailed": "Kon niet kopiëren",
+          "ok": "OK",
+          "failed": "Mislukt",
+          "test": {
+            "title": "Verbinding testen",
+            "body": "Voert een volledige verificatie in 3 stappen uit tegen Tripletex via de opgeslagen inloggegevens.",
+            "stepAuth": "Authenticatie",
+            "stepCompany": "Bedrijf",
+            "stepScope": "Toegang",
+            "run": "Test uitvoeren",
+            "running": "Testen…"
+          },
+          "rotate": {
+            "title": "Webhook-secret roteren",
+            "body": "Genereert een nieuw secret en werkt het Tripletex-abonnement bij bij de volgende voltooiing van de configuratie.",
+            "generate": "Nieuw secret genereren",
+            "generating": "Genereren…"
+          },
+          "disconnect": {
+            "title": "Tripletex loskoppelen",
+            "body": "De verbinding wordt op losgekoppeld gezet. Inloggegevens worden 30 dagen bewaard zodat je opnieuw kunt verbinden zonder nieuw token. Daarna worden ze permanent verwijderd.",
+            "confirm": "Loskoppeling bevestigen",
+            "confirming": "Loskoppelen…"
+          }
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Verbinden met Tripletex",
+        "leadForProvider": "Voor {providerName}",
+        "progress": {
+          "token": "Token",
+          "verify": "Verifiëren",
+          "setup": "Configuratie",
+          "webhook": "Webhook",
+          "done": "Klaar",
+          "ariaLabel": "Stap {current} van {total}: {label}"
+        },
+        "steps": {
+          "token": {
+            "eyebrow": "Stap 1 van 5",
+            "title": "Plakken en verifiëren",
+            "intro": "Genereer een Employee Token in Tripletex onder Bedrijf → API-toegang. Plak de Company ID uit de URL (contextId) en het token hieronder.",
+            "companyIdLabel": "Tripletex Company ID",
+            "companyIdHelp": "Formaat: 6–12 cijfers. Vind het in de URL: contextId=…",
+            "companyIdInvalid": "Company ID moet uit 6–12 cijfers bestaan.",
+            "tokenLabel": "Employee Token",
+            "tokenHintPending": "Het token wordt alleen naar de server gestuurd bij verificatie en opslaan.",
+            "tokenHintVerified": "Token geverifieerd en klaar om op te slaan.",
+            "tokenMissing": "Plak de Employee Token uit Tripletex.",
+            "verify": "Verifiëren",
+            "verifying": "Verifiëren…",
+            "retry": "Opnieuw proberen",
+            "continue": "Doorgaan",
+            "connecting": "Verbinden…",
+            "checksFailed": "Een of meer controles zijn mislukt. Corrigeer en probeer opnieuw.",
+            "tokenMissingOnContinue": "Token ontbreekt. Verifieer opnieuw.",
+            "notRun": "Niet uitgevoerd"
+          },
+          "provisioning": {
+            "eyebrow": "Stap 3 van 5",
+            "title": "Tripletex configureren",
+            "intro": "Dit duurt meestal 10–30 seconden.",
+            "starting": "Configuratie starten…",
+            "waiting": "Wachten op Tripletex-configuratie…",
+            "complete": "Configuratie voltooid.",
+            "syncing": "Btw-codes, producten en klanten synchroniseren…",
+            "timeout": "Iets duurde langer dan verwacht.",
+            "timeoutHint": "De configuratie gaat op de achtergrond verder. Je kunt de pagina sluiten en later terugkomen.",
+            "contactSupport": "Neem contact op met support",
+            "vatSync": "Btw-codes worden gesynchroniseerd",
+            "productsCreate": "Producten worden aangemaakt",
+            "customersSync": "Klanten worden gesynchroniseerd"
+          },
+          "webhook": {
+            "eyebrow": "Stap 4 van 5",
+            "title": "Webhookregistratie",
+            "intro": "Lunchportalen registreert het webhook-abonnement automatisch in Tripletex. Je hoeft geen URL of secret handmatig te plakken.",
+            "preparing": "Webhook-secret voorbereiden…",
+            "ready": "Klaar. Druk op «Configuratie voltooien» om de webhook te registreren en de verbinding af te ronden.",
+            "prepareFailed": "Kon het webhook-secret niet voorbereiden.",
+            "registering": "Webhook registreren in Tripletex…",
+            "finalize": "Configuratie voltooien",
+            "finalizing": "Voltooien…"
+          },
+          "success": {
+            "eyebrow": "Stap 5 van 5",
+            "title": "✓ Tripletex is verbonden",
+            "companyPrefix": "Bedrijf:",
+            "canNow": "Je kunt nu:",
+            "bulletInvoices": "Facturen automatisch naar Tripletex sturen",
+            "bulletPayments": "Betaalstatus ontvangen via webhook",
+            "bulletStatus": "Verbindingsstatus en historie bekijken",
+            "viewInvoices": "Factuurhistorie bekijken",
+            "viewStatus": "Verbindingsstatus bekijken",
+            "backToSettings": "Terug naar overzicht"
+          }
+        },
+        "verify": {
+          "auth": "Authenticatie testen",
+          "companyMatch": "Company ID-match verifiëren",
+          "scope": "Rechten testen",
+          "authOk": "Verbinding OK",
+          "companyOk": "Juist bedrijf",
+          "scopeOk": "Toegang OK"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Niet ingelogd.",
+        "providerAdminRequired": "Alleen een leveranciersbeheerder kan deze actie uitvoeren.",
+        "forbidden": "Geen toegang tot deze leverancier.",
+        "invalidCompanyId": "Company ID moet 6–12 cijfers bevatten.",
+        "missingToken": "Employee Token is verplicht.",
+        "tokenVerificationFailed": "Verificatie mislukt.",
+        "verificationFailed": "Verificatie mislukt. Token of rechten zijn niet geldig.",
+        "credentialsLoadFailed": "Kon inloggegevens niet laden.",
+        "configurationMissing": "Tripletex-inloggegevens zijn niet geconfigureerd.",
+        "connectionTestFailed": "Verbindingstest mislukt.",
+        "healthLoadFailed": "Kon de verbindingsstatus niet ophalen.",
+        "disconnectFailed": "Kon Tripletex niet loskoppelen.",
+        "invalidState": "De verbinding kan in de huidige toestand niet worden losgekoppeld.",
+        "rotateFailed": "Kon geen webhook-secret genereren.",
+        "webhookSecretRequired": "Er moet eerst een webhook-secret worden gegenereerd.",
+        "webhookSyncFailed": "Kon de webhook niet registreren in Tripletex.",
+        "provisioningNotComplete": "De configuratie is nog niet klaar.",
+        "completeFailed": "Kon de verbinding niet opslaan.",
+        "finalizeFailed": "Kon de verbinding niet voltooien.",
+        "saveFailed": "De actie is mislukt.",
+        "unknown": "Er is iets misgegaan. Probeer opnieuw."
+      }
+    },
+    "registrations": {
+      "page": {
+        "eyebrow": "Leverancier",
+        "heading": "Aanvragen",
+        "subheading": "Bekijk nieuwe bedrijven die een lunchregeling willen, en beoordeel het leveringsgebied, de contactgegevens en het gewenste contract voordat je ze behandelt."
+      },
+      "table": {
+        "company": "Bedrijf",
+        "area": "Gebied",
+        "contact": "Contact",
+        "employees": "Medewerkers",
+        "received": "Ontvangen",
+        "status": "Status"
+      },
+      "status": {
+        "pending": "In behandeling",
+        "approved": "Goedgekeurd",
+        "rejected": "Afgewezen",
+        "other": "Overig"
+      },
+      "summary": {
+        "none": "Niets in behandeling",
+        "one": "1 in behandeling",
+        "many": "{count} in behandeling"
+      },
+      "actions": {
+        "review": "Beoordelen"
+      },
+      "empty": {
+        "title": "Geen aanvragen in behandeling",
+        "text": "Nieuwe bedrijfsaanvragen verschijnen hier zodra ze passen bij jouw dekkingsgebied.",
+        "steps": {
+          "reviewRequest": "Controleer het leveringsadres, de contactgegevens en de gewenste lunchregeling zodra een aanvraag binnenkomt.",
+          "approvedFlow": "Goedgekeurde bedrijven gaan door naar de klant- en contractflow.",
+          "rejectedFlow": "Afgewezen aanvragen worden gecontroleerd afgehandeld met een duidelijke status."
+        }
+      },
+      "dialogs": {
+        "closeAria": "Sluiten",
+        "approveTitle": "Registratie goedkeuren",
+        "rejectTitle": "Registratie afwijzen",
+        "contactLabel": "Contact",
+        "phoneLabel": "Telefoon",
+        "employeesLabel": "Medewerkers (ca.)",
+        "tierLabel": "Contractniveau",
+        "rejectReasonLabel": "Motivatie",
+        "rejectInstead": "Toch afwijzen",
+        "approveInstead": "Toch goedkeuren",
+        "cancel": "Annuleren",
+        "approve": "Goedkeuren",
+        "reject": "Afwijzen",
+        "saving": "Behandelen…"
+      },
+      "errors": {
+        "notAuthenticated": "Niet ingelogd.",
+        "providerAdminRequired": "Alleen een leveranciersbeheerder kan deze actie uitvoeren.",
+        "registrationNotFound": "Registratie niet gevonden.",
+        "registrationAlreadyProcessed": "De registratie is al behandeld.",
+        "invalidTier": "Ongeldig contractniveau.",
+        "rejectReasonRequired": "Geef een korte motivatie.",
+        "approveFailed": "Kon de registratie niet goedkeuren.",
+        "rejectFailed": "Kon de registratie niet afwijzen.",
+        "actionFailed": "De actie is mislukt.",
+        "unknown": "Er is iets misgegaan."
+      }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Alleen weergave",
+        "readOnlyLead": "Je hebt geen toegang om het menu te bewerken. Neem contact op met de leveranciersbeheerder voor bewerkingstoegang.",
+        "translationsPromoTitle": "Menuvertalingen",
+        "translationsPromoLead": "Keur vertaalde menuteksten voor medewerkers later goed. Medewerkers zien tot SMART-3 nog steeds de originele tekst.",
+        "translationsPromoCta": "Menuvertalingen openen"
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Menuvertalingen",
+        "lead": "Keur vertaalde menuteksten goed en beheer ze voor {providerName}. Dit heeft nog geen invloed op wat medewerkers zien.",
+        "backToMenu": "Terug naar menu"
+      },
+      "translations": {
+        "introApproved": "Alleen goedgekeurde vertalingen worden aan medewerkers getoond. Concepten, suggesties en afgewezen rijen worden nooit aan medewerkers getoond.",
+        "introPartialCoverage": "Gedeeltelijke dekking is normaal. Bij ontbrekende of verouderde hash wordt teruggevallen op de originele tekst van de leverancier — dit wijzigt geen bestelsleutels, pakket of prijs voor medewerkers.",
+        "introSourceRefs": "Bronreferenties: maaltijd = item.key, categorie = categorie-slug (bijv. paasmurt, salat), allergeen = genormaliseerd token.",
+        "introSources": "Bronnen komen uit de catalogus en het actieve menuvenster (gepubliceerde menuDay-rijen). Warm-gerecht/menu_day-bronnen worden getoond wanneer ze in het actieve menuvenster staan.",
+        "coverageTitle": "Dekking per taal",
+        "loadingSources": "Bronnen laden…",
+        "noSources": "Nog geen bronnen gevonden in de catalogus.",
+        "coverageTable": {
+          "locale": "Taal",
+          "coverage": "Dekking",
+          "employeeVisible": "Goedgekeurd zichtbaar",
+          "missing": "Ontbreekt",
+          "draft": "Concept",
+          "stale": "Verouderd"
+        },
+        "missingTitle": "Bronnen zonder goedgekeurde vertaling",
+        "missingCount": "{count} bronnen missen een rij in minstens één doeltaal.",
+        "createDraftFromSource": "Concept aanmaken",
+        "staleWarning": "{count} bronnen hebben een hash-afwijking — medewerkers zien de originele tekst tot de rij opnieuw is goedgekeurd.",
+        "filters": {
+          "locale": "Taal",
+          "status": "Status",
+          "all": "Alle"
+        },
+        "status": {
+          "missing": "Ontbreekt",
+          "draft": "Concept",
+          "suggested": "Suggestie",
+          "approved": "Goedgekeurd",
+          "rejected": "Afgewezen",
+          "stale": "Verouderd"
+        },
+        "createTitle": "Nieuwe vertaalrij",
+        "createLead": "Maak een handmatige rij aan met bronreferentie en originele tekst, of gebruik «Concept aanmaken» uit de bronlijst hierboven.",
+        "form": {
+          "sourceKind": "Bron",
+          "field": "Veld",
+          "locale": "Taal",
+          "sourceRef": "Bronreferentie",
+          "sourceRefPlaceholder": "item.key, categorie-slug of allergeen-token",
+          "originalText": "Originele tekst",
+          "translatedTextOptional": "Vertaalde tekst (optioneel)"
+        },
+        "saveDraft": "Concept opslaan",
+        "listTitle": "Vertalingen",
+        "loading": "Laden…",
+        "emptyList": "Nog geen vertaalrijen. Maak handmatig een rij aan, of wacht tot import vanuit menubronnen beschikbaar is.",
+        "listTable": {
+          "source": "Bron",
+          "field": "Veld",
+          "locale": "Taal",
+          "original": "Origineel",
+          "translated": "Vertaald",
+          "status": "Status",
+          "updated": "Bijgewerkt",
+          "actions": "Actie"
+        },
+        "hashMismatch": "Hash wijkt af — markeer indien nodig als verouderd",
+        "approve": "Goedkeuren",
+        "reject": "Afwijzen",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Kon de vertalingen niet ophalen.",
+          "updateFailed": "Kon de vertaling niet bijwerken.",
+          "createFailed": "Kon de vertaling niet aanmaken."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Om medewerkers te laten bestellen moet het bedrijf een actief contract hebben en moet het menu zijn gepubliceerd.",
+        "date": "Datum",
+        "plan": "Plan",
+        "category": "Categorie",
+        "mealTitle": "Naam van het gerecht",
+        "description": "Beschrijving",
+        "allergens": "Allergenen (optioneel, kommagescheiden)",
+        "allergensPlaceholder": "Bijv. melk, tarwe",
+        "savingDraft": "Opslaan…",
+        "saveDraft": "Concept opslaan",
+        "publishing": "Publiceren…",
+        "publishMenu": "Menu publiceren"
+      },
+      "header": {
+        "eyebrow": "Menu-editor",
+        "lead": "Plan de week, stel het gezamenlijke warme gerecht van de dag in en publiceer het voor bestellingen.",
+        "prevWeek": "← Vorige",
+        "nextWeek": "Volgende →",
+        "weekFrom": "Week vanaf {date}",
+        "weekTitle": "Week {week} · {year}",
+        "weekNavAria": "Weeknavigatie",
+        "tierTabsAria": "Menupakketten",
+        "priceLineAria": "Tarief-prijs en productieregel",
+        "workspaceAria": "Werkruimte",
+        "sharedWarmMealRule": "Het warme gerecht is gezamenlijk voor alle drie de niveaus."
+      },
+      "tabs": {
+        "weekPlan": "Weekplan",
+        "catalog": "Vaste keuzes"
+      },
+      "status": {
+        "ariaLabel": "Weekstatus",
+        "readyAllGenerated": "De week is klaar — warm gerecht gegenereerd voor alle {days} dagen",
+        "daysMissingVarmrett": "{count, plural, one {# dag mist een warm gerecht} other {# dagen missen een warm gerecht}}",
+        "daysWithVarmrett": "{filled} van {total} dagen met een warm gerecht",
+        "autoRolloutMeta": "Wordt automatisch gepubliceerd op donderdag om 08:00 · medewerkers zien de week om 14:00",
+        "fillMissingMeta": "Vul ontbrekende warme gerechten in voordat de week kan worden gepubliceerd",
+        "autoRolloutChip": "Auto-uitrol actief",
+        "daysPublished": "{count, plural, one {# dag gepubliceerd} other {# dagen gepubliceerd}}"
+      },
+      "preview": {
+        "ariaLabel": "Prijsvoorbeeld diagnose",
+        "title": "Prijsvoorbeeld",
+        "subtitle": "Alleen diagnose — wordt niet gebruikt voor bestellingen, marge of publicatie.",
+        "differs": "Wijkt af van de productieprijs",
+        "sourceMarket": "Uit prijsregels",
+        "sourceFallback": "Fallback",
+        "sourceMixed": "Gemengd",
+        "taxEx": "excl. btw",
+        "taxInc": "incl. btw",
+        "amountExSuffix": "excl. btw",
+        "amountIncSuffix": "incl. btw"
+      },
+      "week": {
+        "plannerTitle": "Weekplan",
+        "plannerLead": "Gezamenlijk warm gerecht per dag — een gegenereerde standaard die je kunt overschrijven.",
+        "ariaLabel": "Weekplan",
+        "loadingAria": "Menu laden",
+        "hotMealEyebrow": "Warm gerecht van de dag",
+        "hotMealMissing": "Warm gerecht ontbreekt",
+        "hotMealMissingHint": "Voer het warme gerecht van de dag in voordat deze dag kan worden gepubliceerd.",
+        "hotMealFallback": "Warm gerecht",
+        "enterpriseUpgrade": "Enterprise-upgrade",
+        "badges": {
+          "generated": "Gegenereerd",
+          "fridayTreat": "Vrijdagtraktatie",
+          "overridden": "Overschreven",
+          "hasOrder": "Heeft bestelling"
+        },
+        "actions": {
+          "add": "Invoeren",
+          "viewDay": "Dag bekijken",
+          "editNow": "Nu bewerken",
+          "edit": "Bewerken"
+        },
+        "allergens": {
+          "confirmed": "Allergenen: {list}",
+          "unconfirmed": "Allergenen niet bevestigd — neem contact op met de leverancier",
+          "opensAfterDelivery": "Wordt na levering geopend voor wijziging"
+        },
+        "pins": {
+          "soup": "Soep",
+          "fish": "Vis",
+          "fridayTreat": "Vrijdagtraktatie"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Heeft bestelling · {count} porties",
+          "hasOrderLocked": "Heeft bestelling · vergrendeld"
+        },
+        "costHint": "Kostprijs {amount}"
+      },
+      "weekdays": {
+        "mon": "Maandag",
+        "tue": "Dinsdag",
+        "wed": "Woensdag",
+        "thu": "Donderdag",
+        "fri": "Vrijdag"
+      },
+      "errors": {
+        "loadFailed": "Kon het menu niet laden.",
+        "saveFailed": "Kon het menu niet opslaan.",
+        "copySourceEmpty": "Geen {tier}-menu om te kopiëren voor deze dag/categorie.",
+        "resetVarmrettFailed": "Kon het warme gerecht niet terugzetten.",
+        "generateProfileWeekFailed": "Kon de week niet genereren uit de profielbank.",
+        "publishConfirmRequired": "{warning} Bevestig om toch te publiceren.",
+        "unauthorized": "Niet ingelogd.",
+        "forbidden": "Je hebt geen toegang tot het menu.",
+        "badRequest": "Ongeldig verzoek.",
+        "invalidBody": "Ongeldig verzoek. Controleer alle velden.",
+        "validationFailed": "Validatie mislukt. Controleer de velden en probeer opnieuw.",
+        "publishUnavailable": "Menupublicatie is op dit moment niet beschikbaar.",
+        "orderLocked": "Het menu is vergrendeld vanwege een actieve bestelling.",
+        "publishConfirmGeneric": "Bevestig om toch te publiceren."
+      },
+      "success": {
+        "published": "Menu gepubliceerd.",
+        "draftSaved": "Concept opgeslagen.",
+        "resetVarmrett": "Warm gerecht teruggezet naar gegenereerd.",
+        "profileWeekGenerated": "Warm gerecht gegenereerd voor {count} dag(en) uit de profielbank.",
+        "copiedFromTier": "Gekopieerd van {tier}. Voeg een Enterprise-upgrade toe vóór publicatie."
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise dat Basis/Luxus hergebruikt moet bij publicatie een upgradetype of upgradebeschrijving hebben.",
+          "weakValue": "Enterprise zou een duidelijke meerwaarde moeten hebben ten opzichte van Luxus.",
+          "lowMargin": "Dit Enterprise-gerecht kan een lagere marge geven dan Luxus. Controleer de grondstofkosten."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Gepubliceerd",
+          "draft": "Concept",
+          "fixed": "Vaste keuze",
+          "missing": "Ontbreekt",
+          "suggestion": "Suggestie"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Vaste keuze",
+          "published": "Gepubliceerd",
+          "draft": "Concept",
+          "existing": "Bestaand",
+          "missing_publish": "Publicatie ontbreekt",
+          "missing_warm_dish": "Warm gerecht uit Sanity/bank ontbreekt"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Voer het warme gerecht van {weekdayPossessive} in",
+          "fill_missing_warm_dishes": "Voer ontbrekende warme gerechten in",
+          "check_enterprise_upgrade": "Controleer de Enterprise-upgrade",
+          "publish_week": "Week publiceren",
+          "ready_for_orders": "Klaar voor bestellingen",
+          "preview_week": "Week voorbeeld bekijken"
+        },
+        "weekdaysPossessive": {
+          "mon": "maandag",
+          "tue": "dinsdag",
+          "wed": "woensdag",
+          "thu": "donderdag",
+          "fri": "vrijdag"
+        },
+        "readiness": {
+          "not_ready": "Niet klaar voor publicatie",
+          "has_draft": "Heeft een concept",
+          "ready_for_orders": "Klaar voor bestellingen",
+          "ready_to_publish": "Klaar voor publicatie"
+        },
+        "weekSummary": {
+          "missing": "Ontbrekende dagen",
+          "ready": "Klaar voor publicatie",
+          "published": "Gepubliceerd",
+          "draft": "Concept",
+          "has_draft": "Heeft een concept"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade gepland",
+          "upgrade_missing": "Upgrade ontbreekt"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · gezamenlijk voor alle pakketten",
+          "enterpriseUpgrade": "{weekday} · Enterprise-upgrade"
+        },
+        "allergens": {
+          "none": "Geen allergenen opgegeven",
+          "prefix": "Allergenen: {list}"
+        },
+        "emptyPanel": {
+          "selectDay": "Kies een dag in het weekplan om catalogusopties te bewerken."
+        },
+        "packageCard": {
+          "notSeparateProduction": "Geen apart productiegerecht",
+          "sharedWarmDishHint": "Eén gezamenlijk warm gerecht"
+        }
+      },
+      "price": {
+        "exVatSuffix": "excl. btw",
+        "incVatSuffix": "incl. btw",
+        "exVatShort": "excl",
+        "incVatShort": "incl btw",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Bewerkpaneel",
+        "idle": {
+          "title": "Kies een dag",
+          "leadPanel": "Klik op een dag in het weekplan om het warme gerecht en de catalogus te bewerken.",
+          "leadInspector": "Klik op een warm gerecht of keuze in het weekplan."
+        },
+        "status": {
+          "published": "Gepubliceerd",
+          "draft": "Concept",
+          "notPublished": "Niet gepubliceerd"
+        },
+        "inspector": {
+          "editDay": "{weekday} bewerken",
+          "headerSharedWarmMeal": "Gezamenlijk warm gerecht van de dag",
+          "headerEnterpriseUpgrade": "Enterprise-upgrade op het warme gerecht van de dag",
+          "close": "Sluiten",
+          "fixedChoices": "Vaste keuzes",
+          "fixedChoicesNote": "Cataloggestuurde keuzes — publiceer de categorie voor deze dag.",
+          "allergensPrefix": "Allergenen: {list}",
+          "singleChoice": "Vaste keuze",
+          "singleChoiceNote": "Cataloggestuurd — publiceer de categorie om te activeren.",
+          "content": "Inhoud",
+          "mealNamePlaceholder": "Voer de naam van het gerecht in",
+          "sharedKitchenLead": "Gezamenlijk keukengerecht voor Basis, Luxus en Enterprise op deze dag.",
+          "orderLock": "Heeft bestelling",
+          "employeesOrdered": "{count} medewerkers hebben besteld",
+          "opensAfterServingDay": "Wordt na de serveerdag geopend"
+        },
+        "varmrett": {
+          "ariaLabel": "Warm gerecht bewerken",
+          "title": "Warm gerecht bewerken — {dateLabel}",
+          "scope": "De wijziging geldt voor alle drie de niveaus.",
+          "sharedBadge": "Gezamenlijk · Basis, Luxus, Enterprise",
+          "generatedStamp": "Gegenereerde standaard uit de gerechtenbank. Je kunt bewerken, je eigen versie maken of terugzetten.",
+          "meal": "Gerecht",
+          "description": "Beschrijving",
+          "allergens": "Allergenen",
+          "allergensPlaceholder": "Bijv. melk, tarwe",
+          "rawCost": "Grondstofkosten",
+          "estimatedRawCost": "Geschatte grondstofkosten",
+          "mealName": "Naam van het gerecht",
+          "resetGenerated": "Terugzetten naar gegenereerd",
+          "cancel": "Annuleren",
+          "save": "Warm gerecht opslaan",
+          "saving": "Opslaan…",
+          "todayHotMeal": "Warm gerecht van de dag"
+        },
+        "economy": {
+          "ariaLabel": "Economie",
+          "title": "Economie",
+          "tierPrice": "Tarief-prijs ({tier}, excl. btw)",
+          "rawCost": "− Grondstofkosten",
+          "commission": "− Lunchportalen 5%",
+          "marginPerPortion": "Marge per portie",
+          "enterRawCostHint": "Voer de grondstofkosten in voor de margeberekening.",
+          "priceExVat": "Prijs excl. btw",
+          "estimatedCost": "Geschatte kosten",
+          "contribution": "Dekkingsbijdrage"
+        },
+        "enterprise": {
+          "title": "Enterprise-upgrade",
+          "lead": "Extra waarde – hetzelfde warme gerecht. Geen nieuw productiegerecht.",
+          "todayWarmMeal": "Warm gerecht van de dag",
+          "warmMealMissing": "Het warme gerecht van de dag ontbreekt — voer eerst een warm gerecht in.",
+          "sameWarmMealNote": "Enterprise bouwt voort op hetzelfde warme gerecht – zonder nieuw productiegerecht.",
+          "surcharge": "Meerprijs",
+          "estimatedRawCost": "Gesch. grondstofkosten",
+          "extraContribution": "Extra dekkingsbijdrage",
+          "suggestedTitle": "Voorgestelde Enterprise-upgrade",
+          "useSuggestion": "Suggestie gebruiken",
+          "chooseOther": "Iets anders kiezen",
+          "selectedUpgrade": "Gekozen upgrade",
+          "upgradeSelected": "Upgrade gekozen",
+          "quickChoicesTitle": "Snelle premiumkeuze",
+          "quickChoicesLead": "Extra waarde – hetzelfde warme gerecht",
+          "quickChoicesAria": "Snelle premiumkeuze",
+          "hideManual": "Handmatige bewerking verbergen",
+          "editManual": "Handmatig bewerken",
+          "manualLead": "Geavanceerde bewerking",
+          "buildFromLuxus": "Bouwen vanuit Luxus",
+          "buildFromTier": "Bouwen vanuit {tier}",
+          "basedOn": "Gebaseerd op",
+          "none": "Geen",
+          "upgradeType": "Upgradetype",
+          "chooseType": "Kies een type",
+          "customerExtra": "Wat krijgt de klant extra?",
+          "customerExtraPlaceholder": "Premium eiwit, grotere portie, dessert/fruit…",
+          "confirmPublishDespiteWarning": "Ik bevestig publicatie ondanks de waarschuwing."
+        },
+        "actions": {
+          "saveDraft": "Concept opslaan",
+          "publishDay": "Dag publiceren",
+          "saving": "Opslaan…",
+          "publishing": "Publiceren…"
+        }
+      },
+      "catalog": {
+        "title": "Menucatalogus",
+        "leadAccordion": "De keuzes die je aanbiedt onder elke categorie. De structuur ligt vast — de inhoud beheer je zelf.",
+        "leadView": "Vaste opties voor jouw leverancier — geen weekinhoud.",
+        "ownCatalogTitle": "Je eigen catalogus",
+        "ownCatalogText": "Wijzigingen hebben alleen invloed op jouw menu. Andere leveranciers zien hun eigen catalogus — niemand deelt inhoud met jou.",
+        "isolated": "Geïsoleerd",
+        "tierBadgeAll": "Alle niveaus",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} keuzes",
+        "lockedCount": "{count} vergrendeld",
+        "edit": "Bewerken",
+        "close": "Sluiten",
+        "addChoice": "+ Keuze toevoegen",
+        "addChoiceLegacy": "Keuze toevoegen",
+        "publishHint": "Wijzigingen in de catalogus gelden vanaf de volgende weekpublicatie voor de week-/keukenweergave. Het bestelvenster wordt direct bijgewerkt.",
+        "saveCatalog": "Catalogus opslaan",
+        "cancel": "Annuleren",
+        "saving": "Opslaan…",
+        "legacyTitle": "Je menucatalogus",
+        "legacyLead": "Dit wijzigt alleen de vaste keuzes van jouw leverancier — niet die van andere cateringbedrijven.",
+        "category": "Categorie",
+        "titleField": "Titel",
+        "noEditableCategories": "Geen bewerkbare categorieën voor {tier}.",
+        "editCatalogAria": "Menucatalogus bewerken",
+        "catalogAria": "Menucatalogus",
+        "orderLocked": "Heeft bestelling",
+        "orderSortHint": "De volgorde wordt bepaald door de catalogus",
+        "view": {
+          "sanityBank": "Sanity/bank",
+          "yourCatalog": "Je catalogus"
+        },
+        "item": {
+          "namePlaceholder": "Naam van de keuze",
+          "locked": "Vergrendeld",
+          "vegetarian": "Vegetarisch",
+          "allergensAria": "Allergenen",
+          "remove": "Verwijderen",
+          "removeChoice": "{name} verwijderen",
+          "removeFallback": "keuze"
+        },
+        "messages": {
+          "saveFailed": "Kon de catalogus niet opslaan.",
+          "saved": "Catalogus opgeslagen."
+        }
+      },
+      "workspaceProfile": {
+        "badge": "Menuprofiel (presentatie)",
+        "banner": "De werkruimte toont de structuur van het menuprofiel. Bestaande cataloginhoud en gepubliceerde menu's worden in deze fase niet gewijzigd.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
+      "workspaceFixedCategories": {
+        "title": "Vaste keuzes van het menuprofiel",
+        "description": "Dit toont de vaste keuzes van het menuprofiel. De catalogus en gepubliceerde menu's worden pas bij een latere cutover gewijzigd.",
+        "activeInCurrentCatalog": "Actief in de huidige catalogus",
+        "comingStructureNotOrderActive": "Komende structuur — nog niet actief in bestellingen",
+        "orderRuntimeEnabled": "Bestel-runtime actief",
+        "presentationOnly": "Alleen presentatie",
+        "packagesLabel": "Pakketten",
+        "profileCategoryLabel": "Profielcategorie"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Actief menuprofiel",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Suggesties voor warme gerechten volgen dit profiel. Bestaande inhoud en gepubliceerde dagen worden niet automatisch gewijzigd.",
+        "title": "Profielgebaseerde suggesties voor warme gerechten",
+        "description": "Nieuwe suggesties voor warme gerechten en standaardgeneratie volgen het actieve menuprofiel. Bestaande inhoud en gepubliceerde dagen worden niet automatisch gewijzigd.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggesties",
+        "resolveMeta": "Profielbron: {source}",
+        "bankSuggestionsLabel": "Vijf suggesties uit de profielbank",
+        "generateWeek": "Week genereren uit profielbank",
+        "generating": "Genereren …",
+        "generateHint": "Vult alleen lege, niet-vergrendelde dagen als concept. Leveranciersinhoud en gepubliceerde dagen worden overgeslagen."
+      },
+      "workspaceWarmDishPreview": {
+        "title": "Warme-gerechtenbank voor het menuprofiel",
+        "description": "Dit zijn suggesties op basis van het gekozen menuprofiel. De suggesties worden pas bij een latere cutover in de catalogus, het weekplan of de publicatie opgenomen.",
+        "previewOnly": "Alleen suggestie",
+        "notPublished": "Niet actief in publicatie",
+        "notVisibleToEmployees": "Niet zichtbaar voor medewerkers",
+        "suggestedForProfile": "Suggestie voor profiel",
+        "suggestedTiers": "Pakkettoegang",
+        "allergensLabel": "Voorgestelde allergenen",
+        "tagsLabel": "Voorgestelde tags",
+        "weekdayLabel": "Weekdagsuggestie",
+        "noItems": "Geen suggesties voor warme gerechten voor dit profiel.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "De suggestie is niet gekoppeld aan publicatie of bestellingen.",
+        "weekdays": {
+          "monday": "Maandag",
+          "tuesday": "Dinsdag",
+          "wednesday": "Woensdag",
+          "thursday": "Donderdag",
+          "friday": "Vrijdag"
+        }
+      },
+      "runtimeMappingProposal": {
+        "title": "Runtime mapping-voorstel",
+        "description": "Dit is een schaduwweergave van hoe het menuprofiel kan worden gemapt op de huidige runtime. In deze fase worden geen keuzes opgeslagen, gepubliceerd of aan medewerkers getoond.",
+        "shadowOnly": "Schaduwweergave",
+        "notActiveInSave": "Niet actief bij opslaan",
+        "notActiveInPublish": "Niet actief in publicatie",
+        "notVisibleToEmployees": "Niet zichtbaar voor medewerkers",
+        "existingNoRuntimeMapping": "Bestaande NO-runtime mapping",
+        "notRuntimeSupportedYet": "Nog niet ondersteund door runtime",
+        "categoryMappings": "Categoriemapping",
+        "warmDishMappings": "Warme-gerechtmapping",
+        "summary": "Samenvatting",
+        "mappedCategories": "{count} gemapte categorieën",
+        "unmappedCategories": "{count} niet-gemapte categorieën",
+        "previewOnlyWarmDishes": "{count} warme gerechten alleen als suggestie",
+        "runtimeEnabledCount": "Runtime ingeschakeld: {count}",
+        "canSaveCount": "Kan opslaan: {count}",
+        "canPublishCount": "Kan publiceren: {count}",
+        "canOrderCount": "Kan bestellen: {count}",
+        "warningTitle": "Waarschuwingen",
+        "noItems": "Geen categorieën om te tonen.",
+        "existingNoRuntimeMappingHelp": "De profielcategorie heeft een bestaande NO-runtime mapping, maar de cutover is niet geactiveerd.",
+        "notRuntimeSupportedYetHelp": "De profielcategorie is nog niet gekoppeld aan de huidige runtime.",
+        "presentationOnlyHelp": "Alleen presentatie — geen runtimekoppeling.",
+        "unsupportedMappingHelp": "Geen runtime-mapping beschikbaar voor deze categorie.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Enterprise-upgrade is geen bestelcategorie.",
+        "previewOnly": "Alleen suggestie",
+        "notPublishable": "Niet publiceerbaar",
+        "previewOnlyHelp": "Alleen suggestie — niet gekoppeld aan menu of bestellingen.",
+        "notPublishableHelp": "Niet publiceerbaar in deze fase.",
+        "warnings": {
+          "unmappedCategories": "Een of meer categorieën missen een runtime-mapping.",
+          "previewOnlyWarmDishes": "Suggesties voor warme gerechten zijn alleen suggesties en kunnen niet worden gepubliceerd.",
+          "enterpriseUpgradeNotOrderCategory": "Enterprise-upgrade is geen bestelcategorie.",
+          "nonNoMarketShadowOnly": "Het profiel valt buiten de NO-markt — alle mapping is schaduwweergave."
+        },
+        "draftSave": {
+          "sectionTitle": "Mapping-concept",
+          "statusNotSaved": "Niet opgeslagen",
+          "statusNotSavedHelp": "Deze beoordeling is slechts een voorbeeld en is niet opgeslagen als concept.",
+          "statusDraftSaved": "Concept opgeslagen",
+          "statusDraftSavedHelp": "De beoordeling is opgeslagen als intern concept. Het is niet gepubliceerd en niet zichtbaar voor medewerkers.",
+          "statusReviewed": "Beoordeeld",
+          "statusArchived": "Gearchiveerd",
+          "statusArchivedHelp": "Dit concept is gearchiveerd en niet actief.",
+          "activationWarning": "Dit activeert geen publicatie, bestellingen of menuweergave.",
+          "saveButton": "Beoordeling opslaan als concept",
+          "viewerNoSave": "Opslaan vereist leveranciersbeheerder.",
+          "saveSuccess": "Concept opgeslagen.",
+          "validationError": "Het concept kon niet worden opgeslagen omdat de validatie een onveilige wijziging tegenhield.",
+          "permissionError": "Je hebt geen toegang om mapping-concepten op te slaan.",
+          "genericError": "Het concept kon niet worden opgeslagen. Probeer het later opnieuw."
+        }
+      },
+      "catalogModel": {
+        "title": "Vaste keuzes",
+        "lead": "Dit zijn de vaste opties van de leverancier. Het weekplan gebruikt deze wanneer je lunch publiceert voor concrete dagen.",
+        "fixedChoicesTitle": "Vaste keuzes bewerken",
+        "weekPlanHint": "Wijzigingen gelden vanaf de volgende weekpublicatie. Het warme gerecht van de dag en de Enterprise-upgrade worden gepland in het Weekplan.",
+        "packageMatrix": {
+          "title": "Menupakketten",
+          "basis": {
+            "title": "Basis",
+            "text": "Boterham, Saladebox en het warme gerecht van de dag."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Alles in Basis + Sushi, Poké bowl en Thai."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Hetzelfde warme gerecht van de dag + Enterprise-upgrade in het Weekplan."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis toont de vaste keuzes voor Boterham en Saladebox.",
+          "luxus": "Luxus omvat de Basis-keuzes en de premiumcategorieën Sushi, Poké bowl en Thai.",
+          "enterprise": "Enterprise gebruikt dezelfde vaste catalogus als Luxus. De upgrade wordt toegevoegd aan het warme gerecht van de dag in het Weekplan — niet hier."
+        },
+        "sharedWarmDish": {
+          "title": "Warm gerecht van de dag",
+          "text": "Wordt beheerd in het Weekplan — één gezamenlijk gerecht per dag voor Basis, Luxus en Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Enterprise-upgrade",
+          "text": "Hetzelfde warme gerecht van de dag als Luxus, met een toevoeging/upgrade die per dag in het Weekplan wordt gepland — geen apart warm gerecht."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Extra eiwit + dessert/fruit",
+          "explanation": "Geeft de klant meer waarde zonder een nieuw keukengerecht te maken.",
+          "note": "Extra eiwit en dessert/fruit als premiumtoevoeging aan het warme gerecht van de dag"
+        },
+        "quickChoices": {
+          "protein": {
+            "label": "Extra eiwit",
+            "note": "Extra eiwit bij het warme gerecht van de dag"
+          },
+          "portion": {
+            "label": "Grotere portie",
+            "note": "Grotere portie van het warme gerecht van de dag"
+          },
+          "dessert": {
+            "label": "Dessert/fruit",
+            "note": "Dessert of fruit als premiumtoevoeging"
+          },
+          "topping": {
+            "label": "Premium topping",
+            "note": "Premium topping bij het warme gerecht van de dag"
+          },
+          "side": {
+            "label": "Extra bijgerecht",
+            "note": "Extra bijgerecht bij het warme gerecht van de dag"
+          },
+          "season": {
+            "label": "Seizoensupgrade",
+            "note": "Seizoensgebonden Enterprise-upgrade bij het warme gerecht van de dag"
+          }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Premium eiwit",
+          "EXTRA_SIDE": "Extra bijgerecht",
+          "DESSERT_FRUIT": "Dessert/fruit/snack",
+          "LARGER_PORTION": "Grotere portie",
+          "PREMIUM_LABELING": "Premium etikettering/controle",
+          "PRIORITY_DELIVERY": "Prioritair levertijdvak",
+          "OTHER": "Eigen/anders"
+        },
+        "source": {
+          "basedOnBasis": "Gebaseerd op Basis",
+          "basedOnLuxus": "Gebaseerd op Luxus",
+          "ownEnterprise": "Eigen Enterprise"
+        }
+      }
+    }
+  }
+}

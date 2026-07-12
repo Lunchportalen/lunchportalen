@@ -36,6 +36,7 @@ const PROVIDER_LOCALE_LABELS: Record<string, string> = {
   "fr-FR": "Français",
   "it-IT": "Italiano",
   "fi-FI": "Suomi",
+  "nl-NL": "Nederlands",
   "sv-SE": "Svenska",
 };
 

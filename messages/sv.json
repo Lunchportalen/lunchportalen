@@ -1596,7 +1596,8 @@
           "de-DE": "Tyska",
           "fr-FR": "Franska",
           "es-ES": "Spanska",
-          "it-IT": "Italienska"
+          "it-IT": "Italienska",
+          "nl-NL": "Nederlands"
         },
         "operationsEmailHint": "Används som huvudmottagare för beställningsaviseringar och driftsmeddelanden.",
         "operationsEmailLabel": "Beställnings- och driftsepost",

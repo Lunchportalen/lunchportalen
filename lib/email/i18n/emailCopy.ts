@@ -232,6 +232,25 @@ const INVITE_FI: EmployeeInviteCopy = {
   labels: { company: "Yritys", role: "Rooli", provider: "Toimittaja", location: "Toimipiste", nextStep: "Seuraava vaihe", createAccount: "Luo tili", summary: "Yhteenveto", whatHappensNext: "Näin jatkuu" },
 };
 
+const INVITE_NL: EmployeeInviteCopy = {
+  subject: (c) => named(c, (n) => `Je bent uitgenodigd voor de bedrijfslunch bij ${n}`, "Je bent uitgenodigd voor Lunchportalen"),
+  heroSubtitle: (c) => named(c, (n) => `${n} nodigt je uit om de bedrijfslunch digitaal te bestellen.`, "Je bent uitgenodigd voor Lunchportalen"),
+  statusSub: (c) => named(c, (n) => `Bedrijfslunch bij ${n}`, "Bedrijfslunch in Lunchportalen"),
+  hero: "Welkom bij Lunchportalen",
+  lead: "Maak je medewerkersaccount aan om het weekmenu te bekijken, je lunch te kiezen en je eigen bestellingen te beheren.",
+  statusBadge: "Je bent uitgenodigd",
+  statusLabel: "Medewerkersuitnodiging",
+  roleLabel: "Medewerker",
+  cta: "Medewerkersaccount aanmaken",
+  securityNote: "De link is persoonlijk, tijdelijk geldig en mag niet worden doorgestuurd.",
+  expiryNote: "De link is 72 uur geldig. Als de link is verlopen, kan de beheerder je een nieuwe uitnodiging sturen.",
+  expiredHint: "Als de link is verlopen, kan de beheerder je een nieuwe uitnodiging sturen.",
+  unexpectedNote: "Als je deze uitnodiging niet verwachtte, kun je deze e-mail negeren.",
+  supportNote: "Hulp nodig? Neem contact op met de beheerder in je bedrijf.",
+  nextSteps: ["Maak een wachtwoord aan", "Bekijk het menu van deze week", "Bestel vóór de deadline"],
+  labels: { company: "Bedrijf", role: "Rol", provider: "Leverancier", location: "Locatie", nextStep: "Volgende stap", createAccount: "Account aanmaken", summary: "Samenvatting", whatHappensNext: "Wat gebeurt er nu" },
+};
+
 const EMPLOYEE_INVITE_COPY: Record<AppLocale, EmployeeInviteCopy> = {
   nb: INVITE_NB,
   en: INVITE_EN,
@@ -242,6 +261,7 @@ const EMPLOYEE_INVITE_COPY: Record<AppLocale, EmployeeInviteCopy> = {
   es: INVITE_ES,
   it: INVITE_IT,
   fi: INVITE_FI,
+  nl: INVITE_NL,
 };
 
 /* =========================================================
@@ -320,6 +340,14 @@ const RESET_COPY: Record<AppLocale, PasswordResetCopy> = {
     linkLead: "Valitse uusi salasana alla olevasta linkistä:",
     validityNote: "Linkki on voimassa 30 minuuttia. Jos et pyytänyt tätä, voit jättää viestin huomiotta.",
     signoff: "Ystävällisin terveisin\nLunchportalen",
+  },
+  nl: {
+    subject: "Stel je Lunchportalen-wachtwoord opnieuw in",
+    greeting: "Hallo,",
+    intro: "Je hebt gevraagd om je wachtwoord voor Lunchportalen opnieuw in te stellen.",
+    linkLead: "Gebruik de onderstaande link om een nieuw wachtwoord te kiezen:",
+    validityNote: "De link is 30 minuten geldig. Als je dit niet hebt aangevraagd, kun je deze e-mail negeren.",
+    signoff: "Met vriendelijke groet\nLunchportalen",
   },
 };
 

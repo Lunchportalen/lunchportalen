@@ -37,6 +37,7 @@ const LOCALIZED_TRANSLATIONS_PAGE_TITLE: Record<(typeof APP_LOCALES)[number], st
   fr: "Traductions du menu",
   it: "Traduzioni menu",
   fi: "Menun käännökset",
+  nl: "Menuvertalingen",
   sv: "Menyöversättningar",
 };
 

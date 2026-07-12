@@ -816,7 +816,8 @@
           "de-DE": "German",
           "fr-FR": "French",
           "es-ES": "Spanish",
-          "it-IT": "Italian"
+          "it-IT": "Italian",
+          "nl-NL": "Nederlands"
         },
         "errors": {
           "notAuthenticated": "Not signed in.",

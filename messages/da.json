@@ -1596,7 +1596,8 @@
           "de-DE": "Tysk",
           "fr-FR": "Fransk",
           "es-ES": "Spansk",
-          "it-IT": "Italiensk"
+          "it-IT": "Italiensk",
+          "nl-NL": "Nederlands"
         },
         "operationsEmailHint": "Bruges som hovedmodtager for ordrevarsler og driftsbeskeder.",
         "operationsEmailLabel": "Ordre- og drifts-e-mail",
