@@ -368,6 +368,19 @@
         "lib/audit/auditWrite.ts"
       ]
     },
+    "billing_audit_log": {
+      "used_in": [
+        "lib/billing/stripePaymentWebhook.ts",
+        "lib/billing/stripeProviderCharge.ts",
+        "lib/billing/stripeProviderSetup.ts"
+      ]
+    },
+    "billing_payment_attempts": {
+      "used_in": [
+        "lib/billing/stripePaymentWebhook.ts",
+        "lib/billing/stripeProviderCharge.ts"
+      ]
+    },
     "billing_products": {
       "used_in": [
         "app/api/system/outbox/process/route.ts",
@@ -1287,8 +1300,16 @@
         "scripts/testSocialFlow.ts"
       ]
     },
+    "organization_billing_profiles": {
+      "used_in": [
+        "lib/billing/stripeProviderCharge.ts",
+        "lib/billing/stripeProviderSetup.ts"
+      ]
+    },
     "organizations": {
       "used_in": [
+        "lib/provider-onboarding/createLiveReadAdapters.ts",
+        "lib/provider-onboarding/createLiveWriteAdapters.ts",
         "lib/server/superadmin/executeCompanyRemoval.ts"
       ]
     },
@@ -1313,6 +1334,12 @@
     "page_versions": {
       "used_in": [
         "lib/backoffice/content/pageVersionsRepo.ts"
+      ]
+    },
+    "payment_methods": {
+      "used_in": [
+        "lib/billing/stripeProviderCharge.ts",
+        "lib/billing/stripeProviderSetup.ts"
       ]
     },
     "product_categories": {
@@ -1458,6 +1485,8 @@
         "lib/metrics/collect.ts",
         "lib/notifications/menuWeekOpeningNotify.ts",
         "lib/observability/graphMetrics.ts",
+        "lib/provider-onboarding/createLiveReadAdapters.ts",
+        "lib/provider-onboarding/createLiveWriteAdapters.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
         "lib/providers/providerCustomerCounts.ts",
         "lib/providers/providerOrderEnrichment.ts",
@@ -1477,6 +1506,12 @@
         "scripts/system-test/utils/cleanup.ts"
       ]
     },
+    "provider_commission_invoices": {
+      "used_in": [
+        "lib/billing/stripePaymentWebhook.ts",
+        "lib/billing/stripeProviderCharge.ts"
+      ]
+    },
     "provider_invoices": {
       "used_in": [
         "lib/integrations/tripletex/providerSaasInvoiceSync.ts",
@@ -1489,6 +1524,8 @@
       "used_in": [
         "lib/auth/getAuthContext.ts",
         "lib/auth/provider.ts",
+        "lib/provider-onboarding/createLiveReadAdapters.ts",
+        "lib/provider-onboarding/createLiveWriteAdapters.ts",
         "lib/server/provider/providerCustomerRouteAuth.ts",
         "lib/superadmin/loadPilotControlCenter.ts",
         "scripts/e2e/seed-e2e-provider-kitchen-access.mjs"
@@ -1508,6 +1545,9 @@
     },
     "provider_settings": {
       "used_in": [
+        "lib/menu-publish/msdiLocalizedItemSnapshot.ts",
+        "lib/provider-onboarding/createLiveReadAdapters.ts",
+        "lib/provider-onboarding/createLiveWriteAdapters.ts",
         "lib/providers/loadProviderOperationalSettings.ts",
         "lib/providers/loadProviderSettingsMenuProfile.ts",
         "lib/providers/providerNotificationRecipients.ts",
@@ -1558,6 +1598,8 @@
         "lib/invites/resolveEmployeeInviteContext.ts",
         "lib/menu-publish/resolveMenuDayProvider.ts",
         "lib/menu/providerMenuScope.ts",
+        "lib/provider-onboarding/createLiveReadAdapters.ts",
+        "lib/provider-onboarding/createLiveWriteAdapters.ts",
         "lib/providers/loadProviderBilling.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
         "lib/providers/loadProviderCustomers.ts",
@@ -1569,6 +1611,7 @@
         "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts",
         "lib/server/superadmin/loadSuperadminProviderDetail.ts",
         "lib/server/superadmin/loadSuperadminProviderList.ts",
+        "lib/smart-menu/providerOrderWindowSourceDays.ts",
         "lib/superadmin/loadPilotControlCenter.ts",
         "lib/superadmin/tripletexAdminData.ts"
       ]
@@ -1617,6 +1660,12 @@
         "lib/social/savePost.ts",
         "lib/social/track.ts",
         "scripts/testSocialFlow.ts"
+      ]
+    },
+    "stripe_billing_webhook_events": {
+      "used_in": [
+        "lib/billing/stripePaymentWebhook.ts",
+        "lib/billing/stripeProviderSetup.ts"
       ]
     },
     "superadmin_audit_log": {
