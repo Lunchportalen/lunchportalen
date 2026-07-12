@@ -20,7 +20,8 @@ describe("providerMenuProfileResolver (ADR-019 G3)", () => {
   describe("providerCountryCodeToMarket", () => {
     it("maps ISO country codes to registry markets", () => {
       expect(providerCountryCodeToMarket("IT")).toBe("IT");
-      expect(providerCountryCodeToMarket("gb")).toBe("UK");
+      expect(providerCountryCodeToMarket("gb")).toBe("GB");
+      expect(providerCountryCodeToMarket("UK")).toBe("GB");
       expect(providerCountryCodeToMarket("XX")).toBeNull();
     });
   });

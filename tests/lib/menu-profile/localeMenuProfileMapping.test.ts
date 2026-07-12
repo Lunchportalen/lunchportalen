@@ -12,9 +12,9 @@ import {
 } from "@/lib/menu-profile/localeMenuProfileMapping";
 import { isSupportedMenuProfile } from "@/lib/menu-profile/registry";
 
-describe("localeMenuProfileMapping — all ten app locales", () => {
+describe("localeMenuProfileMapping — all fifteen app locales", () => {
   it("maps each APP_LOCALE to a valid registry menu_profile_id", () => {
-    expect(APP_LOCALE_MENU_PROFILE_MAPPINGS).toHaveLength(10);
+    expect(APP_LOCALE_MENU_PROFILE_MAPPINGS).toHaveLength(15);
 
     for (const mapping of APP_LOCALE_MENU_PROFILE_MAPPINGS) {
       expect(APP_LOCALES).toContain(mapping.appLocale);
@@ -36,9 +36,10 @@ describe("localeMenuProfileMapping — all ten app locales", () => {
     }
   });
 
-  it("resolveMenuProfileIdFromAppLocale covers nb da de en es fr it fi nl sv", () => {
+  it("resolveMenuProfileIdFromAppLocale covers all fifteen base languages", () => {
     const expected: Record<(typeof APP_LOCALES)[number], string> = {
       nb: "norwegian_company_lunch",
+      cs: "czech_office_lunch",
       da: "danish_office_lunch",
       de: "german_business_lunch",
       en: "uk_office_lunch",
@@ -47,7 +48,11 @@ describe("localeMenuProfileMapping — all ten app locales", () => {
       it: "italian_office_lunch",
       fi: "finnish_office_lunch",
       nl: "dutch_office_lunch",
+      pl: "polish_office_lunch",
+      pt: "portuguese_office_lunch",
+      ro: "romanian_office_lunch",
       sv: "swedish_lunch",
+      el: "greek_office_lunch",
     };
 
     for (const appLocale of APP_LOCALES) {
@@ -66,11 +71,11 @@ describe("localeMenuProfileMapping — fallback safety", () => {
     expect(resolveMenuProfileIdFromProviderLocale("")).toBe("norwegian_company_lunch");
   });
 
-  it("UK market stores GB as default_country_code", () => {
-    const uk = resolveMarketMenuProfileFromProviderLocale("en-GB");
-    expect(uk.market).toBe("UK");
-    expect(uk.defaultCountryCode).toBe("GB");
-    expect(uk.menuProfileId).toBe("uk_office_lunch");
+  it("GB market stores GB as default_country_code", () => {
+    const gb = resolveMarketMenuProfileFromProviderLocale("en-GB");
+    expect(gb.market).toBe("GB");
+    expect(gb.defaultCountryCode).toBe("GB");
+    expect(gb.menuProfileId).toBe("uk_office_lunch");
   });
 
   it("existing no-NO provider locale resolves unchanged", () => {

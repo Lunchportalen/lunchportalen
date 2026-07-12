@@ -10,7 +10,9 @@ import {
   PROVIDER_LOCALE_VALUES,
 } from "@/lib/providers/operationalSettingsShared";
 
-const MESSAGE_LOCALES = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it", "nl"] as const;
+const MESSAGE_LOCALES = [
+  "nb", "en", "sv", "da", "fi", "de", "fr", "es", "it", "nl", "pl", "ro", "cs", "pt", "el",
+] as const;
 
 /** Distinctly Norwegian UI strings — excludes shared Scandinavian homographs (e.g. Faktura, Meny). */
 const NORWEGIAN_LEAKAGE = [
@@ -123,26 +125,35 @@ function extractPlaceholders(value: string): string[] {
 }
 
 describe("provider language coverage (pre-merge PR #343)", () => {
-  it("APP_LOCALES contains all 10 supported app languages in stable order", () => {
-    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "nl", "sv"]);
+  it("APP_LOCALES contains all 15 supported app languages in stable order", () => {
+    expect(APP_LOCALES).toEqual([
+      "nb", "cs", "da", "de", "en", "es", "fr", "it", "nl", "pl", "pt", "ro", "fi", "sv", "el",
+    ]);
     expect(getLocaleLabel("it")).toBe("Italiano");
     expect(getLocaleLabel("nl")).toBe("Nederlands");
+    expect(getLocaleLabel("pl")).toBe("Polski");
+    expect(getLocaleLabel("el")).toBe("Ελληνικά");
   });
 
   it("PROVIDER_LOCALE_OPTIONS follows APP_LOCALES order", () => {
     expect(PROVIDER_LOCALE_VALUES).toEqual([
       "nb-NO",
+      "cs-CZ",
       "da-DK",
       "de-DE",
       "en-GB",
       "es-ES",
       "fr-FR",
       "it-IT",
-      "fi-FI",
       "nl-NL",
+      "pl-PL",
+      "pt-PT",
+      "ro-RO",
+      "fi-FI",
       "sv-SE",
+      "el-GR",
     ]);
-    expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(10);
+    expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(15);
   });
 
   it("operational language label clarifies market/menu profile persistence (nb)", async () => {
@@ -185,22 +196,22 @@ describe("provider language coverage (pre-merge PR #343)", () => {
     expect(messages.provider.settings.menuProfile.statusInactive).toMatch(/Menyprofil/i);
   });
 
-  it("profiles.preferred_locale migration includes all 10 app locales (nine-locale + Dutch additive)", () => {
-    const nineLocaleSql = readFileSync(
-      join(process.cwd(), "supabase/migrations/20260726120000_profiles_preferred_locale_nine_locales.sql"),
-      "utf8",
-    );
+  it("profiles.preferred_locale migration includes all 15 app locales (21-country correction additive)", () => {
     const dutchSql = readFileSync(
       join(process.cwd(), "supabase/migrations/20260815120000_profiles_preferred_locale_add_dutch.sql"),
       "utf8",
     );
-    // The additive Dutch migration is the current CHECK; it must list every app locale.
+    const correctionSql = readFileSync(
+      join(process.cwd(), "supabase/migrations/20260817120000_21_country_market_correction.sql"),
+      "utf8",
+    );
+    // The 21-country correction migration is the current CHECK; it must list every app locale.
     for (const locale of APP_LOCALES) {
-      expect(dutchSql, `dutch migration missing '${locale}'`).toContain(`'${locale}'`);
+      expect(correctionSql, `correction migration missing '${locale}'`).toContain(`'${locale}'`);
     }
-    // Historical nine-locale migration still covers the original nine (unchanged).
-    for (const locale of APP_LOCALES.filter((l) => l !== "nl")) {
-      expect(nineLocaleSql).toContain(`'${locale}'`);
+    // Historical Dutch migration still covers the original ten (unchanged).
+    for (const locale of ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it", "nl"]) {
+      expect(dutchSql).toContain(`'${locale}'`);
     }
   });
 
@@ -255,7 +266,7 @@ describe("provider language coverage (pre-merge PR #343)", () => {
   });
 
   it.each(MESSAGE_LOCALES)(
-    "provider.settings.operations.locales has all 9 entries in messages/%s.json merge",
+    "provider.settings.operations.locales has all 15 entries in messages/%s.json merge",
     async (locale) => {
       const messages = (await loadMessagesForLocale(locale)) as {
         provider: { settings: { operations: { locales: Record<string, string> } } };

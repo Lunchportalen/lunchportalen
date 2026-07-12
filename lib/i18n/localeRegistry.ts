@@ -1,10 +1,17 @@
 /** Edge-safe global app locale registry (no server-only imports). */
 
 /**
- * Stable UI locale order: Norsk first, then alphabetical by native display label.
- * Single source of truth for LocaleSwitcher, APP_LOCALES, and provider operational locales.
+ * Stable UI locale order: Norsk first, then alphabetical by native display label
+ * (Greek script sorts last). Single source of truth for LocaleSwitcher, APP_LOCALES,
+ * and provider operational locales.
+ *
+ * 15 base languages — one per language required by the 21 canonical country markets
+ * (see lib/markets/supportedMarkets.ts). Languages are NOT markets: market identity,
+ * currency, tax, tenant and cutoff are never derived from the UI language.
  */
-export const APP_LOCALES = ["nb", "da", "de", "en", "es", "fr", "it", "fi", "nl", "sv"] as const;
+export const APP_LOCALES = [
+  "nb", "cs", "da", "de", "en", "es", "fr", "it", "nl", "pl", "pt", "ro", "fi", "sv", "el",
+] as const;
 
 export type AppLocale = (typeof APP_LOCALES)[number];
 
@@ -15,15 +22,20 @@ export const LOCALE_REGISTRY: Record<
   { label: string; htmlLang: string; intl: string }
 > = {
   nb: { label: "Norsk bokmål", htmlLang: "nb", intl: "nb-NO" },
+  cs: { label: "Čeština", htmlLang: "cs-CZ", intl: "cs-CZ" },
   en: { label: "English", htmlLang: "en-GB", intl: "en-GB" },
   sv: { label: "Svenska", htmlLang: "sv-SE", intl: "sv-SE" },
   da: { label: "Dansk", htmlLang: "da-DK", intl: "da-DK" },
   fi: { label: "Suomi", htmlLang: "fi-FI", intl: "fi-FI" },
   de: { label: "Deutsch", htmlLang: "de-DE", intl: "de-DE" },
+  el: { label: "Ελληνικά", htmlLang: "el-GR", intl: "el-GR" },
   fr: { label: "Français", htmlLang: "fr-FR", intl: "fr-FR" },
   es: { label: "Español", htmlLang: "es-ES", intl: "es-ES" },
   it: { label: "Italiano", htmlLang: "it-IT", intl: "it-IT" },
   nl: { label: "Nederlands", htmlLang: "nl-NL", intl: "nl-NL" },
+  pl: { label: "Polski", htmlLang: "pl-PL", intl: "pl-PL" },
+  pt: { label: "Português", htmlLang: "pt-PT", intl: "pt-PT" },
+  ro: { label: "Română", htmlLang: "ro-RO", intl: "ro-RO" },
 };
 
 export function isAppLocale(value: unknown): value is AppLocale {
@@ -62,8 +74,11 @@ export type SupportedMarketLocale = {
 };
 
 /**
- * Canonical source-only market locale coverage.
+ * Canonical market locale coverage — 24 market locales spanning exactly the
+ * 21 canonical country markets (lib/markets/supportedMarkets.ts).
  *
+ * A market locale is country + language + regional formatting. Multi-language
+ * countries (BE, CH, CA) contribute several locales but count as ONE market.
  * This is BCP47 market/operational locale identity. It does not expand routed
  * UI language bundles (`APP_LOCALES`) and must not drive order, billing, price,
  * publish, SOT, or provider-owned menu identity.
@@ -119,7 +134,7 @@ export const SUPPORTED_MARKET_LOCALES = [
   },
   {
     locale: "en-GB",
-    market: "UK",
+    market: "GB",
     countryCode: "GB",
     nativeLabel: "English",
     norwegianLabel: "Storbritannia / engelsk",
@@ -197,6 +212,18 @@ export const SUPPORTED_MARKET_LOCALES = [
     norwegianLabel: "Canada / engelsk",
     englishLabel: "Canada / English",
     fallbackAppLocale: "en",
+    currency: "CAD",
+    timezone: "provider_required",
+    menuProfileId: "canadian_office_lunch",
+  },
+  {
+    locale: "fr-CA",
+    market: "CA",
+    countryCode: "CA",
+    nativeLabel: "Français",
+    norwegianLabel: "Canada / fransk",
+    englishLabel: "Canada / French",
+    fallbackAppLocale: "fr",
     currency: "CAD",
     timezone: "provider_required",
     menuProfileId: "canadian_office_lunch",
@@ -286,42 +313,73 @@ export const SUPPORTED_MARKET_LOCALES = [
     menuProfileId: "irish_office_lunch",
   },
   {
-    locale: "fr-LU",
-    market: "LU",
-    countryCode: "LU",
-    nativeLabel: "Français",
-    norwegianLabel: "Luxembourg / fransk",
-    englishLabel: "Luxembourg / French",
-    fallbackAppLocale: "fr",
+    locale: "pl-PL",
+    market: "PL",
+    countryCode: "PL",
+    nativeLabel: "Polski",
+    norwegianLabel: "Polen / polsk",
+    englishLabel: "Poland / Polish",
+    fallbackAppLocale: "pl",
+    currency: "PLN",
+    timezone: "Europe/Warsaw",
+    menuProfileId: "polish_office_lunch",
+  },
+  {
+    locale: "ro-RO",
+    market: "RO",
+    countryCode: "RO",
+    nativeLabel: "Română",
+    norwegianLabel: "Romania / rumensk",
+    englishLabel: "Romania / Romanian",
+    fallbackAppLocale: "ro",
+    currency: "RON",
+    timezone: "Europe/Bucharest",
+    menuProfileId: "romanian_office_lunch",
+  },
+  {
+    locale: "cs-CZ",
+    market: "CZ",
+    countryCode: "CZ",
+    nativeLabel: "Čeština",
+    norwegianLabel: "Tsjekkia / tsjekkisk",
+    englishLabel: "Czechia / Czech",
+    fallbackAppLocale: "cs",
+    currency: "CZK",
+    timezone: "Europe/Prague",
+    menuProfileId: "czech_office_lunch",
+  },
+  {
+    locale: "pt-PT",
+    market: "PT",
+    countryCode: "PT",
+    nativeLabel: "Português",
+    norwegianLabel: "Portugal / portugisisk",
+    englishLabel: "Portugal / Portuguese",
+    fallbackAppLocale: "pt",
     currency: "EUR",
-    timezone: "Europe/Luxembourg",
-    menuProfileId: "luxembourg_office_lunch",
+    timezone: "Europe/Lisbon",
+    menuProfileId: "portuguese_office_lunch",
   },
   {
-    locale: "en-AU",
-    market: "AU",
-    countryCode: "AU",
-    nativeLabel: "English",
-    norwegianLabel: "Australia / engelsk",
-    englishLabel: "Australia / English",
-    fallbackAppLocale: "en",
-    currency: "AUD",
-    timezone: "provider_required",
-    menuProfileId: "australian_office_lunch",
-  },
-  {
-    locale: "en-SG",
-    market: "SG",
-    countryCode: "SG",
-    nativeLabel: "English",
-    norwegianLabel: "Singapore / engelsk",
-    englishLabel: "Singapore / English",
-    fallbackAppLocale: "en",
-    currency: "SGD",
-    timezone: "Asia/Singapore",
-    menuProfileId: "singapore_office_lunch",
+    locale: "el-GR",
+    market: "GR",
+    countryCode: "GR",
+    nativeLabel: "Ελληνικά",
+    norwegianLabel: "Hellas / gresk",
+    englishLabel: "Greece / Greek",
+    fallbackAppLocale: "el",
+    currency: "EUR",
+    timezone: "Europe/Athens",
+    menuProfileId: "greek_office_lunch",
   },
 ] as const satisfies readonly SupportedMarketLocale[];
+
+/**
+ * Locales retired from launch scope by the 21-country correction
+ * (docs/21-COUNTRY-MARKET-CORRECTION-PLAN.md). Kept readable for data
+ * transition only — never offered as active markets.
+ */
+export const RETIRED_MARKET_LOCALES = ["fr-LU", "en-AU", "en-SG"] as const;
 
 export type SupportedMarketLocaleCode = (typeof SUPPORTED_MARKET_LOCALES)[number]["locale"];
 

@@ -87,20 +87,29 @@ describe("SMART-1 — menu_content_translations migration", () => {
     }
   });
 
-  it("locale CHECK aligns with APP_LOCALES registry (nine-locale base + Dutch additive)", () => {
+  it("locale CHECK aligns with APP_LOCALES registry (additive migration chain)", () => {
     // Original migration covers the nine base locales.
-    for (const locale of APP_LOCALES.filter((l) => l !== "nl")) {
+    const originalNine = ["nb", "en", "sv", "da", "fi", "de", "fr", "es", "it"];
+    for (const locale of originalNine) {
       expect(sql).toContain(`'${locale}'`);
     }
-    // Dutch is added by the additive migration so the CHECK matches the 10-locale registry.
+    // Dutch additive migration widened to ten.
     const dutchSql = readFileSync(
       resolve(process.cwd(), "supabase/migrations/20260816120000_menu_content_translations_add_dutch.sql"),
       "utf8",
     );
-    for (const locale of APP_LOCALES) {
+    for (const locale of [...originalNine, "nl"]) {
       expect(dutchSql).toContain(`'${locale}'`);
     }
-    expect(APP_LOCALES).toHaveLength(10);
+    // 21-country correction migration owns the current CHECK: all fifteen base languages.
+    const correctionSql = readFileSync(
+      resolve(process.cwd(), "supabase/migrations/20260817120000_21_country_market_correction.sql"),
+      "utf8",
+    );
+    for (const locale of APP_LOCALES) {
+      expect(correctionSql).toContain(`'${locale}'`);
+    }
+    expect(APP_LOCALES).toHaveLength(15);
   });
 
   it("creates provider, locale/status, source_ref, and approved partial indexes", () => {

@@ -152,16 +152,36 @@ describe("lp_company_cutoff_context (market/location timezone cutoff)", () => {
   });
 });
 
-describe("market matrix completeness (21 markets)", () => {
-  dbTest("all 21 markets have language, currency, timezone, VAT, cutoff, invoice language, stripe status and are active", async () => {
+describe("market matrix completeness (21 country markets)", () => {
+  dbTest("active market rows span exactly the 21 canonical countries with complete config", async () => {
     const { rows } = await q(
       `SELECT country_code, locale, default_language, default_currency, default_timezone,
               vat_rate_food, cutoff_local_time, invoice_language, stripe_status, is_active
        FROM public.markets ORDER BY country_code, locale`,
     );
-    expect(rows.length).toBe(21);
 
-    for (const m of rows) {
+    const active = rows.filter((m: { is_active: boolean }) => m.is_active);
+    // 24 market locales (BE, CH, CA carry two each) across 21 unique countries.
+    expect(active.length).toBe(24);
+    const activeCountries = [...new Set(active.map((m: { country_code: string }) => m.country_code))].sort();
+    expect(activeCountries).toEqual([
+      "AT", "BE", "CA", "CH", "CZ", "DE", "DK", "ES", "FI", "FR", "GB",
+      "GR", "IE", "IT", "NL", "NO", "PL", "PT", "RO", "SE", "US",
+    ]);
+
+    // AU/SG/LU are retired from launch scope: rows retained (readable) but inactive.
+    for (const retired of ["AU", "SG", "LU"]) {
+      const rowsFor = rows.filter((m: { country_code: string }) => m.country_code === retired);
+      expect(rowsFor.length, `${retired} rows retained`).toBeGreaterThan(0);
+      expect(rowsFor.every((m: { is_active: boolean }) => !m.is_active), `${retired} inactive`).toBe(true);
+    }
+
+    // Multi-language markets count once: two locale rows, one country.
+    for (const cc of ["BE", "CH", "CA"]) {
+      expect(active.filter((m: { country_code: string }) => m.country_code === cc).length).toBe(2);
+    }
+
+    for (const m of active) {
       const label = `${m.country_code}/${m.locale}`;
       expect(m.default_language, `${label} language`).toBeTruthy();
       expect(m.default_currency, `${label} currency`).toMatch(/^[A-Z]{3}$/);
@@ -172,14 +192,22 @@ describe("market matrix completeness (21 markets)", () => {
       expect(String(m.cutoff_local_time), `${label} cutoff`).toMatch(/^\d{2}:\d{2}/);
       expect(m.invoice_language, `${label} invoice language`).toBeTruthy();
       expect(["not_configured", "test_mode", "configured"]).toContain(m.stripe_status);
-      expect(m.is_active, `${label} is_active`).toBe(true);
+    }
+
+    // Locale rows of the same country share currency (language never changes money).
+    const byCountry = new Map<string, Set<string>>();
+    for (const m of active) {
+      byCountry.set(m.country_code, (byCountry.get(m.country_code) ?? new Set()).add(m.default_currency));
+    }
+    for (const [cc, currencies] of byCountry) {
+      expect(currencies.size, `${cc} single currency`).toBe(1);
     }
 
     // Spot checks: seeded VAT and Stripe status.
-    const no = rows.find((m) => m.country_code === "NO");
+    const no = active.find((m: { country_code: string }) => m.country_code === "NO");
     expect(Number(no.vat_rate_food)).toBe(15);
     expect(no.stripe_status).toBe("configured");
-    const dk = rows.find((m) => m.country_code === "DK");
+    const dk = active.find((m: { country_code: string }) => m.country_code === "DK");
     expect(Number(dk.vat_rate_food)).toBe(25);
   });
 });

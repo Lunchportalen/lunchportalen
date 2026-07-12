@@ -39,6 +39,11 @@ const LOCALIZED_TRANSLATIONS_PAGE_TITLE: Record<(typeof APP_LOCALES)[number], st
   fi: "Menun käännökset",
   nl: "Menuvertalingen",
   sv: "Menyöversättningar",
+  cs: "Překlady menu",
+  pl: "Tłumaczenia menu",
+  pt: "Traduções do menu",
+  ro: "Traduceri de meniu",
+  el: "Μεταφράσεις μενού",
 };
 
 const NON_NORWEGIAN_UI_LOCALES = ["en", "de", "es", "fr", "it", "fi"] as const;

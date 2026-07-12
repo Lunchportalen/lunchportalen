@@ -37,7 +37,7 @@ const SOURCE_ONLY_FLAGS = {
   rolloutAutomationEnabled: false,
 } as const;
 
-export const PHASE_D_PROVIDER_REQUIRED_TIMEZONE_MARKETS = ["US", "CA", "AU"] as const;
+export const PHASE_D_PROVIDER_REQUIRED_TIMEZONE_MARKETS = ["US", "CA"] as const;
 
 export const PHASE_D_RICH_MARKET_TARGETS: readonly PhaseDLocaleTarget[] = [
   {
@@ -158,45 +158,77 @@ export const PHASE_D_RICH_MARKET_TARGETS: readonly PhaseDLocaleTarget[] = [
     ...SOURCE_ONLY_FLAGS,
   },
   {
-    providerName: "Luxembourg Lunch Pilot",
-    slug: "luxembourg-lunch-pilot",
-    locale: "fr-LU",
-    menuProfileId: "luxembourg_office_lunch",
-    countryCode: "LU",
+    providerName: "Polish Lunch Pilot",
+    slug: "polish-lunch-pilot",
+    locale: "pl-PL",
+    menuProfileId: "polish_office_lunch",
+    countryCode: "PL",
+    currency: "PLN",
+    timezoneStrategy: "fixed",
+    timezone: "Europe/Warsaw",
+    rolloutOrder: 10,
+    notes: ["EU VAT/compliance review required before live provider apply."],
+    ...SOURCE_ONLY_FLAGS,
+  },
+  {
+    providerName: "Romanian Lunch Pilot",
+    slug: "romanian-lunch-pilot",
+    locale: "ro-RO",
+    menuProfileId: "romanian_office_lunch",
+    countryCode: "RO",
+    currency: "RON",
+    timezoneStrategy: "fixed",
+    timezone: "Europe/Bucharest",
+    rolloutOrder: 11,
+    notes: ["EU VAT/compliance review required before live provider apply."],
+    ...SOURCE_ONLY_FLAGS,
+  },
+  {
+    providerName: "Czech Lunch Pilot",
+    slug: "czech-lunch-pilot",
+    locale: "cs-CZ",
+    menuProfileId: "czech_office_lunch",
+    countryCode: "CZ",
+    currency: "CZK",
+    timezoneStrategy: "fixed",
+    timezone: "Europe/Prague",
+    rolloutOrder: 12,
+    notes: ["EU VAT/compliance review required before live provider apply."],
+    ...SOURCE_ONLY_FLAGS,
+  },
+  {
+    providerName: "Portuguese Lunch Pilot",
+    slug: "portuguese-lunch-pilot",
+    locale: "pt-PT",
+    menuProfileId: "portuguese_office_lunch",
+    countryCode: "PT",
     currency: "EUR",
     timezoneStrategy: "fixed",
-    timezone: "Europe/Luxembourg",
-    rolloutOrder: 10,
-    notes: ["Small multilingual enterprise market.", "EU VAT/compliance review required."],
+    timezone: "Europe/Lisbon",
+    rolloutOrder: 13,
+    notes: ["EU VAT/compliance review required before live provider apply."],
     ...SOURCE_ONLY_FLAGS,
   },
   {
-    providerName: "Australian Lunch Pilot",
-    slug: "australian-lunch-pilot",
-    locale: "en-AU",
-    menuProfileId: "australian_office_lunch",
-    countryCode: "AU",
-    currency: "AUD",
-    timezoneStrategy: "provider_required",
-    defaultTimezoneForPilot: "Australia/Sydney",
-    rolloutOrder: 11,
-    notes: ["GST assumptions must be verified later.", "Provider timezone must be explicit before apply."],
-    ...SOURCE_ONLY_FLAGS,
-  },
-  {
-    providerName: "Singapore Lunch Pilot",
-    slug: "singapore-lunch-pilot",
-    locale: "en-SG",
-    menuProfileId: "singapore_office_lunch",
-    countryCode: "SG",
-    currency: "SGD",
+    providerName: "Greek Lunch Pilot",
+    slug: "greek-lunch-pilot",
+    locale: "el-GR",
+    menuProfileId: "greek_office_lunch",
+    countryCode: "GR",
+    currency: "EUR",
     timezoneStrategy: "fixed",
-    timezone: "Asia/Singapore",
-    rolloutOrder: 12,
-    notes: ["City-state market.", "High B2B value; verify GST/commercial assumptions before apply."],
+    timezone: "Europe/Athens",
+    rolloutOrder: 14,
+    notes: ["EU VAT/compliance review required before live provider apply."],
     ...SOURCE_ONLY_FLAGS,
   },
 ] as const;
+
+/**
+ * 21-country correction: AU, SG and LU are no longer launch markets and their
+ * Phase D targets were removed (docs/21-COUNTRY-MARKET-CORRECTION-PLAN.md).
+ */
+export const PHASE_D_REMOVED_LOCALES = ["fr-LU", "en-AU", "en-SG"] as const;
 
 export function phaseDTargetForLocale(locale: string): PhaseDLocaleTarget | null {
   const normalized = String(locale ?? "").trim();

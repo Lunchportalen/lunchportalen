@@ -23,21 +23,24 @@ import path from "node:path";
 const ROOT = process.cwd();
 const MESSAGES_DIR = path.join(ROOT, "messages");
 
-// Canonical 21 (kept in sync with lib/i18n/localeRegistry.ts SUPPORTED_MARKET_LOCALES).
+// Canonical market locales of the 21 country markets (kept in sync with
+// lib/i18n/localeRegistry.ts SUPPORTED_MARKET_LOCALES — 24 locales, 21 countries).
 const CANONICAL_LOCALES = [
   "nb-NO", "sv-SE", "da-DK", "fi-FI", "en-GB", "de-DE", "fr-FR", "es-ES", "it-IT",
-  "en-US", "en-CA", "nl-NL", "nl-BE", "fr-BE", "de-AT", "de-CH", "fr-CH", "en-IE",
-  "fr-LU", "en-AU", "en-SG",
+  "en-US", "en-CA", "fr-CA", "nl-NL", "nl-BE", "fr-BE", "de-AT", "de-CH", "fr-CH",
+  "en-IE", "pl-PL", "ro-RO", "cs-CZ", "pt-PT", "el-GR",
 ];
 
 // Market locale → base language (must mirror lib/i18n/marketLocaleRuntime.ts).
 const MARKET_BASE = {
   "nb-NO": "nb", "sv-SE": "sv", "da-DK": "da", "fi-FI": "fi", "en-GB": "en",
   "de-DE": "de", "fr-FR": "fr", "es-ES": "es", "it-IT": "it", "en-US": "en",
-  "en-CA": "en", "nl-NL": "nl", "nl-BE": "nl", "fr-BE": "fr", "de-AT": "de",
-  "de-CH": "de", "fr-CH": "fr", "en-IE": "en", "fr-LU": "fr", "en-AU": "en",
-  "en-SG": "en",
+  "en-CA": "en", "fr-CA": "fr", "nl-NL": "nl", "nl-BE": "nl", "fr-BE": "fr",
+  "de-AT": "de", "de-CH": "de", "fr-CH": "fr", "en-IE": "en", "pl-PL": "pl",
+  "ro-RO": "ro", "cs-CZ": "cs", "pt-PT": "pt", "el-GR": "el",
 };
+
+const EXPECTED_LOCALE_COUNT = CANONICAL_LOCALES.length;
 
 const MOJIBAKE = /\u00C3|\u00E2\u20AC|\u00C2 /;
 const PLACEHOLDER = /\{[a-zA-Z0-9_]+\}/g;
@@ -119,10 +122,19 @@ for (const lang of baseLanguages) {
 
 // Locale resolution completeness
 const resolved = CANONICAL_LOCALES.filter((l) => MARKET_BASE[l]);
-if (resolved.length !== 21) violation(`resolved locales ${resolved.length}/21`);
+if (resolved.length !== EXPECTED_LOCALE_COUNT) {
+  violation(`resolved locales ${resolved.length}/${EXPECTED_LOCALE_COUNT}`);
+}
 
 // Unexpected fallback: a non-English market locale must not bind to English.
-const NON_EN_MARKET_PREFIX = { nl: ["nl-NL", "nl-BE"] };
+const NON_EN_MARKET_PREFIX = {
+  nl: ["nl-NL", "nl-BE"],
+  pl: ["pl-PL"],
+  ro: ["ro-RO"],
+  cs: ["cs-CZ"],
+  pt: ["pt-PT"],
+  el: ["el-GR"],
+};
 for (const [base, locales] of Object.entries(NON_EN_MARKET_PREFIX)) {
   for (const loc of locales) {
     if (MARKET_BASE[loc] !== base) {
@@ -139,10 +151,10 @@ const totalInterp = baseLanguages.reduce((n, l) => n + (catalogStatus[l]?.badInt
 const totalMojibake = baseLanguages.reduce((n, l) => n + (catalogStatus[l]?.mojibake ?? 0), 0);
 const incompleteBases = baseLanguages.filter((l) => !catalogStatus[l]?.complete);
 
-// Market-locale bundle coverage = 21 iff every base language of the 21 is complete.
+// Market-locale bundle coverage: complete iff every base language is complete.
 const marketBundlesComplete = CANONICAL_LOCALES.filter((l) => catalogStatus[MARKET_BASE[l]]?.complete).length;
 
-console.log("== 21-language E2E completeness ==\n");
+console.log("== market-locale language E2E completeness (21 countries) ==\n");
 for (const l of baseLanguages) {
   const s = catalogStatus[l];
   const flag = s.complete ? "OK  " : "GAP ";
@@ -152,16 +164,16 @@ for (const l of baseLanguages) {
 }
 
 console.log("\n---");
-console.log(`Locales expected: 21`);
-console.log(`Runtime locales: ${resolved.length}/21`);
+console.log(`Market locales expected: ${EXPECTED_LOCALE_COUNT} (21 countries)`);
+console.log(`Runtime locales: ${resolved.length}/${EXPECTED_LOCALE_COUNT}`);
 console.log(`Base languages: ${runtimeComplete.length}/${baseLanguages.length}`);
 console.log(`Dutch catalog: ${catalogStatus["nl"]?.complete ? "PASS" : "FAIL"}`);
-console.log(`Runtime bundles: ${marketBundlesComplete}/21`);
+console.log(`Runtime bundles: ${marketBundlesComplete}/${EXPECTED_LOCALE_COUNT}`);
 console.log(`Missing keys: ${totalMissing}`);
 console.log(`Raw key leaks: ${totalRaw}`);
 console.log(`Invalid interpolation: ${totalInterp}`);
 console.log(`Mojibake: ${totalMojibake}`);
-console.log(`SOURCE_ONLY locales: 0 (runtime binding treats all 21 as first-class)`);
+console.log(`SOURCE_ONLY locales: 0 (runtime binding treats all market locales as first-class)`);
 console.log(`Unexpected fallbacks: ${findings.filter((f) => f.includes("unexpected fallback")).length}`);
 console.log(`Incomplete base languages: ${incompleteBases.length === 0 ? "none" : incompleteBases.join(", ")}`);
 
@@ -170,9 +182,12 @@ if (findings.length > 0) {
   for (const f of findings) console.error(`  - ${f}`);
 }
 
-const gatePass = findings.length === 0 && incompleteBases.length === 0 && marketBundlesComplete === 21;
+const gatePass =
+  findings.length === 0 &&
+  incompleteBases.length === 0 &&
+  marketBundlesComplete === EXPECTED_LOCALE_COUNT;
 if (!gatePass) {
-  console.error("\n21-LANGUAGE E2E GATE: FAIL");
+  console.error("\nMARKET-LOCALE LANGUAGE E2E GATE: FAIL");
   process.exit(1);
 }
-console.log("\n21-LANGUAGE E2E GATE: PASS");
+console.log("\nMARKET-LOCALE LANGUAGE E2E GATE: PASS");

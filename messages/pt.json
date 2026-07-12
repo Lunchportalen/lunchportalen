@@ -1,0 +1,1911 @@
+{
+  "common": {
+    "loading": "A carregar …",
+    "save": "Guardar",
+    "language": "Idioma"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Escolher idioma",
+    "current": "Idioma atual: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Painel",
+      "orders": "Pedidos",
+      "customers": "Clientes",
+      "registrations": "Registos",
+      "menu": "Menu",
+      "areas": "Áreas",
+      "invoices": "Faturas",
+      "settings": "Definições",
+      "logout": "Terminar sessão",
+      "logoutPending": "A terminar sessão…",
+      "more": "Mais",
+      "comingSoon": "(brevemente)",
+      "openMenu": "Abrir menu",
+      "closeMenu": "Fechar menu",
+      "providerMenu": "Menu do fornecedor",
+      "sidebarLabel": "Fornecedor",
+      "desktopLabel": "Fornecedor (computador)",
+      "mobileLabel": "Navegação principal (telemóvel)",
+      "roleAdmin": "Administrador",
+      "roleKitchen": "Cozinha",
+      "roleDefault": "Fornecedor"
+    },
+    "dashboard": {
+      "eyebrow": "Fornecedor",
+      "lead": "Visão geral de clientes, acordos e operações.",
+      "kpiSection": "Indicadores principais",
+      "activeCustomers": "Clientes ativos",
+      "activeCustomersFoot": "Empresas com um serviço de almoço ativo",
+      "activeAgreements": "Acordos de cliente ativos",
+      "activeAgreementsFoot": "Acordos de cliente associados a empresas ativas",
+      "activeAgreementsLinkTitle": "Ver clientes empresariais e acordos ativos",
+      "ordersThisWeek": "Pedidos esta semana",
+      "ordersThisWeekFoot": "Pedidos efetuados na semana atual",
+      "revenueLast30Days": "Valor dos pedidos nos últimos 30 dias",
+      "revenueLast30DaysFoot": "Valor total dos pedidos",
+      "followUpSection": "Requer acompanhamento",
+      "followUpAllClearTitle": "Está tudo em ordem",
+      "followUpAllClearText": "Sem itens críticos de acompanhamento neste momento.",
+      "quickActionsSection": "Ações rápidas",
+      "recentActivitySection": "Atividade recente",
+      "activityEmptyTitle": "Ainda não existe atividade relevante.",
+      "activityEmptyText": "Quando os clientes se registarem, os acordos forem aprovados ou chegarem pedidos, aparecerão aqui.",
+      "quickActionOrdersTitle": "Ver as entregas de hoje",
+      "quickActionOrdersText": "Obtenha uma visão geral dos pedidos e da produção para o próximo dia de entrega.",
+      "quickActionCustomersTitle": "Ver clientes",
+      "quickActionCustomersText": "Gerir empresas, acordos e configuração de entrega.",
+      "quickActionMenuTitle": "Menu e publicação",
+      "quickActionMenuTextEnabled": "Gerir o conteúdo do menu apresentado aos clientes.",
+      "quickActionMenuTextDisabled": "Ver o conteúdo do menu e o estado de edição do fornecedor.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "A edição do menu não está ativada",
+          "text": "O conteúdo do menu é atualmente gerido pela Lunchportalen.",
+          "action": "Ver estado do menu"
+        },
+        "noOrdersThisWeek": {
+          "title": "Sem pedidos esta semana",
+          "text": "Volte a verificar quando os clientes começarem a encomendar as próximas entregas.",
+          "action": "Ver pedidos"
+        },
+        "noRevenue30d": {
+          "title": "Sem valor de pedidos nos últimos 30 dias",
+          "text": "Quando chegarem pedidos, o valor total dos pedidos aparecerá aqui.",
+          "action": "Ver faturas"
+        }
+      },
+      "activity": {
+        "registrationReceived": {
+          "title": "Novo registo de cliente recebido",
+          "description": "Uma empresa registou-se e aguarda análise."
+        },
+        "registrationApproved": {
+          "title": "Cliente aprovado",
+          "description": "Um registo de cliente foi aprovado e ativado."
+        },
+        "registrationRejected": {
+          "title": "Registo de cliente rejeitado",
+          "description": "Um registo de cliente foi processado e rejeitado."
+        },
+        "agreementActivated": {
+          "title": "Acordo ativado",
+          "description": "Um acordo de entrega foi ativado."
+        },
+        "agreementUpdated": {
+          "title": "Acordo atualizado",
+          "description": "Um acordo de entrega foi alterado."
+        },
+        "invoiceGenerated": {
+          "title": "Base de faturação gerada",
+          "description": "Uma nova base de faturação está pronta para análise."
+        },
+        "orderReceived": {
+          "title": "Pedido recebido",
+          "description": "Um novo pedido foi registado."
+        },
+        "orderCancelled": {
+          "title": "Pedido cancelado",
+          "description": "Um pedido foi cancelado."
+        },
+        "menuPublished": {
+          "title": "Menu publicado",
+          "description": "O conteúdo do menu foi publicado e está visível para os clientes."
+        },
+        "settingsUpdated": {
+          "title": "Definições atualizadas",
+          "description": "As definições do fornecedor foram alteradas."
+        }
+      }
+    },
+    "orders": {
+      "page": {
+        "eyebrow": "Pedidos e produção",
+        "heading": "Pedidos"
+      },
+      "filters": {
+        "dateGroupAria": "Período",
+        "statusGroupAria": "Estado",
+        "groupingAria": "Agrupamento",
+        "companyLabel": "Empresa",
+        "companyAll": "Todas as empresas",
+        "companyAria": "Filtrar por empresa",
+        "groupByCompany": "Por empresa",
+        "groupByTime": "Por hora",
+        "date": {
+          "today": "Hoje",
+          "tomorrow": "Amanhã",
+          "week": "Semana completa"
+        },
+        "status": {
+          "all": "Todos",
+          "received": "Recebido",
+          "production": "Em produção",
+          "ready": "Pronto",
+          "delivered": "Entregue"
+        }
+      },
+      "status": {
+        "received": "Recebido",
+        "inProduction": "Em produção",
+        "readyForDelivery": "Pronto para entrega",
+        "delivered": "Entregue",
+        "paused": "Em pausa",
+        "cancelled": "Cancelado",
+        "other": "Outro"
+      },
+      "actions": {
+        "startProduction": "Iniciar produção",
+        "readyForDelivery": "Pronto para entrega",
+        "markDelivered": "Marcar como entregue",
+        "saving": "A guardar…"
+      },
+      "empty": {
+        "title": {
+          "today": "Sem pedidos para hoje",
+          "tomorrow": "Sem pedidos para amanhã",
+          "week": "Sem pedidos esta semana",
+          "filtered": "Sem pedidos com o estado selecionado"
+        },
+        "text": {
+          "default": "Não existem pedidos ativos para o período selecionado.",
+          "filtered": "Não existem pedidos com o estado selecionado neste período. Selecione «Todos» para ver todos os pedidos do período."
+        },
+        "steps": {
+          "checkMenu": "Verifique se o menu está publicado para os dias relevantes.",
+          "checkWeek": "Veja a semana completa se quiser rever as próximas entregas.",
+          "ordersAppear": "Os novos pedidos aparecem aqui como base de produção à medida que chegam."
+        }
+      },
+      "card": {
+        "deliveryGroupPrefix": "Entrega",
+        "noLines": "Nenhuma linha de pedido registada",
+        "lineQuantity": "{quantity} un. · {displayLine}",
+        "allergensPrefix": "Alergénios: {list}",
+        "noteLabel": "Nota:",
+        "readOnlyNote": "Apenas visualização — tem acesso de leitura aos pedidos."
+      },
+      "fallbacks": {
+        "unknownProfile": "Desconhecido",
+        "unknownProduct": "Prato"
+      },
+      "errors": {
+        "notAuthenticated": "Sessão não iniciada.",
+        "orderNotFound": "Pedido não encontrado.",
+        "kitchenRoleRequired": "Apenas perfis de cozinha podem atualizar o estado.",
+        "updateFailed": "Não foi possível atualizar o estado.",
+        "unknown": "Ocorreu um erro."
+      }
+    },
+    "customers": {
+      "page": {
+        "eyebrow": "Fornecedor",
+        "heading": "Empresas",
+        "leadWithProvider": "Gerir clientes empresariais, acordos e configuração de entrega para {providerName}.",
+        "leadDefault": "Gerir clientes empresariais, acordos e configuração de entrega."
+      },
+      "filters": {
+        "searchLabel": "Pesquisar",
+        "searchPlaceholder": "Pesquisar por nome da empresa",
+        "statusGroupAria": "Filtro de estado",
+        "all": "Todos",
+        "active": "Ativo",
+        "paused": "Em pausa",
+        "suspended": "Suspenso",
+        "deleted": "Eliminado"
+      },
+      "status": {
+        "active": "Ativo",
+        "paused": "Em pausa",
+        "suspended": "Suspenso",
+        "deleted": "Eliminado"
+      },
+      "table": {
+        "name": "Empresa",
+        "orgnr": "N.º de registo",
+        "status": "Estado",
+        "employees": "Colaboradores",
+        "ordersThisWeek": "Pedidos esta semana",
+        "historicalOrders": "Histórico",
+        "invoice": "Fatura",
+        "lastUpdated": "Última atualização",
+        "actions": "Ações"
+      },
+      "actions": {
+        "newCustomer": "Novo cliente empresarial",
+        "newCustomerTitle": "Os novos clientes empresariais chegam através de um registo controlado.",
+        "openCustomer": "Abrir cliente",
+        "removeCustomer": "Remover cliente",
+        "restoreCustomer": "Restaurar cliente"
+      },
+      "empty": {
+        "noResults": {
+          "title": "Sem correspondências",
+          "text": "Experimente outro nome de empresa ou limpe o filtro."
+        },
+        "noStatusMatch": {
+          "title": "Nenhuma empresa com o estado selecionado",
+          "text": "Altere o filtro de estado para ver mais clientes empresariais."
+        },
+        "noneYet": {
+          "title": "Ainda não existem empresas",
+          "text": "Quando os clientes empresariais forem registados e aprovados, aparecem aqui com estado, acordos e base de pedidos."
+        }
+      },
+      "card": {
+        "mobileMeta": "{employees} colaboradores · {orders} pedidos esta semana · {history} no histórico · Fatura: {invoice}",
+        "mobileUpdatedPrefix": "Última atualização",
+        "orgNrPrefix": "N.º de registo: {orgnr}"
+      },
+      "pagination": {
+        "aria": "Paginação",
+        "prev": "Anterior",
+        "next": "Seguinte",
+        "oneCompany": "1 empresa",
+        "companies": "{count} empresas",
+        "page": "Página {current} de {total} ({count} no total)"
+      },
+      "create": {
+        "heading": "Novo cliente empresarial",
+        "lead": "A criação direta de clientes empresariais ainda não está disponível. As novas empresas na sua área de cobertura chegam através de Registos quando manifestam interesse, e aparecem em Empresas após aprovação.",
+        "backToCustomers": "Voltar às empresas"
+      },
+      "billing": {
+        "method": {
+          "email": "Email",
+          "ehf": "EHF",
+          "notSelected": "Não selecionado"
+        },
+        "recipient": {
+          "notSelected": "Não selecionado"
+        },
+        "commissionBase": {
+          "taxEx": "sem IVA",
+          "taxInc": "com IVA",
+          "notAvailable": "Não disponível"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Sessão não iniciada.",
+        "providerAdminRequired": "Apenas administradores do fornecedor podem executar esta ação.",
+        "providerContextMissing": "Não foi encontrada nenhuma associação a fornecedor para o utilizador com sessão iniciada.",
+        "customerNotFound": "Cliente não encontrado.",
+        "invalidCustomer": "Falta o identificador do cliente.",
+        "reasonTooShort": "O motivo deve ter pelo menos 20 caracteres.",
+        "forbidden": "Não tem acesso a este cliente.",
+        "outOfScope": "Este cliente não pertence ao seu fornecedor.",
+        "confirmMismatch": "A confirmação não corresponde.",
+        "hardDeleteBlocked": "Este cliente não pode ser eliminado permanentemente.",
+        "alreadyArchived": "Este cliente já está arquivado.",
+        "alreadyActive": "Este cliente já está ativo.",
+        "protectedSystem": "A organização de sistema não pode ser alterada aqui.",
+        "selfCustomer": "Um fornecedor não pode ser cliente de si próprio.",
+        "validationFailed": "Pedido inválido.",
+        "invalidAgreement": "Os dados do acordo são inválidos.",
+        "invalidPayload": "Não foram fornecidas alterações válidas.",
+        "noActiveAgreement": "A empresa não tem um acordo ativo.",
+        "updateFailed": "Não foi possível atualizar o cliente.",
+        "suspendFailed": "Não foi possível suspender o cliente.",
+        "pauseFailed": "Não foi possível colocar o cliente em pausa.",
+        "removeFailed": "Não foi possível remover o cliente.",
+        "restoreFailed": "Não foi possível restaurar o cliente.",
+        "loadRulesFailed": "Não foi possível carregar as regras de remoção.",
+        "agreementLoadFailed": "Não foi possível carregar o acordo.",
+        "agreementUpdateFailed": "Não foi possível guardar o acordo.",
+        "unknown": "Ocorreu um erro."
+      },
+      "detail": {
+        "eyebrow": "Cliente",
+        "orgnrMissing": "N.º de registo não registado",
+        "contactMissing": "—",
+        "locationMissing": "Morada de entrega não definida",
+        "agreementStatusMissing": "Sem acordo ativo",
+        "billingIncomplete": "Base de faturação incompleta",
+        "vatNotSpecified": "Não especificado",
+        "billingPeriodLabel": "Últimos 30 dias",
+        "grossOnlyNote": "Os valores são apresentados com IVA porque a base de pedidos não tem separação de IVA.",
+        "completeCommissionNote": "A comissão é calculada sobre a receita sem IVA.",
+        "identityTitle": "Informações do cliente",
+        "billingBasisTitle": "Base de faturação",
+        "meta": {
+          "orgnr": "N.º de registo",
+          "invoiceMethod": "Método de faturação",
+          "agreementLevel": "Nível do acordo",
+          "status": "Estado"
+        },
+        "kpis": {
+          "employees": "Colaboradores",
+          "activeOrders": "Pedidos ativos",
+          "orderHistory": "Histórico de pedidos",
+          "revenue30Days": "Receita 30 dias",
+          "commission5": "Comissão 5%"
+        },
+        "actions": {
+          "editAgreement": "Editar acordo",
+          "pause": "Pausar",
+          "suspend": "Suspender",
+          "removeCustomer": "Remover cliente",
+          "restore": "Restaurar",
+          "agreementUpdated": "Acordo atualizado."
+        },
+        "statusBanner": {
+          "suspendedDefault": "O cliente está suspenso.",
+          "pausedDefault": "O cliente está em pausa."
+        },
+        "readOnly": "Tem acesso apenas de leitura. As alterações requerem acesso de administrador.",
+        "labels": {
+          "orgnr": "N.º de registo",
+          "contact": "Contacto",
+          "email": "Email",
+          "phone": "Telefone",
+          "deliveryAddress": "Morada de entrega",
+          "agreementStatus": "Estado do acordo",
+          "period": "Período",
+          "ordersThisMonth": "Base de pedidos",
+          "revenueExVat": "Receita sem IVA",
+          "vat": "IVA",
+          "revenueIncVat": "Receita com IVA",
+          "commissionBase": "Base de comissão",
+          "commission": "Comissão 5%",
+          "commissionRateValue": "5%",
+          "invoiceMethod": "Método de faturação",
+          "invoiceRecipient": "Destinatário da fatura",
+          "billingStatus": "Estado"
+        },
+        "billingStatus": {
+          "ready": "Pronto para base de faturação",
+          "missingVat": "Falta a separação de IVA",
+          "missingRecipient": "Falta o destinatário da fatura",
+          "missingOrders": "Falta a base de pedidos"
+        },
+        "badges": {
+          "oneOrderThisMonth": "1 pedido este mês",
+          "ordersThisMonth": "{count} pedidos este mês",
+          "commissionNotReady": "Comissão não disponível",
+          "commissionAmount": "{amount} de comissão",
+          "oneHistorical": "1 histórico",
+          "historical": "{count} históricos",
+          "ordersSuffix": "pedidos"
+        },
+        "sections": {
+          "employees": "Colaboradores",
+          "orders": "Pedidos",
+          "activity": "Atividade",
+          "employeesEmpty": "Ainda não existem colaboradores registados para este cliente.",
+          "ordersEmpty": "Ainda não existem pedidos registados para este cliente."
+        },
+        "employeesTable": {
+          "name": "Nome",
+          "email": "Email",
+          "role": "Função"
+        }
+      },
+      "agreement": {
+        "sectionTitle": "Acordo",
+        "activeTitle": "Acordo de cliente ativo",
+        "inactiveTitle": "Acordo de cliente",
+        "deliveryDaysWarning": "O acordo inclui dias de entrega fora da entrega regular de almoços.",
+        "multipleActiveWarning": "Existem vários acordos ativos registados para este cliente.",
+        "packageMissing": "Ainda não especificado na vista do acordo",
+        "packageMix": "Misto",
+        "locationMissing": "Morada de entrega não definida",
+        "notSpecified": "Não especificado",
+        "weekdaysRange": "Segunda a sexta-feira",
+        "weekdays": {
+          "mon": "Segunda-feira",
+          "tue": "Terça-feira",
+          "wed": "Quarta-feira",
+          "thu": "Quinta-feira",
+          "fri": "Sexta-feira"
+        },
+        "periodFromTo": "De {from} a {to}",
+        "periodFromOpen": "Desde {from} · Sem data de fim",
+        "createdAt": "Criado em {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusWeekdaysTier": "Segunda a sexta-feira · {tier}",
+        "dayMenusWeekdaysTierLine": "Segunda a sexta-feira: {tier}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "status": {
+          "active": "Ativo",
+          "pending": "Aguarda análise",
+          "paused": "Em pausa",
+          "rejected": "Rejeitado",
+          "closed": "Encerrado",
+          "unknown": "Desconhecido"
+        },
+        "labels": {
+          "status": "Estado",
+          "created": "Criado",
+          "period": "Período do acordo",
+          "deliveryDays": "Dias de entrega",
+          "dayMenus": "Dias de entrega e menu",
+          "location": "Morada de entrega",
+          "package": "Nível do acordo"
+        },
+        "empty": {
+          "title": "Nenhum acordo registado",
+          "text": "Quando um acordo de cliente for aprovado, os dias de entrega, a localização e o conteúdo do acordo aparecem aqui."
+        }
+      },
+      "activity": {
+        "empty": {
+          "title": "Ainda não existe atividade de cliente relevante para mostrar.",
+          "text": "Quando o cliente se registar, fizer pedidos ou for restaurado, aparece aqui."
+        },
+        "events": {
+          "company_registration_submitted": {
+            "title": "Registo de cliente recebido",
+            "summary": "A empresa submeteu um pedido de acordo."
+          },
+          "company_registration_approved": {
+            "title": "Cliente aprovado",
+            "summary": "Registo de cliente aprovado e ativado."
+          },
+          "agreement_activated": {
+            "title": "Acordo ativado",
+            "summary": "Acordo de entrega ativado."
+          },
+          "agreement_updated": {
+            "title": "Acordo atualizado",
+            "summary": "Acordo de entrega alterado."
+          },
+          "order_created": {
+            "title": "Pedido registado",
+            "summary": "Novo pedido registado."
+          },
+          "order_received": {
+            "title": "Pedido registado",
+            "summary": "Novo pedido registado."
+          },
+          "order_canceled": {
+            "title": "Pedido cancelado",
+            "summary": "Um pedido foi cancelado."
+          },
+          "order_cancelled": {
+            "title": "Pedido cancelado",
+            "summary": "Um pedido foi cancelado."
+          },
+          "provider.customer.restore.success": {
+            "title": "Cliente restaurado",
+            "summary": "Relação com o cliente reativada."
+          },
+          "provider.customer.restore.attempt": {
+            "title": "Restauro iniciado",
+            "summary": "Tentativa de restauro do cliente."
+          },
+          "provider.customer.archive.success": {
+            "title": "Cliente arquivado",
+            "summary": "Cliente arquivado junto do fornecedor."
+          },
+          "provider.customer.hard_delete.success": {
+            "title": "Cliente removido",
+            "summary": "Cliente removido da lista do fornecedor."
+          }
+        }
+      },
+      "lifecycle": {
+        "dialog": {
+          "closeAria": "Fechar caixa de diálogo",
+          "reasonLabel": "Motivo",
+          "reasonHint": "{current}/{min} caracteres",
+          "reasonNeedMore": " — são necessários mais caracteres",
+          "cancel": "Cancelar",
+          "working": "A processar…",
+          "suspend": {
+            "title": "Suspender {name}?",
+            "confirm": "Suspender",
+            "description": "Indique um motivo claro (pelo menos 20 caracteres)."
+          },
+          "pause": {
+            "title": "Pausar {name}?",
+            "confirm": "Pausar",
+            "description": "Indique um motivo claro (pelo menos 20 caracteres)."
+          },
+          "delete": {
+            "title": "Eliminar {name}?",
+            "confirm": "Eliminar",
+            "description": "Isto elimina o cliente de forma reversível. Os pedidos podem ser afetados."
+          },
+          "resume": {
+            "title": "Restaurar {name}?",
+            "confirm": "Restaurar",
+            "description": "O cliente e os pedidos associados são restaurados sempre que possível."
+          }
+        }
+      },
+      "dialogs": {
+        "adminEyebrow": "Administração de clientes",
+        "closeAria": "Fechar",
+        "cancel": "Cancelar",
+        "working": "A processar…",
+        "removal": {
+          "loadingRules": "A carregar regras de remoção…",
+          "loadingDependencies": "A carregar dependências…",
+          "hardDeleteTitle": "Eliminar cliente permanentemente",
+          "hardDeleteBlockedTitle": "O cliente não pode ser eliminado permanentemente",
+          "archiveTitle": "Arquivar cliente",
+          "removeTitle": "Remover cliente",
+          "hardDeleteLead": "O cliente não tem histórico operacional e pode ser eliminado permanentemente após confirmação.",
+          "hardDeleteBlockedLead": "Este cliente tem histórico operacional que deve ser preservado.",
+          "chooseModeLead": "Escolha entre arquivar ou eliminar permanentemente o cliente.",
+          "loadRulesFailed": "Não foi possível carregar as regras de remoção.",
+          "loadRulesFailedHttp": "Não foi possível carregar as regras de remoção (HTTP {status}).",
+          "actionFailed": "A ação falhou.",
+          "confirmLabel": "Confirmação",
+          "confirmHint": "(escreva exatamente: {hint})",
+          "reasonOptional": "Motivo (opcional)",
+          "archiveCustomer": "Arquivar cliente",
+          "hardDelete": "Eliminar permanentemente",
+          "archiveAction": "Arquivar cliente"
+        },
+        "restore": {
+          "title": "Restaurar cliente",
+          "lead": "Isto reativa a relação com o cliente sem eliminar o histórico.",
+          "confirmLabel": "Confirmação",
+          "confirmHint": "(escreva exatamente: {hint})",
+          "actionFailed": "Não foi possível restaurar o cliente.",
+          "successDefault": "Cliente restaurado.",
+          "restoreCustomer": "Restaurar cliente"
+        },
+        "agreementEdit": {
+          "title": "Editar acordo de cliente",
+          "loading": "A carregar acordo…",
+          "loadFailed": "Não foi possível carregar o acordo.",
+          "saveFailed": "Não foi possível guardar o acordo.",
+          "save": "Guardar alterações",
+          "saving": "A guardar…",
+          "updated": "Acordo atualizado.",
+          "updatedWithWarnings": "Acordo atualizado. {warnings}",
+          "dayMenusLegend": "Menu por dia de entrega",
+          "dayMenusLead": "Escolha o menu que o cliente tem em cada dia de entrega.",
+          "weekdaysOnlyNote": "Entrega de almoços de segunda a sexta-feira. Fins de semana não suportados.",
+          "locationLegend": "Morada de entrega",
+          "locationName": "Nome da localização",
+          "address": "Morada",
+          "contactLegend": "Pessoa de contacto",
+          "name": "Nome",
+          "email": "Email",
+          "phone": "Telefone",
+          "deliveryWindowLegend": "Janela de entrega",
+          "from": "De",
+          "to": "Até",
+          "billingLegend": "Faturação",
+          "invoiceEmail": "Email",
+          "invoiceEmailField": "Email de faturação",
+          "ehf": "EHF",
+          "orgnr": "Número de registo da empresa",
+          "ehfEndpoint": "Ponto de acesso EHF",
+          "billingContact": "Contacto de faturação",
+          "statusLegend": "Estado",
+          "statusActive": "Ativo",
+          "statusPaused": "Em pausa",
+          "deliveryNote": "Instruções de entrega",
+          "reasonOptional": "Motivo (opcional, guardado no registo de auditoria)",
+          "validation": {
+            "pickDeliveryDay": "Selecione pelo menos um dia de entrega.",
+            "pickMenuForDay": "Selecione o menu para {day}.",
+            "invalidEmail": "Endereço de email inválido.",
+            "invoiceEmailRequired": "O email de faturação deve ser um endereço de email válido.",
+            "ehfEndpointRequired": "O ponto de acesso EHF é obrigatório.",
+            "orgnrLength": "O número de registo da empresa deve ter 9 dígitos.",
+            "invalidBillingEmail": "Email inválido para o contacto de faturação."
+          }
+        }
+      }
+    },
+    "coverage": {
+      "page": {
+        "eyebrow": "Fornecedor",
+        "heading": "Áreas de cobertura",
+        "leadWithProvider": "As áreas de cobertura determinam que empresas podem enviar um pedido a {providerName}. Utilize-as para definir códigos postais, número mínimo de colaboradores e dias de entrega.",
+        "leadNoProvider": "As áreas de cobertura determinam que empresas podem enviar um pedido ao fornecedor. Utilize-as para definir códigos postais, número mínimo de colaboradores e dias de entrega."
+      },
+      "actions": {
+        "newArea": "Nova área de cobertura",
+        "newAreaTitle": "Adicionar uma nova área de cobertura para o fornecedor.",
+        "readOnlyNote": "Tem acesso apenas de leitura. As alterações requerem acesso de administrador.",
+        "edit": "Editar",
+        "activate": "Ativar",
+        "deactivate": "Desativar",
+        "deactivateTitle": "As novas empresas nesta área não podem selecionar o fornecedor enquanto a área estiver desativada. Os acordos existentes não são alterados automaticamente.",
+        "activateTitle": "Voltar a disponibilizar a área para novos pedidos de empresas.",
+        "cancel": "Cancelar",
+        "closeDrawer": "Fechar",
+        "createArea": "Criar área",
+        "saveChanges": "Guardar alterações",
+        "saving": "A guardar…"
+      },
+      "table": {
+        "area": "Área",
+        "postalCodes": "Códigos postais",
+        "minEmployees": "Mín. colaboradores",
+        "deliveryDays": "Dias de entrega",
+        "status": "Estado"
+      },
+      "summary": {
+        "noneActive": "Sem áreas de cobertura ativas",
+        "oneActive": "1 área de cobertura ativa",
+        "manyActive": "{count} áreas de cobertura ativas",
+        "inactiveSuffix": " · {count} inativas"
+      },
+      "status": {
+        "active": "Ativa",
+        "inactive": "Inativa",
+        "paused": "Em pausa",
+        "unknown": "Desconhecido"
+      },
+      "weekdays": {
+        "mon": "Seg",
+        "tue": "Ter",
+        "wed": "Qua",
+        "thu": "Qui",
+        "fri": "Sex",
+        "weekdaysRange": "Segunda a sexta-feira"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesRange": "{min}–{max}",
+        "employeesMin": "{min}+",
+        "employeesMax": "≤{max}"
+      },
+      "empty": {
+        "title": "Ainda não existem áreas de cobertura",
+        "text": "Adicione uma área de cobertura para controlar que empresas podem enviar um pedido ao fornecedor.",
+        "step1": "Defina os códigos postais ou a área.",
+        "step2": "Defina o número mínimo de colaboradores.",
+        "step3": "Selecione os dias de entrega para a área."
+      },
+      "form": {
+        "editTitle": "Editar área",
+        "createTitle": "Adicionar área",
+        "cityLabel": "Cidade / área",
+        "postalFrom": "Código postal de",
+        "postalTo": "Código postal até",
+        "minEmployees": "Mín. colaboradores",
+        "maxEmployees": "Máx. colaboradores (opcional)",
+        "deliveryDaysLegend": "Dias de entrega",
+        "activeToggle": "Área ativa (utilizada na correspondência de registos)"
+      },
+      "errors": {
+        "notAuthenticated": "Sessão não iniciada.",
+        "providerAdminRequired": "Apenas um administrador do fornecedor pode alterar áreas de cobertura.",
+        "forbidden": "Não tem acesso para alterar esta área.",
+        "validationFailed": "Formulário inválido.",
+        "cityRequired": "A cidade é obrigatória.",
+        "invalidPostalFrom": "O código postal inicial deve ter 4 dígitos.",
+        "invalidPostalTo": "O código postal final deve ter 4 dígitos.",
+        "invalidPostalRange": "O código postal inicial não pode ser superior ao final.",
+        "deliveryDaysRequired": "Selecione pelo menos um dia.",
+        "invalidEmployeeRange": "O mínimo de colaboradores não pode ser superior ao máximo.",
+        "invalidPostalCode": "O código postal deve ter 4 dígitos.",
+        "postalRangeInvalid": "O código postal inicial não pode ser superior ao final.",
+        "employeeRangeInvalid": "Intervalo de colaboradores inválido.",
+        "postalOverlap": "O intervalo de códigos postais sobrepõe-se a uma área ativa existente.",
+        "serviceAreaNotFound": "A área não foi encontrada.",
+        "saveFailed": "Não foi possível guardar a área. Tente novamente.",
+        "toggleFailed": "Não foi possível atualizar o estado.",
+        "unknown": "Ocorreu um erro. Tente novamente."
+      }
+    },
+    "settings": {
+      "page": {
+        "eyebrow": "Fornecedor",
+        "heading": "Definições",
+        "leadWithProvider": "Perfil e informações de contacto de {providerName}.",
+        "readOnly": "Tem acesso apenas de leitura. As definições só podem ser alteradas por um administrador.",
+        "brandSection": "Logótipo e marca",
+        "brandIntro": "Carregue um logótipo e escolha uma cor de destaque controlada. A Lunchportalen mantém o layout, a tipografia e a expressão do produto.",
+        "logoHeading": "Logótipo",
+        "logoIntro": "Utilize um logótipo limpo com fundo transparente. O logótipo é apresentado de forma controlada no menu do fornecedor.",
+        "logoNote": "Logótipos que não sigam o padrão visual da plataforma podem ser rejeitados.",
+        "colorHeading": "Cor principal",
+        "colorIntro": "Escolha a cor de destaque do fornecedor. A cor é utilizada apenas em detalhes controlados.",
+        "operationsSection": "Operações e notificações",
+        "operationsIntro": "Introduza os endereços de email que devem receber pedidos, listas de cozinha e notificações de entrega para este fornecedor. Estas definições aplicam-se apenas a esta empresa de catering.",
+        "operationsNote": "A empresa de catering deve introduzir os endereços de email que devem receber pedidos, listas de cozinha e notificações de entrega. Por predefinição, a Lunchportalen não envia os emails operacionais do fornecedor para a plataforma — os emails em falta devem ser preenchidos aqui.",
+        "accountingSection": "Contabilidade",
+        "accountingIntro": "Ligue o Tripletex para faturação automática e estado de pagamento através da integração contabilística norueguesa. Não se trata de uma norma contabilística global.",
+        "tripletexSetup": "Configuração do Tripletex"
+      },
+      "menuProfile": {
+        "heading": "Mercado, moeda e perfil de menu",
+        "flagActive": "Ativado através de feature flag — apenas visualização, ainda sem alterações ao produto.",
+        "statusInactive": "O perfil de menu ainda não controla categorias, publicação nem preços.",
+        "statusLabel": "Estado",
+        "uiVsProfileExplanation": "O idioma da interface traduz a interface. O mercado e o perfil de menu controlam as opções fixas locais, o banco de pratos quentes e a moeda. A ligação completa chega na próxima fase G5.",
+        "profileLabel": "Perfil de menu",
+        "sourceLabel": "Origem",
+        "marketLabel": "Mercado",
+        "localeLabel": "Localização",
+        "currencyLabel": "Moeda",
+        "readOnlyNote": "Apenas visualização. O conteúdo do menu, a moeda e os preços não são alterados aqui.",
+        "invalidProfile": "Perfil de menu inválido nas definições: {message}",
+        "sourceProviderSetting": "Definição do fornecedor",
+        "sourceMarketDefault": "Predefinição do mercado",
+        "sourceFallbackNoMarket": "Alternativa (perfil/mercado em falta)",
+        "sourceLegacyDisabled": "Legado (desativado)",
+        "sourceUnknown": "Desconhecida",
+        "marketNames": {
+          "NO": "Noruega",
+          "SE": "Suécia",
+          "DK": "Dinamarca",
+          "FI": "Finlândia",
+          "DE": "Alemanha",
+          "FR": "França",
+          "ES": "Espanha",
+          "UK": "Reino Unido",
+          "IT": "Itália"
+        }
+      },
+      "profile": {
+        "leadWithProvider": "Perfil de {providerName}",
+        "nameLabel": "Nome",
+        "emailLabel": "Email de contacto",
+        "phoneLabel": "Telefone de contacto",
+        "save": "Guardar definições",
+        "saving": "A guardar…",
+        "saved": "Definições guardadas.",
+        "errors": {
+          "notAuthenticated": "Sessão não iniciada.",
+          "providerNotFound": "Fornecedor em falta.",
+          "forbidden": "Sem acesso.",
+          "nameRequired": "O nome é obrigatório.",
+          "emailRequired": "É necessário um email válido.",
+          "saveFailed": "Não foi possível guardar as definições.",
+          "unknown": "Erro inesperado ao guardar."
+        }
+      },
+      "operations": {
+        "operationsEmailLabel": "Email de pedidos e operações",
+        "operationsEmailHint": "Utilizado como destinatário principal de alertas de pedidos e mensagens operacionais.",
+        "kitchenEmailLabel": "Email da cozinha",
+        "kitchenEmailHint": "Utilizado para a base de produção e alertas de cozinha.",
+        "deliveryEmailLabel": "Email de entregas",
+        "deliveryEmailHint": "Utilizado para alertas e mensagens relacionados com entregas quando os pedidos estão prontos para entrega.",
+        "localeLabel": "Mercado e idioma de administração",
+        "localeHint": "Controla o mercado e o perfil de menu guardados para esta empresa de catering. Não afeta a janela de pedidos dos colaboradores até à próxima fase.",
+        "uiLocaleSeparation": "O idioma da barra lateral altera apenas o texto da interface. O mercado e o perfil de menu são guardados aqui nas definições operacionais.",
+        "marketProfileLabel": "Perfil de menu ativo",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Ainda não existe um perfil de menu guardado — é selecionado automaticamente quando guardar o mercado.",
+        "marketChangeImpact": "Alterar o mercado afeta as futuras sugestões de menu e os pratos gerados.",
+        "marketChangeCatalogPreserved": "O catálogo existente e os pedidos publicados não são substituídos.",
+        "marketChangeResetRequired": "Construir um novo catálogo a partir de um perfil de mercado requer uma reposição separada.",
+        "marketChangeEmployeeRuntime": "Os colaboradores receberão o perfil de menu do fornecedor quando o runtime for ativado na próxima fase.",
+        "save": "Guardar definições operacionais",
+        "saving": "A guardar…",
+        "saved": "Definições operacionais guardadas.",
+        "locales": {
+          "nb-NO": "Norueguês (bokmål)",
+          "cs-CZ": "Čeština",
+          "da-DK": "Dinamarquês",
+          "de-DE": "Alemão",
+          "en-GB": "Inglês",
+          "es-ES": "Espanhol",
+          "fr-FR": "Francês",
+          "it-IT": "Italiano",
+          "nl-NL": "Neerlandês",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Finlandês",
+          "sv-SE": "Sueco",
+          "el-GR": "Ελληνικά"
+        },
+        "errors": {
+          "notAuthenticated": "Sessão não iniciada.",
+          "providerNotFound": "Fornecedor em falta.",
+          "forbidden": "Sem acesso.",
+          "invalidEmail": "Endereço de email inválido.",
+          "emailTooLong": "O endereço de email é demasiado longo.",
+          "invalidLocale": "Seleção de idioma inválida.",
+          "saveFailed": "Não é possível guardar as definições operacionais neste momento.",
+          "unknown": "Não é possível guardar as definições operacionais neste momento."
+        }
+      },
+      "logo": {
+        "hint": "Recomendado: logótipo PNG ou WebP com fundo transparente. Máx. 2 MB. Não utilize fotografias de comida, banners, capturas de ecrã, gráficos publicitários nem logótipos sobre fundos coloridos ou carregados.",
+        "upload": "Carregar logótipo",
+        "replace": "Substituir logótipo",
+        "remove": "Remover logótipo",
+        "pickFile": "Escolher ficheiro do logótipo",
+        "altWithProvider": "Logótipo de {providerName}",
+        "uploading": "A carregar…",
+        "removing": "A remover…",
+        "updated": "Logótipo atualizado.",
+        "removed": "Logótipo removido.",
+        "errors": {
+          "notAuthenticated": "Sessão não iniciada.",
+          "invalidProvider": "Fornecedor inválido.",
+          "forbidden": "Sem acesso.",
+          "noFileSelected": "Escolha um ficheiro de logótipo.",
+          "unsupportedFileType": "O logótipo deve ser PNG ou WebP. Prefira um logótipo com fundo transparente.",
+          "fileTooLarge": "O logótipo é demasiado grande. O tamanho máximo é 2 MB.",
+          "uploadUnavailable": "O carregamento não está disponível neste momento.",
+          "uploadFailed": "Não foi possível carregar o logótipo.",
+          "removeFailed": "Não foi possível remover o logótipo.",
+          "saveFailed": "Não foi possível guardar o logótipo.",
+          "urlFailed": "Não foi possível resolver o URL do logótipo.",
+          "unknown": "Erro inesperado durante o carregamento."
+        }
+      },
+      "brand": {
+        "hexLabel": "Código HEX",
+        "save": "Guardar cor",
+        "saving": "A guardar…",
+        "sampleHint": "Como a cor é utilizada: como pequeno destaque no menu e nos detalhes.",
+        "formatHint": "Utilize o formato HEX, por exemplo #F5C518. Se o contraste for fraco, é utilizada a cor predefinida.",
+        "saved": "Cor guardada.",
+        "restoredDefault": "Cor predefinida reposta.",
+        "errors": {
+          "notAuthenticated": "Sessão não iniciada.",
+          "invalidProvider": "Fornecedor inválido.",
+          "forbidden": "Sem acesso.",
+          "invalidHex": "Utilize o formato HEX, por exemplo #F5C518.",
+          "contrastTooWeak": "A cor tem contraste insuficiente e não pode ser utilizada. Escolha uma cor mais escura.",
+          "saveFailed": "Não foi possível guardar a cor.",
+          "unknown": "Erro inesperado ao guardar."
+        }
+      }
+    },
+    "banner": {
+      "paused": {
+        "title": "O fornecedor está em pausa",
+        "defaultReason": "Pausa temporária"
+      },
+      "suspended": {
+        "title": "O fornecedor está suspenso",
+        "defaultReason": "Suspenso"
+      },
+      "contactPrefix": "Contacte",
+      "contactSuffix": "para resolver."
+    },
+    "billing": {
+      "page": {
+        "eyebrow": "Fornecedor",
+        "heading": "Faturas e liquidação",
+        "subheading": "Visão geral da base de faturação, comissão e liquidação entre o fornecedor e a Lunchportalen."
+      },
+      "summary": {
+        "settlementStatus": "Estado da liquidação",
+        "commission": "Comissão",
+        "nextSettlement": "Próxima liquidação",
+        "activateHint": "Contacte a Lunchportalen para ativar.",
+        "commissionPending": "Apresentado quando a liquidação for ativada",
+        "nextSettlementNone": "Não agendada"
+      },
+      "notActivated": {
+        "title": "A liquidação não está ativada",
+        "text": "A liquidação ainda não está ativada para este fornecedor. Contacte a Lunchportalen para ativar o acordo de liquidação e a base de faturação."
+      },
+      "commissionNote": "A Lunchportalen calcula 5% de comissão por porção vendida quando a liquidação está ativada.",
+      "agreement": {
+        "activeEyebrow": "Acordo de liquidação ativo",
+        "netPerMonth": "Líquido / mês",
+        "vatLabel": "IVA ({rate}%)",
+        "totalPerMonth": "Total / mês",
+        "invoiceSentTo": "Fatura enviada para",
+        "orgNrSuffix": " · n.º de registo {orgNumber}"
+      },
+      "history": {
+        "title": "Base de faturação e liquidação",
+        "emptyTitle": "Ainda não foi gerada nenhuma base de faturação",
+        "emptyText": "Quando a liquidação for ativada e a base estiver pronta, a base de faturação, a comissão, os montantes, o estado e as datas de vencimento aparecem aqui."
+      },
+      "invoice": {
+        "table": {
+          "period": "Período",
+          "amount": "Montante",
+          "status": "Estado",
+          "dueDate": "Data de vencimento"
+        },
+        "noNumber": "Sem número",
+        "drawerTitle": "Fatura {number}",
+        "net": "Líquido",
+        "vat": "IVA",
+        "total": "Total",
+        "status": "Estado",
+        "sent": "Enviada",
+        "paid": "Paga",
+        "downloadPdfSoon": "Transferir PDF (brevemente)",
+        "downloadPdfIntegrationTitle": "Disponível com o Tripletex"
+      },
+      "status": {
+        "settlement": {
+          "active": "Ativa",
+          "notActivated": "Não ativada"
+        },
+        "invoice": {
+          "DRAFT": "Rascunho",
+          "SENT": "Enviada",
+          "PAID": "Paga",
+          "OVERDUE": "Vencida",
+          "VOID": "Anulada",
+          "unknown": "Desconhecido"
+        }
+      },
+      "plan": {
+        "SAAS_FIXED": "Preço mensal fixo",
+        "SAAS_PER_COMPANY": "Preço por empresa",
+        "CUSTOM": "Acordo personalizado"
+      },
+      "actions": {
+        "details": "Detalhes",
+        "close": "Fechar",
+        "closeDrawer": "Fechar"
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "contact": {
+        "editButton": "Editar contacto de faturação",
+        "title": "Contacto de faturação",
+        "emailLabel": "Email de faturação",
+        "orgLabel": "N.º de registo (opcional)",
+        "addressLabel": "Morada de faturação (opcional)",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "saving": "A guardar…",
+        "saved": "Contacto de faturação atualizado.",
+        "saveFailed": "Não foi possível guardar."
+      },
+      "errors": {
+        "notAuthenticated": "Sessão não iniciada.",
+        "providerAdminRequired": "Apenas um administrador do fornecedor pode alterar o contacto de faturação.",
+        "forbidden": "Não tem acesso.",
+        "invalidEmail": "Email de faturação inválido.",
+        "activeSubscriptionNotFound": "Não existe uma subscrição ativa para atualizar.",
+        "saveFailed": "Não foi possível guardar o contacto de faturação.",
+        "unknown": "Ocorreu um erro. Tente novamente."
+      }
+    },
+    "tripletex": {
+      "brand": "Tripletex",
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "status": {
+          "eyebrow": "Tripletex",
+          "heading": "Estado da ligação",
+          "subheading": "Visão geral da ligação, do webhook e da atividade recente.",
+          "fallbackHeading": "Estado do Tripletex",
+          "noAccess": "Não tem acesso a este fornecedor."
+        },
+        "connect": {
+          "heading": "Ligar o Tripletex",
+          "adminRequired": "Apenas um administrador do fornecedor pode ligar o Tripletex.",
+          "degraded": {
+            "heading": "O Tripletex requer atenção",
+            "body": "A ligação está degradada. O fluxo de reconfiguração chega em TPT-B-7b-edge.",
+            "badge": "Requer atenção"
+          },
+          "disconnected": {
+            "heading": "O Tripletex está desligado",
+            "body": "O fluxo de restauro sem novo token chega em TPT-B-7b-edge.",
+            "badge": "Desligado"
+          }
+        }
+      },
+      "state": {
+        "CONNECTED": "Ligado",
+        "CONFIGURING": "A configurar…",
+        "DEGRADED": "Requer atenção",
+        "DISCONNECTED": "Desligado",
+        "NOT_CONNECTED": "Não ligado"
+      },
+      "activity": {
+        "onboarding_connection_started": "Ligação iniciada",
+        "onboarding_provisioning_completed": "Configuração concluída",
+        "onboarding_customer_skipped": "Cliente ignorado",
+        "onboarding_finalized": "Ligação concluída",
+        "onboarding_disconnected": "Tripletex desligado",
+        "onboarding_reconnect_initiated": "Restauro iniciado",
+        "onboarding_test_token": "Ligação testada",
+        "onboarding_vault_purged": "Credenciais eliminadas",
+        "state_change_connected": "Estado alterado para ligado",
+        "state_change_degraded": "Estado alterado para requer atenção",
+        "state_change_disconnected": "Estado alterado para desligado",
+        "state_change_configuring": "Estado alterado para a configurar",
+        "state_change_generic": "Estado da ligação alterado"
+      },
+      "status": {
+        "sections": {
+          "resources": "Recursos no Tripletex",
+          "webhook": "Webhook",
+          "activity": "Atividade nos últimos 30 dias",
+          "actions": "Ações"
+        },
+        "hero": {
+          "configureWebhook": "Configurar webhook →",
+          "continueSetup": "Continuar configuração →",
+          "reconnect": "Ligar novamente →",
+          "reconfigure": "Reconfigurar →",
+          "since": "Desde {datetime}",
+          "lastHealthCheck": "Última verificação de estado: {relative}",
+          "credentialsPurge": "As credenciais serão eliminadas em {datetime}",
+          "daysUntilPurge": "dentro de {days} dias"
+        },
+        "cards": {
+          "products": "Produtos",
+          "productsMeta": "Produtos de refeição mapeados",
+          "customers": "Clientes",
+          "customersMeta": "Ligações de empresas no Tripletex",
+          "vatCodes": "Códigos de IVA",
+          "vatCodesMeta": "Códigos fiscais únicos em utilização"
+        },
+        "webhook": {
+          "subscriptions": "Subscrições registadas",
+          "activeCount": "{count} ativas no Tripletex",
+          "noneRegistered": "Ainda nenhuma registada",
+          "eventTypes": "Tipos de eventos",
+          "lastReceived": "Último recebido",
+          "noEventsYet": "Ainda sem eventos",
+          "last30Days": "Últimos 30 dias",
+          "eventsCount": "{count} eventos",
+          "secretRotated": "Segredo rodado",
+          "notRotated": "Não rodado",
+          "copy": "Copiar",
+          "copied": "Copiado",
+          "copyFailed": "Não foi possível copiar"
+        },
+        "activityStats": {
+          "invoicesSent": "Faturas enviadas",
+          "invoicesPaid": "Faturas pagas",
+          "workerFailures": "Envios falhados",
+          "webhookEvents": "Webhooks",
+          "recentHeading": "Eventos recentes",
+          "empty": "Ainda não há eventos registados."
+        },
+        "actions": {
+          "adminNote": "Apenas um administrador do fornecedor pode executar estas ações.",
+          "testConnection": "Testar ligação",
+          "rotateSecret": "Rodar segredo do webhook",
+          "disconnect": "Desligar →"
+        },
+        "modals": {
+          "close": "Fechar",
+          "copy": "Copiar",
+          "copied": "Copiado",
+          "copyFailed": "Não foi possível copiar",
+          "ok": "OK",
+          "failed": "Falhou",
+          "test": {
+            "title": "Testar ligação",
+            "body": "Executa a verificação completa em 3 passos contra o Tripletex utilizando as credenciais guardadas.",
+            "stepAuth": "Autenticação",
+            "stepCompany": "Empresa",
+            "stepScope": "Acesso",
+            "run": "Executar teste",
+            "running": "A testar…"
+          },
+          "rotate": {
+            "title": "Rodar segredo do webhook",
+            "body": "Gera um novo segredo e atualiza a subscrição do Tripletex quando a configuração for concluída.",
+            "generate": "Gerar novo segredo",
+            "generating": "A gerar…"
+          },
+          "disconnect": {
+            "title": "Desligar o Tripletex",
+            "body": "A ligação passa ao estado desligado. As credenciais são mantidas durante 30 dias para que possa voltar a ligar sem um novo token. Depois disso, são eliminadas permanentemente.",
+            "confirm": "Confirmar desligamento",
+            "confirming": "A desligar…"
+          }
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Ligar o Tripletex",
+        "leadForProvider": "Para {providerName}",
+        "progress": {
+          "token": "Token",
+          "verify": "Verificar",
+          "setup": "Configuração",
+          "webhook": "Webhook",
+          "done": "Concluído",
+          "ariaLabel": "Passo {current} de {total}: {label}"
+        },
+        "steps": {
+          "token": {
+            "eyebrow": "Passo 1 de 5",
+            "title": "Colar e verificar",
+            "intro": "Gere um Employee Token no Tripletex em Empresa → Acesso API. Cole abaixo o Company ID do URL (contextId) e o token.",
+            "companyIdLabel": "Company ID do Tripletex",
+            "companyIdHelp": "Formato: 6–12 dígitos. Encontre-o no URL: contextId=…",
+            "companyIdInvalid": "O Company ID deve ter 6–12 dígitos.",
+            "tokenLabel": "Employee Token",
+            "tokenHintPending": "O token só é enviado para o servidor durante a verificação e o armazenamento.",
+            "tokenHintVerified": "Token verificado e pronto para armazenamento.",
+            "tokenMissing": "Cole o Employee Token do Tripletex.",
+            "verify": "Verificar",
+            "verifying": "A verificar…",
+            "retry": "Tentar novamente",
+            "continue": "Continuar",
+            "connecting": "A ligar…",
+            "checksFailed": "Uma ou mais verificações falharam. Corrija e tente novamente.",
+            "tokenMissingOnContinue": "Token em falta. Verifique novamente.",
+            "notRun": "Não executado"
+          },
+          "provisioning": {
+            "eyebrow": "Passo 3 de 5",
+            "title": "A configurar o Tripletex",
+            "intro": "Normalmente demora 10–30 segundos.",
+            "starting": "A iniciar a configuração…",
+            "waiting": "A aguardar a configuração do Tripletex…",
+            "complete": "Configuração concluída.",
+            "syncing": "A sincronizar códigos de IVA, produtos e clientes…",
+            "timeout": "Algo demorou mais do que o esperado.",
+            "timeoutHint": "A configuração continua em segundo plano. Pode fechar esta página e voltar mais tarde.",
+            "contactSupport": "Contactar o suporte",
+            "vatSync": "Códigos de IVA em sincronização",
+            "productsCreate": "Produtos a serem criados",
+            "customersSync": "Clientes em sincronização"
+          },
+          "webhook": {
+            "eyebrow": "Passo 4 de 5",
+            "title": "Registo do webhook",
+            "intro": "A Lunchportalen regista automaticamente as subscrições de webhook no Tripletex. Não precisa de colar o URL nem o segredo manualmente.",
+            "preparing": "A preparar o segredo do webhook…",
+            "ready": "Pronto. Clique em «Concluir configuração» para registar o webhook e finalizar a ligação.",
+            "prepareFailed": "Não foi possível preparar o segredo do webhook.",
+            "registering": "A registar o webhook no Tripletex…",
+            "finalize": "Concluir configuração",
+            "finalizing": "A concluir…"
+          },
+          "success": {
+            "eyebrow": "Passo 5 de 5",
+            "title": "✓ O Tripletex está ligado",
+            "companyPrefix": "Empresa:",
+            "canNow": "Pode agora:",
+            "bulletInvoices": "Enviar faturas automaticamente para o Tripletex",
+            "bulletPayments": "Receber o estado de pagamento via webhook",
+            "bulletStatus": "Ver o estado da ligação e o histórico",
+            "viewInvoices": "Ver histórico de faturas",
+            "viewStatus": "Ver estado da ligação",
+            "backToSettings": "Voltar à visão geral"
+          }
+        },
+        "verify": {
+          "auth": "A testar a autenticação",
+          "companyMatch": "A verificar a correspondência do Company ID",
+          "scope": "A testar as permissões",
+          "authOk": "Ligação OK",
+          "companyOk": "Empresa correta",
+          "scopeOk": "Acesso OK"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Sessão não iniciada.",
+        "providerAdminRequired": "Apenas um administrador do fornecedor pode executar esta ação.",
+        "forbidden": "Não tem acesso a este fornecedor.",
+        "invalidCompanyId": "O Company ID deve ter 6–12 dígitos.",
+        "missingToken": "O Employee Token é obrigatório.",
+        "tokenVerificationFailed": "A verificação falhou.",
+        "verificationFailed": "A verificação falhou. O token ou as permissões não são válidos.",
+        "credentialsLoadFailed": "Não foi possível carregar as credenciais.",
+        "configurationMissing": "As credenciais do Tripletex não estão configuradas.",
+        "connectionTestFailed": "O teste de ligação falhou.",
+        "healthLoadFailed": "Não foi possível carregar o estado da ligação.",
+        "disconnectFailed": "Não foi possível desligar o Tripletex.",
+        "invalidState": "A ligação não pode ser desligada no estado atual.",
+        "rotateFailed": "Não foi possível gerar o segredo do webhook.",
+        "webhookSecretRequired": "O segredo do webhook deve ser gerado primeiro.",
+        "webhookSyncFailed": "Não foi possível registar o webhook no Tripletex.",
+        "provisioningNotComplete": "A configuração ainda não está concluída.",
+        "completeFailed": "Não foi possível guardar a ligação.",
+        "finalizeFailed": "Não foi possível concluir a ligação.",
+        "saveFailed": "A ação falhou.",
+        "unknown": "Ocorreu um erro. Tente novamente."
+      }
+    },
+    "registrations": {
+      "page": {
+        "eyebrow": "Fornecedor",
+        "heading": "Pedidos de adesão",
+        "subheading": "Analise as novas empresas interessadas num serviço de almoço e avalie a área de entrega, os dados de contacto e o acordo pretendido antes do processamento."
+      },
+      "table": {
+        "company": "Empresa",
+        "area": "Área",
+        "contact": "Contacto",
+        "employees": "Colaboradores",
+        "received": "Recebido",
+        "status": "Estado"
+      },
+      "status": {
+        "pending": "Aguarda análise",
+        "approved": "Aprovado",
+        "rejected": "Rejeitado",
+        "other": "Outro"
+      },
+      "summary": {
+        "none": "Nenhum pendente",
+        "one": "1 pendente",
+        "many": "{count} pendentes"
+      },
+      "actions": {
+        "review": "Analisar"
+      },
+      "empty": {
+        "title": "Sem pedidos de adesão a aguardar análise",
+        "text": "Os novos pedidos de empresas aparecem aqui quando correspondem à sua área de cobertura.",
+        "steps": {
+          "reviewRequest": "Verifique o local de entrega, os dados de contacto e o serviço de almoço pretendido quando chegar um pedido.",
+          "approvedFlow": "As empresas aprovadas passam ao fluxo de cliente e acordo.",
+          "rejectedFlow": "Os pedidos rejeitados são tratados de forma controlada, com um estado claro."
+        }
+      },
+      "dialogs": {
+        "closeAria": "Fechar",
+        "approveTitle": "Aprovar registo",
+        "rejectTitle": "Rejeitar registo",
+        "contactLabel": "Contacto",
+        "phoneLabel": "Telefone",
+        "employeesLabel": "Colaboradores (aprox.)",
+        "tierLabel": "Nível do acordo",
+        "rejectReasonLabel": "Motivo",
+        "rejectInstead": "Rejeitar em alternativa",
+        "approveInstead": "Aprovar em alternativa",
+        "cancel": "Cancelar",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "saving": "A processar…"
+      },
+      "errors": {
+        "notAuthenticated": "Sessão não iniciada.",
+        "providerAdminRequired": "Apenas administradores do fornecedor podem executar esta ação.",
+        "registrationNotFound": "Registo não encontrado.",
+        "registrationAlreadyProcessed": "Este registo já foi processado.",
+        "invalidTier": "Nível de acordo inválido.",
+        "rejectReasonRequired": "Indique um motivo breve.",
+        "approveFailed": "Não foi possível aprovar o registo.",
+        "rejectFailed": "Não foi possível rejeitar o registo.",
+        "actionFailed": "A ação falhou.",
+        "unknown": "Ocorreu um erro."
+      }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Apenas visualização",
+        "readOnlyLead": "Não tem permissão para editar o menu. Contacte o administrador do seu fornecedor para obter acesso de edição.",
+        "translationsPromoTitle": "Traduções do menu",
+        "translationsPromoLead": "Aprove mais tarde o texto traduzido do menu para os colaboradores. Os colaboradores continuam a ver o texto original até ao SMART-3.",
+        "translationsPromoCta": "Abrir traduções do menu"
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Traduções do menu",
+        "lead": "Aprove e faça a gestão do texto traduzido do menu para {providerName}. Isto ainda não altera o que os colaboradores veem.",
+        "backToMenu": "Voltar ao menu"
+      },
+      "translations": {
+        "introApproved": "Apenas as traduções aprovadas são apresentadas aos colaboradores. As linhas em rascunho, sugeridas e rejeitadas nunca são apresentadas aos colaboradores.",
+        "introPartialCoverage": "A cobertura parcial é normal. Um hash em falta ou desatualizado recorre ao texto original do fornecedor — isto não altera as chaves de pedido, o pacote nem o preço para os colaboradores.",
+        "introSourceRefs": "Referências de origem: refeição = item.key, categoria = slug da categoria (p. ex. paasmurt, salat), alergénio = token normalizado.",
+        "introSources": "As origens vêm do catálogo e da janela de menu ativa (linhas menuDay publicadas). As origens de prato quente/menu_day aparecem quando existem na janela de menu ativa.",
+        "coverageTitle": "Cobertura por idioma",
+        "loadingSources": "A carregar origens…",
+        "noSources": "Ainda não foram encontradas origens no catálogo.",
+        "coverageTable": {
+          "locale": "Idioma",
+          "coverage": "Cobertura",
+          "employeeVisible": "Aprovadas visíveis",
+          "missing": "Em falta",
+          "draft": "Rascunho",
+          "stale": "Desatualizada"
+        },
+        "missingTitle": "Origens sem tradução aprovada",
+        "missingCount": "{count} origens sem linha para pelo menos um idioma de destino.",
+        "createDraftFromSource": "Criar rascunho",
+        "staleWarning": "{count} origens têm hash divergente — os colaboradores veem o texto original até a linha ser aprovada novamente.",
+        "filters": {
+          "locale": "Idioma",
+          "status": "Estado",
+          "all": "Todos"
+        },
+        "status": {
+          "missing": "Em falta",
+          "draft": "Rascunho",
+          "suggested": "Sugerida",
+          "approved": "Aprovada",
+          "rejected": "Rejeitada",
+          "stale": "Desatualizada"
+        },
+        "createTitle": "Nova linha de tradução",
+        "createLead": "Crie uma linha manual com referência de origem e texto original, ou utilize «Criar rascunho» na lista de origens acima.",
+        "form": {
+          "sourceKind": "Origem",
+          "field": "Campo",
+          "locale": "Idioma",
+          "sourceRef": "Referência de origem",
+          "sourceRefPlaceholder": "item.key, slug de categoria ou token de alergénio",
+          "originalText": "Texto original",
+          "translatedTextOptional": "Texto traduzido (opcional)"
+        },
+        "saveDraft": "Guardar rascunho",
+        "listTitle": "Traduções",
+        "loading": "A carregar…",
+        "emptyList": "Ainda não existem linhas de tradução. Crie uma linha manualmente ou aguarde até que a importação a partir das origens do menu esteja disponível.",
+        "listTable": {
+          "source": "Origem",
+          "field": "Campo",
+          "locale": "Idioma",
+          "original": "Original",
+          "translated": "Traduzido",
+          "status": "Estado",
+          "updated": "Atualizado",
+          "actions": "Ações"
+        },
+        "hashMismatch": "Hash divergente — marque como desatualizada se necessário",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Não foi possível carregar as traduções.",
+          "updateFailed": "Não foi possível atualizar a tradução.",
+          "createFailed": "Não foi possível criar a tradução."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Os colaboradores só podem encomendar quando a empresa tem um acordo ativo e o menu está publicado.",
+        "date": "Data",
+        "plan": "Plano",
+        "category": "Categoria",
+        "mealTitle": "Nome do prato",
+        "description": "Descrição",
+        "allergens": "Alergénios (opcional, separados por vírgulas)",
+        "allergensPlaceholder": "P. ex. leite, trigo",
+        "savingDraft": "A guardar…",
+        "saveDraft": "Guardar rascunho",
+        "publishing": "A publicar…",
+        "publishMenu": "Publicar menu"
+      },
+      "header": {
+        "eyebrow": "Editor de menu",
+        "lead": "Planeie a semana, defina o prato quente partilhado para cada dia e publique para permitir pedidos.",
+        "prevWeek": "← Anterior",
+        "nextWeek": "Seguinte →",
+        "weekFrom": "Semana a partir de {date}",
+        "weekTitle": "Semana {week} · {year}",
+        "weekNavAria": "Navegação por semanas",
+        "tierTabsAria": "Pacotes de menu",
+        "priceLineAria": "Preço do nível e regra de produção",
+        "workspaceAria": "Área de trabalho",
+        "sharedWarmMealRule": "O prato quente é partilhado pelos três níveis."
+      },
+      "tabs": {
+        "weekPlan": "Plano semanal",
+        "catalog": "Opções fixas"
+      },
+      "status": {
+        "ariaLabel": "Estado da semana",
+        "readyAllGenerated": "Semana pronta — prato quente gerado para todos os {days} dias",
+        "daysMissingVarmrett": "{count, plural, one {# dia sem prato quente} other {# dias sem prato quente}}",
+        "daysWithVarmrett": "{filled} de {total} dias com prato quente",
+        "autoRolloutMeta": "Publicado automaticamente à quinta-feira às 08:00 · os colaboradores veem a semana às 14:00",
+        "fillMissingMeta": "Preencha os pratos quentes em falta antes de a semana poder ser publicada",
+        "autoRolloutChip": "Publicação automática ativa",
+        "daysPublished": "{count, plural, one {# dia publicado} other {# dias publicados}}"
+      },
+      "preview": {
+        "ariaLabel": "Diagnóstico de pré-visualização de preços",
+        "title": "Pré-visualização de preços",
+        "subtitle": "Apenas diagnóstico — não é utilizado para pedidos, margem ou publicação.",
+        "differs": "Difere do preço de produção",
+        "sourceMarket": "Das regras de preços",
+        "sourceFallback": "Alternativa",
+        "sourceMixed": "Misto",
+        "taxEx": "sem IVA",
+        "taxInc": "com IVA",
+        "amountExSuffix": "NOK sem IVA",
+        "amountIncSuffix": "NOK com IVA"
+      },
+      "week": {
+        "plannerTitle": "Plano semanal",
+        "plannerLead": "Prato quente partilhado por dia — predefinição gerada que pode substituir.",
+        "ariaLabel": "Plano semanal",
+        "loadingAria": "A carregar menu",
+        "hotMealEyebrow": "Prato quente do dia",
+        "hotMealMissing": "Prato quente em falta",
+        "hotMealMissingHint": "Adicione o prato quente do dia antes de este dia poder ser publicado.",
+        "hotMealFallback": "Prato quente",
+        "enterpriseUpgrade": "Upgrade Enterprise",
+        "badges": {
+          "generated": "Gerado",
+          "fridayTreat": "Mimo de sexta-feira",
+          "overridden": "Substituído",
+          "hasOrder": "Tem pedidos"
+        },
+        "actions": {
+          "add": "Adicionar",
+          "viewDay": "Ver dia",
+          "editNow": "Editar agora",
+          "edit": "Editar"
+        },
+        "allergens": {
+          "confirmed": "Alergénios: {list}",
+          "unconfirmed": "Alergénios não confirmados — contacte o fornecedor",
+          "opensAfterDelivery": "Abre para edição após a entrega"
+        },
+        "pins": {
+          "soup": "Sopa",
+          "fish": "Peixe",
+          "fridayTreat": "Mimo de sexta-feira"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Tem pedidos · {count} porções",
+          "hasOrderLocked": "Tem pedidos · bloqueado"
+        },
+        "costHint": "Custo {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Segunda-feira",
+        "tue": "Terça-feira",
+        "wed": "Quarta-feira",
+        "thu": "Quinta-feira",
+        "fri": "Sexta-feira"
+      },
+      "errors": {
+        "loadFailed": "Não foi possível carregar o menu.",
+        "saveFailed": "Não foi possível guardar o menu.",
+        "copySourceEmpty": "Não existe menu {tier} para copiar para este dia/categoria.",
+        "resetVarmrettFailed": "Não foi possível repor o prato quente.",
+        "generateProfileWeekFailed": "Não foi possível gerar a semana a partir do banco do perfil.",
+        "publishConfirmRequired": "{warning} Confirme para publicar mesmo assim.",
+        "unauthorized": "Sessão não iniciada.",
+        "forbidden": "Não tem acesso ao menu.",
+        "badRequest": "Pedido inválido.",
+        "invalidBody": "Pedido inválido. Verifique todos os campos.",
+        "validationFailed": "A validação falhou. Verifique os campos e tente novamente.",
+        "publishUnavailable": "A publicação do menu não está disponível neste momento.",
+        "orderLocked": "O menu está bloqueado devido a um pedido ativo.",
+        "publishConfirmGeneric": "Confirme para publicar mesmo assim."
+      },
+      "success": {
+        "published": "Menu publicado.",
+        "draftSaved": "Rascunho guardado.",
+        "resetVarmrett": "Prato quente reposto para o gerado.",
+        "profileWeekGenerated": "Pratos quentes gerados para {count} dia(s) a partir do banco do perfil.",
+        "copiedFromTier": "Copiado de {tier}. Adicione o upgrade Enterprise antes de publicar."
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Um Enterprise que reutiliza Basis/Luxus deve ter um tipo de upgrade ou uma descrição antes da publicação.",
+          "weakValue": "O Enterprise deve ter um valor acrescentado claro em comparação com o Luxus.",
+          "lowMargin": "Este prato Enterprise pode gerar uma margem inferior à do Luxus. Verifique o custo dos ingredientes."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Publicado",
+          "draft": "Rascunho",
+          "fixed": "Opção fixa",
+          "missing": "Em falta",
+          "suggestion": "Sugestão"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Opção fixa",
+          "published": "Publicado",
+          "draft": "Rascunho",
+          "existing": "Existente",
+          "missing_publish": "Publicação em falta",
+          "missing_warm_dish": "Prato quente em falta do Sanity/banco"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Adicionar o prato quente de {weekdayPossessive}",
+          "fill_missing_warm_dishes": "Adicionar os pratos quentes em falta",
+          "check_enterprise_upgrade": "Rever o upgrade Enterprise",
+          "publish_week": "Publicar semana",
+          "ready_for_orders": "Pronto para pedidos",
+          "preview_week": "Pré-visualizar semana"
+        },
+        "weekdaysPossessive": {
+          "mon": "segunda-feira",
+          "tue": "terça-feira",
+          "wed": "quarta-feira",
+          "thu": "quinta-feira",
+          "fri": "sexta-feira"
+        },
+        "readiness": {
+          "not_ready": "Não está pronto para publicar",
+          "has_draft": "Tem rascunhos",
+          "ready_for_orders": "Pronto para pedidos",
+          "ready_to_publish": "Pronto para publicar"
+        },
+        "weekSummary": {
+          "missing": "Dias em falta",
+          "ready": "Pronto para publicar",
+          "published": "Publicado",
+          "draft": "Rascunho",
+          "has_draft": "Tem rascunhos"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade planeado",
+          "upgrade_missing": "Upgrade em falta"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · partilhado por todos os pacotes",
+          "enterpriseUpgrade": "{weekday} · upgrade Enterprise"
+        },
+        "allergens": {
+          "none": "Sem alergénios indicados",
+          "prefix": "Alergénios: {list}"
+        },
+        "packageCard": {
+          "notSeparateProduction": "Não é um prato de produção separado",
+          "sharedWarmDishHint": "Um prato quente partilhado"
+        },
+        "emptyPanel": {
+          "selectDay": "Selecione um dia no plano semanal para editar as opções do catálogo."
+        }
+      },
+      "price": {
+        "exVatSuffix": "kr sem IVA",
+        "incVatSuffix": "kr com IVA",
+        "exVatShort": "sem IVA",
+        "incVatShort": "com IVA",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Painel de edição",
+        "idle": {
+          "title": "Selecione um dia",
+          "leadPanel": "Clique num dia do plano semanal para editar o prato quente e o catálogo.",
+          "leadInspector": "Clique no prato quente ou numa opção do plano semanal."
+        },
+        "status": {
+          "published": "Publicado",
+          "draft": "Rascunho",
+          "notPublished": "Não publicado"
+        },
+        "inspector": {
+          "editDay": "Editar {weekday}",
+          "headerSharedWarmMeal": "Prato quente partilhado do dia",
+          "headerEnterpriseUpgrade": "Upgrade Enterprise no prato quente do dia",
+          "close": "Fechar",
+          "fixedChoices": "Opções fixas",
+          "fixedChoicesNote": "Opções baseadas no catálogo — publique a categoria para este dia.",
+          "allergensPrefix": "Alergénios: {list}",
+          "singleChoice": "Opção fixa",
+          "singleChoiceNote": "Baseada no catálogo — publique a categoria para ativar.",
+          "content": "Conteúdo",
+          "mealNamePlaceholder": "Introduza o nome da refeição",
+          "sharedKitchenLead": "Refeição de cozinha partilhada para Basis, Luxus e Enterprise neste dia.",
+          "orderLock": "Tem pedidos",
+          "employeesOrdered": "{count} colaboradores encomendaram",
+          "opensAfterServingDay": "Abre após o dia de serviço"
+        },
+        "varmrett": {
+          "ariaLabel": "Editar prato quente",
+          "title": "Editar prato quente — {dateLabel}",
+          "scope": "A alteração aplica-se aos três níveis.",
+          "sharedBadge": "Partilhado · Basis, Luxus, Enterprise",
+          "generatedStamp": "Predefinição gerada a partir do banco de refeições. Pode editar, criar a sua própria ou repor.",
+          "meal": "Refeição",
+          "description": "Descrição",
+          "allergens": "Alergénios",
+          "allergensPlaceholder": "P. ex. leite, trigo",
+          "rawCost": "Custo das matérias-primas (kr)",
+          "estimatedRawCost": "Custo estimado das matérias-primas (kr)",
+          "mealName": "Nome da refeição",
+          "resetGenerated": "Repor para o gerado",
+          "cancel": "Cancelar",
+          "save": "Guardar prato quente",
+          "saving": "A guardar…",
+          "todayHotMeal": "Prato quente do dia"
+        },
+        "economy": {
+          "ariaLabel": "Economia",
+          "title": "Economia",
+          "tierPrice": "Preço do nível ({tier}, sem IVA)",
+          "rawCost": "− Custo das matérias-primas",
+          "commission": "− Lunchportalen 5%",
+          "marginPerPortion": "Margem por porção",
+          "enterRawCostHint": "Introduza o custo das matérias-primas para calcular a margem.",
+          "priceExVat": "Preço sem IVA",
+          "estimatedCost": "Custo estimado",
+          "contribution": "Margem de contribuição"
+        },
+        "enterprise": {
+          "title": "Upgrade Enterprise",
+          "lead": "Valor extra – o mesmo prato quente. Sem novo prato de cozinha.",
+          "todayWarmMeal": "Prato quente do dia",
+          "warmMealMissing": "O prato quente do dia está em falta — adicione primeiro o prato quente.",
+          "sameWarmMealNote": "O Enterprise assenta no mesmo prato quente – sem um novo prato de cozinha.",
+          "surcharge": "Suplemento",
+          "estimatedRawCost": "Custo est. das matérias-primas",
+          "extraContribution": "Margem de contribuição extra",
+          "suggestedTitle": "Upgrade Enterprise sugerido",
+          "useSuggestion": "Usar sugestão",
+          "chooseOther": "Escolher outro",
+          "selectedUpgrade": "Upgrade selecionado",
+          "upgradeSelected": "Upgrade selecionado",
+          "quickChoicesTitle": "Opção premium rápida",
+          "quickChoicesLead": "Valor extra – o mesmo prato quente",
+          "quickChoicesAria": "Opção premium rápida",
+          "hideManual": "Ocultar edição manual",
+          "editManual": "Editar manualmente",
+          "manualLead": "Edição avançada",
+          "buildFromLuxus": "Construir a partir do Luxus",
+          "buildFromTier": "Construir a partir de {tier}",
+          "basedOn": "Baseado em",
+          "none": "Nenhum",
+          "upgradeType": "Tipo de upgrade",
+          "chooseType": "Escolher tipo",
+          "customerExtra": "O que é que o cliente recebe a mais?",
+          "customerExtraPlaceholder": "Proteína premium, porção maior, sobremesa/fruta…",
+          "confirmPublishDespiteWarning": "Confirmo a publicação apesar do aviso."
+        },
+        "actions": {
+          "saveDraft": "Guardar rascunho",
+          "publishDay": "Publicar dia",
+          "saving": "A guardar…",
+          "publishing": "A publicar…"
+        }
+      },
+      "catalog": {
+        "title": "Catálogo do menu",
+        "leadAccordion": "As opções que oferece em cada categoria. A estrutura é fixa — o conteúdo é seu.",
+        "leadView": "Opções fixas do seu fornecedor — não o conteúdo semanal do menu.",
+        "ownCatalogTitle": "O seu próprio catálogo",
+        "ownCatalogText": "As alterações afetam apenas o seu menu. Os outros fornecedores veem o seu próprio — sem conteúdo partilhado.",
+        "isolated": "Isolado",
+        "tierBadgeAll": "Todos os níveis",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} opções",
+        "lockedCount": "{count} bloqueadas",
+        "edit": "Editar",
+        "close": "Fechar",
+        "addChoice": "+ Adicionar opção",
+        "addChoiceLegacy": "Adicionar opção",
+        "publishHint": "As alterações ao catálogo aplicam-se a partir da próxima publicação da semana para a vista de semana/cozinha. A janela de pedidos é atualizada de imediato.",
+        "saveCatalog": "Guardar catálogo",
+        "cancel": "Cancelar",
+        "saving": "A guardar…",
+        "legacyTitle": "O seu catálogo de menu",
+        "legacyLead": "Isto altera apenas as opções fixas do seu fornecedor — não as de outras empresas de catering.",
+        "category": "Categoria",
+        "titleField": "Título",
+        "noEditableCategories": "Sem categorias editáveis para {tier}.",
+        "editCatalogAria": "Editar catálogo do menu",
+        "catalogAria": "Catálogo do menu",
+        "orderLocked": "Tem pedidos",
+        "orderSortHint": "A ordem é controlada pelo catálogo",
+        "view": {
+          "sanityBank": "Sanity/banco",
+          "yourCatalog": "O seu catálogo"
+        },
+        "item": {
+          "namePlaceholder": "Nome da opção",
+          "locked": "Bloqueada",
+          "vegetarian": "Vegetariano",
+          "allergensAria": "Alergénios",
+          "remove": "Remover",
+          "removeChoice": "Remover {name}",
+          "removeFallback": "opção"
+        },
+        "messages": {
+          "saveFailed": "Não foi possível guardar o catálogo.",
+          "saved": "Catálogo guardado."
+        }
+      },
+      "workspaceProfile": {
+        "badge": "Perfil de menu (apresentação)",
+        "banner": "A área de trabalho mostra a estrutura do perfil de menu. O conteúdo do catálogo existente e os menus publicados não são alterados nesta fase.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
+      "workspaceFixedCategories": {
+        "title": "Opções fixas do perfil de menu",
+        "description": "Isto mostra as opções fixas do perfil de menu. O catálogo e os menus publicados não são alterados até uma transição posterior.",
+        "activeInCurrentCatalog": "Ativa no catálogo atual",
+        "comingStructureNotOrderActive": "Estrutura futura — ainda não ativa em pedidos",
+        "orderRuntimeEnabled": "Runtime de pedidos ativado",
+        "presentationOnly": "Apenas apresentação",
+        "packagesLabel": "Pacotes",
+        "profileCategoryLabel": "Categoria do perfil"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Perfil de menu ativo",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "As sugestões de prato quente seguem este perfil. O conteúdo existente e os dias publicados não são alterados automaticamente.",
+        "title": "Sugestões de prato quente baseadas no perfil",
+        "description": "As novas sugestões de prato quente e a geração predefinida seguem o perfil de menu ativo. O conteúdo existente e os dias publicados não são alterados automaticamente.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} sugestões",
+        "resolveMeta": "Origem do perfil: {source}",
+        "bankSuggestionsLabel": "Cinco sugestões do banco do perfil",
+        "generateWeek": "Gerar semana a partir do banco do perfil",
+        "generating": "A gerar …",
+        "generateHint": "Preenche apenas os dias vazios e não bloqueados como rascunhos. O conteúdo do fornecedor e os dias publicados são ignorados."
+      },
+      "workspaceWarmDishPreview": {
+        "title": "Banco de pratos quentes para o perfil de menu",
+        "description": "Estas são sugestões baseadas no perfil de menu selecionado. As sugestões não são adicionadas ao catálogo, ao plano semanal nem à publicação até uma transição posterior.",
+        "previewOnly": "Apenas sugestão",
+        "notPublished": "Não ativa na publicação",
+        "notVisibleToEmployees": "Não visível para os colaboradores",
+        "suggestedForProfile": "Sugestões para o perfil",
+        "suggestedTiers": "Adequação aos pacotes",
+        "allergensLabel": "Alergénios sugeridos",
+        "tagsLabel": "Etiquetas sugeridas",
+        "weekdayLabel": "Sugestão de dia da semana",
+        "noItems": "Sem sugestões de pratos quentes para este perfil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Esta sugestão não está ligada à publicação nem aos pedidos.",
+        "weekdays": {
+          "monday": "Segunda-feira",
+          "tuesday": "Terça-feira",
+          "wednesday": "Quarta-feira",
+          "thursday": "Quinta-feira",
+          "friday": "Sexta-feira"
+        }
+      },
+      "runtimeMappingProposal": {
+        "title": "Proposta de mapeamento de runtime",
+        "description": "Esta é uma vista sombra de como o perfil de menu poderia ser mapeado para o runtime atual. Nenhuma opção é guardada, publicada ou apresentada aos colaboradores nesta fase.",
+        "shadowOnly": "Vista sombra",
+        "notActiveInSave": "Não ativa na gravação",
+        "notActiveInPublish": "Não ativa na publicação",
+        "notVisibleToEmployees": "Não visível para os colaboradores",
+        "existingNoRuntimeMapping": "Mapeamento de runtime NO existente",
+        "notRuntimeSupportedYet": "Ainda não suportado no runtime",
+        "categoryMappings": "Mapeamentos de categorias",
+        "warmDishMappings": "Mapeamentos de pratos quentes",
+        "summary": "Resumo",
+        "mappedCategories": "{count} categorias mapeadas",
+        "unmappedCategories": "{count} categorias não mapeadas",
+        "previewOnlyWarmDishes": "{count} pratos quentes apenas de pré-visualização",
+        "runtimeEnabledCount": "Runtime ativado: {count}",
+        "canSaveCount": "Pode guardar: {count}",
+        "canPublishCount": "Pode publicar: {count}",
+        "canOrderCount": "Pode encomendar: {count}",
+        "warningTitle": "Avisos",
+        "noItems": "Sem categorias para mostrar.",
+        "existingNoRuntimeMappingHelp": "Esta categoria do perfil tem um mapeamento de runtime NO existente, mas a transição não está ativada.",
+        "notRuntimeSupportedYetHelp": "Esta categoria do perfil ainda não está ligada ao runtime atual.",
+        "presentationOnlyHelp": "Apenas apresentação — sem ligação ao runtime.",
+        "unsupportedMappingHelp": "Não existe mapeamento de runtime disponível para esta categoria.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "O upgrade Enterprise não é uma categoria de pedido.",
+        "previewOnly": "Apenas pré-visualização",
+        "notPublishable": "Não publicável",
+        "previewOnlyHelp": "Apenas pré-visualização — sem ligação ao menu nem aos pedidos.",
+        "notPublishableHelp": "Não publicável nesta fase.",
+        "warnings": {
+          "unmappedCategories": "Uma ou mais categorias não têm mapeamento de runtime.",
+          "previewOnlyWarmDishes": "As sugestões de pratos quentes são apenas de pré-visualização e não podem ser publicadas.",
+          "enterpriseUpgradeNotOrderCategory": "O upgrade Enterprise não é uma categoria de pedido.",
+          "nonNoMarketShadowOnly": "O perfil está fora do mercado NO — todo o mapeamento é apenas sombra."
+        },
+        "draftSave": {
+          "sectionTitle": "Rascunho de mapeamento",
+          "statusNotSaved": "Não guardado",
+          "statusNotSavedHelp": "Esta avaliação é apenas de pré-visualização e não foi guardada como rascunho.",
+          "statusDraftSaved": "Rascunho guardado",
+          "statusDraftSavedHelp": "A avaliação está guardada como rascunho interno. Não está publicada nem visível para os colaboradores.",
+          "statusReviewed": "Revisto",
+          "statusArchived": "Arquivado",
+          "statusArchivedHelp": "Este rascunho está arquivado e não está ativo.",
+          "activationWarning": "Isto não ativa a publicação, os pedidos nem a apresentação do menu.",
+          "saveButton": "Guardar avaliação como rascunho",
+          "viewerNoSave": "Guardar requer administrador do fornecedor.",
+          "saveSuccess": "Rascunho guardado.",
+          "validationError": "Não foi possível guardar o rascunho porque a validação bloqueou uma alteração insegura.",
+          "permissionError": "Não tem permissão para guardar rascunhos de mapeamento.",
+          "genericError": "Não foi possível guardar o rascunho. Tente novamente mais tarde."
+        }
+      },
+      "catalogModel": {
+        "title": "Opções fixas",
+        "lead": "Estas são as opções fixas do seu fornecedor. O plano semanal utiliza-as quando publica o almoço para dias específicos.",
+        "fixedChoicesTitle": "Editar opções fixas",
+        "weekPlanHint": "As alterações aplicam-se a partir da próxima publicação da semana. O prato quente do dia e o upgrade Enterprise são planeados no plano semanal.",
+        "packageMatrix": {
+          "title": "Pacotes de menu",
+          "basis": {
+            "title": "Basis",
+            "text": "Sanduíche aberta, caixa de salada e prato quente do dia."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Tudo o que está no Basis + sushi, poké bowl e tailandês."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "O mesmo prato quente do dia + upgrade Enterprise no plano semanal."
+          }
+        },
+        "tierContext": {
+          "basis": "O Basis mostra as opções fixas de sanduíche aberta e caixa de salada.",
+          "luxus": "O Luxus inclui as opções do Basis e as categorias premium sushi, poké bowl e tailandês.",
+          "enterprise": "O Enterprise utiliza o mesmo catálogo fixo do Luxus. Os upgrades são adicionados ao prato quente do dia no plano semanal — não aqui."
+        },
+        "sharedWarmDish": {
+          "title": "Prato quente do dia",
+          "text": "Gerido no plano semanal — um prato partilhado por dia para Basis, Luxus e Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Upgrade Enterprise",
+          "text": "O mesmo prato quente do dia do Luxus, com extras/upgrades planeados por dia no plano semanal — não é um prato quente separado."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Proteína extra + sobremesa/fruta",
+          "explanation": "Dá mais valor ao cliente sem criar um novo prato de cozinha.",
+          "note": "Proteína extra e sobremesa/fruta como extra premium do prato quente do dia"
+        },
+        "quickChoices": {
+          "protein": {
+            "label": "Proteína extra",
+            "note": "Proteína extra para o prato quente do dia"
+          },
+          "portion": {
+            "label": "Porção maior",
+            "note": "Porção maior do prato quente do dia"
+          },
+          "dessert": {
+            "label": "Sobremesa/fruta",
+            "note": "Sobremesa ou fruta como extra premium"
+          },
+          "topping": {
+            "label": "Topping premium",
+            "note": "Topping premium para o prato quente do dia"
+          },
+          "side": {
+            "label": "Acompanhamento extra",
+            "note": "Acompanhamento extra para o prato quente do dia"
+          },
+          "season": {
+            "label": "Upgrade sazonal",
+            "note": "Upgrade Enterprise sazonal para o prato quente do dia"
+          }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Proteína premium",
+          "EXTRA_SIDE": "Acompanhamento extra",
+          "DESSERT_FRUIT": "Sobremesa/fruta/snack",
+          "LARGER_PORTION": "Porção maior",
+          "PREMIUM_LABELING": "Rotulagem/controlo premium",
+          "PRIORITY_DELIVERY": "Janela de entrega prioritária",
+          "OTHER": "Personalizado/outro"
+        },
+        "source": {
+          "basedOnBasis": "Baseado no Basis",
+          "basedOnLuxus": "Baseado no Luxus",
+          "ownEnterprise": "Enterprise próprio"
+        }
+      }
+    }
+  }
+}

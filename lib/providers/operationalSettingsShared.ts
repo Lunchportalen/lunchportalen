@@ -29,6 +29,7 @@ export const PROVIDER_INTL_LOCALES = APP_LOCALES.map((locale) => intlLocaleForAp
 
 const PROVIDER_LOCALE_LABELS: Record<string, string> = {
   "nb-NO": "Norsk (bokmål)",
+  "cs-CZ": "Čeština",
   "da-DK": "Dansk",
   "de-DE": "Deutsch",
   "en-GB": "English",
@@ -37,7 +38,11 @@ const PROVIDER_LOCALE_LABELS: Record<string, string> = {
   "it-IT": "Italiano",
   "fi-FI": "Suomi",
   "nl-NL": "Nederlands",
+  "pl-PL": "Polski",
+  "pt-PT": "Português",
+  "ro-RO": "Română",
   "sv-SE": "Svenska",
+  "el-GR": "Ελληνικά",
 };
 
 /**

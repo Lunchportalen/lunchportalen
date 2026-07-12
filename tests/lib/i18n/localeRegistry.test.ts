@@ -16,13 +16,15 @@ import { isSupportedMenuProfile } from "@/lib/menu-profile/registry";
 import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
 
 describe("localeRegistry", () => {
-  it("contains all ten app locales in stable display order (nb first, then alphabetical)", () => {
-    expect(APP_LOCALES).toEqual(["nb", "da", "de", "en", "es", "fr", "it", "fi", "nl", "sv"]);
+  it("contains all fifteen app locales in stable display order (nb first, then alphabetical; Greek last)", () => {
+    expect(APP_LOCALES).toEqual([
+      "nb", "cs", "da", "de", "en", "es", "fr", "it", "nl", "pl", "pt", "ro", "fi", "sv", "el",
+    ]);
     expect(DEFAULT_APP_LOCALE).toBe("nb");
-    expect(APP_LOCALES).toHaveLength(10);
+    expect(APP_LOCALES).toHaveLength(15);
   });
 
-  it("parseAppLocale accepts nb/en/sv/da/fi/de/fr/es/it/nl", () => {
+  it("parseAppLocale accepts every app locale", () => {
     for (const locale of APP_LOCALES) {
       expect(parseAppLocale(locale)).toBe(locale);
       expect(parseAppLocale(locale.toUpperCase())).toBe(locale);
@@ -38,7 +40,8 @@ describe("localeRegistry", () => {
 
   it("isAppLocale mirrors parseAppLocale", () => {
     expect(isAppLocale("sv")).toBe(true);
-    expect(isAppLocale("pt")).toBe(false);
+    expect(isAppLocale("pt")).toBe(true);
+    expect(isAppLocale("xx")).toBe(false);
   });
 
   it("maps htmlLang and intl locale tags", () => {
@@ -72,9 +75,9 @@ describe("localeRegistry", () => {
     }
   });
 
-  it("keeps routed UI app locales separate from 21 market locales", () => {
-    expect(APP_LOCALES).toHaveLength(10);
-    expect(SUPPORTED_MARKET_LOCALES).toHaveLength(21);
+  it("keeps routed UI app locales separate from market locales (24 locales, 21 countries)", () => {
+    expect(APP_LOCALES).toHaveLength(15);
+    expect(SUPPORTED_MARKET_LOCALES).toHaveLength(24);
     expect(SUPPORTED_MARKET_LOCALES.map((entry) => entry.locale)).toEqual([
       "nb-NO",
       "sv-SE",
@@ -87,6 +90,7 @@ describe("localeRegistry", () => {
       "it-IT",
       "en-US",
       "en-CA",
+      "fr-CA",
       "nl-NL",
       "nl-BE",
       "fr-BE",
@@ -94,13 +98,17 @@ describe("localeRegistry", () => {
       "de-CH",
       "fr-CH",
       "en-IE",
-      "fr-LU",
-      "en-AU",
-      "en-SG",
+      "pl-PL",
+      "ro-RO",
+      "cs-CZ",
+      "pt-PT",
+      "el-GR",
     ]);
+    // 24 locale rows collapse to exactly 21 unique countries.
+    expect(new Set(SUPPORTED_MARKET_LOCALES.map((e) => e.countryCode)).size).toBe(21);
   });
 
-  it("has complete market locale identity for all 21 entries", () => {
+  it("has complete market locale identity for all entries", () => {
     const codes = SUPPORTED_MARKET_LOCALES.map((entry) => entry.locale);
     expect(new Set(codes).size).toBe(codes.length);
 

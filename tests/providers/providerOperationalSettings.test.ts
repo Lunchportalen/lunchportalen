@@ -41,12 +41,14 @@ describe("normalizeOperationalEmail", () => {
 });
 
 describe("isSupportedProviderLocale", () => {
-  it("godtar alle ti provider operational locales", () => {
+  it("godtar alle femten provider operational locales", () => {
     for (const locale of PROVIDER_LOCALE_VALUES) {
       expect(isSupportedProviderLocale(locale)).toBe(true);
     }
-    expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(10);
+    expect(PROVIDER_LOCALE_OPTIONS).toHaveLength(15);
     expect(isSupportedProviderLocale("nl-NL")).toBe(true);
+    expect(isSupportedProviderLocale("pl-PL")).toBe(true);
+    expect(isSupportedProviderLocale("el-GR")).toBe(true);
   });
 
   it("godtar kjente locales", () => {

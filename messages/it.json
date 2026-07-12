@@ -820,15 +820,20 @@
         "saved": "Impostazioni operative salvate.",
         "locales": {
           "nb-NO": "Norvegese (Bokmål)",
-          "en-GB": "English",
-          "sv-SE": "Svedese",
+          "cs-CZ": "Čeština",
           "da-DK": "Danese",
-          "fi-FI": "Finlandese",
           "de-DE": "Tedesco",
-          "fr-FR": "Francese",
+          "en-GB": "English",
           "es-ES": "Spagnolo",
+          "fr-FR": "Francese",
           "it-IT": "Italiano",
-          "nl-NL": "Nederlands"
+          "nl-NL": "Nederlands",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Finlandese",
+          "sv-SE": "Svedese",
+          "el-GR": "Ελληνικά"
         },
         "errors": {
           "notAuthenticated": "Accesso non eseguito",

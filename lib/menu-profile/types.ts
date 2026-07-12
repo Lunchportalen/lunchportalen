@@ -5,6 +5,14 @@
  * until explicit G1+ phase gate.
  */
 
+/**
+ * Menu-profile market codes.
+ * Canonical launch countries come from lib/markets/supportedMarkets.ts (21 countries).
+ * Market code = ISO 3166-1 alpha-2 country code ("GB", not the legacy "UK" alias;
+ * legacy "UK" values are normalized at the read boundary).
+ * LU/AU/SG are RETIRED from launch scope (kept readable for data transition only —
+ * see docs/21-COUNTRY-MARKET-CORRECTION-PLAN.md).
+ */
 export const MARKET_CODES = [
   "NO",
   "SE",
@@ -13,7 +21,7 @@ export const MARKET_CODES = [
   "DE",
   "FR",
   "ES",
-  "UK",
+  "GB",
   "IT",
   "US",
   "CA",
@@ -22,13 +30,21 @@ export const MARKET_CODES = [
   "AT",
   "CH",
   "IE",
+  "PL",
+  "RO",
+  "CZ",
+  "PT",
+  "GR",
   "LU",
   "AU",
   "SG",
 ] as const;
 export type MarketCode = (typeof MARKET_CODES)[number];
 
-export const CURRENCY_CODES = [`${"NO"}K`, "SEK", "DKK", "EUR", "GBP", "USD", "CAD", "CHF", "AUD", "SGD"] as const;
+/** Markets retired from launch scope by the 21-country correction. */
+export const RETIRED_MARKET_CODES = ["LU", "AU", "SG"] as const;
+
+export const CURRENCY_CODES = [`${"NO"}K`, "SEK", "DKK", "EUR", "GBP", "USD", "CAD", "CHF", "PLN", "RON", "CZK", "AUD", "SGD"] as const;
 export type CurrencyCode = (typeof CURRENCY_CODES)[number];
 
 export const MENU_PROFILE_IDS = [
@@ -50,6 +66,11 @@ export const MENU_PROFILE_IDS = [
   "swiss_german_office_lunch",
   "swiss_french_office_lunch",
   "irish_office_lunch",
+  "polish_office_lunch",
+  "romanian_office_lunch",
+  "czech_office_lunch",
+  "portuguese_office_lunch",
+  "greek_office_lunch",
   "luxembourg_office_lunch",
   "australian_office_lunch",
   "singapore_office_lunch",
