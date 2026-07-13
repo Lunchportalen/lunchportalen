@@ -573,7 +573,8 @@ export async function listFirms(input: FirmsQueryInput): Promise<FirmsQueryResul
   const supabase = await supabaseServer();
 
   const page = clampInt(Number(input.page ?? 1), 1, 1_000_000);
-  const pageSize = clampInt(Number(input.pageSize ?? 50), 10, 100);
+  // AGENTS A1.1 (LOCKED): superadmin firm pagination default is 25.
+  const pageSize = clampInt(Number(input.pageSize ?? 25), 10, 100);
 
   const q = normQ(input.q);
   const status = normStatus(input.status);

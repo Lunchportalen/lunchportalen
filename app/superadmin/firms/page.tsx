@@ -70,7 +70,7 @@ export default async function SuperadminFirmsPage(props: { searchParams?: SP }) 
   const q = sp1(sp.q);
   const status = safeStatus(sp1(sp.status));
   const page = safeInt(sp1(sp.page) || "1", 1, 1, 1_000_000);
-  const pageSize = safeInt(sp1(sp.pageSize) || "50", 50, 10, 100);
+  const pageSize = safeInt(sp1(sp.pageSize) || "25", 25, 10, 100);
   const sortKey = safeSortKey(sp1(sp.sortKey));
   const sortDir = safeSortDir(sp1(sp.sortDir));
 

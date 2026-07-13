@@ -504,3 +504,62 @@ export function passwordResetCopy(locale: AppLocale | string | null | undefined)
   const key = String(locale ?? "").trim() as AppLocale;
   return RESET_COPY[key] ?? RESET_COPY.nb;
 }
+
+/* =========================================================
+   Company-approved (agreement approval) email copy.
+   nb + en defined; other locales fall back en → nb (documented
+   per-template policy) so no email contains raw keys.
+========================================================= */
+
+export type CompanyApprovedCopy = {
+  subject: string;
+  badge: string;
+  hero: string;
+  greeting: (contactName: string) => string;
+  intro: (companyName: string) => string;
+  activateLead: string;
+  cta: string;
+  expiryTitle: string;
+  expiryNote: string;
+  signoff: string;
+};
+
+const COMPANY_APPROVED_NB: CompanyApprovedCopy = {
+  subject: "Velkommen til Lunchportalen \u2013 aktiver din konto",
+  badge: "Avtale godkjent",
+  hero: "Velkommen til Lunchportalen",
+  greeting: (n) => `Hei ${n},`,
+  intro: (c) => `Avtalen for ${c} er godkjent og klar til å aktiveres.`,
+  activateLead: "Klikk på knappen nedenfor for å opprette din innlogging og komme i gang:",
+  cta: "Aktiver konto",
+  expiryTitle: "Lenken er gyldig i 7 dager.",
+  expiryNote: "Dersom lenken utløper kan du kontakte oss for å få en ny.",
+  signoff: "Med vennlig hilsen,\nLunchportalen-teamet",
+};
+
+const COMPANY_APPROVED_EN: CompanyApprovedCopy = {
+  subject: "Welcome to Lunchportalen \u2013 activate your account",
+  badge: "Agreement approved",
+  hero: "Welcome to Lunchportalen",
+  greeting: (n) => `Hi ${n},`,
+  intro: (c) => `The agreement for ${c} has been approved and is ready to activate.`,
+  activateLead: "Click the button below to create your login and get started:",
+  cta: "Activate account",
+  expiryTitle: "The link is valid for 7 days.",
+  expiryNote: "If the link expires, contact us and we'll send a new one.",
+  signoff: "Best regards,\nThe Lunchportalen team",
+};
+
+const COMPANY_APPROVED_COPY: Partial<Record<AppLocale, CompanyApprovedCopy>> = {
+  nb: COMPANY_APPROVED_NB,
+  en: COMPANY_APPROVED_EN,
+};
+
+export function companyApprovedCopy(locale: AppLocale | string | null | undefined): CompanyApprovedCopy {
+  const raw = String(locale ?? "").trim();
+  const key = raw as AppLocale;
+  if (COMPANY_APPROVED_COPY[key]) return COMPANY_APPROVED_COPY[key] as CompanyApprovedCopy;
+  // Fail-closed to the platform default (nb) when no locale is given; an
+  // explicit non-nb locale without a dedicated set falls back to en.
+  return raw === "" ? COMPANY_APPROVED_NB : COMPANY_APPROVED_EN;
+}

@@ -193,7 +193,8 @@ function useInfiniteScroll(opts: {
   return ref;
 }
 
-const PAGE_LIMIT = 50;
+// AGENTS A1.1 (LOCKED): superadmin company/firm pagination is 25.
+const PAGE_LIMIT = 25;
 
 /* =========================
    Main component

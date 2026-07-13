@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+
+import { goToPostLogin } from "@/lib/auth/postLoginNav";
 
 import type { Database } from "@/lib/types/database";
 
@@ -31,7 +32,6 @@ function strengthLabel(score: number) {
 }
 
 export default function RegisterCompanyAdminClient({ token, email, initialName, companyName }: Props) {
-  const router = useRouter();
   const supabase = useMemo(() => {
     return createBrowserClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   }, []);
@@ -77,8 +77,9 @@ export default function RegisterCompanyAdminClient({ token, email, initialName, 
         return;
       }
 
-      router.replace("/admin");
-      router.refresh();
+      // E5: land via the ONE canonical post-login resolver (agreement gate
+      // decides /admin vs /avtale-ikke-aktiv), never a hardcoded destination.
+      goToPostLogin();
     } catch {
       setError("Uventet feil. Prøv igjen.");
     } finally {

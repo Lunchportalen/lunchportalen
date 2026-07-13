@@ -3,6 +3,7 @@
 import React from "react";
 import { useSearchParams } from "next/navigation";
 import type { SupabasePublicConfigStatus } from "@/lib/config/env-public";
+import { buildPostLoginUrl } from "@/lib/auth/postLoginNav";
 
 type LoginFormProps = {
   authRuntime: SupabasePublicConfigStatus;
@@ -38,15 +39,9 @@ function normEmail(v: unknown) {
   return safeStr(v).toLowerCase();
 }
 
-// All post-login routing is server-side via /api/auth/post-login. The client
-// never maps role → destination locally — that mapping lives in exactly one
-// place (lib/auth/resolveLoginDestination.ts) so the redirect is deterministic
-// and observable in the server log.
-function buildPostLoginUrl(nextPath: string | null) {
-  const next = safeStr(nextPath);
-  if (!next) return "/api/auth/post-login";
-  return `/api/auth/post-login?next=${encodeURIComponent(next)}`;
-}
+// All post-login routing is server-side via /api/auth/post-login (canonical
+// helper: lib/auth/postLoginNav.ts). The client never maps role → destination
+// locally so the redirect is deterministic and observable in the server log.
 
 function mapLoginError(result: ApiLoginRes): string {
   if (!result || result.ok !== false) {

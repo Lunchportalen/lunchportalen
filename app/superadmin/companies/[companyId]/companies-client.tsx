@@ -175,7 +175,7 @@ export default function CompaniesClient({ initial }: Props) {
   const [dir, setDir] = useState<"asc" | "desc">(initial?.dir ?? "desc");
 
   const [page, setPage] = useState<number>(initial?.page ?? 1);
-  const [limit, setLimit] = useState<number>(initial?.limit ?? 50);
+  const [limit, setLimit] = useState<number>(initial?.limit ?? 25);
 
   // Data state
   const [rows, setRows] = useState<CompanyRow[]>(initial?.companies ?? []);
@@ -193,7 +193,7 @@ export default function CompaniesClient({ initial }: Props) {
   const debounceRef = useRef<any>(null);
   const seqRef = useRef(0);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / (limit || 50))), [total, limit]);
+  const totalPages = useMemo(() => Math.max(1, Math.ceil((total || 0) / (limit || 25))), [total, limit]);
 
   const activeFiltersLabel = useMemo(() => {
     const bits: string[] = [];

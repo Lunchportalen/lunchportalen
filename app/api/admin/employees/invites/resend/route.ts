@@ -13,6 +13,7 @@ import nodemailer from "nodemailer";
 import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
+import { inviteExpiresAtIso } from "@/lib/invites/employeeInviteConstants";
 
 /* =========================================================
    Helpers
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
     const token = crypto.randomBytes(32).toString("hex");
     const newHash = sha256Hex(token);
     const link = buildEmployeeInviteUrl(appUrl, token);
-    const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 days
+    const newExpiry = inviteExpiresAtIso(); // 7 days
 
     // update first; rollback on mail failure
     const upd1 = await admin

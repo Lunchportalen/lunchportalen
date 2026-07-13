@@ -51,10 +51,9 @@ export async function POST(req: NextRequest) {
 
     if (inviteErr) return jsonErr(rid, "Kunne ikke verifisere invitasjon.", 500, "INVITE_LOOKUP_FAILED");
     if (!invite) return jsonErr(rid, "Ugyldig invitasjon.", 400, "INVALID_INVITE");
-    if (invite.used_at) return jsonErr(rid, "Invitasjonen er allerede brukt.", 409, "INVITE_USED");
-    if (!invite.expires_at || new Date(invite.expires_at).getTime() <= Date.now()) {
-      return jsonErr(rid, "Invitasjonen er utløpt.", 400, "INVITE_EXPIRED");
-    }
+    // Note: used/expired/revoked/wrong-tenant are validated atomically inside
+    // lp_company_admin_invite_accept (below) so retries stay idempotent — we do
+    // not short-circuit on used_at/expires_at here.
 
     const email = normEmail(invite.contact_email);
     const companyId = safeStr(invite.company_id);
@@ -96,40 +95,55 @@ export async function POST(req: NextRequest) {
 
     if (!userId) return jsonErr(rid, "Kunne ikke bekrefte brukerkonto.", 500, "AUTH_USER_MISSING");
 
-    const { data: existingProfile, error: profileReadErr } = await admin
-      .from("profiles")
-      .select("id, company_id")
-      .eq("id", userId)
-      .maybeSingle();
-    if (profileReadErr) return jsonErr(rid, "Kunne ikke lese profil.", 500, "PROFILE_READ_FAILED");
-    if (existingProfile?.company_id && String(existingProfile.company_id) !== companyId) {
-      return jsonErr(rid, "Kontoen er allerede knyttet til et annet firma.", 409, "COMPANY_MISMATCH");
+    // Ensure the profile row exists (trigger on auth.users) before atomic bind.
+    let profileReady = false;
+    for (let i = 0; i < 25; i += 1) {
+      const { data: p } = await admin.from("profiles").select("id").eq("id", userId).maybeSingle();
+      if (p?.id) {
+        profileReady = true;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    if (!profileReady) return jsonErr(rid, "Profil ble ikke opprettet automatisk.", 500, "PROFILE_NOT_CREATED");
+
+    // CANONICAL atomic accept: profile bind + membership sync + invite consume
+    // in one transaction, idempotent, fail-closed (expired/used/revoked/wrong-tenant).
+    const { data: acceptData, error: acceptErr } = await (admin as any).rpc("lp_company_admin_invite_accept", {
+      p_user_id: userId,
+      p_token_hash: tokenHash,
+      p_email: email,
+      p_full_name: fullName,
+    });
+
+    if (acceptErr) {
+      const raw = String(acceptErr.message ?? "").toUpperCase();
+      if (raw.includes("INVITE_EXPIRED")) return jsonErr(rid, "Invitasjonen er utløpt.", 400, "INVITE_EXPIRED");
+      if (raw.includes("INVITE_REVOKED")) return jsonErr(rid, "Invitasjonen er trukket tilbake.", 409, "INVITE_REVOKED");
+      if (raw.includes("INVITE_USED")) return jsonErr(rid, "Invitasjonen er allerede brukt.", 409, "INVITE_USED");
+      if (raw.includes("INVITE_EMAIL_MISMATCH")) return jsonErr(rid, "Invitasjonen tilhører en annen e-postadresse.", 409, "INVITE_EMAIL_MISMATCH");
+      if (raw.includes("COMPANY_MISMATCH")) return jsonErr(rid, "Kontoen er allerede knyttet til et annet firma.", 409, "COMPANY_MISMATCH");
+      if (raw.includes("INVITE_INVALID") || raw.includes("INVITE_CORRUPT")) return jsonErr(rid, "Ugyldig invitasjon.", 400, "INVALID_INVITE");
+      return jsonErr(rid, "Kunne ikke fullføre invitasjonen.", 500, "ACCEPT_FAILED");
     }
 
-    const profilePayload = {
-      id: userId,
-      email,
-      full_name: fullName,
-      role: "company_admin",
-      company_id: companyId,
-      active: true,
-      is_active: true,
-      disabled_at: null,
-      updated_at: new Date().toISOString(),
-    };
-
-    const profileWrite = existingProfile
-      ? await admin.from("profiles").update(profilePayload).eq("id", existingProfile.id)
-      : await admin.from("profiles").insert(profilePayload);
-    if (profileWrite.error) return jsonErr(rid, "Kunne ikke lagre profil.", 500, "PROFILE_WRITE_FAILED");
-
-    const nowIso = new Date().toISOString();
-    const mark = await (admin as any)
-      .from("company_invites")
-      .update({ used_at: nowIso, accepted_at: nowIso })
-      .eq("id", invite.id)
-      .is("used_at", null);
-    if (mark.error) return jsonErr(rid, "Konto opprettet, men invitasjonen kunne ikke markeres brukt.", 500, "INVITE_MARK_FAILED");
+    try {
+      const { auditLog } = await import("@/lib/audit/log");
+      auditLog({
+        action: "INVITE_ACCEPTED",
+        userId,
+        role: "company_admin",
+        companyId,
+        locationId: null,
+        resource: "company_invite",
+        resourceId: String(invite.id),
+        metadata: { rid, idempotent: Boolean((acceptData as { idempotent?: boolean } | null)?.idempotent) },
+        timestamp: Date.now(),
+        rid,
+      });
+    } catch {
+      // audit must never break acceptance
+    }
 
     return jsonOk(rid, { email, userId, companyId }, 200);
   } catch {

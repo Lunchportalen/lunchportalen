@@ -12,6 +12,8 @@ import { jsonErr, jsonOk } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403 } from "@/lib/http/routeGuard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildCompanyApprovedEmail } from "@/lib/email/templates/companyApproved";
+import { inviteExpiresAtIso } from "@/lib/invites/employeeInviteConstants";
+import { resolveRecipientLocaleForCompany } from "@/lib/email/recipientLocale";
 
 type Ctx = {
   params: { agreementId: string } | Promise<{ agreementId: string }>;
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const companyName = safeStr((companyRow as any)?.name) || "firmaet";
     const token = crypto.randomUUID();
     const tokenHash = await hashToken(token);
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
+    const expiresAt = inviteExpiresAtIso();
     const activateUrl = `${appBaseUrl(req)}/registrer-bruker?token=${encodeURIComponent(token)}`;
 
     await admin.from("company_invites").update({ revoked_at: new Date().toISOString() }).eq("company_id", companyId).is("revoked_at", null);
@@ -94,10 +96,14 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
     }
 
+    // E5: approval email in the recipient's language (company preferred locale
+    // → market default → nb), same chain as employee invites.
+    const recipientLocale = await resolveRecipientLocaleForCompany(admin, companyId);
     const { subject, html, text } = buildCompanyApprovedEmail({
       contactName,
       companyName,
       activateUrl,
+      locale: recipientLocale,
     });
 
     const outboxRes = await admin.from("outbox").upsert(

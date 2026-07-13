@@ -9,6 +9,7 @@ import nodemailer from "nodemailer";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { inviteExpiresAtIso } from "@/lib/invites/employeeInviteConstants";
 
 function noStore() {
   return { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", Expires: "0" };
@@ -216,7 +217,7 @@ export async function POST(req: Request) {
       }
 
       // LAGRE INVITE ETTER SEND
-      const expires_at = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 dager
+      const expires_at = inviteExpiresAtIso(); // 7 dager
       const ins = await admin.from("employee_invites").insert({
         company_id: companyId,
         location_id: location_id ?? null,
