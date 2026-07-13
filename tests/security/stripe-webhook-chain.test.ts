@@ -295,6 +295,12 @@ describe("route handler contract", () => {
         sig === GOOD_SIG ? { ok: true, duplicate: false } : { ok: false, code: "INVALID_SIGNATURE", message: "Ugyldig Stripe-signatur." }
       ),
     }));
+    // Kill switch reads system_settings via Supabase; without admin env (CI) it
+    // would fall back to the cookie-scoped client, which cannot exist in vitest.
+    vi.doMock("@/lib/system/opsKillSwitch", () => ({
+      opsKillSwitchResponse: vi.fn(async () => null),
+      checkOpsKillSwitch: vi.fn(async () => ({ killed: false })),
+    }));
     const mod = await import("../../app/api/webhooks/stripe-billing-payments/route");
 
     const bad = await mod.POST(
@@ -321,5 +327,6 @@ describe("route handler contract", () => {
     expect(goodJson.ok).toBe(true);
     expect(goodJson.data.received).toBe(true);
     vi.doUnmock("@/lib/billing/stripePaymentWebhook");
+    vi.doUnmock("@/lib/system/opsKillSwitch");
   });
 });
