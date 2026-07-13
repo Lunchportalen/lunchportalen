@@ -177,7 +177,7 @@ export async function runTaskChecks(root, task, input) {
     });
     checks.push({
       name: "bulk apply would not be F4b-only",
-      ok: pending.length > 0,
+      ok: !(pending.length === 1 && pending[0] === F4B_MIGRATION),
       detail: `pending count: ${pending.length}`,
     });
   }

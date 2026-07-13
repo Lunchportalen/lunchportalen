@@ -6,7 +6,13 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { ALWAYS_FORBIDDEN_OPERATIONS, EVIDENCE_PATH_PREFIX, VALID_TASKS } from "../../../scripts/go-operator/constants.mjs";
+import {
+  ALWAYS_FORBIDDEN_OPERATIONS,
+  EVIDENCE_PATH_PREFIX,
+  PENDING_BILLING_MIGRATIONS,
+  PRODUCTION_LEDGER_SNAPSHOT,
+  VALID_TASKS,
+} from "../../../scripts/go-operator/constants.mjs";
 import {
   buildPrBranchName,
   openDocsOnlyPr,
@@ -95,6 +101,27 @@ describe("GO Operator safety", () => {
     expect(result.checks.some((c) => c.name === "F4b migration file" && c.ok)).toBe(true);
     expect(result.checks.some((c) => c.name === "no broad UPDATE/DELETE" && c.ok)).toBe(true);
     expect(result.ok).toBe(true);
+  });
+
+  it("production ledger snapshot matches Fase 1 release truth (2026-07-13)", async () => {
+    // Billing block applied 2026-07-11; 21-country correction applied 2026-07-13.
+    for (const version of ["20260729120000", "20260809120000", "20260814120000", "20260817120000"]) {
+      expect(PRODUCTION_LEDGER_SNAPSHOT).toContain(version);
+    }
+    expect(PENDING_BILLING_MIGRATIONS).toEqual([]);
+    // Ledger must be strictly sorted and unique.
+    const sorted = [...PRODUCTION_LEDGER_SNAPSHOT].sort();
+    expect(PRODUCTION_LEDGER_SNAPSHOT).toEqual(sorted);
+    expect(new Set(PRODUCTION_LEDGER_SNAPSHOT).size).toBe(PRODUCTION_LEDGER_SNAPSHOT.length);
+
+    const result = await runTaskChecks(root, "f4b-production-apply-readiness", {
+      workspace: { ok: true, branch: "test", head: "abc123" },
+      mode: "read-only",
+      runTests: false,
+    });
+    expect(result.decision).toMatch(/F4b already applied/);
+    expect(result.checks.some((c) => c.name === "pending billing migrations isolated" && c.ok)).toBe(true);
+    expect(result.checks.some((c) => c.name === "bulk apply would not be F4b-only" && c.ok)).toBe(true);
   });
 
   it("writes machine-readable report path contract", async () => {

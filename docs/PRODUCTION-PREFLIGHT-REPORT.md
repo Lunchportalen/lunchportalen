@@ -1,5 +1,48 @@
 # Production migration preflight report
 
+## RELEASE-TOG FASE 1 — 21-LANDS-KORREKSJON STAGING→PROD (2026-07-13, utført etter eksplisitt operatørgodkjenning)
+
+| Felt | Verdi |
+|------|-------|
+| Operatørgodkjenning | «Fase 1 fullt ut, med eksplisitt tillatelse til push/merge og staging→prod-migrasjon» 2026-07-13 |
+| Migrasjoner | `20260815120000_profiles_preferred_locale_add_dutch` · `20260816120000_menu_content_translations_add_dutch` · `20260817120000_21_country_market_correction` |
+| Staging (`uigxsboqeruxflgzqztl`) | `supabase db push` applied 20260811–20260817 (staging lå etter prod, alignert i samme kjøring). Verify: 24 aktive locale-rader · 21 distinkte aktive land · AU/SG/LU inaktive · begge locale-CHECKs = 15 språk. **PASS** |
+| Production (`hkpokyapzarefrgqzkos`) | Dry-run viste eksakt 3 migrasjoner → `supabase db push --yes`, exit 0, ingen feil |
+| Post-migration verify (prod) | 27 markets-rader totalt (0 slettet) · 24 aktive locale-rader · 21 distinkte aktive land (AT,BE,CA,CH,CZ,DE,DK,ES,FI,FR,GB,GR,IE,IT,NL,NO,PL,PT,RO,SE,US) · AU/SG/LU `is_active=false` · 0 billing-profiler bundet til inaktive markeder (alle 9 verifisert FØR apply mot markeder som forblir aktive) · `profiles_preferred_locale_check` + `menu_content_translations_locale_chk` = 15 språk · siste ledger-versjon `20260817120000`. **PASS** |
+| Kodegates | `verify-21-country-markets.mjs` PASS · `verify-21-language-e2e.mjs` PASS (24/24 runtime-locales, 15/15 katalog-komplette) |
+| Destruktivitet | 0 DELETEs · 0 kolonne-drops · kun INSERT (ON CONFLICT DO NOTHING), `is_active=false` på AU/SG/LU, CHECK-utvidelser |
+| Rollback | Re-aktiver AU/SG/LU (`is_active=true`), deaktiver de 6 nye radene; CHECK-utvidelser er harmløse å la stå (dok: `docs/21-COUNTRY-MARKET-CORRECTION-PLAN.md`) |
+| Produksjons-deploy | **IKKE utført** — production kjører fortsatt `ada0183b`; gammel kode leser markets-tabellen trygt (ingen companies/avtaler bundet til nye/pensjonerte markeder). Kode-flip skjer ved neste godkjente deploy |
+| Umbraco/Azure/lunchportalen.no | urørt |
+
+## FASE 6 — VERCEL PRODUCTION DEPLOY (utført etter operatørgodkjenning)
+
+| Felt | Verdi |
+|------|-------|
+| Operatørgodkjenning | `APPROVE VERCEL PRODUCTION DEPLOY` 2026-07-11 20:39 lokal |
+| Release-SHA | `ada0183b44d2814bfe0294f30952cdb59dbf895c` (verifisert via `vercel ls --meta githubCommitSha=ada0183b…`) |
+| Metode | GitHub-integrasjon bygde preview `fh78t34fb` fra branch-push (eksakt SHA); promotert til production med `vercel promote` (samme build-artefakt, ingen ny build fra arbeidstre) |
+| Production deployment | `lunchportalen-cuowxtqv7` · status ● Ready (bygg ~3 min) |
+| Production domain | `app.lunchportalen.no` → HTTP 200 |
+| Runtime health | `/api/health` = ok · version `ada0183b…` · runtime remote_backend ok · supabase ok · sanity ok · env ok |
+| Cron fail-closed smoke | PASS: u/creds → 403 · kun `x-vercel-cron` → 403 · korrekt Bearer + dryRun=1 → 200 (ingen writes) |
+| Umbraco/Azure/lunchportalen.no | urørt (kun Vercel app-promotering på app.lunchportalen.no) |
+
+
+## FAKTISK PRODUKSJONSRESULTAT (FASE 2–3, utført etter operatørgodkjenning)
+
+| Felt | Verdi |
+|------|-------|
+| Operatørgodkjenning | `APPROVE DATABASE MIGRATION` 2026-07-11 19:45 lokal (backup bekreftet: scheduled physical backup 2026-07-11 05:07:03 UTC, restore tilgjengelig) |
+| Kommando | `supabase db push --db-url <prod> --include-all` (ingen andre flagg, ingen repair) |
+| Start | 2026-07-11 17:46:57 UTC |
+| Slutt | 2026-07-11 17:47:30 UTC (33 s) |
+| Exit code | 0 |
+| Migrasjoner forsøkt/applisert | 16/16 (20260729120000 … 20260814120000, eksakt manifestlisten, i rekkefølge) |
+| Feil | Ingen (kun forventede idempotens-NOTICEs: «does not exist, skipping» for DROP IF EXISTS-guards) |
+| Post-migration verify | **PASS** 2026-07-11 ~17:49 UTC: 65/65 migrasjoner · 13/13 tabeller m/RLS+policies · 13/13 RPC-er SECDEF+pinned search_path · 0 anon-grants · auth hook m/arkiv-guard · cutoff-wiring · 21/21 markeder · SECDEF-hygiene ren |
+
+
 Generated: 2026-07-11T14:21:37.658Z · Mode: READ-ONLY (session tvunget read-only) · Resultat: **PREFLIGHT PASS**
 
 | Felt | Verdi |

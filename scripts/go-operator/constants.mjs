@@ -57,7 +57,12 @@ export const EVIDENCE_PATH_PREFIX = "docs/evidence/";
 /** @deprecated use EVIDENCE_PATH_PREFIX for evidence PRs */
 export const DOCS_ONLY_ALLOWED_PREFIXES = [EVIDENCE_PATH_PREFIX];
 
-/** Last verified production migration ledger snapshot (read-only reference). */
+/**
+ * Last verified production migration ledger snapshot (read-only reference).
+ * Verified 2026-07-13 against hosted project ledger (Fase 1 release-sannhet):
+ * billing block 20260729–20260809 applied 2026-07-11 (operator-approved),
+ * 20260811–20260814 applied 2026-07-11, 20260815–20260817 applied 2026-07-13.
+ */
 export const PRODUCTION_LEDGER_SNAPSHOT = [
   "20260528000000",
   "20260529120000",
@@ -107,11 +112,6 @@ export const PRODUCTION_LEDGER_SNAPSHOT = [
   "20260726120000",
   "20260727120000",
   "20260728120000",
-  "20260810120000",
-];
-
-/** Repo migrations not yet in production ledger snapshot (billing track). */
-export const PENDING_BILLING_MIGRATIONS = [
   "20260729120000",
   "20260730120000",
   "20260731120000",
@@ -124,7 +124,23 @@ export const PENDING_BILLING_MIGRATIONS = [
   "20260807120000",
   "20260808120000",
   "20260809120000",
+  "20260810120000",
+  "20260811120000",
+  "20260812120000",
+  "20260813120000",
+  "20260814120000",
+  "20260815120000",
+  "20260816120000",
+  "20260817120000",
 ];
+
+/**
+ * Repo migrations not yet in production ledger snapshot (billing track).
+ * Empty since 2026-07-13: the billing block 20260729–20260809 was applied to
+ * production 2026-07-11 with explicit operator approval (see
+ * docs/PRODUCTION-PREFLIGHT-REPORT.md). Kept as a contract for future tracks.
+ */
+export const PENDING_BILLING_MIGRATIONS = [];
 
 export const TASK_TEST_COMMANDS = {
   "truth-freeze": [
