@@ -6,9 +6,15 @@ import type { NextRequest } from "next/server";
 
 import { handleProviderStripeSetupWebhook } from "@/lib/billing/stripeProviderSetup";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
+import { opsKillSwitchResponse } from "@/lib/system/opsKillSwitch";
 
 export async function POST(req: NextRequest) {
   const rid = makeRid("wh_stripe_setup");
+
+  // Fase I kill switch: 503 (retryable) — Stripe redeliverer events etter reaktivering.
+  const killed = await opsKillSwitchResponse(rid, "stripe_webhooks", "stripe_setup");
+  if (killed) return killed;
+
   const signature = req.headers.get("stripe-signature");
   const raw = await req.text();
 

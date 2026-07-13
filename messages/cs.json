@@ -1,0 +1,1911 @@
+{
+  "common": {
+    "loading": "Načítání …",
+    "save": "Uložit",
+    "language": "Jazyk"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Vyberte jazyk",
+    "current": "Aktuální jazyk: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Přehled",
+      "orders": "Objednávky",
+      "customers": "Zákazníci",
+      "registrations": "Registrace",
+      "menu": "Menu",
+      "areas": "Oblasti",
+      "invoices": "Faktury",
+      "settings": "Nastavení",
+      "logout": "Odhlásit se",
+      "logoutPending": "Odhlašování…",
+      "more": "Více",
+      "comingSoon": "(již brzy)",
+      "openMenu": "Otevřít menu",
+      "closeMenu": "Zavřít menu",
+      "providerMenu": "Menu dodavatele",
+      "sidebarLabel": "Dodavatel",
+      "desktopLabel": "Dodavatel (desktop)",
+      "mobileLabel": "Hlavní navigace (mobil)",
+      "roleAdmin": "Administrátor",
+      "roleKitchen": "Kuchyně",
+      "roleDefault": "Dodavatel"
+    },
+    "dashboard": {
+      "eyebrow": "Dodavatel",
+      "lead": "Přehled zákazníků, smluv a provozu.",
+      "kpiSection": "Klíčové ukazatele",
+      "activeCustomers": "Aktivní zákazníci",
+      "activeCustomersFoot": "Firmy s aktivním obědovým programem",
+      "activeAgreements": "Aktivní zákaznické smlouvy",
+      "activeAgreementsFoot": "Zákaznické smlouvy propojené s aktivními firmami",
+      "activeAgreementsLinkTitle": "Zobrazit aktivní firemní zákazníky a smlouvy",
+      "ordersThisWeek": "Objednávky tento týden",
+      "ordersThisWeekFoot": "Objednávky zadané v aktuálním týdnu",
+      "revenueLast30Days": "Hodnota objednávek za posledních 30 dní",
+      "revenueLast30DaysFoot": "Celková hodnota objednávek",
+      "followUpSection": "Vyžaduje pozornost",
+      "followUpAllClearTitle": "Vše vypadá dobře",
+      "followUpAllClearText": "Momentálně nejsou žádné kritické položky k řešení.",
+      "quickActionsSection": "Rychlé akce",
+      "recentActivitySection": "Nedávná aktivita",
+      "activityEmptyTitle": "Zatím žádná relevantní aktivita.",
+      "activityEmptyText": "Jakmile se zákazníci zaregistrují, smlouvy budou schváleny nebo dorazí objednávky, zobrazí se zde.",
+      "quickActionOrdersTitle": "Zobrazit dnešní doručení",
+      "quickActionOrdersText": "Získejte přehled objednávek a výroby pro nejbližší den doručení.",
+      "quickActionCustomersTitle": "Zobrazit zákazníky",
+      "quickActionCustomersText": "Spravujte firmy, smlouvy a nastavení doručování.",
+      "quickActionMenuTitle": "Menu a publikování",
+      "quickActionMenuTextEnabled": "Spravujte obsah menu zobrazovaný zákazníkům.",
+      "quickActionMenuTextDisabled": "Zobrazit obsah menu a stav úprav dodavatele.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Úprava menu není povolena",
+          "text": "Obsah menu aktuálně spravuje Lunchportalen.",
+          "action": "Zobrazit stav menu"
+        },
+        "noOrdersThisWeek": {
+          "title": "Tento týden žádné objednávky",
+          "text": "Vraťte se, až zákazníci začnou objednávat nadcházející doručení.",
+          "action": "Zobrazit objednávky"
+        },
+        "noRevenue30d": {
+          "title": "Žádná hodnota objednávek za posledních 30 dní",
+          "text": "Jakmile začnou přicházet objednávky, zobrazí se zde jejich celková hodnota.",
+          "action": "Zobrazit faktury"
+        }
+      },
+      "activity": {
+        "registrationReceived": {
+          "title": "Přijata nová registrace zákazníka",
+          "description": "Firma se zaregistrovala a čeká na posouzení."
+        },
+        "registrationApproved": {
+          "title": "Zákazník schválen",
+          "description": "Registrace zákazníka byla schválena a aktivována."
+        },
+        "registrationRejected": {
+          "title": "Registrace zákazníka zamítnuta",
+          "description": "Registrace zákazníka byla zpracována a zamítnuta."
+        },
+        "agreementActivated": {
+          "title": "Smlouva aktivována",
+          "description": "Smlouva o doručování byla aktivována."
+        },
+        "agreementUpdated": {
+          "title": "Smlouva aktualizována",
+          "description": "Smlouva o doručování byla změněna."
+        },
+        "invoiceGenerated": {
+          "title": "Fakturační podklad vygenerován",
+          "description": "Nový fakturační podklad je připraven ke kontrole."
+        },
+        "orderReceived": {
+          "title": "Objednávka přijata",
+          "description": "Byla zaregistrována nová objednávka."
+        },
+        "orderCancelled": {
+          "title": "Objednávka zrušena",
+          "description": "Objednávka byla zrušena."
+        },
+        "menuPublished": {
+          "title": "Menu publikováno",
+          "description": "Obsah menu byl publikován a je viditelný pro zákazníky."
+        },
+        "settingsUpdated": {
+          "title": "Nastavení aktualizováno",
+          "description": "Nastavení dodavatele bylo změněno."
+        }
+      }
+    },
+    "orders": {
+      "page": {
+        "eyebrow": "Objednávky a výroba",
+        "heading": "Objednávky"
+      },
+      "filters": {
+        "dateGroupAria": "Období",
+        "statusGroupAria": "Stav",
+        "groupingAria": "Seskupení",
+        "companyLabel": "Firma",
+        "companyAll": "Všechny firmy",
+        "companyAria": "Filtrovat podle firmy",
+        "groupByCompany": "Podle firmy",
+        "groupByTime": "Podle času",
+        "date": {
+          "today": "Dnes",
+          "tomorrow": "Zítra",
+          "week": "Celý týden"
+        },
+        "status": {
+          "all": "Vše",
+          "received": "Přijato",
+          "production": "Ve výrobě",
+          "ready": "Připraveno",
+          "delivered": "Doručeno"
+        }
+      },
+      "status": {
+        "received": "Přijato",
+        "inProduction": "Ve výrobě",
+        "readyForDelivery": "Připraveno k doručení",
+        "delivered": "Doručeno",
+        "paused": "Pozastaveno",
+        "cancelled": "Zrušeno",
+        "other": "Ostatní"
+      },
+      "actions": {
+        "startProduction": "Zahájit výrobu",
+        "readyForDelivery": "Připraveno k doručení",
+        "markDelivered": "Označit jako doručeno",
+        "saving": "Ukládání…"
+      },
+      "empty": {
+        "title": {
+          "today": "Na dnešek žádné objednávky",
+          "tomorrow": "Na zítřek žádné objednávky",
+          "week": "Tento týden žádné objednávky",
+          "filtered": "Žádné objednávky s vybraným stavem"
+        },
+        "text": {
+          "default": "Pro vybrané období nejsou žádné aktivní objednávky.",
+          "filtered": "V tomto období nejsou žádné objednávky s vybraným stavem. Vyberte «Vše» pro zobrazení všech objednávek v období."
+        },
+        "steps": {
+          "checkMenu": "Zkontrolujte, že je menu publikováno pro příslušné dny.",
+          "checkWeek": "Zobrazte celý týden, pokud chcete projít nadcházející doručení.",
+          "ordersAppear": "Nové objednávky se zde zobrazují jako podklad pro výrobu, jakmile přicházejí."
+        }
+      },
+      "card": {
+        "deliveryGroupPrefix": "Doručení",
+        "noLines": "Nejsou registrovány žádné položky",
+        "lineQuantity": "{quantity} ks · {displayLine}",
+        "allergensPrefix": "Alergeny: {list}",
+        "noteLabel": "Poznámka:",
+        "readOnlyNote": "Pouze pro čtení — k objednávkám máte přístup jen pro čtení."
+      },
+      "fallbacks": {
+        "unknownProfile": "Neznámý",
+        "unknownProduct": "Pokrm"
+      },
+      "errors": {
+        "notAuthenticated": "Nejste přihlášeni.",
+        "orderNotFound": "Objednávka nenalezena.",
+        "kitchenRoleRequired": "Stav mohou aktualizovat pouze role kuchyně.",
+        "updateFailed": "Stav se nepodařilo aktualizovat.",
+        "unknown": "Něco se pokazilo."
+      }
+    },
+    "customers": {
+      "page": {
+        "eyebrow": "Dodavatel",
+        "heading": "Firmy",
+        "leadWithProvider": "Spravujte firemní zákazníky, smlouvy a nastavení doručování pro {providerName}.",
+        "leadDefault": "Spravujte firemní zákazníky, smlouvy a nastavení doručování."
+      },
+      "filters": {
+        "searchLabel": "Hledat",
+        "searchPlaceholder": "Hledat podle názvu firmy",
+        "statusGroupAria": "Filtr stavu",
+        "all": "Vše",
+        "active": "Aktivní",
+        "paused": "Pozastavené",
+        "suspended": "Suspendované",
+        "deleted": "Smazané"
+      },
+      "status": {
+        "active": "Aktivní",
+        "paused": "Pozastaveno",
+        "suspended": "Suspendováno",
+        "deleted": "Smazáno"
+      },
+      "table": {
+        "name": "Firma",
+        "orgnr": "IČO",
+        "status": "Stav",
+        "employees": "Zaměstnanci",
+        "ordersThisWeek": "Objednávky tento týden",
+        "historicalOrders": "Historie",
+        "invoice": "Faktura",
+        "lastUpdated": "Naposledy aktualizováno",
+        "actions": "Akce"
+      },
+      "actions": {
+        "newCustomer": "Nový firemní zákazník",
+        "newCustomerTitle": "Noví firemní zákazníci přicházejí prostřednictvím řízené registrace.",
+        "openCustomer": "Otevřít zákazníka",
+        "removeCustomer": "Odebrat zákazníka",
+        "restoreCustomer": "Obnovit zákazníka"
+      },
+      "empty": {
+        "noResults": {
+          "title": "Žádné shody",
+          "text": "Zkuste jiný název firmy nebo zrušte filtr."
+        },
+        "noStatusMatch": {
+          "title": "Žádné firmy s vybraným stavem",
+          "text": "Změňte filtr stavu, abyste viděli více firemních zákazníků."
+        },
+        "noneYet": {
+          "title": "Zatím žádné firmy",
+          "text": "Jakmile budou firemní zákazníci zaregistrováni a schváleni, zobrazí se zde se stavem, smlouvami a podkladem objednávek."
+        }
+      },
+      "card": {
+        "mobileMeta": "{employees} zaměstnanců · {orders} objednávek tento týden · {history} v historii · Faktura: {invoice}",
+        "mobileUpdatedPrefix": "Naposledy aktualizováno",
+        "orgNrPrefix": "IČO: {orgnr}"
+      },
+      "pagination": {
+        "aria": "Stránkování",
+        "prev": "Předchozí",
+        "next": "Další",
+        "oneCompany": "1 firma",
+        "companies": "{count} firem",
+        "page": "Strana {current} z {total} (celkem {count})"
+      },
+      "create": {
+        "heading": "Nový firemní zákazník",
+        "lead": "Přímé vytváření firemních zákazníků zatím není k dispozici. Nové firmy ve vaší oblasti pokrytí přicházejí přes Registrace, když projeví zájem, a po schválení se zobrazí v sekci Firmy.",
+        "backToCustomers": "Zpět na firmy"
+      },
+      "billing": {
+        "method": {
+          "email": "E-mail",
+          "ehf": "EHF",
+          "notSelected": "Nevybráno"
+        },
+        "recipient": {
+          "notSelected": "Nevybráno"
+        },
+        "commissionBase": {
+          "taxEx": "bez DPH",
+          "taxInc": "vč. DPH",
+          "notAvailable": "Není k dispozici"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Nejste přihlášeni.",
+        "providerAdminRequired": "Tuto akci mohou provést pouze administrátoři dodavatele.",
+        "providerContextMissing": "Pro přihlášeného uživatele nebylo nalezeno žádné členství u dodavatele.",
+        "customerNotFound": "Zákazník nenalezen.",
+        "invalidCustomer": "Chybí ID zákazníka.",
+        "reasonTooShort": "Důvod musí mít alespoň 20 znaků.",
+        "forbidden": "K tomuto zákazníkovi nemáte přístup.",
+        "outOfScope": "Tento zákazník nepatří k vašemu dodavateli.",
+        "confirmMismatch": "Potvrzení se neshoduje.",
+        "hardDeleteBlocked": "Tohoto zákazníka nelze trvale smazat.",
+        "alreadyArchived": "Tento zákazník je již archivován.",
+        "alreadyActive": "Tento zákazník je již aktivní.",
+        "protectedSystem": "Systémovou organizaci zde nelze měnit.",
+        "selfCustomer": "Dodavatel nemůže být svým vlastním zákazníkem.",
+        "validationFailed": "Neplatný požadavek.",
+        "invalidAgreement": "Data smlouvy jsou neplatná.",
+        "invalidPayload": "Nebyly poskytnuty žádné platné změny.",
+        "noActiveAgreement": "Firma nemá aktivní smlouvu.",
+        "updateFailed": "Zákazníka se nepodařilo aktualizovat.",
+        "suspendFailed": "Zákazníka se nepodařilo suspendovat.",
+        "pauseFailed": "Zákazníka se nepodařilo pozastavit.",
+        "removeFailed": "Zákazníka se nepodařilo odebrat.",
+        "restoreFailed": "Zákazníka se nepodařilo obnovit.",
+        "loadRulesFailed": "Pravidla pro odebrání se nepodařilo načíst.",
+        "agreementLoadFailed": "Smlouvu se nepodařilo načíst.",
+        "agreementUpdateFailed": "Smlouvu se nepodařilo uložit.",
+        "unknown": "Něco se pokazilo."
+      },
+      "detail": {
+        "eyebrow": "Zákazník",
+        "orgnrMissing": "IČO není registrováno",
+        "contactMissing": "—",
+        "locationMissing": "Doručovací adresa není nastavena",
+        "agreementStatusMissing": "Žádná aktivní smlouva",
+        "billingIncomplete": "Fakturační podklad je neúplný",
+        "vatNotSpecified": "Neuvedeno",
+        "billingPeriodLabel": "Posledních 30 dní",
+        "grossOnlyNote": "Částky jsou zobrazeny vč. DPH, protože podklad objednávek neobsahuje samostatné rozdělení DPH.",
+        "completeCommissionNote": "Provize se počítá z tržeb bez DPH.",
+        "identityTitle": "Informace o zákazníkovi",
+        "billingBasisTitle": "Fakturační podklad",
+        "meta": {
+          "orgnr": "IČO",
+          "invoiceMethod": "Způsob fakturace",
+          "agreementLevel": "Úroveň smlouvy",
+          "status": "Stav"
+        },
+        "kpis": {
+          "employees": "Zaměstnanci",
+          "activeOrders": "Aktivní objednávky",
+          "orderHistory": "Historie objednávek",
+          "revenue30Days": "Tržby za 30 dní",
+          "commission5": "Provize 5 %"
+        },
+        "actions": {
+          "editAgreement": "Upravit smlouvu",
+          "pause": "Pozastavit",
+          "suspend": "Suspendovat",
+          "removeCustomer": "Odebrat zákazníka",
+          "restore": "Obnovit",
+          "agreementUpdated": "Smlouva aktualizována."
+        },
+        "statusBanner": {
+          "suspendedDefault": "Zákazník je suspendován.",
+          "pausedDefault": "Zákazník je pozastaven."
+        },
+        "readOnly": "Máte přístup pouze pro čtení. Změny vyžadují administrátorský přístup.",
+        "labels": {
+          "orgnr": "IČO",
+          "contact": "Kontakt",
+          "email": "E-mail",
+          "phone": "Telefon",
+          "deliveryAddress": "Doručovací adresa",
+          "agreementStatus": "Stav smlouvy",
+          "period": "Období",
+          "ordersThisMonth": "Podklad objednávek",
+          "revenueExVat": "Tržby bez DPH",
+          "vat": "DPH",
+          "revenueIncVat": "Tržby vč. DPH",
+          "commissionBase": "Základ provize",
+          "commission": "Provize 5 %",
+          "commissionRateValue": "5 %",
+          "invoiceMethod": "Způsob fakturace",
+          "invoiceRecipient": "Příjemce faktury",
+          "billingStatus": "Stav"
+        },
+        "billingStatus": {
+          "ready": "Připraveno pro fakturační podklad",
+          "missingVat": "Chybí rozdělení DPH",
+          "missingRecipient": "Chybí příjemce faktury",
+          "missingOrders": "Chybí podklad objednávek"
+        },
+        "badges": {
+          "oneOrderThisMonth": "1 objednávka tento měsíc",
+          "ordersThisMonth": "{count} objednávek tento měsíc",
+          "commissionNotReady": "Provize není připravena",
+          "commissionAmount": "{amount} provize",
+          "oneHistorical": "1 historická",
+          "historical": "{count} historických",
+          "ordersSuffix": "objednávek"
+        },
+        "sections": {
+          "employees": "Zaměstnanci",
+          "orders": "Objednávky",
+          "activity": "Aktivita",
+          "employeesEmpty": "Pro tohoto zákazníka zatím nejsou registrováni žádní zaměstnanci.",
+          "ordersEmpty": "Pro tohoto zákazníka zatím nejsou registrovány žádné objednávky."
+        },
+        "employeesTable": {
+          "name": "Jméno",
+          "email": "E-mail",
+          "role": "Role"
+        }
+      },
+      "agreement": {
+        "sectionTitle": "Smlouva",
+        "activeTitle": "Aktivní zákaznická smlouva",
+        "inactiveTitle": "Zákaznická smlouva",
+        "deliveryDaysWarning": "Smlouva zahrnuje dny doručení mimo běžné doručování obědů.",
+        "multipleActiveWarning": "Pro tohoto zákazníka je registrováno více aktivních smluv.",
+        "packageMissing": "V zobrazení smlouvy zatím neuvedeno",
+        "packageMix": "Mix",
+        "locationMissing": "Doručovací adresa není nastavena",
+        "notSpecified": "Neuvedeno",
+        "weekdaysRange": "Pondělí–pátek",
+        "weekdays": {
+          "mon": "Pondělí",
+          "tue": "Úterý",
+          "wed": "Středa",
+          "thu": "Čtvrtek",
+          "fri": "Pátek"
+        },
+        "periodFromTo": "Od {from} do {to}",
+        "periodFromOpen": "Od {from} · Bez data ukončení",
+        "createdAt": "Vytvořeno {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusWeekdaysTier": "Pondělí–pátek · {tier}",
+        "dayMenusWeekdaysTierLine": "Pondělí–pátek: {tier}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "status": {
+          "active": "Aktivní",
+          "pending": "Čeká na posouzení",
+          "paused": "Pozastaveno",
+          "rejected": "Zamítnuto",
+          "closed": "Uzavřeno",
+          "unknown": "Neznámý"
+        },
+        "labels": {
+          "status": "Stav",
+          "created": "Vytvořeno",
+          "period": "Období smlouvy",
+          "deliveryDays": "Dny doručení",
+          "dayMenus": "Dny doručení a menu",
+          "location": "Doručovací adresa",
+          "package": "Úroveň smlouvy"
+        },
+        "empty": {
+          "title": "Žádná registrovaná smlouva",
+          "text": "Jakmile bude zákaznická smlouva schválena, zobrazí se zde dny doručení, lokalita a obsah smlouvy."
+        }
+      },
+      "activity": {
+        "empty": {
+          "title": "Zatím žádná relevantní aktivita zákazníka k zobrazení.",
+          "text": "Jakmile se zákazník zaregistruje, objedná nebo bude obnoven, zobrazí se to zde."
+        },
+        "events": {
+          "company_registration_submitted": {
+            "title": "Přijata registrace zákazníka",
+            "summary": "Firma odeslala žádost o smlouvu."
+          },
+          "company_registration_approved": {
+            "title": "Zákazník schválen",
+            "summary": "Registrace zákazníka schválena a aktivována."
+          },
+          "agreement_activated": {
+            "title": "Smlouva aktivována",
+            "summary": "Smlouva o doručování aktivována."
+          },
+          "agreement_updated": {
+            "title": "Smlouva aktualizována",
+            "summary": "Smlouva o doručování změněna."
+          },
+          "order_created": {
+            "title": "Objednávka zaregistrována",
+            "summary": "Zaregistrována nová objednávka."
+          },
+          "order_received": {
+            "title": "Objednávka zaregistrována",
+            "summary": "Zaregistrována nová objednávka."
+          },
+          "order_canceled": {
+            "title": "Objednávka zrušena",
+            "summary": "Objednávka byla zrušena."
+          },
+          "order_cancelled": {
+            "title": "Objednávka zrušena",
+            "summary": "Objednávka byla zrušena."
+          },
+          "provider.customer.restore.success": {
+            "title": "Zákazník obnoven",
+            "summary": "Zákaznický vztah znovu aktivován."
+          },
+          "provider.customer.restore.attempt": {
+            "title": "Obnovení zahájeno",
+            "summary": "Proběhl pokus o obnovení zákazníka."
+          },
+          "provider.customer.archive.success": {
+            "title": "Zákazník archivován",
+            "summary": "Zákazník archivován u dodavatele."
+          },
+          "provider.customer.hard_delete.success": {
+            "title": "Zákazník odebrán",
+            "summary": "Zákazník odebrán ze seznamu dodavatele."
+          }
+        }
+      },
+      "lifecycle": {
+        "dialog": {
+          "closeAria": "Zavřít dialog",
+          "reasonLabel": "Důvod",
+          "reasonHint": "{current}/{min} znaků",
+          "reasonNeedMore": " — je potřeba více znaků",
+          "cancel": "Zrušit",
+          "working": "Pracuji…",
+          "suspend": {
+            "title": "Suspendovat {name}?",
+            "confirm": "Suspendovat",
+            "description": "Uveďte jasný důvod (alespoň 20 znaků)."
+          },
+          "pause": {
+            "title": "Pozastavit {name}?",
+            "confirm": "Pozastavit",
+            "description": "Uveďte jasný důvod (alespoň 20 znaků)."
+          },
+          "delete": {
+            "title": "Smazat {name}?",
+            "confirm": "Smazat",
+            "description": "Toto zákazníka měkce smaže. Objednávky mohou být ovlivněny."
+          },
+          "resume": {
+            "title": "Obnovit {name}?",
+            "confirm": "Obnovit",
+            "description": "Zákazník a související objednávky budou obnoveny tam, kde je to možné."
+          }
+        }
+      },
+      "dialogs": {
+        "adminEyebrow": "Správa zákazníka",
+        "closeAria": "Zavřít",
+        "cancel": "Zrušit",
+        "working": "Pracuji…",
+        "removal": {
+          "loadingRules": "Načítání pravidel pro odebrání…",
+          "loadingDependencies": "Načítání závislostí…",
+          "hardDeleteTitle": "Trvale smazat zákazníka",
+          "hardDeleteBlockedTitle": "Zákazníka nelze trvale smazat",
+          "archiveTitle": "Archivovat zákazníka",
+          "removeTitle": "Odebrat zákazníka",
+          "hardDeleteLead": "Zákazník nemá žádnou provozní historii a po potvrzení může být trvale smazán.",
+          "hardDeleteBlockedLead": "Tento zákazník má provozní historii, kterou je nutné zachovat.",
+          "chooseModeLead": "Zvolte, zda chcete zákazníka archivovat, nebo trvale smazat.",
+          "loadRulesFailed": "Pravidla pro odebrání se nepodařilo načíst.",
+          "loadRulesFailedHttp": "Pravidla pro odebrání se nepodařilo načíst (HTTP {status}).",
+          "actionFailed": "Akce se nezdařila.",
+          "confirmLabel": "Potvrzení",
+          "confirmHint": "(napište přesně: {hint})",
+          "reasonOptional": "Důvod (volitelné)",
+          "archiveCustomer": "Archivovat zákazníka",
+          "hardDelete": "Smazat trvale",
+          "archiveAction": "Archivovat zákazníka"
+        },
+        "restore": {
+          "title": "Obnovit zákazníka",
+          "lead": "Tímto se znovu aktivuje zákaznický vztah bez smazání historie.",
+          "confirmLabel": "Potvrzení",
+          "confirmHint": "(napište přesně: {hint})",
+          "actionFailed": "Zákazníka se nepodařilo obnovit.",
+          "successDefault": "Zákazník obnoven.",
+          "restoreCustomer": "Obnovit zákazníka"
+        },
+        "agreementEdit": {
+          "title": "Upravit zákaznickou smlouvu",
+          "loading": "Načítání smlouvy…",
+          "loadFailed": "Smlouvu se nepodařilo načíst.",
+          "saveFailed": "Smlouvu se nepodařilo uložit.",
+          "save": "Uložit změny",
+          "saving": "Ukládání…",
+          "updated": "Smlouva aktualizována.",
+          "updatedWithWarnings": "Smlouva aktualizována. {warnings}",
+          "dayMenusLegend": "Menu pro jednotlivé dny doručení",
+          "dayMenusLead": "Zvolte, které menu má zákazník pro jednotlivé dny doručení.",
+          "weekdaysOnlyNote": "Doručování obědů pondělí–pátek. Víkendy nejsou podporovány.",
+          "locationLegend": "Doručovací adresa",
+          "locationName": "Název lokality",
+          "address": "Adresa",
+          "contactLegend": "Kontaktní osoba",
+          "name": "Jméno",
+          "email": "E-mail",
+          "phone": "Telefon",
+          "deliveryWindowLegend": "Doručovací okno",
+          "from": "Od",
+          "to": "Do",
+          "billingLegend": "Fakturace",
+          "invoiceEmail": "E-mail",
+          "invoiceEmailField": "Fakturační e-mail",
+          "ehf": "EHF",
+          "orgnr": "Identifikační číslo organizace",
+          "ehfEndpoint": "Koncový bod EHF",
+          "billingContact": "Fakturační kontakt",
+          "statusLegend": "Stav",
+          "statusActive": "Aktivní",
+          "statusPaused": "Pozastaveno",
+          "deliveryNote": "Pokyny k doručení",
+          "reasonOptional": "Důvod (volitelné, ukládá se do auditního protokolu)",
+          "validation": {
+            "pickDeliveryDay": "Vyberte alespoň jeden den doručení.",
+            "pickMenuForDay": "Vyberte menu pro {day}.",
+            "invalidEmail": "Neplatná e-mailová adresa.",
+            "invoiceEmailRequired": "Fakturační e-mail musí být platná e-mailová adresa.",
+            "ehfEndpointRequired": "Koncový bod EHF je povinný.",
+            "orgnrLength": "Identifikační číslo organizace musí mít 9 číslic.",
+            "invalidBillingEmail": "Neplatný e-mail fakturačního kontaktu."
+          }
+        }
+      }
+    },
+    "coverage": {
+      "page": {
+        "eyebrow": "Dodavatel",
+        "heading": "Oblasti pokrytí",
+        "leadWithProvider": "Oblasti pokrytí určují, které firmy mohou poslat žádost dodavateli {providerName}. Použijte je k definici PSČ, minimálního počtu zaměstnanců a dnů doručení.",
+        "leadNoProvider": "Oblasti pokrytí určují, které firmy mohou poslat žádost dodavateli. Použijte je k definici PSČ, minimálního počtu zaměstnanců a dnů doručení."
+      },
+      "actions": {
+        "newArea": "Nová oblast pokrytí",
+        "newAreaTitle": "Přidat novou oblast pokrytí pro dodavatele.",
+        "readOnlyNote": "Máte přístup pouze pro čtení. Změny vyžadují administrátorský přístup.",
+        "edit": "Upravit",
+        "activate": "Aktivovat",
+        "deactivate": "Deaktivovat",
+        "deactivateTitle": "Nové firmy v této oblasti si nemohou vybrat dodavatele, dokud je oblast deaktivována. Stávající smlouvy se automaticky nemění.",
+        "activateTitle": "Znovu zpřístupnit oblast pro nové žádosti firem.",
+        "cancel": "Zrušit",
+        "closeDrawer": "Zavřít",
+        "createArea": "Vytvořit oblast",
+        "saveChanges": "Uložit změny",
+        "saving": "Ukládání…"
+      },
+      "table": {
+        "area": "Oblast",
+        "postalCodes": "PSČ",
+        "minEmployees": "Min. zaměstnanců",
+        "deliveryDays": "Dny doručení",
+        "status": "Stav"
+      },
+      "summary": {
+        "noneActive": "Žádné aktivní oblasti pokrytí",
+        "oneActive": "1 aktivní oblast pokrytí",
+        "manyActive": "{count} aktivních oblastí pokrytí",
+        "inactiveSuffix": " · {count} neaktivních"
+      },
+      "status": {
+        "active": "Aktivní",
+        "inactive": "Neaktivní",
+        "paused": "Pozastaveno",
+        "unknown": "Neznámý"
+      },
+      "weekdays": {
+        "mon": "Po",
+        "tue": "Út",
+        "wed": "St",
+        "thu": "Čt",
+        "fri": "Pá",
+        "weekdaysRange": "Pondělí–pátek"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesRange": "{min}–{max}",
+        "employeesMin": "{min}+",
+        "employeesMax": "≤{max}"
+      },
+      "empty": {
+        "title": "Zatím žádné oblasti pokrytí",
+        "text": "Přidejte oblast pokrytí, abyste určili, které firmy mohou poslat žádost dodavateli.",
+        "step1": "Definujte PSČ nebo oblast.",
+        "step2": "Nastavte minimální počet zaměstnanců.",
+        "step3": "Vyberte dny doručení pro oblast."
+      },
+      "form": {
+        "editTitle": "Upravit oblast",
+        "createTitle": "Přidat oblast",
+        "cityLabel": "Město / oblast",
+        "postalFrom": "PSČ od",
+        "postalTo": "PSČ do",
+        "minEmployees": "Min. zaměstnanců",
+        "maxEmployees": "Max. zaměstnanců (volitelné)",
+        "deliveryDaysLegend": "Dny doručení",
+        "activeToggle": "Aktivní oblast (používá se při párování registrací)"
+      },
+      "errors": {
+        "notAuthenticated": "Nejste přihlášeni.",
+        "providerAdminRequired": "Oblasti pokrytí může měnit pouze administrátor dodavatele.",
+        "forbidden": "Nemáte přístup ke změně této oblasti.",
+        "validationFailed": "Neplatný formulář.",
+        "cityRequired": "Město je povinné.",
+        "invalidPostalFrom": "PSČ od musí mít 4 číslice.",
+        "invalidPostalTo": "PSČ do musí mít 4 číslice.",
+        "invalidPostalRange": "PSČ od nemůže být vyšší než PSČ do.",
+        "deliveryDaysRequired": "Vyberte alespoň jeden den.",
+        "invalidEmployeeRange": "Min. počet zaměstnanců nemůže být vyšší než max.",
+        "invalidPostalCode": "PSČ musí mít 4 číslice.",
+        "postalRangeInvalid": "PSČ od nemůže být vyšší než PSČ do.",
+        "employeeRangeInvalid": "Neplatný rozsah počtu zaměstnanců.",
+        "postalOverlap": "Rozsah PSČ se překrývá s existující aktivní oblastí.",
+        "serviceAreaNotFound": "Oblast nebyla nalezena.",
+        "saveFailed": "Oblast se nepodařilo uložit. Zkuste to znovu.",
+        "toggleFailed": "Stav se nepodařilo aktualizovat.",
+        "unknown": "Něco se pokazilo. Zkuste to znovu."
+      }
+    },
+    "settings": {
+      "page": {
+        "eyebrow": "Dodavatel",
+        "heading": "Nastavení",
+        "leadWithProvider": "Profil a kontaktní údaje pro {providerName}.",
+        "readOnly": "Máte přístup pouze pro čtení. Nastavení může měnit pouze administrátor.",
+        "brandSection": "Logo a značka",
+        "brandIntro": "Nahrajte logo a zvolte kontrolovanou akcentovou barvu. Lunchportalen zachovává rozvržení, typografii a produktový výraz.",
+        "logoHeading": "Logo",
+        "logoIntro": "Použijte čisté logo s průhledným pozadím. Logo se zobrazuje kontrolovaným způsobem v menu dodavatele.",
+        "logoNote": "Loga, která nedodržují vizuální standard platformy, mohou být odmítnuta.",
+        "colorHeading": "Primární barva",
+        "colorIntro": "Zvolte akcentovou barvu dodavatele. Barva se používá pouze v kontrolovaných detailech.",
+        "operationsSection": "Provoz a upozornění",
+        "operationsIntro": "Zadejte e-mailové adresy, které mají přijímat objednávky, kuchyňské seznamy a oznámení o doručení pro tohoto dodavatele. Tato nastavení platí pouze pro tuto cateringovou společnost.",
+        "operationsNote": "Cateringová společnost musí zadat e-mailové adresy, které mají přijímat objednávky, kuchyňské seznamy a oznámení o doručení. Lunchportalen ve výchozím nastavení neposílá provozní e-maily dodavatele na platformu — chybějící e-mail je nutné vyplnit zde.",
+        "accountingSection": "Účetnictví",
+        "accountingIntro": "Připojte Tripletex pro automatickou fakturaci a stav plateb prostřednictvím norské účetní integrace. Nejedná se o globální účetní standard.",
+        "tripletexSetup": "Nastavení Tripletex"
+      },
+      "menuProfile": {
+        "heading": "Trh, měna a profil menu",
+        "flagActive": "Povoleno pomocí feature flagu — pouze zobrazení, zatím žádná změna produktu.",
+        "statusInactive": "Profil menu zatím neřídí kategorie, publikování ani ceny.",
+        "statusLabel": "Stav",
+        "uiVsProfileExplanation": "Jazyk rozhraní překládá rozhraní. Trh a profil menu řídí místní pevné volby, banku teplých jídel a měnu. Úplné propojení přijde v další fázi G5.",
+        "profileLabel": "Profil menu",
+        "sourceLabel": "Zdroj",
+        "marketLabel": "Trh",
+        "localeLabel": "Národní prostředí",
+        "currencyLabel": "Měna",
+        "readOnlyNote": "Pouze zobrazení. Obsah menu, měna a ceny se zde nemění.",
+        "invalidProfile": "Neplatný profil menu v nastavení: {message}",
+        "sourceProviderSetting": "Nastavení dodavatele",
+        "sourceMarketDefault": "Výchozí pro trh",
+        "sourceFallbackNoMarket": "Záloha (chybí profil/trh)",
+        "sourceLegacyDisabled": "Starší (zakázáno)",
+        "sourceUnknown": "Neznámý",
+        "marketNames": {
+          "NO": "Norsko",
+          "SE": "Švédsko",
+          "DK": "Dánsko",
+          "FI": "Finsko",
+          "DE": "Německo",
+          "FR": "Francie",
+          "ES": "Španělsko",
+          "UK": "Spojené království",
+          "IT": "Itálie"
+        }
+      },
+      "profile": {
+        "leadWithProvider": "Profil pro {providerName}",
+        "nameLabel": "Název",
+        "emailLabel": "Kontaktní e-mail",
+        "phoneLabel": "Kontaktní telefon",
+        "save": "Uložit nastavení",
+        "saving": "Ukládání…",
+        "saved": "Nastavení uloženo.",
+        "errors": {
+          "notAuthenticated": "Nejste přihlášeni.",
+          "providerNotFound": "Dodavatel chybí.",
+          "forbidden": "Bez přístupu.",
+          "nameRequired": "Název je povinný.",
+          "emailRequired": "Je vyžadován platný e-mail.",
+          "saveFailed": "Nastavení se nepodařilo uložit.",
+          "unknown": "Neočekávaná chyba při ukládání."
+        }
+      },
+      "operations": {
+        "operationsEmailLabel": "E-mail pro objednávky a provoz",
+        "operationsEmailHint": "Používá se jako hlavní příjemce upozornění na objednávky a provozních zpráv.",
+        "kitchenEmailLabel": "E-mail kuchyně",
+        "kitchenEmailHint": "Používá se pro výrobní podklady a upozornění pro kuchyni.",
+        "deliveryEmailLabel": "E-mail pro doručování",
+        "deliveryEmailHint": "Používá se pro upozornění a zprávy související s doručením, když jsou objednávky připraveny k doručení.",
+        "localeLabel": "Trh a jazyk administrace",
+        "localeHint": "Řídí uložený trh a profil menu pro tuto cateringovou společnost. Do další fáze neovlivňuje objednávkové okno zaměstnanců.",
+        "uiLocaleSeparation": "Jazyk v postranním panelu mění pouze text rozhraní. Trh a profil menu se ukládají zde v provozních nastaveních.",
+        "marketProfileLabel": "Aktivní profil menu",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Zatím není uložen žádný profil menu — vybere se automaticky při uložení trhu.",
+        "marketChangeImpact": "Změna trhu ovlivňuje budoucí návrhy menu a generovaná jídla.",
+        "marketChangeCatalogPreserved": "Stávající katalog a publikované objednávky se nepřepisují.",
+        "marketChangeResetRequired": "Sestavení nového katalogu z tržního profilu vyžaduje samostatný reset.",
+        "marketChangeEmployeeRuntime": "Zaměstnanci obdrží profil menu dodavatele, jakmile bude v další fázi povolen runtime.",
+        "save": "Uložit provozní nastavení",
+        "saving": "Ukládání…",
+        "saved": "Provozní nastavení uloženo.",
+        "locales": {
+          "nb-NO": "Norština (bokmål)",
+          "cs-CZ": "Čeština",
+          "da-DK": "Dánština",
+          "de-DE": "Němčina",
+          "en-GB": "Angličtina",
+          "es-ES": "Španělština",
+          "fr-FR": "Francouzština",
+          "it-IT": "Italština",
+          "nl-NL": "Nizozemština",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Finština",
+          "sv-SE": "Švédština",
+          "el-GR": "Ελληνικά"
+        },
+        "errors": {
+          "notAuthenticated": "Nejste přihlášeni.",
+          "providerNotFound": "Dodavatel chybí.",
+          "forbidden": "Bez přístupu.",
+          "invalidEmail": "Neplatná e-mailová adresa.",
+          "emailTooLong": "E-mailová adresa je příliš dlouhá.",
+          "invalidLocale": "Neplatný výběr jazyka.",
+          "saveFailed": "Provozní nastavení se teď nepodařilo uložit.",
+          "unknown": "Provozní nastavení se teď nepodařilo uložit."
+        }
+      },
+      "logo": {
+        "hint": "Doporučeno: logo ve formátu PNG nebo WebP s průhledným pozadím. Max. 2 MB. Nepoužívejte fotografie jídla, bannery, snímky obrazovky, reklamní grafiku ani loga na rušném/barevném pozadí.",
+        "upload": "Nahrát logo",
+        "replace": "Nahradit logo",
+        "remove": "Odstranit logo",
+        "pickFile": "Vybrat soubor s logem",
+        "altWithProvider": "Logo pro {providerName}",
+        "uploading": "Nahrávání…",
+        "removing": "Odstraňování…",
+        "updated": "Logo aktualizováno.",
+        "removed": "Logo odstraněno.",
+        "errors": {
+          "notAuthenticated": "Nejste přihlášeni.",
+          "invalidProvider": "Neplatný dodavatel.",
+          "forbidden": "Bez přístupu.",
+          "noFileSelected": "Vyberte soubor s logem.",
+          "unsupportedFileType": "Logo musí být PNG nebo WebP. Upřednostněte logo s průhledným pozadím.",
+          "fileTooLarge": "Logo je příliš velké. Maximální velikost je 2 MB.",
+          "uploadUnavailable": "Nahrávání teď není k dispozici.",
+          "uploadFailed": "Logo se nepodařilo nahrát.",
+          "removeFailed": "Logo se nepodařilo odstranit.",
+          "saveFailed": "Logo se nepodařilo uložit.",
+          "urlFailed": "URL loga se nepodařilo zjistit.",
+          "unknown": "Neočekávaná chyba při nahrávání."
+        }
+      },
+      "brand": {
+        "hexLabel": "HEX kód",
+        "save": "Uložit barvu",
+        "saving": "Ukládání…",
+        "sampleHint": "Jak se barva používá: jako drobný akcent v menu a detailech.",
+        "formatHint": "Použijte formát HEX, například #F5C518. Pokud je kontrast slabý, použije se výchozí barva.",
+        "saved": "Barva uložena.",
+        "restoredDefault": "Výchozí barva obnovena.",
+        "errors": {
+          "notAuthenticated": "Nejste přihlášeni.",
+          "invalidProvider": "Neplatný dodavatel.",
+          "forbidden": "Bez přístupu.",
+          "invalidHex": "Použijte formát HEX, například #F5C518.",
+          "contrastTooWeak": "Barva má příliš malý kontrast a nelze ji použít. Zvolte tmavší barvu.",
+          "saveFailed": "Barvu se nepodařilo uložit.",
+          "unknown": "Neočekávaná chyba při ukládání."
+        }
+      }
+    },
+    "banner": {
+      "paused": {
+        "title": "Dodavatel je pozastaven",
+        "defaultReason": "Dočasné pozastavení"
+      },
+      "suspended": {
+        "title": "Dodavatel je suspendován",
+        "defaultReason": "Suspendováno"
+      },
+      "contactPrefix": "Kontaktujte",
+      "contactSuffix": "pro vyřešení."
+    },
+    "billing": {
+      "page": {
+        "eyebrow": "Dodavatel",
+        "heading": "Faktury a vyúčtování",
+        "subheading": "Přehled fakturačních podkladů, provize a vyúčtování mezi dodavatelem a platformou Lunchportalen."
+      },
+      "summary": {
+        "settlementStatus": "Stav vyúčtování",
+        "commission": "Provize",
+        "nextSettlement": "Další vyúčtování",
+        "activateHint": "Pro aktivaci kontaktujte Lunchportalen.",
+        "commissionPending": "Zobrazí se po aktivaci vyúčtování",
+        "nextSettlementNone": "Nenaplánováno"
+      },
+      "notActivated": {
+        "title": "Vyúčtování není aktivováno",
+        "text": "Vyúčtování pro tohoto dodavatele zatím není aktivováno. Kontaktujte Lunchportalen pro aktivaci smlouvy o vyúčtování a fakturačních podkladů."
+      },
+      "commissionNote": "Lunchportalen účtuje 5% provizi za každou prodanou porci, jakmile je vyúčtování aktivováno.",
+      "agreement": {
+        "activeEyebrow": "Aktivní smlouva o vyúčtování",
+        "netPerMonth": "Netto / měsíc",
+        "vatLabel": "DPH ({rate} %)",
+        "totalPerMonth": "Celkem / měsíc",
+        "invoiceSentTo": "Faktura zasílána na",
+        "orgNrSuffix": " · IČO {orgNumber}"
+      },
+      "history": {
+        "title": "Fakturační podklady a vyúčtování",
+        "emptyTitle": "Zatím nebyl vygenerován žádný fakturační podklad",
+        "emptyText": "Jakmile bude vyúčtování aktivováno a podklad připraven, zobrazí se zde fakturační podklady, provize, částky, stav a data splatnosti."
+      },
+      "invoice": {
+        "table": {
+          "period": "Období",
+          "amount": "Částka",
+          "status": "Stav",
+          "dueDate": "Splatnost"
+        },
+        "noNumber": "Bez čísla",
+        "drawerTitle": "Faktura {number}",
+        "net": "Netto",
+        "vat": "DPH",
+        "total": "Celkem",
+        "status": "Stav",
+        "sent": "Odesláno",
+        "paid": "Zaplaceno",
+        "downloadPdfSoon": "Stáhnout PDF (již brzy)",
+        "downloadPdfIntegrationTitle": "Přijde s integrací Tripletex"
+      },
+      "status": {
+        "settlement": {
+          "active": "Aktivní",
+          "notActivated": "Neaktivováno"
+        },
+        "invoice": {
+          "DRAFT": "Koncept",
+          "SENT": "Odesláno",
+          "PAID": "Zaplaceno",
+          "OVERDUE": "Po splatnosti",
+          "VOID": "Stornováno",
+          "unknown": "Neznámý"
+        }
+      },
+      "plan": {
+        "SAAS_FIXED": "Pevná měsíční cena",
+        "SAAS_PER_COMPANY": "Cena za firmu",
+        "CUSTOM": "Individuální smlouva"
+      },
+      "actions": {
+        "details": "Podrobnosti",
+        "close": "Zavřít",
+        "closeDrawer": "Zavřít"
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "contact": {
+        "editButton": "Upravit fakturační kontakt",
+        "title": "Fakturační kontakt",
+        "emailLabel": "Fakturační e-mail",
+        "orgLabel": "IČO (volitelné)",
+        "addressLabel": "Fakturační adresa (volitelné)",
+        "cancel": "Zrušit",
+        "save": "Uložit",
+        "saving": "Ukládání…",
+        "saved": "Fakturační kontakt aktualizován.",
+        "saveFailed": "Nepodařilo se uložit."
+      },
+      "errors": {
+        "notAuthenticated": "Nejste přihlášeni.",
+        "providerAdminRequired": "Fakturační kontakt může měnit pouze administrátor dodavatele.",
+        "forbidden": "Nemáte přístup.",
+        "invalidEmail": "Neplatný fakturační e-mail.",
+        "activeSubscriptionNotFound": "Žádné aktivní předplatné k aktualizaci.",
+        "saveFailed": "Fakturační kontakt se nepodařilo uložit.",
+        "unknown": "Něco se pokazilo. Zkuste to prosím znovu."
+      }
+    },
+    "tripletex": {
+      "brand": "Tripletex",
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "status": {
+          "eyebrow": "Tripletex",
+          "heading": "Stav připojení",
+          "subheading": "Přehled připojení, webhooků a nedávné aktivity.",
+          "fallbackHeading": "Stav Tripletex",
+          "noAccess": "K tomuto dodavateli nemáte přístup."
+        },
+        "connect": {
+          "heading": "Připojit Tripletex",
+          "adminRequired": "Tripletex může připojit pouze administrátor dodavatele.",
+          "degraded": {
+            "heading": "Tripletex vyžaduje pozornost",
+            "body": "Připojení je degradované. Postup pro novou konfiguraci přijde v TPT-B-7b-edge.",
+            "badge": "Vyžaduje pozornost"
+          },
+          "disconnected": {
+            "heading": "Tripletex je odpojen",
+            "body": "Postup obnovení bez nového tokenu přijde v TPT-B-7b-edge.",
+            "badge": "Odpojeno"
+          }
+        }
+      },
+      "state": {
+        "CONNECTED": "Připojeno",
+        "CONFIGURING": "Konfigurace…",
+        "DEGRADED": "Vyžaduje pozornost",
+        "DISCONNECTED": "Odpojeno",
+        "NOT_CONNECTED": "Nepřipojeno"
+      },
+      "activity": {
+        "onboarding_connection_started": "Připojení zahájeno",
+        "onboarding_provisioning_completed": "Nastavení dokončeno",
+        "onboarding_customer_skipped": "Zákazník přeskočen",
+        "onboarding_finalized": "Připojení dokončeno",
+        "onboarding_disconnected": "Tripletex odpojen",
+        "onboarding_reconnect_initiated": "Obnovení zahájeno",
+        "onboarding_test_token": "Připojení otestováno",
+        "onboarding_vault_purged": "Přihlašovací údaje smazány",
+        "state_change_connected": "Stav změněn na připojeno",
+        "state_change_degraded": "Stav změněn na vyžaduje pozornost",
+        "state_change_disconnected": "Stav změněn na odpojeno",
+        "state_change_configuring": "Stav změněn na konfiguraci",
+        "state_change_generic": "Stav připojení se změnil"
+      },
+      "status": {
+        "sections": {
+          "resources": "Zdroje v Tripletex",
+          "webhook": "Webhook",
+          "activity": "Aktivita za posledních 30 dní",
+          "actions": "Akce"
+        },
+        "hero": {
+          "configureWebhook": "Konfigurovat webhook →",
+          "continueSetup": "Pokračovat v nastavení →",
+          "reconnect": "Připojit znovu →",
+          "reconfigure": "Znovu konfigurovat →",
+          "since": "Od {datetime}",
+          "lastHealthCheck": "Poslední kontrola stavu: {relative}",
+          "credentialsPurge": "Přihlašovací údaje budou smazány {datetime}",
+          "daysUntilPurge": "za {days} dní"
+        },
+        "cards": {
+          "products": "Produkty",
+          "productsMeta": "Namapované produkty jídel",
+          "customers": "Zákazníci",
+          "customersMeta": "Propojení firem v Tripletex",
+          "vatCodes": "Kódy DPH",
+          "vatCodesMeta": "Jedinečné daňové kódy v použití"
+        },
+        "webhook": {
+          "subscriptions": "Registrované odběry",
+          "activeCount": "{count} aktivních v Tripletex",
+          "noneRegistered": "Zatím žádné registrované",
+          "eventTypes": "Typy událostí",
+          "lastReceived": "Naposledy přijato",
+          "noEventsYet": "Zatím žádné události",
+          "last30Days": "Posledních 30 dní",
+          "eventsCount": "{count} událostí",
+          "secretRotated": "Tajný klíč obměněn",
+          "notRotated": "Neobměněn",
+          "copy": "Kopírovat",
+          "copied": "Zkopírováno",
+          "copyFailed": "Nepodařilo se zkopírovat"
+        },
+        "activityStats": {
+          "invoicesSent": "Odeslané faktury",
+          "invoicesPaid": "Zaplacené faktury",
+          "workerFailures": "Neúspěšná odeslání",
+          "webhookEvents": "Webhooky",
+          "recentHeading": "Nedávné události",
+          "empty": "Zatím nebyly zaznamenány žádné události."
+        },
+        "actions": {
+          "adminNote": "Tyto akce může provést pouze administrátor dodavatele.",
+          "testConnection": "Otestovat připojení",
+          "rotateSecret": "Obměnit tajný klíč webhooku",
+          "disconnect": "Odpojit →"
+        },
+        "modals": {
+          "close": "Zavřít",
+          "copy": "Kopírovat",
+          "copied": "Zkopírováno",
+          "copyFailed": "Nepodařilo se zkopírovat",
+          "ok": "OK",
+          "failed": "Selhalo",
+          "test": {
+            "title": "Otestovat připojení",
+            "body": "Spustí úplné třístupňové ověření vůči Tripletex pomocí uložených přihlašovacích údajů.",
+            "stepAuth": "Ověření",
+            "stepCompany": "Firma",
+            "stepScope": "Přístup",
+            "run": "Spustit test",
+            "running": "Testování…"
+          },
+          "rotate": {
+            "title": "Obměnit tajný klíč webhooku",
+            "body": "Vygeneruje nový tajný klíč a po dokončení nastavení aktualizuje odběr v Tripletex.",
+            "generate": "Vygenerovat nový tajný klíč",
+            "generating": "Generování…"
+          },
+          "disconnect": {
+            "title": "Odpojit Tripletex",
+            "body": "Připojení bude nastaveno jako odpojené. Přihlašovací údaje se uchovávají 30 dní, abyste se mohli znovu připojit bez nového tokenu. Poté budou trvale smazány.",
+            "confirm": "Potvrdit odpojení",
+            "confirming": "Odpojování…"
+          }
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Připojit Tripletex",
+        "leadForProvider": "Pro {providerName}",
+        "progress": {
+          "token": "Token",
+          "verify": "Ověření",
+          "setup": "Nastavení",
+          "webhook": "Webhook",
+          "done": "Hotovo",
+          "ariaLabel": "Krok {current} z {total}: {label}"
+        },
+        "steps": {
+          "token": {
+            "eyebrow": "Krok 1 z 5",
+            "title": "Vložit a ověřit",
+            "intro": "Vygenerujte Employee Token v Tripletex v sekci Firma → Přístup k API. Vložte níže Company ID z URL (contextId) a token.",
+            "companyIdLabel": "Tripletex Company ID",
+            "companyIdHelp": "Formát: 6–12 číslic. Najdete jej v URL: contextId=…",
+            "companyIdInvalid": "Company ID musí mít 6–12 číslic.",
+            "tokenLabel": "Employee Token",
+            "tokenHintPending": "Token se odesílá na server pouze při ověření a uložení.",
+            "tokenHintVerified": "Token ověřen a připraven k uložení.",
+            "tokenMissing": "Vložte Employee Token z Tripletex.",
+            "verify": "Ověřit",
+            "verifying": "Ověřování…",
+            "retry": "Zkusit znovu",
+            "continue": "Pokračovat",
+            "connecting": "Připojování…",
+            "checksFailed": "Jedna nebo více kontrol selhalo. Opravte a zkuste znovu.",
+            "tokenMissingOnContinue": "Token chybí. Ověřte znovu.",
+            "notRun": "Nespuštěno"
+          },
+          "provisioning": {
+            "eyebrow": "Krok 3 z 5",
+            "title": "Nastavování Tripletex",
+            "intro": "Obvykle to trvá 10–30 sekund.",
+            "starting": "Zahajování nastavení…",
+            "waiting": "Čekání na nastavení Tripletex…",
+            "complete": "Nastavení dokončeno.",
+            "syncing": "Synchronizace kódů DPH, produktů a zákazníků…",
+            "timeout": "Něco trvalo déle, než se očekávalo.",
+            "timeoutHint": "Nastavení pokračuje na pozadí. Tuto stránku můžete zavřít a vrátit se později.",
+            "contactSupport": "Kontaktovat podporu",
+            "vatSync": "Synchronizace kódů DPH",
+            "productsCreate": "Vytváření produktů",
+            "customersSync": "Synchronizace zákazníků"
+          },
+          "webhook": {
+            "eyebrow": "Krok 4 z 5",
+            "title": "Registrace webhooku",
+            "intro": "Lunchportalen registruje odběry webhooků v Tripletex automaticky. URL ani tajný klíč nemusíte vkládat ručně.",
+            "preparing": "Příprava tajného klíče webhooku…",
+            "ready": "Připraveno. Kliknutím na «Dokončit nastavení» zaregistrujete webhook a dokončíte připojení.",
+            "prepareFailed": "Tajný klíč webhooku se nepodařilo připravit.",
+            "registering": "Registrace webhooku v Tripletex…",
+            "finalize": "Dokončit nastavení",
+            "finalizing": "Dokončování…"
+          },
+          "success": {
+            "eyebrow": "Krok 5 z 5",
+            "title": "✓ Tripletex je připojen",
+            "companyPrefix": "Firma:",
+            "canNow": "Nyní můžete:",
+            "bulletInvoices": "Odesílat faktury automaticky do Tripletex",
+            "bulletPayments": "Přijímat stav plateb přes webhook",
+            "bulletStatus": "Zobrazit stav připojení a historii",
+            "viewInvoices": "Zobrazit historii faktur",
+            "viewStatus": "Zobrazit stav připojení",
+            "backToSettings": "Zpět na přehled"
+          }
+        },
+        "verify": {
+          "auth": "Testování ověření",
+          "companyMatch": "Ověřování shody Company ID",
+          "scope": "Testování oprávnění",
+          "authOk": "Připojení OK",
+          "companyOk": "Správná firma",
+          "scopeOk": "Přístup OK"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Nejste přihlášeni.",
+        "providerAdminRequired": "Tuto akci může provést pouze administrátor dodavatele.",
+        "forbidden": "K tomuto dodavateli nemáte přístup.",
+        "invalidCompanyId": "Company ID musí mít 6–12 číslic.",
+        "missingToken": "Employee Token je povinný.",
+        "tokenVerificationFailed": "Ověření selhalo.",
+        "verificationFailed": "Ověření selhalo. Token nebo oprávnění nejsou platné.",
+        "credentialsLoadFailed": "Přihlašovací údaje se nepodařilo načíst.",
+        "configurationMissing": "Přihlašovací údaje Tripletex nejsou nakonfigurovány.",
+        "connectionTestFailed": "Test připojení selhal.",
+        "healthLoadFailed": "Stav připojení se nepodařilo načíst.",
+        "disconnectFailed": "Tripletex se nepodařilo odpojit.",
+        "invalidState": "Připojení nelze v aktuálním stavu odpojit.",
+        "rotateFailed": "Tajný klíč webhooku se nepodařilo vygenerovat.",
+        "webhookSecretRequired": "Nejprve musí být vygenerován tajný klíč webhooku.",
+        "webhookSyncFailed": "Webhook se nepodařilo zaregistrovat v Tripletex.",
+        "provisioningNotComplete": "Nastavení ještě není dokončeno.",
+        "completeFailed": "Připojení se nepodařilo uložit.",
+        "finalizeFailed": "Připojení se nepodařilo dokončit.",
+        "saveFailed": "Akce se nezdařila.",
+        "unknown": "Něco se pokazilo. Zkuste to prosím znovu."
+      }
+    },
+    "registrations": {
+      "page": {
+        "eyebrow": "Dodavatel",
+        "heading": "Žádosti",
+        "subheading": "Posuzujte nové firmy se zájmem o obědový program a před zpracováním vyhodnoťte oblast doručení, kontaktní údaje a požadovanou smlouvu."
+      },
+      "table": {
+        "company": "Firma",
+        "area": "Oblast",
+        "contact": "Kontakt",
+        "employees": "Zaměstnanci",
+        "received": "Přijato",
+        "status": "Stav"
+      },
+      "status": {
+        "pending": "Čeká na posouzení",
+        "approved": "Schváleno",
+        "rejected": "Zamítnuto",
+        "other": "Ostatní"
+      },
+      "summary": {
+        "none": "Žádné čekající",
+        "one": "1 čekající",
+        "many": "{count} čekajících"
+      },
+      "actions": {
+        "review": "Posoudit"
+      },
+      "empty": {
+        "title": "Žádné žádosti čekající na posouzení",
+        "text": "Nové firemní žádosti se zde zobrazí, jakmile budou odpovídat vaší oblasti pokrytí.",
+        "steps": {
+          "reviewRequest": "Když žádost dorazí, zkontrolujte místo doručení, kontaktní údaje a požadovaný obědový program.",
+          "approvedFlow": "Schválené firmy pokračují do procesu zákazníka a smlouvy.",
+          "rejectedFlow": "Zamítnuté žádosti se zpracovávají řízeně s jasným stavem."
+        }
+      },
+      "dialogs": {
+        "closeAria": "Zavřít",
+        "approveTitle": "Schválit registraci",
+        "rejectTitle": "Zamítnout registraci",
+        "contactLabel": "Kontakt",
+        "phoneLabel": "Telefon",
+        "employeesLabel": "Zaměstnanci (přibližně)",
+        "tierLabel": "Úroveň smlouvy",
+        "rejectReasonLabel": "Důvod",
+        "rejectInstead": "Raději zamítnout",
+        "approveInstead": "Raději schválit",
+        "cancel": "Zrušit",
+        "approve": "Schválit",
+        "reject": "Zamítnout",
+        "saving": "Zpracování…"
+      },
+      "errors": {
+        "notAuthenticated": "Nejste přihlášeni.",
+        "providerAdminRequired": "Tuto akci mohou provést pouze administrátoři dodavatele.",
+        "registrationNotFound": "Registrace nenalezena.",
+        "registrationAlreadyProcessed": "Tato registrace již byla zpracována.",
+        "invalidTier": "Neplatná úroveň smlouvy.",
+        "rejectReasonRequired": "Uveďte krátký důvod.",
+        "approveFailed": "Registraci se nepodařilo schválit.",
+        "rejectFailed": "Registraci se nepodařilo zamítnout.",
+        "actionFailed": "Akce se nezdařila.",
+        "unknown": "Něco se pokazilo."
+      }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Pouze zobrazení",
+        "readOnlyLead": "Nemáte oprávnění upravovat menu. Pro přístup k úpravám kontaktujte administrátora vašeho dodavatele.",
+        "translationsPromoTitle": "Překlady menu",
+        "translationsPromoLead": "Přeložené texty menu pro zaměstnance schválíte později. Do SMART-3 zaměstnanci stále vidí původní text.",
+        "translationsPromoCta": "Otevřít překlady menu"
+      },
+      "translationsPage": {
+        "eyebrow": "Menu",
+        "title": "Překlady menu",
+        "lead": "Schvalujte a spravujte přeložené texty menu pro {providerName}. Zatím to nemění, co zaměstnanci vidí.",
+        "backToMenu": "Zpět na menu"
+      },
+      "translations": {
+        "introApproved": "Zaměstnancům se zobrazují pouze schválené překlady. Řádky ve stavu koncept, návrh a zamítnuto se zaměstnancům nikdy nezobrazují.",
+        "introPartialCoverage": "Částečné pokrytí je normální. Chybějící nebo zastaralý hash se vrací k původnímu textu dodavatele — to nemění objednávkové klíče, balíček ani cenu pro zaměstnance.",
+        "introSourceRefs": "Zdrojové reference: jídlo = item.key, kategorie = slug kategorie (např. paasmurt, salat), alergen = normalizovaný token.",
+        "introSources": "Zdroje pocházejí z katalogu a aktivního okna menu (publikované řádky menuDay). Zdroje teplé jídlo/menu_day se zobrazí, pokud jsou v aktivním okně menu přítomny.",
+        "coverageTitle": "Pokrytí podle jazyka",
+        "loadingSources": "Načítání zdrojů…",
+        "noSources": "V katalogu zatím nebyly nalezeny žádné zdroje.",
+        "coverageTable": {
+          "locale": "Jazyk",
+          "coverage": "Pokrytí",
+          "employeeVisible": "Schválené viditelné",
+          "missing": "Chybí",
+          "draft": "Koncept",
+          "stale": "Zastaralé"
+        },
+        "missingTitle": "Zdroje bez schváleného překladu",
+        "missingCount": "{count} zdrojů nemá řádek pro alespoň jeden cílový jazyk.",
+        "createDraftFromSource": "Vytvořit koncept",
+        "staleWarning": "{count} zdrojů má neshodu hashe — zaměstnanci vidí původní text, dokud nebude řádek znovu schválen.",
+        "filters": {
+          "locale": "Jazyk",
+          "status": "Stav",
+          "all": "Vše"
+        },
+        "status": {
+          "missing": "Chybí",
+          "draft": "Koncept",
+          "suggested": "Návrh",
+          "approved": "Schváleno",
+          "rejected": "Zamítnuto",
+          "stale": "Zastaralé"
+        },
+        "createTitle": "Nový řádek překladu",
+        "createLead": "Vytvořte ruční řádek se zdrojovou referencí a původním textem, nebo použijte «Vytvořit koncept» ze seznamu zdrojů výše.",
+        "form": {
+          "sourceKind": "Zdroj",
+          "field": "Pole",
+          "locale": "Jazyk",
+          "sourceRef": "Zdrojová reference",
+          "sourceRefPlaceholder": "item.key, slug kategorie nebo token alergenu",
+          "originalText": "Původní text",
+          "translatedTextOptional": "Přeložený text (volitelné)"
+        },
+        "saveDraft": "Uložit koncept",
+        "listTitle": "Překlady",
+        "loading": "Načítání…",
+        "emptyList": "Zatím žádné řádky překladů. Vytvořte řádek ručně, nebo počkejte, až bude k dispozici import ze zdrojů menu.",
+        "listTable": {
+          "source": "Zdroj",
+          "field": "Pole",
+          "locale": "Jazyk",
+          "original": "Originál",
+          "translated": "Přeloženo",
+          "status": "Stav",
+          "updated": "Aktualizováno",
+          "actions": "Akce"
+        },
+        "hashMismatch": "Neshoda hashe — v případě potřeby označte jako zastaralé",
+        "approve": "Schválit",
+        "reject": "Zamítnout",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Překlady se nepodařilo načíst.",
+          "updateFailed": "Překlad se nepodařilo aktualizovat.",
+          "createFailed": "Překlad se nepodařilo vytvořit."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Zaměstnanci mohou objednávat, pouze pokud má firma aktivní smlouvu a menu je publikováno.",
+        "date": "Datum",
+        "plan": "Plán",
+        "category": "Kategorie",
+        "mealTitle": "Název pokrmu",
+        "description": "Popis",
+        "allergens": "Alergeny (volitelné, oddělené čárkami)",
+        "allergensPlaceholder": "Např. mléko, pšenice",
+        "savingDraft": "Ukládání…",
+        "saveDraft": "Uložit koncept",
+        "publishing": "Publikování…",
+        "publishMenu": "Publikovat menu"
+      },
+      "header": {
+        "eyebrow": "Editor menu",
+        "lead": "Naplánujte týden, nastavte společné teplé jídlo pro každý den a publikujte pro objednávání.",
+        "prevWeek": "← Předchozí",
+        "nextWeek": "Další →",
+        "weekFrom": "Týden od {date}",
+        "weekTitle": "Týden {week} · {year}",
+        "weekNavAria": "Navigace po týdnech",
+        "tierTabsAria": "Balíčky menu",
+        "priceLineAria": "Cena úrovně a pravidlo výroby",
+        "workspaceAria": "Pracovní plocha",
+        "sharedWarmMealRule": "Teplé jídlo je společné pro všechny tři úrovně."
+      },
+      "tabs": {
+        "weekPlan": "Týdenní plán",
+        "catalog": "Pevné volby"
+      },
+      "status": {
+        "ariaLabel": "Stav týdne",
+        "readyAllGenerated": "Týden připraven — teplé jídlo vygenerováno pro všech {days} dní",
+        "daysMissingVarmrett": "{count, plural, one {# den bez teplého jídla} few {# dny bez teplého jídla} other {# dnů bez teplého jídla}}",
+        "daysWithVarmrett": "{filled} z {total} dní s teplým jídlem",
+        "autoRolloutMeta": "Publikuje se automaticky ve čtvrtek v 08:00 · zaměstnanci vidí týden ve 14:00",
+        "fillMissingMeta": "Před publikováním týdne doplňte chybějící teplá jídla",
+        "autoRolloutChip": "Automatické publikování aktivní",
+        "daysPublished": "{count, plural, one {# den publikován} few {# dny publikovány} other {# dnů publikováno}}"
+      },
+      "preview": {
+        "ariaLabel": "Diagnostika náhledu cen",
+        "title": "Náhled cen",
+        "subtitle": "Pouze diagnostika — nepoužívá se pro objednávky, marži ani publikování.",
+        "differs": "Liší se od produkční ceny",
+        "sourceMarket": "Z cenových pravidel",
+        "sourceFallback": "Záloha",
+        "sourceMixed": "Smíšené",
+        "taxEx": "bez DPH",
+        "taxInc": "vč. DPH",
+        "amountExSuffix": "NOK bez DPH",
+        "amountIncSuffix": "NOK vč. DPH"
+      },
+      "week": {
+        "plannerTitle": "Týdenní plán",
+        "plannerLead": "Společné teplé jídlo na každý den — vygenerovaný výchozí návrh, který můžete přepsat.",
+        "ariaLabel": "Týdenní plán",
+        "loadingAria": "Načítání menu",
+        "hotMealEyebrow": "Dnešní teplé jídlo",
+        "hotMealMissing": "Teplé jídlo chybí",
+        "hotMealMissingHint": "Než bude možné tento den publikovat, přidejte dnešní teplé jídlo.",
+        "hotMealFallback": "Teplé jídlo",
+        "enterpriseUpgrade": "Enterprise vylepšení",
+        "badges": {
+          "generated": "Vygenerováno",
+          "fridayTreat": "Páteční pochoutka",
+          "overridden": "Přepsáno",
+          "hasOrder": "Má objednávky"
+        },
+        "actions": {
+          "add": "Přidat",
+          "viewDay": "Zobrazit den",
+          "editNow": "Upravit nyní",
+          "edit": "Upravit"
+        },
+        "allergens": {
+          "confirmed": "Alergeny: {list}",
+          "unconfirmed": "Alergeny nejsou potvrzeny — kontaktujte dodavatele",
+          "opensAfterDelivery": "Otevře se pro úpravy po doručení"
+        },
+        "pins": {
+          "soup": "Polévka",
+          "fish": "Ryba",
+          "fridayTreat": "Páteční pochoutka"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Má objednávky · {count} porcí",
+          "hasOrderLocked": "Má objednávky · uzamčeno"
+        },
+        "costHint": "Náklady {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Pondělí",
+        "tue": "Úterý",
+        "wed": "Středa",
+        "thu": "Čtvrtek",
+        "fri": "Pátek"
+      },
+      "errors": {
+        "loadFailed": "Menu se nepodařilo načíst.",
+        "saveFailed": "Menu se nepodařilo uložit.",
+        "copySourceEmpty": "Pro tento den/kategorii není k dispozici žádné menu {tier} ke zkopírování.",
+        "resetVarmrettFailed": "Teplé jídlo se nepodařilo resetovat.",
+        "generateProfileWeekFailed": "Týden se nepodařilo vygenerovat z profilové banky.",
+        "publishConfirmRequired": "{warning} Potvrďte, chcete-li přesto publikovat.",
+        "unauthorized": "Nejste přihlášeni.",
+        "forbidden": "K menu nemáte přístup.",
+        "badRequest": "Neplatný požadavek.",
+        "invalidBody": "Neplatný požadavek. Zkontrolujte všechna pole.",
+        "validationFailed": "Validace selhala. Zkontrolujte pole a zkuste to znovu.",
+        "publishUnavailable": "Publikování menu teď není k dispozici.",
+        "orderLocked": "Menu je uzamčeno kvůli aktivní objednávce.",
+        "publishConfirmGeneric": "Potvrďte, chcete-li přesto publikovat."
+      },
+      "success": {
+        "published": "Menu publikováno.",
+        "draftSaved": "Koncept uložen.",
+        "resetVarmrett": "Teplé jídlo resetováno na vygenerované.",
+        "profileWeekGenerated": "Vygenerována teplá jídla pro {count} den/dní z profilové banky.",
+        "copiedFromTier": "Zkopírováno z {tier}. Před publikováním přidejte Enterprise vylepšení."
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise přebírající Basis/Luxus musí mít před publikováním typ vylepšení nebo popis.",
+          "weakValue": "Enterprise by měl mít jasnou přidanou hodnotu oproti Luxus.",
+          "lowMargin": "Tento pokrm Enterprise může mít nižší marži než Luxus. Zkontrolujte náklady na suroviny."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Publikováno",
+          "draft": "Koncept",
+          "fixed": "Pevná volba",
+          "missing": "Chybí",
+          "suggestion": "Návrh"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Pevná volba",
+          "published": "Publikováno",
+          "draft": "Koncept",
+          "existing": "Existující",
+          "missing_publish": "Chybí publikace",
+          "missing_warm_dish": "Chybí teplé jídlo ze Sanity/banky"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Přidat {weekdayPossessive} teplé jídlo",
+          "fill_missing_warm_dishes": "Přidat chybějící teplá jídla",
+          "check_enterprise_upgrade": "Zkontrolovat Enterprise vylepšení",
+          "publish_week": "Publikovat týden",
+          "ready_for_orders": "Připraveno pro objednávky",
+          "preview_week": "Náhled týdne"
+        },
+        "weekdaysPossessive": {
+          "mon": "pondělní",
+          "tue": "úterní",
+          "wed": "středeční",
+          "thu": "čtvrteční",
+          "fri": "páteční"
+        },
+        "readiness": {
+          "not_ready": "Není připraveno k publikování",
+          "has_draft": "Má koncepty",
+          "ready_for_orders": "Připraveno pro objednávky",
+          "ready_to_publish": "Připraveno k publikování"
+        },
+        "weekSummary": {
+          "missing": "Chybějící dny",
+          "ready": "Připraveno k publikování",
+          "published": "Publikováno",
+          "draft": "Koncept",
+          "has_draft": "Má koncepty"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Vylepšení naplánováno",
+          "upgrade_missing": "Vylepšení chybí"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · společné pro všechny balíčky",
+          "enterpriseUpgrade": "{weekday} · Enterprise vylepšení"
+        },
+        "allergens": {
+          "none": "Žádné uvedené alergeny",
+          "prefix": "Alergeny: {list}"
+        },
+        "packageCard": {
+          "notSeparateProduction": "Není samostatný výrobní pokrm",
+          "sharedWarmDishHint": "Jedno společné teplé jídlo"
+        },
+        "emptyPanel": {
+          "selectDay": "Vyberte den v týdenním plánu pro úpravu voleb katalogu."
+        }
+      },
+      "price": {
+        "exVatSuffix": "kr bez DPH",
+        "incVatSuffix": "kr vč. DPH",
+        "exVatShort": "bez DPH",
+        "incVatShort": "vč. DPH",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Panel editoru",
+        "idle": {
+          "title": "Vyberte den",
+          "leadPanel": "Klikněte na den v týdenním plánu pro úpravu teplého jídla a katalogu.",
+          "leadInspector": "Klikněte na teplé jídlo nebo volbu v týdenním plánu."
+        },
+        "status": {
+          "published": "Publikováno",
+          "draft": "Koncept",
+          "notPublished": "Nepublikováno"
+        },
+        "inspector": {
+          "editDay": "Upravit {weekday}",
+          "headerSharedWarmMeal": "Dnešní společné teplé jídlo",
+          "headerEnterpriseUpgrade": "Enterprise vylepšení dnešního teplého jídla",
+          "close": "Zavřít",
+          "fixedChoices": "Pevné volby",
+          "fixedChoicesNote": "Volby řízené katalogem — publikujte kategorii pro tento den.",
+          "allergensPrefix": "Alergeny: {list}",
+          "singleChoice": "Pevná volba",
+          "singleChoiceNote": "Řízeno katalogem — pro aktivaci publikujte kategorii.",
+          "content": "Obsah",
+          "mealNamePlaceholder": "Zadejte název jídla",
+          "sharedKitchenLead": "Společné kuchyňské jídlo pro Basis, Luxus a Enterprise v tento den.",
+          "orderLock": "Má objednávky",
+          "employeesOrdered": "{count} zaměstnanců si objednalo",
+          "opensAfterServingDay": "Otevře se po dni podávání"
+        },
+        "varmrett": {
+          "ariaLabel": "Upravit teplé jídlo",
+          "title": "Upravit teplé jídlo — {dateLabel}",
+          "scope": "Změna platí pro všechny tři úrovně.",
+          "sharedBadge": "Společné · Basis, Luxus, Enterprise",
+          "generatedStamp": "Vygenerovaný výchozí návrh z banky jídel. Můžete upravit, vytvořit vlastní nebo resetovat.",
+          "meal": "Jídlo",
+          "description": "Popis",
+          "allergens": "Alergeny",
+          "allergensPlaceholder": "Např. mléko, pšenice",
+          "rawCost": "Náklady na suroviny (kr)",
+          "estimatedRawCost": "Odhadované náklady na suroviny (kr)",
+          "mealName": "Název jídla",
+          "resetGenerated": "Resetovat na vygenerované",
+          "cancel": "Zrušit",
+          "save": "Uložit teplé jídlo",
+          "saving": "Ukládání…",
+          "todayHotMeal": "Dnešní teplé jídlo"
+        },
+        "economy": {
+          "ariaLabel": "Ekonomika",
+          "title": "Ekonomika",
+          "tierPrice": "Cena úrovně ({tier}, bez DPH)",
+          "rawCost": "− Náklady na suroviny",
+          "commission": "− Lunchportalen 5 %",
+          "marginPerPortion": "Marže na porci",
+          "enterRawCostHint": "Pro výpočet marže zadejte náklady na suroviny.",
+          "priceExVat": "Cena bez DPH",
+          "estimatedCost": "Odhadované náklady",
+          "contribution": "Příspěvková marže"
+        },
+        "enterprise": {
+          "title": "Enterprise vylepšení",
+          "lead": "Extra hodnota – stejné teplé jídlo. Žádný nový kuchyňský pokrm.",
+          "todayWarmMeal": "Dnešní teplé jídlo",
+          "warmMealMissing": "Dnešní teplé jídlo chybí — nejprve přidejte teplé jídlo.",
+          "sameWarmMealNote": "Enterprise staví na stejném teplém jídle – bez nového kuchyňského pokrmu.",
+          "surcharge": "Příplatek",
+          "estimatedRawCost": "Odh. náklady na suroviny",
+          "extraContribution": "Dodatečná příspěvková marže",
+          "suggestedTitle": "Navržené Enterprise vylepšení",
+          "useSuggestion": "Použít návrh",
+          "chooseOther": "Zvolit jiné",
+          "selectedUpgrade": "Vybrané vylepšení",
+          "upgradeSelected": "Vylepšení vybráno",
+          "quickChoicesTitle": "Rychlá prémiová volba",
+          "quickChoicesLead": "Extra hodnota – stejné teplé jídlo",
+          "quickChoicesAria": "Rychlá prémiová volba",
+          "hideManual": "Skrýt ruční úpravy",
+          "editManual": "Upravit ručně",
+          "manualLead": "Pokročilé úpravy",
+          "buildFromLuxus": "Sestavit z Luxus",
+          "buildFromTier": "Sestavit z {tier}",
+          "basedOn": "Založeno na",
+          "none": "Žádné",
+          "upgradeType": "Typ vylepšení",
+          "chooseType": "Zvolte typ",
+          "customerExtra": "Co zákazník dostane navíc?",
+          "customerExtraPlaceholder": "Prémiový protein, větší porce, dezert/ovoce…",
+          "confirmPublishDespiteWarning": "Potvrzuji publikování navzdory varování."
+        },
+        "actions": {
+          "saveDraft": "Uložit koncept",
+          "publishDay": "Publikovat den",
+          "saving": "Ukládání…",
+          "publishing": "Publikování…"
+        }
+      },
+      "catalog": {
+        "title": "Katalog menu",
+        "leadAccordion": "Volby, které nabízíte v jednotlivých kategoriích. Struktura je pevná — obsah vlastníte vy.",
+        "leadView": "Pevné možnosti vašeho dodavatele — nikoli obsah týdenního menu.",
+        "ownCatalogTitle": "Váš vlastní katalog",
+        "ownCatalogText": "Změny ovlivňují pouze vaše menu. Ostatní dodavatelé vidí svá vlastní — žádný sdílený obsah.",
+        "isolated": "Izolované",
+        "tierBadgeAll": "Všechny úrovně",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} voleb",
+        "lockedCount": "{count} uzamčeno",
+        "edit": "Upravit",
+        "close": "Zavřít",
+        "addChoice": "+ Přidat volbu",
+        "addChoiceLegacy": "Přidat volbu",
+        "publishHint": "Změny katalogu platí od dalšího publikování týdne pro zobrazení týdne/kuchyně. Objednávkové okno se aktualizuje okamžitě.",
+        "saveCatalog": "Uložit katalog",
+        "cancel": "Zrušit",
+        "saving": "Ukládání…",
+        "legacyTitle": "Váš katalog menu",
+        "legacyLead": "Tím se mění pouze pevné volby vašeho dodavatele — ne ostatních cateringových společností.",
+        "category": "Kategorie",
+        "titleField": "Název",
+        "noEditableCategories": "Žádné upravitelné kategorie pro {tier}.",
+        "editCatalogAria": "Upravit katalog menu",
+        "catalogAria": "Katalog menu",
+        "orderLocked": "Má objednávky",
+        "orderSortHint": "Pořadí je řízeno katalogem",
+        "view": {
+          "sanityBank": "Sanity/banka",
+          "yourCatalog": "Váš katalog"
+        },
+        "item": {
+          "namePlaceholder": "Název volby",
+          "locked": "Uzamčeno",
+          "vegetarian": "Vegetariánské",
+          "allergensAria": "Alergeny",
+          "remove": "Odebrat",
+          "removeChoice": "Odebrat {name}",
+          "removeFallback": "volbu"
+        },
+        "messages": {
+          "saveFailed": "Katalog se nepodařilo uložit.",
+          "saved": "Katalog uložen."
+        }
+      },
+      "workspaceProfile": {
+        "badge": "Profil menu (prezentace)",
+        "banner": "Pracovní plocha zobrazuje strukturu profilu menu. Stávající obsah katalogu a publikovaná menu se v této fázi nemění.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
+      "workspaceFixedCategories": {
+        "title": "Pevné volby profilu menu",
+        "description": "Zde jsou zobrazeny pevné volby profilu menu. Katalog a publikovaná menu se nemění až do pozdějšího přechodu.",
+        "activeInCurrentCatalog": "Aktivní v dnešním katalogu",
+        "comingStructureNotOrderActive": "Nadcházející struktura — zatím není aktivní v objednávkách",
+        "orderRuntimeEnabled": "Objednávkový runtime povolen",
+        "presentationOnly": "Pouze prezentace",
+        "packagesLabel": "Balíčky",
+        "profileCategoryLabel": "Kategorie profilu"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Aktivní profil menu",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Návrhy teplých jídel se řídí tímto profilem. Stávající obsah a publikované dny se automaticky nemění.",
+        "title": "Návrhy teplých jídel podle profilu",
+        "description": "Nové návrhy teplých jídel a výchozí generování se řídí aktivním profilem menu. Stávající obsah a publikované dny se automaticky nemění.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} návrhů",
+        "resolveMeta": "Zdroj profilu: {source}",
+        "bankSuggestionsLabel": "Pět návrhů z profilové banky",
+        "generateWeek": "Vygenerovat týden z profilové banky",
+        "generating": "Generování …",
+        "generateHint": "Vyplní pouze prázdné, neuzamčené dny jako koncepty. Obsah dodavatele a publikované dny se přeskakují."
+      },
+      "workspaceWarmDishPreview": {
+        "title": "Banka teplých jídel pro profil menu",
+        "description": "Toto jsou návrhy založené na vybraném profilu menu. Návrhy se do katalogu, týdenního plánu ani publikování nepřidávají až do pozdějšího přechodu.",
+        "previewOnly": "Pouze návrh",
+        "notPublished": "Není aktivní v publikování",
+        "notVisibleToEmployees": "Není viditelné pro zaměstnance",
+        "suggestedForProfile": "Návrhy pro profil",
+        "suggestedTiers": "Vhodnost balíčků",
+        "allergensLabel": "Navržené alergeny",
+        "tagsLabel": "Navržené štítky",
+        "weekdayLabel": "Návrh dne v týdnu",
+        "noItems": "Žádné návrhy teplých jídel pro tento profil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Tento návrh není propojen s publikováním ani objednávkami.",
+        "weekdays": {
+          "monday": "Pondělí",
+          "tuesday": "Úterý",
+          "wednesday": "Středa",
+          "thursday": "Čtvrtek",
+          "friday": "Pátek"
+        }
+      },
+      "runtimeMappingProposal": {
+        "title": "Návrh mapování runtime",
+        "description": "Toto je stínové zobrazení toho, jak by se profil menu mohl mapovat na dnešní runtime. V této fázi se žádné volby neukládají, nepublikují ani nezobrazují zaměstnancům.",
+        "shadowOnly": "Stínové zobrazení",
+        "notActiveInSave": "Není aktivní při ukládání",
+        "notActiveInPublish": "Není aktivní v publikování",
+        "notVisibleToEmployees": "Není viditelné pro zaměstnance",
+        "existingNoRuntimeMapping": "Existující runtime mapování NO",
+        "notRuntimeSupportedYet": "Zatím není podporováno v runtime",
+        "categoryMappings": "Mapování kategorií",
+        "warmDishMappings": "Mapování teplých jídel",
+        "summary": "Souhrn",
+        "mappedCategories": "{count} namapovaných kategorií",
+        "unmappedCategories": "{count} nenamapovaných kategorií",
+        "previewOnlyWarmDishes": "{count} teplých jídel pouze v náhledu",
+        "runtimeEnabledCount": "Runtime povolen: {count}",
+        "canSaveCount": "Lze uložit: {count}",
+        "canPublishCount": "Lze publikovat: {count}",
+        "canOrderCount": "Lze objednat: {count}",
+        "warningTitle": "Varování",
+        "noItems": "Žádné kategorie k zobrazení.",
+        "existingNoRuntimeMappingHelp": "Tato kategorie profilu má existující runtime mapování NO, ale přechod není povolen.",
+        "notRuntimeSupportedYetHelp": "Tato kategorie profilu zatím není propojena s dnešním runtime.",
+        "presentationOnlyHelp": "Pouze prezentace — žádné propojení s runtime.",
+        "unsupportedMappingHelp": "Pro tuto kategorii není k dispozici žádné runtime mapování.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Enterprise vylepšení není objednávková kategorie.",
+        "previewOnly": "Pouze náhled",
+        "notPublishable": "Nelze publikovat",
+        "previewOnlyHelp": "Pouze náhled — bez propojení s menu nebo objednávkami.",
+        "notPublishableHelp": "V této fázi nelze publikovat.",
+        "warnings": {
+          "unmappedCategories": "Jedna nebo více kategorií nemá runtime mapování.",
+          "previewOnlyWarmDishes": "Návrhy teplých jídel jsou pouze náhledové a nelze je publikovat.",
+          "enterpriseUpgradeNotOrderCategory": "Enterprise vylepšení není objednávková kategorie.",
+          "nonNoMarketShadowOnly": "Profil je mimo trh NO — veškeré mapování je pouze stínové."
+        },
+        "draftSave": {
+          "sectionTitle": "Koncept mapování",
+          "statusNotSaved": "Neuloženo",
+          "statusNotSavedHelp": "Toto vyhodnocení je pouze náhledové a nebylo uloženo jako koncept.",
+          "statusDraftSaved": "Koncept uložen",
+          "statusDraftSavedHelp": "Vyhodnocení je uloženo jako interní koncept. Není publikováno a není viditelné pro zaměstnance.",
+          "statusReviewed": "Zkontrolováno",
+          "statusArchived": "Archivováno",
+          "statusArchivedHelp": "Tento koncept je archivován a není aktivní.",
+          "activationWarning": "Toto nepovoluje publikování, objednávání ani zobrazení menu.",
+          "saveButton": "Uložit vyhodnocení jako koncept",
+          "viewerNoSave": "Ukládání vyžaduje administrátora dodavatele.",
+          "saveSuccess": "Koncept uložen.",
+          "validationError": "Koncept se nepodařilo uložit, protože validace zablokovala nebezpečnou změnu.",
+          "permissionError": "Nemáte oprávnění ukládat koncepty mapování.",
+          "genericError": "Koncept se nepodařilo uložit. Zkuste to později."
+        }
+      },
+      "catalogModel": {
+        "title": "Pevné volby",
+        "lead": "Toto jsou pevné možnosti vašeho dodavatele. Týdenní plán je používá, když publikujete obědy pro konkrétní dny.",
+        "fixedChoicesTitle": "Upravit pevné volby",
+        "weekPlanHint": "Změny platí od dalšího publikování týdne. Dnešní teplé jídlo a Enterprise vylepšení se plánují v týdenním plánu.",
+        "packageMatrix": {
+          "title": "Balíčky menu",
+          "basis": {
+            "title": "Basis",
+            "text": "Obložený chléb, salátový box a dnešní teplé jídlo."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Vše z Basis + sushi, poké bowl a thajská kuchyně."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Stejné dnešní teplé jídlo + Enterprise vylepšení v týdenním plánu."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis zobrazuje pevné volby pro obložený chléb a salátový box.",
+          "luxus": "Luxus zahrnuje volby Basis a prémiové kategorie sushi, poké bowl a thajskou kuchyni.",
+          "enterprise": "Enterprise používá stejný pevný katalog jako Luxus. Vylepšení se přidávají k dnešnímu teplému jídlu v týdenním plánu — ne zde."
+        },
+        "sharedWarmDish": {
+          "title": "Dnešní teplé jídlo",
+          "text": "Spravuje se v týdenním plánu — jeden společný pokrm na den pro Basis, Luxus a Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Enterprise vylepšení",
+          "text": "Stejné dnešní teplé jídlo jako Luxus, s doplňky/vylepšeními plánovanými na jednotlivé dny v týdenním plánu — nikoli samostatné teplé jídlo."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Extra protein + dezert/ovoce",
+          "explanation": "Dává zákazníkovi větší hodnotu bez vytváření nového kuchyňského pokrmu.",
+          "note": "Extra protein a dezert/ovoce jako prémiový doplněk k dnešnímu teplému jídlu"
+        },
+        "quickChoices": {
+          "protein": {
+            "label": "Extra protein",
+            "note": "Extra protein k dnešnímu teplému jídlu"
+          },
+          "portion": {
+            "label": "Větší porce",
+            "note": "Větší porce dnešního teplého jídla"
+          },
+          "dessert": {
+            "label": "Dezert/ovoce",
+            "note": "Dezert nebo ovoce jako prémiový doplněk"
+          },
+          "topping": {
+            "label": "Prémiová obloha",
+            "note": "Prémiová obloha k dnešnímu teplému jídlu"
+          },
+          "side": {
+            "label": "Extra příloha",
+            "note": "Extra příloha k dnešnímu teplému jídlu"
+          },
+          "season": {
+            "label": "Sezónní vylepšení",
+            "note": "Sezónní Enterprise vylepšení dnešního teplého jídla"
+          }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Prémiový protein",
+          "EXTRA_SIDE": "Extra příloha",
+          "DESSERT_FRUIT": "Dezert/ovoce/svačina",
+          "LARGER_PORTION": "Větší porce",
+          "PREMIUM_LABELING": "Prémiové označení/kontrola",
+          "PRIORITY_DELIVERY": "Prioritní doručovací okno",
+          "OTHER": "Vlastní/jiné"
+        },
+        "source": {
+          "basedOnBasis": "Založeno na Basis",
+          "basedOnLuxus": "Založeno na Luxus",
+          "ownEnterprise": "Vlastní Enterprise"
+        }
+      }
+    }
+  }
+}

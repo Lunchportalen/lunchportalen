@@ -129,14 +129,17 @@ describe("Gate F0 — SOT feature flag guards", () => {
   });
 
   test("SOT flag tokens appear only in allowed paths", () => {
+    // Single repo walk + single read per file (was one full walk per token,
+    // which timed out under full-suite load — see PRODUCTION-READONLY-EVIDENCE).
+    const tokens = [...SOT_FLAG_TOKENS, AUTO_ROLLOUT_FLAG];
     const offenders: string[] = [];
-    for (const token of [...SOT_FLAG_TOKENS, AUTO_ROLLOUT_FLAG]) {
-      for (const filePath of walkFiles(ROOT)) {
-        const r = rel(filePath);
-        if (!/\.(ts|tsx|js|jsx|mjs|md)$/.test(r)) continue;
-        if (r.includes("node_modules/") || r.startsWith("repo-intelligence/")) continue;
-        if (isSotGovernanceAllowedPath(r)) continue;
-        const src = fs.readFileSync(filePath, "utf8");
+    for (const filePath of walkFiles(ROOT)) {
+      const r = rel(filePath);
+      if (!/\.(ts|tsx|js|jsx|mjs|md)$/.test(r)) continue;
+      if (r.includes("node_modules/") || r.startsWith("repo-intelligence/")) continue;
+      if (isSotGovernanceAllowedPath(r)) continue;
+      const src = fs.readFileSync(filePath, "utf8");
+      for (const token of tokens) {
         if (src.includes(token)) offenders.push(`${r} → ${token}`);
       }
     }

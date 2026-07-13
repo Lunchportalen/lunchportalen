@@ -36,24 +36,57 @@ describe("requireCronAuth", () => {
     }
   });
 
-  test("allows Vercel Cron via x-vercel-cron: 1 even when CRON_SECRET is unset", () => {
+  // CRON-001: x-vercel-cron alone is never proof. Fail closed without secret.
+  test("rejects x-vercel-cron: 1 when CRON_SECRET is unset (fail-closed)", () => {
     delete process.env.CRON_SECRET;
     const req = mkReq({ "x-vercel-cron": "1" });
-    expect(requireCronAuth(req)).toEqual({ mode: "vercel-cron" });
+    expect(() => requireCronAuth(req)).toThrow();
+    try {
+      requireCronAuth(req);
+    } catch (e: any) {
+      expect(e?.code).toBe("cron_secret_missing");
+    }
   });
 
-  test("x-vercel-cron bypass precedes wrong Bearer when secret is set", () => {
+  test("rejects x-vercel-cron with wrong Bearer even when secret is set", () => {
     process.env.CRON_SECRET = "correct-secret";
     const req = mkReq({ authorization: "Bearer wrong-secret", "x-vercel-cron": "1" });
+    expect(() => requireCronAuth(req)).toThrow();
+    try {
+      requireCronAuth(req);
+    } catch (e: any) {
+      expect(e?.code).toBe("forbidden");
+    }
+  });
+
+  test("rejects x-vercel-cron without any secret header even when secret is set", () => {
+    process.env.CRON_SECRET = "correct-secret";
+    const req = mkReq({ "x-vercel-cron": "1" });
+    expect(() => requireCronAuth(req)).toThrow();
+    try {
+      requireCronAuth(req);
+    } catch (e: any) {
+      expect(e?.code).toBe("forbidden");
+    }
+  });
+
+  test("tags mode vercel-cron when x-vercel-cron AND correct Bearer are present", () => {
+    process.env.CRON_SECRET = "correct-secret";
+    const req = mkReq({ authorization: "Bearer correct-secret", "x-vercel-cron": "1" });
     expect(requireCronAuth(req)).toEqual({ mode: "vercel-cron" });
   });
 
-  test("SYSTEM_MOTOR routes: x-vercel-cron allows without SYSTEM_MOTOR_SECRET", () => {
+  test("SYSTEM_MOTOR routes: rejects x-vercel-cron without SYSTEM_MOTOR_SECRET (fail-closed)", () => {
     delete process.env.SYSTEM_MOTOR_SECRET;
     const req = mkReq({ "x-vercel-cron": "1" });
-    expect(
+    expect(() =>
       requireCronAuth(req, { secretEnvVar: "SYSTEM_MOTOR_SECRET", missingCode: "system_motor_secret_missing" }),
-    ).toEqual({ mode: "vercel-cron" });
+    ).toThrow();
+    try {
+      requireCronAuth(req, { secretEnvVar: "SYSTEM_MOTOR_SECRET", missingCode: "system_motor_secret_missing" });
+    } catch (e: any) {
+      expect(e?.code).toBe("system_motor_secret_missing");
+    }
   });
 
   test("throws forbidden when secret is set but no header", () => {

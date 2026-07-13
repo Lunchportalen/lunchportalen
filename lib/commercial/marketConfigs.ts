@@ -7,7 +7,7 @@
  * UI locale (`lp_locale`, `profiles.preferred_locale`) is unrelated to this config.
  */
 
-export type MarketCode = "NO" | "SE" | "DK" | "FI" | "DE" | "FR" | "ES" | "UK";
+export type MarketCode = "NO" | "SE" | "DK" | "FI" | "DE" | "FR" | "ES" | "GB";
 
 export type CurrencyCode = "NOK" | "SEK" | "DKK" | "EUR" | "GBP";
 
@@ -135,9 +135,9 @@ export const MARKET_COMMERCIAL_CONFIGS: Readonly<Record<MarketCode, MarketCommer
     taxLabel: "IVA",
     notes: "Placeholder — not enabled. No hardcoded VAT rates. Manual validation required.",
   },
-  UK: {
+  GB: {
     ...NON_NO_BASE,
-    marketCode: "UK",
+    marketCode: "GB",
     countryCode: "GB",
     defaultCurrency: "GBP",
     defaultTimezone: "Europe/London",

@@ -1,0 +1,1911 @@
+{
+  "common": {
+    "loading": "Se încarcă …",
+    "save": "Salvează",
+    "language": "Limbă"
+  },
+  "nav": {
+    "languageNb": "Norsk",
+    "languageEn": "English",
+    "languageSv": "Svenska",
+    "languageDa": "Dansk",
+    "languageFi": "Suomi",
+    "languageDe": "Deutsch",
+    "languageFr": "Français",
+    "languageEs": "Español"
+  },
+  "localeSwitcher": {
+    "label": "Alege limba",
+    "current": "Limba curentă: {language}"
+  },
+  "provider": {
+    "nav": {
+      "dashboard": "Tablou de bord",
+      "orders": "Comenzi",
+      "customers": "Clienți",
+      "registrations": "Înregistrări",
+      "menu": "Meniu",
+      "areas": "Zone",
+      "invoices": "Facturi",
+      "settings": "Setări",
+      "logout": "Deconectare",
+      "logoutPending": "Se deconectează…",
+      "more": "Mai multe",
+      "comingSoon": "(în curând)",
+      "openMenu": "Deschide meniul",
+      "closeMenu": "Închide meniul",
+      "providerMenu": "Meniu furnizor",
+      "sidebarLabel": "Furnizor",
+      "desktopLabel": "Furnizor (desktop)",
+      "mobileLabel": "Navigare principală (mobil)",
+      "roleAdmin": "Administrator",
+      "roleKitchen": "Bucătărie",
+      "roleDefault": "Furnizor"
+    },
+    "dashboard": {
+      "eyebrow": "Furnizor",
+      "lead": "Prezentare generală a clienților, contractelor și operațiunilor.",
+      "kpiSection": "Indicatori-cheie",
+      "activeCustomers": "Clienți activi",
+      "activeCustomersFoot": "Companii cu un aranjament de prânz activ",
+      "activeAgreements": "Contracte de client active",
+      "activeAgreementsFoot": "Contracte de client asociate companiilor active",
+      "activeAgreementsLinkTitle": "Vezi clienții business activi și contractele acestora",
+      "ordersThisWeek": "Comenzi în această săptămână",
+      "ordersThisWeekFoot": "Comenzi plasate în săptămâna curentă",
+      "revenueLast30Days": "Valoarea comenzilor în ultimele 30 de zile",
+      "revenueLast30DaysFoot": "Valoarea totală a comenzilor",
+      "followUpSection": "Necesită atenție",
+      "followUpAllClearTitle": "Totul arată bine",
+      "followUpAllClearText": "Nu există momentan elemente critice de urmărit.",
+      "quickActionsSection": "Acțiuni rapide",
+      "recentActivitySection": "Activitate recentă",
+      "activityEmptyTitle": "Nicio activitate relevantă încă.",
+      "activityEmptyText": "Când clienții se înregistrează, contractele sunt aprobate sau sosesc comenzi, acestea vor apărea aici.",
+      "quickActionOrdersTitle": "Vezi livrările de astăzi",
+      "quickActionOrdersText": "Obține o imagine de ansamblu asupra comenzilor și producției pentru următoarea zi de livrare.",
+      "quickActionCustomersTitle": "Vezi clienții",
+      "quickActionCustomersText": "Gestionează companiile, contractele și configurarea livrărilor.",
+      "quickActionMenuTitle": "Meniu și publicare",
+      "quickActionMenuTextEnabled": "Gestionează conținutul de meniu afișat clienților.",
+      "quickActionMenuTextDisabled": "Vezi conținutul meniului și starea de editare a furnizorului.",
+      "followUp": {
+        "menuEditingDisabled": {
+          "title": "Editarea meniului nu este activată",
+          "text": "Conținutul meniului este gestionat momentan de Lunchportalen.",
+          "action": "Vezi starea meniului"
+        },
+        "noOrdersThisWeek": {
+          "title": "Nicio comandă în această săptămână",
+          "text": "Revino când clienții încep să comande livrările viitoare.",
+          "action": "Vezi comenzile"
+        },
+        "noRevenue30d": {
+          "title": "Nicio valoare a comenzilor în ultimele 30 de zile",
+          "text": "Când sosesc comenzi, valoarea totală a acestora va apărea aici.",
+          "action": "Vezi facturile"
+        }
+      },
+      "activity": {
+        "registrationReceived": {
+          "title": "Înregistrare nouă de client primită",
+          "description": "O companie s-a înregistrat și așteaptă evaluarea."
+        },
+        "registrationApproved": {
+          "title": "Client aprobat",
+          "description": "O înregistrare de client a fost aprobată și activată."
+        },
+        "registrationRejected": {
+          "title": "Înregistrare de client respinsă",
+          "description": "O înregistrare de client a fost procesată și respinsă."
+        },
+        "agreementActivated": {
+          "title": "Contract activat",
+          "description": "Un contract de livrare a fost activat."
+        },
+        "agreementUpdated": {
+          "title": "Contract actualizat",
+          "description": "Un contract de livrare a fost modificat."
+        },
+        "invoiceGenerated": {
+          "title": "Bază de facturare generată",
+          "description": "O nouă bază de facturare este pregătită pentru verificare."
+        },
+        "orderReceived": {
+          "title": "Comandă primită",
+          "description": "O nouă comandă a fost înregistrată."
+        },
+        "orderCancelled": {
+          "title": "Comandă anulată",
+          "description": "O comandă a fost anulată."
+        },
+        "menuPublished": {
+          "title": "Meniu publicat",
+          "description": "Conținutul meniului a fost publicat și este vizibil pentru clienți."
+        },
+        "settingsUpdated": {
+          "title": "Setări actualizate",
+          "description": "Setările furnizorului au fost modificate."
+        }
+      }
+    },
+    "orders": {
+      "page": {
+        "eyebrow": "Comenzi și producție",
+        "heading": "Comenzi"
+      },
+      "filters": {
+        "dateGroupAria": "Perioadă",
+        "statusGroupAria": "Stare",
+        "groupingAria": "Grupare",
+        "companyLabel": "Companie",
+        "companyAll": "Toate companiile",
+        "companyAria": "Filtrează după companie",
+        "groupByCompany": "După companie",
+        "groupByTime": "După oră",
+        "date": {
+          "today": "Astăzi",
+          "tomorrow": "Mâine",
+          "week": "Toată săptămâna"
+        },
+        "status": {
+          "all": "Toate",
+          "received": "Primită",
+          "production": "În producție",
+          "ready": "Gata",
+          "delivered": "Livrată"
+        }
+      },
+      "status": {
+        "received": "Primită",
+        "inProduction": "În producție",
+        "readyForDelivery": "Gata de livrare",
+        "delivered": "Livrată",
+        "paused": "În pauză",
+        "cancelled": "Anulată",
+        "other": "Altele"
+      },
+      "actions": {
+        "startProduction": "Începe producția",
+        "readyForDelivery": "Gata de livrare",
+        "markDelivered": "Marchează ca livrată",
+        "saving": "Se salvează…"
+      },
+      "empty": {
+        "title": {
+          "today": "Nicio comandă pentru astăzi",
+          "tomorrow": "Nicio comandă pentru mâine",
+          "week": "Nicio comandă în această săptămână",
+          "filtered": "Nicio comandă cu starea selectată"
+        },
+        "text": {
+          "default": "Nu există comenzi active pentru perioada selectată.",
+          "filtered": "Nu există comenzi cu starea selectată în această perioadă. Selectează «Toate» pentru a vedea toate comenzile din perioadă."
+        },
+        "steps": {
+          "checkMenu": "Verifică dacă meniul este publicat pentru zilele relevante.",
+          "checkWeek": "Vezi întreaga săptămână dacă vrei să analizezi livrările viitoare.",
+          "ordersAppear": "Comenzile noi apar aici ca bază de producție pe măsură ce sosesc."
+        }
+      },
+      "card": {
+        "deliveryGroupPrefix": "Livrare",
+        "noLines": "Nicio linie de comandă înregistrată",
+        "lineQuantity": "{quantity} buc · {displayLine}",
+        "allergensPrefix": "Alergeni: {list}",
+        "noteLabel": "Notă:",
+        "readOnlyNote": "Doar vizualizare — ai acces de citire la comenzi."
+      },
+      "fallbacks": {
+        "unknownProfile": "Necunoscut",
+        "unknownProduct": "Preparat"
+      },
+      "errors": {
+        "notAuthenticated": "Nu ești autentificat.",
+        "orderNotFound": "Comanda nu a fost găsită.",
+        "kitchenRoleRequired": "Doar rolurile de bucătărie pot actualiza starea.",
+        "updateFailed": "Starea nu a putut fi actualizată.",
+        "unknown": "Ceva nu a mers bine."
+      }
+    },
+    "customers": {
+      "page": {
+        "eyebrow": "Furnizor",
+        "heading": "Companii",
+        "leadWithProvider": "Gestionează clienții business, contractele și configurarea livrărilor pentru {providerName}.",
+        "leadDefault": "Gestionează clienții business, contractele și configurarea livrărilor."
+      },
+      "filters": {
+        "searchLabel": "Căutare",
+        "searchPlaceholder": "Caută după numele companiei",
+        "statusGroupAria": "Filtru de stare",
+        "all": "Toate",
+        "active": "Active",
+        "paused": "În pauză",
+        "suspended": "Suspendate",
+        "deleted": "Șterse"
+      },
+      "status": {
+        "active": "Activ",
+        "paused": "În pauză",
+        "suspended": "Suspendat",
+        "deleted": "Șters"
+      },
+      "table": {
+        "name": "Companie",
+        "orgnr": "Nr. org.",
+        "status": "Stare",
+        "employees": "Angajați",
+        "ordersThisWeek": "Comenzi în această săptămână",
+        "historicalOrders": "Istoric",
+        "invoice": "Factură",
+        "lastUpdated": "Ultima actualizare",
+        "actions": "Acțiuni"
+      },
+      "actions": {
+        "newCustomer": "Client business nou",
+        "newCustomerTitle": "Clienții business noi sosesc prin înregistrare controlată.",
+        "openCustomer": "Deschide clientul",
+        "removeCustomer": "Elimină clientul",
+        "restoreCustomer": "Restaurează clientul"
+      },
+      "empty": {
+        "noResults": {
+          "title": "Nicio potrivire",
+          "text": "Încearcă alt nume de companie sau golește filtrul."
+        },
+        "noStatusMatch": {
+          "title": "Nicio companie cu starea selectată",
+          "text": "Schimbă filtrul de stare pentru a vedea mai mulți clienți business."
+        },
+        "noneYet": {
+          "title": "Nicio companie încă",
+          "text": "Când clienții business sunt înregistrați și aprobați, apar aici cu stare, contracte și bază de comenzi."
+        }
+      },
+      "card": {
+        "mobileMeta": "{employees} angajați · {orders} comenzi în această săptămână · {history} în istoric · Factură: {invoice}",
+        "mobileUpdatedPrefix": "Ultima actualizare",
+        "orgNrPrefix": "Nr. org.: {orgnr}"
+      },
+      "pagination": {
+        "aria": "Paginare",
+        "prev": "Înapoi",
+        "next": "Înainte",
+        "oneCompany": "1 companie",
+        "companies": "{count} companii",
+        "page": "Pagina {current} din {total} ({count} în total)"
+      },
+      "create": {
+        "heading": "Client business nou",
+        "lead": "Crearea directă a clienților business nu este încă disponibilă. Companiile noi din zona ta de acoperire sosesc prin Înregistrări atunci când își exprimă interesul și apar la Companii după aprobare.",
+        "backToCustomers": "Înapoi la companii"
+      },
+      "billing": {
+        "method": {
+          "email": "E-mail",
+          "ehf": "EHF",
+          "notSelected": "Neselectat"
+        },
+        "recipient": {
+          "notSelected": "Neselectat"
+        },
+        "commissionBase": {
+          "taxEx": "fără TVA",
+          "taxInc": "cu TVA",
+          "notAvailable": "Indisponibil"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Nu ești autentificat.",
+        "providerAdminRequired": "Doar administratorii furnizorului pot efectua această acțiune.",
+        "providerContextMissing": "Nu s-a găsit nicio apartenență la furnizor pentru utilizatorul autentificat.",
+        "customerNotFound": "Clientul nu a fost găsit.",
+        "invalidCustomer": "Lipsește ID-ul clientului.",
+        "reasonTooShort": "Motivul trebuie să aibă cel puțin 20 de caractere.",
+        "forbidden": "Nu ai acces la acest client.",
+        "outOfScope": "Acest client nu aparține furnizorului tău.",
+        "confirmMismatch": "Confirmarea nu se potrivește.",
+        "hardDeleteBlocked": "Acest client nu poate fi șters definitiv.",
+        "alreadyArchived": "Acest client este deja arhivat.",
+        "alreadyActive": "Acest client este deja activ.",
+        "protectedSystem": "Organizația de sistem nu poate fi modificată aici.",
+        "selfCustomer": "Un furnizor nu poate fi propriul său client.",
+        "validationFailed": "Cerere nevalidă.",
+        "invalidAgreement": "Datele contractului sunt nevalide.",
+        "invalidPayload": "Nu au fost furnizate modificări valide.",
+        "noActiveAgreement": "Compania nu are un contract activ.",
+        "updateFailed": "Clientul nu a putut fi actualizat.",
+        "suspendFailed": "Clientul nu a putut fi suspendat.",
+        "pauseFailed": "Clientul nu a putut fi pus în pauză.",
+        "removeFailed": "Clientul nu a putut fi eliminat.",
+        "restoreFailed": "Clientul nu a putut fi restaurat.",
+        "loadRulesFailed": "Regulile de eliminare nu au putut fi încărcate.",
+        "agreementLoadFailed": "Contractul nu a putut fi încărcat.",
+        "agreementUpdateFailed": "Contractul nu a putut fi salvat.",
+        "unknown": "Ceva nu a mers bine."
+      },
+      "detail": {
+        "eyebrow": "Client",
+        "orgnrMissing": "Nr. org. neînregistrat",
+        "contactMissing": "—",
+        "locationMissing": "Adresa de livrare nu este setată",
+        "agreementStatusMissing": "Niciun contract activ",
+        "billingIncomplete": "Bază de facturare incompletă",
+        "vatNotSpecified": "Nespecificat",
+        "billingPeriodLabel": "Ultimele 30 de zile",
+        "grossOnlyNote": "Sumele sunt afișate cu TVA inclus deoarece baza de comenzi nu are TVA-ul defalcat separat.",
+        "completeCommissionNote": "Comisionul se calculează din veniturile fără TVA.",
+        "identityTitle": "Informații despre client",
+        "billingBasisTitle": "Bază de facturare",
+        "meta": {
+          "orgnr": "Nr. org.",
+          "invoiceMethod": "Metodă de facturare",
+          "agreementLevel": "Nivel de contract",
+          "status": "Stare"
+        },
+        "kpis": {
+          "employees": "Angajați",
+          "activeOrders": "Comenzi active",
+          "orderHistory": "Istoric comenzi",
+          "revenue30Days": "Venituri 30 de zile",
+          "commission5": "Comision 5%"
+        },
+        "actions": {
+          "editAgreement": "Editează contractul",
+          "pause": "Pune în pauză",
+          "suspend": "Suspendă",
+          "removeCustomer": "Elimină clientul",
+          "restore": "Restaurează",
+          "agreementUpdated": "Contract actualizat."
+        },
+        "statusBanner": {
+          "suspendedDefault": "Clientul este suspendat.",
+          "pausedDefault": "Clientul este în pauză."
+        },
+        "readOnly": "Ai acces doar în citire. Modificările necesită acces de administrator.",
+        "labels": {
+          "orgnr": "Nr. org.",
+          "contact": "Contact",
+          "email": "E-mail",
+          "phone": "Telefon",
+          "deliveryAddress": "Adresă de livrare",
+          "agreementStatus": "Stare contract",
+          "period": "Perioadă",
+          "ordersThisMonth": "Bază de comenzi",
+          "revenueExVat": "Venituri fără TVA",
+          "vat": "TVA",
+          "revenueIncVat": "Venituri cu TVA inclus",
+          "commissionBase": "Bază de comision",
+          "commission": "Comision 5%",
+          "commissionRateValue": "5%",
+          "invoiceMethod": "Metodă de facturare",
+          "invoiceRecipient": "Destinatar factură",
+          "billingStatus": "Stare"
+        },
+        "billingStatus": {
+          "ready": "Pregătit pentru baza de facturare",
+          "missingVat": "Lipsește defalcarea TVA",
+          "missingRecipient": "Lipsește destinatarul facturii",
+          "missingOrders": "Lipsește baza de comenzi"
+        },
+        "badges": {
+          "oneOrderThisMonth": "1 comandă în această lună",
+          "ordersThisMonth": "{count} comenzi în această lună",
+          "commissionNotReady": "Comisionul nu este pregătit",
+          "commissionAmount": "{amount} comision",
+          "oneHistorical": "1 în istoric",
+          "historical": "{count} în istoric",
+          "ordersSuffix": "comenzi"
+        },
+        "sections": {
+          "employees": "Angajați",
+          "orders": "Comenzi",
+          "activity": "Activitate",
+          "employeesEmpty": "Niciun angajat înregistrat pentru acest client încă.",
+          "ordersEmpty": "Nicio comandă înregistrată pentru acest client încă."
+        },
+        "employeesTable": {
+          "name": "Nume",
+          "email": "E-mail",
+          "role": "Rol"
+        }
+      },
+      "agreement": {
+        "sectionTitle": "Contract",
+        "activeTitle": "Contract de client activ",
+        "inactiveTitle": "Contract de client",
+        "deliveryDaysWarning": "Contractul include zile de livrare în afara livrării obișnuite de prânz.",
+        "multipleActiveWarning": "Pentru acest client sunt înregistrate mai multe contracte active.",
+        "packageMissing": "Încă nespecificat în vizualizarea contractului",
+        "packageMix": "Mix",
+        "locationMissing": "Adresa de livrare nu este setată",
+        "notSpecified": "Nespecificat",
+        "weekdaysRange": "Luni–vineri",
+        "weekdays": {
+          "mon": "Luni",
+          "tue": "Marți",
+          "wed": "Miercuri",
+          "thu": "Joi",
+          "fri": "Vineri"
+        },
+        "periodFromTo": "De la {from} până la {to}",
+        "periodFromOpen": "De la {from} · Fără dată de încheiere",
+        "createdAt": "Creat la {date}",
+        "dayMenuLine": "{day} · {plan}",
+        "dayMenusWeekdaysTier": "Luni–vineri · {tier}",
+        "dayMenusWeekdaysTierLine": "Luni–vineri: {tier}",
+        "dayMenusDaysTier": "{days} · {tier}",
+        "dayMenusDaysTierLine": "{days}: {tier}",
+        "status": {
+          "active": "Activ",
+          "pending": "În așteptarea evaluării",
+          "paused": "În pauză",
+          "rejected": "Respins",
+          "closed": "Închis",
+          "unknown": "Necunoscut"
+        },
+        "labels": {
+          "status": "Stare",
+          "created": "Creat",
+          "period": "Perioada contractului",
+          "deliveryDays": "Zile de livrare",
+          "dayMenus": "Zile de livrare și meniu",
+          "location": "Adresă de livrare",
+          "package": "Nivel de contract"
+        },
+        "empty": {
+          "title": "Niciun contract înregistrat",
+          "text": "Când un contract de client este aprobat, zilele de livrare, locația și conținutul contractului apar aici."
+        }
+      },
+      "activity": {
+        "empty": {
+          "title": "Nicio activitate relevantă a clientului de afișat încă.",
+          "text": "Când clientul se înregistrează, comandă sau este restaurat, acest lucru apare aici."
+        },
+        "events": {
+          "company_registration_submitted": {
+            "title": "Înregistrare de client primită",
+            "summary": "Compania a trimis o cerere de contract."
+          },
+          "company_registration_approved": {
+            "title": "Client aprobat",
+            "summary": "Înregistrarea clientului a fost aprobată și activată."
+          },
+          "agreement_activated": {
+            "title": "Contract activat",
+            "summary": "Contract de livrare activat."
+          },
+          "agreement_updated": {
+            "title": "Contract actualizat",
+            "summary": "Contract de livrare modificat."
+          },
+          "order_created": {
+            "title": "Comandă înregistrată",
+            "summary": "Comandă nouă înregistrată."
+          },
+          "order_received": {
+            "title": "Comandă înregistrată",
+            "summary": "Comandă nouă înregistrată."
+          },
+          "order_canceled": {
+            "title": "Comandă anulată",
+            "summary": "O comandă a fost anulată."
+          },
+          "order_cancelled": {
+            "title": "Comandă anulată",
+            "summary": "O comandă a fost anulată."
+          },
+          "provider.customer.restore.success": {
+            "title": "Client restaurat",
+            "summary": "Relația cu clientul a fost reactivată."
+          },
+          "provider.customer.restore.attempt": {
+            "title": "Restaurare începută",
+            "summary": "S-a încercat restaurarea clientului."
+          },
+          "provider.customer.archive.success": {
+            "title": "Client arhivat",
+            "summary": "Client arhivat la furnizor."
+          },
+          "provider.customer.hard_delete.success": {
+            "title": "Client eliminat",
+            "summary": "Client eliminat din lista furnizorului."
+          }
+        }
+      },
+      "lifecycle": {
+        "dialog": {
+          "closeAria": "Închide dialogul",
+          "reasonLabel": "Motiv",
+          "reasonHint": "{current}/{min} caractere",
+          "reasonNeedMore": " — sunt necesare mai multe caractere",
+          "cancel": "Anulează",
+          "working": "Se procesează…",
+          "suspend": {
+            "title": "Suspenzi {name}?",
+            "confirm": "Suspendă",
+            "description": "Oferă un motiv clar (cel puțin 20 de caractere)."
+          },
+          "pause": {
+            "title": "Pui în pauză {name}?",
+            "confirm": "Pune în pauză",
+            "description": "Oferă un motiv clar (cel puțin 20 de caractere)."
+          },
+          "delete": {
+            "title": "Ștergi {name}?",
+            "confirm": "Șterge",
+            "description": "Aceasta șterge clientul reversibil (soft delete). Comenzile pot fi afectate."
+          },
+          "resume": {
+            "title": "Restaurezi {name}?",
+            "confirm": "Restaurează",
+            "description": "Clientul și comenzile asociate sunt restaurate acolo unde este posibil."
+          }
+        }
+      },
+      "dialogs": {
+        "adminEyebrow": "Administrarea clienților",
+        "closeAria": "Închide",
+        "cancel": "Anulează",
+        "working": "Se procesează…",
+        "removal": {
+          "loadingRules": "Se încarcă regulile de eliminare…",
+          "loadingDependencies": "Se încarcă dependențele…",
+          "hardDeleteTitle": "Șterge definitiv clientul",
+          "hardDeleteBlockedTitle": "Clientul nu poate fi șters definitiv",
+          "archiveTitle": "Arhivează clientul",
+          "removeTitle": "Elimină clientul",
+          "hardDeleteLead": "Clientul nu are istoric operațional și poate fi șters definitiv după confirmare.",
+          "hardDeleteBlockedLead": "Acest client are un istoric operațional care trebuie păstrat.",
+          "chooseModeLead": "Alege dacă vrei să arhivezi sau să ștergi definitiv clientul.",
+          "loadRulesFailed": "Regulile de eliminare nu au putut fi încărcate.",
+          "loadRulesFailedHttp": "Regulile de eliminare nu au putut fi încărcate (HTTP {status}).",
+          "actionFailed": "Acțiunea a eșuat.",
+          "confirmLabel": "Confirmare",
+          "confirmHint": "(tastează exact: {hint})",
+          "reasonOptional": "Motiv (opțional)",
+          "archiveCustomer": "Arhivează clientul",
+          "hardDelete": "Șterge definitiv",
+          "archiveAction": "Arhivează clientul"
+        },
+        "restore": {
+          "title": "Restaurează clientul",
+          "lead": "Aceasta reactivează relația cu clientul fără a șterge istoricul.",
+          "confirmLabel": "Confirmare",
+          "confirmHint": "(tastează exact: {hint})",
+          "actionFailed": "Clientul nu a putut fi restaurat.",
+          "successDefault": "Client restaurat.",
+          "restoreCustomer": "Restaurează clientul"
+        },
+        "agreementEdit": {
+          "title": "Editează contractul clientului",
+          "loading": "Se încarcă contractul…",
+          "loadFailed": "Contractul nu a putut fi încărcat.",
+          "saveFailed": "Contractul nu a putut fi salvat.",
+          "save": "Salvează modificările",
+          "saving": "Se salvează…",
+          "updated": "Contract actualizat.",
+          "updatedWithWarnings": "Contract actualizat. {warnings}",
+          "dayMenusLegend": "Meniu pentru fiecare zi de livrare",
+          "dayMenusLead": "Alege ce meniu are clientul pentru fiecare zi de livrare.",
+          "weekdaysOnlyNote": "Livrare de prânz luni–vineri. Weekendurile nu sunt acceptate.",
+          "locationLegend": "Adresă de livrare",
+          "locationName": "Numele locației",
+          "address": "Adresă",
+          "contactLegend": "Persoană de contact",
+          "name": "Nume",
+          "email": "E-mail",
+          "phone": "Telefon",
+          "deliveryWindowLegend": "Interval de livrare",
+          "from": "De la",
+          "to": "Până la",
+          "billingLegend": "Facturare",
+          "invoiceEmail": "E-mail",
+          "invoiceEmailField": "E-mail de facturare",
+          "ehf": "EHF",
+          "orgnr": "Număr de organizație",
+          "ehfEndpoint": "Punct final EHF",
+          "billingContact": "Contact de facturare",
+          "statusLegend": "Stare",
+          "statusActive": "Activ",
+          "statusPaused": "În pauză",
+          "deliveryNote": "Instrucțiuni de livrare",
+          "reasonOptional": "Motiv (opțional, stocat în jurnalul de audit)",
+          "validation": {
+            "pickDeliveryDay": "Selectează cel puțin o zi de livrare.",
+            "pickMenuForDay": "Selectează meniul pentru {day}.",
+            "invalidEmail": "Adresă de e-mail nevalidă.",
+            "invoiceEmailRequired": "E-mailul de facturare trebuie să fie o adresă de e-mail validă.",
+            "ehfEndpointRequired": "Punctul final EHF este obligatoriu.",
+            "orgnrLength": "Numărul de organizație trebuie să aibă 9 cifre.",
+            "invalidBillingEmail": "E-mail nevalid pentru contactul de facturare."
+          }
+        }
+      }
+    },
+    "coverage": {
+      "page": {
+        "eyebrow": "Furnizor",
+        "heading": "Zone de acoperire",
+        "leadWithProvider": "Zonele de acoperire controlează ce companii pot trimite o solicitare către {providerName}. Folosește-le pentru a defini codurile poștale, numărul minim de angajați și zilele de livrare.",
+        "leadNoProvider": "Zonele de acoperire controlează ce companii pot trimite o solicitare către furnizor. Folosește-le pentru a defini codurile poștale, numărul minim de angajați și zilele de livrare."
+      },
+      "actions": {
+        "newArea": "Zonă de acoperire nouă",
+        "newAreaTitle": "Adaugă o zonă de acoperire nouă pentru furnizor.",
+        "readOnlyNote": "Ai acces doar în citire. Modificările necesită acces de administrator.",
+        "edit": "Editează",
+        "activate": "Activează",
+        "deactivate": "Dezactivează",
+        "deactivateTitle": "Companiile noi din această zonă nu pot selecta furnizorul cât timp zona este dezactivată. Contractele existente nu se modifică automat.",
+        "activateTitle": "Fă zona disponibilă din nou pentru solicitări noi din partea companiilor.",
+        "cancel": "Anulează",
+        "closeDrawer": "Închide",
+        "createArea": "Creează zona",
+        "saveChanges": "Salvează modificările",
+        "saving": "Se salvează…"
+      },
+      "table": {
+        "area": "Zonă",
+        "postalCodes": "Coduri poștale",
+        "minEmployees": "Nr. min. de angajați",
+        "deliveryDays": "Zile de livrare",
+        "status": "Stare"
+      },
+      "summary": {
+        "noneActive": "Nicio zonă de acoperire activă",
+        "oneActive": "1 zonă de acoperire activă",
+        "manyActive": "{count} zone de acoperire active",
+        "inactiveSuffix": " · {count} inactive"
+      },
+      "status": {
+        "active": "Activă",
+        "inactive": "Inactivă",
+        "paused": "În pauză",
+        "unknown": "Necunoscută"
+      },
+      "weekdays": {
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mie",
+        "thu": "Joi",
+        "fri": "Vin",
+        "weekdaysRange": "Luni–vineri"
+      },
+      "format": {
+        "emDash": "—",
+        "employeesRange": "{min}–{max}",
+        "employeesMin": "{min}+",
+        "employeesMax": "≤{max}"
+      },
+      "empty": {
+        "title": "Nicio zonă de acoperire încă",
+        "text": "Adaugă o zonă de acoperire pentru a controla ce companii pot trimite o solicitare către furnizor.",
+        "step1": "Definește codurile poștale sau zona.",
+        "step2": "Setează numărul minim de angajați.",
+        "step3": "Selectează zilele de livrare pentru zonă."
+      },
+      "form": {
+        "editTitle": "Editează zona",
+        "createTitle": "Adaugă zona",
+        "cityLabel": "Oraș / zonă",
+        "postalFrom": "Cod poștal de la",
+        "postalTo": "Cod poștal până la",
+        "minEmployees": "Nr. min. de angajați",
+        "maxEmployees": "Nr. max. de angajați (opțional)",
+        "deliveryDaysLegend": "Zile de livrare",
+        "activeToggle": "Zonă activă (folosită la potrivirea înregistrărilor)"
+      },
+      "errors": {
+        "notAuthenticated": "Nu ești autentificat.",
+        "providerAdminRequired": "Doar un administrator al furnizorului poate modifica zonele de acoperire.",
+        "forbidden": "Nu ai acces pentru a modifica această zonă.",
+        "validationFailed": "Formular nevalid.",
+        "cityRequired": "Orașul este obligatoriu.",
+        "invalidPostalFrom": "Codul poștal de la trebuie să aibă 4 cifre.",
+        "invalidPostalTo": "Codul poștal până la trebuie să aibă 4 cifre.",
+        "invalidPostalRange": "Codul poștal de la nu poate fi mai mare decât cel până la.",
+        "deliveryDaysRequired": "Selectează cel puțin o zi.",
+        "invalidEmployeeRange": "Nr. min. de angajați nu poate fi mai mare decât nr. max.",
+        "invalidPostalCode": "Codul poștal trebuie să aibă 4 cifre.",
+        "postalRangeInvalid": "Codul poștal de la nu poate fi mai mare decât cel până la.",
+        "employeeRangeInvalid": "Interval de angajați nevalid.",
+        "postalOverlap": "Intervalul de coduri poștale se suprapune cu o zonă activă existentă.",
+        "serviceAreaNotFound": "Zona nu a fost găsită.",
+        "saveFailed": "Zona nu a putut fi salvată. Încearcă din nou.",
+        "toggleFailed": "Starea nu a putut fi actualizată.",
+        "unknown": "Ceva nu a mers bine. Încearcă din nou."
+      }
+    },
+    "settings": {
+      "page": {
+        "eyebrow": "Furnizor",
+        "heading": "Setări",
+        "leadWithProvider": "Profil și informații de contact pentru {providerName}.",
+        "readOnly": "Ai acces doar în citire. Setările pot fi modificate doar de un administrator.",
+        "brandSection": "Logo și brand",
+        "brandIntro": "Încarcă un logo și alege o culoare de accent controlată. Lunchportalen păstrează layoutul, tipografia și expresia produsului.",
+        "logoHeading": "Logo",
+        "logoIntro": "Folosește un logo curat, cu fundal transparent. Logoul este afișat într-un mod controlat în meniul furnizorului.",
+        "logoNote": "Logourile care nu respectă standardul vizual al platformei pot fi respinse.",
+        "colorHeading": "Culoare principală",
+        "colorIntro": "Alege culoarea de accent a furnizorului. Culoarea este folosită doar în detalii controlate.",
+        "operationsSection": "Operațiuni și notificări",
+        "operationsIntro": "Introdu adresele de e-mail care trebuie să primească comenzile, listele de bucătărie și notificările de livrare pentru acest furnizor. Aceste setări se aplică doar acestei firme de catering.",
+        "operationsNote": "Firma de catering trebuie să introducă adresele de e-mail care trebuie să primească comenzile, listele de bucătărie și notificările de livrare. Lunchportalen nu trimite implicit e-mailurile operaționale ale furnizorului către platformă — adresa lipsă trebuie completată aici.",
+        "accountingSection": "Contabilitate",
+        "accountingIntro": "Conectează Tripletex pentru facturare automată și stare de plată prin integrarea contabilă norvegiană. Acesta nu este un standard contabil global.",
+        "tripletexSetup": "Configurare Tripletex"
+      },
+      "menuProfile": {
+        "heading": "Piață, monedă și profil de meniu",
+        "flagActive": "Activat printr-un feature flag — doar afișare, fără modificări de produs deocamdată.",
+        "statusInactive": "Profilul de meniu nu controlează încă categoriile, publicarea sau prețurile.",
+        "statusLabel": "Stare",
+        "uiVsProfileExplanation": "Limba interfeței traduce interfața. Piața și profilul de meniu controlează opțiunile fixe locale, banca de preparate calde și moneda. Conectarea completă vine în următoarea fază G5.",
+        "profileLabel": "Profil de meniu",
+        "sourceLabel": "Sursă",
+        "marketLabel": "Piață",
+        "localeLabel": "Setare regională",
+        "currencyLabel": "Monedă",
+        "readOnlyNote": "Doar afișare. Conținutul meniului, moneda și prețurile nu se modifică aici.",
+        "invalidProfile": "Profil de meniu nevalid în setări: {message}",
+        "sourceProviderSetting": "Setare a furnizorului",
+        "sourceMarketDefault": "Valoare implicită a pieței",
+        "sourceFallbackNoMarket": "Rezervă (profil/piață lipsă)",
+        "sourceLegacyDisabled": "Vechi (dezactivat)",
+        "sourceUnknown": "Necunoscută",
+        "marketNames": {
+          "NO": "Norvegia",
+          "SE": "Suedia",
+          "DK": "Danemarca",
+          "FI": "Finlanda",
+          "DE": "Germania",
+          "FR": "Franța",
+          "ES": "Spania",
+          "UK": "Regatul Unit",
+          "IT": "Italia"
+        }
+      },
+      "profile": {
+        "leadWithProvider": "Profil pentru {providerName}",
+        "nameLabel": "Nume",
+        "emailLabel": "E-mail de contact",
+        "phoneLabel": "Telefon de contact",
+        "save": "Salvează setările",
+        "saving": "Se salvează…",
+        "saved": "Setări salvate.",
+        "errors": {
+          "notAuthenticated": "Nu ești autentificat.",
+          "providerNotFound": "Furnizorul lipsește.",
+          "forbidden": "Fără acces.",
+          "nameRequired": "Numele este obligatoriu.",
+          "emailRequired": "Este necesar un e-mail valid.",
+          "saveFailed": "Setările nu au putut fi salvate.",
+          "unknown": "Eroare neașteptată la salvare."
+        }
+      },
+      "operations": {
+        "operationsEmailLabel": "E-mail pentru comenzi și operațiuni",
+        "operationsEmailHint": "Folosit ca destinatar principal pentru alertele de comenzi și mesajele operaționale.",
+        "kitchenEmailLabel": "E-mail bucătărie",
+        "kitchenEmailHint": "Folosit pentru baza de producție și alertele de bucătărie.",
+        "deliveryEmailLabel": "E-mail livrare",
+        "deliveryEmailHint": "Folosit pentru alertele și mesajele legate de livrare atunci când comenzile sunt gata de livrare.",
+        "localeLabel": "Piață și limbă de administrare",
+        "localeHint": "Controlează piața stocată și profilul de meniu pentru această firmă de catering. Nu afectează fereastra de comandă a angajaților până la faza următoare.",
+        "uiLocaleSeparation": "Limba din bara laterală schimbă doar textul interfeței. Piața și profilul de meniu se salvează aici, la setările operaționale.",
+        "marketProfileLabel": "Profil de meniu activ",
+        "marketProfileValue": "{profileId}",
+        "marketProfileUnset": "Niciun profil de meniu salvat încă — se selectează automat când salvezi piața.",
+        "marketChangeImpact": "Schimbarea pieței afectează sugestiile viitoare de meniu și preparatele generate.",
+        "marketChangeCatalogPreserved": "Catalogul existent și comenzile publicate nu sunt suprascrise.",
+        "marketChangeResetRequired": "Construirea unui catalog nou dintr-un profil de piață necesită o resetare separată.",
+        "marketChangeEmployeeRuntime": "Angajații vor primi profilul de meniu al furnizorului când runtime-ul va fi activat în faza următoare.",
+        "save": "Salvează setările operaționale",
+        "saving": "Se salvează…",
+        "saved": "Setări operaționale salvate.",
+        "locales": {
+          "nb-NO": "Norvegiană (bokmål)",
+          "cs-CZ": "Čeština",
+          "da-DK": "Daneză",
+          "de-DE": "Germană",
+          "en-GB": "Engleză",
+          "es-ES": "Spaniolă",
+          "fr-FR": "Franceză",
+          "it-IT": "Italiană",
+          "nl-NL": "Neerlandeză",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Finlandeză",
+          "sv-SE": "Suedeză",
+          "el-GR": "Ελληνικά"
+        },
+        "errors": {
+          "notAuthenticated": "Nu ești autentificat.",
+          "providerNotFound": "Furnizorul lipsește.",
+          "forbidden": "Fără acces.",
+          "invalidEmail": "Adresă de e-mail nevalidă.",
+          "emailTooLong": "Adresa de e-mail este prea lungă.",
+          "invalidLocale": "Selecție de limbă nevalidă.",
+          "saveFailed": "Setările operaționale nu pot fi salvate în acest moment.",
+          "unknown": "Setările operaționale nu pot fi salvate în acest moment."
+        }
+      },
+      "logo": {
+        "hint": "Recomandat: logo PNG sau WebP cu fundal transparent. Max. 2 MB. Nu folosi fotografii cu mâncare, bannere, capturi de ecran, grafică publicitară sau logouri pe fundaluri aglomerate/colorate.",
+        "upload": "Încarcă logoul",
+        "replace": "Înlocuiește logoul",
+        "remove": "Elimină logoul",
+        "pickFile": "Alege fișierul logo",
+        "altWithProvider": "Logo pentru {providerName}",
+        "uploading": "Se încarcă…",
+        "removing": "Se elimină…",
+        "updated": "Logo actualizat.",
+        "removed": "Logo eliminat.",
+        "errors": {
+          "notAuthenticated": "Nu ești autentificat.",
+          "invalidProvider": "Furnizor nevalid.",
+          "forbidden": "Fără acces.",
+          "noFileSelected": "Alege un fișier logo.",
+          "unsupportedFileType": "Logoul trebuie să fie PNG sau WebP. Preferă un logo cu fundal transparent.",
+          "fileTooLarge": "Logoul este prea mare. Dimensiunea maximă este de 2 MB.",
+          "uploadUnavailable": "Încărcarea nu este disponibilă în acest moment.",
+          "uploadFailed": "Logoul nu a putut fi încărcat.",
+          "removeFailed": "Logoul nu a putut fi eliminat.",
+          "saveFailed": "Logoul nu a putut fi salvat.",
+          "urlFailed": "URL-ul logoului nu a putut fi determinat.",
+          "unknown": "Eroare neașteptată în timpul încărcării."
+        }
+      },
+      "brand": {
+        "hexLabel": "Cod HEX",
+        "save": "Salvează culoarea",
+        "saving": "Se salvează…",
+        "sampleHint": "Cum este folosită culoarea: ca accent discret în meniu și în detalii.",
+        "formatHint": "Folosește formatul HEX, de exemplu #F5C518. Dacă contrastul este slab, se folosește culoarea implicită.",
+        "saved": "Culoare salvată.",
+        "restoredDefault": "Culoarea implicită a fost restaurată.",
+        "errors": {
+          "notAuthenticated": "Nu ești autentificat.",
+          "invalidProvider": "Furnizor nevalid.",
+          "forbidden": "Fără acces.",
+          "invalidHex": "Folosește formatul HEX, de exemplu #F5C518.",
+          "contrastTooWeak": "Culoarea are un contrast prea slab și nu poate fi folosită. Alege o culoare mai închisă.",
+          "saveFailed": "Culoarea nu a putut fi salvată.",
+          "unknown": "Eroare neașteptată la salvare."
+        }
+      }
+    },
+    "banner": {
+      "paused": {
+        "title": "Furnizorul este în pauză",
+        "defaultReason": "Pauză temporară"
+      },
+      "suspended": {
+        "title": "Furnizorul este suspendat",
+        "defaultReason": "Suspendat"
+      },
+      "contactPrefix": "Contactează",
+      "contactSuffix": "pentru a rezolva situația."
+    },
+    "billing": {
+      "page": {
+        "eyebrow": "Furnizor",
+        "heading": "Facturi și decontare",
+        "subheading": "Prezentare generală a bazei de facturare, a comisionului și a decontării dintre furnizor și Lunchportalen."
+      },
+      "summary": {
+        "settlementStatus": "Stare decontare",
+        "commission": "Comision",
+        "nextSettlement": "Următoarea decontare",
+        "activateHint": "Contactează Lunchportalen pentru activare.",
+        "commissionPending": "Se afișează când decontarea este activată",
+        "nextSettlementNone": "Neprogramată"
+      },
+      "notActivated": {
+        "title": "Decontarea nu este activată",
+        "text": "Decontarea nu este încă activată pentru acest furnizor. Contactează Lunchportalen pentru a activa contractul de decontare și baza de facturare."
+      },
+      "commissionNote": "Lunchportalen calculează un comision de 5% pentru fiecare porție vândută atunci când decontarea este activată.",
+      "agreement": {
+        "activeEyebrow": "Contract de decontare activ",
+        "netPerMonth": "Net / lună",
+        "vatLabel": "TVA ({rate}%)",
+        "totalPerMonth": "Total / lună",
+        "invoiceSentTo": "Factură trimisă către",
+        "orgNrSuffix": " · nr. org. {orgNumber}"
+      },
+      "history": {
+        "title": "Bază de facturare și decontare",
+        "emptyTitle": "Nicio bază de facturare generată încă",
+        "emptyText": "Când decontarea este activată și baza este pregătită, baza de facturare, comisionul, sumele, starea și scadențele apar aici."
+      },
+      "invoice": {
+        "table": {
+          "period": "Perioadă",
+          "amount": "Sumă",
+          "status": "Stare",
+          "dueDate": "Scadență"
+        },
+        "noNumber": "Fără număr",
+        "drawerTitle": "Factura {number}",
+        "net": "Net",
+        "vat": "TVA",
+        "total": "Total",
+        "status": "Stare",
+        "sent": "Trimisă",
+        "paid": "Plătită",
+        "downloadPdfSoon": "Descarcă PDF (în curând)",
+        "downloadPdfIntegrationTitle": "Vine odată cu Tripletex"
+      },
+      "status": {
+        "settlement": {
+          "active": "Activă",
+          "notActivated": "Neactivată"
+        },
+        "invoice": {
+          "DRAFT": "Ciornă",
+          "SENT": "Trimisă",
+          "PAID": "Plătită",
+          "OVERDUE": "Restantă",
+          "VOID": "Anulată",
+          "unknown": "Necunoscută"
+        }
+      },
+      "plan": {
+        "SAAS_FIXED": "Preț lunar fix",
+        "SAAS_PER_COMPANY": "Preț per companie",
+        "CUSTOM": "Contract personalizat"
+      },
+      "actions": {
+        "details": "Detalii",
+        "close": "Închide",
+        "closeDrawer": "Închide"
+      },
+      "format": {
+        "emDash": "—"
+      },
+      "contact": {
+        "editButton": "Editează contactul de facturare",
+        "title": "Contact de facturare",
+        "emailLabel": "E-mail de facturare",
+        "orgLabel": "Nr. org. (opțional)",
+        "addressLabel": "Adresă de facturare (opțional)",
+        "cancel": "Anulează",
+        "save": "Salvează",
+        "saving": "Se salvează…",
+        "saved": "Contact de facturare actualizat.",
+        "saveFailed": "Nu s-a putut salva."
+      },
+      "errors": {
+        "notAuthenticated": "Nu ești autentificat.",
+        "providerAdminRequired": "Doar un administrator al furnizorului poate modifica contactul de facturare.",
+        "forbidden": "Nu ai acces.",
+        "invalidEmail": "E-mail de facturare nevalid.",
+        "activeSubscriptionNotFound": "Niciun abonament activ de actualizat.",
+        "saveFailed": "Contactul de facturare nu a putut fi salvat.",
+        "unknown": "Ceva nu a mers bine. Încearcă din nou."
+      }
+    },
+    "tripletex": {
+      "brand": "Tripletex",
+      "format": {
+        "emDash": "—"
+      },
+      "page": {
+        "status": {
+          "eyebrow": "Tripletex",
+          "heading": "Stare conexiune",
+          "subheading": "Prezentare generală a conexiunii, a webhook-ului și a activității recente.",
+          "fallbackHeading": "Stare Tripletex",
+          "noAccess": "Nu ai acces la acest furnizor."
+        },
+        "connect": {
+          "heading": "Conectează Tripletex",
+          "adminRequired": "Doar un administrator al furnizorului poate conecta Tripletex.",
+          "degraded": {
+            "heading": "Tripletex necesită atenție",
+            "body": "Conexiunea este degradată. Fluxul de reconfigurare vine în TPT-B-7b-edge.",
+            "badge": "Necesită atenție"
+          },
+          "disconnected": {
+            "heading": "Tripletex este deconectat",
+            "body": "Fluxul de restaurare fără token nou vine în TPT-B-7b-edge.",
+            "badge": "Deconectat"
+          }
+        }
+      },
+      "state": {
+        "CONNECTED": "Conectat",
+        "CONFIGURING": "Se configurează…",
+        "DEGRADED": "Necesită atenție",
+        "DISCONNECTED": "Deconectat",
+        "NOT_CONNECTED": "Neconectat"
+      },
+      "activity": {
+        "onboarding_connection_started": "Conectare începută",
+        "onboarding_provisioning_completed": "Configurare finalizată",
+        "onboarding_customer_skipped": "Client omis",
+        "onboarding_finalized": "Conectare finalizată",
+        "onboarding_disconnected": "Tripletex deconectat",
+        "onboarding_reconnect_initiated": "Restaurare începută",
+        "onboarding_test_token": "Conexiune testată",
+        "onboarding_vault_purged": "Acreditări șterse",
+        "state_change_connected": "Starea s-a schimbat în conectat",
+        "state_change_degraded": "Starea s-a schimbat în necesită atenție",
+        "state_change_disconnected": "Starea s-a schimbat în deconectat",
+        "state_change_configuring": "Starea s-a schimbat în se configurează",
+        "state_change_generic": "Starea conexiunii s-a schimbat"
+      },
+      "status": {
+        "sections": {
+          "resources": "Resurse în Tripletex",
+          "webhook": "Webhook",
+          "activity": "Activitate în ultimele 30 de zile",
+          "actions": "Acțiuni"
+        },
+        "hero": {
+          "configureWebhook": "Configurează webhook-ul →",
+          "continueSetup": "Continuă configurarea →",
+          "reconnect": "Conectează din nou →",
+          "reconfigure": "Reconfigurează →",
+          "since": "Din {datetime}",
+          "lastHealthCheck": "Ultima verificare de stare: {relative}",
+          "credentialsPurge": "Acreditările vor fi șterse la {datetime}",
+          "daysUntilPurge": "în {days} zile"
+        },
+        "cards": {
+          "products": "Produse",
+          "productsMeta": "Produse de masă mapate",
+          "customers": "Clienți",
+          "customersMeta": "Legături de companii în Tripletex",
+          "vatCodes": "Coduri TVA",
+          "vatCodesMeta": "Coduri fiscale unice în uz"
+        },
+        "webhook": {
+          "subscriptions": "Abonamente înregistrate",
+          "activeCount": "{count} active în Tripletex",
+          "noneRegistered": "Niciunul înregistrat încă",
+          "eventTypes": "Tipuri de evenimente",
+          "lastReceived": "Ultimul primit",
+          "noEventsYet": "Niciun eveniment încă",
+          "last30Days": "Ultimele 30 de zile",
+          "eventsCount": "{count} evenimente",
+          "secretRotated": "Secret rotit",
+          "notRotated": "Nerotit",
+          "copy": "Copiază",
+          "copied": "Copiat",
+          "copyFailed": "Nu s-a putut copia"
+        },
+        "activityStats": {
+          "invoicesSent": "Facturi trimise",
+          "invoicesPaid": "Facturi plătite",
+          "workerFailures": "Trimiteri eșuate",
+          "webhookEvents": "Webhook-uri",
+          "recentHeading": "Evenimente recente",
+          "empty": "Niciun eveniment înregistrat încă."
+        },
+        "actions": {
+          "adminNote": "Doar un administrator al furnizorului poate efectua aceste acțiuni.",
+          "testConnection": "Testează conexiunea",
+          "rotateSecret": "Rotește secretul webhook-ului",
+          "disconnect": "Deconectează →"
+        },
+        "modals": {
+          "close": "Închide",
+          "copy": "Copiază",
+          "copied": "Copiat",
+          "copyFailed": "Nu s-a putut copia",
+          "ok": "OK",
+          "failed": "Eșuat",
+          "test": {
+            "title": "Testează conexiunea",
+            "body": "Rulează verificarea completă în 3 pași față de Tripletex, folosind acreditările stocate.",
+            "stepAuth": "Autentificare",
+            "stepCompany": "Companie",
+            "stepScope": "Acces",
+            "run": "Rulează testul",
+            "running": "Se testează…"
+          },
+          "rotate": {
+            "title": "Rotește secretul webhook-ului",
+            "body": "Generează un secret nou și actualizează abonamentul Tripletex când configurarea se finalizează.",
+            "generate": "Generează secret nou",
+            "generating": "Se generează…"
+          },
+          "disconnect": {
+            "title": "Deconectează Tripletex",
+            "body": "Conexiunea este setată ca deconectată. Acreditările sunt păstrate 30 de zile, astfel încât să te poți reconecta fără un token nou. După aceea sunt șterse definitiv.",
+            "confirm": "Confirmă deconectarea",
+            "confirming": "Se deconectează…"
+          }
+        }
+      },
+      "wizard": {
+        "eyebrow": "Tripletex",
+        "heading": "Conectează Tripletex",
+        "leadForProvider": "Pentru {providerName}",
+        "progress": {
+          "token": "Token",
+          "verify": "Verificare",
+          "setup": "Configurare",
+          "webhook": "Webhook",
+          "done": "Gata",
+          "ariaLabel": "Pasul {current} din {total}: {label}"
+        },
+        "steps": {
+          "token": {
+            "eyebrow": "Pasul 1 din 5",
+            "title": "Lipește și verifică",
+            "intro": "Generează un Employee Token în Tripletex, la Companie → Acces API. Lipește mai jos Company ID din URL (contextId) și tokenul.",
+            "companyIdLabel": "Company ID Tripletex",
+            "companyIdHelp": "Format: 6–12 cifre. Îl găsești în URL: contextId=…",
+            "companyIdInvalid": "Company ID trebuie să aibă 6–12 cifre.",
+            "tokenLabel": "Employee Token",
+            "tokenHintPending": "Tokenul este trimis către server doar în timpul verificării și al stocării.",
+            "tokenHintVerified": "Token verificat și pregătit pentru stocare.",
+            "tokenMissing": "Lipește Employee Token din Tripletex.",
+            "verify": "Verifică",
+            "verifying": "Se verifică…",
+            "retry": "Încearcă din nou",
+            "continue": "Continuă",
+            "connecting": "Se conectează…",
+            "checksFailed": "Una sau mai multe verificări au eșuat. Corectează și încearcă din nou.",
+            "tokenMissingOnContinue": "Tokenul lipsește. Verifică din nou.",
+            "notRun": "Nerulat"
+          },
+          "provisioning": {
+            "eyebrow": "Pasul 3 din 5",
+            "title": "Se configurează Tripletex",
+            "intro": "De obicei durează 10–30 de secunde.",
+            "starting": "Se pornește configurarea…",
+            "waiting": "Se așteaptă configurarea Tripletex…",
+            "complete": "Configurare finalizată.",
+            "syncing": "Se sincronizează codurile TVA, produsele și clienții…",
+            "timeout": "Ceva a durat mai mult decât era de așteptat.",
+            "timeoutHint": "Configurarea continuă în fundal. Poți închide această pagină și reveni mai târziu.",
+            "contactSupport": "Contactează asistența",
+            "vatSync": "Coduri TVA în curs de sincronizare",
+            "productsCreate": "Produse în curs de creare",
+            "customersSync": "Clienți în curs de sincronizare"
+          },
+          "webhook": {
+            "eyebrow": "Pasul 4 din 5",
+            "title": "Înregistrare webhook",
+            "intro": "Lunchportalen înregistrează automat abonamentele webhook în Tripletex. Nu trebuie să lipești manual URL-ul sau secretul.",
+            "preparing": "Se pregătește secretul webhook-ului…",
+            "ready": "Gata. Apasă «Finalizează configurarea» pentru a înregistra webhook-ul și a încheia conectarea.",
+            "prepareFailed": "Secretul webhook-ului nu a putut fi pregătit.",
+            "registering": "Se înregistrează webhook-ul în Tripletex…",
+            "finalize": "Finalizează configurarea",
+            "finalizing": "Se finalizează…"
+          },
+          "success": {
+            "eyebrow": "Pasul 5 din 5",
+            "title": "✓ Tripletex este conectat",
+            "companyPrefix": "Companie:",
+            "canNow": "Acum poți:",
+            "bulletInvoices": "Trimite automat facturi către Tripletex",
+            "bulletPayments": "Primi starea plăților prin webhook",
+            "bulletStatus": "Vedea starea conexiunii și istoricul",
+            "viewInvoices": "Vezi istoricul facturilor",
+            "viewStatus": "Vezi starea conexiunii",
+            "backToSettings": "Înapoi la prezentarea generală"
+          }
+        },
+        "verify": {
+          "auth": "Se testează autentificarea",
+          "companyMatch": "Se verifică potrivirea Company ID",
+          "scope": "Se testează permisiunile",
+          "authOk": "Conexiune OK",
+          "companyOk": "Companie corectă",
+          "scopeOk": "Acces OK"
+        }
+      },
+      "errors": {
+        "notAuthenticated": "Nu ești autentificat.",
+        "providerAdminRequired": "Doar un administrator al furnizorului poate efectua această acțiune.",
+        "forbidden": "Nu ai acces la acest furnizor.",
+        "invalidCompanyId": "Company ID trebuie să aibă 6–12 cifre.",
+        "missingToken": "Employee Token este obligatoriu.",
+        "tokenVerificationFailed": "Verificarea a eșuat.",
+        "verificationFailed": "Verificarea a eșuat. Tokenul sau permisiunile nu sunt valide.",
+        "credentialsLoadFailed": "Acreditările nu au putut fi încărcate.",
+        "configurationMissing": "Acreditările Tripletex nu sunt configurate.",
+        "connectionTestFailed": "Testul de conexiune a eșuat.",
+        "healthLoadFailed": "Starea conexiunii nu a putut fi încărcată.",
+        "disconnectFailed": "Tripletex nu a putut fi deconectat.",
+        "invalidState": "Conexiunea nu poate fi deconectată în starea sa actuală.",
+        "rotateFailed": "Secretul webhook-ului nu a putut fi generat.",
+        "webhookSecretRequired": "Secretul webhook-ului trebuie generat mai întâi.",
+        "webhookSyncFailed": "Webhook-ul nu a putut fi înregistrat în Tripletex.",
+        "provisioningNotComplete": "Configurarea nu este încă finalizată.",
+        "completeFailed": "Conexiunea nu a putut fi salvată.",
+        "finalizeFailed": "Conexiunea nu a putut fi finalizată.",
+        "saveFailed": "Acțiunea a eșuat.",
+        "unknown": "Ceva nu a mers bine. Încearcă din nou."
+      }
+    },
+    "registrations": {
+      "page": {
+        "eyebrow": "Furnizor",
+        "heading": "Solicitări",
+        "subheading": "Analizează companiile noi interesate de un aranjament de prânz și evaluează zona de livrare, datele de contact și contractul dorit înainte de procesare."
+      },
+      "table": {
+        "company": "Companie",
+        "area": "Zonă",
+        "contact": "Contact",
+        "employees": "Angajați",
+        "received": "Primită",
+        "status": "Stare"
+      },
+      "status": {
+        "pending": "În așteptarea evaluării",
+        "approved": "Aprobată",
+        "rejected": "Respinsă",
+        "other": "Altele"
+      },
+      "summary": {
+        "none": "Niciuna în așteptare",
+        "one": "1 în așteptare",
+        "many": "{count} în așteptare"
+      },
+      "actions": {
+        "review": "Evaluează"
+      },
+      "empty": {
+        "title": "Nicio solicitare în așteptarea evaluării",
+        "text": "Solicitările noi ale companiilor apar aici când se potrivesc cu zona ta de acoperire.",
+        "steps": {
+          "reviewRequest": "Verifică locația de livrare, datele de contact și aranjamentul de prânz dorit atunci când sosește o solicitare.",
+          "approvedFlow": "Companiile aprobate trec mai departe la fluxul de client și contract.",
+          "rejectedFlow": "Solicitările respinse sunt gestionate controlat, cu o stare clară."
+        }
+      },
+      "dialogs": {
+        "closeAria": "Închide",
+        "approveTitle": "Aprobă înregistrarea",
+        "rejectTitle": "Respinge înregistrarea",
+        "contactLabel": "Contact",
+        "phoneLabel": "Telefon",
+        "employeesLabel": "Angajați (aprox.)",
+        "tierLabel": "Nivel de contract",
+        "rejectReasonLabel": "Motiv",
+        "rejectInstead": "Respinge în schimb",
+        "approveInstead": "Aprobă în schimb",
+        "cancel": "Anulează",
+        "approve": "Aprobă",
+        "reject": "Respinge",
+        "saving": "Se procesează…"
+      },
+      "errors": {
+        "notAuthenticated": "Nu ești autentificat.",
+        "providerAdminRequired": "Doar administratorii furnizorului pot efectua această acțiune.",
+        "registrationNotFound": "Înregistrarea nu a fost găsită.",
+        "registrationAlreadyProcessed": "Această înregistrare a fost deja procesată.",
+        "invalidTier": "Nivel de contract nevalid.",
+        "rejectReasonRequired": "Oferă un motiv scurt.",
+        "approveFailed": "Înregistrarea nu a putut fi aprobată.",
+        "rejectFailed": "Înregistrarea nu a putut fi respinsă.",
+        "actionFailed": "Acțiunea a eșuat.",
+        "unknown": "Ceva nu a mers bine."
+      }
+    },
+    "menu": {
+      "page": {
+        "readOnlyTitle": "Doar vizualizare",
+        "readOnlyLead": "Nu ai permisiunea de a edita meniul. Contactează administratorul furnizorului pentru acces de editare.",
+        "translationsPromoTitle": "Traduceri de meniu",
+        "translationsPromoLead": "Aprobă mai târziu textul de meniu tradus pentru angajați. Angajații văd în continuare textul original până la SMART-3.",
+        "translationsPromoCta": "Deschide traducerile de meniu"
+      },
+      "translationsPage": {
+        "eyebrow": "Meniu",
+        "title": "Traduceri de meniu",
+        "lead": "Aprobă și gestionează textul de meniu tradus pentru {providerName}. Aceasta nu schimbă deocamdată ceea ce văd angajații.",
+        "backToMenu": "Înapoi la meniu"
+      },
+      "translations": {
+        "introApproved": "Doar traducerile aprobate sunt afișate angajaților. Rândurile în stadiul de ciornă, sugerate sau respinse nu sunt afișate niciodată angajaților.",
+        "introPartialCoverage": "Acoperirea parțială este normală. Hash-ul lipsă sau învechit revine la textul original al furnizorului — acest lucru nu schimbă cheile de comandă, pachetul sau prețul pentru angajați.",
+        "introSourceRefs": "Referințe sursă: preparat = item.key, categorie = slug de categorie (de ex. paasmurt, salat), alergen = token normalizat.",
+        "introSources": "Sursele provin din catalog și din fereastra de meniu activă (rânduri menuDay publicate). Sursele de tip preparat cald/menu_day apar când există în fereastra de meniu activă.",
+        "coverageTitle": "Acoperire pe limbă",
+        "loadingSources": "Se încarcă sursele…",
+        "noSources": "Nicio sursă găsită în catalog încă.",
+        "coverageTable": {
+          "locale": "Limbă",
+          "coverage": "Acoperire",
+          "employeeVisible": "Aprobate vizibile",
+          "missing": "Lipsă",
+          "draft": "Ciornă",
+          "stale": "Învechite"
+        },
+        "missingTitle": "Surse fără traducere aprobată",
+        "missingCount": "La {count} surse lipsește un rând pentru cel puțin o limbă țintă.",
+        "createDraftFromSource": "Creează ciornă",
+        "staleWarning": "{count} surse au hash nepotrivit — angajații văd textul original până când rândul este aprobat din nou.",
+        "filters": {
+          "locale": "Limbă",
+          "status": "Stare",
+          "all": "Toate"
+        },
+        "status": {
+          "missing": "Lipsă",
+          "draft": "Ciornă",
+          "suggested": "Sugerată",
+          "approved": "Aprobată",
+          "rejected": "Respinsă",
+          "stale": "Învechită"
+        },
+        "createTitle": "Rând de traducere nou",
+        "createLead": "Creează un rând manual cu referință sursă și text original sau folosește «Creează ciornă» din lista de surse de mai sus.",
+        "form": {
+          "sourceKind": "Sursă",
+          "field": "Câmp",
+          "locale": "Limbă",
+          "sourceRef": "Referință sursă",
+          "sourceRefPlaceholder": "item.key, slug de categorie sau token de alergen",
+          "originalText": "Text original",
+          "translatedTextOptional": "Text tradus (opțional)"
+        },
+        "saveDraft": "Salvează ciorna",
+        "listTitle": "Traduceri",
+        "loading": "Se încarcă…",
+        "emptyList": "Niciun rând de traducere încă. Creează un rând manual sau așteaptă până când importul din sursele de meniu devine disponibil.",
+        "listTable": {
+          "source": "Sursă",
+          "field": "Câmp",
+          "locale": "Limbă",
+          "original": "Original",
+          "translated": "Tradus",
+          "status": "Stare",
+          "updated": "Actualizat",
+          "actions": "Acțiuni"
+        },
+        "hashMismatch": "Hash nepotrivit — marchează ca învechit dacă este necesar",
+        "approve": "Aprobă",
+        "reject": "Respinge",
+        "emptyTranslated": "—",
+        "errors": {
+          "loadFailed": "Traducerile nu au putut fi încărcate.",
+          "updateFailed": "Traducerea nu a putut fi actualizată.",
+          "createFailed": "Traducerea nu a putut fi creată."
+        }
+      },
+      "legacyEditor": {
+        "intro": "Angajații pot comanda doar când compania are un contract activ și meniul este publicat.",
+        "date": "Dată",
+        "plan": "Plan",
+        "category": "Categorie",
+        "mealTitle": "Numele preparatului",
+        "description": "Descriere",
+        "allergens": "Alergeni (opțional, separați prin virgulă)",
+        "allergensPlaceholder": "De ex. lapte, grâu",
+        "savingDraft": "Se salvează…",
+        "saveDraft": "Salvează ciorna",
+        "publishing": "Se publică…",
+        "publishMenu": "Publică meniul"
+      },
+      "header": {
+        "eyebrow": "Editor de meniu",
+        "lead": "Planifică săptămâna, setează preparatul cald comun pentru fiecare zi și publică pentru comenzi.",
+        "prevWeek": "← Anterioara",
+        "nextWeek": "Următoarea →",
+        "weekFrom": "Săptămâna din {date}",
+        "weekTitle": "Săptămâna {week} · {year}",
+        "weekNavAria": "Navigare între săptămâni",
+        "tierTabsAria": "Pachete de meniu",
+        "priceLineAria": "Prețul nivelului și regula de producție",
+        "workspaceAria": "Spațiu de lucru",
+        "sharedWarmMealRule": "Preparatul cald este comun pentru toate cele trei niveluri."
+      },
+      "tabs": {
+        "weekPlan": "Plan săptămânal",
+        "catalog": "Opțiuni fixe"
+      },
+      "status": {
+        "ariaLabel": "Starea săptămânii",
+        "readyAllGenerated": "Săptămâna este gata — preparat cald generat pentru toate cele {days} zile",
+        "daysMissingVarmrett": "{count, plural, one {# zi fără preparat cald} other {# zile fără preparat cald}}",
+        "daysWithVarmrett": "{filled} din {total} zile cu preparat cald",
+        "autoRolloutMeta": "Publicat automat joi la 08:00 · angajații văd săptămâna la 14:00",
+        "fillMissingMeta": "Completează preparatele calde lipsă înainte ca săptămâna să poată fi publicată",
+        "autoRolloutChip": "Publicare automată activă",
+        "daysPublished": "{count, plural, one {# zi publicată} other {# zile publicate}}"
+      },
+      "preview": {
+        "ariaLabel": "Diagnosticare previzualizare de preț",
+        "title": "Previzualizare de preț",
+        "subtitle": "Doar pentru diagnosticare — nu se folosește pentru comenzi, marjă sau publicare.",
+        "differs": "Diferă de prețul de producție",
+        "sourceMarket": "Din regulile de preț",
+        "sourceFallback": "Rezervă",
+        "sourceMixed": "Mixt",
+        "taxEx": "fără TVA",
+        "taxInc": "cu TVA",
+        "amountExSuffix": "NOK fără TVA",
+        "amountIncSuffix": "NOK cu TVA"
+      },
+      "week": {
+        "plannerTitle": "Plan săptămânal",
+        "plannerLead": "Preparat cald comun pentru fiecare zi — valoare implicită generată, pe care o poți înlocui.",
+        "ariaLabel": "Plan săptămânal",
+        "loadingAria": "Se încarcă meniul",
+        "hotMealEyebrow": "Preparatul cald al zilei",
+        "hotMealMissing": "Lipsește preparatul cald",
+        "hotMealMissingHint": "Adaugă preparatul cald al zilei înainte ca această zi să poată fi publicată.",
+        "hotMealFallback": "Preparat cald",
+        "enterpriseUpgrade": "Upgrade Enterprise",
+        "badges": {
+          "generated": "Generat",
+          "fridayTreat": "Răsfățul de vineri",
+          "overridden": "Înlocuit",
+          "hasOrder": "Are comenzi"
+        },
+        "actions": {
+          "add": "Adaugă",
+          "viewDay": "Vezi ziua",
+          "editNow": "Editează acum",
+          "edit": "Editează"
+        },
+        "allergens": {
+          "confirmed": "Alergeni: {list}",
+          "unconfirmed": "Alergeni neconfirmați — contactează furnizorul",
+          "opensAfterDelivery": "Se deschide pentru editare după livrare"
+        },
+        "pins": {
+          "soup": "Supă",
+          "fish": "Pește",
+          "fridayTreat": "Răsfățul de vineri"
+        },
+        "orderLock": {
+          "hasOrderWithPortions": "Are comenzi · {count} porții",
+          "hasOrderLocked": "Are comenzi · blocat"
+        },
+        "costHint": "Cost {amount} kr"
+      },
+      "weekdays": {
+        "mon": "Luni",
+        "tue": "Marți",
+        "wed": "Miercuri",
+        "thu": "Joi",
+        "fri": "Vineri"
+      },
+      "errors": {
+        "loadFailed": "Meniul nu a putut fi încărcat.",
+        "saveFailed": "Meniul nu a putut fi salvat.",
+        "copySourceEmpty": "Niciun meniu {tier} de copiat pentru această zi/categorie.",
+        "resetVarmrettFailed": "Preparatul cald nu a putut fi resetat.",
+        "generateProfileWeekFailed": "Săptămâna nu a putut fi generată din banca profilului.",
+        "publishConfirmRequired": "{warning} Confirmă pentru a publica oricum.",
+        "unauthorized": "Nu ești autentificat.",
+        "forbidden": "Nu ai acces la meniu.",
+        "badRequest": "Cerere nevalidă.",
+        "invalidBody": "Cerere nevalidă. Verifică toate câmpurile.",
+        "validationFailed": "Validarea a eșuat. Verifică câmpurile și încearcă din nou.",
+        "publishUnavailable": "Publicarea meniului nu este disponibilă în acest moment.",
+        "orderLocked": "Meniul este blocat din cauza unei comenzi active.",
+        "publishConfirmGeneric": "Confirmă pentru a publica oricum."
+      },
+      "success": {
+        "published": "Meniu publicat.",
+        "draftSaved": "Ciornă salvată.",
+        "resetVarmrett": "Preparatul cald a fost resetat la varianta generată.",
+        "profileWeekGenerated": "S-au generat preparate calde pentru {count} zi(le) din banca profilului.",
+        "copiedFromTier": "Copiat din {tier}. Adaugă upgrade-ul Enterprise înainte de publicare."
+      },
+      "validation": {
+        "enterprise": {
+          "upgradeRequired": "Enterprise care reutilizează Basis/Luxus trebuie să aibă un tip de upgrade sau o descriere înainte de publicare.",
+          "weakValue": "Enterprise ar trebui să aibă o valoare adăugată clară față de Luxus.",
+          "lowMargin": "Acest preparat Enterprise poate genera o marjă mai mică decât Luxus. Verifică costul ingredientelor."
+        }
+      },
+      "workspace": {
+        "status": {
+          "published": "Publicat",
+          "draft": "Ciornă",
+          "fixed": "Opțiune fixă",
+          "missing": "Lipsă",
+          "suggestion": "Sugestie"
+        },
+        "catalogStatus": {
+          "fixed_choice": "Opțiune fixă",
+          "published": "Publicat",
+          "draft": "Ciornă",
+          "existing": "Existent",
+          "missing_publish": "Lipsește publicarea",
+          "missing_warm_dish": "Lipsește preparatul cald din Sanity/bancă"
+        },
+        "nextStep": {
+          "fill_warm_dish_for_day": "Adaugă preparatul cald {weekdayPossessive}",
+          "fill_missing_warm_dishes": "Adaugă preparatele calde lipsă",
+          "check_enterprise_upgrade": "Verifică upgrade-ul Enterprise",
+          "publish_week": "Publică săptămâna",
+          "ready_for_orders": "Gata pentru comenzi",
+          "preview_week": "Previzualizează săptămâna"
+        },
+        "weekdaysPossessive": {
+          "mon": "de luni",
+          "tue": "de marți",
+          "wed": "de miercuri",
+          "thu": "de joi",
+          "fri": "de vineri"
+        },
+        "readiness": {
+          "not_ready": "Nu este gata de publicare",
+          "has_draft": "Are ciorne",
+          "ready_for_orders": "Gata pentru comenzi",
+          "ready_to_publish": "Gata de publicare"
+        },
+        "weekSummary": {
+          "missing": "Zile lipsă",
+          "ready": "Gata de publicare",
+          "published": "Publicat",
+          "draft": "Ciornă",
+          "has_draft": "Are ciorne"
+        },
+        "enterpriseSummary": {
+          "upgrade_planned": "Upgrade planificat",
+          "upgrade_missing": "Upgrade lipsă"
+        },
+        "editorLine": {
+          "sharedWarmMeal": "{weekday} · comun pentru toate pachetele",
+          "enterpriseUpgrade": "{weekday} · upgrade Enterprise"
+        },
+        "allergens": {
+          "none": "Niciun alergen menționat",
+          "prefix": "Alergeni: {list}"
+        },
+        "packageCard": {
+          "notSeparateProduction": "Nu este un preparat de producție separat",
+          "sharedWarmDishHint": "Un singur preparat cald comun"
+        },
+        "emptyPanel": {
+          "selectDay": "Selectează o zi din planul săptămânal pentru a edita opțiunile din catalog."
+        }
+      },
+      "price": {
+        "exVatSuffix": "kr fără TVA",
+        "incVatSuffix": "kr cu TVA",
+        "exVatShort": "fără TVA",
+        "incVatShort": "cu TVA",
+        "compactLine": "{tier} · {exPrice} {exShort} / {incPrice} {incShort}. {sharedRule}"
+      },
+      "editor": {
+        "ariaLabel": "Panou de editare",
+        "idle": {
+          "title": "Selectează o zi",
+          "leadPanel": "Apasă pe o zi din planul săptămânal pentru a edita preparatul cald și catalogul.",
+          "leadInspector": "Apasă pe preparatul cald sau pe o opțiune din planul săptămânal."
+        },
+        "status": {
+          "published": "Publicat",
+          "draft": "Ciornă",
+          "notPublished": "Nepublicat"
+        },
+        "inspector": {
+          "editDay": "Editează {weekday}",
+          "headerSharedWarmMeal": "Preparatul cald comun al zilei",
+          "headerEnterpriseUpgrade": "Upgrade Enterprise pe preparatul cald al zilei",
+          "close": "Închide",
+          "fixedChoices": "Opțiuni fixe",
+          "fixedChoicesNote": "Opțiuni bazate pe catalog — publică această categorie pentru ziua respectivă.",
+          "allergensPrefix": "Alergeni: {list}",
+          "singleChoice": "Opțiune fixă",
+          "singleChoiceNote": "Bazată pe catalog — publică această categorie pentru a o activa.",
+          "content": "Conținut",
+          "mealNamePlaceholder": "Introdu numele preparatului",
+          "sharedKitchenLead": "Preparat comun de bucătărie pentru Basis, Luxus și Enterprise în această zi.",
+          "orderLock": "Are comenzi",
+          "employeesOrdered": "{count} angajați au comandat",
+          "opensAfterServingDay": "Se deschide după ziua de servire"
+        },
+        "varmrett": {
+          "ariaLabel": "Editează preparatul cald",
+          "title": "Editează preparatul cald — {dateLabel}",
+          "scope": "Modificarea se aplică tuturor celor trei niveluri.",
+          "sharedBadge": "Comun · Basis, Luxus, Enterprise",
+          "generatedStamp": "Valoare implicită generată din banca de preparate. Poți edita, crea propria variantă sau reseta.",
+          "meal": "Preparat",
+          "description": "Descriere",
+          "allergens": "Alergeni",
+          "allergensPlaceholder": "De ex. lapte, grâu",
+          "rawCost": "Costul materiilor prime (kr)",
+          "estimatedRawCost": "Costul estimat al materiilor prime (kr)",
+          "mealName": "Numele preparatului",
+          "resetGenerated": "Resetează la varianta generată",
+          "cancel": "Anulează",
+          "save": "Salvează preparatul cald",
+          "saving": "Se salvează…",
+          "todayHotMeal": "Preparatul cald al zilei"
+        },
+        "economy": {
+          "ariaLabel": "Economie",
+          "title": "Economie",
+          "tierPrice": "Prețul nivelului ({tier}, fără TVA)",
+          "rawCost": "− Costul materiilor prime",
+          "commission": "− Lunchportalen 5%",
+          "marginPerPortion": "Marjă per porție",
+          "enterRawCostHint": "Introdu costul materiilor prime pentru a calcula marja.",
+          "priceExVat": "Preț fără TVA",
+          "estimatedCost": "Cost estimat",
+          "contribution": "Marjă de contribuție"
+        },
+        "enterprise": {
+          "title": "Upgrade Enterprise",
+          "lead": "Valoare suplimentară – același preparat cald. Fără un preparat nou în bucătărie.",
+          "todayWarmMeal": "Preparatul cald al zilei",
+          "warmMealMissing": "Preparatul cald al zilei lipsește — adaugă mai întâi preparatul cald.",
+          "sameWarmMealNote": "Enterprise se bazează pe același preparat cald – fără un preparat nou în bucătărie.",
+          "surcharge": "Supliment",
+          "estimatedRawCost": "Cost estimat al materiilor prime",
+          "extraContribution": "Marjă de contribuție suplimentară",
+          "suggestedTitle": "Upgrade Enterprise sugerat",
+          "useSuggestion": "Folosește sugestia",
+          "chooseOther": "Alege altceva",
+          "selectedUpgrade": "Upgrade selectat",
+          "upgradeSelected": "Upgrade selectat",
+          "quickChoicesTitle": "Alegere premium rapidă",
+          "quickChoicesLead": "Valoare suplimentară – același preparat cald",
+          "quickChoicesAria": "Alegere premium rapidă",
+          "hideManual": "Ascunde editarea manuală",
+          "editManual": "Editează manual",
+          "manualLead": "Editare avansată",
+          "buildFromLuxus": "Construiește pornind de la Luxus",
+          "buildFromTier": "Construiește pornind de la {tier}",
+          "basedOn": "Bazat pe",
+          "none": "Niciunul",
+          "upgradeType": "Tip de upgrade",
+          "chooseType": "Alege tipul",
+          "customerExtra": "Ce primește clientul în plus?",
+          "customerExtraPlaceholder": "Proteină premium, porție mai mare, desert/fructe…",
+          "confirmPublishDespiteWarning": "Confirm publicarea în ciuda avertismentului."
+        },
+        "actions": {
+          "saveDraft": "Salvează ciorna",
+          "publishDay": "Publică ziua",
+          "saving": "Se salvează…",
+          "publishing": "Se publică…"
+        }
+      },
+      "catalog": {
+        "title": "Catalog de meniu",
+        "leadAccordion": "Opțiunile pe care le oferi în cadrul fiecărei categorii. Structura este fixă — tu deții conținutul.",
+        "leadView": "Opțiuni fixe pentru furnizorul tău — nu conținut de meniu săptămânal.",
+        "ownCatalogTitle": "Propriul tău catalog",
+        "ownCatalogText": "Modificările afectează doar meniul tău. Ceilalți furnizori își văd propriul catalog — fără conținut comun.",
+        "isolated": "Izolat",
+        "tierBadgeAll": "Toate nivelurile",
+        "tierBadgeLuxusEnterprise": "Luxus + Enterprise",
+        "choicesCount": "{count} opțiuni",
+        "lockedCount": "{count} blocate",
+        "edit": "Editează",
+        "close": "Închide",
+        "addChoice": "+ Adaugă opțiune",
+        "addChoiceLegacy": "Adaugă opțiune",
+        "publishHint": "Modificările din catalog se aplică de la următoarea publicare a săptămânii pentru vizualizarea săptămânală/de bucătărie. Fereastra de comandă se actualizează imediat.",
+        "saveCatalog": "Salvează catalogul",
+        "cancel": "Anulează",
+        "saving": "Se salvează…",
+        "legacyTitle": "Catalogul tău de meniu",
+        "legacyLead": "Aceasta modifică doar opțiunile fixe ale furnizorului tău — nu ale altor firme de catering.",
+        "category": "Categorie",
+        "titleField": "Titlu",
+        "noEditableCategories": "Nicio categorie editabilă pentru {tier}.",
+        "editCatalogAria": "Editează catalogul de meniu",
+        "catalogAria": "Catalog de meniu",
+        "orderLocked": "Are comenzi",
+        "orderSortHint": "Ordinea este controlată de catalog",
+        "view": {
+          "sanityBank": "Sanity/bancă",
+          "yourCatalog": "Catalogul tău"
+        },
+        "item": {
+          "namePlaceholder": "Numele opțiunii",
+          "locked": "Blocată",
+          "vegetarian": "Vegetariană",
+          "allergensAria": "Alergeni",
+          "remove": "Elimină",
+          "removeChoice": "Elimină {name}",
+          "removeFallback": "opțiune"
+        },
+        "messages": {
+          "saveFailed": "Catalogul nu a putut fi salvat.",
+          "saved": "Catalog salvat."
+        }
+      },
+      "workspaceProfile": {
+        "badge": "Profil de meniu (prezentare)",
+        "banner": "Spațiul de lucru afișează structura profilului de meniu. Conținutul de catalog existent și meniurile publicate nu se modifică în această fază.",
+        "metaLine": "{profileName} · {market} · {locale} · {currency}"
+      },
+      "workspaceFixedCategories": {
+        "title": "Opțiunile fixe ale profilului de meniu",
+        "description": "Aici sunt afișate opțiunile fixe ale profilului de meniu. Catalogul și meniurile publicate nu se modifică până la o tranziție ulterioară.",
+        "activeInCurrentCatalog": "Activă în catalogul actual",
+        "comingStructureNotOrderActive": "Structură viitoare — încă inactivă în comenzi",
+        "orderRuntimeEnabled": "Runtime de comandă activat",
+        "presentationOnly": "Doar prezentare",
+        "packagesLabel": "Pachete",
+        "profileCategoryLabel": "Categorie de profil"
+      },
+      "workspaceWarmDishGeneration": {
+        "activeProfileEyebrow": "Profil de meniu activ",
+        "activeProfileTitle": "{profileName}",
+        "followsProfileLead": "Sugestiile de preparate calde urmează acest profil. Conținutul existent și zilele publicate nu se modifică automat.",
+        "title": "Sugestii de preparate calde bazate pe profil",
+        "description": "Sugestiile noi de preparate calde și generarea implicită urmează profilul de meniu activ. Conținutul existent și zilele publicate nu se modifică automat.",
+        "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} sugestii",
+        "resolveMeta": "Sursa profilului: {source}",
+        "bankSuggestionsLabel": "Cinci sugestii din banca profilului",
+        "generateWeek": "Generează săptămâna din banca profilului",
+        "generating": "Se generează …",
+        "generateHint": "Completează doar zilele goale și neblocate, ca ciorne. Conținutul furnizorului și zilele publicate sunt omise."
+      },
+      "workspaceWarmDishPreview": {
+        "title": "Banca de preparate calde pentru profilul de meniu",
+        "description": "Acestea sunt sugestii bazate pe profilul de meniu selectat. Sugestiile nu sunt adăugate în catalog, în planul săptămânal sau în publicare până la o tranziție ulterioară.",
+        "previewOnly": "Doar sugestie",
+        "notPublished": "Inactivă în publicare",
+        "notVisibleToEmployees": "Invizibilă pentru angajați",
+        "suggestedForProfile": "Sugestii pentru profil",
+        "suggestedTiers": "Potrivire cu pachetele",
+        "allergensLabel": "Alergeni sugerați",
+        "tagsLabel": "Etichete sugerate",
+        "weekdayLabel": "Sugestie pentru ziua săptămânii",
+        "noItems": "Nicio sugestie de preparat cald pentru acest profil.",
+        "profileMeta": "{profileId} · {market} · {locale} · {currency}",
+        "notPublishedHelp": "Această sugestie nu este conectată la publicare sau la comenzi.",
+        "weekdays": {
+          "monday": "Luni",
+          "tuesday": "Marți",
+          "wednesday": "Miercuri",
+          "thursday": "Joi",
+          "friday": "Vineri"
+        }
+      },
+      "runtimeMappingProposal": {
+        "title": "Propunere de mapare runtime",
+        "description": "Aceasta este o vizualizare-umbră a modului în care profilul de meniu s-ar putea mapa la runtime-ul actual. În această fază, nicio opțiune nu este salvată, publicată sau afișată angajaților.",
+        "shadowOnly": "Vizualizare-umbră",
+        "notActiveInSave": "Inactivă la salvare",
+        "notActiveInPublish": "Inactivă în publicare",
+        "notVisibleToEmployees": "Invizibilă pentru angajați",
+        "existingNoRuntimeMapping": "Mapare runtime NO existentă",
+        "notRuntimeSupportedYet": "Încă neacceptată în runtime",
+        "categoryMappings": "Mapări de categorii",
+        "warmDishMappings": "Mapări de preparate calde",
+        "summary": "Rezumat",
+        "mappedCategories": "{count} categorii mapate",
+        "unmappedCategories": "{count} categorii nemapate",
+        "previewOnlyWarmDishes": "{count} preparate calde doar pentru previzualizare",
+        "runtimeEnabledCount": "Runtime activat: {count}",
+        "canSaveCount": "Se pot salva: {count}",
+        "canPublishCount": "Se pot publica: {count}",
+        "canOrderCount": "Se pot comanda: {count}",
+        "warningTitle": "Avertismente",
+        "noItems": "Nicio categorie de afișat.",
+        "existingNoRuntimeMappingHelp": "Această categorie de profil are o mapare runtime NO existentă, dar tranziția nu este activată.",
+        "notRuntimeSupportedYetHelp": "Această categorie de profil nu este încă conectată la runtime-ul actual.",
+        "presentationOnlyHelp": "Doar prezentare — fără conexiune runtime.",
+        "unsupportedMappingHelp": "Nu există o mapare runtime disponibilă pentru această categorie.",
+        "enterpriseUpgradeNotOrderCategoryHelp": "Upgrade-ul Enterprise nu este o categorie de comandă.",
+        "previewOnly": "Doar previzualizare",
+        "notPublishable": "Nepublicabilă",
+        "previewOnlyHelp": "Doar previzualizare — neconectată la meniu sau la comenzi.",
+        "notPublishableHelp": "Nepublicabilă în această fază.",
+        "warnings": {
+          "unmappedCategories": "Uneia sau mai multor categorii le lipsește o mapare runtime.",
+          "previewOnlyWarmDishes": "Sugestiile de preparate calde sunt doar pentru previzualizare și nu pot fi publicate.",
+          "enterpriseUpgradeNotOrderCategory": "Upgrade-ul Enterprise nu este o categorie de comandă.",
+          "nonNoMarketShadowOnly": "Profilul este în afara pieței NO — toată maparea este doar în mod umbră."
+        },
+        "draftSave": {
+          "sectionTitle": "Ciornă de mapare",
+          "statusNotSaved": "Nesalvată",
+          "statusNotSavedHelp": "Această evaluare este doar pentru previzualizare și nu a fost salvată ca ciornă.",
+          "statusDraftSaved": "Ciornă salvată",
+          "statusDraftSavedHelp": "Evaluarea este salvată ca ciornă internă. Nu este publicată și nu este vizibilă angajaților.",
+          "statusReviewed": "Evaluată",
+          "statusArchived": "Arhivată",
+          "statusArchivedHelp": "Această ciornă este arhivată și nu este activă.",
+          "activationWarning": "Aceasta nu activează publicarea, comandarea sau afișarea meniului.",
+          "saveButton": "Salvează evaluarea ca ciornă",
+          "viewerNoSave": "Salvarea necesită rolul de administrator al furnizorului.",
+          "saveSuccess": "Ciornă salvată.",
+          "validationError": "Ciorna nu a putut fi salvată deoarece validarea a blocat o modificare nesigură.",
+          "permissionError": "Nu ai permisiunea de a salva ciorne de mapare.",
+          "genericError": "Ciorna nu a putut fi salvată. Încearcă din nou mai târziu."
+        }
+      },
+      "catalogModel": {
+        "title": "Opțiuni fixe",
+        "lead": "Acestea sunt opțiunile fixe ale furnizorului tău. Planul săptămânal le folosește când publici prânzul pentru anumite zile.",
+        "fixedChoicesTitle": "Editează opțiunile fixe",
+        "weekPlanHint": "Modificările se aplică de la următoarea publicare a săptămânii. Preparatul cald al zilei și upgrade-ul Enterprise se planifică în planul săptămânal.",
+        "packageMatrix": {
+          "title": "Pachete de meniu",
+          "basis": {
+            "title": "Basis",
+            "text": "Sandviș deschis, cutie de salată și preparatul cald al zilei."
+          },
+          "luxus": {
+            "title": "Luxus",
+            "text": "Tot ce include Basis + sushi, poké bowl și preparate thailandeze."
+          },
+          "enterprise": {
+            "title": "Enterprise",
+            "text": "Același preparat cald al zilei + upgrade Enterprise în planul săptămânal."
+          }
+        },
+        "tierContext": {
+          "basis": "Basis afișează opțiuni fixe pentru sandviș deschis și cutie de salată.",
+          "luxus": "Luxus include opțiunile Basis și categoriile premium sushi, poké bowl și preparate thailandeze.",
+          "enterprise": "Enterprise folosește același catalog fix ca Luxus. Upgrade-urile se adaugă la preparatul cald al zilei în planul săptămânal — nu aici."
+        },
+        "sharedWarmDish": {
+          "title": "Preparatul cald al zilei",
+          "text": "Gestionat în planul săptămânal — un preparat comun pe zi pentru Basis, Luxus și Enterprise."
+        },
+        "enterpriseUpgrade": {
+          "title": "Upgrade Enterprise",
+          "text": "Același preparat cald al zilei ca la Luxus, cu suplimente/upgrade-uri planificate pe zi în planul săptămânal — nu un preparat cald separat."
+        }
+      },
+      "enterprise": {
+        "defaultSuggestion": {
+          "title": "Proteină suplimentară + desert/fructe",
+          "explanation": "Oferă clientului mai multă valoare fără a crea un preparat nou în bucătărie.",
+          "note": "Proteină suplimentară și desert/fructe ca supliment premium la preparatul cald al zilei"
+        },
+        "quickChoices": {
+          "protein": {
+            "label": "Proteină suplimentară",
+            "note": "Proteină suplimentară pentru preparatul cald al zilei"
+          },
+          "portion": {
+            "label": "Porție mai mare",
+            "note": "Porție mai mare din preparatul cald al zilei"
+          },
+          "dessert": {
+            "label": "Desert/fructe",
+            "note": "Desert sau fructe ca supliment premium"
+          },
+          "topping": {
+            "label": "Topping premium",
+            "note": "Topping premium pentru preparatul cald al zilei"
+          },
+          "side": {
+            "label": "Garnitură suplimentară",
+            "note": "Garnitură suplimentară pentru preparatul cald al zilei"
+          },
+          "season": {
+            "label": "Upgrade de sezon",
+            "note": "Upgrade Enterprise de sezon pentru preparatul cald al zilei"
+          }
+        },
+        "upgradeTypes": {
+          "PREMIUM_PROTEIN": "Proteină premium",
+          "EXTRA_SIDE": "Garnitură suplimentară",
+          "DESSERT_FRUIT": "Desert/fructe/gustare",
+          "LARGER_PORTION": "Porție mai mare",
+          "PREMIUM_LABELING": "Etichetare/control premium",
+          "PRIORITY_DELIVERY": "Interval de livrare prioritar",
+          "OTHER": "Personalizat/altele"
+        },
+        "source": {
+          "basedOnBasis": "Bazat pe Basis",
+          "basedOnLuxus": "Bazat pe Luxus",
+          "ownEnterprise": "Enterprise propriu"
+        }
+      }
+    }
+  }
+}

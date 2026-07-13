@@ -105,8 +105,8 @@ describe("menuProfileResolver (ADR-019 G1 — inert, flag default OFF)", () => {
       expect(result.profile.id).toBe("italian_office_lunch");
     });
 
-    it("market UK returns uk_office_lunch via market_default", () => {
-      const result = resolveMenuProfileForProvider({ market: "UK", env: enabledEnv() });
+    it("market GB returns uk_office_lunch via market_default", () => {
+      const result = resolveMenuProfileForProvider({ market: "GB", env: enabledEnv() });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.source).toBe("market_default");

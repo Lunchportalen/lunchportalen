@@ -135,7 +135,8 @@ test.describe("Backoffice core surfaces", () => {
     await waitForPostLoginNavigation(page);
     await expect(page).toHaveURL(/\/backoffice\/content/);
     await waitForMainContent(page);
-    await expect(page.getByRole("heading", { name: /content/i })).toBeVisible();
+    // Editor pane heading is "Hovedinnhold" (ContentDetailDocumentEditor); /content/i kept for markup evolution.
+    await expect(page.getByRole("heading", { name: /hovedinnhold|content/i }).first()).toBeVisible();
   });
 });
 

@@ -21,6 +21,13 @@ type SupportedTierLocale =
   | "de-CH"
   | "fr-CH"
   | "en-IE"
+  | "fr-CA"
+  | "pl-PL"
+  | "ro-RO"
+  | "cs-CZ"
+  | "pt-PT"
+  | "el-GR"
+  // Retired launch locales — kept readable for data transition only.
   | "fr-LU"
   | "en-AU"
   | "en-SG";
@@ -120,6 +127,36 @@ const TIER_DISPLAY_LABELS: Record<SupportedTierLocale, Record<TierCode, string>>
     LUXUS: "Premium",
     ENTERPRISE: "Enterprise",
   },
+  "fr-CA": {
+    BASIS: "Essentiel",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "pl-PL": {
+    BASIS: "Podstawowy",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "ro-RO": {
+    BASIS: "De bază",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "cs-CZ": {
+    BASIS: "Základní",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "pt-PT": {
+    BASIS: "Básico",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
+  "el-GR": {
+    BASIS: "Βασικό",
+    LUXUS: "Premium",
+    ENTERPRISE: "Enterprise",
+  },
   "fr-LU": {
     BASIS: "Essentiel",
     LUXUS: "Premium",
@@ -167,6 +204,17 @@ const LOCALE_ALIASES: Record<string, SupportedTierLocale> = {
   "de-ch": "de-CH",
   "fr-ch": "fr-CH",
   "en-ie": "en-IE",
+  "fr-ca": "fr-CA",
+  pl: "pl-PL",
+  "pl-pl": "pl-PL",
+  ro: "ro-RO",
+  "ro-ro": "ro-RO",
+  cs: "cs-CZ",
+  "cs-cz": "cs-CZ",
+  pt: "pt-PT",
+  "pt-pt": "pt-PT",
+  el: "el-GR",
+  "el-gr": "el-GR",
   "fr-lu": "fr-LU",
   "en-au": "en-AU",
   "en-sg": "en-SG",

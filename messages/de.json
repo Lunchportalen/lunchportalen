@@ -1400,14 +1400,20 @@
         "saved": "Betriebseinstellungen gespeichert.",
         "locales": {
           "nb-NO": "Norwegisch (Bokmål)",
-          "en-GB": "Englisch",
-          "sv-SE": "Schwedisch",
+          "cs-CZ": "Čeština",
           "da-DK": "Dänisch",
-          "fi-FI": "Finnisch",
           "de-DE": "Deutsch",
-          "fr-FR": "Französisch",
+          "en-GB": "Englisch",
           "es-ES": "Spanisch",
-          "it-IT": "Italienisch"
+          "fr-FR": "Französisch",
+          "it-IT": "Italienisch",
+          "nl-NL": "Nederlands",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Finnisch",
+          "sv-SE": "Schwedisch",
+          "el-GR": "Ελληνικά"
         },
         "errors": {
           "notAuthenticated": "Nicht angemeldet.",

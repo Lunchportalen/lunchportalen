@@ -6,7 +6,7 @@ import {
   type MarketCode,
 } from "@/lib/commercial/marketConfigs";
 
-const ALL_MARKETS: MarketCode[] = ["NO", "SE", "DK", "FI", "DE", "FR", "ES", "UK"];
+const ALL_MARKETS: MarketCode[] = ["NO", "SE", "DK", "FI", "DE", "FR", "ES", "GB"];
 
 describe("inert market commercial config (ADR-017 R2)", () => {
   it("defines all expected market codes", () => {

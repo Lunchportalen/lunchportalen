@@ -73,7 +73,11 @@ export default function CompanyStatusControls({
 
     startTransition(async () => {
       try {
-        await setCompanyStatus(companyId, target);
+        const result = await setCompanyStatus(companyId, target);
+        if (!result || result.ok !== true) {
+          setErr((result && "message" in result && result.message) || "Kunne ikke oppdatere status");
+          return;
+        }
         closeModal();
         router.refresh();
       } catch (e: any) {

@@ -37,8 +37,8 @@ function resetMailFrom(): string {
   );
 }
 
-async function sendResetEmail(opts: { to: string; link: string; rid: string }) {
-  const { subject, text } = buildPasswordResetEmail(opts.link);
+async function sendResetEmail(opts: { to: string; link: string; rid: string; locale?: string | null }) {
+  const { subject, text } = buildPasswordResetEmail(opts.link, opts.locale ?? null);
 
   try {
     await sendMail({ from: resetMailFrom(), to: opts.to, subject, text });
@@ -107,7 +107,16 @@ export async function POST(req: NextRequest) {
       return jsonErr(rid, "Kunne ikke sende lenke.", 500, { code: "RECOVERY_REDIRECT_LOCALHOST" });
     }
 
-    const sent = await sendResetEmail({ to: email, link: normalizedLink, rid });
+    // Fase E5: recipient language (profile → company → market → nb). Best effort —
+    // same confirmation is returned regardless (no user enumeration, S8).
+    let recipientLocale: string | null = null;
+    const recoveredUserId = (data as { user?: { id?: string | null } | null })?.user?.id ?? null;
+    if (recoveredUserId) {
+      const { resolveRecipientLocaleForUser } = await import("@/lib/email/recipientLocale");
+      recipientLocale = await resolveRecipientLocaleForUser(admin, String(recoveredUserId));
+    }
+
+    const sent = await sendResetEmail({ to: email, link: normalizedLink, rid, locale: recipientLocale });
     if (sent.ok === false) {
       return jsonErr(rid, "Kunne ikke sende lenke.", 500, { code: "EMAIL_SEND_FAILED" });
     }

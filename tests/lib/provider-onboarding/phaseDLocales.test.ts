@@ -20,17 +20,23 @@ const EXPECTED = [
   ["de-CH", "swiss_german_office_lunch", "CH", "CHF", "fixed", "Europe/Zurich"],
   ["fr-CH", "swiss_french_office_lunch", "CH", "CHF", "fixed", "Europe/Zurich"],
   ["en-IE", "irish_office_lunch", "IE", "EUR", "fixed", "Europe/Dublin"],
-  ["fr-LU", "luxembourg_office_lunch", "LU", "EUR", "fixed", "Europe/Luxembourg"],
-  ["en-AU", "australian_office_lunch", "AU", "AUD", "provider_required", "Australia/Sydney"],
-  ["en-SG", "singapore_office_lunch", "SG", "SGD", "fixed", "Asia/Singapore"],
+  ["pl-PL", "polish_office_lunch", "PL", "PLN", "fixed", "Europe/Warsaw"],
+  ["ro-RO", "romanian_office_lunch", "RO", "RON", "fixed", "Europe/Bucharest"],
+  ["cs-CZ", "czech_office_lunch", "CZ", "CZK", "fixed", "Europe/Prague"],
+  ["pt-PT", "portuguese_office_lunch", "PT", "EUR", "fixed", "Europe/Lisbon"],
+  ["el-GR", "greek_office_lunch", "GR", "EUR", "fixed", "Europe/Athens"],
 ] as const;
 
 describe("Phase D rich-market rollout control", () => {
-  it("defines all 12 source-only targets in deterministic rollout order", () => {
-    expect(PHASE_D_RICH_MARKET_TARGETS).toHaveLength(12);
+  it("defines all 14 source-only targets in deterministic rollout order (AU/SG/LU removed by 21-country correction)", () => {
+    expect(PHASE_D_RICH_MARKET_TARGETS).toHaveLength(14);
     expect(phaseDTargetsByRolloutOrder().map((target) => target.rolloutOrder)).toEqual(
-      Array.from({ length: 12 }, (_, index) => index + 1),
+      Array.from({ length: 14 }, (_, index) => index + 1),
     );
+
+    for (const retired of ["fr-LU", "en-AU", "en-SG"]) {
+      expect(phaseDTargetForLocale(retired)).toBeNull();
+    }
 
     for (const [locale, menuProfileId, countryCode, currency, timezoneStrategy, timezone] of EXPECTED) {
       const target = phaseDTargetForLocale(locale);
@@ -81,12 +87,12 @@ describe("Phase D rich-market rollout control", () => {
     }
   });
 
-  it("flags only US, CA and AU as provider-required timezone markets", () => {
-    expect(PHASE_D_PROVIDER_REQUIRED_TIMEZONE_MARKETS).toEqual(["US", "CA", "AU"]);
+  it("flags only US and CA as provider-required timezone markets", () => {
+    expect(PHASE_D_PROVIDER_REQUIRED_TIMEZONE_MARKETS).toEqual(["US", "CA"]);
     const providerRequired = PHASE_D_RICH_MARKET_TARGETS
       .filter((target) => target.timezoneStrategy === "provider_required")
       .map((target) => target.countryCode);
-    expect(providerRequired).toEqual(["US", "CA", "AU"]);
+    expect(providerRequired).toEqual(["US", "CA"]);
   });
 
   it("has locale-aware tier display labels for every Phase D locale", () => {

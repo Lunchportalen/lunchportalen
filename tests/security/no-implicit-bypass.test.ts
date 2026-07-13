@@ -27,8 +27,9 @@ describe("no-implicit-bypass (DC-011 middleware)", () => {
     }
   });
 
-  test("API_AUTH_ALLOWLIST_SIZE is 86", () => {
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(86);
+  test("API_AUTH_ALLOWLIST_SIZE is 88", () => {
+    // 86 → 88: SEC-001 added /api/webhooks/stripe-billing-payments + stripe-provider-setup.
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(88);
   });
 
   test("non-allowlisted /api/* returns JSON 401 path exists", () => {

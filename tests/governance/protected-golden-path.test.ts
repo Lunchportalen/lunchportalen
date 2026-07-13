@@ -446,7 +446,7 @@ describe("Protected Golden Path — SUPERSMART provider menu profile runtime", (
     expect(flagSource).toContain("LP_MENU_PROFILE_RESOLVER");
     expect(runtime).toMatch(/LP_MENU_PROFILE_RESOLVER|resolveActiveMenuProfileForRuntime/);
 
-    for (const market of ["NO", "DK", "DE", "UK", "ES", "FR", "IT", "FI", "SE"]) {
+    for (const market of ["NO", "DK", "DE", "GB", "ES", "FR", "IT", "FI", "SE"]) {
       expect(runtime, `profile runtime must cover market "${market}"`).toContain(`${market}:`);
     }
 

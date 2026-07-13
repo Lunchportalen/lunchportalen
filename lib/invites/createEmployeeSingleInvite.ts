@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 
 import { auditAdmin } from "@/lib/audit/actions";
 import { buildEmployeeInviteEmail } from "@/lib/email/templates/employeeInvite";
+import { resolveRecipientLocaleForCompany } from "@/lib/email/recipientLocale";
 import { sendEmail } from "@/lib/email/send";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isSystemEmail as isSystemEmailCore } from "@/lib/system/emails";
@@ -61,6 +62,7 @@ async function sendInviteEmailBestEffort(opts: {
   companyName: string;
   providerName?: string;
   locationName?: string;
+  locale?: string | null;
 }) {
   try {
     const built = buildEmployeeInviteEmail({
@@ -68,6 +70,7 @@ async function sendInviteEmailBestEffort(opts: {
       inviteUrl: opts.link,
       providerName: opts.providerName,
       locationName: opts.locationName,
+      locale: opts.locale ?? null,
     });
 
     const result = await sendEmail({
@@ -225,12 +228,16 @@ export async function createEmployeeSingleInvite(opts: {
 
   const metadata = await resolveInviteEmailMetadata(admin, companyId, def.locationId);
 
+  // Fase E5: invitees have no profile yet — recipient language follows the company/market.
+  const recipientLocale = await resolveRecipientLocaleForCompany(admin, companyId);
+
   const sent = await sendInviteEmailBestEffort({
     to: email,
     link: inviteUrl,
     companyName: def.companyName,
     providerName: metadata.providerName || undefined,
     locationName: metadata.locationName || undefined,
+    locale: recipientLocale,
   });
 
   await auditAdmin({

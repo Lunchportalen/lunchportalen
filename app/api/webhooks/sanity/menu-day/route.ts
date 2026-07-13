@@ -20,6 +20,7 @@ import {
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { opsLog } from "@/lib/ops/log";
 import { SANITY_WEBHOOK_SIGNATURE_HEADER, verifySanityWebhookSignature } from "@/lib/sanity/verifySanityWebhookSignature";
+import { opsKillSwitchResponse } from "@/lib/system/opsKillSwitch";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function safeTrim(v: unknown): string {
@@ -42,6 +43,10 @@ function skippedPayload(reason: string) {
 
 export async function POST(req: NextRequest) {
   const rid = makeRid("wh_menu");
+
+  // Fase I kill switch: 503 (retryable) — Sanity retryer webhooks etter reaktivering.
+  const killed = await opsKillSwitchResponse(rid, "sanity_webhook");
+  if (killed) return killed;
 
   const secret = safeTrim(process.env.SANITY_WEBHOOK_SECRET);
   if (!secret) {

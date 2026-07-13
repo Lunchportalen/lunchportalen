@@ -379,7 +379,7 @@ const SPANISH_MENU_DEL_DIA: MenuProfile = {
 
 const UK_OFFICE_LUNCH: MenuProfile = {
   id: "uk_office_lunch",
-  market: "UK",
+  market: "GB",
   locale: "en-GB",
   name: "UK office lunch",
   description: "UK office lunch profile — seed for UK market.",
@@ -656,6 +656,81 @@ const LUXEMBOURG_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
   riskNote: "Small multilingual enterprise market; EU VAT/compliance review required.",
 });
 
+const POLISH_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "polish_office_lunch",
+  market: "PL",
+  locale: "pl-PL",
+  name: "Polski lunch biurowy",
+  sandwichLabel: "Kanapki",
+  saladLabel: "Sałatki",
+  warmLunchLabel: "Ciepły lunch",
+  bowlLabel: "Bowle",
+  flexibleLabel: "Opcja elastyczna",
+  enterpriseLabel: "Ulepszenie Enterprise",
+  enterpriseDescription: "Ten sam ciepły lunch z dodatkami premium w planie tygodnia.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
+const ROMANIAN_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "romanian_office_lunch",
+  market: "RO",
+  locale: "ro-RO",
+  name: "Prânz de birou românesc",
+  sandwichLabel: "Sandvișuri",
+  saladLabel: "Salate",
+  warmLunchLabel: "Prânz cald",
+  bowlLabel: "Bowl-uri",
+  flexibleLabel: "Opțiune flexibilă",
+  enterpriseLabel: "Upgrade Enterprise",
+  enterpriseDescription: "Același prânz cald cu adaosuri premium în planul săptămânal.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
+const CZECH_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "czech_office_lunch",
+  market: "CZ",
+  locale: "cs-CZ",
+  name: "Český kancelářský oběd",
+  sandwichLabel: "Sendviče",
+  saladLabel: "Saláty",
+  warmLunchLabel: "Teplý oběd",
+  bowlLabel: "Bowly",
+  flexibleLabel: "Flexibilní volba",
+  enterpriseLabel: "Enterprise upgrade",
+  enterpriseDescription: "Stejný teplý oběd s prémiovými doplňky v týdenním plánu.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
+const PORTUGUESE_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "portuguese_office_lunch",
+  market: "PT",
+  locale: "pt-PT",
+  name: "Almoço de escritório português",
+  sandwichLabel: "Sandes",
+  saladLabel: "Saladas",
+  warmLunchLabel: "Almoço quente",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Opção flexível",
+  enterpriseLabel: "Upgrade Enterprise",
+  enterpriseDescription: "O mesmo almoço quente com extras premium no plano semanal.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
+const GREEK_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
+  id: "greek_office_lunch",
+  market: "GR",
+  locale: "el-GR",
+  name: "Ελληνικό γεύμα γραφείου",
+  sandwichLabel: "Σάντουιτς",
+  saladLabel: "Σαλάτες",
+  warmLunchLabel: "Ζεστό γεύμα",
+  bowlLabel: "Bowls",
+  flexibleLabel: "Ευέλικτη επιλογή",
+  enterpriseLabel: "Αναβάθμιση Enterprise",
+  enterpriseDescription: "Το ίδιο ζεστό γεύμα με premium προσθήκες στο εβδομαδιαίο πρόγραμμα.",
+  riskNote: "EU VAT/compliance review required before live provider apply.",
+});
+
 const AUSTRALIAN_OFFICE_LUNCH = dormantPhaseDOfficeLunchProfile({
   id: "australian_office_lunch",
   market: "AU",
@@ -705,6 +780,11 @@ export const MENU_PROFILE_REGISTRY: Readonly<Record<MenuProfileId, MenuProfile>>
   swiss_german_office_lunch: SWISS_GERMAN_OFFICE_LUNCH,
   swiss_french_office_lunch: SWISS_FRENCH_OFFICE_LUNCH,
   irish_office_lunch: IRISH_OFFICE_LUNCH,
+  polish_office_lunch: POLISH_OFFICE_LUNCH,
+  romanian_office_lunch: ROMANIAN_OFFICE_LUNCH,
+  czech_office_lunch: CZECH_OFFICE_LUNCH,
+  portuguese_office_lunch: PORTUGUESE_OFFICE_LUNCH,
+  greek_office_lunch: GREEK_OFFICE_LUNCH,
   luxembourg_office_lunch: LUXEMBOURG_OFFICE_LUNCH,
   australian_office_lunch: AUSTRALIAN_OFFICE_LUNCH,
   singapore_office_lunch: SINGAPORE_OFFICE_LUNCH,

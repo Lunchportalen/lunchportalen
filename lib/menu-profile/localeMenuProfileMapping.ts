@@ -19,9 +19,9 @@ export type ProviderLocaleMarketMapping = {
 
 const FALLBACK_MARKET: MarketCode = "NO";
 
-/** ISO country stored in provider_settings.default_country_code (GB for UK market). */
+/** ISO country stored in provider_settings.default_country_code (market codes are ISO). */
 export function marketToDefaultCountryCode(market: MarketCode): string {
-  return market === "UK" ? "GB" : market;
+  return market;
 }
 
 function findMarketByIntlLocale(intlLocale: string): MarketCode | null {

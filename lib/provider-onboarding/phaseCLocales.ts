@@ -113,7 +113,7 @@ export const PHASE_C_LAUNCH_LOCALES: readonly PhaseCLocaleTarget[] = [
     country: "GB",
     currency: "GBP",
     timezone: "Europe/London",
-    market: "UK",
+    market: "GB",
     recommendedProviderSlug: "uk-lunch-pilot",
     recommendedProviderName: "UK Lunch Pilot",
     rolloutOrder: 3,

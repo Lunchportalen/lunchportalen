@@ -48,7 +48,7 @@ export const ROUTE_REGISTRY: RouteRegistryItem[] = [
     path: "/api/order/cancel",
     owner: "orders",
     standard: "dag3",
-    notes: "Canonical employee cancel (HTTP). /api/orders/cancel er DEPRECATED.",
+    notes: "DEPRECATED (410). Canonical cancel: POST /api/orders med action=CANCEL (lp_order_set).",
   },
   {
     id: "order-get",
