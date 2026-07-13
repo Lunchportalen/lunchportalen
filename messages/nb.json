@@ -809,14 +809,20 @@
         "saved": "Driftsinnstillinger lagret.",
         "locales": {
           "nb-NO": "Norsk (bokmål)",
-          "en-GB": "English",
-          "sv-SE": "Svenska",
+          "cs-CZ": "Čeština",
           "da-DK": "Dansk",
-          "fi-FI": "Suomi",
           "de-DE": "Deutsch",
-          "fr-FR": "Français",
+          "en-GB": "English",
           "es-ES": "Español",
-          "it-IT": "Italiano"
+          "fr-FR": "Français",
+          "it-IT": "Italiano",
+          "nl-NL": "Nederlands",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Suomi",
+          "sv-SE": "Svenska",
+          "el-GR": "Ελληνικά"
         },
         "errors": {
           "notAuthenticated": "Ikke innlogget.",

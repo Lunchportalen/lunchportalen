@@ -18,6 +18,20 @@ describe("env validation (platform core)", () => {
     if (report.ok === false) expect(report.missing).toContain("SYSTEM_MOTOR_SECRET");
   });
 
+  it("validateSystemRuntimeEnv reports missing CRON_SECRET (CRON-001 fail-closed)", () => {
+    const original = process.env["CRON_SECRET"];
+    // eslint-disable-next-line no-restricted-syntax
+    delete process.env["CRON_SECRET"];
+
+    const report = validateSystemRuntimeEnv();
+    if (original !== undefined) {
+      process.env["CRON_SECRET"] = original;
+    }
+
+    expect(report.ok).toBe(false);
+    if (report.ok === false) expect(report.missing).toContain("CRON_SECRET");
+  });
+
   it("getSupabasePublicConfig throws if public Supabase env is missing", () => {
     const origNodeEnv = process.env["NODE_ENV"];
     const origVitest = process.env["VITEST"];

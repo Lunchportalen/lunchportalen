@@ -54,7 +54,7 @@ function extractPlaceholders(value: string): string[] {
 describe("Italian locale foundation (pre-G5)", () => {
   it("registers it in APP_LOCALES and locale registry", () => {
     expect(APP_LOCALES).toContain("it");
-    expect(APP_LOCALES).toHaveLength(9);
+    expect(APP_LOCALES).toHaveLength(15);
     expect(getLocaleLabel("it")).toBe("Italiano");
     expect(htmlLangForAppLocale("it")).toBe("it-IT");
     expect(intlLocaleForAppLocale("it")).toBe("it-IT");

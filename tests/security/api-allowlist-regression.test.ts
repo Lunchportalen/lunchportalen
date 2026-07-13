@@ -77,9 +77,16 @@ const API_KEY_AUTH = /(x-api-key|API_KEY|apiKey|v1\/public\/orders)/i;
 describe("api-allowlist-regression (DC-011)", () => {
   const routeFiles = walkRouteFiles(API_ROOT);
 
-  test("allowlist size matches canonical count (86)", () => {
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(86);
-    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(86);
+  test("allowlist size matches canonical count (88)", () => {
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(88);
+    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(88);
+  });
+
+  // SEC-001: Stripe billing webhooks must pass middleware without a user session.
+  // Signature validation happens in the handler (stripe.webhooks.constructEvent).
+  test("SEC-001: Stripe billing webhook routes are allowlisted for middleware bypass", () => {
+    expect(isApiAuthAllowlisted("/api/webhooks/stripe-billing-payments", "POST")).toBe(true);
+    expect(isApiAuthAllowlisted("/api/webhooks/stripe-provider-setup", "POST")).toBe(true);
   });
 
   test("every allowlisted static path maps to a route file with category auth evidence", () => {

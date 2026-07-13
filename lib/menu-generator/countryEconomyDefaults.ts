@@ -10,7 +10,7 @@ const VAT_BY_MARKET: Readonly<Record<MarketCode, number>> = {
   DE: 19 / 100,
   FR: 10 / 100,
   ES: 10 / 100,
-  UK: 20 / 100,
+  GB: 20 / 100,
   IT: 10 / 100,
   US: 0,
   CA: 0,
@@ -19,6 +19,11 @@ const VAT_BY_MARKET: Readonly<Record<MarketCode, number>> = {
   AT: 10 / 100,
   CH: 8.1 / 100,
   IE: 13.5 / 100,
+  PL: 8 / 100,
+  RO: 9 / 100,
+  CZ: 12 / 100,
+  PT: 13 / 100,
+  GR: 13 / 100,
   LU: 8 / 100,
   AU: 10 / 100,
   SG: 9 / 100,
@@ -34,6 +39,9 @@ function costBasisForCurrency(currency: CurrencyCode): number {
   if (currency === "USD") return 9.5;
   if (currency === "CAD") return 12;
   if (currency === "CHF") return 10;
+  if (currency === "PLN") return 36;
+  if (currency === "RON") return 42;
+  if (currency === "CZK") return 210;
   if (currency === "AUD") return 13;
   if (currency === "SGD") return 12;
   return 85;
@@ -81,8 +89,8 @@ export function resolveEconomyConfigForCountry(countryCode: string): EconomyConf
     DE: "DE",
     FR: "FR",
     ES: "ES",
-    GB: "UK",
-    UK: "UK",
+    GB: "GB",
+    UK: "GB",
     IT: "IT",
     US: "US",
     CA: "CA",
@@ -91,6 +99,11 @@ export function resolveEconomyConfigForCountry(countryCode: string): EconomyConf
     AT: "AT",
     CH: "CH",
     IE: "IE",
+    PL: "PL",
+    RO: "RO",
+    CZ: "CZ",
+    PT: "PT",
+    GR: "GR",
     LU: "LU",
     AU: "AU",
     SG: "SG",

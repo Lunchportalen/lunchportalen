@@ -127,7 +127,11 @@ test.describe("Mobile invariants — /backoffice", () => {
     await loginViaForm(page, creds.email, creds.password, "/backoffice/content");
     await waitForPostLoginNavigation(page);
     await expect(page).toHaveURL(/\/backoffice\/content/);
-    await page.getByRole("heading", { name: /content/i }).waitFor({ state: "visible", timeout: 15_000 });
+    // Editor pane heading is "Hovedinnhold" (ContentDetailDocumentEditor); /content/i kept for markup evolution.
+    await page
+      .getByRole("heading", { name: /hovedinnhold|content/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 15_000 });
     await assertNoHorizontalOverflow(page);
   });
 
@@ -137,7 +141,7 @@ test.describe("Mobile invariants — /backoffice", () => {
     await loginViaForm(page, creds.email, creds.password, "/backoffice/content");
     await waitForPostLoginNavigation(page);
     await expect(page).toHaveURL(/\/backoffice\/content/);
-    const heading = page.getByRole("heading", { name: /content/i });
+    const heading = page.getByRole("heading", { name: /hovedinnhold|content/i }).first();
     await expect(heading).toBeVisible();
     await assertInViewport(page, heading);
   });

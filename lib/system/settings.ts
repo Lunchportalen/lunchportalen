@@ -35,6 +35,16 @@ export type KillSwitch = {
   ai?: boolean;
   /** Optional JSONB — enterprise global halt (fail-closed when true). */
   global?: boolean;
+  /** Global launch (Fase I) — operational kill switches. Default false = åpen. */
+  stripe_webhooks?: boolean;
+  stripe_setup?: boolean;
+  stripe_charges?: boolean;
+  billing?: boolean;
+  commission_posting?: boolean;
+  invoice_generation?: boolean;
+  cron?: boolean;
+  sanity_webhook?: boolean;
+  production_generation?: boolean;
 };
 
 export type Retention = {
@@ -99,6 +109,15 @@ export function withDefaults(raw: Partial<SystemSettings> | null): SystemSetting
       kitchen_feed: Boolean(killswitch.kitchen_feed ?? false),
       ai: killswitch.ai === true,
       global: killswitch.global === true,
+      stripe_webhooks: killswitch.stripe_webhooks === true,
+      stripe_setup: killswitch.stripe_setup === true,
+      stripe_charges: killswitch.stripe_charges === true,
+      billing: killswitch.billing === true,
+      commission_posting: killswitch.commission_posting === true,
+      invoice_generation: killswitch.invoice_generation === true,
+      cron: killswitch.cron === true,
+      sanity_webhook: killswitch.sanity_webhook === true,
+      production_generation: killswitch.production_generation === true,
     },
     retention: {
       orders_months: Number.isFinite(retention.orders_months) ? Number(retention.orders_months) : 18,

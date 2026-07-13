@@ -5,6 +5,13 @@ import { POST } from "@/app/api/webhooks/sanity/menu-day/route";
 
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: vi.fn(() => ({})),
+  hasSupabaseAdminConfig: vi.fn(() => false),
+}));
+
+// Fase I: route checks ops kill switch first; keep it open in these tests.
+vi.mock("@/lib/system/opsKillSwitch", () => ({
+  opsKillSwitchResponse: vi.fn(async () => null),
+  checkOpsKillSwitch: vi.fn(async () => ({ killed: false })),
 }));
 
 const syncMock = vi.fn();

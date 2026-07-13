@@ -1400,14 +1400,20 @@
         "saved": "Toiminta-asetukset tallennettu.",
         "locales": {
           "nb-NO": "Norja (bokmål)",
-          "en-GB": "Englanti",
-          "sv-SE": "Ruotsi",
+          "cs-CZ": "Čeština",
           "da-DK": "Tanska",
-          "fi-FI": "Suomi",
           "de-DE": "Saksa",
-          "fr-FR": "Ranska",
+          "en-GB": "Englanti",
           "es-ES": "Espanja",
-          "it-IT": "Italia"
+          "fr-FR": "Ranska",
+          "it-IT": "Italia",
+          "nl-NL": "Nederlands",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Suomi",
+          "sv-SE": "Ruotsi",
+          "el-GR": "Ελληνικά"
         },
         "errors": {
           "notAuthenticated": "Et ole kirjautunut sisään.",

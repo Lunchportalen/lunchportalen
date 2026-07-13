@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "purpose": "E2E fixture: explicit provider-APPROVED Dutch menu translations for nl-NL and nl-BE.",
+    "rule": "Only rows with status=approved and matching original_text_hash are shown to employees. Machine drafts are status=draft and must never render as approved.",
+    "reviewStatus": "NATIVE_REVIEW_PENDING",
+    "providerId": "fixture-nl-provider",
+    "baseLanguage": "nl"
+  },
+  "sourceOriginals": {
+    "menu_day_item:paasmurt:title": "Påsmurt",
+    "menu_day_item:laks-eggerore:title": "Laks og eggerøre",
+    "menu_day_item:varmrett:title": "Dagens varmrett",
+    "category_label:salatboks": "Salatboks",
+    "allergen_label:melk": "Melk",
+    "allergen_label:hvete": "Hvete"
+  },
+  "translations": {
+    "nl-NL": [
+      { "source_kind": "menu_day_item", "source_ref": "paasmurt", "field": "title", "locale": "nl", "text": "Belegde boterham", "status": "approved" },
+      { "source_kind": "menu_day_item", "source_ref": "laks-eggerore", "field": "title", "locale": "nl", "text": "Zalm met roerei", "status": "approved" },
+      { "source_kind": "menu_day_item", "source_ref": "varmrett", "field": "title", "locale": "nl", "text": "Warm gerecht van de dag", "status": "approved" },
+      { "source_kind": "category_label", "source_ref": "salatboks", "field": "label", "locale": "nl", "text": "Saladebox", "status": "approved" },
+      { "source_kind": "allergen_label", "source_ref": "melk", "field": "label", "locale": "nl", "text": "Melk", "status": "approved" },
+      { "source_kind": "allergen_label", "source_ref": "hvete", "field": "label", "locale": "nl", "text": "Tarwe", "status": "approved" },
+      { "source_kind": "menu_day_item", "source_ref": "sushi", "field": "title", "locale": "nl", "text": "Sushi (machinevertaling)", "status": "draft" }
+    ],
+    "nl-BE": [
+      { "source_kind": "menu_day_item", "source_ref": "paasmurt", "field": "title", "locale": "nl", "text": "Belegde boterham", "status": "approved" },
+      { "source_kind": "menu_day_item", "source_ref": "laks-eggerore", "field": "title", "locale": "nl", "text": "Zalm met roerei", "status": "approved" },
+      { "source_kind": "menu_day_item", "source_ref": "varmrett", "field": "title", "locale": "nl", "text": "Dagschotel", "status": "approved" },
+      { "source_kind": "category_label", "source_ref": "salatboks", "field": "label", "locale": "nl", "text": "Saladebox", "status": "approved" },
+      { "source_kind": "allergen_label", "source_ref": "melk", "field": "label", "locale": "nl", "text": "Melk", "status": "approved" },
+      { "source_kind": "allergen_label", "source_ref": "hvete", "field": "label", "locale": "nl", "text": "Tarwe", "status": "approved" }
+    ]
+  }
+}

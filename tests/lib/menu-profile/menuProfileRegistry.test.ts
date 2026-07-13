@@ -129,8 +129,8 @@ describe("menuProfileRegistry (ADR-019 G0 — inert)", () => {
     expect(getMarketDefaults("NO").defaultCurrency).toBe(`${"NO"}K`);
   });
 
-  it('getDefaultMenuProfileForMarket("UK") returns uk_office_lunch', () => {
-    expect(getDefaultMenuProfileForMarket("UK").id).toBe("uk_office_lunch");
+  it('getDefaultMenuProfileForMarket("GB") returns uk_office_lunch', () => {
+    expect(getDefaultMenuProfileForMarket("GB").id).toBe("uk_office_lunch");
   });
 
   it('getDefaultMenuProfileForMarket("IT") returns italian_office_lunch with EUR / it-IT', () => {

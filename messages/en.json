@@ -809,14 +809,20 @@
         "saved": "Operational settings saved.",
         "locales": {
           "nb-NO": "Norwegian (bokmål)",
-          "en-GB": "English",
-          "sv-SE": "Swedish",
+          "cs-CZ": "Čeština",
           "da-DK": "Danish",
-          "fi-FI": "Finnish",
           "de-DE": "German",
-          "fr-FR": "French",
+          "en-GB": "English",
           "es-ES": "Spanish",
-          "it-IT": "Italian"
+          "fr-FR": "French",
+          "it-IT": "Italian",
+          "nl-NL": "Nederlands",
+          "pl-PL": "Polski",
+          "pt-PT": "Português",
+          "ro-RO": "Română",
+          "fi-FI": "Finnish",
+          "sv-SE": "Swedish",
+          "el-GR": "Ελληνικά"
         },
         "errors": {
           "notAuthenticated": "Not signed in.",

@@ -23,12 +23,8 @@ const ROUTES: RouteSpec[] = [
     mustHaveTenantScope: true,
     mustNotReadTenantFromClient: true,
   },
-  {
-    name: "order.bulk-set",
-    file: "app/api/order/bulk-set/route.ts",
-    mustHaveTenantScope: true,
-    mustNotReadTenantFromClient: true,
-  },
+  // order.bulk-set: DEPRECATED 410 (Fase G P0) — no data access, no tenant scope needed.
+  // Covered by tests/api/order-legacy-day-choice-routes-deprecated.test.ts
 ];
 
 function readFile(repoRel: string) {

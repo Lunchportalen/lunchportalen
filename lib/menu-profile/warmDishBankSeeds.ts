@@ -290,24 +290,24 @@ export const WARM_DISH_BANK_SEEDS: readonly WarmDishBankSeed[] = [
   }),
 
   // UK — uk_office_lunch
-  seed("uk_office_lunch", "UK", "en-GB", "chicken-pie-mash", "Chicken pie with mash and peas", {
+  seed("uk_office_lunch", "GB", "en-GB", "chicken-pie-mash", "Chicken pie with mash and peas", {
     tags: ["chicken", "classic"],
     dishType: "pie",
     protein: "chicken",
     allergens: ["gluten", "milk"],
   }),
-  seed("uk_office_lunch", "UK", "en-GB", "beef-stew-root", "Beef stew with root vegetables", {
+  seed("uk_office_lunch", "GB", "en-GB", "beef-stew-root", "Beef stew with root vegetables", {
     tags: ["beef", "stew"],
     dishType: "stew",
     protein: "beef",
   }),
-  seed("uk_office_lunch", "UK", "en-GB", "baked-salmon-potatoes", "Baked salmon with potatoes", {
+  seed("uk_office_lunch", "GB", "en-GB", "baked-salmon-potatoes", "Baked salmon with potatoes", {
     tags: ["fish"],
     dishType: "fish",
     protein: "fish",
     allergens: ["fish"],
   }),
-  seed("uk_office_lunch", "UK", "en-GB", "macaroni-cheese-salad", "Macaroni cheese with salad", {
+  seed("uk_office_lunch", "GB", "en-GB", "macaroni-cheese-salad", "Macaroni cheese with salad", {
     tags: ["pasta", "vegetarian"],
     dishType: "pasta",
     protein: "vegetarian",
@@ -315,7 +315,7 @@ export const WARM_DISH_BANK_SEEDS: readonly WarmDishBankSeed[] = [
   }),
   seed(
     "uk_office_lunch",
-    "UK",
+    "GB",
     "en-GB",
     "vegetarian-shepherds-pie",
     "Vegetarian shepherd's pie",
@@ -423,6 +423,41 @@ export const WARM_DISH_BANK_SEEDS: readonly WarmDishBankSeed[] = [
     "Baked cod with mash",
     "Vegetarian colcannon bake",
   ]),
+  ...phaseDSeedSet("polish_office_lunch", "PL", "pl-PL", "polish-office-lunch", [
+    "Kurczak duszony z ryżem",
+    "Gulasz wołowy z ziemniakami",
+    "Kotlety mielone z warzywami",
+    "Łosoś z ziemniakami koperkowymi",
+    "Wegetariańskie pierogi z kapustą",
+  ]),
+  ...phaseDSeedSet("romanian_office_lunch", "RO", "ro-RO", "romanian-office-lunch", [
+    "Tocăniță de pui cu orez",
+    "Gulaș de vită cu cartofi",
+    "Chiftele cu legume",
+    "Somon cu cartofi și mărar",
+    "Ghiveci vegetarian de legume",
+  ]),
+  ...phaseDSeedSet("czech_office_lunch", "CZ", "cs-CZ", "czech-office-lunch", [
+    "Dušené kuře s rýží",
+    "Hovězí guláš s bramborem",
+    "Sekaná se zeleninou",
+    "Losos s bramborem a koprem",
+    "Vegetariánské rizoto se zeleninou",
+  ]),
+  ...phaseDSeedSet("portuguese_office_lunch", "PT", "pt-PT", "portuguese-office-lunch", [
+    "Frango estufado com arroz",
+    "Guisado de vaca com batatas",
+    "Almôndegas com legumes",
+    "Salmão com batatas e endro",
+    "Caçarola vegetariana de legumes",
+  ]),
+  ...phaseDSeedSet("greek_office_lunch", "GR", "el-GR", "greek-office-lunch", [
+    "Κοτόπουλο κοκκινιστό με ρύζι",
+    "Μοσχάρι στιφάδο με πατάτες",
+    "Σουτζουκάκια με λαχανικά",
+    "Σολομός με πατάτες και άνηθο",
+    "Γεμιστά λαχανικά (χορτοφαγικό)",
+  ]),
   ...phaseDSeedSet("luxembourg_office_lunch", "LU", "fr-LU", "luxembourg-office-lunch", [
     "Poulet mijoté avec pommes de terre",
     "Ragoût de dinde au riz",
@@ -465,6 +500,11 @@ const SEEDS_BY_PROFILE: Readonly<Record<MenuProfileId, readonly WarmDishBankSeed
   swiss_german_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "swiss_german_office_lunch"),
   swiss_french_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "swiss_french_office_lunch"),
   irish_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "irish_office_lunch"),
+  polish_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "polish_office_lunch"),
+  romanian_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "romanian_office_lunch"),
+  czech_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "czech_office_lunch"),
+  portuguese_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "portuguese_office_lunch"),
+  greek_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "greek_office_lunch"),
   luxembourg_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "luxembourg_office_lunch"),
   australian_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "australian_office_lunch"),
   singapore_office_lunch: WARM_DISH_BANK_SEEDS.filter((s) => s.profileId === "singapore_office_lunch"),

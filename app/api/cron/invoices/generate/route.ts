@@ -11,6 +11,7 @@ import { osloNowIsoLocal, osloPreviousPeriodYm } from "@/lib/date/osloPeriod";
 import { requireCronAuth } from "@/lib/http/cronAuth";
 import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { enqueueInvoiceReadyOutbox, type InvoiceReadyOutboxInput } from "@/lib/outbox/invoiceReady";
+import { opsKillSwitchResponse } from "@/lib/system/opsKillSwitch";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type AgreementTier = "BASIS" | "LUXUS" | "ENTERPRISE";
@@ -227,6 +228,28 @@ async function loadActiveAgreementsByCompany(
   return { byCompany, loadError: null };
 }
 
+/**
+ * GLOBAL RELEASE GATE (Fase F): the legacy invoice engine is NOK/Tripletex and
+ * NO-market only. Companies outside NO are excluded here (fail-closed) — global
+ * markets are billed by the bigint-minor commission engine (lp_billing_*).
+ */
+async function loadNoMarketCompanyIds(admin: any, companyIds: string[]): Promise<Set<string>> {
+  const noMarket = new Set<string>();
+  for (const part of chunk(companyIds, CHUNK_SIZE)) {
+    const { data, error } = await admin
+      .from("companies")
+      .select("id,billing_country")
+      .in("id", part);
+    if (error) throw error;
+    for (const row of Array.isArray(data) ? data : []) {
+      const id = safeStr((row as any)?.id);
+      const country = safeStr((row as any)?.billing_country).toUpperCase();
+      if (id && (country === "NO" || country === "")) noMarket.add(id);
+    }
+  }
+  return noMarket;
+}
+
 async function loadExistingInvoicePeriods(
   admin: any,
   companyIds: string[],
@@ -294,6 +317,10 @@ export async function GET(req: NextRequest): Promise<Response> {
     return jsonErr(rid, "Ugyldig eller manglende cron-tilgang.", 403, "CRON_FORBIDDEN");
   }
 
+  // Fase I kill switch: stopp fakturagenerering separat (eller all cron) uten deploy.
+  const killed = await opsKillSwitchResponse(rid, "cron", "invoice_generation", "billing");
+  if (killed) return killed;
+
   const url = new URL(req.url);
   const periodInput = safeStr(url.searchParams.get("period"));
   const resolvedPeriod = periodInput || osloPreviousPeriodYm();
@@ -314,7 +341,19 @@ export async function GET(req: NextRequest): Promise<Response> {
       bounds.periodStart,
       bounds.periodEndExclusive
     );
-    const companyIds = Array.from(countsByCompany.keys()).sort((a, b) => a.localeCompare(b));
+    const allCompanyIds = Array.from(countsByCompany.keys()).sort((a, b) => a.localeCompare(b));
+
+    // NOK float isolation: only NO-market companies flow through this legacy engine.
+    const noMarketIds = await loadNoMarketCompanyIds(admin, allCompanyIds);
+    const companyIds = allCompanyIds.filter((id) => noMarketIds.has(id));
+    const skippedNonNoMarket = allCompanyIds.length - companyIds.length;
+    if (skippedNonNoMarket > 0) {
+      console.info("[cron.invoice_periods.non_no_market_skipped]", {
+        rid,
+        period: bounds.period,
+        skipped_non_no_market: skippedNonNoMarket,
+      });
+    }
 
     if (companyIds.length === 0) {
       return jsonOk(rid, {

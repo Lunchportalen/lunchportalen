@@ -16,11 +16,11 @@ export type ProviderSettingsMenuProfileInput = {
   env?: Readonly<Record<string, string | undefined>>;
 };
 
-/** Maps ISO country code to registry market (GB → UK). */
+/** Maps ISO country code to registry market (legacy "UK" values normalize to GB). */
 export function providerCountryCodeToMarket(countryCode: unknown): MarketCode | null {
   const code = String(countryCode ?? "").trim().toUpperCase();
   if (!code) return null;
-  if (code === "GB") return "UK";
+  if (code === "UK") return "GB";
   return (MARKET_CODES as readonly string[]).includes(code) ? (code as MarketCode) : null;
 }
 
