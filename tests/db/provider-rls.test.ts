@@ -126,9 +126,13 @@ describe.skipIf(!hasDb)("provider RLS (Patch 6)", () => {
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const res = await anon.from("companies").select("id").limit(1);
-      // With table GRANT + RLS: empty result, no error (matches database-integrity convention).
-      expect(res.error).toBeNull();
-      expect(rowCount(res)).toBe(0);
+      // Post anon-grant-lockdown (20260818): denial is a 42501 grant error.
+      // Pre-lockdown behavior (table GRANT + RLS) was an empty result. Both deny.
+      if (res.error) {
+        expect(res.error.code).toBe("42501");
+      } else {
+        expect(rowCount(res)).toBe(0);
+      }
     });
   });
 

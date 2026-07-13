@@ -124,7 +124,9 @@ export async function loadAgreementContext(): Promise<AgreementContextResult> {
 
   const emailRole = systemRoleByEmail(user.email ?? null);
   const profile = await loadProfile(sb, user.id);
-  const role = toAgreementContextRole(emailRole ?? profile?.role ?? user.user_metadata?.role);
+  // D4: role truth is email allowlist → profiles.role; user_metadata is never
+  // an authorization source (it could grant superadmin agreement-gate bypass).
+  const role = toAgreementContextRole(emailRole ?? profile?.role);
 
   // Superadmin bypasses agreement gating (global ops role), but remains deterministic.
   if (role === "superadmin") {

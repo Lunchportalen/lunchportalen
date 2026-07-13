@@ -2,19 +2,22 @@ import type { AuthContext } from "@/lib/auth/getAuthContext";
 
 import { hasAnyRole } from "@/lib/auth/roles";
 
+/**
+ * Tenant law: kitchen/driver are tenant-bound to their assigned company/location
+ * (getAuthContext requires both for these roles). No role gets blanket access
+ * except superadmin. Fail-closed on missing assignment.
+ */
 export function canAccessCompany(ctx: AuthContext, companyId: string): boolean {
   if (!ctx.sessionOk) return false;
   if (ctx.role === "superadmin") return true;
-  if (ctx.role === "kitchen") return true;
-  if (ctx.role === "driver") return true;
+  if (!ctx.company_id) return false;
   return ctx.company_id === companyId;
 }
 
 export function canAccessLocation(ctx: AuthContext, locationId: string): boolean {
   if (!ctx.sessionOk) return false;
   if (ctx.role === "superadmin") return true;
-  if (ctx.role === "kitchen") return true;
-  if (ctx.role === "driver") return true;
+  if (!ctx.location_id) return false;
   return ctx.location_id === locationId;
 }
 

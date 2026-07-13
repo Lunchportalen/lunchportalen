@@ -23,15 +23,10 @@ export async function GET() {
   // ─────────────────────────────────────────────────────
   // Auth
   // ─────────────────────────────────────────────────────
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-
-  if (userErr || !userData?.user) {
-    return jsonErr(rid, "Ikke innlogget", 401, "NOT_AUTHENTICATED");
-  }
-
-  const role = String(userData.user.user_metadata?.role ?? "");
-  if (role !== "superadmin") {
-    return jsonErr(rid, "Kun superadmin har tilgang", 403, "FORBIDDEN");
+  const { requireSuperadminApi } = await import("@/lib/superadmin/auth");
+  const guard = await requireSuperadminApi();
+  if (guard.ok === false) {
+    return jsonErr(rid, guard.message, guard.status, guard.status === 401 ? "NOT_AUTHENTICATED" : "FORBIDDEN");
   }
 
   // ─────────────────────────────────────────────────────

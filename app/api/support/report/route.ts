@@ -12,19 +12,17 @@ import { jsonOk, jsonErr } from "@/lib/http/respond";
 
 type Role = "employee" | "company_admin" | "superadmin" | "kitchen" | "driver";
 
-function normEmail(v: any) {
-  return String(v ?? "").trim().toLowerCase();
-}
 function roleByEmail(email: string | null | undefined): Role | null {
   return systemRoleByEmail(email);
 }
-function roleFromMetadata(user: any): Role {
-  const raw = String(user?.user_metadata?.role ?? "employee").toLowerCase();
-  if (raw === "company_admin") return "company_admin";
-  if (raw === "superadmin") return "superadmin";
-  if (raw === "kitchen") return "kitchen";
-  if (raw === "driver") return "driver";
-  return "employee";
+function roleFromProfile(raw: unknown): Role | null {
+  const r = String(raw ?? "").trim().toLowerCase();
+  if (r === "company_admin") return "company_admin";
+  if (r === "superadmin") return "superadmin";
+  if (r === "kitchen") return "kitchen";
+  if (r === "driver") return "driver";
+  if (r === "employee") return "employee";
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -39,8 +37,16 @@ export async function POST(req: NextRequest) {
 
     if (!user) return jsonErr(rid, "Du må være innlogget.", 401, "UNAUTHORIZED");
 
+    // Role truth: system email allowlist → profiles.role. user_metadata is never
+    // an authorization source (D4: server-side membership only).
+    const { data: profRole } = await supabase
+      .from("profiles")
+      .select("role, company_id, location_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
     const byEmail = roleByEmail(user.email);
-    const role = byEmail ?? roleFromMetadata(user);
+    const role = byEmail ?? roleFromProfile((profRole as { role?: string | null } | null)?.role);
 
     if (role !== "superadmin" && role !== "company_admin") {
       return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN");
@@ -58,23 +64,17 @@ export async function POST(req: NextRequest) {
       company_id = String(body?.company_id ?? "").trim() || null;
       location_id = String(body?.location_id ?? "").trim() || null;
     } else {
-      const { data: prof, error: profErr } = await supabase
-        .from("profiles")
-        .select("company_id, location_id")
-        .or(`user_id.eq.${user.id},id.eq.${user.id}`)
-        .maybeSingle();
-
-      if (profErr || !prof) {
-        return jsonErr(rid, "Kunne ikke verifisere firmascope.", 403, "FORBIDDEN");
-      }
-
-      company_id = String((prof as { company_id?: string | null }).company_id ?? "").trim() || null;
-      location_id = String((prof as { location_id?: string | null }).location_id ?? "").trim() || null;
+      company_id =
+        String((profRole as { company_id?: string | null } | null)?.company_id ?? "").trim() || null;
+      location_id =
+        String((profRole as { location_id?: string | null } | null)?.location_id ?? "").trim() || null;
 
       if (!company_id) {
         return jsonErr(rid, "Mangler firmatilknytning.", 403, "MISSING_COMPANY_SCOPE");
       }
 
+      // Tenant deviations are BLOCKING (not log-only): client-sent tenant ids
+      // must match server truth or the request is rejected. No PII in log.
       const bodyCompany = String(body?.company_id ?? "").trim();
       const bodyLocation = String(body?.location_id ?? "").trim();
       if (bodyCompany && bodyCompany !== company_id) {
@@ -82,14 +82,18 @@ export async function POST(req: NextRequest) {
           requestedCompanyId: bodyCompany,
           ctxCompanyId: company_id,
           role,
+          blocked: true,
         });
+        return jsonErr(rid, "Forespurt firma matcher ikke tilknyttet firma.", 403, "COMPANY_SCOPE_MISMATCH");
       }
       if (bodyLocation && bodyLocation !== (location_id ?? "")) {
         authLog(rid, "tenant_violation_attempt", {
           requestedLocationId: bodyLocation,
           ctxLocationId: location_id,
           role,
+          blocked: true,
         });
+        return jsonErr(rid, "Forespurt lokasjon matcher ikke tilknyttet lokasjon.", 403, "LOCATION_SCOPE_MISMATCH");
       }
     }
     const desired_change = String(body?.desired_change ?? "").slice(0, 2000) || null;

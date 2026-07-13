@@ -77,10 +77,27 @@ export async function ensureIntegrationTestTableGrants(): Promise<void> {
     "driver_runs",
     "deliveries",
   ] as const;
+  // Parallel test files bootstrap concurrently; concurrent GRANTs on the same
+  // table race in pg_class ("tuple concurrently updated"). Retry with backoff.
+  const grantWithRetry = async (sql: string) => {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        await fixturePgQuery(sql);
+        return;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (attempt < 5 && msg.includes("tuple concurrently updated")) {
+          await new Promise((r) => setTimeout(r, 250 * attempt));
+          continue;
+        }
+        throw e;
+      }
+    }
+  };
   for (const table of tablesSelect) {
-    await fixturePgQuery(`GRANT SELECT ON public.${table} TO authenticated`);
+    await grantWithRetry(`GRANT SELECT ON public.${table} TO authenticated`);
   }
-  await fixturePgQuery(`GRANT UPDATE ON public.companies TO authenticated`);
+  await grantWithRetry(`GRANT UPDATE ON public.companies TO authenticated`);
   grantsBootstrapped = true;
 }
 
@@ -91,6 +108,32 @@ export async function fixturePgQuery<T extends pg.QueryResultRow = pg.QueryResul
   const client = await getFixturePgPool().connect();
   try {
     return await client.query<T>(text, values);
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Run several parameterized statements in ONE transaction on ONE connection.
+ * Needed for fixture teardown with `set local session_replication_role`.
+ */
+export async function fixturePgTransaction(
+  statements: Array<{ text: string; values?: unknown[] }>,
+): Promise<void> {
+  const client = await getFixturePgPool().connect();
+  try {
+    await client.query("begin");
+    for (const s of statements) {
+      await client.query(s.text, s.values);
+    }
+    await client.query("commit");
+  } catch (e) {
+    try {
+      await client.query("rollback");
+    } catch {
+      // ignore
+    }
+    throw e;
   } finally {
     client.release();
   }

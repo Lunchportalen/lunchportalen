@@ -165,6 +165,38 @@ function buildEmptyCtx(req: NextRequest, rid: string): AuthedCtx {
   };
 }
 
+/**
+ * Fire-and-forget audit of denied access attempts (403). No PII: no email,
+ * no request body — only pseudonymous actor id, role, route and deny code.
+ * Dynamic import avoids a module cycle (lib/audit/log imports ctxSnapshot).
+ */
+function auditAccessDenied(
+  ctx: AuthedCtx | null,
+  code: string,
+  extra?: Record<string, unknown>
+): void {
+  try {
+    void import("@/lib/audit/log")
+      .then(({ auditLog }) => {
+        auditLog({
+          action: "ACCESS_DENIED",
+          userId: safeStr(ctx?.scope?.userId) || null,
+          role: normRole(ctx?.scope?.role) as string | null,
+          companyId: safeStr(ctx?.scope?.companyId) || null,
+          locationId: safeStr(ctx?.scope?.locationId) || null,
+          resource: "route",
+          resourceId: safeStr(ctx?.route) || null,
+          metadata: { code, method: safeStr(ctx?.method) || null, ...extra },
+          timestamp: Date.now(),
+          rid: safeStr(ctx?.rid) || ridFallback(),
+        });
+      })
+      .catch(() => undefined);
+  } catch {
+    // audit must never break the deny path
+  }
+}
+
 function requireKitchenDriverScopeOr403(ctx: AuthedCtx, role: AllowedRole | string | null): Response | null {
   const r = normRole(role);
   if (r !== "kitchen" && r !== "driver") return null;
@@ -174,6 +206,7 @@ function requireKitchenDriverScopeOr403(ctx: AuthedCtx, role: AllowedRole | stri
   const locationId = safeStr(ctx?.scope?.locationId);
 
   if (!companyId || !locationId) {
+    auditAccessDenied(ctx, "SCOPE_NOT_ASSIGNED", { role: r });
     return jsonErr(rid, "Scope er ikke tilordnet.", 403, "SCOPE_NOT_ASSIGNED", {
       path: ctx?.route ?? null,
       role: r,
@@ -323,8 +356,14 @@ export function requireRoleOr403(...args: any[]): Response | null {
     if (args.length === 2 && Array.isArray(args[1])) {
       const allowed = normalizeAllowed(args[1]);
       if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE");
-      if (!ctxRole) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
-      if (!allowed.includes(ctxRole as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: ctxRole, allowed });
+      if (!ctxRole) {
+        auditAccessDenied(ctx, "FORBIDDEN_NO_ROLE");
+        return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: null });
+      }
+      if (!allowed.includes(ctxRole as AllowedRole)) {
+        auditAccessDenied(ctx, "FORBIDDEN_ROLE", { allowed: allowed.join(",") });
+        return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { path: ctx.route, role: ctxRole, allowed });
+      }
       const scopeDeny = requireKitchenDriverScopeOr403(ctx, ctxRole);
       if (scopeDeny) return scopeDeny;
       return null;
@@ -336,8 +375,14 @@ export function requireRoleOr403(...args: any[]): Response | null {
       const allowed = normalizeAllowed(args[2]);
 
       if (!allowed.length) return jsonErr(rid, "Ingen tillatte roller er konfigurert for denne ruten.", 500, "MISCONFIGURED_ROUTE", { action });
-      if (!ctxRole) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: null });
-      if (!allowed.includes(ctxRole as AllowedRole)) return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: ctxRole, allowed });
+      if (!ctxRole) {
+        auditAccessDenied(ctx, "FORBIDDEN_NO_ROLE", { action });
+        return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: null });
+      }
+      if (!allowed.includes(ctxRole as AllowedRole)) {
+        auditAccessDenied(ctx, "FORBIDDEN_ROLE", { action, allowed: allowed.join(",") });
+        return jsonErr(rid, "Ingen tilgang.", 403, "FORBIDDEN", { action, path: ctx.route, role: ctxRole, allowed });
+      }
       const scopeDeny = requireKitchenDriverScopeOr403(ctx, ctxRole);
       if (scopeDeny) return scopeDeny;
 
@@ -446,6 +491,7 @@ export function requireCompanyScopeOr403(...args: any[]): Response | null {
         return jsonErr(rid, "Mangler firmascope.", 403, "MISSING_COMPANY_SCOPE", { path: ctx.route, role });
       }
       if (cidFromCtx !== cidExpected) {
+        auditAccessDenied(ctx, "COMPANY_SCOPE_MISMATCH", { requestedCompanyId: cidExpected });
         return jsonErr(rid, "Forespurt firma matcher ikke tilknyttet firma.", 403, "COMPANY_SCOPE_MISMATCH", {
           path: ctx.route,
         });

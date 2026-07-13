@@ -13,6 +13,13 @@ export async function POST(req: Request) {
   return withApiAiEntrypoint(req, "POST", async () => {
     const rid = makeRid("ai_track");
     try {
+      // Fail-closed: telemetry writes require an authenticated session
+      // (prevents anonymous telemetry poisoning / unauthenticated DB writes).
+      const auth = await getAuthContext({ rid, reqHeaders: req.headers });
+      if (!auth.sessionOk || !auth.userId) {
+        return jsonErr(rid, "Ikke innlogget.", 401, "UNAUTHORIZED");
+      }
+
       let body: unknown;
       try {
         body = await req.json();
@@ -35,7 +42,7 @@ export async function POST(req: Request) {
           ? { ...(b.metadata as Record<string, unknown>) }
           : {};
 
-      const auth = await getAuthContext();
+      // Server truth only: client-sent company_id is never trusted.
       baseMeta.company_id = auth.company_id ?? null;
 
       const event: AIEvent = {

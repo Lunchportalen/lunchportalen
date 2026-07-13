@@ -18,6 +18,33 @@ vi.mock("@/lib/audit/actions", () => ({
 const RUN_ID = "aaaaaaaa-bbbb-4ccc-8000-eeeeeeeeeeee";
 const COMPANY_ID = "11111111-1111-4111-8111-111111111111";
 
+/** Session client mock: auth user + profiles.role read (D4 — role truth is profiles.role). */
+function superadminSessionClient() {
+  return {
+    auth: {
+      getUser: async () => ({
+        data: { user: { id: "u1" } },
+        error: null,
+      }),
+    },
+    from: (table: string) => {
+      if (table === "profiles") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({
+                data: { role: "superadmin", disabled_at: null },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    },
+  } as any;
+}
+
 const minimalLine = {
   id: "line-1",
   company_id: COMPANY_ID,
@@ -41,14 +68,7 @@ describe("superadmin company_billing_accounts fail-soft", () => {
   });
 
   it("GET invoices/runs/[runId]: manglende tabell → 200, tripletex_mapping_available false", async () => {
-    vi.mocked(supabaseServer).mockResolvedValue({
-      auth: {
-        getUser: async () => ({
-          data: { user: { id: "u1", user_metadata: { role: "superadmin" } } },
-          error: null,
-        }),
-      },
-    } as any);
+    vi.mocked(supabaseServer).mockResolvedValue(superadminSessionClient());
 
     vi.mocked(supabaseAdmin).mockImplementation(
       () =>
@@ -113,14 +133,7 @@ describe("superadmin company_billing_accounts fail-soft", () => {
   });
 
   it("POST invoices/mapping/bulk: manglende tabell → 200 med tom mappings", async () => {
-    vi.mocked(supabaseServer).mockResolvedValue({
-      auth: {
-        getUser: async () => ({
-          data: { user: { id: "u1", user_metadata: { role: "superadmin" } } },
-          error: null,
-        }),
-      },
-    } as any);
+    vi.mocked(supabaseServer).mockResolvedValue(superadminSessionClient());
 
     vi.mocked(supabaseAdmin).mockImplementation(
       () =>

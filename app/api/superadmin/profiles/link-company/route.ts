@@ -64,6 +64,22 @@ export async function POST(req: NextRequest) {
   // Oppdater target profile (bruk service role for å slippe RLS-trøbbel)
   const admin = supabaseAdmin();
 
+  // Tenant-integritet: location må tilhøre firmaet (ellers kan en profil bindes
+  // til firma A med lokasjon fra firma B — kryss-tenant scope).
+  if (locationId !== null) {
+    const { data: loc, error: lErr } = await admin
+      .from("company_locations")
+      .select("id, company_id")
+      .eq("id", locationId)
+      .maybeSingle();
+
+    if (lErr) return jsonError(rid, 500, "location_read_failed", "Kunne ikke lese lokasjon.", lErr);
+    if (!loc) return jsonError(rid, 404, "not_found", "Lokasjon finnes ikke.");
+    if (String((loc as { company_id?: string | null }).company_id ?? "") !== String(companyId)) {
+      return jsonError(rid, 422, "location_company_mismatch", "Lokasjonen tilhører ikke firmaet.");
+    }
+  }
+
   const { data: updated, error: uErr } = await admin
     .from("profiles")
     .update({

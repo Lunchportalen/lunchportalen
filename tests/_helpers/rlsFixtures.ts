@@ -9,7 +9,7 @@ import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/lib/types/database";
-import { ensureIntegrationTestTableGrants, fixturePgQuery } from "./fixturePg";
+import { ensureIntegrationTestTableGrants, fixturePgQuery, fixturePgTransaction } from "./fixturePg";
 import { readRemoteSupabaseIntegrationEnv } from "./remoteSupabaseIntegration";
 import { anonClient, serviceRoleClient } from "./supabaseTestClient";
 
@@ -591,21 +591,38 @@ export async function buildRlsFixtures(): Promise<Fixtures> {
     empOther.user_id,
   ];
 
-  // ✅ FASIT cleanup rekkefølge (orders -> agreements -> profiles -> locations -> companies -> auth)
+  // ✅ FASIT cleanup rekkefølge (order_items/day_choices -> orders -> menu -> agreements -> profiles -> locations -> companies -> auth)
+  // Terminal orders (CANCELLED/LOCKED/…) are delete-protected by tg_guard_order_mutation,
+  // and order_items deletes fire total-recalc against already-deleted orders. Fixture
+  // teardown therefore runs in ONE transaction with session_replication_role=replica
+  // (postgres fixture role only — disables triggers for this tx; RLS/policies untouched).
   async function cleanup() {
-    await fixturePgQuery(`DELETE FROM public.orders WHERE user_id = ANY($1::uuid[])`, [authUserIds]);
-    if (menuDayIds.length > 0) {
-      await fixturePgQuery(`DELETE FROM public.menu_service_days WHERE id = ANY($1::uuid[])`, [menuDayIds]);
-    }
-    await fixturePgQuery(`DELETE FROM public.agreements WHERE company_id = ANY($1::uuid[])`, [
-      [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId],
-    ]);
-    await fixturePgQuery(`DELETE FROM public.profiles WHERE id = ANY($1::uuid[])`, [authUserIds]);
-    await fixturePgQuery(`DELETE FROM public.company_locations WHERE id = ANY($1::uuid[])`, [
-      [locAId, locBId, locActiveId, locPausedId, locClosedId, locOtherId],
-    ]);
-    await fixturePgQuery(`DELETE FROM public.companies WHERE id = ANY($1::uuid[])`, [
-      [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId],
+    const companyIds = [companyAId, companyBId, companyActiveId, companyPausedId, companyClosedId, companyOtherId];
+    const locationIds = [locAId, locBId, locActiveId, locPausedId, locClosedId, locOtherId];
+
+    await fixturePgTransaction([
+      { text: `set local session_replication_role = replica` },
+      {
+        text: `delete from public.order_items oi using public.orders o
+               where oi.order_id = o.id and o.user_id = any($1::uuid[])`,
+        values: [authUserIds],
+      },
+      { text: `delete from public.day_choices where user_id = any($1::uuid[])`, values: [authUserIds] },
+      { text: `delete from public.orders where user_id = any($1::uuid[])`, values: [authUserIds] },
+      {
+        text: `delete from public.menu_service_day_items msdi using public.menu_service_days msd
+               where msdi.menu_service_day_id = msd.id
+                 and (msd.id = any($1::uuid[]) or msd.location_id = any($2::uuid[]))`,
+        values: [menuDayIds, locationIds],
+      },
+      {
+        text: `delete from public.menu_service_days where id = any($1::uuid[]) or location_id = any($2::uuid[])`,
+        values: [menuDayIds, locationIds],
+      },
+      { text: `delete from public.agreements where company_id = any($1::uuid[])`, values: [companyIds] },
+      { text: `delete from public.profiles where id = any($1::uuid[])`, values: [authUserIds] },
+      { text: `delete from public.company_locations where id = any($1::uuid[])`, values: [locationIds] },
+      { text: `delete from public.companies where id = any($1::uuid[])`, values: [companyIds] },
     ]);
 
     for (const id of authUserIds) {

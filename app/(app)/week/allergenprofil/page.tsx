@@ -38,8 +38,9 @@ export default async function AllergenProfilPage() {
 
   const email = data.user.email ?? null;
   const emailRole = systemRoleByEmail(email);
-  const metaRole = normalizeRoleDefaultEmployee((data.user.user_metadata as { role?: unknown })?.role);
-  const role: Role = (emailRole ?? metaRole) as Role;
+  // D4: user_metadata is never an authorization source — role truth is profiles.role.
+  const { data: roleRow } = await sb.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
+  const role: Role = (emailRole ?? normalizeRoleDefaultEmployee(roleRow?.role)) as Role;
 
   if (role !== "employee" && role !== "company_admin") {
     redirect("/week");

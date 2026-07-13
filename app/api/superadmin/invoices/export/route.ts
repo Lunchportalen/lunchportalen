@@ -24,7 +24,6 @@ function csvEscape(v: any) {
 
 export async function GET(req: Request) {
   const rid = makeRid();
-  const { supabaseServer } = await import("@/lib/supabase/server");
   const url = new URL(req.url);
   const runId = url.searchParams.get("runId");
   const format = (url.searchParams.get("format") ?? "json").toLowerCase();
@@ -33,13 +32,11 @@ export async function GET(req: Request) {
     return jsonErr(rid, "runId må være en gyldig UUID", 400, "BAD_RUN_ID");
   }
 
-  const supabase = await supabaseServer();
-
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData.user) return jsonErr(rid, "Ikke innlogget", 401, "NOT_AUTHENTICATED");
-
-  const role = String(userData.user.user_metadata?.role ?? "");
-  if (role !== "superadmin") return jsonErr(rid, "Kun superadmin", 403, "FORBIDDEN");
+  const { requireSuperadminApi } = await import("@/lib/superadmin/auth");
+  const guard = await requireSuperadminApi();
+  if (guard.ok === false) {
+    return jsonErr(rid, guard.message, guard.status, guard.status === 401 ? "NOT_AUTHENTICATED" : "FORBIDDEN");
+  }
 
   const result = await loadTripletexExportByRun(runId);
   if (result.ok === false) {
