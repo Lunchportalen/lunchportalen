@@ -804,7 +804,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/accept-invite/complete/route.ts` | `/api/accept-invite/complete` | GET,POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/accept-invite/complete/route.ts` | `/api/accept-invite/complete` | GET,POST | middleware-session | nei | nei | nei | ja | høy |
 
 ### /api/acquire/ (2 ruter)
 
@@ -824,7 +824,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/admin/accept-invite/complete/route.ts` | `/api/admin/accept-invite/complete` | GET,POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/admin/accept-invite/complete/route.ts` | `/api/admin/accept-invite/complete` | GET,POST | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/admin/agreement/change-requests/[requestId]/cancel/route.ts` | `/api/admin/agreement/change-requests/[requestId]/cancel` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/admin/agreement/change-requests/route.ts` | `/api/admin/agreement/change-requests` | GET,POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/admin/agreement/route.ts` | `/api/admin/agreement` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
@@ -857,8 +857,8 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/admin/invite/route.ts` | `/api/admin/invite` | GET,POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/admin/invites/[id]/route.ts` | `/api/admin/invites/[id]` | PATCH,DELETE | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/admin/invites/create/route.ts` | `/api/admin/invites/create` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/admin/invites/lookup/route.ts` | `/api/admin/invites/lookup` | GET | middleware-session | nei | nei | nei | ja | hÃ¸y |
-| `app/api/admin/invites/register/route.ts` | `/api/admin/invites/register` | POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/admin/invites/lookup/route.ts` | `/api/admin/invites/lookup` | GET | middleware-session | nei | nei | nei | ja | høy |
+| `app/api/admin/invites/register/route.ts` | `/api/admin/invites/register` | POST | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/admin/invites/resend/route.ts` | `/api/admin/invites/resend` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/admin/invites/resolve/route.ts` | `/api/admin/invites/resolve` | GET | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/admin/invites/revoke/route.ts` | `/api/admin/invites/revoke` | GET,POST | session+scopeOr401 | ja | ja | nei | ja | lav |
@@ -883,7 +883,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/agreements/my-latest/route.ts` | `/api/agreements/my-latest` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/agreements/my-latest/route.ts` | `/api/agreements/my-latest` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/agreements/route.ts` | `/api/agreements` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 
 ### /api/ai/ (24 ruter)
@@ -911,7 +911,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/ai/recommendation/apply/route.ts` | `/api/ai/recommendation/apply` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/ai/recommendation/history/route.ts` | `/api/ai/recommendation/history` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/ai/rewrite/route.ts` | `/api/ai/rewrite` | POST | middleware-session | nei | nei | nei | nei | lav |
-| `app/api/ai/route.ts` | `/api/ai` | â€” | middleware-session | nei | nei | nei | nei | lav |
+| `app/api/ai/route.ts` | `/api/ai` | — | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/ai/track/route.ts` | `/api/ai/track` | POST | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/ai/usage/route.ts` | `/api/ai/usage` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 
@@ -925,10 +925,10 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/auth/accept-invite/route.ts` | `/api/auth/accept-invite` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/auth/accept-invite/route.ts` | `/api/auth/accept-invite` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
 | `app/api/auth/debug-cookies/route.ts` | `/api/auth/debug-cookies` | GET | offentlig/allowlist | nei | nei | nei | nei | lav |
 | `app/api/auth/dev-bypass/route.ts` | `/api/auth/dev-bypass` | POST | offentlig/allowlist | nei | nei | nei | nei | lav |
-| `app/api/auth/forgot-password/route.ts` | `/api/auth/forgot-password` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/auth/forgot-password/route.ts` | `/api/auth/forgot-password` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
 | `app/api/auth/login-debug/route.ts` | `/api/auth/login-debug` | GET,POST | offentlig/allowlist | nei | nei | nei | nei | lav |
 | `app/api/auth/login/route.ts` | `/api/auth/login` | POST | offentlig/allowlist | nei | nei | nei | nei | lav |
 | `app/api/auth/logout/route.ts` | `/api/auth/logout` | GET,POST | offentlig/allowlist | nei | nei | nei | nei | lav |
@@ -936,7 +936,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/auth/post-login/route.ts` | `/api/auth/post-login` | GET,POST | offentlig/allowlist | nei | nei | nei | nei | lav |
 | `app/api/auth/profile/route.ts` | `/api/auth/profile` | GET | offentlig/allowlist | nei | nei | nei | nei | lav |
 | `app/api/auth/redirect/route.ts` | `/api/auth/redirect` | GET | offentlig/allowlist | nei | nei | nei | nei | lav |
-| `app/api/auth/register-company-admin/route.ts` | `/api/auth/register-company-admin` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/auth/register-company-admin/route.ts` | `/api/auth/register-company-admin` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
 | `app/api/auth/remote-backend-harness/route.ts` | `/api/auth/remote-backend-harness` | POST | offentlig/allowlist | nei | nei | nei | nei | lav |
 | `app/api/auth/session/route.ts` | `/api/auth/session` | POST | custom-401 | nei | nei | nei | nei | lav |
 
@@ -1026,7 +1026,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/backoffice/enterprise/page-insights/route.ts` | `/api/backoffice/enterprise/page-insights` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/backoffice/experiments/[id]/route.ts` | `/api/backoffice/experiments/[id]` | GET,PATCH | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/backoffice/experiments/create/route.ts` | `/api/backoffice/experiments/create` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/backoffice/experiments/event/route.ts` | `/api/backoffice/experiments/event` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/backoffice/experiments/event/route.ts` | `/api/backoffice/experiments/event` | POST | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/backoffice/experiments/resolve/route.ts` | `/api/backoffice/experiments/resolve` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/backoffice/experiments/route.ts` | `/api/backoffice/experiments` | GET,POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/backoffice/experiments/stats/route.ts` | `/api/backoffice/experiments/stats` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
@@ -1114,9 +1114,9 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/cron/ai-experiment-generator/route.ts` | `/api/cron/ai-experiment-generator` | POST | cron-secret | nei | nei | ja | nei | lav |
 | `app/api/cron/autopilot/route.ts` | `/api/cron/autopilot` | GET | cron-secret | nei | nei | ja | nei | lav |
 | `app/api/cron/business/route.ts` | `/api/cron/business` | GET,POST | cron-secret | nei | nei | ja | ja | middels |
-| `app/api/cron/check-deviations/route.ts` | `/api/cron/check-deviations` | â€” | cron-secret | nei | nei | ja | ja | middels |
+| `app/api/cron/check-deviations/route.ts` | `/api/cron/check-deviations` | — | cron-secret | nei | nei | ja | ja | middels |
 | `app/api/cron/cleanup-invites/route.ts` | `/api/cron/cleanup-invites` | POST | cron-secret | nei | nei | ja | ja | middels |
-| `app/api/cron/daily-order-summary/route.ts` | `/api/cron/daily-order-summary` | â€” | cron-secret | nei | nei | ja | ja | middels |
+| `app/api/cron/daily-order-summary/route.ts` | `/api/cron/daily-order-summary` | — | cron-secret | nei | nei | ja | ja | middels |
 | `app/api/cron/daily-sanity/route.ts` | `/api/cron/daily-sanity` | GET | cron-secret | nei | nei | ja | ja | middels |
 | `app/api/cron/experiments/route.ts` | `/api/cron/experiments` | POST | cron-secret | nei | nei | ja | ja | middels |
 | `app/api/cron/forecast/route.ts` | `/api/cron/forecast` | GET | cron-secret | nei | nei | ja | nei | lav |
@@ -1216,10 +1216,10 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/experiments/assign/route.ts` | `/api/experiments/assign` | GET | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/experiments/assign/route.ts` | `/api/experiments/assign` | GET | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/experiments/results/route.ts` | `/api/experiments/results` | GET | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/experiments/rollout/route.ts` | `/api/experiments/rollout` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/experiments/track/route.ts` | `/api/experiments/track` | POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/experiments/track/route.ts` | `/api/experiments/track` | POST | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/experiments/winner/route.ts` | `/api/experiments/winner` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 
 ### /api/global/ (3 ruter)
@@ -1243,7 +1243,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
 | `app/api/health/live/route.ts` | `/api/health/live` | GET | offentlig/allowlist | nei | nei | nei | nei | lav |
 | `app/api/health/ready/route.ts` | `/api/health/ready` | GET | offentlig/allowlist | nei | nei | nei | nei | lav |
-| `app/api/health/route.ts` | `/api/health` | GET | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/health/route.ts` | `/api/health` | GET | offentlig/allowlist | nei | nei | nei | ja | høy |
 
 ### /api/integrations/ (1 ruter)
 
@@ -1284,7 +1284,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/kitchen/batch/upsert/route.ts` | `/api/kitchen/batch/upsert` | POST | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/kitchen/companies/route.ts` | `/api/kitchen/companies` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/kitchen/company/route.ts` | `/api/kitchen/company` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/kitchen/day/route.ts` | `/api/kitchen/day` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/kitchen/day/route.ts` | `/api/kitchen/day` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/kitchen/demand-forecast/route.ts` | `/api/kitchen/demand-forecast` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/kitchen/orders.csv/route.ts` | `/api/kitchen/orders.csv` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/kitchen/orders/batch-status/route.ts` | `/api/kitchen/orders/batch-status` | GET,POST | session+scopeOr401 | ja | ja | nei | ja | lav |
@@ -1305,7 +1305,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/me/agreement/route.ts` | `/api/me/agreement` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/me/agreement/route.ts` | `/api/me/agreement` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/me/route.ts` | `/api/me` | GET | custom-401 | nei | nei | nei | nei | lav |
 | `app/api/me/user-allergens/route.ts` | `/api/me/user-allergens` | GET,PUT | custom-401 | nei | nei | nei | nei | lav |
 
@@ -1320,7 +1320,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/onboarding/complete/route.ts` | `/api/onboarding/complete` | POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/onboarding/complete/route.ts` | `/api/onboarding/complete` | POST | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/onboarding/terms-pdf/route.ts` | `/api/onboarding/terms-pdf` | POST | middleware-session | nei | nei | nei | nei | lav |
 
 ### /api/ops/ (2 ruter)
@@ -1334,8 +1334,8 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/order/bulk-set/route.ts` | `/api/order/bulk-set` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/order/cancel/route.ts` | `/api/order/cancel` | POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/order/bulk-set/route.ts` | `/api/order/bulk-set` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/order/cancel/route.ts` | `/api/order/cancel` | POST | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/order/route.ts` | `/api/order` | GET,POST,DELETE | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/order/set-choice/route.ts` | `/api/order/set-choice` | POST | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/order/set-day/route.ts` | `/api/order/set-day` | POST | middleware-session | nei | nei | nei | nei | lav |
@@ -1346,9 +1346,9 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/orders/[orderId]/cancel/route.ts` | `/api/orders/[orderId]/cancel` | PATCH | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/orders/[orderId]/cancel/route.ts` | `/api/orders/[orderId]/cancel` | PATCH | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/orders/[orderId]/route.ts` | `/api/orders/[orderId]` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/orders/[orderId]/toggle/route.ts` | `/api/orders/[orderId]/toggle` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/orders/[orderId]/toggle/route.ts` | `/api/orders/[orderId]/toggle` | POST | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/orders/cancel/route.ts` | `/api/orders/cancel` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/orders/choice/route.ts` | `/api/orders/choice` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/orders/export/route.ts` | `/api/orders/export` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
@@ -1398,8 +1398,8 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/profile/route.ts` | `/api/profile` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/profile/set-scope/route.ts` | `/api/profile/set-scope` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/profile/route.ts` | `/api/profile` | GET | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/profile/set-scope/route.ts` | `/api/profile/set-scope` | POST | custom-401 | nei | nei | nei | ja | høy |
 
 ### /api/provider/ (20 ruter)
 
@@ -1410,10 +1410,10 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/provider/customers/[companyId]/remove/route.ts` | `/api/provider/customers/[companyId]/remove` | GET,POST | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/provider/customers/[companyId]/restore/route.ts` | `/api/provider/customers/[companyId]/restore` | POST | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/provider/menu-catalog/route.ts` | `/api/provider/menu-catalog` | GET,POST | custom-401 | nei | nei | nei | nei | lav |
-| `app/api/provider/menu-days/route.ts` | `/api/provider/menu-days` | GET,POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/provider/menu-days/route.ts` | `/api/provider/menu-days` | GET,POST | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/provider/menu-days/varmrett/generate/route.ts` | `/api/provider/menu-days/varmrett/generate` | POST | custom-401 | nei | nei | nei | nei | lav |
-| `app/api/provider/menu-days/varmrett/reset/route.ts` | `/api/provider/menu-days/varmrett/reset` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/provider/menu-days/varmrett/route.ts` | `/api/provider/menu-days/varmrett` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/provider/menu-days/varmrett/reset/route.ts` | `/api/provider/menu-days/varmrett/reset` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/provider/menu-days/varmrett/route.ts` | `/api/provider/menu-days/varmrett` | POST | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/provider/menu-days/varmrett/suggestions/route.ts` | `/api/provider/menu-days/varmrett/suggestions` | GET | custom-401 | nei | nei | nei | nei | lav |
 | `app/api/provider/menu-generator/apply-week/route.ts` | `/api/provider/menu-generator/apply-week` | POST | custom-401 | nei | nei | nei | nei | lav |
 | `app/api/provider/menu-generator/week-preview/route.ts` | `/api/provider/menu-generator/week-preview` | GET | custom-401 | nei | nei | nei | nei | lav |
@@ -1430,19 +1430,19 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/public/ai-demo-cta/assign/route.ts` | `/api/public/ai-demo-cta/assign` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
-| `app/api/public/analytics/route.ts` | `/api/public/analytics` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
-| `app/api/public/coverage/check/route.ts` | `/api/public/coverage/check` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/public/ai-demo-cta/assign/route.ts` | `/api/public/ai-demo-cta/assign` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
+| `app/api/public/analytics/route.ts` | `/api/public/analytics` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
+| `app/api/public/coverage/check/route.ts` | `/api/public/coverage/check` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
 | `app/api/public/demo-interest/route.ts` | `/api/public/demo-interest` | POST | offentlig/allowlist | nei | nei | nei | nei | lav |
-| `app/api/public/forms/[id]/route.ts` | `/api/public/forms/[id]` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
-| `app/api/public/forms/[id]/schema/route.ts` | `/api/public/forms/[id]/schema` | GET | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
-| `app/api/public/leads/capture/route.ts` | `/api/public/leads/capture` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/public/forms/[id]/route.ts` | `/api/public/forms/[id]` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
+| `app/api/public/forms/[id]/schema/route.ts` | `/api/public/forms/[id]/schema` | GET | offentlig/allowlist | nei | nei | nei | ja | høy |
+| `app/api/public/leads/capture/route.ts` | `/api/public/leads/capture` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
 | `app/api/public/onboarding/create-admin/route.ts` | `/api/public/onboarding/create-admin` | GET,POST | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/public/onboarding/register/route.ts` | `/api/public/onboarding/register` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
-| `app/api/public/register-company/route.ts` | `/api/public/register-company` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/public/onboarding/register/route.ts` | `/api/public/onboarding/register` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
+| `app/api/public/register-company/route.ts` | `/api/public/register-company` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
 | `app/api/public/register/route.ts` | `/api/public/register` | POST | offentlig/allowlist | nei | nei | nei | nei | lav |
-| `app/api/public/search/route.ts` | `/api/public/search` | GET | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
-| `app/api/public/track-event/route.ts` | `/api/public/track-event` | POST | offentlig/allowlist | nei | nei | nei | ja | hÃ¸y |
+| `app/api/public/search/route.ts` | `/api/public/search` | GET | offentlig/allowlist | nei | nei | nei | ja | høy |
+| `app/api/public/track-event/route.ts` | `/api/public/track-event` | POST | offentlig/allowlist | nei | nei | nei | ja | høy |
 
 ### /api/queue/ (1 ruter)
 
@@ -1490,7 +1490,7 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/scope/options/route.ts` | `/api/scope/options` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/scope/options/route.ts` | `/api/scope/options` | GET | custom-401 | nei | nei | nei | ja | høy |
 
 ### /api/sdr/ (2 ruter)
 
@@ -1521,9 +1521,9 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/social/posts/route.ts` | `/api/social/posts` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/social/posts/save/route.ts` | `/api/social/posts/save` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/social/recommendations/route.ts` | `/api/social/recommendations` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/social/redirect/route.ts` | `/api/social/redirect` | GET | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/social/redirect/route.ts` | `/api/social/redirect` | GET | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/social/run/route.ts` | `/api/social/run` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/social/track/route.ts` | `/api/social/track` | POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/social/track/route.ts` | `/api/social/track` | POST | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/social/unified/generate/route.ts` | `/api/social/unified/generate` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 
 ### /api/something/ (1 ruter)
@@ -1559,23 +1559,23 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/superadmin/agreement-change-requests/[requestId]/approve/route.ts` | `/api/superadmin/agreement-change-requests/[requestId]/approve` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/agreements/[agreementId]/activate/route.ts` | `/api/superadmin/agreements/[agreementId]/activate` | GET,POST,PUT,DELETE | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/agreements/[agreementId]/approve/route.ts` | `/api/superadmin/agreements/[agreementId]/approve` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/superadmin/agreements/[agreementId]/close/route.ts` | `/api/superadmin/agreements/[agreementId]/close` | GET,POST,PUT,DELETE | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/agreements/[agreementId]/close/route.ts` | `/api/superadmin/agreements/[agreementId]/close` | GET,POST,PUT,DELETE | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/superadmin/agreements/[agreementId]/pause-ledger/route.ts` | `/api/superadmin/agreements/[agreementId]/pause-ledger` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/agreements/[agreementId]/pause/route.ts` | `/api/superadmin/agreements/[agreementId]/pause` | GET,POST,PUT,DELETE | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/agreements/[agreementId]/reject/route.ts` | `/api/superadmin/agreements/[agreementId]/reject` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/superadmin/agreements/[agreementId]/resume/route.ts` | `/api/superadmin/agreements/[agreementId]/resume` | GET,POST,PUT,DELETE | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/agreements/[agreementId]/resume/route.ts` | `/api/superadmin/agreements/[agreementId]/resume` | GET,POST,PUT,DELETE | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/superadmin/agreements/list/route.ts` | `/api/superadmin/agreements/list` | GET,POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/agreements/route.ts` | `/api/superadmin/agreements` | GET,POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/ai-config/route.ts` | `/api/superadmin/ai-config` | GET,PATCH | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/superadmin/ai-prompts/route.ts` | `/api/superadmin/ai-prompts` | PATCH | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/superadmin/audit-meta/recent/route.ts` | `/api/superadmin/audit-meta/recent` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/superadmin/audit-write/route.ts` | `/api/superadmin/audit-write` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/audit/[id]/route.ts` | `/api/superadmin/audit/[id]` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/audit/route.ts` | `/api/superadmin/audit` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/audit-write/route.ts` | `/api/superadmin/audit-write` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/audit/[id]/route.ts` | `/api/superadmin/audit/[id]` | GET | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/audit/route.ts` | `/api/superadmin/audit` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/superadmin/autonomy/route.ts` | `/api/superadmin/autonomy` | GET,POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/autonomy/run/route.ts` | `/api/superadmin/autonomy/run` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/superadmin/billing-accounts/route.ts` | `/api/superadmin/billing-accounts` | POST | middleware-session | nei | ja | nei | ja | hÃ¸y |
-| `app/api/superadmin/billing/export/route.ts` | `/api/superadmin/billing/export` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/billing-accounts/route.ts` | `/api/superadmin/billing-accounts` | POST | middleware-session | nei | ja | nei | ja | høy |
+| `app/api/superadmin/billing/export/route.ts` | `/api/superadmin/billing/export` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/superadmin/billing/stripe-charge/route.ts` | `/api/superadmin/billing/stripe-charge` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/break-glass/route.ts` | `/api/superadmin/break-glass` | GET,POST,DELETE | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/cfo/summary/route.ts` | `/api/superadmin/cfo/summary` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
@@ -1621,30 +1621,30 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/superadmin/growth/capital-allocate/route.ts` | `/api/superadmin/growth/capital-allocate` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/investor/metrics/route.ts` | `/api/superadmin/investor/metrics` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/investor/route.ts` | `/api/superadmin/investor` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/superadmin/invoices/csv/route.ts` | `/api/superadmin/invoices/csv` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/invoices/csv/route.ts` | `/api/superadmin/invoices/csv` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/superadmin/invoices/export/route.ts` | `/api/superadmin/invoices/export` | GET | custom-401 | nei | nei | nei | nei | lav |
 | `app/api/superadmin/invoices/exports/retry/route.ts` | `/api/superadmin/invoices/exports/retry` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/invoices/exports/route.ts` | `/api/superadmin/invoices/exports` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/invoices/generate/route.ts` | `/api/superadmin/invoices/generate` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/superadmin/invoices/mapping/bulk/route.ts` | `/api/superadmin/invoices/mapping/bulk` | POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/invoices/mapping/bulk/route.ts` | `/api/superadmin/invoices/mapping/bulk` | POST | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/superadmin/invoices/mapping/route.ts` | `/api/superadmin/invoices/mapping` | GET,POST | middleware-session | nei | nei | nei | nei | lav |
 | `app/api/superadmin/invoices/reconcile/route.ts` | `/api/superadmin/invoices/reconcile` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/invoices/reverse/route.ts` | `/api/superadmin/invoices/reverse` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/superadmin/invoices/runs/[runId]/exports/route.ts` | `/api/superadmin/invoices/runs/[runId]/exports` | GET | middleware-session | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/invoices/runs/[runId]/route.ts` | `/api/superadmin/invoices/runs/[runId]` | GET | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/invoices/runs/[runId]/exports/route.ts` | `/api/superadmin/invoices/runs/[runId]/exports` | GET | middleware-session | nei | nei | nei | ja | høy |
+| `app/api/superadmin/invoices/runs/[runId]/route.ts` | `/api/superadmin/invoices/runs/[runId]` | GET | middleware-session | nei | nei | nei | ja | høy |
 | `app/api/superadmin/invoices/runs/route.ts` | `/api/superadmin/invoices/runs` | GET | custom-401 | nei | nei | nei | nei | lav |
 | `app/api/superadmin/menu-profiles/[providerId]/route.ts` | `/api/superadmin/menu-profiles/[providerId]` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/menu-profiles/route.ts` | `/api/superadmin/menu-profiles` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/menu-publish/route.ts` | `/api/superadmin/menu-publish` | POST | middleware-session | nei | ja | nei | nei | lav |
-| `app/api/superadmin/menus-week/route.ts` | `/api/superadmin/menus-week` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/menus-week/route.ts` | `/api/superadmin/menus-week` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/superadmin/outbox/list/route.ts` | `/api/superadmin/outbox/list` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/outbox/resend/route.ts` | `/api/superadmin/outbox/resend` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/outbox/run/route.ts` | `/api/superadmin/outbox/run` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/superadmin/overview/route.ts` | `/api/superadmin/overview` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/overview/route.ts` | `/api/superadmin/overview` | GET | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/superadmin/production-operative-snapshot/materialize/route.ts` | `/api/superadmin/production-operative-snapshot/materialize` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/production-readiness/route.ts` | `/api/superadmin/production-readiness` | GET | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/profiles/assign/route.ts` | `/api/superadmin/profiles/assign` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
-| `app/api/superadmin/profiles/link-company/route.ts` | `/api/superadmin/profiles/link-company` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/profiles/link-company/route.ts` | `/api/superadmin/profiles/link-company` | POST | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/superadmin/profiles/remove/route.ts` | `/api/superadmin/profiles/remove` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/profiles/update/route.ts` | `/api/superadmin/profiles/update` | POST | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/quality/route.ts` | `/api/superadmin/quality` | GET | middleware-session | nei | ja | nei | nei | lav |
@@ -1666,15 +1666,15 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 | `app/api/superadmin/system/status/route.ts` | `/api/superadmin/system/status` | GET | session+scopeOr401 | ja | ja | nei | ja | lav |
 | `app/api/superadmin/tripletex/outbox/retry/route.ts` | `/api/superadmin/tripletex/outbox/retry` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
 | `app/api/superadmin/tripletex/webhooks/retry/route.ts` | `/api/superadmin/tripletex/webhooks/retry` | POST | session+scopeOr401 | ja | ja | nei | nei | lav |
-| `app/api/superadmin/user-disable/route.ts` | `/api/superadmin/user-disable` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/user-role/route.ts` | `/api/superadmin/user-role` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/users/cleanup/route.ts` | `/api/superadmin/users/cleanup` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/users/delete/route.ts` | `/api/superadmin/users/delete` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/users/disable/route.ts` | `/api/superadmin/users/disable` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/users/enable/route.ts` | `/api/superadmin/users/enable` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/users/route.ts` | `/api/superadmin/users` | GET | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/users/set-company-admin/route.ts` | `/api/superadmin/users/set-company-admin` | POST | middleware-session | nei | nei | nei | ja | hÃ¸y |
-| `app/api/superadmin/users/set-scope/route.ts` | `/api/superadmin/users/set-scope` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/superadmin/user-disable/route.ts` | `/api/superadmin/user-disable` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/user-role/route.ts` | `/api/superadmin/user-role` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/users/cleanup/route.ts` | `/api/superadmin/users/cleanup` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/users/delete/route.ts` | `/api/superadmin/users/delete` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/users/disable/route.ts` | `/api/superadmin/users/disable` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/users/enable/route.ts` | `/api/superadmin/users/enable` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/users/route.ts` | `/api/superadmin/users` | GET | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/superadmin/users/set-company-admin/route.ts` | `/api/superadmin/users/set-company-admin` | POST | middleware-session | nei | nei | nei | ja | høy |
+| `app/api/superadmin/users/set-scope/route.ts` | `/api/superadmin/users/set-scope` | POST | custom-401 | nei | nei | nei | ja | høy |
 
 ### /api/support/ (1 ruter)
 
@@ -1736,17 +1736,17 @@ Request → x-vercel-cron: 1?  → return { mode: "vercel-cron" }  (INGEN secret
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/webhooks/sanity/menu-day/route.ts` | `/api/webhooks/sanity/menu-day` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/webhooks/sanity/menu-day/route.ts` | `/api/webhooks/sanity/menu-day` | POST | custom-401 | nei | nei | nei | ja | høy |
 | `app/api/webhooks/stripe-billing-payments/route.ts` | `/api/webhooks/stripe-billing-payments` | POST | webhook-signatur | nei | nei | nei | nei | lav |
 | `app/api/webhooks/stripe-provider-setup/route.ts` | `/api/webhooks/stripe-provider-setup` | POST | webhook-signatur | nei | nei | nei | nei | lav |
-| `app/api/webhooks/tripletex-provider/[providerId]/route.ts` | `/api/webhooks/tripletex-provider/[providerId]` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
-| `app/api/webhooks/tripletex/route.ts` | `/api/webhooks/tripletex` | POST | custom-401 | nei | nei | nei | ja | hÃ¸y |
+| `app/api/webhooks/tripletex-provider/[providerId]/route.ts` | `/api/webhooks/tripletex-provider/[providerId]` | POST | custom-401 | nei | nei | nei | ja | høy |
+| `app/api/webhooks/tripletex/route.ts` | `/api/webhooks/tripletex` | POST | custom-401 | nei | nei | nei | ja | høy |
 
 ### /api/week/ (1 ruter)
 
 | Fil | URL | Metoder | Auth | scopeOr401 | Rolle | Cron | Service role | Risiko |
 |-----|-----|---------|------|------------|-------|------|--------------|--------|
-| `app/api/week/route.ts` | `/api/week` | GET | middleware-session | nei | nei | nei | ja | hÃ¸y |
+| `app/api/week/route.ts` | `/api/week` | GET | middleware-session | nei | nei | nei | ja | høy |
 
 ### /api/worker/ (1 ruter)
 
