@@ -86,7 +86,11 @@ describeDb("RLS migration parity (golden snapshot v2)", () => {
     });
 
     expect(live.project_ref).toEqual(golden.project_ref);
-    expect(live.postgres_version).toEqual(golden.postgres_version);
+    // Compare the Postgres version number only. The full version() string embeds
+    // the compiler build (gcc x.y.z), which drifts between staging/prod infra
+    // rebuilds without any schema/RLS meaning and made this gate fail on noise.
+    const versionNumber = (s: string) => s.match(/^PostgreSQL \S+/)?.[0] ?? s;
+    expect(versionNumber(live.postgres_version)).toEqual(versionNumber(golden.postgres_version));
     expect(live.policies).toEqual(golden.policies);
     expect(live.private_functions).toEqual(golden.private_functions);
     expect(live.rls_enabled_tables).toEqual(golden.rls_enabled_tables);

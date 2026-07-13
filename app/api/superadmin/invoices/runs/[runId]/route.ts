@@ -28,21 +28,14 @@ async function adminDb(): Promise<any> {
 }
 
 async function requireSuperadmin() {
-  const { supabaseServer } = await import("@/lib/supabase/server");
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return { ok: false as const, status: 401, message: "Ikke innlogget" };
-
-  const role = String(data.user.user_metadata?.role ?? "");
-  if (role !== "superadmin") return { ok: false as const, status: 403, message: "Ingen tilgang" };
-
-  return { ok: true as const, userId: data.user.id };
+  const { requireSuperadminApi } = await import("@/lib/superadmin/auth");
+  return requireSuperadminApi();
 }
 
 export async function GET(_: Request, ctx: { params: { runId: string } }) {
   const rid = makeRid();
   const guard = await requireSuperadmin();
-  if (!guard.ok) return jsonErr(rid, guard.message, guard.status ?? 400, "AUTH");
+  if (guard.ok === false) return jsonErr(rid, guard.message, guard.status ?? 400, "AUTH");
 
   const runId = ctx.params.runId;
   if (!isUuid(runId)) return jsonErr(rid, "Ugyldig runId", 400, "BAD_REQUEST");

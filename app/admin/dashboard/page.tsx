@@ -92,7 +92,14 @@ export default async function CompanyAdminDashboardPage() {
   const user = userData?.user ?? null;
   if (!user) redirect("/login?next=/admin/dashboard");
 
-  const role = String(user.user_metadata?.role ?? "employee");
+  // Role truth: profiles.role (D4 — user_metadata is never an authorization source).
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string | null }>();
+
+  const role = String(prof?.role ?? "").toLowerCase();
   if (role !== "company_admin") redirect("/admin");
 
   // Next 15: headers() is async

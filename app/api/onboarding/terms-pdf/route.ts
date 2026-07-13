@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { jsonErr, makeRid } from "@/lib/http/respond";
+import { rateLimit } from "@/lib/security/rateLimit";
 
 type Body = {
   title?: string;
@@ -15,15 +16,29 @@ function safeStr(v: unknown) {
   return typeof v === "string" ? v.trim() : "";
 }
 
+function clientIp(req: Request) {
+  const xf = req.headers.get("x-forwarded-for");
+  if (xf) return xf.split(",")[0]?.trim() || "unknown";
+  return req.headers.get("x-real-ip") || "unknown";
+}
+
 export async function POST(req: Request) {
   const rid = makeRid();
   try {
+    // Public onboarding endpoint: per-IP rate limit + strict input caps so the
+    // PDF generator cannot be used as an anonymous CPU/content injection target.
+    if (!rateLimit(`onboarding:terms-pdf:${clientIp(req)}`, 10)) {
+      return jsonErr(rid, "For mange forespørsler. Prøv igjen om litt.", 429, "RATE_LIMITED");
+    }
+
     const body = (await req.json().catch(() => null)) as Body | null;
 
-    const title = safeStr(body?.title) || "Vilkår for Lunchportalen";
-    const version = safeStr(body?.version) || "ukjent";
-    const updatedAt = safeStr(body?.updatedAt) || "ukjent";
-    const bullets = Array.isArray(body?.bullets) ? body!.bullets!.filter(Boolean) : [];
+    const title = (safeStr(body?.title) || "Vilkår for Lunchportalen").slice(0, 120);
+    const version = (safeStr(body?.version) || "ukjent").slice(0, 40);
+    const updatedAt = (safeStr(body?.updatedAt) || "ukjent").slice(0, 40);
+    const bullets = (Array.isArray(body?.bullets) ? body!.bullets!.filter(Boolean) : [])
+      .slice(0, 30)
+      .map((b) => String(b).slice(0, 300));
 
     const { PDFDocument, StandardFonts } = await import("pdf-lib");
     const pdf = await PDFDocument.create();

@@ -83,6 +83,15 @@ export async function GET(req: NextRequest) {
     const denyRole = requireRoleOr403(scoped.ctx, "kitchen.companies.read", ["kitchen", "superadmin"]);
     if (denyRole) return denyRole;
 
+    // Tenant law: kitchen is bound to its assigned company/location (fail-closed).
+    // requireRoleOr403 already guarantees both are present for kitchen (SCOPE_NOT_ASSIGNED).
+    const role = String(scoped.ctx.scope.role ?? "").toLowerCase();
+    const tenantCompanyId = role === "kitchen" ? String(scoped.ctx.scope.companyId ?? "").trim() : null;
+    const tenantLocationId = role === "kitchen" ? String(scoped.ctx.scope.locationId ?? "").trim() : null;
+    if (role === "kitchen" && (!tenantCompanyId || !tenantLocationId)) {
+      return jsonErr(rid, "Scope er ikke tilordnet.", 403, "SCOPE_NOT_ASSIGNED");
+    }
+
     const url = new URL(req.url);
     const dateParam = url.searchParams.get("date");
     const date = dateParam && isISODate(dateParam) ? dateParam : osloTodayISODate();
@@ -103,6 +112,8 @@ export async function GET(req: NextRequest) {
       .order("company_id", { ascending: true })
       .limit(limit);
 
+    if (tenantCompanyId) q = q.eq("company_id", tenantCompanyId);
+    if (tenantLocationId) q = q.eq("location_id", tenantLocationId);
     if (cursor) q = q.gt("company_id", cursor);
 
     const { data: companyRows, error: cidsErr } = await q;
@@ -138,12 +149,14 @@ export async function GET(req: NextRequest) {
     (companies ?? []).forEach((c: any) => compMap.set(String(c.id), c));
 
     // 3) Hent orders for disse firmaene for dagen (for totals)
-    const { data: orders, error: oErr } = await supabase
+    let ordersQuery = supabase
       .from("orders")
       .select("id, company_id, location_id")
       .eq("date", date)
       .eq("integrity_status", "ok")
       .in("company_id", companyIds);
+    if (tenantLocationId) ordersQuery = ordersQuery.eq("location_id", tenantLocationId);
+    const { data: orders, error: oErr } = await ordersQuery;
 
     if (oErr) return jsonErr(rid, "Kunne ikke hente ordre.", 500, { code: "orders_failed", detail: oErr.message });
 

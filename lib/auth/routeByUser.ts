@@ -4,7 +4,6 @@
 import "server-only";
 
 import { systemRoleByEmail } from "@/lib/system/emails";
-import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
 import { getScopeServer } from "@/lib/auth/getScopeServer";
 import { homeForRole, homeForUser, type Role } from "@/lib/auth/redirect";
 
@@ -20,8 +19,8 @@ export function destinationForUser(user: { email?: string | null; user_metadata?
   if (systemRole === "kitchen") return { role: "kitchen", path: "/kitchen" };
   if (systemRole === "driver") return { role: "driver", path: "/driver" };
 
-  const role = normalizeRoleDefaultEmployee(user.user_metadata?.role ?? "employee");
-  return { role, path: homeForRole(role) };
+  // D4: user_metadata never decides role — without DB truth, land as employee.
+  return { role: "employee", path: homeForRole("employee") };
 }
 
 /**

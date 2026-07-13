@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-07-02T21:14:22.073Z",
+  "generated_at": "2026-07-13T17:46:46.730Z",
   "project_ref": "hkpokyapzarefrgqzkos",
   "postgres_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
   "policies": [
@@ -600,6 +600,66 @@
     },
     {
       "schema": "public",
+      "table": "billing_audit_log",
+      "name": "billing_audit_log_platform_admin_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_audit_log",
+      "name": "billing_audit_log_platform_admin_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_audit_log",
+      "name": "billing_audit_log_service_role_insert",
+      "command": "INSERT",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": null,
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_payment_attempts",
+      "name": "billing_payment_attempts_platform_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_payment_attempts",
+      "name": "billing_payment_attempts_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "billing_products",
       "name": "billing_products_authenticated_select",
       "command": "SELECT",
@@ -608,6 +668,42 @@
       ],
       "using_expr": "true",
       "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_readiness_events",
+      "name": "billing_readiness_events_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_readiness_events",
+      "name": "billing_readiness_events_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "((provider_id IS NOT NULL) AND lp_billing_can_access_provider(provider_id))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "billing_readiness_events",
+      "name": "billing_readiness_events_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
       "permissive": true
     },
     {
@@ -668,6 +764,114 @@
       ],
       "using_expr": "(is_platform_admin() OR ((scope_company_id IS NOT NULL) AND (scope_location_id IS NULL) AND can_admin_company(scope_company_id)) OR ((scope_location_id IS NOT NULL) AND can_admin_location(scope_location_id)))",
       "check_expr": "(is_platform_admin() OR ((scope_company_id IS NOT NULL) AND (scope_location_id IS NULL) AND can_admin_company(scope_company_id)) OR ((scope_location_id IS NOT NULL) AND can_admin_location(scope_location_id)))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_ledger",
+      "name": "commission_ledger_platform_admin_insert",
+      "command": "INSERT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": null,
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_ledger",
+      "name": "commission_ledger_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "lp_billing_can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_ledger",
+      "name": "commission_ledger_service_role_insert",
+      "command": "INSERT",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": null,
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_periods",
+      "name": "commission_periods_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_periods",
+      "name": "commission_periods_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "lp_billing_can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_periods",
+      "name": "commission_periods_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_rules",
+      "name": "commission_rules_authenticated_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "true",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_rules",
+      "name": "commission_rules_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "commission_rules",
+      "name": "commission_rules_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
       "permissive": true
     },
     {
@@ -1341,6 +1545,42 @@
     },
     {
       "schema": "public",
+      "table": "invoice_deliveries",
+      "name": "invoice_deliveries_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_deliveries",
+      "name": "invoice_deliveries_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "(EXISTS ( SELECT 1\n   FROM provider_commission_invoices pci\n  WHERE ((pci.id = invoice_deliveries.invoice_id) AND lp_billing_can_access_provider(pci.provider_id))))",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "invoice_deliveries",
+      "name": "invoice_deliveries_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "invoice_lines",
       "name": "invoice_lines_manage",
       "command": "ALL",
@@ -1719,6 +1959,42 @@
     },
     {
       "schema": "public",
+      "table": "markets",
+      "name": "markets_authenticated_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "true",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "markets",
+      "name": "markets_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "markets",
+      "name": "markets_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "media_items",
       "name": "media_items_platform_admin_only",
       "command": "ALL",
@@ -1959,6 +2235,30 @@
     },
     {
       "schema": "public",
+      "table": "order_line_commercial_snapshots",
+      "name": "order_line_snapshots_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "lp_billing_can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "order_line_commercial_snapshots",
+      "name": "order_line_snapshots_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "order_status_history",
       "name": "order_status_history_select",
       "command": "SELECT",
@@ -2043,6 +2343,30 @@
     },
     {
       "schema": "public",
+      "table": "organization_billing_profiles",
+      "name": "organization_billing_profiles_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "lp_billing_can_access_provider(organization_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "organization_billing_profiles",
+      "name": "organization_billing_profiles_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "outbox",
       "name": "outbox_delete_none",
       "command": "DELETE",
@@ -2087,6 +2411,30 @@
       ],
       "using_expr": "false",
       "check_expr": "false",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "payment_methods",
+      "name": "payment_methods_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "lp_billing_can_access_provider(organization_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "payment_methods",
+      "name": "payment_methods_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
       "permissive": true
     },
     {
@@ -2375,6 +2723,42 @@
       ],
       "using_expr": "((COALESCE(active, true) = true) AND ((id = auth.uid()) OR is_platform_admin() OR ((company_id IS NOT NULL) AND can_admin_company(company_id))))",
       "check_expr": "((COALESCE(active, true) = true) AND ((id = auth.uid()) OR is_platform_admin() OR ((company_id IS NOT NULL) AND can_admin_company(company_id) AND (lower(COALESCE((role)::text, ''::text)) <> 'superadmin'::text))))",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_commission_invoices",
+      "name": "provider_commission_invoices_platform_admin_all",
+      "command": "ALL",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": "is_platform_admin()",
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_commission_invoices",
+      "name": "provider_commission_invoices_provider_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "lp_billing_can_access_provider(provider_id)",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "provider_commission_invoices",
+      "name": "provider_commission_invoices_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
       "permissive": true
     },
     {
@@ -2907,6 +3291,30 @@
     },
     {
       "schema": "public",
+      "table": "stripe_billing_webhook_events",
+      "name": "stripe_billing_webhook_events_platform_select",
+      "command": "SELECT",
+      "roles": [
+        "authenticated"
+      ],
+      "using_expr": "is_platform_admin()",
+      "check_expr": null,
+      "permissive": true
+    },
+    {
+      "schema": "public",
+      "table": "stripe_billing_webhook_events",
+      "name": "stripe_billing_webhook_events_service_role_all",
+      "command": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using_expr": "true",
+      "check_expr": "true",
+      "permissive": true
+    },
+    {
+      "schema": "public",
       "table": "system_health_snapshots",
       "name": "health_delete_none",
       "command": "DELETE",
@@ -3278,6 +3686,54 @@
       "body_hash": "fdba375b54f641232d2b43dd44a64217"
     },
     {
+      "name": "lp_billing_create_order_line_snapshot_unchecked",
+      "args": "p_order_line_id uuid",
+      "result_type": "order_line_commercial_snapshots",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "020cabdbd1a7d088b8ed41c29c6d21a5"
+    },
+    {
+      "name": "lp_billing_post_delivered_commission_unchecked",
+      "args": "p_order_id uuid, p_actor_user_id uuid, p_reason text",
+      "result_type": "integer",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "4d218e49592972c5fb2e6ab3d789f7ce"
+    },
+    {
+      "name": "lp_billing_provider_missing_requirements",
+      "args": "p_provider_id uuid",
+      "result_type": "text[]",
+      "is_security_definer": true,
+      "volatility": "stable",
+      "body_hash": "c271a753c734b73490927ea8bf83408c"
+    },
+    {
+      "name": "lp_billing_record_ledger_skip_unchecked",
+      "args": "p_provider_id uuid, p_order_id uuid, p_event_type text, p_reason text, p_reference_id text",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "a3291c0759b1fa2418590e980ee1a846"
+    },
+    {
+      "name": "lp_billing_record_readiness_event_unchecked",
+      "args": "p_order_line_id uuid, p_event_type text, p_error text",
+      "result_type": "void",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "cc6d73955c8af96cf8e02083a080c98a"
+    },
+    {
+      "name": "lp_billing_snapshot_order_unchecked",
+      "args": "p_order_id uuid",
+      "result_type": "integer",
+      "is_security_definer": true,
+      "volatility": "volatile",
+      "body_hash": "3e5b1f3e1842f99c64f9621a27cd7a6d"
+    },
+    {
       "name": "lp_enqueue_agreement_invoice_outbox",
       "args": "p_invoice_id uuid, p_provider_id uuid, p_agreement_id uuid, p_request_rid text",
       "result_type": "text",
@@ -3331,7 +3787,7 @@
       "result_type": "jsonb",
       "is_security_definer": true,
       "volatility": "volatile",
-      "body_hash": "2c6af16ff22f95c6c1028de92fa14ec9"
+      "body_hash": "82de673e9777d085c09be11262075554"
     },
     {
       "name": "lp_orders_cancel_active",
@@ -3773,8 +4229,23 @@
     },
     {
       "schema": "public",
+      "name": "billing_audit_log",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
+      "name": "billing_payment_attempts",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
       "name": "billing_products",
       "policy_count": 1
+    },
+    {
+      "schema": "public",
+      "name": "billing_readiness_events",
+      "policy_count": 3
     },
     {
       "schema": "public",
@@ -3785,6 +4256,21 @@
       "schema": "public",
       "name": "closed_dates",
       "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "commission_ledger",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
+      "name": "commission_periods",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
+      "name": "commission_rules",
+      "policy_count": 3
     },
     {
       "schema": "public",
@@ -3903,6 +4389,11 @@
     },
     {
       "schema": "public",
+      "name": "invoice_deliveries",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
       "name": "invoice_lines",
       "policy_count": 4
     },
@@ -3968,6 +4459,11 @@
     },
     {
       "schema": "public",
+      "name": "markets",
+      "policy_count": 3
+    },
+    {
+      "schema": "public",
       "name": "media_items",
       "policy_count": 1
     },
@@ -4013,6 +4509,11 @@
     },
     {
       "schema": "public",
+      "name": "order_line_commercial_snapshots",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
       "name": "order_status_history",
       "policy_count": 1
     },
@@ -4023,6 +4524,11 @@
     },
     {
       "schema": "public",
+      "name": "organization_billing_profiles",
+      "policy_count": 2
+    },
+    {
+      "schema": "public",
       "name": "organizations",
       "policy_count": 0
     },
@@ -4030,6 +4536,11 @@
       "schema": "public",
       "name": "outbox",
       "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "payment_methods",
+      "policy_count": 2
     },
     {
       "schema": "public",
@@ -4085,6 +4596,11 @@
       "schema": "public",
       "name": "profiles",
       "policy_count": 6
+    },
+    {
+      "schema": "public",
+      "name": "provider_commission_invoices",
+      "policy_count": 3
     },
     {
       "schema": "public",
@@ -4165,6 +4681,11 @@
       "schema": "public",
       "name": "standing_orders",
       "policy_count": 4
+    },
+    {
+      "schema": "public",
+      "name": "stripe_billing_webhook_events",
+      "policy_count": 2
     },
     {
       "schema": "public",

@@ -19,15 +19,6 @@ function roleByEmail(email: string | null | undefined): Role | null {
   return systemRoleByEmail(email);
 }
 
-function roleFromMetadata(user: any): Role {
-  const raw = String(user?.user_metadata?.role ?? "employee").toLowerCase();
-  if (raw === "company_admin") return "company_admin";
-  if (raw === "superadmin") return "superadmin";
-  if (raw === "kitchen") return "kitchen";
-  if (raw === "driver") return "driver";
-  return "employee";
-}
-
 function computeRole(user: any, profileRole?: any): Role {
   const byEmail = roleByEmail(user?.email);
   if (byEmail) return byEmail;
@@ -39,7 +30,9 @@ function computeRole(user: any, profileRole?: any): Role {
   if (pr === "driver") return "driver";
   if (pr === "employee") return "employee";
 
-  return roleFromMetadata(user);
+  // D4: user_metadata is never an authorization source — missing profile role
+  // degrades to employee (fail-closed), never upgrades.
+  return "employee";
 }
 
 export default async function AdminMenusPage() {

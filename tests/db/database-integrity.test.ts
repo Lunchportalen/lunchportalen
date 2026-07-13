@@ -135,8 +135,13 @@ describe("database integrity", () => {
 
         const { data, error } = await anon.from("orders").select("id").limit(1);
 
-        expect(error).toBeNull();
-        expect(Array.isArray(data) ? data.length : 0).toBe(0);
+        // Post anon-grant-lockdown (20260818): denial is a 42501 grant error.
+        // Pre-lockdown behavior (RLS-only) was an empty result. Both are deny.
+        if (error) {
+          expect(error.code).toBe("42501");
+        } else {
+          expect(Array.isArray(data) ? data.length : 0).toBe(0);
+        }
       },
     );
 
@@ -152,8 +157,12 @@ describe("database integrity", () => {
 
         const { data, error } = await anon.from("companies").select("id").limit(1);
 
-        expect(error).toBeNull();
-        expect(Array.isArray(data) ? data.length : 0).toBe(0);
+        // Post anon-grant-lockdown (20260818): denial is a 42501 grant error.
+        if (error) {
+          expect(error.code).toBe("42501");
+        } else {
+          expect(Array.isArray(data) ? data.length : 0).toBe(0);
+        }
       },
     );
   });

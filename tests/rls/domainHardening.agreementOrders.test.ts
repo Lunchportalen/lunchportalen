@@ -4,8 +4,75 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import crypto from "node:crypto";
 import { buildRlsFixtures, type Fixtures } from "../_helpers/rlsFixtures";
+import { fixturePgQuery } from "../_helpers/fixturePg";
 
 let fx: Fixtures;
+
+/** Global tri-category product ids used by smoke/integration fixtures (company_id null). */
+const GLOBAL_PAASMURT_PRODUCT_ID = "c1111111-1111-4111-8111-000000000201";
+
+/**
+ * Dedicated RLS fixture provider WITHOUT organization_billing_profiles row.
+ * The billing snapshot trigger must skip fixture orders — Melhus (the default
+ * provider) has a staging billing profile, and snapshots are append-only with
+ * ON DELETE RESTRICT, which would permanently block order re-SET/CANCEL and
+ * fixture cleanup (see release-train security phase report).
+ */
+const RLS_FIXTURE_PROVIDER_ID = "33333333-3333-4333-8333-333333333333";
+
+async function ensureBillingFreeFixtureProvider() {
+  await fixturePgQuery(
+    `insert into public.providers (id, name, slug, status, contact_email, created_at, updated_at)
+     values ($1::uuid, 'RLS Fixture Provider', 'rls-fixture-provider', 'ACTIVE', 'rls-fixture@test.lunchportalen.no', now(), now())
+     on conflict (id) do nothing`,
+    [RLS_FIXTURE_PROVIDER_ID],
+  );
+  // Fail-closed: the whole point is that this provider has NO billing profile.
+  await fixturePgQuery(
+    `do $$ begin
+       if exists (select 1 from public.organization_billing_profiles where organization_id = '${RLS_FIXTURE_PROVIDER_ID}') then
+         raise exception 'RLS fixture provider must not have a billing profile';
+       end if;
+     end $$`,
+    [],
+  );
+}
+
+/**
+ * lp_order_set (current contract) resolves p_choice_key against the published
+ * menu (MSD + MSDI). Seed a published menu day with the global 'paasmurt'
+ * product for the fixture company/location/date.
+ */
+async function seedMenuForOrderDate(companyId: string, locationId: string, date: string) {
+  await ensureBillingFreeFixtureProvider();
+  await fixturePgQuery(
+    `insert into public.products (id, company_id, sku, name, base_price_cents_ex_vat, created_at, updated_at)
+     values ($1::uuid, null, 'paasmurt', 'Påsmurt', 9000, now(), now())
+     on conflict (id) do update set sku = excluded.sku, updated_at = now()`,
+    [GLOBAL_PAASMURT_PRODUCT_ID],
+  );
+  const msdId = crypto.randomUUID();
+  await fixturePgQuery(
+    `insert into public.menu_service_days (id, company_id, location_id, service_date, state, provider_id, published_at, created_at, updated_at)
+     values ($1::uuid, $2::uuid, $3::uuid, $4::date, 'published', $5::uuid, now(), now(), now())
+     on conflict (location_id, service_date) do nothing`,
+    [msdId, companyId, locationId, date, RLS_FIXTURE_PROVIDER_ID],
+  );
+  await fixturePgQuery(
+    `insert into public.menu_service_day_items (
+       menu_service_day_id, product_id, product_name_snapshot, unit_name_snapshot,
+       offered_price_cents_ex_vat, vat_rate_snapshot, quantity, sort_order, is_optional, created_at, updated_at
+     )
+     select msd.id, $1::uuid, 'Påsmurt', 'porsjon', 9000, 0.15, 1, 10, false, now(), now()
+     from public.menu_service_days msd
+     where msd.location_id = $2::uuid and msd.service_date = $3::date
+       and not exists (
+         select 1 from public.menu_service_day_items x
+         where x.menu_service_day_id = msd.id and x.product_id = $1::uuid
+       )`,
+    [GLOBAL_PAASMURT_PRODUCT_ID, locationId, date],
+  );
+}
 
 function isoFrom(offsetDays: number) {
   const d = new Date();
@@ -16,44 +83,39 @@ function isoFrom(offsetDays: number) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/**
+ * lp_agreement_create_pending was deprecated with the manual-draft flow (API
+ * returns 410; the RPC is removed from staging AND prod). Agreement invariants
+ * now live in DB constraints:
+ *   - agreements_company_location_fk  (location must belong to company)
+ *   - agreements_no_open_overlap      (one open agreement per location)
+ * Fixture agreements are therefore created directly (service role), matching
+ * the runtime write-path used by lp_company_register / approval RPCs.
+ */
 async function ensureActiveAgreementForCompany(
   admin: any,
-  args: { companyId: string; locationId: string; deliveryDays: string[] }
+  args: { companyId: string; locationId: string; deliveryDays: string[]; status?: string; startsAt?: string }
 ) {
-  const today = isoFrom(1); // ensure starts_at is in (near) future but after cutoff logic
-
-  const { data, error } = await admin.rpc("lp_agreement_create_pending", {
-    p_company_id: args.companyId,
-    p_location_id: args.locationId,
-    p_tier: "BASIS",
-    p_delivery_days: args.deliveryDays,
-    p_slot_start: "11:00",
-    p_slot_end: "13:00",
-    p_starts_at: today,
-    p_binding_months: 12,
-    p_notice_months: 3,
-    p_price_per_employee: 100,
-  });
+  await ensureBillingFreeFixtureProvider();
+  const id = crypto.randomUUID();
+  const { error } = await admin.from("agreements").insert({
+    id,
+    company_id: args.companyId,
+    location_id: args.locationId,
+    provider_id: RLS_FIXTURE_PROVIDER_ID,
+    tier: "BASIS",
+    status: args.status ?? "ACTIVE",
+    delivery_days: args.deliveryDays,
+    slot_start: "11:00",
+    slot_end: "13:00",
+    starts_at: args.startsAt ?? isoFrom(1),
+  } as any);
 
   if (error) {
-    throw new Error(`lp_agreement_create_pending failed: ${error.message}`);
+    throw new Error(`agreements fixture insert failed: ${error.message}`);
   }
 
-  const row = Array.isArray(data) ? data[0] : data;
-  const agreementId = String(row?.agreement_id ?? row?.id ?? "");
-  if (!agreementId) {
-    throw new Error("lp_agreement_create_pending returned no agreement_id");
-  }
-
-  const approve = await admin.rpc("lp_agreement_approve_active", {
-    p_agreement_id: agreementId,
-    p_actor_user_id: null,
-  });
-  if (approve.error) {
-    throw new Error(`lp_agreement_approve_active failed: ${approve.error.message}`);
-  }
-
-  return agreementId;
+  return id;
 }
 
 beforeEach(async () => {
@@ -65,25 +127,25 @@ afterEach(async () => {
 });
 
 describe("domain hardening – agreements + orders", () => {
-  test("invalid company/location relation is rejected by lp_agreement_create_pending", async () => {
-    const { admin, companyA, companyB, locB } = fx;
+  test("invalid company/location relation is rejected (cross-tenant location)", async () => {
+    const { admin, companyA, locB } = fx;
 
-    const { error } = await admin.rpc("lp_agreement_create_pending", {
-      p_company_id: companyA.id,
-      // location from another company should fail with LOCATION_INVALID
-      p_location_id: locB.id,
-      p_tier: "BASIS",
-      p_delivery_days: ["mon"],
-      p_slot_start: "11:00",
-      p_slot_end: "13:00",
-      p_starts_at: isoFrom(1),
-      p_binding_months: 12,
-      p_notice_months: 3,
-      p_price_per_employee: 100,
-    });
+    // location from another company must fail on agreements_company_location_fk
+    const { error } = await admin.from("agreements").insert({
+      id: crypto.randomUUID(),
+      company_id: companyA.id,
+      location_id: locB.id,
+      provider_id: "11111111-1111-1111-1111-111111111111",
+      tier: "BASIS",
+      status: "PENDING",
+      delivery_days: ["mon"],
+      slot_start: "11:00",
+      slot_end: "13:00",
+      starts_at: isoFrom(1),
+    } as any);
 
     expect(error).toBeTruthy();
-    expect(String(error?.message ?? "").toUpperCase()).toContain("LOCATION_INVALID");
+    expect(String(error?.message ?? "")).toMatch(/agreements_company_location_fk|foreign key/i);
   });
 
   test("agreements.delivery_days DB constraint rejects invalid values", async () => {
@@ -194,8 +256,8 @@ describe("domain hardening – agreements + orders", () => {
     expect(String(error?.message ?? "").toUpperCase()).toContain("OUTSIDE_DELIVERY_DAYS");
   });
 
-  test("lp_agreement_approve_active prevents multiple ACTIVE agreements per company", async () => {
-    const { admin, companyA, locA, superadmin } = fx;
+  test("DB exclusion constraint prevents multiple open agreements per location", async () => {
+    const { admin, companyA, locA } = fx;
 
     // First agreement: ACTIVE
     const ag1 = await ensureActiveAgreementForCompany(admin, {
@@ -205,31 +267,25 @@ describe("domain hardening – agreements + orders", () => {
     });
     expect(ag1).toBeTruthy();
 
-    // Second agreement: PENDING for same company/location
-    const { data: data2, error: err2 } = await admin.rpc("lp_agreement_create_pending", {
-      p_company_id: companyA.id,
-      p_location_id: locA.id,
-      p_tier: "BASIS",
-      p_delivery_days: ["tue"],
-      p_slot_start: "11:00",
-      p_slot_end: "13:00",
-      p_starts_at: isoFrom(2),
-      p_binding_months: 12,
-      p_notice_months: 3,
-      p_price_per_employee: 100,
-    });
-    expect(err2).toBeNull();
-    const row2 = Array.isArray(data2) ? data2[0] : data2;
-    const ag2 = String(row2?.agreement_id ?? row2?.id ?? "");
-    expect(ag2).toBeTruthy();
-
-    // Approving the second should fail with ACTIVE_AGREEMENT_EXISTS
-    const approve2 = await admin.rpc("lp_agreement_approve_active", {
-      p_agreement_id: ag2,
-      p_actor_user_id: superadmin.user_id,
-    });
-    expect(approve2.error).toBeTruthy();
-    expect(String(approve2.error?.message ?? "").toUpperCase()).toContain("ACTIVE_AGREEMENT_EXISTS");
+    // Second open agreement for the same location/date window must be rejected
+    // by agreements_no_open_overlap (the DB-level replacement for the retired
+    // ACTIVE_AGREEMENT_EXISTS RPC check).
+    let secondError: unknown = null;
+    try {
+      await ensureActiveAgreementForCompany(admin, {
+        companyId: companyA.id,
+        locationId: locA.id,
+        deliveryDays: ["tue"],
+        status: "PENDING",
+        startsAt: isoFrom(2),
+      });
+    } catch (e) {
+      secondError = e;
+    }
+    expect(secondError).toBeTruthy();
+    expect(String((secondError as Error)?.message ?? "")).toMatch(
+      /agreements_no_(open|active)_overlap|exclusion constraint/i,
+    );
   });
 
   test("duplicate orders for same user/date/slot collapse to a single row", async () => {
@@ -243,12 +299,16 @@ describe("domain hardening – agreements + orders", () => {
     });
 
     const orderDate = isoFrom(2);
+    await seedMenuForOrderDate(companyA.id, locA.id, orderDate);
     const sb = supabaseAs(employeeA.accessToken);
 
-    // Multiple writes for the same logical order
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "first", p_slot: "default" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "second", p_slot: "default" });
+    // Multiple writes for the same logical order (current lp_order_set contract)
+    const s1 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default", p_choice_key: "paasmurt", p_item_key: "default" });
+    expect(s1.error, `first SET failed: ${s1.error?.message}`).toBeNull();
+    const s2 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "first", p_slot: "default", p_choice_key: "paasmurt", p_item_key: "default" });
+    expect(s2.error, `second SET failed: ${s2.error?.message}`).toBeNull();
+    const s3 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: "second", p_slot: "default", p_choice_key: "paasmurt", p_item_key: "default" });
+    expect(s3.error, `third SET failed: ${s3.error?.message}`).toBeNull();
 
     const check = await admin
       .from("orders")
@@ -277,14 +337,18 @@ describe("domain hardening – agreements + orders", () => {
     });
 
     const orderDate = isoFrom(2);
+    await seedMenuForOrderDate(companyA.id, locA.id, orderDate);
     const sb = supabaseAs(employeeA.accessToken);
 
     // Place order once
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
+    const s1 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default", p_choice_key: "paasmurt", p_item_key: "default" });
+    expect(s1.error, `SET failed: ${s1.error?.message}`).toBeNull();
 
     // Cancel twice
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default" });
+    const c1 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default", p_choice_key: null, p_item_key: "default" });
+    expect(c1.error, `first CANCEL failed: ${c1.error?.message}`).toBeNull();
+    const c2 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default", p_choice_key: null, p_item_key: "default" });
+    expect(c2.error, `second CANCEL failed: ${c2.error?.message}`).toBeNull();
 
     const check = await admin
       .from("orders")
@@ -313,12 +377,16 @@ describe("domain hardening – agreements + orders", () => {
     });
 
     const orderDate = isoFrom(2);
+    await seedMenuForOrderDate(companyA.id, locA.id, orderDate);
     const sb = supabaseAs(employeeA.accessToken);
 
     // Set -> Cancel -> Set again
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default" });
-    await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default" });
+    const s1 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default", p_choice_key: "paasmurt", p_item_key: "default" });
+    expect(s1.error, `first SET failed: ${s1.error?.message}`).toBeNull();
+    const c1 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "CANCEL", p_note: null, p_slot: "default", p_choice_key: null, p_item_key: "default" });
+    expect(c1.error, `CANCEL failed: ${c1.error?.message}`).toBeNull();
+    const s2 = await sb.rpc("lp_order_set", { p_date: orderDate, p_action: "SET", p_note: null, p_slot: "default", p_choice_key: "paasmurt", p_item_key: "default" });
+    expect(s2.error, `second SET failed: ${s2.error?.message}`).toBeNull();
 
     const check = await admin
       .from("orders")
@@ -331,8 +399,14 @@ describe("domain hardening – agreements + orders", () => {
 
     expect(check.error).toBeNull();
     const rows = Array.isArray(check.data) ? check.data : [];
-    expect(rows.length).toBe(1);
-    expect(String(rows[0].status ?? "").toUpperCase()).toBe("ACTIVE");
+    // Canonical lp_order_set contract (proven in production): CANCEL keeps the
+    // CANCELLED row as immutable history; re-SET creates a NEW order. Exactly
+    // ONE ACTIVE order may exist per user/date/slot — that is the determinism law.
+    const active = rows.filter((r) => String(r.status ?? "").toUpperCase() === "ACTIVE");
+    const cancelled = rows.filter((r) => String(r.status ?? "").toUpperCase().includes("CANCEL"));
+    expect(active.length).toBe(1);
+    expect(cancelled.length).toBe(1);
+    expect(rows.length).toBe(active.length + cancelled.length);
   });
 });
 

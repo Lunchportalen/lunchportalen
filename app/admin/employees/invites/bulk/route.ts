@@ -55,9 +55,9 @@ async function requireCompanyAdmin() {
   if (perr) throw Object.assign(new Error("db_error"), { code: "db_error", detail: perr });
   if (profile?.disabled_at) throw Object.assign(new Error("account_disabled"), { code: "account_disabled" });
 
+  // D4: profiles.role is the only role truth — user_metadata is never an authorization source.
   const roleDb = String(profile?.role ?? "").trim().toLowerCase();
-  const roleMeta = String(user.user_metadata?.role ?? "").trim().toLowerCase();
-  const role = (roleDb || roleMeta || "employee") as Role;
+  const role = (roleDb || "employee") as Role;
   if (role !== "company_admin") throw Object.assign(new Error("forbidden"), { code: "forbidden" });
 
   const companyId = profile?.company_id ? String(profile.company_id) : "";
