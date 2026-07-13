@@ -1,4 +1,9 @@
 // app/api/superadmin/agreements/[agreementId]/resume/route.ts
+//
+// Fase 5: ledger-avtaler (public.agreements) gjenopptas via den kanoniske
+// state-machine-RPC-en lp_agreement_resume (SUSPENDED → ACTIVE).
+// Legacy company_agreements-atferden er bevart uendret som fallback når
+// id-en ikke finnes i ledger (ingen regresjon).
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +40,38 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     const admin = supabaseAdmin();
 
+    // Fase 5: ledger-avtale? → kanonisk state machine (SUSPENDED → ACTIVE).
+    const ledger = await admin.from("agreements").select("id, status").eq("id", agreementId).maybeSingle();
+    if (ledger.error) {
+      return jsonErr(rid, "Kunne ikke lese avtale.", 500, { code: "READ_FAILED", detail: ledger.error });
+    }
+    if (ledger.data?.id) {
+      const { data, error } = await (admin as any).rpc("lp_agreement_resume", {
+        p_agreement_id: agreementId,
+        p_actor_user_id: scope.user_id ?? null,
+      });
+      if (error) {
+        const m = String(error.message ?? "").toUpperCase();
+        if (m.includes("AGREEMENT_NOT_SUSPENDED")) {
+          return jsonErr(rid, "Ugyldig overgang. Kan bare gjenoppta SUSPENDED-avtaler.", 409, {
+            code: "INVALID_TRANSITION",
+            detail: { from: String((ledger.data as any).status ?? ""), to: "ACTIVE" },
+          });
+        }
+        return jsonErr(rid, "Kunne ikke gjenoppta avtalen.", 500, "AGREEMENT_RESUME_FAILED");
+      }
+      return jsonOk(
+        rid,
+        {
+          agreement: { id: agreementId, status: String((data as any)?.status ?? "ACTIVE") },
+          idempotent: Boolean((data as any)?.idempotent),
+          ledger: true,
+        },
+        200,
+      );
+    }
+
+    // Legacy company_agreements-flyt (uendret).
     // Before snapshot (for audit + idempotency)
     const before = await admin
       .from("company_agreements")

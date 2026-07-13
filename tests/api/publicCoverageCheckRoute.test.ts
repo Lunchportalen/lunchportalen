@@ -102,15 +102,20 @@ describe("POST /api/public/coverage/check", () => {
     expect(uiWouldTreatAsCovered).toBe(false);
   });
 
-  test("no write-path RPCs are called — kun match-RPC for lesing", async () => {
+  test("no write-path RPCs are called — kun match-RPC-er for lesing", async () => {
     mockServiceAreaCount(1);
     rpcMock.mockResolvedValue({ data: "prov-1", error: null });
 
     const { POST } = await import("@/app/api/public/coverage/check/route");
     await POST(postReq({ postal_code: "0150", city: "Oslo" }));
 
-    expect(rpcMock).toHaveBeenCalledTimes(1);
-    expect(rpcMock.mock.calls[0]?.[0]).toBe("lp_match_provider_by_postal_code");
+    // Fase 5: ved dekning kalles også lp_match_providers_by_postal_code (flertall)
+    // for kontrollert valg — begge er STABLE/read-only match-RPC-er.
+    const allowed = new Set(["lp_match_provider_by_postal_code", "lp_match_providers_by_postal_code"]);
+    expect(rpcMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+    for (const c of rpcMock.mock.calls) {
+      expect(allowed.has(String(c[0]))).toBe(true);
+    }
     expect(rpcMock.mock.calls.some((c) => String(c[0]).includes("register"))).toBe(false);
   });
 

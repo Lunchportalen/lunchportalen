@@ -5,7 +5,7 @@
     "app/(backoffice)/backoffice/content/_components/EditorGtmDashboardPanel.tsx:159:NOK",
     "app/(backoffice)/backoffice/content/_components/EditorGtmDashboardPanel.tsx:175:NOK",
     "app/(backoffice)/backoffice/content/_components/EditorGtmDashboardPanel.tsx:420:NOK",
-    "app/admin/agreement/page.tsx:204:EHF",
+    "app/admin/agreement/page.tsx:206:EHF",
     "app/admin/control-tower/OperationsTowerClient.tsx:466:NOK",
     "app/admin/control-tower/OperationsTowerClient.tsx:527:NOK",
     "app/admin/control-tower/OperationsTowerClient.tsx:561:NOK",

@@ -190,11 +190,13 @@ function AgreementBody({
   data,
   providerName,
   ehfEnabled,
+  cutoffLabel,
 }: {
   ctx: AdminContextOk;
   data: AgreementPageData;
   providerName: string | null;
   ehfEnabled: boolean;
+  cutoffLabel: string;
 }) {
   const status = statusBadge(data.status);
   const note = statusNote(data.status);
@@ -215,7 +217,9 @@ function AgreementBody({
               <Badge variant={status.variant}>{status.label}</Badge>
             </div>
           </div>
-          <div className="text-xs text-[rgb(var(--lp-muted))]">Cut-off kl. 08:00 (Oslo)</div>
+          {/* Fase 5: bestillingsfristen eies av leverandør/marked og vises kun
+              (ingen skrivevei for firma — styres av provider-innstillinger). */}
+          <div className="text-xs text-[rgb(var(--lp-muted))]">{cutoffLabel}</div>
         </div>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <AdminCompanySelect companies={data.companies} selectedId={data.company.id} />
@@ -359,6 +363,24 @@ function AgreementBody({
   );
 }
 
+/**
+ * Fase 5: cutoff-synlighet. Bestillingsfristen eies av leverandør/marked
+ * (lp_company_cutoff_context) — firma kan aldri overstyre den herfra.
+ */
+async function loadCutoffLabel(companyId: string): Promise<string> {
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase/admin");
+    const admin = supabaseAdmin();
+    const { data } = await (admin as any).rpc("lp_company_cutoff_context", { p_company_id: companyId });
+    const row = Array.isArray(data) ? data[0] : data;
+    const cutoff = String(row?.cutoff_at ?? "08:00:00").slice(0, 5);
+    const tz = String(row?.tz ?? "Europe/Oslo");
+    return `Bestillingsfrist kl. ${cutoff} (${tz}) — styres av leverandøren`;
+  } catch {
+    return "Bestillingsfrist styres av leverandøren";
+  }
+}
+
 function blockedTitle(ctx: AdminContextBlocked) {
   if (ctx.blocked === "ACCOUNT_DISABLED") return "Konto er deaktivert";
   if (ctx.blocked === "MISSING_COMPANY_ID") return "Mangler firmatilknytning";
@@ -416,6 +438,7 @@ export default async function Page() {
 
   const result = await fetchAgreementPageDataForAdmin(ctx.companyId);
   const companyMeta = await loadDashboardCompanyMeta(ctx.companyId);
+  const cutoffLabel = await loadCutoffLabel(ctx.companyId);
 
   return (
     <AdminPageShell
@@ -432,6 +455,7 @@ export default async function Page() {
             data={result.data}
             providerName={companyMeta.providerName}
             ehfEnabled={companyMeta.ehfEnabled}
+            cutoffLabel={cutoffLabel}
           />
         )}
       </Suspense>

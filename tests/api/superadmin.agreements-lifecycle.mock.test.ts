@@ -111,6 +111,11 @@ describe("superadmin agreements lifecycle API contract (mocked)", () => {
   });
 
   test("approve returns ok:true and queues invite/outbox side effects", async () => {
+    // Fase 5: ruten materialiserer registreringsplanen FØR aktivering.
+    rpcMock.mockResolvedValueOnce({
+      data: { ok: true, materialized: true },
+      error: null,
+    });
     rpcMock.mockResolvedValueOnce({
       data: { company_id: "company_1", contact_email: "admin@example.no", contact_name: "Ada" },
       error: null,

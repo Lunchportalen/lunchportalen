@@ -49,6 +49,19 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
     const actorUserId = safeStr(g.ctx.scope.userId) || null;
     const admin = supabaseAdmin();
+
+    // Fase 5: materialize registration plan (weekday tiers, delivery window,
+    // binding/notice) onto the agreement BEFORE activation. Fail-closed on DB
+    // error; registrations without plan data are skipped (materialized:false).
+    const materialize = await (admin as any).rpc("lp_agreement_materialize_plan", {
+      p_agreement_id: agreementId,
+    });
+    if (materialize.error) {
+      const mMsg = safeStr(materialize.error.message).toUpperCase();
+      if (mMsg.includes("AGREEMENT_NOT_FOUND")) return jsonErr(rid, "Fant ikke avtale.", 404, "AGREEMENT_NOT_FOUND");
+      return jsonErr(rid, "Kunne ikke materialisere avtaleplanen.", 500, "AGREEMENT_PLAN_MATERIALIZE_FAILED");
+    }
+
     const { data, error } = await admin.rpc("lp_agreement_approve_active", {
       p_agreement_id: agreementId,
       p_actor_user_id: actorUserId,
@@ -133,7 +146,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       });
     }
 
-    return jsonOk(rid, { companyId, agreementId }, 200);
+    const planMaterialized = Boolean((materialize.data as { materialized?: boolean } | null)?.materialized);
+    return jsonOk(rid, { companyId, agreementId, planMaterialized }, 200);
   } catch {
     return jsonErr(rid, "Kunne ikke godkjenne avtalen.", 500, "AGREEMENT_APPROVE_UNEXPECTED");
   }
