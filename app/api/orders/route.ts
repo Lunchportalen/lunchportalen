@@ -613,6 +613,25 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
       slot: tableSlot,
     });
 
+    // FASE 6: best-effort post-write side effects (audit, employee confirmation,
+    // provider cancel notification, commission-basis correction). Never blocks
+    // and never changes lp_order_set semantics.
+    try {
+      const { runOrderWriteSideEffects } = await import("@/lib/orders/orderWriteSideEffects");
+      await runOrderWriteSideEffects({
+        rid,
+        action,
+        orderId,
+        date: savedDate,
+        userId: safeStr(g.ctx.scope.userId) || null,
+        userEmail: safeStr(g.ctx.scope.email) || null,
+        companyId: companyIdFromCtx(g.ctx),
+        locationId: safeStr(g.ctx.scope.locationId) || null,
+      });
+    } catch {
+      /* side effects must never block the order response */
+    }
+
     const successTs = new Date().toISOString();
     const writtenStatus = orderWriteStatusFromDb(savedStatus);
     if (idemKey !== "" && idemHash) {

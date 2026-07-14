@@ -20,6 +20,7 @@ import {
   weekdayKeyFromDateISO,
 } from "@/lib/week/orderPatternsClient";
 import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCard";
+import WeekBulkOrderCard from "@/components/week/WeekBulkOrderCard";
 import WeekMenuNotificationToggle from "@/components/week/WeekMenuNotificationToggle";
 import { ALLERGEN_DISPLAY_LABELS, displayAllergens } from "@/lib/cms/menuDayContract";
 import { buildOrderedMealDisplayLine } from "@/lib/employee/orderedMealDisplay";
@@ -2365,6 +2366,32 @@ export default function EmployeeWeekClient({
           );
         })}
       </nav>
+
+      {/* FASE 6: ukesbestilling via kanonisk bulk-endepunkt (lp_order_set per dag). */}
+      {!readOnlyPreview && canAct && activeDay ? (
+        <WeekBulkOrderCard
+          days={sortedDays
+            .filter(
+              (d) =>
+                startOfWeekISO(d.date) === startOfWeekISO(activeDay.date) &&
+                d.orderStatus !== "ACTIVE" &&
+                canOrderDay(d, canAct, false),
+            )
+            .map((d) => ({
+              date: d.date,
+              label: `${(formatWeekdayNO(d.date) || d.weekday).slice(0, 3)}. ${formatDateNO(d.date)}`,
+              orderable: true,
+              categories: d.categories
+                .filter((c) => c.available)
+                .map((c) => ({ key: c.key, label: c.label, itemKeys: c.items.map((it) => it.key) })),
+            }))}
+          disabled={globalBusy}
+          onCompleted={async () => {
+            await loadWindow({ silent: true });
+            showSuccessToast("Ukesbestilling registrert ✔");
+          }}
+        />
+      ) : null}
 
       {activeDay ? (
         <section className="mb-7">
