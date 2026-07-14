@@ -12,7 +12,8 @@
  *   4. Grants: anon has ZERO privileges on billing tables
  *   5. Auth hook: custom_access_token_hook + lp_org_is_archived (archived-org guard)
  *   6. Cutoff: lp_company_cutoff_context wired into lp_order_set + tg_orders_cutoff_0800
- *   7. Markets: 21 active rows with complete config (VAT, cutoff, invoice language, stripe status)
+ *   7. Markets: 21 active rows with complete config (VAT, cutoff, invoice language)
+ *      NOTE: Stripe status is intentionally NOT part of launch readiness — settlement is invoice-only (Phase 9).
  *   8. SECURITY DEFINER hygiene: no public SECDEF function without pinned search_path (report)
  *
  * Never mutates (session forced read-only). Fails closed on any mismatch.
@@ -197,7 +198,7 @@ try {
   // 7) Markets completeness
   const { rows: markets } = await client.query(
     `SELECT country_code, locale, default_currency, default_timezone, vat_rate_food,
-            cutoff_local_time, invoice_language, stripe_status, is_active
+            cutoff_local_time, invoice_language, is_active
      FROM public.markets ORDER BY country_code, locale`,
   );
   if (markets.length !== 21) fail(`markets rows: ${markets.length} (expected 21)`);
@@ -208,7 +209,6 @@ try {
       m.vat_rate_food == null ||
       !m.cutoff_local_time ||
       !m.invoice_language ||
-      !m.stripe_status ||
       m.is_active !== true,
   );
   if (markets.length === 21 && incomplete.length === 0) ok("21/21 markets active with complete config");

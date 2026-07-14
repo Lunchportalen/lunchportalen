@@ -29,6 +29,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/cron/business",
   "/api/cron/check-deviations",
   "/api/cron/cleanup-invites",
+  "/api/cron/commission-settlement",
   "/api/cron/daily-order-summary",
   "/api/cron/daily-sanity",
   "/api/cron/experiments",

@@ -77,12 +77,13 @@ const API_KEY_AUTH = /(x-api-key|API_KEY|apiKey|v1\/public\/orders)/i;
 describe("api-allowlist-regression (DC-011)", () => {
   const routeFiles = walkRouteFiles(API_ROOT);
 
-  test("allowlist size matches canonical count (87)", () => {
+  test("allowlist size matches canonical count (88)", () => {
     // Fase 3: 3 duplicate invite-completion routes removed (88 → 85).
     // Fase 4: provider self-service added /api/public/provider-registration
     // + /api/auth/register-provider-admin (85 → 87).
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(87);
-    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(87);
+    // Fase 9: /api/cron/commission-settlement (cron-secret gated) (87 → 88).
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(88);
+    expect(API_AUTH_ALLOWLIST.size + API_AUTH_ALLOWLIST_GET_ONLY.size + 3).toBe(88);
   });
 
   // SEC-001: Stripe billing webhooks must pass middleware without a user session.

@@ -80,6 +80,13 @@ export async function chargeProviderCommissionInvoice(
   input: ChargeProviderInvoiceInput,
   deps?: StripeChargeDeps,
 ): Promise<ChargeProviderInvoiceResult> {
+  // FASE 9: oppgjør er invoice-only — kortbelastning er eksplisitt deaktivert
+  // bak server-side policy. Stripe-koden forblir dormant.
+  const { cardChargesEnabled } = await import("@/lib/billing/settlementPolicy");
+  if (!cardChargesEnabled()) {
+    return { ok: false, code: "SETTLEMENT_INVOICE_ONLY", message: "Oppgjør skjer via faktura (invoice-only). Kortbelastning er deaktivert." };
+  }
+
   const providerInvoiceId = safeStr(input.providerInvoiceId);
   if (!providerInvoiceId) return { ok: false, code: "PROVIDER_INVOICE_ID_REQUIRED", message: "Invoice id mangler." };
 

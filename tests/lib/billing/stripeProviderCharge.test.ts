@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { chargeProviderCommissionInvoice } from "@/lib/billing/stripeProviderCharge";
 
@@ -149,6 +149,14 @@ function makeStripeMock(status = "succeeded", error?: any) {
 beforeEach(() => {
   vi.restoreAllMocks();
   process.env.STRIPE_SECRET_KEY = "sk_test_mock";
+  // Fase 9: oppgjør er invoice-only by default; kortbelastning er eksplisitt
+  // deaktivert bak server-side policy. Denne suiten tester den DORMANTE
+  // kodebanen og må derfor opt-e inn eksplisitt.
+  process.env.PLATFORM_SETTLEMENT_MODE = "card";
+});
+
+afterEach(() => {
+  delete process.env.PLATFORM_SETTLEMENT_MODE;
 });
 
 describe("stripeProviderCharge", () => {
