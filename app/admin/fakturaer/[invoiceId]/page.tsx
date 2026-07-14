@@ -52,6 +52,7 @@ export default async function CompanyInvoiceDetailPage({
         payments={bundle.payments}
         providerName={bundle.providerName}
         companyName={bundle.companyName}
+        legal={bundle.legal}
       />
     </div>
   );

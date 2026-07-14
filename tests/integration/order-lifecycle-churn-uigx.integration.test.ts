@@ -31,13 +31,13 @@ import {
 
 const enabled = hasRemoteSupabaseIntegrationEnv({ requireAnon: true });
 
-const MIG_VARIANT = path.join(
+// FASE 10-drift-fix: suiten re-appliserte tidligere 20260611/20260612 og
+// NEDGRADERTE dermed kanonisk lp_order_set (20260814, med markeds-/cutoff-
+// kontekst) på staging ved hver kjøring. Kanonisk migrasjon inneholder hele
+// variant-/livssyklus-logikken — bruk alltid den.
+const MIG_CANONICAL_ORDER_SET = path.join(
   process.cwd(),
-  "supabase/migrations/20260611120000_lp_order_set_variant_itemkey.sql",
-);
-const MIG_LIFECYCLE = path.join(
-  process.cwd(),
-  "supabase/migrations/20260612120000_lp_order_set_lifecycle_robustness.sql",
+  "supabase/migrations/20260814120000_market_timezone_cutoff.sql",
 );
 
 /** Wednesday in smoke agreement window; BASIS @9000 MSDI; avoid dates with locked orders on uigx. */
@@ -191,8 +191,7 @@ describe.skipIf(!enabled)("order lifecycle churn (uigx integration)", () => {
     });
 
     await fixturePgQuery(buildTriCategorySeedSql(CHURN_DATE));
-    await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
-    await fixturePgQuery(fs.readFileSync(MIG_LIFECYCLE, "utf8"));
+    await fixturePgQuery(fs.readFileSync(MIG_CANONICAL_ORDER_SET, "utf8"));
 
     const email = String(process.env.SMOKE_TEST_EMAIL ?? SMOKE_EMAIL).trim();
     const password = String(process.env.PLAYWRIGHT_TEST_PASSWORD ?? process.env.SMOKE_TEST_PASSWORD ?? "").trim();

@@ -25,9 +25,12 @@ import { SMOKE_COMPANY_ID, SMOKE_EMAIL, SMOKE_LOCATION_ID } from "../../scripts/
 const enabled = hasRemoteSupabaseIntegrationEnv({ requireAnon: true });
 const basisDate = VARIANT_TEST_BASIS_DATE;
 
-const MIG_VARIANT = path.join(
+// FASE 10-drift-fix: bruk KANONISK lp_order_set (20260814, inkluderer hele
+// variant-logikken + markeds-/cutoff-kontekst). Re-applisering av 20260611
+// nedgraderte golden-path-funksjonen på staging.
+const MIG_CANONICAL_ORDER_SET = path.join(
   process.cwd(),
-  "supabase/migrations/20260611120000_lp_order_set_variant_itemkey.sql",
+  "supabase/migrations/20260814120000_market_timezone_cutoff.sql",
 );
 
 function assertStagingOnly() {
@@ -48,7 +51,7 @@ describe.skipIf(!enabled)("kitchen variant note e2e (uigx)", () => {
     admin = createClient<Database>(url, serviceKey, { auth: { persistSession: false } });
 
     await fixturePgQuery(buildProdRealisticVariantSeedSql());
-    await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
+    await fixturePgQuery(fs.readFileSync(MIG_CANONICAL_ORDER_SET, "utf8"));
 
     const anon = createClient<Database>(url, anonKey!, { auth: { persistSession: false } });
     const password = String(process.env.PLAYWRIGHT_TEST_PASSWORD ?? "").trim();

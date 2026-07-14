@@ -125,8 +125,25 @@ d("platform commission invoice-only settlement (staging)", () => {
     }
   }
 
+  let deApprovalBackup: Record<string, unknown> | null = null;
+
   beforeAll(async () => {
     if (!RUN) return;
+    // FASE 10: fakturaer krever kommersielt ACTIVE marked (fail-closed gate).
+    // NO er produksjonsaktivt; DE aktiveres midlertidig for multi-currency-beviset
+    // og tilbakestilles i afterAll.
+    const de = await fixturePgQuery(`select * from public.market_approvals where country_code = 'DE'`);
+    deApprovalBackup = de.rows[0] ?? null;
+    await fixturePgQuery(
+      `update public.market_approvals
+       set status = 'ACTIVE',
+           tax_approved_at = coalesce(tax_approved_at, now()),
+           legal_approved_at = coalesce(legal_approved_at, now()),
+           activated_at = coalesce(activated_at, now()),
+           updated_at = now()
+       where country_code = 'DE'`,
+    );
+
     const agrN = await seedProvider(provN, compN, locN, "n", "NOK", "NO");
     const agrE = await seedProvider(provE, compE, locE, "e", "EUR", "DE");
     await seedDeliveredOrder({ id: orders.n1, date: "2026-06-15", createdAt: "2026-06-15T10:00:00Z", pid: provN, cid: compN, lid: locN, agreementId: agrN, priceCents: 9000, currency: "NOK" });
@@ -137,6 +154,20 @@ d("platform commission invoice-only settlement (staging)", () => {
 
   afterAll(async () => {
     if (!RUN) return;
+    if (deApprovalBackup) {
+      await fixturePgQuery(
+        `update public.market_approvals
+         set status = $2, tax_approved_at = $3, legal_approved_at = $4, activated_at = $5, updated_at = now()
+         where country_code = $1`,
+        [
+          "DE",
+          deApprovalBackup.status,
+          deApprovalBackup.tax_approved_at,
+          deApprovalBackup.legal_approved_at,
+          deApprovalBackup.activated_at,
+        ],
+      );
+    }
     const provIds = [provN, provE];
     const orderIds = Object.values(orders);
     await fixturePgTransaction([

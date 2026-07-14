@@ -63,6 +63,17 @@ d("provider→company invoice-only billing (staging)", () => {
        values ($1, 'provider', $2, $3, 'ACTIVE', 'provider', now(), now()) on conflict (id) do nothing`,
       [pid, `Bill Prov ${label} ${runId}`, `bill-prov-${label}-${runId}`],
     );
+    // FASE 10: fakturagate krever billingprofil (markeds-/valutasannhet) og
+    // kommersielt ACTIVE marked (NO er produksjonsmarked). Currency hentes fra
+    // markedet — aldri hardkodet.
+    await fixturePgQuery(
+      `insert into public.organization_billing_profiles
+         (organization_id, market_id, legal_name, legal_country_code, tax_country_code, billing_currency, billing_timezone, billing_email_current, billing_status)
+       select $1, m.id, $2, m.country_code, m.tax_country_code, m.default_currency, m.default_timezone, $3, 'active'
+       from public.markets m where m.country_code = 'NO' and m.is_active = true limit 1
+       on conflict (organization_id) do nothing`,
+      [pid, `Bill Prov ${label} ${runId} AS`, `obp-bill-${label}-${runId}@test.lunchportalen.no`],
+    );
     await fixturePgQuery(
       `insert into public.companies (id, name, status, orgnr, provider_id, employee_count, billing_email)
        values ($1, $2, 'ACTIVE', $3, $4::uuid, 25, $5)`,
@@ -142,6 +153,7 @@ d("provider→company invoice-only billing (staging)", () => {
       { text: `update public.companies set default_location_id = null where id = any($1::uuid[])`, values: [[compA, compB]] },
       { text: `delete from public.company_locations where company_id = any($1::uuid[])`, values: [[compA, compB]] },
       { text: `delete from public.companies where id = any($1::uuid[])`, values: [[compA, compB]] },
+      { text: `delete from public.organization_billing_profiles where organization_id = any($1::uuid[])`, values: [[provA, provB]] },
       { text: `delete from public.organizations where id = any($1::uuid[])`, values: [[provA, provB]] },
       { text: `delete from public.providers where id = any($1::uuid[])`, values: [[provA, provB]] },
     ]);

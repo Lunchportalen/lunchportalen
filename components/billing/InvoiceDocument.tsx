@@ -2,7 +2,7 @@
 // FASE 8 — kanonisk HTML-fakturadokument (print = PDF via nettleser).
 // Server-komponent, delt av provider-, company- og superadmin-visningene.
 import { formatDateNO } from "@/lib/date/format";
-import type { InvoiceHead, InvoiceLine, InvoicePayment } from "@/lib/billing/invoiceLifecycle";
+import type { InvoiceHead, InvoiceLegalContext, InvoiceLine, InvoicePayment } from "@/lib/billing/invoiceLifecycle";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Utkast",
@@ -31,14 +31,18 @@ export default function InvoiceDocument({
   payments,
   providerName,
   companyName,
+  legal,
 }: {
   head: InvoiceHead;
   lines: InvoiceLine[];
   payments: InvoicePayment[];
   providerName: string;
   companyName: string;
+  /** FASE 10 — lovpålagte felter per marked (selger/kjøper-skatte-ID, noter). */
+  legal?: InvoiceLegalContext;
 }) {
   const kindLabel = head.kind === "CREDIT_NOTE" ? "Kreditnota" : "Faktura";
+  const taxLabel = legal?.taxLabel ?? "MVA";
   return (
     <article className="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document>
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4">
@@ -49,6 +53,23 @@ export default function InvoiceDocument({
           <p className="mt-1 text-sm text-neutral-600">
             {providerName} → {companyName}
           </p>
+          {legal?.sellerTaxId ? (
+            <p className="text-xs text-neutral-500" data-lp-legal="seller_tax_id">
+              Selger org./skatte-ID: {legal.sellerTaxId}
+              {legal.marketCountry === "NO" ? " MVA" : ""}
+            </p>
+          ) : null}
+          {legal?.buyerTaxId ? (
+            <p className="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">
+              Kjøper org./skatte-ID: {legal.buyerTaxId}
+            </p>
+          ) : null}
+          {legal?.buyerAddress ? (
+            <p className="text-xs text-neutral-500" data-lp-legal="buyer_address">
+              Kjøper adresse: {legal.buyerAddress}
+              {legal.buyerStateProvince ? `, ${legal.buyerStateProvince}` : ""}
+            </p>
+          ) : null}
           <p className="text-sm text-neutral-600">
             Periode: {formatDateNO(head.invoice_period_start)} – {formatDateNO(head.invoice_period_end)}
           </p>
@@ -78,7 +99,7 @@ export default function InvoiceDocument({
             <th className="py-1 pr-3 text-right">Antall</th>
             <th className="py-1 pr-3 text-right">Enhetspris</th>
             <th className="py-1 pr-3 text-right">Netto</th>
-            <th className="py-1 pr-3 text-right">MVA</th>
+            <th className="py-1 pr-3 text-right">{taxLabel}</th>
             <th className="py-1 text-right">Brutto</th>
           </tr>
         </thead>
@@ -106,7 +127,7 @@ export default function InvoiceDocument({
             <dd>{money(head.amount_net, head.currency)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-neutral-600">MVA</dt>
+            <dt className="text-neutral-600">{taxLabel}</dt>
             <dd>{money(head.amount_tax, head.currency)}</dd>
           </div>
           <div className="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold">
@@ -140,6 +161,16 @@ export default function InvoiceDocument({
       ) : null}
 
       <footer className="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">
+        {legal?.reverseChargeNote ? (
+          <p className="mb-1 font-semibold" data-lp-legal="reverse_charge_note">
+            {legal.reverseChargeNote}
+          </p>
+        ) : null}
+        {legal?.taxExemptNote ? (
+          <p className="mb-1 font-semibold" data-lp-legal="tax_exempt_note">
+            {legal.taxExemptNote}
+          </p>
+        ) : null}
         Betaling skjer via bankoverføring. Ingen kortbetaling (invoice-only).
       </footer>
     </article>

@@ -102,18 +102,31 @@ export async function listCompanyInvoices(companyId: string): Promise<InvoiceHea
   return (data ?? []) as InvoiceHead[];
 }
 
+/** FASE 10 — lovpålagt fakturakontekst per marked (aldri utledet fra språk). */
+export type InvoiceLegalContext = {
+  marketCountry: string | null;
+  taxLabel: string;
+  sellerTaxId: string | null;
+  buyerTaxId: string | null;
+  buyerAddress: string | null;
+  buyerStateProvince: string | null;
+  reverseChargeNote: string | null;
+  taxExemptNote: string | null;
+};
+
 export async function loadInvoiceWithLines(invoiceId: string): Promise<{
   head: InvoiceHead;
   lines: InvoiceLine[];
   payments: InvoicePayment[];
   providerName: string;
   companyName: string;
+  legal: InvoiceLegalContext;
 } | null> {
   const a = admin();
   const { data: head, error } = await a.from("agreement_invoices").select(HEAD_FIELDS).eq("id", invoiceId).maybeSingle();
   if (error || !head) return null;
 
-  const [linesRes, paymentsRes, providerRes, companyRes] = await Promise.all([
+  const [linesRes, paymentsRes, providerRes, companyRes, marketRes] = await Promise.all([
     a
       .from("agreement_invoice_lines")
       .select("id, source, product_key, description, quantity, unit_price, line_amount, vat_rate, vat_amount, currency, order_id, location_id, service_date")
@@ -121,16 +134,52 @@ export async function loadInvoiceWithLines(invoiceId: string): Promise<{
       .order("service_date", { ascending: true })
       .order("created_at", { ascending: true }),
     a.from("invoice_payments").select("id, amount, paid_at, method, reference, created_at").eq("invoice_id", invoiceId).order("paid_at"),
-    a.from("providers").select("name").eq("id", (head as any).provider_id).maybeSingle(),
-    a.from("companies").select("name").eq("id", (head as any).company_id).maybeSingle(),
+    a.from("providers").select("name, org_number").eq("id", (head as any).provider_id).maybeSingle(),
+    a
+      .from("companies")
+      .select("name, orgnr, tax_id, reverse_charge, tax_exempt_reason, state_province, default_location_id")
+      .eq("id", (head as any).company_id)
+      .maybeSingle(),
+    a
+      .from("organization_billing_profiles")
+      .select("market_id, markets:market_id (country_code, reverse_charge_supported)")
+      .eq("organization_id", (head as any).provider_id)
+      .maybeSingle(),
   ]);
+
+  const company = companyRes.data as Record<string, unknown> | null;
+  let buyerAddress: string | null = null;
+  if (company?.default_location_id) {
+    const { data: loc } = await a.from("company_locations").select("address").eq("id", company.default_location_id).maybeSingle();
+    buyerAddress = String(loc?.address ?? "").trim() || null;
+  }
+
+  const marketJoin = (marketRes.data as any)?.markets;
+  const marketRow = Array.isArray(marketJoin) ? marketJoin[0] : marketJoin;
+  const marketCountry = String(marketRow?.country_code ?? "").trim().toUpperCase() || null;
+
+  const { taxLabelForCountry, reverseChargeNote, taxExemptNote } = await import("@/lib/tax/invoiceLegalFields");
+  const legal: InvoiceLegalContext = {
+    marketCountry,
+    taxLabel: marketCountry ? taxLabelForCountry(marketCountry) : "MVA",
+    sellerTaxId: String((providerRes.data as any)?.org_number ?? "").trim() || null,
+    buyerTaxId: String(company?.tax_id ?? "").trim() || String(company?.orgnr ?? "").trim() || null,
+    buyerAddress,
+    buyerStateProvince: String(company?.state_province ?? "").trim() || null,
+    reverseChargeNote:
+      company?.reverse_charge === true && marketRow?.reverse_charge_supported === true && marketCountry
+        ? reverseChargeNote(marketCountry)
+        : null,
+    taxExemptNote: taxExemptNote(String(company?.tax_exempt_reason ?? "")),
+  };
 
   return {
     head: head as InvoiceHead,
     lines: (linesRes.data ?? []) as InvoiceLine[],
     payments: (paymentsRes.data ?? []) as InvoicePayment[],
     providerName: String(providerRes.data?.name ?? ""),
-    companyName: String(companyRes.data?.name ?? ""),
+    companyName: String(company?.name ?? ""),
+    legal,
   };
 }
 

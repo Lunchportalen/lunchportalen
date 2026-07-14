@@ -49,6 +49,7 @@ export default async function ProviderInvoiceDetailPage({
         payments={bundle.payments}
         providerName={bundle.providerName}
         companyName={bundle.companyName}
+        legal={bundle.legal}
       />
 
       {canManage ? (
