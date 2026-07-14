@@ -13,6 +13,7 @@ import "server-only";
 import { getProviderNotificationRecipients } from "@/lib/providers/providerNotificationRecipients";
 import { upsertOutboxEvent } from "@/lib/orderBackup/outbox";
 import { isoToDDMMYYYY } from "@/lib/orderBackup/emailContent";
+import { orderNotificationCopy } from "@/lib/i18n/notificationCopy";
 import { opsLog } from "@/lib/ops/log";
 
 function safeStr(v: unknown) {
@@ -58,6 +59,9 @@ export async function notifyOrderStatusAdvanced(input: OrderStatusNotificationIn
         opsLog("orders.statusNotify.delivery_email_missing", { rid: input.rid, orderId, providerId });
         return;
       }
+      // FASE 11: provider-varsel på PROVIDERENS språk (provider_settings.locale).
+      const { data: ps } = await admin.from("provider_settings").select("locale").eq("provider_id", providerId).maybeSingle();
+      const providerCopyTexts = orderNotificationCopy(safeStr(ps?.locale));
       const eventKey = `order.status.dispatched:${orderId}`;
       await upsertOutboxEvent(eventKey, {
         eventType: "ORDER_PLACED",
@@ -73,16 +77,22 @@ export async function notifyOrderStatusAdvanced(input: OrderStatusNotificationIn
         timestampISO: new Date().toISOString(),
         from: mailFrom(),
         to,
-        subject: `Ordre ut for levering – ${pretty} – Lunchportalen`,
-        bodyText: `Ordre ${orderId} for ${pretty} er markert «Klar for levering» og er på vei ut.\n\nDenne meldingen er sendt automatisk fra Lunchportalen.`,
+        subject: providerCopyTexts.dispatchedSubject(pretty),
+        bodyText: providerCopyTexts.dispatchedBody(orderId, pretty),
         extra: { providerId, transition: "DISPATCHED" },
       } as Parameters<typeof upsertOutboxEvent>[1]);
       return;
     }
 
     // DELIVERED: ansattbekreftelse + provider-kopi (deduplisert).
-    const { data: profile } = await admin.from("profiles").select("email").eq("id", safeStr(order.user_id)).maybeSingle();
+    // FASE 11: bekreftelsen bruker ANSATTES språk (profiles.preferred_locale).
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("email, preferred_locale")
+      .eq("id", safeStr(order.user_id))
+      .maybeSingle();
     const employeeEmail = safeStr(profile?.email) || null;
+    const employeeCopy = orderNotificationCopy(safeStr(profile?.preferred_locale));
     const providerCopy = recipients?.operationsEmail ?? null;
     const to = [employeeEmail, providerCopy].filter(Boolean).join(", ");
     if (!to) {
@@ -104,8 +114,8 @@ export async function notifyOrderStatusAdvanced(input: OrderStatusNotificationIn
       timestampISO: new Date().toISOString(),
       from: mailFrom(),
       to,
-      subject: `Lunsj levert – ${pretty} – Lunchportalen`,
-      bodyText: `Hei,\n\nLunsjen din for ${pretty} er levert. God lunsj!\n\nMed vennlig hilsen\nLunchportalen`,
+      subject: employeeCopy.deliveredSubject(pretty),
+      bodyText: employeeCopy.deliveredBody(pretty),
       extra: { providerId, transition: "DELIVERED" },
     } as Parameters<typeof upsertOutboxEvent>[1]);
   } catch (e) {

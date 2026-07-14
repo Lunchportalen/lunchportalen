@@ -112,6 +112,13 @@ export type InvoiceLegalContext = {
   buyerStateProvince: string | null;
   reverseChargeNote: string | null;
   taxExemptNote: string | null;
+  /**
+   * FASE 11 — fakturaspråk = COMPANY billing language:
+   * companies.preferred_locale → markets.invoice_language → nb (fail-closed).
+   * intlLocale styrer KUN tall-/datoformat (markedets Intl-locale).
+   */
+  invoiceLanguage: string;
+  intlLocale: string;
 };
 
 export async function loadInvoiceWithLines(invoiceId: string): Promise<{
@@ -137,12 +144,12 @@ export async function loadInvoiceWithLines(invoiceId: string): Promise<{
     a.from("providers").select("name, org_number").eq("id", (head as any).provider_id).maybeSingle(),
     a
       .from("companies")
-      .select("name, orgnr, tax_id, reverse_charge, tax_exempt_reason, state_province, default_location_id")
+      .select("name, orgnr, tax_id, reverse_charge, tax_exempt_reason, state_province, default_location_id, preferred_locale")
       .eq("id", (head as any).company_id)
       .maybeSingle(),
     a
       .from("organization_billing_profiles")
-      .select("market_id, markets:market_id (country_code, reverse_charge_supported)")
+      .select("market_id, markets:market_id (country_code, reverse_charge_supported, invoice_language, locale)")
       .eq("organization_id", (head as any).provider_id)
       .maybeSingle(),
   ]);
@@ -159,6 +166,12 @@ export async function loadInvoiceWithLines(invoiceId: string): Promise<{
   const marketCountry = String(marketRow?.country_code ?? "").trim().toUpperCase() || null;
 
   const { taxLabelForCountry, reverseChargeNote, taxExemptNote } = await import("@/lib/tax/invoiceLegalFields");
+  // FASE 11: fakturaspråk = kjøpers (company) billing language, fail-closed nb.
+  const invoiceLanguage =
+    String(company?.preferred_locale ?? "").trim().toLowerCase() ||
+    String(marketRow?.invoice_language ?? "").trim().toLowerCase() ||
+    "nb";
+  const intlLocale = String(marketRow?.locale ?? "").trim() || "nb-NO";
   const legal: InvoiceLegalContext = {
     marketCountry,
     taxLabel: marketCountry ? taxLabelForCountry(marketCountry) : "MVA",
@@ -171,6 +184,8 @@ export async function loadInvoiceWithLines(invoiceId: string): Promise<{
         ? reverseChargeNote(marketCountry)
         : null,
     taxExemptNote: taxExemptNote(String(company?.tax_exempt_reason ?? "")),
+    invoiceLanguage,
+    intlLocale,
   };
 
   return {

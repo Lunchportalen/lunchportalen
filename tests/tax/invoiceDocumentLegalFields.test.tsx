@@ -55,6 +55,9 @@ const legal: InvoiceLegalContext = {
   buyerStateProvince: null,
   reverseChargeNote: "Reverse charge — VAT to be accounted for by the recipient (Article 196, Council Directive 2006/112/EC).",
   taxExemptNote: null,
+  // FASE 11: faktura bruker company billing language + markedets Intl-locale.
+  invoiceLanguage: "de",
+  intlLocale: "de-DE",
 };
 
 describe("InvoiceDocument renders legally required fields", () => {
@@ -67,7 +70,9 @@ describe("InvoiceDocument renders legally required fields", () => {
     expect(html).toContain("Test Provider GmbH");
     expect(html).toContain("Beispiel AG");
     expect(html).toContain("EUR");
-    expect(html).toContain("14 dager"); // payment terms
+    // FASE 11: dokumentet er på kjøpers billing language (tysk).
+    expect(html).toContain("14 Tage");
+    expect(html).toContain("Rechnung");
   });
 
   it("renders seller and buyer tax IDs and buyer address", () => {
@@ -102,6 +107,8 @@ describe("InvoiceDocument renders legally required fields", () => {
           buyerStateProvince: "TX",
           reverseChargeNote: null,
           taxExemptNote: "Tax exempt — reason: RESALE_CERTIFICATE",
+          invoiceLanguage: "en",
+          intlLocale: "en-US",
         }}
       />,
     );

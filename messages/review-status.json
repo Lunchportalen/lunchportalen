@@ -1,0 +1,20 @@
+{
+  "comment": "FASE 11 — review-metadata per grunnspråk. nativeReview: språklig gjennomgang av morsmålsbruker. legalReview: juridisk gjennomgang av kunde-/kontraktsnær tekst. Status: pending | in_review | approved. Endres kun ved faktisk gjennomført review (audit i git-historikk).",
+  "languages": {
+    "nb": { "nativeReview": "approved", "legalReview": "approved", "reviewedBy": "owner", "reviewedAt": "2026-07-14", "note": "Kanonisk basisspråk — produksjonsspråk siden lansering." },
+    "en": { "nativeReview": "approved", "legalReview": "pending", "reviewedBy": "internal", "reviewedAt": "2026-07-14", "note": "Intern QA fullført; juridisk gjennomgang før første engelskspråklige kontrakt." },
+    "sv": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "da": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "fi": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "de": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "fr": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "es": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "it": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "nl": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "pl": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "ro": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "cs": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "pt": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." },
+    "el": { "nativeReview": "pending", "legalReview": "pending", "reviewedBy": null, "reviewedAt": null, "note": "Maskinassistert oversettelse + intern QA (Fase 11). Krever morsmålsreview før markedsaktivering." }
+  }
+}

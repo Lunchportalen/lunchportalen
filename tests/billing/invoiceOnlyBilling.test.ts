@@ -171,12 +171,17 @@ describe("email delivery", () => {
 
 describe("UI documents", () => {
   it("invoice document shows due date, payment terms, tax and payments (HTML/print)", () => {
+    // FASE 11: dokumentteksten kommer fra lokalisert invoiceCopy (kjøpers
+    // billing language); norsk basis lever i lib/billing/invoiceCopy.ts.
     const doc = read("components/billing/InvoiceDocument.tsx");
-    expect(doc).toContain("Forfall:");
+    expect(doc).toContain("copy.due");
     expect(doc).toContain("payment_terms_days");
-    expect(doc).toContain("MVA");
-    expect(doc).toContain("Registrerte betalinger");
-    expect(doc).toContain("invoice-only");
+    expect(doc).toContain("taxLabel");
+    expect(doc).toContain("copy.paymentsTitle");
+    const copySrc = read("lib/billing/invoiceCopy.ts");
+    expect(copySrc).toContain('due: "Forfall"');
+    expect(copySrc).toContain('paymentsTitle: "Registrerte betalinger"');
+    expect(copySrc).toContain("invoice-only");
   });
 
   it("provider actions cover finalize/send/payment/credit/void with idempotent payment key", () => {
