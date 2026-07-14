@@ -61,10 +61,14 @@ export default async function DriverPage() {
      - profiles.id = auth.users.id (primary)
      - fallback: legacy profile user id column if present
   ========================= */
+  // FASE 7 fix: profiles.id = auth.users.id er kanonisk — user_id-kolonnen
+  // finnes ikke i schema, så den gamle `.or(id,user_id)`-spørringen feilet
+  // alltid mot PostgREST og sendte ALLE sjåfører til /login (fail-closed,
+  // men flaten var død). Kun kanonisk oppslag nå.
   const { data: profile, error: pErr } = (await supabase
     .from("profiles")
     .select("role, disabled_at, is_active, company_id, location_id")
-    .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+    .eq("id", user.id)
     .maybeSingle()) as { data: ProfileRow | null; error: any };
 
   // Fail-closed: hvis vi ikke klarer å lese profilen => ut
