@@ -33,6 +33,8 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/ci/run-suspend-rpc-integration.mjs",
   // E2E self-heal probe — admin password-sync invalidates session (uigx only).
   "scripts/e2e/",
+  // Playwright staging E2E specs — opt-in via STAGING_REF + service role (same contract as scripts/e2e).
+  "e2e/",
   "app/api/cron/",
   "app/api/superadmin/",
   "app/api/system/",
