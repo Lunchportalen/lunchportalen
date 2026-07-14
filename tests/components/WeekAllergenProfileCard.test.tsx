@@ -1,10 +1,11 @@
 /** @vitest-environment jsdom */
 
-import React, { act } from "react";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import React from "react";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import { act } from "@/tests/_helpers/reactAct";
 
 import WeekAllergenProfileCard from "@/components/employee/WeekAllergenProfileCard";
 

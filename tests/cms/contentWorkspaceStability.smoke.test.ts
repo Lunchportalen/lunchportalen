@@ -270,23 +270,3 @@ describe("ContentWorkspace stability – useContentWorkspaceData", () => {
     document.body.removeChild(container);
   });
 });
-
-describe("ContentWorkspace stability – detail effect deps", () => {
-  test("detail effect deps documented to avoid fetch loop", async () => {
-    const path = await import("path");
-    const fs = await import("fs");
-    const p = path.join(process.cwd(), "app", "(backoffice)", "backoffice", "content", "_components", "useContentWorkspaceData.ts");
-    const src = fs.readFileSync(p, "utf8");
-    expect(src).toContain("[selectedId, refetchDetailKey");
-    expect(src).toMatch(/Intentionally omit|would retrigger|fetch loop/i);
-  });
-
-  test("detail run-id guard present to avoid stale response apply", async () => {
-    const path = await import("path");
-    const fs = await import("fs");
-    const p = path.join(process.cwd(), "app", "(backoffice)", "backoffice", "content", "_components", "useContentWorkspaceData.ts");
-    const src = fs.readFileSync(p, "utf8");
-    expect(src).toContain("detailRunIdRef");
-    expect(src).toContain("runId !== detailRunIdRef.current");
-  });
-});

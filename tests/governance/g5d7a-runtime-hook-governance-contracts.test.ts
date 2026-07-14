@@ -223,7 +223,16 @@ function walkFiles(dir: string, out: string[] = []): string[] {
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, ent.name);
     if (ent.isDirectory()) {
-      if (ent.name === "node_modules" || ent.name === ".next") continue;
+      if (
+        ent.name === "node_modules" ||
+        ent.name === ".next" ||
+        ent.name === ".backups" ||
+        ent.name === "test-results" ||
+        ent.name === "playwright-report" ||
+        ent.name === "temp"
+      ) {
+        continue;
+      }
       walkFiles(p, out);
     } else if (/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env)$/.test(ent.name)) {
       out.push(p);

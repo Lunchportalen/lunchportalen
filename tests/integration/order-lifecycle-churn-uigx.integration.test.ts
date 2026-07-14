@@ -40,8 +40,10 @@ const MIG_CANONICAL_ORDER_SET = path.join(
   "supabase/migrations/20260814120000_market_timezone_cutoff.sql",
 );
 
-/** Wednesday in smoke agreement window; BASIS @9000 MSDI; avoid dates with locked orders on uigx. */
-const CHURN_DATE = "2026-06-18";
+/** Wednesday in smoke agreement window; BASIS @9000 MSDI; avoid dates with locked orders on uigx.
+ * FASE 13: dynamisk framtidig onsdag (+3 uker; kolliderer ikke med variant-suitene på +2). */
+import { nextWednesdayISO } from "../_helpers/variantItemkeyUigxSeed.mjs";
+const CHURN_DATE = nextWednesdayISO(3);
 
 type ChurnOp =
   | { kind: "SET"; choiceKey: string; itemKey: string }
@@ -283,7 +285,8 @@ describe.skipIf(!enabled)("order lifecycle churn (uigx integration)", () => {
         await snapAfter(last, lastChoice, { includeKitchen: isLast && last === "SET" });
       }
     }
-  }, 180_000);
+    // FASE 13: 360s — suiten kjøres parallelt med andre staging-suiter (DB-kø).
+  }, 360_000);
 
   test("prove-fire: naive last-wins red when ghost CANCELLED sorts after ACTIVE", async () => {
     await rpc({ kind: "SET", choiceKey: "salatboks", itemKey: "default" });

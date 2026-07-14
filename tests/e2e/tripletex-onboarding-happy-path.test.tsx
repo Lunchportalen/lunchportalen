@@ -3,7 +3,8 @@
 /**
  * TPT-B-7b — Onboarding happy path (mocked actions, MSW-free).
  */
-import React, { act } from "react";
+import React from "react";
+import { act } from "@/tests/_helpers/reactAct";
 import { describe, expect, test, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";

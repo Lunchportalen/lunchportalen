@@ -4,7 +4,8 @@
  */
 /** @vitest-environment jsdom */
 
-import React, { act } from "react";
+import React from "react";
+import { act } from "@/tests/_helpers/reactAct";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 (global as any).React = React;
