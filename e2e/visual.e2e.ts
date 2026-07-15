@@ -117,7 +117,7 @@ test.describe("Visual regression — backoffice content landing", () => {
     await loginViaForm(page, creds.email, creds.password, "/backoffice/content");
     await waitForPostLoginNavigation(page);
     await expect(page).toHaveURL(/\/backoffice\/content/);
-    await page.getByRole("heading", { name: /content/i }).waitFor({ state: "visible", timeout: 15_000 });
+    await waitForMainContent(page);
     await settleLayout(page);
     await expect(page).toHaveScreenshot("backoffice-content.png", {
       fullPage: false,

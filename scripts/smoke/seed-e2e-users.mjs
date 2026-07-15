@@ -255,21 +255,28 @@ async function main() {
     process.exit(2);
   }
 
+  /** Roles that may be omitted when credentials are absent (unless --only requires them). */
+  const OPTIONAL_WHEN_UNSET = new Set(["kitchen"]);
+
   for (const spec of ROLE_SPECS) {
     const canonical = E2E_CANONICAL_EMAILS[spec.key];
     const fromEnv = String(env[spec.emailEnv] ?? "").trim().toLowerCase();
     const password = String(env[spec.passwordEnv] ?? "");
-    if (!onlyKeys || onlyKeys.has(spec.key)) {
-      if (!fromEnv || !password) {
-        console.error(`ABORT: missing ${spec.emailEnv} or ${spec.passwordEnv}`);
-        process.exit(2);
+    const selected = !onlyKeys || onlyKeys.has(spec.key);
+    if (!selected) continue;
+    if (!fromEnv || !password) {
+      if (!onlyKeys && OPTIONAL_WHEN_UNSET.has(spec.key)) {
+        console.log(`SKIP ${spec.key}: ${spec.emailEnv}/${spec.passwordEnv} unset`);
+        continue;
       }
-      if (fromEnv !== canonical.toLowerCase()) {
-        console.error(
-          `ABORT: ${spec.emailEnv} must be ${canonical} (got ${fromEnv})`,
-        );
-        process.exit(2);
-      }
+      console.error(`ABORT: missing ${spec.emailEnv} or ${spec.passwordEnv}`);
+      process.exit(2);
+    }
+    if (fromEnv !== canonical.toLowerCase()) {
+      console.error(
+        `ABORT: ${spec.emailEnv} must be ${canonical} (got ${fromEnv})`,
+      );
+      process.exit(2);
     }
   }
 
@@ -281,6 +288,11 @@ async function main() {
     if (onlyKeys && !onlyKeys.has(spec.key)) continue;
     const email = E2E_CANONICAL_EMAILS[spec.key];
     const password = String(env[spec.passwordEnv] ?? "");
+    if (!password || !String(env[spec.emailEnv] ?? "").trim()) {
+      if (!onlyKeys && OPTIONAL_WHEN_UNSET.has(spec.key)) continue;
+      console.error(`ABORT: missing ${spec.emailEnv} or ${spec.passwordEnv}`);
+      process.exit(2);
+    }
     const userId = await upsertAuthUser(admin, url, anonKey, email, password);
     await upsertProfile(admin, userId, spec, email);
     await upsertMemberships(admin, userId, spec);

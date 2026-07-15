@@ -138,6 +138,41 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
+      - name: Resolve staging Postgres URL (identity-guarded)
+        env:
+          SUPABASE_STAGING_POSTGRES_URL: ${{ secrets.SUPABASE_STAGING_POSTGRES_URL }}
+          PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          STAGING_REF="uigxsboqeruxflgzqztl"
+          PROD_REF="hkpokyapzarefrgqzkos"
+          URL="${SUPABASE_STAGING_POSTGRES_URL:-}"
+          if [[ -z "$URL" ]]; then
+            : "${PROJECT_REF:?Missing SUPABASE_STAGING_PROJECT_REF}"
+            : "${DB_PASSWORD:?Missing SUPABASE_STAGING_DB_PASSWORD}"
+            ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+            URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          fi
+          if [[ "$URL" == *"$PROD_REF"* ]]; then
+            echo "FAIL: PRODUCTION_BLOCKED"
+            exit 1
+          fi
+          if [[ "$URL" != *"$STAGING_REF"* ]]; then
+            echo "FAIL: STAGING_PROJECT_MATCH=NO"
+            exit 1
+          fi
+          if [[ "${PROJECT_REF:-}" != "" && "${PROJECT_REF}" != "$STAGING_REF" ]]; then
+            echo "FAIL: PROJECT_REF mismatch"
+            exit 1
+          fi
+          echo "SUPABASE_POSTGRES_URL<<EOF" >> "$GITHUB_ENV"
+          printf '%s\n' "$URL" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+          echo "STAGING_POSTGRES_CONFIGURED=YES"
+          echo "STAGING_PROJECT_MATCH=YES"
+          echo "PRODUCTION_BLOCKED=YES"
+
       - name: Run staging runtime Playwright suite
         env:
           PLAYWRIGHT_TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
@@ -158,10 +193,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
-          SUPABASE_POSTGRES_URL: ${{ secrets.SUPABASE_STAGING_POSTGRES_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
+          : "${SUPABASE_POSTGRES_URL:?Missing SUPABASE_POSTGRES_URL after resolve step}"
           npx playwright test \
             --config playwright.staging-runtime.config.ts \
             e2e/auth.e2e.ts \
@@ -175,6 +210,7 @@ jobs:
             e2e/company-onboarding.e2e.ts \
             e2e/employee-weekly-ordering.e2e.ts \
             e2e/staging-locale-matrix.e2e.ts \
+            e2e/visual.e2e.ts \
             --project=chromium \
             --reporter=list
 
