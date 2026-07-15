@@ -43,12 +43,30 @@ if (!/^[0-9a-f]{40}$/.test(expectedSha)) {
 async function healthOnce() {
   const url = `${base}/api/health?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${encodeURIComponent(bypass)}`;
   const res = await fetch(url, {
+    redirect: "manual",
     headers: {
       accept: "application/json",
       "x-vercel-protection-bypass": bypass,
       "x-vercel-set-bypass-cookie": "true",
     },
   });
+  if (res.status >= 300 && res.status < 400) {
+    const loc = res.headers.get("location");
+    if (loc) {
+      const follow = await fetch(loc, {
+        headers: {
+          accept: "application/json",
+          "x-vercel-protection-bypass": bypass,
+          "x-vercel-set-bypass-cookie": "true",
+        },
+      });
+      return parseHealth(follow);
+    }
+  }
+  return parseHealth(res);
+}
+
+async function parseHealth(res) {
   const text = await res.text();
   let json;
   try {
