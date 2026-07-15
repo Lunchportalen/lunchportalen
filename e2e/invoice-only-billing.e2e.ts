@@ -95,6 +95,14 @@ test.describe("invoice-only billing: draft → issue → send → paid + isolati
             values: [pid, `E2E Bill ${label} ${runId}`, `e2e-bill-${label}-${runId}`],
           },
           {
+            text: `insert into public.organization_billing_profiles
+                     (organization_id, market_id, legal_name, legal_country_code, tax_country_code, billing_currency, billing_timezone, billing_email_current, billing_status)
+                   select $1, m.id, $2, m.country_code, m.tax_country_code, m.default_currency, m.default_timezone, $3, 'active'
+                   from public.markets m where m.country_code = 'NO' and m.is_active = true limit 1
+                   on conflict (organization_id) do nothing`,
+            values: [pid, `E2E Bill ${label} ${runId} AS`, `obp-bill-${label}-${runId}@test.lunchportalen.no`],
+          },
+          {
             text: `insert into public.companies (id, name, status, orgnr, provider_id, employee_count, billing_email)
                    values ($1, $2, 'ACTIVE', $3, $4::uuid, 25, $5)`,
             values: [cid, `E2E BillCo ${label} ${runId}`, `9${Math.floor(Math.random() * 90000000 + 10000000)}`, pid, `faktura-${label}-${runId}@test.lunchportalen.no`],
@@ -107,7 +115,7 @@ test.describe("invoice-only billing: draft → issue → send → paid + isolati
             values: [cid, lid, pid],
           },
         ]);
-        const agreementId = String((agr[5] as any).rows[0].id);
+        const agreementId = String((agr[6] as any).rows[0].id);
         const isA = label === "a";
         const orders = isA ? [orderIds[0], orderIds[1]] : [orderIds[2]];
         for (const [i, oid] of orders.entries()) {
