@@ -1,0 +1,70 @@
+name: CI E2E Staging Runtime
+
+# Playwright against verified staging.app RC runtime (Phase 14C.2 Gate 7).
+# Manual dispatch only — does not replace ci-e2e.yml (localhost lane).
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_base_url:
+        description: "Staging runtime base URL"
+        required: true
+        default: "https://staging.app.lunchportalen.no"
+      expected_sha:
+        description: "Exact RC SHA health must report"
+        required: true
+        default: "5cf96d7457292976faac4a6decc8763baf0aa48f"
+
+concurrency:
+  group: ci-e2e-staging-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-runtime-e2e:
+    name: staging-runtime-e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ inputs.staging_base_url }}
+      LP_E2E_EXTERNAL_SERVER: "1"
+      EXPECTED_RUNTIME_SHA: ${{ inputs.expected_sha }}
+      NEXT_PUBLIC_SANITY_DATASET: staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/global-invoice-only-foundation
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Preflight health SHA
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          node scripts/smoke/staging-runtime-preflight.mjs \
+            --base "${{ inputs.staging_base_url }}" \
+            --expected-sha "${{ inputs.expected_sha }}"
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run core staging runtime E2E
+        env:
+          PLAYWRIGHT_TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
+          PLAYWRIGHT_TEST_PASSWORD: ${{ secrets.PLAYWRIGHT_TEST_PASSWORD }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          npx playwright test \
+            e2e/auth.e2e.ts \
+            e2e/auth-role.e2e.ts \
+            e2e/core-flows.e2e.ts \
+            e2e/mobile-invariants.e2e.ts \
+            --project=chromium \
+            --reporter=list

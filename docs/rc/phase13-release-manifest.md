@@ -1,7 +1,7 @@
 # PHASE 13 — Immutable release manifest
 
-**Generert:** 2026-07-14T21:25:49.437Z  
-**Git HEAD:** `f8a463566407ba06f90065ee9d41a783697f984c` (branch `HEAD`)  
+**Generert:** 2026-07-15T13:22:29.898Z  
+**Git HEAD:** `7aa6570431654e7adbad5da1e650f3a4970c8b25` (branch `HEAD`)  
 **Migrasjoner:** 83 lokale filer (SHA256 nedenfor)
 
 > Dette manifestet låser release-identiteten for Fase 13 staging RC-beviset.
@@ -109,5 +109,5 @@ c435e5191a4a4f327bf75c82eee017f83cd4b8aafae49d12c60a05dd201b4a15  20260827130000
 # certutil -hashfile supabase/migrations/<fil> SHA256   # Windows
 # shasum -a 256 supabase/migrations/<fil>               # macOS/Linux
 
-git rev-parse HEAD   # skal matche f8a46356
+git rev-parse HEAD   # skal matche 7aa65704
 ```

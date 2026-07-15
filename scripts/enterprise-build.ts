@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -149,6 +149,15 @@ function runNextBuild() {
 }
 
 async function main() {
+  if (!process.env.APP_VERSION?.trim() && !process.env.VERCEL_GIT_COMMIT_SHA?.trim()) {
+    const git = spawnSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" });
+    const sha = (git.stdout ?? "").trim();
+    if (/^[0-9a-f]{40}$/i.test(sha)) {
+      process.env.APP_VERSION = sha.toLowerCase();
+      console.log(`[enterprise-build] Stamped APP_VERSION from git HEAD (${sha.slice(0, 8)}).`);
+    }
+  }
+
   const routes = await findEnterpriseExcludedRoutes();
   let hidden: ExcludedRoute[] = [];
   let buildExitCode = 1;

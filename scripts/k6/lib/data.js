@@ -36,19 +36,40 @@ export function requirePassword(config) {
 }
 
 export function osloTodayISO() {
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Oslo' });
+  // k6/goja lacks reliable IANA timezone support — derive Europe/Oslo calendar date via fixed offset.
+  const now = Date.now();
+  const osloOffsetMinutes = Number(__ENV.K6_OSLO_UTC_OFFSET_MINUTES || '120');
+  const oslo = new Date(now + osloOffsetMinutes * 60 * 1000);
+  const y = oslo.getUTCFullYear();
+  const m = String(oslo.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(oslo.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 export function addDaysISO(isoDate, days) {
-  const [y, m, d] = isoDate.split('-').map(Number);
+  const parts = String(isoDate ?? '').split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) {
+    throw new Error(`addDaysISO: invalid isoDate ${isoDate}`);
+  }
+  const [y, m, d] = parts;
   const dt = new Date(Date.UTC(y, m - 1, d + days));
+  if (Number.isNaN(dt.getTime())) {
+    throw new Error(`addDaysISO: invalid result for ${isoDate} + ${days}`);
+  }
   return dt.toISOString().slice(0, 10);
 }
 
 /** Spread order writes across future weekdays to reduce duplicate-order noise. */
 export function orderTargetDate(vu, iter) {
-  const offset = 1 + ((vu * 7 + iter) % 14);
-  return addDaysISO(osloTodayISO(), offset);
+  const base = osloTodayISO();
+  let offset = 1 + ((vu * 7 + iter) % 14);
+  for (let attempt = 0; attempt < 14; attempt += 1) {
+    const candidate = addDaysISO(base, offset + attempt);
+    const [y, m, d] = candidate.split('-').map(Number);
+    const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    if (dow >= 1 && dow <= 5) return candidate;
+  }
+  return addDaysISO(base, 3);
 }
 
 /** Stable idempotency key per VU + iteration + date (retries stay safe). */
