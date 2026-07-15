@@ -14,8 +14,14 @@ const WEIGHT_TOTAL = WORKLOAD_WEIGHTS.reduce((sum, item) => sum + item.weight, 0
 
 export function getConfig() {
   const baseUrl = (__ENV.K6_BASE_URL || 'https://app.lunchportalen.no').replace(/\/$/, '');
-  const email = __ENV.K6_SMOKE_EMAIL || 'smoke-test@lunchportalen.no';
-  const password = __ENV.K6_SMOKE_PASSWORD || '';
+  const email =
+    __ENV.K6_EMPLOYEE_EMAIL ||
+    __ENV.K6_SMOKE_EMAIL ||
+    'smoke-test@lunchportalen.no';
+  const password =
+    __ENV.K6_EMPLOYEE_PASSWORD ||
+    __ENV.K6_SMOKE_PASSWORD ||
+    '';
   const tagEnv = __ENV.K6_TAG_ENV || 'prod';
   const outputDir = __ENV.K6_OUTPUT_DIR || 'scripts/k6/results';
   const phasesRaw = __ENV.K6_FASES || 'setup,smoke,baseline,soak,stress,spike,recovery';

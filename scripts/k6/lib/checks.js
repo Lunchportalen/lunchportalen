@@ -1,6 +1,7 @@
 import { check, sleep } from 'k6';
 
 import { authParams, primeVercelBypass } from './auth.js';
+import { stagingOrderDate } from './actors.js';
 import { lpGet, lpPost } from './httpClient.js';
 import {
   getConfig,
@@ -43,10 +44,12 @@ export function checkWeekBrowse(baseUrl, scenario) {
 }
 
 export function checkDayView(baseUrl, scenario) {
+  if ((__ENV.K6_TAG_ENV || 'prod') === 'staging') {
+    return checkWeekBrowse(baseUrl, scenario);
+  }
   primeVercelBypass(baseUrl);
-  const date = osloTodayISO();
   const res = lpGet(
-    `${baseUrl}/api/orders?date=${date}`,
+    `${baseUrl}/api/orders?date=${osloTodayISO()}`,
     authParams(scenario, 'day_view'),
   );
   recordEndpointMetric('day_view', res.timings.duration);

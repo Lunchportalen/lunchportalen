@@ -102,6 +102,8 @@
     "k6:live": "node scripts/k6/run.mjs",
     "k6:smoke": "cross-env K6_FASES=smoke node scripts/k6/run.mjs scripts/k6/scenarios/smoke.js",
     "k6:staging-smoke": "cross-env K6_TAG_ENV=staging K6_FASES=smoke node scripts/k6/run.mjs scripts/k6/scenarios/smoke.js",
+    "k6:staging-runtime": "cross-env K6_TAG_ENV=staging K6_FASES=staging-runtime node scripts/k6/run.mjs scripts/k6/scenarios/staging-runtime-smoke.js",
+    "test:staging-harness": "node --test tests/smoke/staging-edge-access.node.test.mjs",
     "manifest:phase13": "node scripts/verify/generate-release-manifest.mjs",
     "verify:phase13-rc-proof": "node scripts/verify/phase13-21-country-rc-proof.mjs",
     "verify:phase13-rc-proof:local": "node scripts/verify/phase13-21-country-rc-proof.mjs --local-only",

@@ -1,11 +1,12 @@
 import { check } from 'k6';
 
-import { vercelBypassSecret, lpGet, lpPost } from './httpClient.js';
+import { clearVuJar, lpGet, lpPost } from './httpClient.js';
 import { getConfig } from './data.js';
+
+const vuLoginState = {};
 
 /** Prime Vercel Deployment Protection bypass cookie before auth. */
 export function primeVercelBypass(baseUrl) {
-  if (!vercelBypassSecret()) return;
   lpGet(`${baseUrl}/api/health`, {
     tags: { scenario: 'auth', endpoint: 'bypass_warmup', env: __ENV.K6_TAG_ENV || 'prod' },
   });
@@ -13,16 +14,16 @@ export function primeVercelBypass(baseUrl) {
 
 /**
  * Cookie-based login via POST /api/auth/login (Supabase SSR cookies).
- * k6 stores Set-Cookie automatically in the VU cookie jar.
+ * Uses per-VU cookie jar — never k6 setup().
  */
-export function login(baseUrl, email, password) {
+export function login(baseUrl, email, password, scenario = 'auth') {
   primeVercelBypass(baseUrl);
   const res = lpPost(
     `${baseUrl}/api/auth/login`,
     JSON.stringify({ email, password }),
     {
       headers: { 'Content-Type': 'application/json' },
-      tags: { scenario: 'auth', endpoint: 'login', env: __ENV.K6_TAG_ENV || 'prod' },
+      tags: { scenario, endpoint: 'login', env: __ENV.K6_TAG_ENV || 'prod' },
     },
   );
 
@@ -49,13 +50,40 @@ export function hasSupabaseAuthCookie(res) {
   );
 }
 
-/** Per-VU setup: authenticate once and reuse cookie jar for all iterations. */
-export function setupAuth() {
+/** One stable login per VU per actor key. */
+export function ensureActorLogin(actorKey, email, password) {
+  const vu = __VU;
+  const cacheKey = `${vu}:${actorKey}`;
+  if (vuLoginState[cacheKey]) return vuLoginState[cacheKey];
+
+  clearVuJar();
   const config = getConfig();
-  const res = login(config.baseUrl, config.email, config.password);
+  const res = login(config.baseUrl, email, password, actorKey);
   if (res.status !== 200 || !hasSupabaseAuthCookie(res)) {
-    throw new Error(`Login failed for ${config.email} (${res.status})`);
+    throw new Error(`Login failed for ${actorKey} (${res.status})`);
   }
+  vuLoginState[cacheKey] = { ok: true };
+  return vuLoginState[cacheKey];
+}
+
+export function logout(baseUrl, scenario) {
+  const res = lpPost(`${baseUrl}/api/auth/logout`, null, {
+    tags: { scenario, endpoint: 'logout', env: __ENV.K6_TAG_ENV || 'prod' },
+  });
+  check(res, {
+    'logout acceptable': (r) => r.status >= 200 && r.status < 500,
+  });
+  clearVuJar();
+  return res;
+}
+
+/** setup() — metadata only; no session cookies. */
+export function setupReadiness() {
+  const config = getConfig();
+  if (!config.baseUrl.includes('staging.app.lunchportalen.no') && __ENV.K6_TAG_ENV === 'staging') {
+    throw new Error('Staging k6 must target staging.app.lunchportalen.no');
+  }
+  primeVercelBypass(config.baseUrl);
   return { config };
 }
 

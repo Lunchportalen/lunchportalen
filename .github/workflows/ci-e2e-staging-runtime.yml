@@ -1,9 +1,15 @@
 name: CI E2E Staging Runtime
 
-# Playwright against verified staging.app RC runtime (Phase 14C.2 Gate 7).
-# Manual dispatch only — does not replace ci-e2e.yml (localhost lane).
+# Playwright + k6 + cron battery against verified staging.app RC runtime (Phase 14C.4).
+# Registered via push to release branch and pull_request to main (PR #489).
 
 on:
+  push:
+    branches:
+      - release/global-invoice-only-foundation
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       staging_base_url:
@@ -13,26 +19,42 @@ on:
       expected_sha:
         description: "Exact RC SHA health must report"
         required: true
-        default: "5cf96d7457292976faac4a6decc8763baf0aa48f"
 
 concurrency:
-  group: ci-e2e-staging-runtime-${{ github.ref }}
+  group: ci-e2e-staging-runtime-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  staging-runtime-e2e:
-    name: staging-runtime-e2e
+  staging-runtime-cert:
+    name: staging-runtime-cert
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.number == 489)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    environment: staging
     env:
-      PLAYWRIGHT_BASE_URL: ${{ inputs.staging_base_url }}
+      PLAYWRIGHT_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.staging_base_url || 'https://staging.app.lunchportalen.no' }}
       LP_E2E_EXTERNAL_SERVER: "1"
-      EXPECTED_RUNTIME_SHA: ${{ inputs.expected_sha }}
+      EXPECTED_RUNTIME_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || github.sha }}
+      K6_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.staging_base_url || 'https://staging.app.lunchportalen.no' }}
+      K6_TAG_ENV: staging
+      K6_FASES: staging-runtime
       NEXT_PUBLIC_SANITY_DATASET: staging
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: release/global-invoice-only-foundation
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Block production targets
+        run: |
+          set -euo pipefail
+          base="${PLAYWRIGHT_BASE_URL}"
+          case "$base" in
+            *app.lunchportalen.no*|*lunchportalen.no*) echo "FAIL: production target blocked"; exit 1 ;;
+          esac
+          echo "OK: staging target $base"
 
       - uses: actions/setup-node@v4
         with:
@@ -42,29 +64,89 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Harness unit tests
+        run: npm run test:staging-harness
+
       - name: Preflight health SHA
         env:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           node scripts/smoke/staging-runtime-preflight.mjs \
-            --base "${{ inputs.staging_base_url }}" \
-            --expected-sha "${{ inputs.expected_sha }}"
+            --base "${PLAYWRIGHT_BASE_URL}" \
+            --expected-sha "${EXPECTED_RUNTIME_SHA}"
+
+      - name: k6 staging runtime (3 consecutive runs)
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          K6_EMPLOYEE_EMAIL: ${{ secrets.E2E_EMPLOYEE_EMAIL }}
+          K6_EMPLOYEE_PASSWORD: ${{ secrets.E2E_EMPLOYEE_PASSWORD }}
+          K6_PROVIDER_ADMIN_EMAIL: ${{ secrets.MELHUS_PROVIDER_ADMIN_EMAIL }}
+          K6_PROVIDER_ADMIN_PASSWORD: ${{ secrets.MELHUS_PROVIDER_ADMIN_PASSWORD }}
+          K6_KITCHEN_EMAIL: ${{ secrets.E2E_PROVIDER_KITCHEN_EMAIL }}
+          K6_KITCHEN_PASSWORD: ${{ secrets.E2E_PROVIDER_KITCHEN_PASSWORD }}
+          K6_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
+          K6_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for run in 1 2 3; do
+            echo "=== k6 run $run/3 ==="
+            node scripts/k6/run.mjs scripts/k6/scenarios/staging-runtime-smoke.js
+          done
+
+      - name: Cron/outbox auth battery
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node scripts/smoke/staging-cron-outbox-battery.mjs "${PLAYWRIGHT_BASE_URL}"
 
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Run core staging runtime E2E
+      - name: Run staging runtime Playwright suite
         env:
           PLAYWRIGHT_TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
           PLAYWRIGHT_TEST_PASSWORD: ${{ secrets.PLAYWRIGHT_TEST_PASSWORD }}
+          E2E_EMPLOYEE_EMAIL: ${{ secrets.E2E_EMPLOYEE_EMAIL }}
+          E2E_EMPLOYEE_PASSWORD: ${{ secrets.E2E_EMPLOYEE_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
+          E2E_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
+          E2E_TEST_USER_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
+          E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
+          E2E_PROVIDER_KITCHEN_EMAIL: ${{ secrets.E2E_PROVIDER_KITCHEN_EMAIL }}
+          E2E_PROVIDER_KITCHEN_PASSWORD: ${{ secrets.E2E_PROVIDER_KITCHEN_PASSWORD }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+          SUPABASE_POSTGRES_URL: ${{ secrets.SUPABASE_STAGING_POSTGRES_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          set -euo pipefail
           npx playwright test \
+            --config playwright.staging-runtime.config.ts \
             e2e/auth.e2e.ts \
             e2e/auth-role.e2e.ts \
             e2e/core-flows.e2e.ts \
             e2e/mobile-invariants.e2e.ts \
+            e2e/invite-acceptance.e2e.ts \
+            e2e/invoice-only-billing.e2e.ts \
+            e2e/kitchen-packing-delivery.e2e.ts \
+            e2e/provider-registration.e2e.ts \
+            e2e/company-onboarding.e2e.ts \
+            e2e/employee-weekly-ordering.e2e.ts \
+            e2e/staging-locale-matrix.e2e.ts \
+            e2e/visual.e2e.ts \
             --project=chromium \
             --reporter=list
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-runtime-playwright
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore

@@ -35,10 +35,9 @@ function resolveBaseUrl(envLocal) {
   }
   const tagEnv = process.env.K6_TAG_ENV || 'prod';
   if (tagEnv === 'staging') {
-    // git-staging deploy — Vercel bypass works reliably (see dc-011-smoke)
     return (
       envLocal.K6_STAGING_BASE_URL ||
-      'https://lunchportalen-git-staging-lunchportalen.vercel.app'
+      'https://staging.app.lunchportalen.no'
     ).replace(/\/$/, '');
   }
   return 'https://app.lunchportalen.no';
@@ -86,6 +85,32 @@ function main() {
       envLocal.PLAYWRIGHT_TEST_PASSWORD ||
       envLocal.K6_SMOKE_PASSWORD ||
       '',
+    K6_EMPLOYEE_EMAIL: process.env.K6_EMPLOYEE_EMAIL || envLocal.E2E_EMPLOYEE_EMAIL || '',
+    K6_EMPLOYEE_PASSWORD: process.env.K6_EMPLOYEE_PASSWORD || envLocal.E2E_EMPLOYEE_PASSWORD || '',
+    K6_PROVIDER_ADMIN_EMAIL:
+      process.env.K6_PROVIDER_ADMIN_EMAIL ||
+      envLocal.MELHUS_PROVIDER_ADMIN_EMAIL ||
+      envLocal.E2E_PROVIDER_ADMIN_EMAIL ||
+      '',
+    K6_PROVIDER_ADMIN_PASSWORD:
+      process.env.K6_PROVIDER_ADMIN_PASSWORD ||
+      envLocal.MELHUS_PROVIDER_ADMIN_PASSWORD ||
+      envLocal.E2E_PROVIDER_ADMIN_PASSWORD ||
+      '',
+    K6_KITCHEN_EMAIL:
+      process.env.K6_KITCHEN_EMAIL ||
+      envLocal.E2E_PROVIDER_KITCHEN_EMAIL ||
+      envLocal.E2E_KITCHEN_EMAIL ||
+      envLocal.E2E_TEST_USER_EMAIL ||
+      '',
+    K6_KITCHEN_PASSWORD:
+      process.env.K6_KITCHEN_PASSWORD ||
+      envLocal.E2E_PROVIDER_KITCHEN_PASSWORD ||
+      envLocal.E2E_KITCHEN_PASSWORD ||
+      envLocal.E2E_TEST_USER_PASSWORD ||
+      '',
+    K6_SUPERADMIN_EMAIL: process.env.K6_SUPERADMIN_EMAIL || envLocal.E2E_SUPERADMIN_EMAIL || '',
+    K6_SUPERADMIN_PASSWORD: process.env.K6_SUPERADMIN_PASSWORD || envLocal.E2E_SUPERADMIN_PASSWORD || '',
     K6_TAG_ENV: process.env.K6_TAG_ENV || 'staging',
     K6_OUTPUT_DIR: process.env.K6_OUTPUT_DIR || 'scripts/k6/results',
     K6_FASES: process.env.K6_FASES || 'smoke',
@@ -96,8 +121,8 @@ function main() {
       '',
   };
 
-  if (!env.K6_SMOKE_PASSWORD) {
-    console.error('Missing K6_SMOKE_PASSWORD / PLAYWRIGHT_TEST_PASSWORD.');
+  if (!env.K6_SMOKE_PASSWORD && !env.K6_EMPLOYEE_PASSWORD) {
+    console.error('Missing K6_SMOKE_PASSWORD / K6_EMPLOYEE_PASSWORD / PLAYWRIGHT_TEST_PASSWORD.');
     console.error('Run: node scripts/smoke/provision-smoke-user.mjs');
     process.exit(1);
   }
