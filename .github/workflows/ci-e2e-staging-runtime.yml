@@ -37,7 +37,7 @@ jobs:
     env:
       PLAYWRIGHT_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.staging_base_url || 'https://staging.app.lunchportalen.no' }}
       LP_E2E_EXTERNAL_SERVER: "1"
-      EXPECTED_RUNTIME_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || github.sha }}
+      EXPECTED_RUNTIME_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || (github.event.pull_request.head.sha || github.sha) }}
       K6_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.staging_base_url || 'https://staging.app.lunchportalen.no' }}
       K6_TAG_ENV: staging
       K6_FASES: staging-runtime
@@ -51,10 +51,20 @@ jobs:
         run: |
           set -euo pipefail
           base="${PLAYWRIGHT_BASE_URL}"
-          case "$base" in
-            *app.lunchportalen.no*|*lunchportalen.no*) echo "FAIL: production target blocked"; exit 1 ;;
+          host="$(node -e "console.log(new URL(process.argv[1]).hostname)" "$base")"
+          case "$host" in
+            app.lunchportalen.no|lunchportalen.no|www.lunchportalen.no)
+              echo "FAIL: production host blocked ($host)"
+              exit 1
+              ;;
+            staging.app.lunchportalen.no)
+              echo "OK: staging target $base"
+              ;;
+            *)
+              echo "FAIL: unknown host blocked ($host)"
+              exit 1
+              ;;
           esac
-          echo "OK: staging target $base"
 
       - uses: actions/setup-node@v4
         with:
