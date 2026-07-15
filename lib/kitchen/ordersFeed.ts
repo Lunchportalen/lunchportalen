@@ -60,7 +60,14 @@ function normStatus(v: unknown): "ORDERED" | "CANCELED" | "OTHER" {
 
 function isMissingSchemaError(error: any) {
   const msg = safeStr(error?.message).toLowerCase();
-  return msg.includes("does not exist") || msg.includes("not exist") || msg.includes("column");
+  return (
+    msg.includes("does not exist") ||
+    msg.includes("not exist") ||
+    msg.includes("column") ||
+    msg.includes("schema cache") ||
+    msg.includes("could not find the table") ||
+    msg.includes("relation")
+  );
 }
 
 function applyTenantScope(query: any, scope: KitchenScope) {
