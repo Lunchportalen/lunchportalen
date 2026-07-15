@@ -135,9 +135,7 @@ async function fetchProfileMeta(userIds: string[]) {
   if (!userIds.length) return out;
 
   const attempts = [
-    "id,full_name,name,department",
-    "id,name,department",
-    "id,name",
+    "id,full_name",
     "id",
   ];
 
@@ -156,8 +154,8 @@ async function fetchProfileMeta(userIds: string[]) {
   for (const row of rows) {
     const userId = safeStr(row?.id);
     if (!userId) continue;
-    const name = safeStr(row?.full_name) || safeStr(row?.name) || userId;
-    const dept = safeStr(row?.department) || null;
+    const name = safeStr(row?.full_name) || userId;
+    const dept = null;
     out.set(userId, { name, dept });
   }
 
