@@ -85,6 +85,13 @@ jobs:
             --base "${PLAYWRIGHT_BASE_URL}" \
             --expected-sha "${EXPECTED_RUNTIME_SHA}"
 
+      - name: Install k6
+        run: |
+          set -euo pipefail
+          curl -sL "https://github.com/grafana/k6/releases/download/v0.57.0/k6-v0.57.0-linux-amd64.tar.gz" \
+            | sudo tar xvz -C /usr/local/bin --strip-components=1 k6-v0.57.0-linux-amd64/k6
+          k6 version
+
       - name: k6 staging runtime (3 consecutive runs)
         env:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
