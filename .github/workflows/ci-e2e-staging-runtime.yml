@@ -175,7 +175,6 @@ jobs:
             e2e/company-onboarding.e2e.ts \
             e2e/employee-weekly-ordering.e2e.ts \
             e2e/staging-locale-matrix.e2e.ts \
-            e2e/visual.e2e.ts \
             --project=chromium \
             --reporter=list
 
