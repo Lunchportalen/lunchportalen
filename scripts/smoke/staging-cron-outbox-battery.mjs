@@ -16,7 +16,7 @@ const base = (process.argv[2] || process.env.STAGING_BASE_URL || "https://stagin
 assertStagingTarget(base);
 
 const env = { ...loadEnvFile(".env.local"), ...loadEnvFile(".env"), ...process.env };
-const cronSecret = String(env.STAGING_CRON_SECRET || env.CRON_SECRET || env.LP_SMOKE_CRON_SECRET || "").trim();
+const cronSecret = String(env.CRON_SECRET || env.STAGING_CRON_SECRET || env.LP_SMOKE_CRON_SECRET || "").trim();
 
 const JOBS = [
   { method: "GET", path: "/api/cron/daily-order-summary?dryRun=1", name: "daily-order-summary" },

@@ -221,3 +221,43 @@ export async function runStagingHealthPreflight(baseUrl, expectedSha, env = { ..
   }
   return { baseUrl, version: lastVersion };
 }
+
+export async function waitForStagingHealthSha(
+  baseUrl,
+  expectedSha,
+  env = { ...loadEnvFile(), ...process.env },
+  options = {},
+) {
+  const expected = String(expectedSha ?? "").toLowerCase();
+  if (!/^[0-9a-f]{40}$/.test(expected)) {
+    throw new Error("FAIL: expectedSha must be 40-char git SHA");
+  }
+  assertStagingTarget(baseUrl);
+  const maxWaitMs = Number(options.maxWaitMs ?? 20 * 60 * 1000);
+  const intervalMs = Number(options.intervalMs ?? 15_000);
+  const start = Date.now();
+  let attempt = 0;
+  let last = { status: 0, version: "", ok: false };
+
+  while (Date.now() - start <= maxWaitMs) {
+    attempt += 1;
+    last = await stagingHealthOnce(baseUrl, env);
+    if (last.status === 200 && last.ok && last.version === expected) {
+      return {
+        baseUrl,
+        version: last.version,
+        attempts: attempt,
+        waitedMs: Date.now() - start,
+      };
+    }
+    console.log(
+      `WAIT health attempt ${attempt} status=${last.status} version=${last.version || "(empty)"} expected=${expected.slice(0, 8)}`,
+    );
+    if (Date.now() - start + intervalMs > maxWaitMs) break;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error(
+    `FAIL: timeout waiting for health SHA after ${attempt} attempts (last status=${last.status} version=${last.version || "(empty)"})`,
+  );
+}

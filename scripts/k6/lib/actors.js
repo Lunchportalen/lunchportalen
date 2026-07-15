@@ -25,18 +25,8 @@ export function getActorConfig(key) {
         '',
     },
     kitchen: {
-      email:
-        __ENV.K6_KITCHEN_EMAIL ||
-        __ENV.E2E_PROVIDER_KITCHEN_EMAIL ||
-        __ENV.E2E_KITCHEN_EMAIL ||
-        __ENV.E2E_TEST_USER_EMAIL ||
-        '',
-      password:
-        __ENV.K6_KITCHEN_PASSWORD ||
-        __ENV.E2E_PROVIDER_KITCHEN_PASSWORD ||
-        __ENV.E2E_KITCHEN_PASSWORD ||
-        __ENV.E2E_TEST_USER_PASSWORD ||
-        '',
+      email: __ENV.K6_KITCHEN_EMAIL || __ENV.E2E_KITCHEN_EMAIL || '',
+      password: __ENV.K6_KITCHEN_PASSWORD || __ENV.E2E_KITCHEN_PASSWORD || '',
     },
     superadmin: {
       email: __ENV.K6_SUPERADMIN_EMAIL || __ENV.E2E_SUPERADMIN_EMAIL || '',
@@ -58,5 +48,6 @@ export function stagingOrderDate() {
   return __ENV.K6_STAGING_ORDER_DATE || STAGING_SMOKE_ORDER_DATE;
 }
 
-/** Foreign location for negative kitchen scope checks. */
 export const FOREIGN_KITCHEN_LOCATION_ID = '00000000-0000-0000-0000-000000000099';
+export const STAGING_KITCHEN_COMPANY_ID = '8b0b8fa4-8d89-4795-b92b-e09129dd635f';
+export const STAGING_KITCHEN_LOCATION_ID = 'f319b299-8914-4c52-9984-569ce07c914d';

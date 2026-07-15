@@ -1,7 +1,7 @@
 import { check, sleep } from 'k6';
 
 import { authParams, ensureActorLogin, logout, primeVercelBypass } from './auth.js';
-import { getActorConfig, stagingOrderDate, FOREIGN_KITCHEN_LOCATION_ID } from './actors.js';
+import { getActorConfig, stagingOrderDate, FOREIGN_KITCHEN_LOCATION_ID, STAGING_KITCHEN_COMPANY_ID, STAGING_KITCHEN_LOCATION_ID } from './actors.js';
 import { lpGet } from './httpClient.js';
 import { getConfig } from './data.js';
 import { getSmokeThresholds } from './thresholds.js';
@@ -83,19 +83,33 @@ export function runKitchenScenario() {
     'kitchen own ok': (r) => isJsonOk(r),
   });
 
-  const foreign = lpGet(
-    `${config.baseUrl}/api/kitchen/orders?date=${date}&location_id=${FOREIGN_KITCHEN_LOCATION_ID}`,
-    {
-      tags: {
-        scenario: 'kitchen',
-        endpoint: 'kitchen_foreign',
-        env: __ENV.K6_TAG_ENV || 'staging',
-        expected: 'false',
-      },
-    },
+  const foreign = authedGet(
+    config.baseUrl,
+    `/api/kitchen/orders?date=${date}&location_id=${FOREIGN_KITCHEN_LOCATION_ID}`,
+    'kitchen',
+    'kitchen_foreign',
   );
   check(foreign, {
-    'kitchen foreign denied': (r) => r.status === 403 || r.status === 404,
+    'kitchen foreign denied or scoped': (r) => {
+      if (r.status === 403 || r.status === 404) return true;
+      if (r.status !== 200 || !isJsonOk(r)) return false;
+      try {
+        const body = r.json();
+        const slots = body?.data?.slots ?? [];
+        for (const slot of slots) {
+          for (const company of slot.companies ?? []) {
+            if (company.companyId && company.companyId !== STAGING_KITCHEN_COMPANY_ID) return false;
+            for (const loc of company.locations ?? []) {
+              if (loc.locationId === FOREIGN_KITCHEN_LOCATION_ID) return false;
+              if (loc.locationId && loc.locationId !== STAGING_KITCHEN_LOCATION_ID) return false;
+            }
+          }
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    },
   });
 
   logout(config.baseUrl, 'kitchen');

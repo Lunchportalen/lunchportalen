@@ -97,20 +97,8 @@ function main() {
       envLocal.MELHUS_PROVIDER_ADMIN_PASSWORD ||
       envLocal.E2E_PROVIDER_ADMIN_PASSWORD ||
       '',
-    K6_KITCHEN_EMAIL:
-      process.env.K6_KITCHEN_EMAIL ||
-      envLocal.E2E_PROVIDER_KITCHEN_EMAIL ||
-      envLocal.E2E_KITCHEN_EMAIL ||
-      envLocal.E2E_TEST_USER_EMAIL ||
-      envLocal.PLAYWRIGHT_TEST_EMAIL ||
-      '',
-    K6_KITCHEN_PASSWORD:
-      process.env.K6_KITCHEN_PASSWORD ||
-      envLocal.E2E_PROVIDER_KITCHEN_PASSWORD ||
-      envLocal.E2E_KITCHEN_PASSWORD ||
-      envLocal.E2E_TEST_USER_PASSWORD ||
-      envLocal.PLAYWRIGHT_TEST_PASSWORD ||
-      '',
+    K6_KITCHEN_EMAIL: process.env.K6_KITCHEN_EMAIL || envLocal.E2E_KITCHEN_EMAIL || '',
+    K6_KITCHEN_PASSWORD: process.env.K6_KITCHEN_PASSWORD || envLocal.E2E_KITCHEN_PASSWORD || '',
     K6_SUPERADMIN_EMAIL: process.env.K6_SUPERADMIN_EMAIL || envLocal.E2E_SUPERADMIN_EMAIL || '',
     K6_SUPERADMIN_PASSWORD: process.env.K6_SUPERADMIN_PASSWORD || envLocal.E2E_SUPERADMIN_PASSWORD || '',
     K6_TAG_ENV: process.env.K6_TAG_ENV || 'staging',

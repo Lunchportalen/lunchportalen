@@ -77,13 +77,32 @@ jobs:
       - name: Harness unit tests
         run: npm run test:staging-harness
 
-      - name: Preflight health SHA
+      - name: Wait for staging health SHA
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          node scripts/smoke/staging-wait-for-health-sha.mjs \
+            --base "${PLAYWRIGHT_BASE_URL}" \
+            --expected-sha "${EXPECTED_RUNTIME_SHA}" \
+            --max-wait-ms 1200000 \
+            --interval-ms 15000
+
+      - name: Preflight health SHA (stable)
         env:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           node scripts/smoke/staging-runtime-preflight.mjs \
             --base "${PLAYWRIGHT_BASE_URL}" \
             --expected-sha "${EXPECTED_RUNTIME_SHA}"
+
+      - name: Seed company kitchen actor (uigx)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+          E2E_KITCHEN_EMAIL: ${{ secrets.E2E_KITCHEN_EMAIL }}
+          E2E_KITCHEN_PASSWORD: ${{ secrets.E2E_KITCHEN_PASSWORD }}
+        run: node scripts/smoke/seed-e2e-users.mjs --only=kitchen
 
       - name: Install k6
         run: |
@@ -99,8 +118,8 @@ jobs:
           K6_EMPLOYEE_PASSWORD: ${{ secrets.E2E_EMPLOYEE_PASSWORD }}
           K6_PROVIDER_ADMIN_EMAIL: ${{ secrets.MELHUS_PROVIDER_ADMIN_EMAIL }}
           K6_PROVIDER_ADMIN_PASSWORD: ${{ secrets.MELHUS_PROVIDER_ADMIN_PASSWORD }}
-          K6_KITCHEN_EMAIL: ${{ secrets.E2E_PROVIDER_KITCHEN_EMAIL }}
-          K6_KITCHEN_PASSWORD: ${{ secrets.E2E_PROVIDER_KITCHEN_PASSWORD }}
+          K6_KITCHEN_EMAIL: ${{ secrets.E2E_KITCHEN_EMAIL }}
+          K6_KITCHEN_PASSWORD: ${{ secrets.E2E_KITCHEN_PASSWORD }}
           K6_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
           K6_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
         run: |
@@ -131,8 +150,10 @@ jobs:
           E2E_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
           E2E_TEST_USER_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
           E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
-          E2E_PROVIDER_KITCHEN_EMAIL: ${{ secrets.E2E_PROVIDER_KITCHEN_EMAIL }}
-          E2E_PROVIDER_KITCHEN_PASSWORD: ${{ secrets.E2E_PROVIDER_KITCHEN_PASSWORD }}
+          E2E_KITCHEN_EMAIL: ${{ secrets.E2E_KITCHEN_EMAIL }}
+          E2E_KITCHEN_PASSWORD: ${{ secrets.E2E_KITCHEN_PASSWORD }}
+          E2E_PROVIDER_KITCHEN_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
+          E2E_PROVIDER_KITCHEN_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}

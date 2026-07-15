@@ -29,6 +29,7 @@ export const E2E_CANONICAL_EMAILS = {
   employee: "e2e.employee@lunchportalen.no",
   admin: "e2e.company-admin@lunchportalen.no",
   superadmin: "e2e.superadmin@lunchportalen.no",
+  kitchen: "e2e.kitchen@lunchportalen.no",
 };
 
 const A6_COMPANY_ID = "8b0b8fa4-8d89-4795-b92b-e09129dd635f";
@@ -79,6 +80,17 @@ const ROLE_SPECS = [
     locationId: null,
     companyMembershipRole: null,
     locationMembershipRole: null,
+  },
+  {
+    key: "kitchen",
+    emailEnv: "E2E_KITCHEN_EMAIL",
+    passwordEnv: "E2E_KITCHEN_PASSWORD",
+    profileRole: "kitchen",
+    fullName: "E2E Kitchen",
+    companyId: A6_COMPANY_ID,
+    locationId: A6_LOCATION_ID,
+    companyMembershipRole: "employee",
+    locationMembershipRole: "employee",
   },
 ];
 
@@ -230,6 +242,8 @@ async function verifyLogin(url, anonKey, email, password) {
 
 async function main() {
   const env = { ...loadEnvFile(path.join(process.cwd(), ".env.local")), ...process.env };
+  const onlyArg = process.argv.find((a) => a.startsWith("--only="));
+  const onlyKeys = onlyArg ? new Set(onlyArg.slice("--only=".length).split(",")) : null;
   const url = String(env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY ?? "";
   const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -245,15 +259,17 @@ async function main() {
     const canonical = E2E_CANONICAL_EMAILS[spec.key];
     const fromEnv = String(env[spec.emailEnv] ?? "").trim().toLowerCase();
     const password = String(env[spec.passwordEnv] ?? "");
-    if (!fromEnv || !password) {
-      console.error(`ABORT: missing ${spec.emailEnv} or ${spec.passwordEnv}`);
-      process.exit(2);
-    }
-    if (fromEnv !== canonical.toLowerCase()) {
-      console.error(
-        `ABORT: ${spec.emailEnv} must be ${canonical} (got ${fromEnv})`,
-      );
-      process.exit(2);
+    if (!onlyKeys || onlyKeys.has(spec.key)) {
+      if (!fromEnv || !password) {
+        console.error(`ABORT: missing ${spec.emailEnv} or ${spec.passwordEnv}`);
+        process.exit(2);
+      }
+      if (fromEnv !== canonical.toLowerCase()) {
+        console.error(
+          `ABORT: ${spec.emailEnv} must be ${canonical} (got ${fromEnv})`,
+        );
+        process.exit(2);
+      }
     }
   }
 
@@ -262,6 +278,7 @@ async function main() {
   });
 
   for (const spec of ROLE_SPECS) {
+    if (onlyKeys && !onlyKeys.has(spec.key)) continue;
     const email = E2E_CANONICAL_EMAILS[spec.key];
     const password = String(env[spec.passwordEnv] ?? "");
     const userId = await upsertAuthUser(admin, url, anonKey, email, password);
