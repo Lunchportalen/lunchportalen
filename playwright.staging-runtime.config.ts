@@ -6,6 +6,11 @@ import { isStagingRuntimeBaseUrl, stagingBypassHeaders } from "./e2e/helpers/sta
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
+if (!process.env.E2E_TEST_USER_EMAIL && process.env.E2E_EMPLOYEE_EMAIL) {
+  process.env.E2E_TEST_USER_EMAIL = process.env.E2E_EMPLOYEE_EMAIL;
+  process.env.E2E_TEST_USER_PASSWORD = process.env.E2E_EMPLOYEE_PASSWORD ?? "";
+}
+
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "https://staging.app.lunchportalen.no";
 const stagingHeaders = stagingBypassHeaders(baseURL);
 
@@ -15,6 +20,7 @@ if (!isStagingRuntimeBaseUrl(baseURL)) {
 
 export default defineConfig({
   testDir: "./e2e",
+  testMatch: ["**/*.e2e.ts", "**/*@(spec|test).?(c|m)[jt]s?(x)"],
   globalSetup: "./e2e/staging-global-setup.ts",
   timeout: 120_000,
   expect: { timeout: 30_000 },
