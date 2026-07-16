@@ -45,7 +45,7 @@ export const E_INVOICE_CAPABILITIES: Record<CountryCode, CountryEInvoiceCapabili
   NO: cap("NO", {
     channels: ["pdf_email", "peppol", "accounting_export"],
     officialSourceUrl: "https://www.skatteetaten.no/",
-    notes: "EHF/Peppol researched; adapter STUB; no staging legal invoice issuance.",
+    notes: "Norwegian Peppol profile researched; adapter STUB; no staging legal invoice issuance.",
   }),
   SE: cap("SE", { channels: ["pdf_email", "peppol", "accounting_export"], notes: "Peppol researched; STUB." }),
   DK: cap("DK", { channels: ["pdf_email", "peppol", "accounting_export"], notes: "NemHandel/Peppol researched; STUB." }),
