@@ -84,14 +84,13 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
   const admin = RUN ? serviceRoleClient() : (null as never);
   let anonUrl = "";
   let anonKey = "";
-  // Delte aktører (auth-rate-limit-vennlig): kjøkken + provider-admin er
-  // medlemmer i alle 21 providere; NO/DE/US får DEDIKERTE ansatte for
-  // tenant-isolasjonsbeviset, øvrige land deler én ansatt (profilen flyttes
-  // per land — landene kjører sekvensielt).
-  let kitchenActor: Actor;
-  let providerAdminActor: Actor;
-  let sharedEmployee: Actor;
-  const dedicatedEmployees = new Map<string, Actor>();
+  // RC15G2C: isolated JWT actors per country (kitchen/admin/employee).
+  // company_admin + driver are auth users without immediate sign-in (inventory + profile bind).
+  const kitchenByCountry = new Map<string, Actor>();
+  const providerAdminByCountry = new Map<string, Actor>();
+  const employeeByCountry = new Map<string, Actor>();
+  const companyAdminIds = new Map<string, string>();
+  const driverIds = new Map<string, string>();
 
   beforeAll(async () => {
     if (!RUN) return;
@@ -119,13 +118,19 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
     );
     if (prods.length < 2) throw new Error("globale produkter paasmurt/salatboks mangler på staging");
 
-    kitchenActor = await createActor(`rc13-kitchen-${runId}@test.lunchportalen.no`);
-    providerAdminActor = await createActor(`rc13-padmin-${runId}@test.lunchportalen.no`);
-    sharedEmployee = await createActor(`rc13-emp-shared-${runId}@test.lunchportalen.no`);
-    for (const cc of ["NO", "DE", "US"]) {
-      dedicatedEmployees.set(cc, await createActor(`rc13-emp-${cc.toLowerCase()}-${runId}@test.lunchportalen.no`));
+    for (const cc of COUNTRIES) {
+      const lower = cc.toLowerCase();
+      kitchenByCountry.set(cc, await createActor(`rc15g2c-kitchen-${lower}-${runId}@test.lunchportalen.no`));
+      await sleep(400);
+      providerAdminByCountry.set(cc, await createActor(`rc15g2c-padmin-${lower}-${runId}@test.lunchportalen.no`));
+      await sleep(400);
+      employeeByCountry.set(cc, await createActor(`rc15g2c-emp-${lower}-${runId}@test.lunchportalen.no`));
+      await sleep(400);
+      companyAdminIds.set(cc, await createAuthUserOnly(`rc15g2c-cadmin-${lower}-${runId}@test.lunchportalen.no`));
+      driverIds.set(cc, await createAuthUserOnly(`rc15g2c-driver-${lower}-${runId}@test.lunchportalen.no`));
+      await sleep(200);
     }
-  }, 180_000);
+  }, 900_000);
 
   afterAll(async () => {
     if (!RUN) return;
@@ -147,7 +152,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
           c.approvalBackup.blocked_reason,
         ],
       ).catch(() => null);
-      await fixturePgQuery(`delete from public.market_approval_events where country_code=$1 and reason like $2`, [c.cc, `%rc13-${runId}%`]).catch(() => null);
+      await fixturePgQuery(`delete from public.market_approval_events where country_code=$1 and reason like $2`, [c.cc, `%rc15g2c-${runId}%`]).catch(() => null);
     }
 
     if (provIds.length) {
@@ -179,13 +184,13 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
         { text: `delete from public.companies where id = any($1::uuid[])`, values: [compIds] },
         { text: `delete from public.provider_memberships where provider_id = any($1::uuid[])`, values: [provIds] },
         { text: `delete from public.provider_invites where provider_id = any($1::uuid[])`, values: [provIds] },
-        { text: `delete from public.superadmin_translation_events where translation_id in (select id from public.superadmin_translations where entity_id in (select id from public.provider_registrations where company_name like $1))`, values: [`RC13 %${runId}%`] },
-        { text: `delete from public.superadmin_translations where entity_id in (select id from public.provider_registrations where company_name like $1)`, values: [`RC13 %${runId}%`] },
+        { text: `delete from public.superadmin_translation_events where translation_id in (select id from public.superadmin_translations where entity_id in (select id from public.provider_registrations where company_name like $1))`, values: [`RC15G2C %${runId}%`] },
+        { text: `delete from public.superadmin_translations where entity_id in (select id from public.provider_registrations where company_name like $1)`, values: [`RC15G2C %${runId}%`] },
         { text: `delete from public.organization_billing_profiles where organization_id = any($1::uuid[])`, values: [provIds] },
         { text: `delete from public.provider_settings where provider_id = any($1::uuid[])`, values: [provIds] },
         { text: `delete from public.organizations where id = any($1::uuid[])`, values: [provIds] },
         { text: `delete from public.providers where id = any($1::uuid[])`, values: [provIds] },
-        { text: `delete from public.provider_registrations where company_name like $1`, values: [`RC13 %${runId}%`] },
+        { text: `delete from public.provider_registrations where company_name like $1`, values: [`RC15G2C %${runId}%`] },
         { text: `delete from public.outbox where event_key like $1`, values: [`%${runId}%`] },
       ]).catch((e) => console.error("cleanup:", e?.message));
 
@@ -201,17 +206,40 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
     await closeFixturePgPool();
   }, 300_000);
 
+  function sleep(ms: number) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  async function createAuthUserOnly(email: string): Promise<string> {
+    const password = `Rc15G2C!${runId}!${crypto.randomUUID().slice(0, 8)}`;
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    if (error || !data.user?.id) throw new Error(`createUser ${email}: ${error?.message}`);
+    createdUserIds.push(data.user.id);
+    return data.user.id;
+  }
+
   async function createActor(email: string): Promise<{ id: string; client: ReturnType<typeof createClient> }> {
-    const password = `Rc13!${runId}!${crypto.randomUUID().slice(0, 8)}`;
+    const password = `Rc15G2C!${runId}!${crypto.randomUUID().slice(0, 8)}`;
     const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
     if (error || !data.user?.id) throw new Error(`createUser ${email}: ${error?.message}`);
     createdUserIds.push(data.user.id);
     const anon = createClient(anonUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
-    const signIn = await anon.auth.signInWithPassword({ email, password });
-    if (signIn.error || !signIn.data.session?.access_token) throw new Error(`signIn ${email}: ${signIn.error?.message}`);
+    let token: string | undefined;
+    let lastErr = "";
+    for (let attempt = 0; attempt < 8; attempt++) {
+      if (attempt > 0) await sleep(1500 * attempt);
+      const signIn = await anon.auth.signInWithPassword({ email, password });
+      if (!signIn.error && signIn.data.session?.access_token) {
+        token = signIn.data.session.access_token;
+        break;
+      }
+      lastErr = signIn.error?.message || "no token";
+      if (!/rate limit/i.test(lastErr)) break;
+    }
+    if (!token) throw new Error(`signIn ${email}: ${lastErr}`);
     const client = createClient(anonUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { Authorization: `Bearer ${signIn.data.session.access_token}` } },
+      global: { headers: { Authorization: `Bearer ${token}` } },
     });
     return { id: data.user.id, client };
   }
@@ -228,18 +256,18 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       // ---------------------------------------------------------------
       const reg = await admin.rpc("lp_provider_registration_create", {
         p_payload: {
-          company_name: `RC13 Provider ${cc} ${runId}`,
+          company_name: `RC15G2C Provider ${cc} ${runId}`,
           country_code: cc,
           contact_name: `Contact ${cc}`,
-          contact_email: `rc13-prov-${lower}-${runId}@test.lunchportalen.no`,
+          contact_email: `rc15g2c-prov-${lower}-${runId}@test.lunchportalen.no`,
           operating_language: ctx.language,
           invoice_language: ctx.language,
           currency: ctx.currency,
           timezone: ctx.timezone,
-          coverage_wish: `Coverage wish written in ${ctx.language} for ${cc} (rc13-${runId})`,
-          order_email: `rc13-order-${lower}-${runId}@test.lunchportalen.no`,
-          kitchen_email: `rc13-kitchen-${lower}-${runId}@test.lunchportalen.no`,
-          delivery_email: `rc13-delivery-${lower}-${runId}@test.lunchportalen.no`,
+          coverage_wish: `Coverage wish written in ${ctx.language} for ${cc} (rc15g2c-${runId})`,
+          order_email: `rc15g2c-order-${lower}-${runId}@test.lunchportalen.no`,
+          kitchen_email: `rc15g2c-kitchen-${lower}-${runId}@test.lunchportalen.no`,
+          delivery_email: `rc15g2c-delivery-${lower}-${runId}@test.lunchportalen.no`,
         },
       });
       expect(reg.error, `${cc} registration: ${reg.error?.message}`).toBeNull();
@@ -248,8 +276,8 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       // 2) SUPERADMIN APPROVAL → provider + org + settings + invite (atomisk RPC).
       const approve = await admin.rpc("lp_provider_registration_approve", {
         p_registration_id: ctx.registrationId,
-        p_slug: `rc13-${lower}-${runId}`,
-        p_token_hash: crypto.createHash("sha256").update(`rc13-${cc}-${runId}`).digest("hex"),
+        p_slug: `rc15g2c-${lower}-${runId}`,
+        p_token_hash: crypto.createHash("sha256").update(`rc15g2c-${cc}-${runId}`).digest("hex"),
         p_invite_expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
         p_actor_user_id: null,
       });
@@ -264,16 +292,22 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       expect(ps[0].default_currency).toBe(ctx.currency);
       expect(ps[0].default_country_code).toBe(cc);
 
-      // 3) FIRST ADMIN + KITCHEN (ekte auth-brukere med roller i provideren;
-      // invite-raden fra approve-RPC-en beviser first-admin-bootstrappen).
+      // 3) FIRST ADMIN + KITCHEN + DRIVER (RC15G2C: isolated per country).
       const { rows: invites } = await fixturePgQuery(`select id from public.provider_invites where provider_id = $1`, [ctx.providerId]);
       expect(invites.length, `${cc} provider invite`).toBeGreaterThanOrEqual(1);
-      const kitchen = kitchenActor;
+      const kitchen = kitchenByCountry.get(cc)!;
+      const providerAdmin = providerAdminByCountry.get(cc)!;
+      const companyAdminId = companyAdminIds.get(cc)!;
+      const driverId = driverIds.get(cc)!;
       ctx.kitchenId = kitchen.id;
       await fixturePgQuery(
-        `insert into public.provider_memberships (user_id, provider_id, role) values ($1, $3, 'provider_admin'), ($2, $3, 'provider_kitchen') on conflict do nothing`,
-        [providerAdminActor.id, kitchen.id, ctx.providerId],
+        `insert into public.provider_memberships (user_id, provider_id, role) values
+           ($1, $3, 'provider_admin'), ($2, $3, 'provider_kitchen')
+         on conflict do nothing`,
+        [providerAdmin.id, kitchen.id, ctx.providerId],
       );
+      // Driver actor exists for tenant inventory; delivery advances use kitchen JWT (canonical path).
+      void driverId;
 
       // 4) BILLING PROFILE (markedssannhet; state/tz påkrevd for US/CA).
       await fixturePgQuery(
@@ -282,7 +316,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
          select $1, m.id, $2, m.country_code, m.tax_country_code, m.default_currency, $3, $4, 'active',
                 case when m.state_province_required then 'XX' end
          from public.markets m where m.country_code = $5 and m.is_active = true limit 1`,
-        [ctx.providerId, `RC13 Provider ${cc} ${runId} Ltd`, ctx.timezone, `rc13-billing-${lower}-${runId}@test.lunchportalen.no`, cc],
+        [ctx.providerId, `RC15G2C Provider ${cc} ${runId} Ltd`, ctx.timezone, `rc15g2c-billing-${lower}-${runId}@test.lunchportalen.no`, cc],
       );
 
       // 5) COMPANY + LOCATION + PACKAGE/BILLING (avtale ACTIVE, BASIS 90/dag).
@@ -291,9 +325,9 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       await fixturePgQuery(
         `insert into public.companies (id, name, status, orgnr, provider_id, employee_count, billing_email, preferred_locale)
          values ($1, $2, 'ACTIVE', $3, $4::uuid, 10, $5, $6)`,
-        [ctx.companyId, `RC13 Company ${cc} ${runId}`, `9${Math.floor(Math.random() * 90000000 + 10000000)}`, ctx.providerId, `rc13-co-${lower}-${runId}@test.lunchportalen.no`, ctx.language],
+        [ctx.companyId, `RC15G2C Company ${cc} ${runId}`, `9${Math.floor(Math.random() * 90000000 + 10000000)}`, ctx.providerId, `rc15g2c-co-${lower}-${runId}@test.lunchportalen.no`, ctx.language],
       );
-      await fixturePgQuery(`insert into public.company_locations (id, company_id, name, address) values ($1, $2, 'HQ', 'RC13 Street 1')`, [ctx.locationId, ctx.companyId]);
+      await fixturePgQuery(`insert into public.company_locations (id, company_id, name, address) values ($1, $2, 'HQ', 'RC15G2C Street 1')`, [ctx.locationId, ctx.companyId]);
       await fixturePgQuery(`update public.companies set default_location_id = $2 where id = $1`, [ctx.companyId, ctx.locationId]);
       const { rows: agr } = await fixturePgQuery(
         `insert into public.agreements (company_id, location_id, provider_id, tier, status, delivery_days, slot_start, slot_end, starts_at, price_per_meal_nok)
@@ -320,14 +354,20 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
         );
       }
 
-      // 7) EMPLOYEE (invitasjon/aksept-resultat: profil knyttet til company).
-      const employee = dedicatedEmployees.get(cc) ?? sharedEmployee;
+      // 7) EMPLOYEE + COMPANY ADMIN (isolated per country; test-domain sink only).
+      const employee = employeeByCountry.get(cc)!;
       ctx.employeeId = employee.id;
       await fixturePgQuery(
         `insert into public.profiles (id, email, company_id, location_id, preferred_locale)
          values ($1, $2, $3, $4, $5)
          on conflict (id) do update set company_id = excluded.company_id, location_id = excluded.location_id, preferred_locale = excluded.preferred_locale`,
-        [employee.id, `rc13-emp-${lower}-${runId}@test.lunchportalen.no`, ctx.companyId, ctx.locationId, ctx.language],
+        [employee.id, `rc15g2c-emp-${lower}-${runId}@test.lunchportalen.no`, ctx.companyId, ctx.locationId, ctx.language],
+      );
+      await fixturePgQuery(
+        `insert into public.profiles (id, email, company_id, location_id, preferred_locale)
+         values ($1, $2, $3, $4, $5)
+         on conflict (id) do update set company_id = excluded.company_id, location_id = excluded.location_id, preferred_locale = excluded.preferred_locale`,
+        [companyAdminId, `rc15g2c-cadmin-${lower}-${runId}@test.lunchportalen.no`, ctx.companyId, ctx.locationId, ctx.language],
       );
 
       // 8) DAILY + WEEKLY ORDER + UPDATE + CANCELLATION (kanonisk lp_order_set).
@@ -383,7 +423,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       if (cc !== "NO") {
         for (const step of ["TAX_REVIEW_PENDING", "TAX_APPROVED", "LEGAL_REVIEW_PENDING", "LEGAL_APPROVED", "ACTIVE"]) {
           const tr = await admin.rpc("lp_market_approval_transition", {
-            p_country_code: cc, p_new_status: step, p_reason: `rc13-${runId}`, p_actor_user_id: null,
+            p_country_code: cc, p_new_status: step, p_reason: `rc15g2c-${runId}`, p_actor_user_id: null,
           });
           expect(tr.error, `${cc} approval ${step}: ${tr.error?.message}`).toBeNull();
         }
@@ -401,7 +441,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       const fin = await admin.rpc("lp_invoice_finalize", { p_invoice_id: ctx.invoiceId, p_actor_user_id: null });
       expect(fin.error, `${cc} finalize: ${fin.error?.message}`).toBeNull();
       const sent = await admin.rpc("lp_invoice_mark_sent", {
-        p_invoice_id: ctx.invoiceId, p_recipient_email: `rc13-co-${lower}-${runId}@test.lunchportalen.no`, p_actor_user_id: null,
+        p_invoice_id: ctx.invoiceId, p_recipient_email: `rc15g2c-co-${lower}-${runId}@test.lunchportalen.no`, p_actor_user_id: null,
       });
       expect(sent.error, `${cc} sent: ${sent.error?.message}`).toBeNull();
 
@@ -423,7 +463,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
 
       const pay = await admin.rpc("lp_invoice_register_payment", {
         p_invoice_id: ctx.invoiceId, p_amount: Number(head[0].amount_total), p_paid_at: new Date().toISOString(),
-        p_method: "BANK", p_reference: `rc13-${cc}`, p_idempotency_key: `rc13-pay-${cc}-${runId}`, p_actor_user_id: null,
+        p_method: "BANK", p_reference: `rc15g2c-${cc}`, p_idempotency_key: `rc15g2c-pay-${cc}-${runId}`, p_actor_user_id: null,
       });
       expect(pay.error, `${cc} payment: ${pay.error?.message}`).toBeNull();
       const { rows: paid } = await fixturePgQuery(`select status, amount_paid from public.agreement_invoices where id = $1`, [ctx.invoiceId]);
@@ -432,7 +472,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
 
       // 13) CREDIT NOTE / CORRECTION (negativ speiling, lovlig fra PAID).
       const credit = await admin.rpc("lp_invoice_create_credit_note", {
-        p_invoice_id: ctx.invoiceId, p_reason: `rc13 correction ${cc}`, p_actor_user_id: null, p_order_ids: null,
+        p_invoice_id: ctx.invoiceId, p_reason: `rc15g2c correction ${cc}`, p_actor_user_id: null, p_order_ids: null,
       });
       expect(credit.error, `${cc} credit: ${credit.error?.message}`).toBeNull();
       const { rows: cn } = await fixturePgQuery(
@@ -465,7 +505,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
 
       const cpay = await admin.rpc("lp_commission_invoice_register_payment", {
         p_invoice_id: commissionInvoiceId, p_amount_minor: 1350, p_paid_at: new Date().toISOString(),
-        p_method: "BANK", p_reference: `rc13-comm-${cc}`, p_idempotency_key: `rc13-comm-${cc}-${runId}`, p_actor_user_id: null,
+        p_method: "BANK", p_reference: `rc15g2c-comm-${cc}`, p_idempotency_key: `rc15g2c-comm-${cc}-${runId}`, p_actor_user_id: null,
       });
       expect(cpay.error, `${cc} commission payment: ${cpay.error?.message}`).toBeNull();
       expect(cpay.data.payment_status).toBe("paid");
@@ -481,7 +521,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       expect(cinv[0].currency).toBe(ctx.currency);
 
       // 15) SUPERADMIN NORWEGIAN VIEW: original + norsk, kilde/review bevart.
-      const wish = `Coverage wish written in ${ctx.language} for ${cc} (rc13-${runId})`;
+      const wish = `Coverage wish written in ${ctx.language} for ${cc} (rc15g2c-${runId})`;
       const hash = crypto.createHash("sha256").update(wish, "utf8").digest("hex");
       if (ctx.language !== "nb") {
         const { rows: tr } = await fixturePgQuery(
@@ -489,7 +529,7 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
            values ('provider_registration', $1, 'coverage_wish', $2, $3, $4, $5, 'manual', 'reviewed', 1, now())
            on conflict (entity_type, entity_id, field_name, original_text_hash) do nothing
            returning id, original_text, translated_text_nb`,
-          [ctx.registrationId, ctx.language, wish, hash, `Dekningsønske for ${cc} (rc13-${runId})`],
+          [ctx.registrationId, ctx.language, wish, hash, `Dekningsønske for ${cc} (rc15g2c-${runId})`],
         );
         expect(tr.length, `${cc} superadmin translation`).toBe(1);
         expect(tr[0].original_text).toBe(wish); // original bevart
@@ -525,6 +565,26 @@ d("FULL 21-COUNTRY RC PROOF (staging)", () => {
       [a.employeeId, b.providerId],
     );
     expect(Number(cross[0].n)).toBe(0);
+
+    // Kitchen in NO cannot advance DE orders (cross-country membership isolation).
+    const { rows: deOrders } = await fixturePgQuery(
+      `select id from public.orders where provider_id = $1 limit 1`,
+      [b.providerId],
+    );
+    expect(deOrders[0]?.id, "DE order for negative kitchen test").toBeTruthy();
+    const kitchenNo = kitchenByCountry.get("NO")!;
+    const denied = await kitchenNo.client.rpc("lp_order_advance_status", {
+      p_order_id: deOrders[0].id,
+      p_target_status: "PREPARED",
+      p_note: null,
+    });
+    expect(denied.error, "cross-country kitchen advance must fail").toBeTruthy();
+
+    // Distinct org IDs across all 21 countries.
+    const providerIds = COUNTRIES.map((cc) => ctxByCountry.get(cc)?.providerId).filter(Boolean);
+    const companyIds = COUNTRIES.map((cc) => ctxByCountry.get(cc)?.companyId).filter(Boolean);
+    expect(new Set(providerIds).size).toBe(21);
+    expect(new Set(companyIds).size).toBe(21);
   }, 60_000);
 
   it("no stuck outbox rows caused by the RC run", async () => {
