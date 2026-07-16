@@ -178,7 +178,8 @@ describe("Phase 15G.2 technical completion gate (honest)", () => {
     });
     expect(report.technical21Complete).toBe(false);
     expect(report.decision).toBe("NO-GO");
-    expect(report.coverage.usBlocked).toBe(51);
-    expect(report.coverage.caBlocked).toBe(13);
+    // 15G.2B fixture provider covers US/CA technically; gate still NO-GO without CI/staging.
+    expect(report.coverage.usSupportedOrNa).toBe(51);
+    expect(report.coverage.caSupportedOrNa).toBe(13);
   });
 });

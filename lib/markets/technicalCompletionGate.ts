@@ -1,14 +1,17 @@
 /**
- * TECHNICAL_21_COMPLETE evaluator (Phase 15G.2).
- * Distinct from GLOBAL_21_READY (which requires human approvals).
+ * TECHNICAL_21_COMPLETE evaluator (Phase 15G.2B).
+ * Uses technical jurisdiction coverage (fixture/resolver), not human TAX_APPROVED.
  */
 
 import { evaluateGlobal21Ready } from "@/lib/markets/globalActivationGate";
-import { countUsJurisdictionCoverage } from "@/lib/tax/jurisdictions/usStates";
-import { countCanadaJurisdictionCoverage } from "@/lib/tax/jurisdictions/canadaProvinces";
+import {
+  countCanadaFixtureCoverage,
+  countUsFixtureCoverage,
+} from "@/lib/tax/providers/testFixtureProvider";
 import { assertAllInvoicePacksPresent, COUNTRY_INVOICE_PACKS } from "@/lib/invoice/countryInvoicePacks";
 import { buildLegalDocumentMatrix } from "@/lib/legal/legalDocumentRegistry";
 import { credentialDependencies } from "@/lib/invoice/eInvoiceAdapters";
+import { countTechnicalTaxConfiguration } from "@/lib/tax/rules/technicallyConfiguredRules";
 import { SUPPORTED_COUNTRY_CODES, MARKET_LOCALE_CODES, SUPPORTED_LANGUAGES } from "@/lib/markets/supportedMarkets";
 import { LAUNCH_CURRENCY_CODES } from "@/lib/money/minorUnits";
 
@@ -22,10 +25,14 @@ export type TechnicalCompletionReport = {
     locales: number;
     languages: number;
     currencies: number;
+    usResolverPaths: number;
     usSupportedOrNa: number;
     usBlocked: number;
+    caResolverPaths: number;
     caSupportedOrNa: number;
     caBlocked: number;
+    taxCountriesConfigured: number;
+    taxRules: number;
     invoicePacks: number;
     legalDocs: number;
     credentialDependencies: number;
@@ -41,10 +48,14 @@ export function evaluateTechnical21Complete(args: {
 }): TechnicalCompletionReport {
   assertAllInvoicePacksPresent();
   const global = evaluateGlobal21Ready({ stagingGoldenPathPass: args.stagingCountriesPassed });
-  const us = countUsJurisdictionCoverage();
-  const ca = countCanadaJurisdictionCoverage();
+  const us = countUsFixtureCoverage();
+  const ca = countCanadaFixtureCoverage();
+  const tax = countTechnicalTaxConfiguration();
   const legalDocs = buildLegalDocumentMatrix().length;
   const creds = credentialDependencies();
+
+  const usCovered = us.technicallySupported + us.notApplicable;
+  const caCovered = ca.technicallySupported;
 
   const blockers: string[] = [];
   if (!args.fullCiGreen) blockers.push("FULL_CI_NOT_GREEN");
@@ -52,12 +63,10 @@ export function evaluateTechnical21Complete(args: {
   if (args.stagingLocalesPassed < 24) blockers.push(`STAGING_LOCALES:${args.stagingLocalesPassed}/24`);
   if (args.unresolvedP0P1 > 0) blockers.push(`P0_P1:${args.unresolvedP0P1}`);
   if (!args.rollbackCertified) blockers.push("ROLLBACK_NOT_CERTIFIED");
-  if (us.supported + us.notApplicable < 51) {
-    blockers.push(`US_LAUNCH_FOOTPRINT:${us.supported + us.notApplicable}/51`);
-  }
-  if (ca.supported + ca.notApplicable < 13) {
-    blockers.push(`CA_LAUNCH_FOOTPRINT:${ca.supported + ca.notApplicable}/13`);
-  }
+  if (usCovered < 51 || us.paths !== 51) blockers.push(`US_RESOLVER:${usCovered}/51`);
+  if (caCovered < 13 || ca.paths !== 13) blockers.push(`CA_RESOLVER:${caCovered}/13`);
+  if (tax.countriesWithRules < 21) blockers.push(`TAX_CONFIG:${tax.countriesWithRules}/21`);
+  if (tax.approved > 0) blockers.push(`FORGED_TAX_APPROVALS:${tax.approved}`);
   if (Object.values(COUNTRY_INVOICE_PACKS).length < 21) blockers.push("INVOICE_PACKS_INCOMPLETE");
   if (LAUNCH_CURRENCY_CODES.length < 11) blockers.push("CURRENCIES_INCOMPLETE");
   if (MARKET_LOCALE_CODES.length < 24) blockers.push("LOCALES_INCOMPLETE");
@@ -79,10 +88,14 @@ export function evaluateTechnical21Complete(args: {
       locales: MARKET_LOCALE_CODES.length,
       languages: SUPPORTED_LANGUAGES.length,
       currencies: LAUNCH_CURRENCY_CODES.length,
-      usSupportedOrNa: us.supported + us.notApplicable,
+      usResolverPaths: us.paths,
+      usSupportedOrNa: usCovered,
       usBlocked: us.blocked,
-      caSupportedOrNa: ca.supported + ca.notApplicable,
+      caResolverPaths: ca.paths,
+      caSupportedOrNa: caCovered,
       caBlocked: ca.blocked,
+      taxCountriesConfigured: tax.countriesWithRules,
+      taxRules: tax.ruleCount,
       invoicePacks: Object.keys(COUNTRY_INVOICE_PACKS).length,
       legalDocs,
       credentialDependencies: creds.length,

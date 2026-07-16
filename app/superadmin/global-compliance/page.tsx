@@ -8,13 +8,16 @@ import "server-only";
 import { requireSuperadmin } from "@/lib/superadmin/auth";
 import { evaluateTechnical21Complete } from "@/lib/markets/technicalCompletionGate";
 import { evaluateGlobal21Ready } from "@/lib/markets/globalActivationGate";
-import { countUsJurisdictionCoverage } from "@/lib/tax/jurisdictions/usStates";
-import { countCanadaJurisdictionCoverage } from "@/lib/tax/jurisdictions/canadaProvinces";
+import {
+  countCanadaFixtureCoverage,
+  countUsFixtureCoverage,
+} from "@/lib/tax/providers/testFixtureProvider";
 import { countMarketplaceApprovals } from "@/lib/markets/marketplaceLegalModel";
 import { countEInvoiceApprovals } from "@/lib/invoice/eInvoiceRegistry";
 import { countLegalDocumentApprovals } from "@/lib/legal/legalDocumentRegistry";
 import { credentialDependencies } from "@/lib/invoice/eInvoiceAdapters";
 import { countTaxPacksByStatus } from "@/lib/tax/packs/countryTaxPacks";
+import { countTechnicalTaxConfiguration } from "@/lib/tax/rules/technicallyConfiguredRules";
 
 export default async function GlobalCompliancePage() {
   await requireSuperadmin();
@@ -28,12 +31,13 @@ export default async function GlobalCompliancePage() {
     rollbackCertified: false,
   });
   const global = evaluateGlobal21Ready({ stagingGoldenPathPass: 0 });
-  const us = countUsJurisdictionCoverage();
-  const ca = countCanadaJurisdictionCoverage();
+  const us = countUsFixtureCoverage();
+  const ca = countCanadaFixtureCoverage();
   const market = countMarketplaceApprovals();
   const eInv = countEInvoiceApprovals();
   const legal = countLegalDocumentApprovals();
   const tax = countTaxPacksByStatus();
+  const taxTech = countTechnicalTaxConfiguration();
   const creds = credentialDependencies();
 
   return (
@@ -63,8 +67,8 @@ export default async function GlobalCompliancePage() {
         <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Jurisdictions</p>
           <p className="mt-1 text-sm">
-            US supported/N/A {us.supported + us.notApplicable}/51 (blocked {us.blocked}) · CA supported/N/A{" "}
-            {ca.supported + ca.notApplicable}/13 (blocked {ca.blocked})
+            US technical {us.technicallySupported + us.notApplicable}/51 (blocked {us.blocked}) · CA technical{" "}
+            {ca.technicallySupported}/13 · Tax rules configured {taxTech.ruleCount} (approved {taxTech.approved})
           </p>
         </div>
       </div>
