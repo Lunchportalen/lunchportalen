@@ -1,0 +1,149 @@
+# PHASE 14D.2 — read-only production backup / PITR metadata evidence.
+# NO migrations. NO deploys. NO database writes. NO production environment approval.
+name: prod-backup-read-only
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_ref:
+        description: "Supabase project ref (must be production)"
+        required: true
+        default: "hkpokyapzarefrgqzkos"
+
+permissions:
+  contents: read
+
+jobs:
+  backup_metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Intentionally NOT using environment: production — avoids mutate path / approval.
+    steps:
+      - name: Assert production project ref
+        env:
+          PROJECT_REF: ${{ inputs.project_ref }}
+        run: |
+          set -euo pipefail
+          if [ "$PROJECT_REF" != "hkpokyapzarefrgqzkos" ]; then
+            echo "::error::Refusing non-production project ref"
+            exit 1
+          fi
+          echo "project_ref_ok=true"
+
+      - name: Verify management token present (name only)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN secret missing"
+            exit 1
+          fi
+          echo "token_present=true"
+          echo "token_len=${#SUPABASE_ACCESS_TOKEN}"
+
+      - name: Fetch backup metadata (read-only)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ inputs.project_ref }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/backups
+          # Mask token in logs if Accidental echo
+          echo "::add-mask::${SUPABASE_ACCESS_TOKEN}"
+
+          CODE=$(curl -sS -o evidence/backups/raw.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H "Accept: application/json" \
+            "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/backups")
+          echo "http_status=${CODE}" | tee evidence/backups/meta.txt
+          echo "project_ref=${PROJECT_REF}" >> evidence/backups/meta.txt
+          echo "fetched_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> evidence/backups/meta.txt
+
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Backup API returned HTTP ${CODE}"
+            # Do not dump raw body (may contain sensitive fields); keep status only
+            exit 1
+          fi
+
+          python3 <<'PY'
+          import json, pathlib
+          raw = pathlib.Path("evidence/backups/raw.json").read_text(encoding="utf-8")
+          data = json.loads(raw)
+          # Normalize common shapes
+          backups = data.get("backups") if isinstance(data, dict) else data
+          if backups is None and isinstance(data, dict):
+              backups = data.get("data") or []
+          if not isinstance(backups, list):
+              backups = []
+
+          def status_of(b):
+              return str(b.get("status") or b.get("state") or "").lower()
+
+          def ts_of(b):
+              return (
+                  b.get("inserted_at")
+                  or b.get("created_at")
+                  or b.get("backup_time")
+                  or b.get("time")
+                  or b.get("timestamp")
+                  or ""
+              )
+
+          successful = [b for b in backups if any(x in status_of(b) for x in ("success", "completed", "done", "ok"))]
+          # If API omits status, treat present physical/logical rows as candidates
+          candidates = successful if successful else backups
+
+          def sort_key(b):
+              return str(ts_of(b))
+
+          candidates_sorted = sorted(candidates, key=sort_key, reverse=True)
+          latest = candidates_sorted[0] if candidates_sorted else None
+
+          pitr = None
+          if isinstance(data, dict):
+              pitr = data.get("pitr") or data.get("point_in_time_recovery") or data.get("walg")
+
+          summary = {
+              "project_ref": "hkpokyapzarefrgqzkos",
+              "http_status": 200,
+              "backup_count": len(backups),
+              "successful_count": len(successful),
+              "latest": latest,
+              "pitr_raw_keys": sorted(list(pitr.keys())) if isinstance(pitr, dict) else type(pitr).__name__,
+              "pitr": pitr if isinstance(pitr, (dict, bool, str, int, type(None))) else str(type(pitr)),
+              "top_level_keys": sorted(list(data.keys())) if isinstance(data, dict) else ["<list>"],
+          }
+          pathlib.Path("evidence/backups/summary.json").write_text(
+              json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8"
+          )
+          # Redacted list: status + timestamps + type only
+          redacted = []
+          for b in backups[:30]:
+              if not isinstance(b, dict):
+                  continue
+              redacted.append({
+                  "status": b.get("status") or b.get("state"),
+                  "type": b.get("type") or b.get("backup_type") or b.get("kind"),
+                  "timestamp": ts_of(b),
+                  "id_present": bool(b.get("id") or b.get("backup_id")),
+              })
+          pathlib.Path("evidence/backups/redacted.json").write_text(
+              json.dumps({"backups": redacted}, indent=2) + "\n", encoding="utf-8"
+          )
+          print("backup_count=", len(backups))
+          print("successful_count=", len(successful))
+          if latest:
+              print("latest_status=", status_of(latest) or latest.get("status") or latest.get("state"))
+              print("latest_timestamp=", ts_of(latest))
+          else:
+              print("latest=none")
+          PY
+
+      - name: Upload backup evidence artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: prod-backup-evidence-${{ github.run_id }}
+          path: evidence/backups
+          if-no-files-found: error
+          retention-days: 30
