@@ -1,4 +1,4 @@
-﻿-- PHASE 15G.1 — Source evidence lifecycle, US/CA jurisdictions, review workflow, researched seeds.
+-- PHASE 15G.1 — Source evidence lifecycle, US/CA jurisdictions, review workflow, researched seeds.
 -- Additive after 20260828120000. No DROP/TRUNCATE of production data. No forged APPROVED statuses.
 
 BEGIN;
@@ -462,14 +462,14 @@ INSERT INTO public.tax_rules (
 SELECT
   'NO',
   j.id,
-  cat,
+  r.cat,
   'any',
   'any',
-  bps,
+  r.bps,
   false,
   false,
-  code,
-  wording,
+  r.tax_code,
+  r.wording,
   'b1000000-0000-4000-8000-000000000001',
   '2026-01-01',
   NULL,
@@ -480,11 +480,11 @@ CROSS JOIN (VALUES
   ('cold_food', 1500, 'NO-MVA-15-FOOD', 'no.mva.food'),
   ('hot_food', 2500, 'NO-MVA-HOT-CANDIDATE', 'no.mva.standard'),
   ('platform_commission', 2500, 'NO-MVA-COMMISSION-CANDIDATE', 'no.mva.standard')
-) AS r(cat, bps, code, wording)
+) AS r(cat, bps, tax_code, wording)
 WHERE j.country_code = 'NO' AND j.level = 'country'
   AND NOT EXISTS (
     SELECT 1 FROM public.tax_rules tr
-    WHERE tr.tax_code = r.code AND tr.country_code = 'NO' AND tr.review_status = 'RESEARCHED'
+    WHERE tr.tax_code = r.tax_code AND tr.country_code = 'NO' AND tr.review_status = 'RESEARCHED'
   );
 
 INSERT INTO public.tax_rules (
@@ -495,14 +495,14 @@ INSERT INTO public.tax_rules (
 SELECT
   'GB',
   j.id,
-  cat,
+  r.cat,
   'any',
-  fulfill,
-  bps,
+  r.fulfill,
+  r.bps,
   false,
   false,
-  code,
-  wording,
+  r.tax_code,
+  r.wording,
   'b1000000-0000-4000-8000-000000000002',
   '2012-10-01',
   NULL,
@@ -513,11 +513,11 @@ CROSS JOIN (VALUES
   ('hot_food', 'takeaway', 2000, 'GB-VAT-HOT-TAKEAWAY', 'gb.vat.standard'),
   ('cold_food', 'takeaway', 0, 'GB-VAT-ZERO-COLD', 'gb.vat.zero'),
   ('restaurant_service', 'on_premise', 2000, 'GB-VAT-ON-PREMISE', 'gb.vat.standard')
-) AS r(cat, fulfill, bps, code, wording)
+) AS r(cat, fulfill, bps, tax_code, wording)
 WHERE j.country_code = 'GB' AND j.level = 'country'
   AND NOT EXISTS (
     SELECT 1 FROM public.tax_rules tr
-    WHERE tr.tax_code = r.code AND tr.country_code = 'GB' AND tr.review_status = 'RESEARCHED'
+    WHERE tr.tax_code = r.tax_code AND tr.country_code = 'GB' AND tr.review_status = 'RESEARCHED'
   );
 
 -- ---------------------------------------------------------------------------
