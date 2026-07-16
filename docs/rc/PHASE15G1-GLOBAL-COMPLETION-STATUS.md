@@ -21,7 +21,7 @@
 | Legal docs 24 locales | `legalDocumentRegistry.ts` | DRAFT stubs — **0 LEGAL_APPROVED** |
 | Review workflow | `reviewWorkflow.ts` + DB queue/history | No self-approval; append-only |
 | Activation gate | `globalActivationGate.ts` | Fail-closed |
-| Evidence packs | `docs/rc/evidence/phase15g1/` | Generated skeletons |
+| Evidence packs | `node scripts/rc/export-country-evidence-pack.mjs` → local `docs/rc/evidence/phase15g1/` (gitignored) | Generator committed; run locally for reviewers |
 | Staging Golden Path 21/21 | — | **NOT RUN** |
 
 ## Approval counts (not inferred from implementation)
