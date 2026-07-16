@@ -128,7 +128,7 @@ export default async function GlobalCompliancePage() {
           <li>POST /api/superadmin/review/reviewers — invite/onboard</li>
           <li>POST /api/superadmin/review/queue — seed / assign / expire_stale</li>
           <li>POST /api/superadmin/review/approvals — append-only ingest (fixture isolated)</li>
-          <li>POST /api/superadmin/review/evidence — private upload + signed download</li>
+          <li>POST /api/superadmin/review/evidence-objects — private upload + signed download</li>
           <li>POST /api/superadmin/review/registrations — seed/update (secret_manager_ref only)</li>
         </ul>
         <p className="mt-2 text-sm text-neutral-600">

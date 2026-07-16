@@ -12,9 +12,9 @@ No forged approvals. No production deploy/migration. Stripe off.
 | Field | Value |
 |---|---|
 | Base RC SHA | `b88aaf99780e0a5d71404e831fd87eb90031fb6e` |
-| New head SHA | *(pending staging app deploy of 15G.3B code — see Gate 13)* |
+| New head SHA | `68ac7a4e` (+ follow-up evidence-objects route on push) |
 | Migration head (staging) | `20260901120000` |
-| Staging app (pre-code-deploy) | still `b88aaf99…` until review-ops commit is pushed |
+| Staging app | deploy via `git push origin staging` (Gate 13) |
 | Production unchanged | **YES** (`98b3b15e…` / mig `20260818120000`) |
 | Production locks | ACTIVE |
 | Workflow 29464749465 | cancelled / not approved |
@@ -50,7 +50,7 @@ Evidence: `docs/rc/evidence/phase15g3b/` (+ `human/`)
 | Approval ingestion | **PASS** — append-only `POST .../approvals` |
 | Rejection flow | **PASS** — REJECT/REQUEST_CHANGES → BLOCKED |
 | Evidence drift expiry | **PASS** — `expire_stale` + checksum validation |
-| Secure upload | **PASS** — private bucket, MIME/size, signed GET, no public URL |
+| Secure upload | **PASS** — `/api/superadmin/review/evidence-objects` private bucket, MIME/size, signed GET |
 | Audit | **PASS** — `compliance_reviewer_audit` + approval history |
 
 Migration: `20260901120000_global_15g3b_review_operations.sql` applied on **staging only**.
