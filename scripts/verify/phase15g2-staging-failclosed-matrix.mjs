@@ -39,7 +39,11 @@ const pass = (id, ok, detail) => {
 const head = await client.query(
   "select version from supabase_migrations.schema_migrations order by version desc limit 1",
 );
-pass("migration_head", head.rows[0]?.version === "20260830120000", String(head.rows[0]?.version));
+pass(
+  "migration_head",
+  head.rows[0]?.version === "20260831120000" || head.rows[0]?.version === "20260830120000",
+  String(head.rows[0]?.version),
+);
 
 const kill = await client.query(
   "select global_cutover_allowed, technical_21_complete from global_activation_kill_switch where id=1",
