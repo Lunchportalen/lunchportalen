@@ -31,6 +31,7 @@ import {
 
 const enabled = hasRemoteSupabaseIntegrationEnv({ requireAnon: true });
 
+// Prove-fire-suiten bytter bevisst mellom historiske lp_order_set-versjoner.
 const MIG_BASE = path.join(
   process.cwd(),
   "supabase/migrations/20260610130000_lp_order_set_varmmat_msdi_alias.sql",
@@ -38,6 +39,13 @@ const MIG_BASE = path.join(
 const MIG_VARIANT = path.join(
   process.cwd(),
   "supabase/migrations/20260611120000_lp_order_set_variant_itemkey.sql",
+);
+// FASE 10-drift-fix: suiten skal ALLTID etterlate staging på kanonisk
+// lp_order_set (20260814, med markeds-/cutoff-kontekst) — aldri en historisk
+// versjon. Tidligere etterlot afterAll 20260611 og skapte golden-path-drift.
+const MIG_CANONICAL_ORDER_SET = path.join(
+  process.cwd(),
+  "supabase/migrations/20260814120000_market_timezone_cutoff.sql",
 );
 
 function assertStagingOnly() {
@@ -73,7 +81,7 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
     });
 
     await fixturePgQuery(buildProdRealisticVariantSeedSql());
-    await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
+    await fixturePgQuery(fs.readFileSync(MIG_CANONICAL_ORDER_SET, "utf8"));
 
     const skus = Object.values(VARIANT_TEST_PRODUCT_SKUS);
     const { rows: prods } = await fixturePgQuery<{ id: string; sku: string }>(
@@ -112,7 +120,8 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
 
   afterAll(async () => {
     try {
-      await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
+      // Gjenopprett KANONISK funksjon (aldri etterlat historisk versjon).
+      await fixturePgQuery(fs.readFileSync(MIG_CANONICAL_ORDER_SET, "utf8"));
     } finally {
       await closeFixturePgPool();
     }
@@ -161,7 +170,7 @@ describe.skipIf(!enabled)("lp_order_set variant item_key (uigx integration)", ()
     const base = await setOrder(basisDate, "paasmurt", "ost-skinke");
     expectMenuNotFound(base.error);
 
-    await fixturePgQuery(fs.readFileSync(MIG_VARIANT, "utf8"));
+    await fixturePgQuery(fs.readFileSync(MIG_CANONICAL_ORDER_SET, "utf8"));
     await cancelIfActive(basisDate);
     const variant = await setOrder(basisDate, "paasmurt", "ost-skinke");
     expect(variant.error).toBeNull();

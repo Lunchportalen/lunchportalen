@@ -87,6 +87,46 @@ export async function rejectProviderRegistration(
     return registrationActionFailure(key === "actionFailed" ? "rejectFailed" : key);
   }
 
+  // Fase 5 (avslagsvarsel): firmaet får beskjed om avslaget via outbox.
+  // Best-effort — avslaget er allerede trygt gjennomført i RPC-en.
+  try {
+    const { hasSupabaseAdminConfig, supabaseAdmin } = await import("@/lib/supabase/admin");
+    if (hasSupabaseAdminConfig()) {
+      const admin = supabaseAdmin();
+      const { data: reg } = await admin
+        .from("company_registrations")
+        .select("contact_email, contact_name, company_name, rejection_message_sent_at")
+        .eq("id", registrationId)
+        .maybeSingle();
+      const email = safeStr((reg as any)?.contact_email).toLowerCase();
+      if (email) {
+        await admin.from("outbox").upsert(
+          {
+            event_key: `company.registration.rejected:${registrationId}`,
+            payload: {
+              event: "company.registration.rejected",
+              type: "company.registration.rejected",
+              from: "Lunchportalen <no-reply@lunchportalen.no>",
+              to: email,
+              subject: "Om registreringen deres \u2013 Lunchportalen",
+              bodyText: `Hei ${safeStr((reg as any)?.contact_name) || "der"},\n\nTakk for interessen fra ${safeStr((reg as any)?.company_name) || "firmaet deres"}. Vi kan dessverre ikke gå videre med registreringen nå. Ta gjerne kontakt hvis situasjonen endrer seg.\n\nMed vennlig hilsen\nLunchportalen-teamet`,
+              registration_id: registrationId,
+            },
+            status: "PENDING",
+            attempts: 0,
+          },
+          { onConflict: "event_key" },
+        );
+        await admin
+          .from("company_registrations")
+          .update({ rejection_message_sent_at: new Date().toISOString() })
+          .eq("id", registrationId);
+      }
+    }
+  } catch {
+    // best-effort
+  }
+
   revalidatePath("/leverandor/registreringer");
   return { success: true };
 }

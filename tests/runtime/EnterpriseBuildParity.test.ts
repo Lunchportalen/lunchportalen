@@ -37,9 +37,10 @@ describe("Enterprise build parity", () => {
       },
     );
 
-    const nextDocumentImports = sourceFiles.filter((filePath) =>
-      fs.readFileSync(path.join(repoRoot, filePath), "utf8").includes("next/document"),
-    );
+    const nextDocumentImports = sourceFiles.filter((filePath) => {
+      if (filePath.includes("__lint_probe__")) return false;
+      return fs.readFileSync(path.join(repoRoot, filePath), "utf8").includes("next/document");
+    });
 
     expect(nextDocumentImports).toEqual([]);
   });

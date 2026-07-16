@@ -413,7 +413,7 @@
       "workspaceWarmDishGeneration": {
         "activeProfileEyebrow": "Active menu profile",
         "activeProfileTitle": "{profileName}",
-        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "followsProfileLead": "Vorschläge für warme Gerichte folgen diesem Profil. Bestehende Inhalte und veröffentlichte Tage werden nicht automatisch geändert.",
         "title": "Profilbasierte Tagesgerichtvorschläge",
         "description": "Neue Tagesgerichtvorschläge und Standardgenerierung folgen dem aktiven Menüprofil. Bestehende Inhalte und veröffentlichte Tage werden nicht automatisch geändert.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} Vorschläge",
@@ -482,21 +482,21 @@
           "nonNoMarketShadowOnly": "Profil liegt außerhalb des NO-Markts — alle Mappings sind Schattenansicht."
         },
         "draftSave": {
-          "sectionTitle": "Mapping draft",
-          "statusNotSaved": "Not saved",
-          "statusNotSavedHelp": "This evaluation is preview-only and has not been saved as a draft.",
-          "statusDraftSaved": "Draft saved",
-          "statusDraftSavedHelp": "The evaluation is saved as an internal draft. It is not published and not visible to employees.",
-          "statusReviewed": "Reviewed",
-          "statusArchived": "Archived",
-          "statusArchivedHelp": "This draft is archived and is not active.",
-          "activationWarning": "This does not enable publishing, ordering, or menu display.",
-          "saveButton": "Lagre vurdering som utkast",
-          "viewerNoSave": "Saving requires provider admin.",
-          "saveSuccess": "Draft saved.",
-          "validationError": "The draft could not be saved because validation blocked an unsafe change.",
-          "permissionError": "You do not have permission to save mapping drafts.",
-          "genericError": "The draft could not be saved. Try again later."
+          "sectionTitle": "Mapping-Entwurf",
+          "statusNotSaved": "Nicht gespeichert",
+          "statusNotSavedHelp": "Diese Bewertung ist nur eine Vorschau und wurde nicht als Entwurf gespeichert.",
+          "statusDraftSaved": "Entwurf gespeichert",
+          "statusDraftSavedHelp": "Die Bewertung ist als interner Entwurf gespeichert. Sie ist nicht veröffentlicht und für Mitarbeitende nicht sichtbar.",
+          "statusReviewed": "Geprüft",
+          "statusArchived": "Archiviert",
+          "statusArchivedHelp": "Dieser Entwurf ist archiviert und nicht aktiv.",
+          "activationWarning": "Dies aktiviert weder Veröffentlichung noch Bestellung oder Menüanzeige.",
+          "saveButton": "Bewertung als Entwurf speichern",
+          "viewerNoSave": "Zum Speichern ist ein Anbieter-Administrator erforderlich.",
+          "saveSuccess": "Entwurf gespeichert.",
+          "validationError": "Der Entwurf konnte nicht gespeichert werden, weil die Validierung eine unsichere Änderung verhindert hat.",
+          "permissionError": "Sie haben keine Berechtigung, Mapping-Entwürfe zu speichern.",
+          "genericError": "Der Entwurf konnte nicht gespeichert werden. Versuchen Sie es später erneut."
         }
       },
       "catalogModel": {

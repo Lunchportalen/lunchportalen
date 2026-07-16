@@ -1,0 +1,7 @@
+{
+  "comment": "PHASE 11 — bevisste unntak fra språkinnholds-gaten. Hver oppføring er et legitimt identisk/latinsk uttrykk (delt ordforråd, produktterm eller interpolasjonsnøkkel). Nye unntak krever begrunnelse i PR.",
+  "entries": [
+    { "locale": "el", "key": "provider.menu.catalog.tierBadgeLuxusEnterprise", "reason": "Produkttermer (Luxus/Enterprise) beholdes uoversatt" },
+    { "locale": "el", "key": "provider.menu.enterprise.quickChoices.topping.label", "reason": "Produktterm (Premium topping)" }
+  ]
+}

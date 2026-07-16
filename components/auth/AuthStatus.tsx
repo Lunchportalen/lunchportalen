@@ -13,7 +13,6 @@ type State =
   | {
       type: "authed";
       email: string | null;
-      role?: Role;
       label: string; // det som vises i headeren (klikkbart)
       homeHref: string; // hvor man går når man klikker på label
     };
@@ -25,14 +24,6 @@ function roleLabel(role?: Role) {
   if (role === "kitchen") return "Kjøkken";
   if (role === "driver") return "Sjåfør";
   return "Ansatt";
-}
-
-function roleHome(role?: Role): string {
-  if (role === "superadmin") return "/superadmin";
-  if (role === "company_admin") return "/admin";
-  if (role === "kitchen") return "/kitchen";
-  if (role === "driver") return "/driver";
-  return "/week";
 }
 
 function displayLabel(name: string | null, email: string | null, role?: Role) {
@@ -60,16 +51,18 @@ export default function AuthStatus() {
 
     function setAuthed(sessionUser: any) {
       const email = (sessionUser?.email as string | null) ?? null;
-      const role = (sessionUser?.user_metadata?.role as Role | undefined) ?? undefined;
+      // D4: user_metadata is NEVER an authorization source. The header label is
+      // display-only (name/email) and the home link routes through the ONE
+      // canonical server-side resolver — role is resolved there, not here.
       const name =
         (sessionUser?.user_metadata?.full_name as string | null) ??
         (sessionUser?.user_metadata?.name as string | null) ??
         null;
 
-      const label = displayLabel(name, email, role);
-      const homeHref = roleHome(role);
+      const label = displayLabel(name, email, undefined);
+      const homeHref = "/api/auth/post-login";
 
-      setState({ type: "authed", email, role, label, homeHref });
+      setState({ type: "authed", email, label, homeHref });
     }
 
     // 1) Initial session (én gang)

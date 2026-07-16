@@ -1,0 +1,225 @@
+name: CI E2E Staging Runtime
+
+# Playwright + k6 + cron battery against verified staging.app RC runtime (Phase 14C.4).
+# Registered via push to release branch and pull_request to main (PR #489).
+
+on:
+  push:
+    branches:
+      - release/global-invoice-only-foundation
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      staging_base_url:
+        description: "Staging runtime base URL"
+        required: true
+        default: "https://staging.app.lunchportalen.no"
+      expected_sha:
+        description: "Exact RC SHA health must report"
+        required: true
+
+concurrency:
+  group: ci-e2e-staging-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-runtime-cert:
+    name: staging-runtime-cert
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.number == 489)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: staging
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.staging_base_url || 'https://staging.app.lunchportalen.no' }}
+      LP_E2E_EXTERNAL_SERVER: "1"
+      EXPECTED_RUNTIME_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || (github.event.pull_request.head.sha || github.sha) }}
+      K6_BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.staging_base_url || 'https://staging.app.lunchportalen.no' }}
+      K6_TAG_ENV: staging
+      K6_FASES: staging-runtime
+      NEXT_PUBLIC_SANITY_DATASET: staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Block production targets
+        run: |
+          set -euo pipefail
+          base="${PLAYWRIGHT_BASE_URL}"
+          host="$(node -e "console.log(new URL(process.argv[1]).hostname)" "$base")"
+          case "$host" in
+            app.lunchportalen.no|lunchportalen.no|www.lunchportalen.no)
+              echo "FAIL: production host blocked ($host)"
+              exit 1
+              ;;
+            staging.app.lunchportalen.no)
+              echo "OK: staging target $base"
+              ;;
+            *)
+              echo "FAIL: unknown host blocked ($host)"
+              exit 1
+              ;;
+          esac
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Harness unit tests
+        run: npm run test:staging-harness
+
+      - name: Wait for staging health SHA
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          node scripts/smoke/staging-wait-for-health-sha.mjs \
+            --base "${PLAYWRIGHT_BASE_URL}" \
+            --expected-sha "${EXPECTED_RUNTIME_SHA}" \
+            --max-wait-ms 1200000 \
+            --interval-ms 15000
+
+      - name: Preflight health SHA (stable)
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          node scripts/smoke/staging-runtime-preflight.mjs \
+            --base "${PLAYWRIGHT_BASE_URL}" \
+            --expected-sha "${EXPECTED_RUNTIME_SHA}"
+
+      - name: Seed company kitchen actor (uigx)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+          E2E_KITCHEN_EMAIL: ${{ secrets.E2E_KITCHEN_EMAIL }}
+          E2E_KITCHEN_PASSWORD: ${{ secrets.E2E_KITCHEN_PASSWORD }}
+        run: node scripts/smoke/seed-e2e-users.mjs --only=kitchen
+
+      - name: Install k6
+        run: |
+          set -euo pipefail
+          curl -sL "https://github.com/grafana/k6/releases/download/v0.57.0/k6-v0.57.0-linux-amd64.tar.gz" \
+            | sudo tar xvz -C /usr/local/bin --strip-components=1 k6-v0.57.0-linux-amd64/k6
+          k6 version
+
+      - name: k6 staging runtime (3 consecutive runs)
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          K6_EMPLOYEE_EMAIL: ${{ secrets.E2E_EMPLOYEE_EMAIL }}
+          K6_EMPLOYEE_PASSWORD: ${{ secrets.E2E_EMPLOYEE_PASSWORD }}
+          K6_PROVIDER_ADMIN_EMAIL: ${{ secrets.MELHUS_PROVIDER_ADMIN_EMAIL }}
+          K6_PROVIDER_ADMIN_PASSWORD: ${{ secrets.MELHUS_PROVIDER_ADMIN_PASSWORD }}
+          K6_KITCHEN_EMAIL: ${{ secrets.E2E_KITCHEN_EMAIL }}
+          K6_KITCHEN_PASSWORD: ${{ secrets.E2E_KITCHEN_PASSWORD }}
+          K6_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
+          K6_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for run in 1 2 3; do
+            echo "=== k6 run $run/3 ==="
+            node scripts/k6/run.mjs scripts/k6/scenarios/staging-runtime-smoke.js
+          done
+
+      - name: Cron/outbox auth battery
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node scripts/smoke/staging-cron-outbox-battery.mjs "${PLAYWRIGHT_BASE_URL}"
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Resolve staging Postgres URL (identity-guarded)
+        env:
+          SUPABASE_STAGING_POSTGRES_URL: ${{ secrets.SUPABASE_STAGING_POSTGRES_URL }}
+          PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          STAGING_REF="uigxsboqeruxflgzqztl"
+          PROD_REF="hkpokyapzarefrgqzkos"
+          URL="${SUPABASE_STAGING_POSTGRES_URL:-}"
+          if [[ -z "$URL" ]]; then
+            : "${PROJECT_REF:?Missing SUPABASE_STAGING_PROJECT_REF}"
+            : "${DB_PASSWORD:?Missing SUPABASE_STAGING_DB_PASSWORD}"
+            ENCODED="$(python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+            URL="postgresql://postgres.${PROJECT_REF}:${ENCODED}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+          fi
+          if [[ "$URL" == *"$PROD_REF"* ]]; then
+            echo "FAIL: PRODUCTION_BLOCKED"
+            exit 1
+          fi
+          if [[ "$URL" != *"$STAGING_REF"* ]]; then
+            echo "FAIL: STAGING_PROJECT_MATCH=NO"
+            exit 1
+          fi
+          if [[ "${PROJECT_REF:-}" != "" && "${PROJECT_REF}" != "$STAGING_REF" ]]; then
+            echo "FAIL: PROJECT_REF mismatch"
+            exit 1
+          fi
+          echo "SUPABASE_POSTGRES_URL<<EOF" >> "$GITHUB_ENV"
+          printf '%s\n' "$URL" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+          echo "STAGING_POSTGRES_CONFIGURED=YES"
+          echo "STAGING_PROJECT_MATCH=YES"
+          echo "PRODUCTION_BLOCKED=YES"
+
+      - name: Run staging runtime Playwright suite
+        env:
+          PLAYWRIGHT_TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
+          PLAYWRIGHT_TEST_PASSWORD: ${{ secrets.PLAYWRIGHT_TEST_PASSWORD }}
+          E2E_EMPLOYEE_EMAIL: ${{ secrets.E2E_EMPLOYEE_EMAIL }}
+          E2E_EMPLOYEE_PASSWORD: ${{ secrets.E2E_EMPLOYEE_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
+          E2E_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
+          E2E_TEST_USER_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
+          E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
+          E2E_KITCHEN_EMAIL: ${{ secrets.E2E_KITCHEN_EMAIL }}
+          E2E_KITCHEN_PASSWORD: ${{ secrets.E2E_KITCHEN_PASSWORD }}
+          E2E_PROVIDER_KITCHEN_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
+          E2E_PROVIDER_KITCHEN_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_POSTGRES_URL:?Missing SUPABASE_POSTGRES_URL after resolve step}"
+          npx playwright test \
+            --config playwright.staging-runtime.config.ts \
+            e2e/auth.e2e.ts \
+            e2e/auth-role.e2e.ts \
+            e2e/core-flows.e2e.ts \
+            e2e/mobile-invariants.e2e.ts \
+            e2e/invite-acceptance.e2e.ts \
+            e2e/invoice-only-billing.e2e.ts \
+            e2e/kitchen-packing-delivery.e2e.ts \
+            e2e/provider-registration.e2e.ts \
+            e2e/company-onboarding.e2e.ts \
+            e2e/employee-weekly-ordering.e2e.ts \
+            e2e/staging-locale-matrix.e2e.ts \
+            e2e/visual.e2e.ts \
+            --project=chromium \
+            --reporter=list
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-runtime-playwright
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore

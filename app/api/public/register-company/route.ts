@@ -44,6 +44,9 @@ type RegisterBody = {
   consentAccepted?: unknown;
   accept?: unknown;
   confirmAuthority?: unknown;
+  /** Fase 5: eksplisitt leverandørvalg når flere dekker postnummeret. */
+  provider_id?: unknown;
+  providerId?: unknown;
 };
 
 type RegisterRpcOut = {
@@ -154,6 +157,21 @@ function mapRpcError(messageRaw: unknown) {
       message: "Vi dekker dessverre ikke dette området ennå. Ingen registrering er opprettet.",
     };
   }
+  // Fase 5 kontrollert valg: flere leverandører dekker — eksplisitt valg kreves.
+  if (m.includes("PROVIDER_CHOICE_REQUIRED")) {
+    return {
+      status: 422,
+      code: "PROVIDER_CHOICE_REQUIRED",
+      message: "Flere leverandører dekker området. Velg leverandør i skjemaet før innsending.",
+    };
+  }
+  if (m.includes("PROVIDER_NOT_ELIGIBLE")) {
+    return {
+      status: 422,
+      code: "PROVIDER_NOT_ELIGIBLE",
+      message: "Valgt leverandør dekker ikke dette postnummeret.",
+    };
+  }
 
   return { status: 500, code: "REGISTER_FAILED", message: "Registreringen kunne ikke fullføres nå." };
 }
@@ -234,7 +252,14 @@ export async function POST(req: NextRequest) {
       return err(rid, 409, "ALREADY_ACTIVE", "Dette organisasjonsnummeret er allerede registrert som aktiv kunde.");
     }
 
-    const { data, error } = await admin.rpc("lp_company_register", {
+    // Fase 5: valgfritt eksplisitt leverandørvalg (kun UUID slippes gjennom;
+    // RPC-en validerer fail-closed at valget er innenfor matchet dekning).
+    const rawProviderId = safeStr(body.provider_id ?? body.providerId);
+    const providerChoice = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawProviderId)
+      ? rawProviderId
+      : null;
+
+    const { data, error } = await (admin as any).rpc("lp_company_register", {
       p_orgnr: orgnr,
       p_company_name: companyName,
       p_employee_count: employeeCount,
@@ -244,6 +269,7 @@ export async function POST(req: NextRequest) {
       p_address_line: addressLine,
       p_postal_code: postalCode,
       p_postal_city: postalCity,
+      p_provider_id: providerChoice,
     });
 
     if (error) {

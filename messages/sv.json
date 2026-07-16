@@ -413,7 +413,7 @@
       "workspaceWarmDishGeneration": {
         "activeProfileEyebrow": "Active menu profile",
         "activeProfileTitle": "{profileName}",
-        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "followsProfileLead": "Förslag på varmrätter följer den här profilen. Befintligt innehåll och publicerade dagar ändras inte automatiskt.",
         "title": "Profilbaserade varmrättsförslag",
         "description": "Nya varmrättsförslag och standardgenerering följer aktiv menyprofil. Befintligt innehåll och publicerade dagar ändras inte automatiskt.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} förslag",
@@ -482,21 +482,21 @@
           "nonNoMarketShadowOnly": "Profilen är utanför NO-marknaden — all mapping är skuggvy."
         },
         "draftSave": {
-          "sectionTitle": "Mapping draft",
-          "statusNotSaved": "Not saved",
-          "statusNotSavedHelp": "This evaluation is preview-only and has not been saved as a draft.",
-          "statusDraftSaved": "Draft saved",
-          "statusDraftSavedHelp": "The evaluation is saved as an internal draft. It is not published and not visible to employees.",
-          "statusReviewed": "Reviewed",
-          "statusArchived": "Archived",
-          "statusArchivedHelp": "This draft is archived and is not active.",
-          "activationWarning": "This does not enable publishing, ordering, or menu display.",
-          "saveButton": "Lagre vurdering som utkast",
-          "viewerNoSave": "Saving requires provider admin.",
-          "saveSuccess": "Draft saved.",
-          "validationError": "The draft could not be saved because validation blocked an unsafe change.",
-          "permissionError": "You do not have permission to save mapping drafts.",
-          "genericError": "The draft could not be saved. Try again later."
+          "sectionTitle": "Mappningsutkast",
+          "statusNotSaved": "Inte sparad",
+          "statusNotSavedHelp": "Den här utvärderingen är endast en förhandsgranskning och har inte sparats som utkast.",
+          "statusDraftSaved": "Utkast sparat",
+          "statusDraftSavedHelp": "Utvärderingen är sparad som ett internt utkast. Den är inte publicerad och inte synlig för anställda.",
+          "statusReviewed": "Granskad",
+          "statusArchived": "Arkiverad",
+          "statusArchivedHelp": "Det här utkastet är arkiverat och är inte aktivt.",
+          "activationWarning": "Detta aktiverar inte publicering, beställning eller menyvisning.",
+          "saveButton": "Spara utvärdering som utkast",
+          "viewerNoSave": "Att spara kräver leverantörsadministratör.",
+          "saveSuccess": "Utkast sparat.",
+          "validationError": "Utkastet kunde inte sparas eftersom valideringen stoppade en osäker ändring.",
+          "permissionError": "Du har inte behörighet att spara mappningsutkast.",
+          "genericError": "Utkastet kunde inte sparas. Försök igen senare."
         }
       },
       "catalogModel": {
@@ -1381,7 +1381,7 @@
       },
       "card": {
         "allergensPrefix": "Allergener: {list}",
-        "deliveryGroupPrefix": "Levering",
+        "deliveryGroupPrefix": "Leverans",
         "lineQuantity": "{quantity} st · {displayLine}",
         "noLines": "Inga rader registrerade",
         "noteLabel": "Anteckning:",
@@ -1770,7 +1770,7 @@
           "customers": "Kunder",
           "customersMeta": "Företagskopplingar i Tripletex",
           "products": "Produkter",
-          "productsMeta": "Mappede måltidsprodukter",
+          "productsMeta": "Mappade måltidsprodukter",
           "vatCodes": "Momskoder",
           "vatCodesMeta": "Unika skattkoder i bruk"
         },

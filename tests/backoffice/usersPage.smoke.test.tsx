@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import React from "react";
-import { act } from "react";
+import { act } from "@/tests/_helpers/reactAct";
 import { describe, it, expect, vi, afterEach, beforeAll } from "vitest";
 import { createRoot } from "react-dom/client";
 

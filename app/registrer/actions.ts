@@ -79,6 +79,38 @@ export async function registerCompany(
   const city = parsed.data.city;
   const postal = parsed.data.postal_code.replace(/\D/g, "");
 
+  // Fase 5 (venteliste-varsel): uten dekning bekreftes interessen til firmaet
+  // og salg varsles — via outbox (service role), aldri blokkerende for brukeren.
+  if (!matched && registrationId) {
+    try {
+      const { hasSupabaseAdminConfig, supabaseAdmin } = await import("@/lib/supabase/admin");
+      if (hasSupabaseAdminConfig()) {
+        const admin = supabaseAdmin();
+        const area = `${city} ${postal}`.trim();
+        await admin.from("outbox").upsert(
+          {
+            event_key: `company.registration.waitlist:${registrationId}`,
+            payload: {
+              event: "company.registration.waitlist",
+              type: "company.registration.waitlist",
+              from: "Lunchportalen <no-reply@lunchportalen.no>",
+              to: parsed.data.contact_email,
+              subject: "Vi har notert interessen deres \u2013 Lunchportalen",
+              bodyText: `Hei ${parsed.data.contact_name},\n\nTakk for registreringen for ${parsed.data.company_name}. Vi dekker ikke ${area} ennå, men interessen er notert. Vi tar kontakt så snart en leverandør dekker området deres.\n\nMed vennlig hilsen\nLunchportalen-teamet`,
+              registration_id: registrationId,
+              area,
+            },
+            status: "PENDING",
+            attempts: 0,
+          },
+          { onConflict: "event_key" },
+        );
+      }
+    } catch {
+      // Varsling er best-effort — registreringen er allerede trygt lagret.
+    }
+  }
+
   const qs = new URLSearchParams();
   if (registrationId) qs.set("id", registrationId);
   qs.set("matched", matched ? "1" : "0");

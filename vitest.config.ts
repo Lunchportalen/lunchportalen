@@ -18,6 +18,9 @@ if (process.env.AI_PROFITABILITY_ENABLED === undefined) {
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
+// Unit tests must not inherit NODE_ENV=production from .env.local (dev-bypass, legacy warn contracts).
+Object.assign(process.env, { NODE_ENV: "test" });
+
 // Dev .env.local often sets LP_CMS_RUNTIME_MODE=local_provider. That short-circuits CMS loaders
 // (e.g. getContentBySlug → local provider) before supabaseAdmin mocks apply, breaking unit tests.
 // Tests that need a runtime mode must vi.stubEnv(...) explicitly.
@@ -58,6 +61,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    setupFiles: ["tests/_setup/reactActEnvironment.ts"],
     testTimeout: 120000,
     hookTimeout: 180000,
     // DB integration tests (tests/db/*): use `npx vitest run tests/db/... --pool=threads`

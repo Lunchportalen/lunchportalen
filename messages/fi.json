@@ -413,7 +413,7 @@
       "workspaceWarmDishGeneration": {
         "activeProfileEyebrow": "Active menu profile",
         "activeProfileTitle": "{profileName}",
-        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "followsProfileLead": "Lämpimien ruokien ehdotukset noudattavat tätä profiilia. Olemassa olevaa sisältöä ja julkaistuja päiviä ei muuteta automaattisesti.",
         "title": "Profiilipohjaiset lämpimän aterian ehdotukset",
         "description": "Uudet ehdotukset ja oletusgenerointi noudattavat aktiivista menu-profiilia. Olemassa olevaa sisältöä ja julkaistuja päiviä ei muuteta automaattisesti.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} ehdotusta",
@@ -482,21 +482,21 @@
           "nonNoMarketShadowOnly": "Profiili on NO-markkinoiden ulkopuolella — kaikki mapping on varjokuvaa."
         },
         "draftSave": {
-          "sectionTitle": "Mapping draft",
-          "statusNotSaved": "Not saved",
-          "statusNotSavedHelp": "This evaluation is preview-only and has not been saved as a draft.",
-          "statusDraftSaved": "Draft saved",
-          "statusDraftSavedHelp": "The evaluation is saved as an internal draft. It is not published and not visible to employees.",
-          "statusReviewed": "Reviewed",
-          "statusArchived": "Archived",
-          "statusArchivedHelp": "This draft is archived and is not active.",
-          "activationWarning": "This does not enable publishing, ordering, or menu display.",
-          "saveButton": "Lagre vurdering som utkast",
-          "viewerNoSave": "Saving requires provider admin.",
-          "saveSuccess": "Draft saved.",
-          "validationError": "The draft could not be saved because validation blocked an unsafe change.",
-          "permissionError": "You do not have permission to save mapping drafts.",
-          "genericError": "The draft could not be saved. Try again later."
+          "sectionTitle": "Mappausluonnos",
+          "statusNotSaved": "Ei tallennettu",
+          "statusNotSavedHelp": "Tämä arviointi on vain esikatselu, eikä sitä ole tallennettu luonnoksena.",
+          "statusDraftSaved": "Luonnos tallennettu",
+          "statusDraftSavedHelp": "Arviointi on tallennettu sisäisenä luonnoksena. Sitä ei ole julkaistu, eikä se näy työntekijöille.",
+          "statusReviewed": "Arvioitu",
+          "statusArchived": "Arkistoitu",
+          "statusArchivedHelp": "Tämä luonnos on arkistoitu, eikä se ole aktiivinen.",
+          "activationWarning": "Tämä ei ota käyttöön julkaisua, tilaamista tai ruokalistan näyttämistä.",
+          "saveButton": "Tallenna arviointi luonnoksena",
+          "viewerNoSave": "Tallentaminen vaatii toimittajan ylläpitäjän.",
+          "saveSuccess": "Luonnos tallennettu.",
+          "validationError": "Luonnosta ei voitu tallentaa, koska validointi esti turvattoman muutoksen.",
+          "permissionError": "Sinulla ei ole oikeutta tallentaa mappausluonnoksia.",
+          "genericError": "Luonnosta ei voitu tallentaa. Yritä myöhemmin uudelleen."
         }
       },
       "catalogModel": {

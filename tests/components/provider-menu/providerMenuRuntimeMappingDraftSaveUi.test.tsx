@@ -4,12 +4,13 @@
 // @ts-nocheck
 /** @vitest-environment jsdom */
 
-import React, { act } from "react";
+import React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { act } from "@/tests/_helpers/reactAct";
 import { NextIntlClientProvider } from "next-intl";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

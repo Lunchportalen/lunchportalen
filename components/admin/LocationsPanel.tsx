@@ -20,6 +20,15 @@ type LocationRow = {
   status?: string | null;
   address?: string | null;
   slot_policy?: string | null;
+  delivery_instructions?: string | null;
+};
+
+type EditState = {
+  contact_name: string;
+  contact_phone: string;
+  window_from: string;
+  window_to: string;
+  delivery_instructions: string;
 };
 
 type ApiOk = { ok: true; rid?: string; data?: { locations?: LocationRow[] } | null; locations?: LocationRow[] };
@@ -51,6 +60,14 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [actionErr, setActionErr] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // Fase 5: opprett nytt leveringssted + rediger leveringsdetaljer.
+  const [creating, setCreating] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [newLoc, setNewLoc] = useState({ name: "", address: "", contact_name: "", contact_phone: "", window_from: "", window_to: "", delivery_instructions: "" });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<EditState>({ contact_name: "", contact_phone: "", window_from: "", window_to: "", delivery_instructions: "" });
+  const [editBusy, setEditBusy] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -107,11 +124,73 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
     }
   }
 
+  async function createLocation() {
+    if (readOnly || createBusy) return;
+    setActionErr(null);
+    setCreateBusy(true);
+    try {
+      const res = await fetch("/api/admin/locations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newLoc),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || json?.ok !== true) {
+        setActionErr(String(json?.message ?? "Kunne ikke opprette leveringssted."));
+        return;
+      }
+      setCreating(false);
+      setNewLoc({ name: "", address: "", contact_name: "", contact_phone: "", window_from: "", window_to: "", delivery_instructions: "" });
+      await load();
+    } catch {
+      setActionErr("Uventet feil ved oppretting.");
+    } finally {
+      setCreateBusy(false);
+    }
+  }
+
+  function startEdit(loc: LocationRow) {
+    setEditId(loc.id);
+    setEdit({
+      contact_name: safeStr(loc.contact_name),
+      contact_phone: safeStr(loc.contact_phone),
+      window_from: safeStr(loc.window_from),
+      window_to: safeStr(loc.window_to),
+      delivery_instructions: safeStr(loc.delivery_instructions),
+    });
+  }
+
+  async function saveEdit(locationId: string) {
+    if (readOnly || editBusy) return;
+    setActionErr(null);
+    setEditBusy(true);
+    try {
+      const res = await fetch("/api/admin/locations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locationId, ...edit }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || json?.ok !== true) {
+        setActionErr(String(json?.message ?? "Kunne ikke lagre leveringsdetaljer."));
+        return;
+      }
+      setEditId(null);
+      await load();
+    } catch {
+      setActionErr("Uventet feil ved lagring.");
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
   useEffect(() => {
     if (!companyId) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
+
+  const editFieldClass = "mt-1 w-full rounded-xl border border-[rgb(var(--lp-border))] bg-white px-3 py-2 text-sm";
 
   return (
     <section>
@@ -128,13 +207,66 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
           ) : null}
         </div>
 
-        <button
-          onClick={load}
-          className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))]"
-        >
-          Oppdater
-        </button>
+        <div className="flex gap-2">
+          {!readOnly ? (
+            <button
+              onClick={() => setCreating((v) => !v)}
+              className="rounded-2xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
+            >
+              {creating ? "Avbryt" : "Nytt leveringssted"}
+            </button>
+          ) : null}
+          <button
+            onClick={load}
+            className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold ring-1 ring-[rgb(var(--lp-border))]"
+          >
+            Oppdater
+          </button>
+        </div>
       </div>
+
+      {creating && !readOnly ? (
+        <div className="mt-4 rounded-3xl bg-white p-4 ring-1 ring-[rgb(var(--lp-border))]">
+          <div className="text-sm font-semibold">Nytt leveringssted</div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <label className="text-xs font-medium">
+              Navn *
+              <input className={editFieldClass} name="new_loc_name" value={newLoc.name} onChange={(e) => setNewLoc((p) => ({ ...p, name: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium">
+              Adresse *
+              <input className={editFieldClass} name="new_loc_address" value={newLoc.address} onChange={(e) => setNewLoc((p) => ({ ...p, address: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium">
+              Leveringskontakt
+              <input className={editFieldClass} value={newLoc.contact_name} onChange={(e) => setNewLoc((p) => ({ ...p, contact_name: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium">
+              Telefon
+              <input className={editFieldClass} value={newLoc.contact_phone} onChange={(e) => setNewLoc((p) => ({ ...p, contact_phone: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium">
+              Vindu fra (HH:MM)
+              <input className={editFieldClass} placeholder="11:00" value={newLoc.window_from} onChange={(e) => setNewLoc((p) => ({ ...p, window_from: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium">
+              Vindu til (HH:MM)
+              <input className={editFieldClass} placeholder="13:00" value={newLoc.window_to} onChange={(e) => setNewLoc((p) => ({ ...p, window_to: e.target.value }))} />
+            </label>
+            <label className="text-xs font-medium md:col-span-2">
+              Leveringsinstruksjoner
+              <textarea className={editFieldClass} rows={2} placeholder="F.eks. ringeklokke, etasje, varemottak" value={newLoc.delivery_instructions} onChange={(e) => setNewLoc((p) => ({ ...p, delivery_instructions: e.target.value }))} />
+            </label>
+          </div>
+          <button
+            onClick={createLocation}
+            disabled={createBusy}
+            className="mt-3 rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {createBusy ? "Oppretter …" : "Opprett leveringssted"}
+          </button>
+        </div>
+      ) : null}
 
       {actionErr ? (
         <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
@@ -188,7 +320,47 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
                       {loc.notes ? (
                         <div className="text-xs text-[rgb(var(--lp-muted))]">Notat: {loc.notes}</div>
                       ) : null}
+                      {loc.delivery_instructions ? (
+                        <div className="text-xs text-[rgb(var(--lp-muted))]">
+                          Leveringsinstruksjoner: <span className="text-[rgb(var(--lp-text))]">{loc.delivery_instructions}</span>
+                        </div>
+                      ) : null}
                     </div>
+
+                    {editId === loc.id && !readOnly ? (
+                      <div className="mt-3 rounded-2xl bg-white p-3 ring-1 ring-[rgb(var(--lp-border))]">
+                        <div className="grid gap-2 md:grid-cols-2">
+                          <label className="text-xs font-medium">
+                            Leveringskontakt
+                            <input className={editFieldClass} value={edit.contact_name} onChange={(e) => setEdit((p) => ({ ...p, contact_name: e.target.value }))} />
+                          </label>
+                          <label className="text-xs font-medium">
+                            Telefon
+                            <input className={editFieldClass} value={edit.contact_phone} onChange={(e) => setEdit((p) => ({ ...p, contact_phone: e.target.value }))} />
+                          </label>
+                          <label className="text-xs font-medium">
+                            Vindu fra (HH:MM)
+                            <input className={editFieldClass} value={edit.window_from} onChange={(e) => setEdit((p) => ({ ...p, window_from: e.target.value }))} />
+                          </label>
+                          <label className="text-xs font-medium">
+                            Vindu til (HH:MM)
+                            <input className={editFieldClass} value={edit.window_to} onChange={(e) => setEdit((p) => ({ ...p, window_to: e.target.value }))} />
+                          </label>
+                          <label className="text-xs font-medium md:col-span-2">
+                            Leveringsinstruksjoner
+                            <textarea className={editFieldClass} rows={2} value={edit.delivery_instructions} onChange={(e) => setEdit((p) => ({ ...p, delivery_instructions: e.target.value }))} />
+                          </label>
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                          <button onClick={() => saveEdit(loc.id)} disabled={editBusy} className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60">
+                            {editBusy ? "Lagrer …" : "Lagre"}
+                          </button>
+                          <button onClick={() => setEditId(null)} className="rounded-full border px-3 py-1 text-xs font-semibold">
+                            Avbryt
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     <details className="mt-3">
                       <summary className="cursor-pointer text-xs font-semibold text-[rgb(var(--lp-muted))]">Vis teknisk info</summary>
@@ -196,7 +368,7 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
                     </details>
 
                     {!readOnly ? (
-                      <div className="mt-4">
+                      <div className="mt-4 flex gap-2">
                         <button
                           onClick={() => toggleStatus(loc)}
                           disabled={busyId === loc.id}
@@ -207,6 +379,12 @@ export default function LocationsPanel({ companyId, readOnly = false }: Props) {
                             : status === "ACTIVE"
                               ? "Deaktiver"
                               : "Aktiver"}
+                        </button>
+                        <button
+                          onClick={() => (editId === loc.id ? setEditId(null) : startEdit(loc))}
+                          className="rounded-full border px-3 py-1 text-xs font-semibold text-neutral-900 hover:bg-white"
+                        >
+                          {editId === loc.id ? "Lukk" : "Rediger levering"}
                         </button>
                       </div>
                     ) : null}

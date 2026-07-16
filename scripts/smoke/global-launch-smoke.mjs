@@ -29,6 +29,19 @@ const doCron = runAll || args.has("--cron");
 const doWebhooks = runAll || args.has("--webhooks");
 
 const BASE_URL = String(process.env.LP_SMOKE_BASE_URL ?? "").trim().replace(/\/$/, "");
+const VERCEL_BYPASS = String(
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? process.env.VERCEL_PROTECTION_BYPASS ?? "",
+).trim();
+
+function smokeFetch(path, init = {}) {
+  const headers = { ...(init.headers ?? {}) };
+  if (VERCEL_BYPASS) {
+    headers["x-vercel-protection-bypass"] = VERCEL_BYPASS;
+    headers["x-vercel-set-bypass-cookie"] = "true";
+    headers.accept = "application/json";
+  }
+  return fetch(`${BASE_URL}${path}`, { ...init, headers });
+}
 
 let failures = 0;
 function fail(msg) {
@@ -89,12 +102,20 @@ async function smokeCron() {
   console.log("\n== Cron gate (fail-closed) ==");
   const route = "/api/cron/invoices/generate?dryRun=1";
 
-  const bare = await fetch(`${BASE_URL}${route}`);
+  const bare = await smokeFetch(route);
   if (bare.status === 403) ok("cron without credentials → 403 (fail-closed)");
-  else if (bare.status === 500) fail("cron returns 500 CRON_SECRET_MISSING — sett CRON_SECRET i prod env");
-  else fail(`cron without credentials → ${bare.status} (expected 403)`);
+  else if (bare.status === 500) {
+    const body = await bare.json().catch(() => null);
+    if (String(body?.error ?? "").match(/CRON_SECRET/i)) {
+      fail("cron returns 500 CRON_SECRET_MISSING — sett CRON_SECRET i env");
+    } else {
+      fail(`cron without credentials → 500 (${JSON.stringify(body)?.slice(0, 80)})`);
+    }
+  } else if (bare.status === 401 && VERCEL_BYPASS) {
+    fail("cron without credentials → 401 deployment protection — sjekk bypass secret");
+  } else fail(`cron without credentials → ${bare.status} (expected 403)`);
 
-  const spoofed = await fetch(`${BASE_URL}${route}`, { headers: { "x-vercel-cron": "1" } });
+  const spoofed = await smokeFetch(route, { headers: { "x-vercel-cron": "1" } });
   if (spoofed.status === 403) ok("x-vercel-cron alone → 403 (CRON-001 lukket)");
   else fail(`x-vercel-cron alone → ${spoofed.status} (expected 403) — CRITICAL if 2xx`);
 
@@ -103,7 +124,7 @@ async function smokeCron() {
     console.log("   (LP_SMOKE_CRON_SECRET ikke satt — hopper over positiv dryRun-verifikasjon)");
     return;
   }
-  const authed = await fetch(`${BASE_URL}${route}`, { headers: { authorization: `Bearer ${secret}` } });
+  const authed = await smokeFetch(route, { headers: { authorization: `Bearer ${secret}` } });
   if (authed.status === 200) ok("cron with correct Bearer + dryRun=1 → 200 (ingen writes)");
   else if (authed.status === 503) ok("cron kill switch aktiv (503) — bevisst stengt");
   else fail(`cron with Bearer → ${authed.status} (expected 200)`);

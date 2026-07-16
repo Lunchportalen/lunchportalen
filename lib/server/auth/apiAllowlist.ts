@@ -2,24 +2,25 @@
  * DC-011 / Fase 3 — explicit API auth allowlist (no wildcards in Set).
  * Dynamic App Router segments are matched via ALLOWLIST_DYNAMIC (documented exceptions).
  *
- * Total: 88 routes (83 path + 2 GET-only + 3 dynamic). GET-only: global header/footer public read.
+ * Total: 87 routes (82 path + 2 GET-only + 3 dynamic). GET-only: global header/footer public read.
  */
 
 /** Exact paths only — verified fail-closed / anon (a)–(d) / api-key in route files. */
 export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
-  "/api/accept-invite/complete",
+  // Fase 3: /api/accept-invite/complete, /api/admin/accept-invite/complete and
+  // /api/admin/invites/register removed (duplicate invite completion routes
+  // consolidated into /api/auth/accept-invite).
   "/api/address/resolve",
   "/api/address/search",
-  "/api/admin/accept-invite/complete",
   "/api/admin/auth/login",
   "/api/admin/invites/lookup",
-  "/api/admin/invites/register",
   "/api/auth/accept-invite",
   "/api/auth/forgot-password",
   "/api/auth/login",
   "/api/auth/login-debug",
   "/api/auth/logout",
   "/api/auth/register-company-admin",
+  "/api/auth/register-provider-admin",
   "/api/auth/session",
   "/api/company/create",
   "/api/contact",
@@ -28,6 +29,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/cron/business",
   "/api/cron/check-deviations",
   "/api/cron/cleanup-invites",
+  "/api/cron/commission-settlement",
   "/api/cron/daily-order-summary",
   "/api/cron/daily-sanity",
   "/api/cron/experiments",
@@ -73,6 +75,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/public/demo-interest",
   "/api/public/leads/capture",
   "/api/public/onboarding/register",
+  "/api/public/provider-registration",
   "/api/public/register",
   "/api/public/register-company",
   "/api/public/search",

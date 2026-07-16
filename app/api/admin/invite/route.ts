@@ -12,6 +12,7 @@ import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from
 import { auditAdmin } from "@/lib/audit/actions";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { isSystemEmail as isSystemEmailCore, SYSTEM_EMAILS } from "@/lib/system/emails";
+import { inviteExpiresAtIso } from "@/lib/invites/employeeInviteConstants";
 
 type InviteInput = {
   full_name?: string | null;
@@ -272,7 +273,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const expires_at = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
+      const expires_at = inviteExpiresAtIso();
       const nowIso = new Date().toISOString();
 
       const ins = await admin.from("employee_invites").insert({

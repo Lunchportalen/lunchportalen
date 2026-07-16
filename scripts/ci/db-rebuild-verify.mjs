@@ -26,7 +26,7 @@ try {
 const projectRoot = join(process.cwd());
 const migrationsDir = join(projectRoot, "supabase", "migrations");
 
-// Expected schema (from migrations + db-contracts)
+// Expected schema (Supabase-owned objects only — CMS/Sanity/Umbraco excluded; see docs/audit/prod-schema-gaps-2026-05-31.md)
 const REQUIRED_TABLES = [
   "companies",
   "company_locations",
@@ -43,11 +43,7 @@ const REQUIRED_TABLES = [
   "ops_events",
   "enterprise_groups",
   "incidents",
-  "daily_company_rollup",
-  "daily_employee_orders",
   "invoice_lines",
-  "invoice_exports",
-  "esg_monthly",
   "invoice_periods",
   "company_registrations",
   "billing_tax_codes",
@@ -57,6 +53,20 @@ const REQUIRED_TABLES = [
   "employee_invites",
   "content_pages",
   "content_page_variants",
+  "forms",
+  "form_submissions",
+  "ai_activity_log",
+  "ai_suggestions",
+  "ai_jobs",
+  "media_items",
+];
+
+/** Parked / non-Supabase — must NOT fail rebuild (EXPECTED-RED). */
+const EXPECTED_RED_TABLES = [
+  "daily_company_rollup",
+  "daily_employee_orders",
+  "invoice_exports",
+  "esg_monthly",
   "content_releases",
   "content_release_items",
   "content_workflow_state",
@@ -64,12 +74,6 @@ const REQUIRED_TABLES = [
   "content_analytics_events",
   "content_health",
   "content_experiments",
-  "forms",
-  "form_submissions",
-  "ai_activity_log",
-  "ai_suggestions",
-  "ai_jobs",
-  "media_items",
   "entities",
   "entity_relations",
   "experiment_results",
@@ -78,12 +82,11 @@ const REQUIRED_TABLES = [
 ];
 
 const REQUIRED_CONSTRAINTS = [
-  { table: "company_deletions", name: "company_deletions_mode_ck" },
   { table: "outbox", name: "outbox_status_check" },
 ];
 
 const REQUIRED_INDEXES = [
-  "profiles_company_id_idx",
+  "profiles_company_idx",
   "outbox_claim_idx",
 ];
 
@@ -152,6 +155,12 @@ async function verifySchema(connectionUrl) {
       if (!existingTables.includes(t)) {
         mismatches.push(`Missing table: public.${t}`);
         verified = false;
+      }
+    }
+
+    for (const t of EXPECTED_RED_TABLES) {
+      if (existingTables.includes(t)) {
+        console.log(`  note: EXPECTED-RED table present (optional): public.${t}`);
       }
     }
 

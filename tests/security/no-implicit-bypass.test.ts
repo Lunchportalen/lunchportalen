@@ -29,6 +29,9 @@ describe("no-implicit-bypass (DC-011 middleware)", () => {
 
   test("API_AUTH_ALLOWLIST_SIZE is 88", () => {
     // 86 → 88: SEC-001 added /api/webhooks/stripe-billing-payments + stripe-provider-setup.
+    // 88 → 85: Fase 3 removed 3 duplicate invite-completion routes.
+    // 85 → 87: Fase 4 added /api/public/provider-registration + /api/auth/register-provider-admin.
+    // 87 → 88: Fase 9 added /api/cron/commission-settlement (cron-secret gated).
     expect(API_AUTH_ALLOWLIST_SIZE).toBe(88);
   });
 

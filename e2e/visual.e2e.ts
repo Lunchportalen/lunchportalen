@@ -117,11 +117,14 @@ test.describe("Visual regression — backoffice content landing", () => {
     await loginViaForm(page, creds.email, creds.password, "/backoffice/content");
     await waitForPostLoginNavigation(page);
     await expect(page).toHaveURL(/\/backoffice\/content/);
-    await page.getByRole("heading", { name: /content/i }).waitFor({ state: "visible", timeout: 15_000 });
+    await waitForMainContent(page);
     await settleLayout(page);
+    // Classification: NON_DETERMINISTIC_DATA — CMS tree/body content varies between runs.
+    // Mask main content; shell chrome remains the visual signal.
     await expect(page).toHaveScreenshot("backoffice-content.png", {
       fullPage: false,
       maxDiffPixels: 200,
+      mask: [page.getByRole("main")],
     });
   });
 });

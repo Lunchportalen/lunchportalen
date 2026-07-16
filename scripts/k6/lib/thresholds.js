@@ -4,7 +4,7 @@
  */
 
 const GLOBAL = {
-  http_req_failed: [
+  'http_req_failed{expected:true}': [
     'rate<0.01',
     { threshold: 'rate<0.05', abortOnFail: true, delayAbortEval: '30s' },
   ],

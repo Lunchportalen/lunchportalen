@@ -3,7 +3,8 @@
 /**
  * TPT-B-7b — DirectWizard component tests.
  */
-import React, { act } from "react";
+import React from "react";
+import { act } from "@/tests/_helpers/reactAct";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";

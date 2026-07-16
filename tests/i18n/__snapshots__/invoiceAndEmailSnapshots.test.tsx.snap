@@ -1,0 +1,286 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`email previews — 15/15 languages > email copy renders stable in cs 1`] = `
+"# companyApproved (cs)
+Vítejte v Lunchportalen – aktivujte svůj účet
+Dobrý den, Kari Nordmann,
+Smlouva pro RC Company byla schválena a je připravena k aktivaci.
+Aktivovat účet
+S pozdravem,
+Tým Lunchportalen
+# invite (cs)
+(c) => named(c, (n) => \`Máte pozvánku na firemní oběd u \${n}\`, "Máte pozvánku do Lunchportalen")
+# passwordReset (cs)
+Obnovte si heslo do Lunchportalen
+# orderNotifications (cs)
+Oběd doručen – 20.07.2026 – Lunchportalen
+Objednávka na cestě – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in da 1`] = `
+"# companyApproved (da)
+Velkommen til Lunchportalen – aktivér din konto
+Hej Kari Nordmann,
+Aftalen for RC Company er godkendt og klar til at blive aktiveret.
+Aktivér konto
+Med venlig hilsen,
+Lunchportalen-teamet
+# invite (da)
+(c) => named(c, (n) => \`Du er inviteret til firmafrokost hos \${n}\`, "Du er inviteret til Lunchportalen")
+# passwordReset (da)
+Nulstil din adgangskode i Lunchportalen
+# orderNotifications (da)
+Frokost leveret – 20.07.2026 – Lunchportalen
+Ordre ude til levering – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in de 1`] = `
+"# companyApproved (de)
+Willkommen bei Lunchportalen – Konto aktivieren
+Hallo Kari Nordmann,
+Der Vertrag für RC Company wurde genehmigt und kann aktiviert werden.
+Konto aktivieren
+Mit freundlichen Grüßen,
+Das Lunchportalen-Team
+# invite (de)
+(c) => named(c, (n) => \`Sie sind zum Firmenlunch bei \${n} eingeladen\`, "Sie sind zu Lunchportalen eingeladen")
+# passwordReset (de)
+Setzen Sie Ihr Lunchportalen-Passwort zurück
+# orderNotifications (de)
+Mittagessen geliefert – 20.07.2026 – Lunchportalen
+Bestellung in Zustellung – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in el 1`] = `
+"# companyApproved (el)
+Καλώς ήρθατε στο Lunchportalen – ενεργοποιήστε τον λογαριασμό σας
+Γεια σας Kari Nordmann,
+Η συμφωνία για την RC Company έχει εγκριθεί και είναι έτοιμη για ενεργοποίηση.
+Ενεργοποίηση λογαριασμού
+Με εκτίμηση,
+Η ομάδα του Lunchportalen
+# invite (el)
+(c) => named(c, (n) => \`Έχετε πρόσκληση για εταιρικό γεύμα στην \${n}\`, "Έχετε πρόσκληση στο Lunchportalen")
+# passwordReset (el)
+Επαναφέρετε τον κωδικό πρόσβασής σας στο Lunchportalen
+# orderNotifications (el)
+Το γεύμα παραδόθηκε – 20.07.2026 – Lunchportalen
+Παραγγελία σε παράδοση – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in en 1`] = `
+"# companyApproved (en)
+Welcome to Lunchportalen – activate your account
+Hi Kari Nordmann,
+The agreement for RC Company has been approved and is ready to activate.
+Activate account
+Best regards,
+The Lunchportalen team
+# invite (en)
+(c) => named(c, (n) => \`You are invited to company lunch at \${n}\`, "You are invited to Lunchportalen")
+# passwordReset (en)
+Reset your Lunchportalen password
+# orderNotifications (en)
+Lunch delivered – 20.07.2026 – Lunchportalen
+Order out for delivery – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in es 1`] = `
+"# companyApproved (es)
+Bienvenido a Lunchportalen – activa tu cuenta
+Hola Kari Nordmann:
+El acuerdo para RC Company ha sido aprobado y está listo para activarse.
+Activar cuenta
+Atentamente,
+El equipo de Lunchportalen
+# invite (es)
+(c) => named(c, (n) => \`Estás invitado al almuerzo de empresa en \${n}\`, "Estás invitado a Lunchportalen")
+# passwordReset (es)
+Restablece tu contraseña de Lunchportalen
+# orderNotifications (es)
+Almuerzo entregado – 20.07.2026 – Lunchportalen
+Pedido en reparto – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in fi 1`] = `
+"# companyApproved (fi)
+Tervetuloa Lunchportaleniin – aktivoi tilisi
+Hei Kari Nordmann,
+Sopimus yritykselle RC Company on hyväksytty ja valmis aktivoitavaksi.
+Aktivoi tili
+Ystävällisin terveisin,
+Lunchportalen-tiimi
+# invite (fi)
+(c) => named(c, (n) => \`Sinut on kutsuttu yrityslounaalle: \${n}\`, "Sinut on kutsuttu Lunchportaleniin")
+# passwordReset (fi)
+Vaihda Lunchportalen-salasanasi
+# orderNotifications (fi)
+Lounas toimitettu – 20.07.2026 – Lunchportalen
+Tilaus toimituksessa – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in fr 1`] = `
+"# companyApproved (fr)
+Bienvenue sur Lunchportalen – activez votre compte
+Bonjour Kari Nordmann,
+Le contrat pour RC Company a été approuvé et est prêt à être activé.
+Activer le compte
+Cordialement,
+L'équipe Lunchportalen
+# invite (fr)
+(c) => named(c, (n) => \`Vous êtes invité au déjeuner d'entreprise chez \${n}\`, "Vous êtes invité sur Lunchportalen")
+# passwordReset (fr)
+Réinitialisez votre mot de passe Lunchportalen
+# orderNotifications (fr)
+Déjeuner livré – 20.07.2026 – Lunchportalen
+Commande en cours de livraison – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in it 1`] = `
+"# companyApproved (it)
+Benvenuto su Lunchportalen – attiva il tuo account
+Ciao Kari Nordmann,
+Il contratto per RC Company è stato approvato ed è pronto per essere attivato.
+Attiva account
+Cordiali saluti,
+Il team di Lunchportalen
+# invite (it)
+(c) => named(c, (n) => \`Sei invitato al pranzo aziendale di \${n}\`, "Sei invitato su Lunchportalen")
+# passwordReset (it)
+Reimposta la tua password di Lunchportalen
+# orderNotifications (it)
+Pranzo consegnato – 20.07.2026 – Lunchportalen
+Ordine in consegna – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in nb 1`] = `
+"# companyApproved (nb)
+Velkommen til Lunchportalen – aktiver din konto
+Hei Kari Nordmann,
+Avtalen for RC Company er godkjent og klar til å aktiveres.
+Aktiver konto
+Med vennlig hilsen,
+Lunchportalen-teamet
+# invite (nb)
+(c) => named(c, (n) => \`Du er invitert til firmalunsj hos \${n}\`, "Du er invitert til Lunchportalen")
+# passwordReset (nb)
+Tilbakestill passordet ditt i Lunchportalen
+# orderNotifications (nb)
+Lunsj levert – 20.07.2026 – Lunchportalen
+Ordre ut for levering – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in nl 1`] = `
+"# companyApproved (nl)
+Welkom bij Lunchportalen – activeer je account
+Hallo Kari Nordmann,
+De overeenkomst voor RC Company is goedgekeurd en klaar om te activeren.
+Account activeren
+Met vriendelijke groet,
+Het Lunchportalen-team
+# invite (nl)
+(c) => named(c, (n) => \`Je bent uitgenodigd voor de bedrijfslunch bij \${n}\`, "Je bent uitgenodigd voor Lunchportalen")
+# passwordReset (nl)
+Stel je Lunchportalen-wachtwoord opnieuw in
+# orderNotifications (nl)
+Lunch bezorgd – 20.07.2026 – Lunchportalen
+Bestelling onderweg – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in pl 1`] = `
+"# companyApproved (pl)
+Witamy w Lunchportalen – aktywuj swoje konto
+Cześć Kari Nordmann,
+Umowa dla RC Company została zatwierdzona i jest gotowa do aktywacji.
+Aktywuj konto
+Z poważaniem,
+Zespół Lunchportalen
+# invite (pl)
+(c) => named(c, (n) => \`Zaproszenie na firmowy lunch w \${n}\`, "Zaproszenie do Lunchportalen")
+# passwordReset (pl)
+Zresetuj swoje hasło w Lunchportalen
+# orderNotifications (pl)
+Lunch dostarczony – 20.07.2026 – Lunchportalen
+Zamówienie w dostawie – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in pt 1`] = `
+"# companyApproved (pt)
+Bem-vindo à Lunchportalen – ative a sua conta
+Olá Kari Nordmann,
+O acordo para RC Company foi aprovado e está pronto para ser ativado.
+Ativar conta
+Com os melhores cumprimentos,
+A equipa Lunchportalen
+# invite (pt)
+(c) => named(c, (n) => \`Foi convidado para o almoço de empresa na \${n}\`, "Foi convidado para o Lunchportalen")
+# passwordReset (pt)
+Reponha a sua palavra-passe do Lunchportalen
+# orderNotifications (pt)
+Almoço entregue – 20.07.2026 – Lunchportalen
+Encomenda em entrega – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in ro 1`] = `
+"# companyApproved (ro)
+Bine ați venit la Lunchportalen – activați-vă contul
+Bună, Kari Nordmann,
+Acordul pentru RC Company a fost aprobat și este gata de activare.
+Activați contul
+Cu stimă,
+Echipa Lunchportalen
+# invite (ro)
+(c) => named(c, (n) => \`Ești invitat la prânzul de companie la \${n}\`, "Ești invitat pe Lunchportalen")
+# passwordReset (ro)
+Resetează-ți parola Lunchportalen
+# orderNotifications (ro)
+Prânz livrat – 20.07.2026 – Lunchportalen
+Comandă în livrare – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`email previews — 15/15 languages > email copy renders stable in sv 1`] = `
+"# companyApproved (sv)
+Välkommen till Lunchportalen – aktivera ditt konto
+Hej Kari Nordmann,
+Avtalet för RC Company är godkänt och redo att aktiveras.
+Aktivera konto
+Med vänliga hälsningar,
+Lunchportalen-teamet
+# invite (sv)
+(c) => named(c, (n) => \`Du är inbjuden till företagslunch hos \${n}\`, "Du är inbjuden till Lunchportalen")
+# passwordReset (sv)
+Återställ ditt lösenord i Lunchportalen
+# orderNotifications (sv)
+Lunch levererad – 20.07.2026 – Lunchportalen
+Order ute för leverans – 20.07.2026 – Lunchportalen"
+`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in cs 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Faktura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">IČO/DIČ prodávajícího: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">IČO/DIČ kupujícího: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Adresa kupujícího: Testgata 1</p><p class="text-sm text-neutral-600">Období: 1. 7. 2026 – 31. 7. 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Odeslána</span></p><p class="mt-2 text-neutral-600">Vystavena: 31. 7. 2026</p><p class="text-neutral-600">Splatnost: 14. 8. 2026 (14 dní)</p><p class="text-neutral-600">Příjemce: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Popis</th><th class="py-1 pr-3">Typ</th><th class="py-1 pr-3 text-right">Množství</th><th class="py-1 pr-3 text-right">Jednotková cena</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brutto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>K úhradě</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Uhrazeno</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Platba probíhá bankovním převodem. Bez platby kartou (pouze faktura).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in da 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Faktura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Sælgers CVR-/skatte-ID: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Købers CVR-/skatte-ID: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Købers adresse: Testgata 1</p><p class="text-sm text-neutral-600">Periode: 1. jul. 2026 – 31. jul. 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Sendt</span></p><p class="mt-2 text-neutral-600">Udstedt: 31. jul. 2026</p><p class="text-neutral-600">Forfald: 14. aug. 2026 (14 dage)</p><p class="text-neutral-600">Modtager: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Beskrivelse</th><th class="py-1 pr-3">Type</th><th class="py-1 pr-3 text-right">Antal</th><th class="py-1 pr-3 text-right">Enhedspris</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brutto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>At betale</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Betalt</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Betaling sker via bankoverførsel. Ingen kortbetaling (kun faktura).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in de 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Rechnung RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Steuer-/USt-IdNr. des Verkäufers: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Steuer-/USt-IdNr. des Käufers: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Adresse des Käufers: Testgata 1</p><p class="text-sm text-neutral-600">Zeitraum: 01.07.2026 – 31.07.2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Versendet</span></p><p class="mt-2 text-neutral-600">Ausgestellt: 31.07.2026</p><p class="text-neutral-600">Fällig: 14.08.2026 (14 Tage)</p><p class="text-neutral-600">Empfänger: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Beschreibung</th><th class="py-1 pr-3">Typ</th><th class="py-1 pr-3 text-right">Menge</th><th class="py-1 pr-3 text-right">Einzelpreis</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brutto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Zu zahlen</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Bezahlt</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Die Zahlung erfolgt per Banküberweisung. Keine Kartenzahlung (nur Rechnung).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in el 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Τιμολόγιο RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">ΑΦΜ πωλητή: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">ΑΦΜ αγοραστή: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Διεύθυνση αγοραστή: Testgata 1</p><p class="text-sm text-neutral-600">Περίοδος: 1 Ιουλ 2026 – 31 Ιουλ 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Στάλθηκε</span></p><p class="mt-2 text-neutral-600">Εκδόθηκε: 31 Ιουλ 2026</p><p class="text-neutral-600">Λήξη: 14 Αυγ 2026 (14 ημέρες)</p><p class="text-neutral-600">Παραλήπτης: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Περιγραφή</th><th class="py-1 pr-3">Τύπος</th><th class="py-1 pr-3 text-right">Ποσότητα</th><th class="py-1 pr-3 text-right">Τιμή μονάδας</th><th class="py-1 pr-3 text-right">Καθαρό</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Μικτό</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Καθαρό</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Προς πληρωμή</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Πληρωμένο</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Η πληρωμή γίνεται με τραπεζικό έμβασμα. Χωρίς πληρωμή με κάρτα (μόνο τιμολόγιο).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in en 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Invoice RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Seller tax ID: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Buyer tax ID: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Buyer address: Testgata 1</p><p class="text-sm text-neutral-600">Period: 1 Jul 2026 – 31 Jul 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Sent</span></p><p class="mt-2 text-neutral-600">Issued: 31 Jul 2026</p><p class="text-neutral-600">Due: 14 Aug 2026 (14 days)</p><p class="text-neutral-600">Recipient: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Description</th><th class="py-1 pr-3">Type</th><th class="py-1 pr-3 text-right">Qty</th><th class="py-1 pr-3 text-right">Unit price</th><th class="py-1 pr-3 text-right">Net</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Gross</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90.00 EUR</td><td class="py-1.5 pr-3 text-right">270.00 EUR</td><td class="py-1.5 pr-3 text-right">40.50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310.50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Net</dt><dd>270.00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40.50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Amount due</dt><dd>310.50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Paid</dt><dd>100.00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Payment is made by bank transfer. No card payment (invoice-only).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in es 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Factura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">NIF del vendedor: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">NIF del comprador: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Dirección del comprador: Testgata 1</p><p class="text-sm text-neutral-600">Periodo: 1 jul 2026 – 31 jul 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Enviada</span></p><p class="mt-2 text-neutral-600">Emitida: 31 jul 2026</p><p class="text-neutral-600">Vencimiento: 14 ago 2026 (14 días)</p><p class="text-neutral-600">Destinatario: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Descripción</th><th class="py-1 pr-3">Tipo</th><th class="py-1 pr-3 text-right">Cant.</th><th class="py-1 pr-3 text-right">Precio unitario</th><th class="py-1 pr-3 text-right">Neto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Bruto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Neto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>A pagar</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Pagado</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">El pago se realiza por transferencia bancaria. Sin pago con tarjeta (solo factura).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in fi 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Lasku RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Myyjän Y-/verotunnus: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Ostajan Y-/verotunnus: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Ostajan osoite: Testgata 1</p><p class="text-sm text-neutral-600">Jakso: 1.7.2026 – 31.7.2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Lähetetty</span></p><p class="mt-2 text-neutral-600">Laadittu: 31.7.2026</p><p class="text-neutral-600">Eräpäivä: 14.8.2026 (14 päivää)</p><p class="text-neutral-600">Vastaanottaja: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Kuvaus</th><th class="py-1 pr-3">Tyyppi</th><th class="py-1 pr-3 text-right">Määrä</th><th class="py-1 pr-3 text-right">Yksikköhinta</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brutto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Maksettava</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Maksettu</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Maksu suoritetaan tilisiirtona. Ei korttimaksua (vain lasku).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in fr 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Facture RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Identifiant fiscal du vendeur: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Identifiant fiscal de l&#x27;acheteur: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Adresse de l&#x27;acheteur: Testgata 1</p><p class="text-sm text-neutral-600">Période: 1 juil. 2026 – 31 juil. 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Envoyée</span></p><p class="mt-2 text-neutral-600">Émise: 31 juil. 2026</p><p class="text-neutral-600">Échéance: 14 août 2026 (14 jours)</p><p class="text-neutral-600">Destinataire: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Description</th><th class="py-1 pr-3">Type</th><th class="py-1 pr-3 text-right">Qté</th><th class="py-1 pr-3 text-right">Prix unitaire</th><th class="py-1 pr-3 text-right">Net</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brut</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Net</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>À payer</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Payé</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Le paiement s&#x27;effectue par virement bancaire. Pas de paiement par carte (facture uniquement).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in it 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Fattura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Partita IVA del venditore: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Partita IVA dell&#x27;acquirente: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Indirizzo dell&#x27;acquirente: Testgata 1</p><p class="text-sm text-neutral-600">Periodo: 1 lug 2026 – 31 lug 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Inviata</span></p><p class="mt-2 text-neutral-600">Emessa: 31 lug 2026</p><p class="text-neutral-600">Scadenza: 14 ago 2026 (14 giorni)</p><p class="text-neutral-600">Destinatario: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Descrizione</th><th class="py-1 pr-3">Tipo</th><th class="py-1 pr-3 text-right">Qtà</th><th class="py-1 pr-3 text-right">Prezzo unitario</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Lordo</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Da pagare</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Pagato</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Il pagamento avviene tramite bonifico bancario. Nessun pagamento con carta (solo fattura).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in nb 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Faktura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Selger org./skatte-ID: 999999999 MVA</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Kjøper org./skatte-ID: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Kjøper adresse: Testgata 1</p><p class="text-sm text-neutral-600">Periode: 1. juli 2026 – 31. juli 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Sendt</span></p><p class="mt-2 text-neutral-600">Utstedt: 31. juli 2026</p><p class="text-neutral-600">Forfall: 14. aug. 2026 (14 dager)</p><p class="text-neutral-600">Mottaker: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Beskrivelse</th><th class="py-1 pr-3">Type</th><th class="py-1 pr-3 text-right">Antall</th><th class="py-1 pr-3 text-right">Enhetspris</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">MVA</th><th class="py-1 text-right">Brutto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">MVA</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Å betale</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Betalt</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Betaling skjer via bankoverføring. Ingen kortbetaling (invoice-only).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in nl 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Factuur RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Btw-/fiscaal nummer verkoper: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Btw-/fiscaal nummer koper: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Adres koper: Testgata 1</p><p class="text-sm text-neutral-600">Periode: 1 jul 2026 – 31 jul 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Verzonden</span></p><p class="mt-2 text-neutral-600">Uitgegeven: 31 jul 2026</p><p class="text-neutral-600">Vervaldatum: 14 aug 2026 (14 dagen)</p><p class="text-neutral-600">Ontvanger: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Omschrijving</th><th class="py-1 pr-3">Type</th><th class="py-1 pr-3 text-right">Aantal</th><th class="py-1 pr-3 text-right">Stukprijs</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Bruto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Te betalen</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Betaald</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Betaling gebeurt via bankoverschrijving. Geen kaartbetaling (alleen factuur).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in pl 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Faktura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">NIP sprzedawcy: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">NIP nabywcy: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Adres nabywcy: Testgata 1</p><p class="text-sm text-neutral-600">Okres: 1 lip 2026 – 31 lip 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Wysłana</span></p><p class="mt-2 text-neutral-600">Wystawiona: 31 lip 2026</p><p class="text-neutral-600">Termin płatności: 14 sie 2026 (14 dni)</p><p class="text-neutral-600">Odbiorca: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Opis</th><th class="py-1 pr-3">Typ</th><th class="py-1 pr-3 text-right">Ilość</th><th class="py-1 pr-3 text-right">Cena jednostkowa</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brutto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Do zapłaty</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Zapłacono</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Płatność przelewem bankowym. Brak płatności kartą (tylko faktura).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in pt 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Fatura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">NIF do vendedor: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">NIF do comprador: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Morada do comprador: Testgata 1</p><p class="text-sm text-neutral-600">Período: 01/07/2026 – 31/07/2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Enviada</span></p><p class="mt-2 text-neutral-600">Emitida: 31/07/2026</p><p class="text-neutral-600">Vencimento: 14/08/2026 (14 dias)</p><p class="text-neutral-600">Destinatário: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Descrição</th><th class="py-1 pr-3">Tipo</th><th class="py-1 pr-3 text-right">Qtd.</th><th class="py-1 pr-3 text-right">Preço unitário</th><th class="py-1 pr-3 text-right">Líquido</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Bruto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Líquido</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>A pagar</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Pago</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">O pagamento é efetuado por transferência bancária. Sem pagamento com cartão (apenas fatura).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in ro 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Factură RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">CUI/CIF vânzător: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">CUI/CIF cumpărător: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Adresa cumpărătorului: Testgata 1</p><p class="text-sm text-neutral-600">Perioadă: 1 iul. 2026 – 31 iul. 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Trimisă</span></p><p class="mt-2 text-neutral-600">Emisă: 31 iul. 2026</p><p class="text-neutral-600">Scadență: 14 aug. 2026 (14 zile)</p><p class="text-neutral-600">Destinatar: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Descriere</th><th class="py-1 pr-3">Tip</th><th class="py-1 pr-3 text-right">Cant.</th><th class="py-1 pr-3 text-right">Preț unitar</th><th class="py-1 pr-3 text-right">Net</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brut</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Net</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>De plată</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Plătit</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Plata se face prin transfer bancar. Fără plată cu cardul (doar factură).</footer></article>"`;
+
+exports[`invoice snapshots — 15/15 languages > invoice document renders stable in sv 1`] = `"<article class="rounded-2xl border border-neutral-200 bg-white p-6 print:rounded-none print:border-0" data-lp-invoice-document="true"><header class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 pb-4"><div><h1 class="text-2xl font-semibold tracking-tight">Faktura RC-2026-0042</h1><p class="mt-1 text-sm text-neutral-600">RC Provider → RC Company</p><p class="text-xs text-neutral-500" data-lp-legal="seller_tax_id">Säljarens organisations-/skatte-ID: 999999999</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_tax_id">Köparens organisations-/skatte-ID: 888888888</p><p class="text-xs text-neutral-500" data-lp-legal="buyer_address">Köparens adress: Testgata 1</p><p class="text-sm text-neutral-600">Period: 1 juli 2026 – 31 juli 2026</p></div><div class="text-right text-sm"><p><span class="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">Skickad</span></p><p class="mt-2 text-neutral-600">Utfärdad: 31 juli 2026</p><p class="text-neutral-600">Förfaller: 14 aug. 2026 (14 dagar)</p><p class="text-neutral-600">Mottagare: billing@example.com</p></div></header><table class="mt-4 w-full border-collapse text-sm"><thead><tr class="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500"><th class="py-1 pr-3">Beskrivning</th><th class="py-1 pr-3">Typ</th><th class="py-1 pr-3 text-right">Antal</th><th class="py-1 pr-3 text-right">Enhetspris</th><th class="py-1 pr-3 text-right">Netto</th><th class="py-1 pr-3 text-right">VAT</th><th class="py-1 text-right">Brutto</th></tr></thead><tbody><tr class="border-b border-neutral-100"><td class="py-1.5 pr-3">Lunsj · 20.07.2026</td><td class="py-1.5 pr-3 text-xs text-neutral-500">ORDER</td><td class="py-1.5 pr-3 text-right">3</td><td class="py-1.5 pr-3 text-right">90,00 EUR</td><td class="py-1.5 pr-3 text-right">270,00 EUR</td><td class="py-1.5 pr-3 text-right">40,50 EUR (15%)</td><td class="py-1.5 text-right font-medium">310,50 EUR</td></tr></tbody></table><div class="mt-4 flex justify-end"><dl class="w-64 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-neutral-600">Netto</dt><dd>270,00 EUR</dd></div><div class="flex justify-between"><dt class="text-neutral-600">VAT</dt><dd>40,50 EUR</dd></div><div class="flex justify-between border-t border-neutral-200 pt-1 text-base font-semibold"><dt>Att betala</dt><dd>310,50 EUR</dd></div><div class="flex justify-between text-emerald-700"><dt>Betald</dt><dd>100,00 EUR</dd></div></dl></div><footer class="mt-6 border-t border-neutral-200 pt-3 text-xs text-neutral-500">Betalning sker via banköverföring. Ingen kortbetalning (endast faktura).</footer></article>"`;

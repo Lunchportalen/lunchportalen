@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -206,6 +206,44 @@ export default function CompanyRegistrationForm({
   const [errorReference, setErrorReference] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<RegisterResponse | null>(null);
 
+  // Fase 5 — kontrollert leverandørvalg: når FLERE leverandører dekker
+  // postnummeret må firma velge eksplisitt (server håndhever fail-closed).
+  const [providerChoices, setProviderChoices] = useState<Array<{ id: string; name: string }>>([]);
+  const [providerId, setProviderId] = useState<string>("");
+
+  const postalDigits = onlyDigits(state.postalCode);
+  useEffect(() => {
+    let cancelled = false;
+    setProviderChoices([]);
+    setProviderId("");
+    if (postalDigits.length !== 4) return;
+    (async () => {
+      try {
+        const res = await fetch("/api/public/coverage/check", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ postal_code: postalDigits, city: state.postalCity.trim() || "Ukjent" }),
+        });
+        const json = await res.json().catch(() => null);
+        const providers = Array.isArray(json?.data?.providers) ? json.data.providers : [];
+        if (!cancelled && providers.length > 1) {
+          setProviderChoices(
+            providers
+              .map((p: any) => ({ id: String(p?.id ?? ""), name: String(p?.name ?? "") }))
+              .filter((p: { id: string; name: string }) => p.id && p.name),
+          );
+        }
+      } catch {
+        // Dekningssjekk er veiledende her — serveren håndhever valget uansett.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postalDigits]);
+
   const validationError = useMemo(() => validateCompanyRegistrationForm(state), [state]);
   const canSubmit = !blocked && !pending && !validationError;
   const submitted = receipt?.ok === true && receipt?.persisted === true;
@@ -231,6 +269,11 @@ export default function CompanyRegistrationForm({
       return;
     }
 
+    if (providerChoices.length > 1 && !providerId) {
+      setError("Flere leverandører dekker området. Velg leverandør før innsending.");
+      return;
+    }
+
     setPending(true);
 
     try {
@@ -252,6 +295,7 @@ export default function CompanyRegistrationForm({
           postal_code: onlyDigits(state.postalCode),
           postal_city: state.postalCity.trim(),
           consent_accepted: true,
+          ...(providerId ? { provider_id: providerId } : {}),
           weekday_meal_tiers: state.weekdayTiers,
           delivery_window_from: state.deliveryWindowFrom.trim(),
           delivery_window_to: state.deliveryWindowTo.trim(),
@@ -635,6 +679,29 @@ export default function CompanyRegistrationForm({
               onChange={(e) => setState((prev) => ({ ...prev, postalCity: e.target.value }))}
             />
           </label>
+
+          {providerChoices.length > 1 ? (
+            <label className={`${labelClass} sm:col-span-2`}>
+              Leverandør *
+              <select
+                className={inputClass}
+                name="provider_choice"
+                value={providerId}
+                onChange={(e) => setProviderId(e.target.value)}
+                required
+              >
+                <option value="">Velg leverandør …</option>
+                {providerChoices.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs font-normal text-[#756b5c]">
+                Flere leverandører dekker postnummeret deres — velg hvem som skal levere lunsjen.
+              </span>
+            </label>
+          ) : null}
                       </div>
                     </div>
 

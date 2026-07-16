@@ -209,7 +209,11 @@ describe("POST /api/public/register-company", () => {
     expect(fromMock).not.toHaveBeenCalledWith("company_registrations");
   });
 
-  test("klientstyrt provider_id sendes ALDRI videre til RPC (server-side resolve er sannhet)", async () => {
+  // Fase 5 (kontrollert leverandørvalg): et gyldig UUID-provider_id VIDERESENDES
+  // som p_provider_id, men RPC-en håndhever fail-closed at valget ligger innenfor
+  // faktisk dekning (PROVIDER_NOT_ELIGIBLE ellers). Klienten kan aldri tvinge
+  // gjennom en vilkårlig leverandør — serveren/RPC-en er fortsatt sannhet.
+  test("provider_id videresendes kun som validert valg (RPC håndhever dekning)", async () => {
     const { POST } = await import("@/app/api/public/register-company/route");
     const res = await POST(
       mkReq({
@@ -223,9 +227,7 @@ describe("POST /api/public/register-company", () => {
         postal_code: "5000",
         postal_city: "Bergen",
         consent_accepted: true,
-        // Bypass-forsøk: skal ignoreres av ruten.
         provider_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-        providerId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
         weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
         delivery_window_from: "11:00",
         delivery_window_to: "13:00",
@@ -247,8 +249,36 @@ describe("POST /api/public/register-company", () => {
       "p_orgnr",
       "p_postal_city",
       "p_postal_code",
+      "p_provider_id",
     ]);
-    expect(JSON.stringify(rpcArgs)).not.toContain("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+    expect(rpcArgs.p_provider_id).toBe("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  });
+
+  test("ikke-UUID provider_id slippes ALDRI gjennom (p_provider_id = null)", async () => {
+    const { POST } = await import("@/app/api/public/register-company/route");
+    const res = await POST(
+      mkReq({
+        orgnr: "123456789",
+        company_name: "Test AS",
+        employee_count: 22,
+        contact_name: "Ola",
+        contact_email: "ola@test.no",
+        contact_phone: "41234567",
+        address_line: "Gate 1",
+        postal_code: "5000",
+        postal_city: "Bergen",
+        consent_accepted: true,
+        provider_id: "'; drop table providers; --",
+        weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
+        delivery_window_from: "11:00",
+        delivery_window_to: "13:00",
+        terms_binding_months: 12,
+        terms_notice_months: 3,
+      }),
+    );
+    expect(res.status).toBe(200);
+    const [, rpcArgs] = rpcMock.mock.calls[0];
+    expect(rpcArgs.p_provider_id).toBeNull();
   });
 
   test("alias-rutene /api/register og /api/public/register delegerer til canonical POST", async () => {

@@ -1,6 +1,6 @@
-import { EMPLOYEE_INVITE_TTL_MS } from "@/lib/invites/employeeInviteConstants";
+import { INVITE_TTL_DAYS } from "@/lib/invites/employeeInviteConstants";
 
-const inviteHours = Math.round(EMPLOYEE_INVITE_TTL_MS / (1000 * 60 * 60));
+const inviteDays = INVITE_TTL_DAYS;
 
 export const EMPLOYEE_ACTIVATION_STATUS_BADGE = "Du er invitert";
 export const EMPLOYEE_ACTIVATION_STATUS_LABEL = "Ansattinvitasjon";
@@ -27,7 +27,7 @@ export const EMPLOYEE_ACTIVATION_SECURITY_NOTE =
 
 export const EMPLOYEE_ACTIVATION_SECURITY_NOTE_PAGE = "Dette er en personlig invitasjon.";
 
-export const EMPLOYEE_ACTIVATION_EXPIRY_NOTE = `Lenken er gyldig i ${inviteHours} timer. Hvis lenken er utløpt, kan administrator sende deg en ny invitasjon.`;
+export const EMPLOYEE_ACTIVATION_EXPIRY_NOTE = `Lenken er gyldig i ${inviteDays} dager. Hvis lenken er utløpt, kan administrator sende deg en ny invitasjon.`;
 
 export const EMPLOYEE_ACTIVATION_UNEXPECTED_NOTE =
   "Hvis du ikke forventet denne invitasjonen, kan du ignorere e-posten.";

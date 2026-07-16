@@ -14,6 +14,7 @@ import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { isSystemEmail as isSystemEmailCore } from "@/lib/system/emails";
+import { inviteExpiresAtIso } from "@/lib/invites/employeeInviteConstants";
 
 function makeRidLocal() {
   try {
@@ -242,7 +243,7 @@ export async function POST(req: NextRequest) {
     }
 
     const nowIso = new Date().toISOString();
-    const expires_at = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
+    const expires_at = inviteExpiresAtIso();
 
     if (active.invite?.id) {
       const upd = await admin

@@ -13,6 +13,7 @@
     { "path": "/api/cron/tripletex-connection-health-daily", "schedule": "0 5 * * *" },
     { "path": "/api/cron/cleanup-invites", "schedule": "30 3 * * *" },
     { "path": "/api/cron/menu-service-day-reconcile", "schedule": "0 */6 * * *" },
-    { "path": "/api/cron/menu-week-rollout", "schedule": "0 12 * * 4" }
+    { "path": "/api/cron/menu-week-rollout", "schedule": "0 12 * * 4" },
+    { "path": "/api/cron/commission-settlement", "schedule": "0 7 * * *" }
   ]
 }

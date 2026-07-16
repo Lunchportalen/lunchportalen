@@ -12,7 +12,8 @@
  *   4. Grants: anon has ZERO privileges on billing tables
  *   5. Auth hook: custom_access_token_hook + lp_org_is_archived (archived-org guard)
  *   6. Cutoff: lp_company_cutoff_context wired into lp_order_set + tg_orders_cutoff_0800
- *   7. Markets: 21 active rows with complete config (VAT, cutoff, invoice language, stripe status)
+ *   7. Markets: 21 active rows with complete config (VAT, cutoff, invoice language)
+ *      NOTE: Stripe status is intentionally NOT part of launch readiness — settlement is invoice-only (Phase 9).
  *   8. SECURITY DEFINER hygiene: no public SECDEF function without pinned search_path (report)
  *
  * Never mutates (session forced read-only). Fails closed on any mismatch.
@@ -194,13 +195,23 @@ try {
     ok("market/location timezone cutoff wired (lp_order_set + trigger)");
   }
 
-  // 7) Markets completeness
+  // 7) Markets completeness — 21 country markets (multi-locale countries carry
+  //    several rows but count once). Tax config is country truth, never locale.
+  const EXPECTED_COUNTRIES = [
+    "NO","SE","DK","FI","GB","DE","FR","ES","IT","NL",
+    "BE","CH","AT","IE","PL","RO","CZ","PT","GR","US","CA",
+  ];
   const { rows: markets } = await client.query(
     `SELECT country_code, locale, default_currency, default_timezone, vat_rate_food,
-            cutoff_local_time, invoice_language, stripe_status, is_active
-     FROM public.markets ORDER BY country_code, locale`,
+            cutoff_local_time, invoice_language, tax_strategy, tax_id_validation,
+            state_province_required, provider_timezone_required, postal_code_pattern,
+            address_format, invoice_legal_fields, credit_note_policy, invoice_numbering_policy
+     FROM public.markets WHERE is_active = true ORDER BY country_code, locale`,
   );
-  if (markets.length !== 21) fail(`markets rows: ${markets.length} (expected 21)`);
+  const activeCountries = [...new Set(markets.map((m) => m.country_code))].sort();
+  if (activeCountries.length !== 21 || EXPECTED_COUNTRIES.slice().sort().join(",") !== activeCountries.join(",")) {
+    fail(`active market countries: ${activeCountries.length} [${activeCountries.join(",")}] (expected the 21 canonical countries)`);
+  }
   const incomplete = markets.filter(
     (m) =>
       !m.default_currency ||
@@ -208,11 +219,40 @@ try {
       m.vat_rate_food == null ||
       !m.cutoff_local_time ||
       !m.invoice_language ||
-      !m.stripe_status ||
-      m.is_active !== true,
+      !m.tax_strategy ||
+      !m.tax_id_validation ||
+      !m.postal_code_pattern ||
+      !m.address_format ||
+      !Array.isArray(m.invoice_legal_fields) ||
+      m.invoice_legal_fields.length === 0 ||
+      !m.credit_note_policy ||
+      !m.invoice_numbering_policy,
   );
-  if (markets.length === 21 && incomplete.length === 0) ok("21/21 markets active with complete config");
+  if (activeCountries.length === 21 && incomplete.length === 0) ok("21/21 market countries complete (tax strategy, tax-ID validation, legal invoice fields)");
   else if (incomplete.length > 0) fail(`incomplete market rows: ${incomplete.map((m) => `${m.country_code}/${m.locale}`).join(", ")}`);
+
+  // 7b) US/CA: tax strategy and timezone/state requirements must be EXPLICIT.
+  const northAmerica = markets.filter((m) => m.country_code === "US" || m.country_code === "CA");
+  const naBad = northAmerica.filter(
+    (m) =>
+      m.state_province_required !== true ||
+      m.provider_timezone_required !== true ||
+      (m.country_code === "US" && m.tax_strategy !== "sales_tax") ||
+      (m.country_code === "CA" && m.tax_strategy !== "gst_hst"),
+  );
+  if (northAmerica.length >= 2 && naBad.length === 0) ok("US/CA explicit: sales_tax/gst_hst + state/province + provider timezone required");
+  else fail(`US/CA tax/timezone strategy not explicit: ${naBad.map((m) => `${m.country_code}/${m.locale}`).join(", ") || "rows missing"}`);
+
+  // 7c) Market approval registry — fail-closed activation truth.
+  const { rows: approvals } = await client.query(
+    `SELECT country_code, status, tax_approved_at, legal_approved_at FROM public.market_approvals ORDER BY country_code`,
+  );
+  if (approvals.length !== 21) fail(`market_approvals rows: ${approvals.length} (expected 21)`);
+  const badActive = approvals.filter((a) => a.status === "ACTIVE" && (!a.tax_approved_at || !a.legal_approved_at));
+  if (badActive.length > 0) fail(`ACTIVE without recorded approvals: ${badActive.map((a) => a.country_code).join(", ")}`);
+  if (approvals.length === 21 && badActive.length === 0) {
+    ok(`market approval registry OK (${approvals.filter((a) => a.status === "ACTIVE").length} ACTIVE, all with recorded tax+legal approval)`);
+  }
 
   // 8) SECDEF hygiene report (public schema)
   const { rows: unpinned } = await client.query(

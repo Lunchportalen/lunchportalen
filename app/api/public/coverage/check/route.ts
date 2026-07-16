@@ -66,6 +66,23 @@ export async function POST(req: NextRequest) {
     const covered = typeof providerId === "string" && providerId.length > 0;
     const reason = covered ? "provider_matched" : hasServiceAreas ? "not_covered" : "service_areas_empty";
 
+    // Fase 5 (kontrollert valg): når FLERE leverandører dekker postnummeret,
+    // eksponeres valglisten slik at registreringen kan kreve et eksplisitt valg.
+    // Ved nøyaktig én leverandør holdes identiteten skjult som før.
+    let providers: Array<{ id: string; name: string }> = [];
+    if (covered) {
+      const { data: matches } = await supabase.rpc("lp_match_providers_by_postal_code", {
+        p_postal_code: postal_code,
+      });
+      const list = Array.isArray(matches) ? matches : [];
+      if (list.length > 1) {
+        providers = list.map((m: any) => ({
+          id: String(m?.provider_id ?? ""),
+          name: String(m?.name ?? ""),
+        })).filter((p) => p.id && p.name);
+      }
+    }
+
     return jsonOk(rid, {
       covered,
       hasServiceAreas,
@@ -74,6 +91,9 @@ export async function POST(req: NextRequest) {
       /** Legacy field — alltid false; dekning avgjøres kun av faktisk provider-match. */
       mvpForward: false,
       reason,
+      /** Fase 5: fylles kun når flere leverandører dekker (kontrollert valg). */
+      providers,
+      multipleProviders: providers.length > 1,
     });
   } catch {
     return jsonErr(rid, "Kunne ikke sjekke dekning", 500, "SERVER_ERROR");

@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+
+import { goToPostLogin } from "@/lib/auth/postLoginNav";
 
 import {
   EMPLOYEE_ACTIVATION_CTA_FORM,
@@ -68,8 +69,6 @@ function safeText(v: unknown) {
 }
 
 export default function RegisterEmployeeClient({ token, email }: Props) {
-  const router = useRouter();
-
   const supabase = useMemo(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -159,8 +158,9 @@ export default function RegisterEmployeeClient({ token, email }: Props) {
         return;
       }
 
-      router.replace("/week");
-      router.refresh();
+      // E5: land via the ONE canonical post-login resolver (role → home +
+      // agreement gate), never a hardcoded client destination.
+      goToPostLogin();
     } catch {
       setErr("Uventet feil. Prøv igjen.");
     } finally {

@@ -43,6 +43,21 @@ export async function advanceKitchenOrder(
 
   try {
     const res = await advanceOrderStatus(orderId, targetStatus);
+
+    // FASE 7: best-effort varsler ETTER vellykket kanonisk overgang
+    // (ut-for-levering → provider-eid delivery_email; levert → ansatt +
+    // provider-kopi). Blokkerer aldri og endrer ikke statusmaskinen.
+    try {
+      const { notifyOrderStatusAdvanced } = await import("@/lib/providers/orderStatusNotifications");
+      await notifyOrderStatusAdvanced({
+        orderId,
+        toStatus: safeStr(res.to_status) || targetStatus,
+        rid: `advance_${orderId.slice(0, 8)}`,
+      });
+    } catch {
+      /* varsling må aldri blokkere statusovergang */
+    }
+
     revalidatePath("/leverandor/ordrer");
     return {
       success: true,

@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
-import React, { act, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { act } from "@/tests/_helpers/reactAct";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { ContentAiTools } from "@/app/(backoffice)/backoffice/content/_components/ContentAiTools";

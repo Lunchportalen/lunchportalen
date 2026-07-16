@@ -1,11 +1,16 @@
+import { companyApprovedCopy } from "@/lib/email/i18n/emailCopy";
+import type { AppLocale } from "@/lib/i18n/middlewareLocale";
+
 export function buildCompanyApprovedEmail(params: {
   contactName: string;
   companyName: string;
   activateUrl: string;
+  locale?: AppLocale | string | null;
 }): { subject: string; html: string; text: string } {
   const { contactName, companyName, activateUrl } = params;
+  const c = companyApprovedCopy(params.locale);
 
-  const subject = "Velkommen til Lunchportalen \u2013 aktiver din konto";
+  const subject = c.subject;
 
   const html = `<!DOCTYPE html>
 <html lang="no">
@@ -63,7 +68,7 @@ export function buildCompanyApprovedEmail(params: {
               <tr>
                 <td style="background-color:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);border-radius:999px;padding:8px 16px;">
                   <span style="font-size:12px;font-weight:700;color:#f5c842;letter-spacing:0.1em;text-transform:uppercase;">
-                    &#10003; Avtale godkjent
+                    &#10003; ${c.badge}
                   </span>
                 </td>
               </tr>
@@ -71,20 +76,18 @@ export function buildCompanyApprovedEmail(params: {
 
             <!-- TITLE -->
             <h1 style="margin:0 0 16px;font-size:28px;font-weight:800;color:#ffffff;line-height:1.15;letter-spacing:-0.03em;">
-              Velkommen til<br>Lunchportalen
+              ${c.hero}
             </h1>
 
             <!-- INTRO -->
             <p style="margin:0 0 24px;font-size:16px;color:#c8b99a;line-height:1.65;">
-              Hei ${contactName},
+              ${c.greeting(contactName)}
             </p>
             <p style="margin:0 0 32px;font-size:16px;color:#c8b99a;line-height:1.65;">
-              Vi er glade for å informere deg om at avtalen for
-              <strong style="color:#ffffff;font-weight:700;">${companyName}</strong>
-              er godkjent og klar til å aktiveres.
+              ${c.intro(companyName)}
             </p>
             <p style="margin:0 0 32px;font-size:16px;color:#c8b99a;line-height:1.65;">
-              Klikk på knappen nedenfor for \u00e5 opprette din innlogging og komme i gang:
+              ${c.activateLead}
             </p>
 
             <!-- CTA BUTTON -->
@@ -94,7 +97,7 @@ export function buildCompanyApprovedEmail(params: {
                 <td align="center">
                   <a href="${activateUrl}"
                     style="display:inline-block;background-color:#f5c842;color:#1a1714;font-size:16px;font-weight:800;text-decoration:none;padding:18px 40px;border-radius:999px;letter-spacing:-0.01em;box-shadow:0 12px 30px rgba(245,200,66,0.4);">
-                    Aktiver konto
+                    ${c.cta}
                   </a>
                 </td>
               </tr>
@@ -113,10 +116,10 @@ export function buildCompanyApprovedEmail(params: {
                       </td>
                       <td>
                         <p style="margin:0 0 6px;font-size:14px;color:#c8b99a;line-height:1.55;">
-                          <strong style="color:#ffffff;">Lenken er gyldig i 7 dager.</strong>
+                          <strong style="color:#ffffff;">${c.expiryTitle}</strong>
                         </p>
                         <p style="margin:0;font-size:13px;color:#6b5f4a;line-height:1.5;">
-                          Dersom lenken utl\u00f8per kan du kontakte oss for \u00e5 f\u00e5 en ny.
+                          ${c.expiryNote}
                         </p>
                       </td>
                     </tr>
@@ -135,8 +138,8 @@ export function buildCompanyApprovedEmail(params: {
 
             <!-- SIGN OFF -->
             <p style="margin:0;font-size:15px;color:#c8b99a;line-height:1.6;">
-              Med vennlig hilsen,<br>
-              <strong style="color:#ffffff;">Lunchportalen-teamet</strong>
+              ${c.signoff.split("\n")[0]}<br>
+              <strong style="color:#ffffff;">${c.signoff.split("\n").slice(1).join(" ")}</strong>
             </p>
 
           </td>
@@ -175,21 +178,18 @@ export function buildCompanyApprovedEmail(params: {
 </body>
 </html>`;
 
-  const text = `Velkommen til Lunchportalen – aktiver din konto
+  const text = `${c.subject}
 
-Hei ${contactName},
+${c.greeting(contactName)}
 
-Vi er glade for å informere deg om at avtalen for ${companyName} er godkjent!
+${c.intro(companyName)}
 
-For å komme i gang, aktiver kontoen din her:
+${c.activateLead}
 ${activateUrl}
 
-Lenken er gyldig i 7 dager.
+${c.expiryTitle}
 
-Har du spørsmål? Svar på denne e-posten så hjelper vi deg.
-
-Med vennlig hilsen,
-Lunchportalen-teamet
+${c.signoff}
 © 2026 Lunchportalen · Sluppenvegen 25, 7037 Trondheim`;
 
   return { subject, html, text };

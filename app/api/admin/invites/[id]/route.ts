@@ -11,6 +11,7 @@ import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { scopeOr401, requireRoleOr403, requireCompanyScopeOr403, readJson } from "@/lib/http/routeGuard";
 import { buildEmployeeInviteUrl } from "@/lib/invites/employeeInviteUrl";
 import { getAppBaseUrl } from "@/lib/url/appUrl";
+import { inviteExpiresAtIso } from "@/lib/invites/employeeInviteConstants";
 
 const INVITE_CONTACT_EMAIL = "post@lunchportalen.no";
 
@@ -135,7 +136,7 @@ export async function PATCH(req: NextRequest, ctx: { params: { id: string } }) {
       const token = crypto.randomBytes(32).toString("hex");
       const newHash = sha256Hex(token);
       const link = buildEmployeeInviteUrl(appUrl, token);
-      const newExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
+      const newExpiry = inviteExpiresAtIso();
 
       const upd1 = await admin
         .from("employee_invites")

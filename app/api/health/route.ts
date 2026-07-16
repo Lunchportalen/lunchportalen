@@ -8,21 +8,15 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isAfterCutoff0800, osloTodayISODate } from "@/lib/date/oslo";
 import { validateSystemRuntimeEnv } from "@/lib/env/system";
 import { getCmsRuntimeStatus } from "@/lib/localRuntime/runtime";
-
-function versionFromEnv() {
-  return (
-    process.env.APP_VERSION ||
-    process.env.NEXT_PUBLIC_APP_VERSION ||
-    process.env.VERCEL_GIT_COMMIT_SHA ||
-    process.env.VERCEL_GIT_COMMIT_REF ||
-    "unknown"
-  );
-}
+import { releaseIdentityRequired, resolveReleaseIdentity } from "@/lib/version/releaseIdentity";
 
 export async function GET() {
   const rid = makeRid();
   const ts = new Date().toISOString();
-  const version = versionFromEnv();
+  const release = resolveReleaseIdentity();
+  const versionRequired = releaseIdentityRequired();
+  const versionOk = release.ok;
+  const version = release.ok ? release.version : "";
   const cmsRuntime = getCmsRuntimeStatus();
 
   const appOk = true;
@@ -74,6 +68,7 @@ export async function GET() {
   const remoteHealthy = Boolean(remoteConfigured && remoteSupabaseOk && dbSchemaOk);
   const sanityHealthy = Boolean(sanityOk);
   const envHealthy = Boolean(envOk);
+  const versionHealthy = !versionRequired || versionOk;
   const remoteSummaryStatus: "ok" | "degraded" | "failed" | "skipped" =
     !remoteConfigured
       ? cmsRuntime.requiresRemoteBackend
@@ -86,7 +81,7 @@ export async function GET() {
           : "degraded";
 
   let summaryStatus: "ok" | "degraded" | "failed" = "ok";
-  if (!envHealthy) {
+  if (!envHealthy || !versionHealthy) {
     summaryStatus = "failed";
   } else if (cmsRuntime.requiresRemoteBackend && remoteSummaryStatus !== "ok") {
     summaryStatus = "failed";
@@ -101,6 +96,12 @@ export async function GET() {
     ok,
     ts,
     version,
+    release: {
+      ok: versionOk,
+      required: versionRequired,
+      source: release.source,
+      git_sha: release.gitSha,
+    },
     ...(failureRid ? { rid: failureRid } : {}),
     summary: {
       status: summaryStatus,
@@ -130,6 +131,11 @@ export async function GET() {
       db_schema: { ok: dbSchemaOk, orders: { ok: ordersOk }, profiles: { ok: profilesOk } },
       sanity: { ok: sanityOk, cutoff_helpers: { ok: sanityOk } },
       env: envReport,
+      release_identity: {
+        ok: versionHealthy,
+        required: versionRequired,
+        source: release.source,
+      },
     },
   };
 

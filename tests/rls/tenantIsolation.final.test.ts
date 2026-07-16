@@ -5,16 +5,9 @@
 
 import { describe, test, expect, beforeAll, afterAll } from "vitest";
 import { buildRlsFixtures, type Fixtures } from "../_helpers/rlsFixtures";
+import { hasRemoteSupabaseIntegrationEnv } from "../_helpers/remoteSupabaseIntegration";
 
-let fx: Fixtures;
-
-beforeAll(async () => {
-  fx = await buildRlsFixtures();
-});
-
-afterAll(async () => {
-  if (fx?.cleanup) await fx.cleanup();
-});
+const hasDb = hasRemoteSupabaseIntegrationEnv({ requireAnon: true, requirePostgres: true });
 
 function rowCount(res: { data: any; error: any }) {
   if (res.error) return NaN;
@@ -22,7 +15,17 @@ function rowCount(res: { data: any; error: any }) {
   return Array.isArray(d) ? d.length : 0;
 }
 
-describe("RLS tenant isolation – final guarantees", () => {
+describe.skipIf(!hasDb)("RLS tenant isolation – final guarantees", () => {
+  let fx: Fixtures;
+
+  beforeAll(async () => {
+    fx = await buildRlsFixtures();
+  });
+
+  afterAll(async () => {
+    if (fx?.cleanup) await fx.cleanup();
+  });
+
   test("company_admin cannot read another company's core tables", async () => {
     const { supabaseAs, users, companyA, companyB } = fx;
     const sb = supabaseAs(users.adminA.accessToken);

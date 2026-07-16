@@ -75,20 +75,16 @@ export async function POST(req: Request) {
     const admin = supabaseAdmin();
     const token_hash = sha256Hex(token);
 
-    // 1) Finn invitasjonen
+    // 1) Read the invite (peek only — canonical validation + consume happens
+    //    atomically inside lp_employee_invite_accept). Fail-closed on lookup.
     const { data: invite, error: invErr } = await admin
       .from("employee_invites")
-      .select("id, email, company_id, location_id, department, full_name, expires_at, used_at, token_hash")
+      .select("id, email, company_id, location_id, department, full_name, expires_at, used_at")
       .eq("token_hash", token_hash)
-      .is("used_at", null)
       .maybeSingle();
 
     if (invErr) return jsonError(rid, 500, "db_error", "Kunne ikke lese invitasjon.", invErr);
     if (!invite) return jsonError(rid, 400, "invite_invalid", "Ugyldig eller utløpt invitasjon.");
-
-    if (invite.expires_at && new Date(invite.expires_at).getTime() < Date.now()) {
-      return jsonError(rid, 400, "invite_expired", "Invitasjonen er utløpt.");
-    }
 
     const email = normEmail(invite.email);
     if (!email || !isEmail(email)) return jsonError(rid, 500, "invite_corrupt", "Invitasjonen mangler gyldig e-post.");
@@ -103,7 +99,7 @@ export async function POST(req: Request) {
     const displayName = finalName ?? email;
     const role = "employee";
 
-    // 2) Opprett eller oppdater auth-bruker (metadata brukes av DB-trigger)
+    // 2) Create or update the auth user (auth-admin API; DB trigger seeds profile).
     let userId: string | null = null;
 
     const createRes = await admin.auth.admin.createUser({
@@ -145,67 +141,53 @@ export async function POST(req: Request) {
 
     if (!userId) return jsonError(rid, 500, "auth_error", "Uventet: mangler userId.");
 
-    // 3) Vent til profiles finnes (DB-trigger på auth.users)
+    // 3) Wait for the profile row (trigger on auth.users → public.profiles).
     const profile = await waitForProfile(admin, userId);
     if (!profile) {
       return jsonError(rid, 500, "profile_not_created", "Profil ble ikke opprettet automatisk. Sjekk DB-trigger på auth.users → public.profiles.", { userId });
     }
 
-    // 4) Profile-binding hvis trigger ikke satte scope (forventet)
-    if (!profile.company_id) {
-      const { error: bindError } = await admin
-        .from("profiles")
-        .update({
-          company_id,
-          location_id,
-          role: "employee",
-        })
-        .eq("id", userId);
+    // 4) CANONICAL atomic accept: profile bind + membership sync + invite consume
+    //    in one transaction, idempotent, fail-closed (expired/used/wrong-tenant).
+    const { data: acceptData, error: acceptErr } = await admin.rpc("lp_employee_invite_accept", {
+      p_user_id: userId,
+      p_token_hash: token_hash,
+      p_email: email,
+      p_full_name: finalName,
+    });
 
-      if (bindError) {
-        return jsonError(rid, 500, "profile_bind_failed", "Kunne ikke koble konto til firma.", { userId, error: bindError.message });
+    if (acceptErr) {
+      const raw = String(acceptErr.message ?? "").toUpperCase();
+      if (raw.includes("INVITE_EXPIRED")) return jsonError(rid, 400, "invite_expired", "Invitasjonen er utløpt.");
+      if (raw.includes("INVITE_USED")) return jsonError(rid, 409, "invite_used", "Invitasjonen er allerede brukt.");
+      if (raw.includes("INVITE_EMAIL_MISMATCH")) return jsonError(rid, 409, "invite_email_mismatch", "Invitasjonen tilhører en annen e-postadresse.");
+      if (raw.includes("COMPANY_MISMATCH")) {
+        return jsonError(rid, 409, "company_mismatch", "Kontoen finnes allerede og er knyttet til et annet firma. Kontakt superadmin.");
       }
-
-      // Re-hent for å bekrefte
-      const refetch = await admin.from("profiles").select("id, company_id").eq("id", userId).maybeSingle();
-
-      if (!refetch.data?.company_id) {
-        return jsonError(rid, 500, "profile_bind_unverified", "Profile-binding kunne ikke verifiseres.", { userId });
+      if (raw.includes("INVITE_INVALID") || raw.includes("INVITE_CORRUPT")) {
+        return jsonError(rid, 400, "invite_invalid", "Ugyldig eller utløpt invitasjon.");
       }
-      profile.company_id = refetch.data.company_id;
+      return jsonError(rid, 500, "accept_failed", "Kunne ikke fullføre invitasjonen.", { detail: acceptErr.message });
     }
 
-    // 5) Sikkerhet: profile.company_id må matche invitasjonen
-    if (String(profile.company_id) !== company_id) {
-      return jsonError(rid, 409, "company_mismatch", "Kontoen finnes allerede og er knyttet til et annet firma. Kontakt superadmin.", {
-        existingCompany: profile.company_id,
-        inviteCompany: company_id,
+    // Audit (no PII: pseudonymous ids, no email/password).
+    try {
+      const { auditLog } = await import("@/lib/audit/log");
+      auditLog({
+        action: "INVITE_ACCEPTED",
+        userId,
+        role: "employee",
+        companyId: company_id,
+        locationId: location_id,
+        resource: "employee_invite",
+        resourceId: String(invite.id),
+        metadata: { rid, idempotent: Boolean((acceptData as { idempotent?: boolean } | null)?.idempotent) },
+        timestamp: Date.now(),
+        rid,
       });
+    } catch {
+      // audit must never break acceptance
     }
-
-    // 6) Oppdater trygge profile-felter (company_id er allerede satt i step 4 om nødvendig)
-    const profUpd = await admin
-      .from("profiles")
-      .update({
-        email,
-        full_name: finalName,
-        location_id,
-        role,
-        is_active: true,
-        disabled_at: null,
-      })
-      .eq("id", userId);
-
-    if (profUpd.error) return jsonError(rid, 500, "db_error", "Kunne ikke oppdatere profil.", profUpd.error);
-
-    // 6) Marker invitasjon brukt
-    const { error: useErr } = await admin
-      .from("employee_invites")
-      .update({ used_at: new Date().toISOString(), full_name: finalName ?? invite.full_name ?? null })
-      .eq("id", invite.id)
-      .is("used_at", null);
-
-    if (useErr) return jsonError(rid, 500, "db_error", "Kunne ikke markere invitasjon brukt.", useErr);
 
     return jsonOk(rid, { ok: true, rid, email }, 200);
   } catch (e: any) {

@@ -147,6 +147,8 @@ jobs:
           E2E_ADMIN_PASSWORD: ${{ secrets['E2E_ADMIN_PASSWORD'] }}
           E2E_SUPERADMIN_EMAIL: ${{ secrets['E2E_SUPERADMIN_EMAIL'] }}
           E2E_SUPERADMIN_PASSWORD: ${{ secrets['E2E_SUPERADMIN_PASSWORD'] }}
+          E2E_KITCHEN_EMAIL: ${{ secrets['E2E_KITCHEN_EMAIL'] }}
+          E2E_KITCHEN_PASSWORD: ${{ secrets['E2E_KITCHEN_PASSWORD'] }}
         run: |
           set -euo pipefail
           : "${E2E_TEST_USER_EMAIL:?Missing E2E_TEST_USER_EMAIL secret}"
@@ -157,6 +159,8 @@ jobs:
           : "${E2E_ADMIN_PASSWORD:?Missing E2E_ADMIN_PASSWORD secret}"
           : "${E2E_SUPERADMIN_EMAIL:?Missing E2E_SUPERADMIN_EMAIL secret}"
           : "${E2E_SUPERADMIN_PASSWORD:?Missing E2E_SUPERADMIN_PASSWORD secret}"
+          : "${E2E_KITCHEN_EMAIL:?Missing E2E_KITCHEN_EMAIL secret}"
+          : "${E2E_KITCHEN_PASSWORD:?Missing E2E_KITCHEN_PASSWORD secret}"
           d=E2EENV__DELIM__LP
           {
             echo "E2E_TEST_USER_EMAIL<<${d}"
@@ -196,6 +200,16 @@ jobs:
           {
             echo "E2E_SUPERADMIN_PASSWORD<<${d}"
             printf '%s\n' "$E2E_SUPERADMIN_PASSWORD"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_KITCHEN_EMAIL<<${d}"
+            printf '%s\n' "$E2E_KITCHEN_EMAIL"
+            echo "${d}"
+          } >> "$GITHUB_ENV"
+          {
+            echo "E2E_KITCHEN_PASSWORD<<${d}"
+            printf '%s\n' "$E2E_KITCHEN_PASSWORD"
             echo "${d}"
           } >> "$GITHUB_ENV"
 

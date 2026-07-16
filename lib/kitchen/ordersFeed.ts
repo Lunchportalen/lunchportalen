@@ -60,7 +60,14 @@ function normStatus(v: unknown): "ORDERED" | "CANCELED" | "OTHER" {
 
 function isMissingSchemaError(error: any) {
   const msg = safeStr(error?.message).toLowerCase();
-  return msg.includes("does not exist") || msg.includes("not exist") || msg.includes("column");
+  return (
+    msg.includes("does not exist") ||
+    msg.includes("not exist") ||
+    msg.includes("column") ||
+    msg.includes("schema cache") ||
+    msg.includes("could not find the table") ||
+    msg.includes("relation")
+  );
 }
 
 function applyTenantScope(query: any, scope: KitchenScope) {
@@ -135,15 +142,13 @@ async function fetchProfileMeta(userIds: string[]) {
   if (!userIds.length) return out;
 
   const attempts = [
-    "user_id,full_name,name,department",
-    "user_id,name,department",
-    "user_id,name",
-    "user_id",
+    "id,full_name",
+    "id",
   ];
 
   let rows: any[] = [];
   for (const select of attempts) {
-    const res = await admin.from("profiles").select(select).in("user_id", userIds);
+    const res = await admin.from("profiles").select(select).in("id", userIds);
     if (!res.error) {
       rows = (res.data ?? []) as any[];
       break;
@@ -154,10 +159,10 @@ async function fetchProfileMeta(userIds: string[]) {
   }
 
   for (const row of rows) {
-    const userId = safeStr(row?.user_id);
+    const userId = safeStr(row?.id);
     if (!userId) continue;
-    const name = safeStr(row?.full_name) || safeStr(row?.name) || userId;
-    const dept = safeStr(row?.department) || null;
+    const name = safeStr(row?.full_name) || userId;
+    const dept = null;
     out.set(userId, { name, dept });
   }
 

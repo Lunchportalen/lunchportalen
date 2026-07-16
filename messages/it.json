@@ -1662,7 +1662,7 @@
       "workspaceWarmDishGeneration": {
         "activeProfileEyebrow": "Active menu profile",
         "activeProfileTitle": "{profileName}",
-        "followsProfileLead": "Hot meal suggestions follow this profile. Existing content and published days are not changed automatically.",
+        "followsProfileLead": "I suggerimenti di piatti caldi seguono questo profilo. I contenuti esistenti e i giorni pubblicati non vengono modificati automaticamente.",
         "title": "Suggerimenti piatti caldi basati sul profilo",
         "description": "I nuovi suggerimenti e la generazione predefinita seguono il profilo menu attivo. I contenuti esistenti e i giorni pubblicati non vengono modificati automaticamente.",
         "profileMeta": "{profileName} ({profileId}) · {market} · {locale} · {seedCount} suggerimenti",
@@ -1731,21 +1731,21 @@
           "nonNoMarketShadowOnly": "Il profilo è fuori dal mercato NO — tutto il mapping è vista ombra."
         },
         "draftSave": {
-          "sectionTitle": "Mapping draft",
-          "statusNotSaved": "Not saved",
-          "statusNotSavedHelp": "This evaluation is preview-only and has not been saved as a draft.",
-          "statusDraftSaved": "Draft saved",
-          "statusDraftSavedHelp": "The evaluation is saved as an internal draft. It is not published and not visible to employees.",
-          "statusReviewed": "Reviewed",
-          "statusArchived": "Archived",
-          "statusArchivedHelp": "This draft is archived and is not active.",
-          "activationWarning": "This does not enable publishing, ordering, or menu display.",
-          "saveButton": "Lagre vurdering som utkast",
-          "viewerNoSave": "Saving requires provider admin.",
-          "saveSuccess": "Draft saved.",
-          "validationError": "The draft could not be saved because validation blocked an unsafe change.",
-          "permissionError": "You do not have permission to save mapping drafts.",
-          "genericError": "The draft could not be saved. Try again later."
+          "sectionTitle": "Bozza di mapping",
+          "statusNotSaved": "Non salvata",
+          "statusNotSavedHelp": "Questa valutazione è solo un'anteprima e non è stata salvata come bozza.",
+          "statusDraftSaved": "Bozza salvata",
+          "statusDraftSavedHelp": "La valutazione è salvata come bozza interna. Non è pubblicata e non è visibile ai dipendenti.",
+          "statusReviewed": "Valutata",
+          "statusArchived": "Archiviata",
+          "statusArchivedHelp": "Questa bozza è archiviata e non è attiva.",
+          "activationWarning": "Questo non attiva la pubblicazione, gli ordini né la visualizzazione del menu.",
+          "saveButton": "Salva la valutazione come bozza",
+          "viewerNoSave": "Il salvataggio richiede un amministratore del fornitore.",
+          "saveSuccess": "Bozza salvata.",
+          "validationError": "La bozza non può essere salvata perché la validazione ha bloccato una modifica non sicura.",
+          "permissionError": "Non hai i permessi per salvare bozze di mapping.",
+          "genericError": "La bozza non può essere salvata. Riprova più tardi."
         }
       },
       "catalogModel": {

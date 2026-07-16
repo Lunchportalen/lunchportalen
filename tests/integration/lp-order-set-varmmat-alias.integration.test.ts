@@ -18,9 +18,9 @@ import {
   SMOKE_COMPANY_ID,
   SMOKE_EMAIL,
   SMOKE_LOCATION_ID,
-  SMOKE_ORDER_DATE,
   SMOKE_USER_ID,
 } from "../../scripts/smoke/fixtures/smoke-menu-fixture.constants.mjs";
+import { nextWednesdayISO } from "../_helpers/variantItemkeyUigxSeed.mjs";
 
 const enabled = hasRemoteSupabaseIntegrationEnv({ requireAnon: true });
 
@@ -42,7 +42,6 @@ function buildTriCategorySeedSql(serviceDate: string) {
   const prodPaasmurt = "c1111111-1111-4111-8111-000000000201";
   const prodSalat = "c1111111-1111-4111-8111-000000000202";
   const prodVarmrett = "c1111111-1111-4111-8111-000000000203";
-  const msdId = "c1111111-1111-4111-8111-000000000301";
 
   return `
 insert into public.product_categories (id, name, sort_order, created_at, updated_at)
@@ -60,9 +59,9 @@ values
 on conflict (id) do update set category_id = excluded.category_id, sku = excluded.sku, updated_at = now();
 
 insert into public.menu_service_days (id, company_id, location_id, service_date, state, provider_id, created_at, updated_at)
-select '${msdId}', '${SMOKE_COMPANY_ID}', '${SMOKE_LOCATION_ID}', '${serviceDate}'::date, 'published', c.provider_id, now(), now()
+select gen_random_uuid(), '${SMOKE_COMPANY_ID}', '${SMOKE_LOCATION_ID}', '${serviceDate}'::date, 'published', c.provider_id, now(), now()
 from public.companies c where c.id = '${SMOKE_COMPANY_ID}'
-on conflict (location_id, service_date) do nothing;
+on conflict (location_id, service_date) do update set state = 'published', updated_at = now();
 
 insert into public.menu_service_day_items (menu_service_day_id, product_id, product_name_snapshot, unit_name_snapshot, offered_price_cents_ex_vat, vat_rate_snapshot, quantity, sort_order, is_optional, created_at, updated_at)
 select msd.id, p.id, p.name, 'porsjon', ${SMOKE_BASIS_PRICE_CENTS}, 0.15, 1,
@@ -81,7 +80,8 @@ where msd.location_id = '${SMOKE_LOCATION_ID}' and msd.service_date = '${service
 
 describe.skipIf(!enabled)("lp_order_set varmmat MSDI alias (uigx integration)", () => {
   /** Fixed Wed in smoke agreement window (see scripts/smoke/fixtures). */
-  const serviceDate = SMOKE_ORDER_DATE;
+  // FASE 13: dynamisk framtidig onsdag (+4 uker) — fast dato forfalt mot cutoff.
+  const serviceDate = nextWednesdayISO(4);
   let admin: ReturnType<typeof createClient<Database>>;
   let userClient: ReturnType<typeof createClient<Database>>;
   /** Resolved at sign-in (uigx smoke user id may differ from SMOKE_USER_ID default). */
