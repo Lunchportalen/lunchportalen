@@ -272,6 +272,14 @@ export const capabilities: SuperadminCapability[] = [
     group: "system",
     enabled: true,
   },
+  {
+    id: "global-compliance",
+    label: "Global compliance",
+    description: "21-lands tax/legal/e-invoice readiness — readonly; RESEARCHED ≠ APPROVED.",
+    href: "/superadmin/global-compliance",
+    group: "system",
+    enabled: true,
+  },
 ];
 
 const GROUP_ORDER: SuperadminCapability["group"][] = ["core", "operations", "growth", "system"];
