@@ -99,12 +99,17 @@ export const COUNTRY_TAX_PACKS: Record<CountryCode, CountryTaxPack> = {
     officialSources: [
       {
         authorityName: "HM Revenue & Customs",
-        sourceUrl: "https://www.gov.uk/guidance/rates-of-vat-on-different-goods-and-services",
-        sourceTitle: "Rates of VAT on different goods and services",
+        sourceUrl: "https://www.gov.uk/guidance/catering-takeaway-food-and-vat-notice-7091",
+        sourceTitle: "Catering, takeaway food (VAT Notice 709/1)",
+      },
+      {
+        authorityName: "HM Revenue & Customs",
+        sourceUrl: "https://www.gov.uk/guidance/vat-rates-on-different-goods-and-services",
+        sourceTitle: "VAT rates on different goods and services",
       },
     ],
     openQuestions: [
-      "Confirm hot takeaway / catering liability vs zero-rated cold food under current HMRC notices.",
+      "Confirm edge cases for cold takeaway exceptions (confectionery, soft drinks) under Notice 701/14.",
     ],
   },
   DE: euPack("DE", {
