@@ -110,7 +110,7 @@ export async function POST(req: Request) {
     isFixture,
   });
 
-  if (!validated.ok) {
+  if (validated.ok === false) {
     return jsonErr(g.rid, "Approval avvist", 422, { reasons: validated.reasons });
   }
 

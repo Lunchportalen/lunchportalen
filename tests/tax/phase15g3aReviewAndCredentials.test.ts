@@ -103,7 +103,7 @@ describe("Phase 15G.3A review packs and credentials", () => {
       immutableSignatureHash: "sig",
     });
     expect(result.ok).toBe(false);
-    if (!result.ok) {
+    if (result.ok === false) {
       expect(result.reasons).toContain("REVIEWER_SLOT_UNASSIGNED");
     }
   });
@@ -131,6 +131,6 @@ describe("Phase 15G.3A review packs and credentials", () => {
       immutableSignatureHash: "sig",
     });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reasons).toContain("WRONG_RELEASE_SHA");
+    if (result.ok === false) expect(result.reasons).toContain("WRONG_RELEASE_SHA");
   });
 });

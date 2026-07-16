@@ -330,9 +330,10 @@ export function auditCountryCompleteness(countryCode: CountryCode): CountryCompl
   );
 
   // Credentials
-  const creds = credentialDependencies()
-    .filter((c) => c.countryCode === countryCode)
-    .map((c) => ({ dependency: c.dependency, status: "BLOCKED" as const }));
+  const creds: Array<{ dependency: string; status: "BLOCKED" | "NOT_APPLICABLE" | "VERIFIED" }> =
+    credentialDependencies()
+      .filter((c) => c.countryCode === countryCode)
+      .map((c) => ({ dependency: c.dependency, status: "BLOCKED" as const }));
   if (eInvoiceNa) {
     creds.push({ dependency: `${countryCode}:e_invoice:national_mandate`, status: "NOT_APPLICABLE" });
   }
