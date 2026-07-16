@@ -77,8 +77,12 @@ export function buildCommissionSnapshot(args: {
   };
 }
 
-export function assertCommissionExactFivePercent(orderNetMinor: bigint, commissionMinor: bigint): void {
-  const viaHelper = platformCommissionMinor(orderNetMinor, "NOK").amountMinor;
+export function assertCommissionExactFivePercent(
+  orderNetMinor: bigint,
+  commissionMinor: bigint,
+  currencyCode: string,
+): void {
+  const viaHelper = platformCommissionMinor(orderNetMinor, currencyCode).amountMinor;
   if (commissionMinor !== viaHelper) {
     throw new Error(`COMMISSION_IMBALANCE:${commissionMinor}!=${viaHelper}`);
   }

@@ -5,7 +5,7 @@
  */
 
 import type { CountryCode } from "@/lib/markets/supportedMarkets";
-import { SUPPORTED_COUNTRY_CODES } from "@/lib/markets/supportedMarkets";
+import { SUPPORTED_COUNTRY_CODES, SUPPORTED_MARKETS } from "@/lib/markets/supportedMarkets";
 import { E_INVOICE_CAPABILITIES } from "@/lib/invoice/eInvoiceRegistry";
 
 export type InvoicePackReviewStatus = "RESEARCHED" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
@@ -25,16 +25,16 @@ export type CountryInvoicePack = {
   stagingIssuanceAllowed: false;
 };
 
-const CURRENCY: Record<CountryCode, string> = {
-  NO: "NOK", SE: "SEK", DK: "DKK", FI: "EUR", GB: "GBP", DE: "EUR", FR: "EUR",
-  ES: "EUR", IT: "EUR", NL: "EUR", BE: "EUR", CH: "CHF", AT: "EUR", IE: "EUR",
-  PL: "PLN", RO: "RON", CZ: "CZK", PT: "EUR", GR: "EUR", US: "USD", CA: "CAD",
-};
+function currencyFor(countryCode: CountryCode): string {
+  const m = SUPPORTED_MARKETS.find((x) => x.countryCode === countryCode);
+  if (!m) throw new Error(`MARKET_MISSING:${countryCode}`);
+  return m.currency;
+}
 
 function pack(countryCode: CountryCode, partial?: Partial<CountryInvoicePack>): CountryInvoicePack {
   return {
     countryCode,
-    currencyCode: CURRENCY[countryCode],
+    currencyCode: currencyFor(countryCode),
     supportsSimplifiedInvoice: countryCode !== "IT" && countryCode !== "PL",
     numberingScheme: "sequential_per_issuer",
     requiresTaxIdOnInvoice: true,
@@ -113,14 +113,14 @@ export function buildCreditNoteDraft(args: {
   taxAmountMinor: bigint;
   reason: string;
 }): CreditNoteDraft {
-  const pack = COUNTRY_INVOICE_PACKS[args.countryCode];
-  if (args.currencyCode !== pack.currencyCode) {
-    throw new Error(`CROSS_CURRENCY_INVOICE_FORBIDDEN:${args.currencyCode}->${pack.currencyCode}`);
+  const invoicePack = COUNTRY_INVOICE_PACKS[args.countryCode];
+  if (args.currencyCode !== invoicePack.currencyCode) {
+    throw new Error(`CROSS_CURRENCY_INVOICE_FORBIDDEN:${args.currencyCode}->${invoicePack.currencyCode}`);
   }
   if (!args.originalInvoiceId.trim()) {
     throw new Error("CREDIT_NOTE_REQUIRES_ORIGINAL");
   }
-  if (!pack.creditNoteRequiresOriginalLink) {
+  if (!invoicePack.creditNoteRequiresOriginalLink) {
     throw new Error("CREDIT_NOTE_LINK_REQUIRED");
   }
   return {

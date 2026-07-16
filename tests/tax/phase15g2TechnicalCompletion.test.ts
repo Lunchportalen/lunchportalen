@@ -96,7 +96,7 @@ describe("Phase 15G.2 invoice / e-invoice / legal / commission", () => {
     const cn = buildCreditNoteDraft({
       countryCode: "NO",
       originalInvoiceId: "inv-1",
-      currencyCode: "NOK",
+      currencyCode: COUNTRY_INVOICE_PACKS.NO.currencyCode,
       amountMinor: BigInt(100),
       taxAmountMinor: BigInt(15),
       reason: "cancel",
@@ -148,9 +148,10 @@ describe("Phase 15G.2 invoice / e-invoice / legal / commission", () => {
 
   it("commission snapshot is 5% and tax fail-closed until APPROVED", () => {
     const orderNet = BigInt(20_000);
+    const currencyCode = COUNTRY_INVOICE_PACKS.NO.currencyCode;
     const snap = buildCommissionSnapshot({
       countryCode: "NO",
-      currencyCode: "NOK",
+      currencyCode,
       orderNetMinor: orderNet,
       taxPointDate: "2026-07-16",
       rules: allResearchedTaxRules(),
@@ -159,7 +160,7 @@ describe("Phase 15G.2 invoice / e-invoice / legal / commission", () => {
     expect(snap.commissionBps).toBe(500);
     expect(snap.commissionMinor).toBe(BigInt(1000));
     expect(snap.commissionTax.status).toBe("FAIL_CLOSED");
-    assertCommissionExactFivePercent(orderNet, snap.commissionMinor);
+    assertCommissionExactFivePercent(orderNet, snap.commissionMinor, currencyCode);
   });
 });
 
