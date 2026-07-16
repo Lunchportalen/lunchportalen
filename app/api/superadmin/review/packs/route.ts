@@ -2,10 +2,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { jsonOk } from "@/lib/http/respond";
+import { jsonOk, jsonErr } from "@/lib/http/respond";
 import { gateReviewApi } from "@/lib/review/reviewApiGuard";
 import { auditAllCountryReviewPacks, buildCountryReviewPack } from "@/lib/review/countryReviewPack";
 import type { CountryCode } from "@/lib/markets/supportedMarkets";
+import { SUPPORTED_COUNTRY_CODES } from "@/lib/markets/supportedMarkets";
 import { buildReviewerStaffingPlan } from "@/lib/review/staffingPlan";
 import {
   buildRegistrationRequirementSeeds,
@@ -19,7 +20,10 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const country = url.searchParams.get("country")?.toUpperCase();
-  if (country && /^[A-Z]{2}$/.test(country)) {
+  if (country) {
+    if (!/^[A-Z]{2}$/.test(country) || !SUPPORTED_COUNTRY_CODES.includes(country as CountryCode)) {
+      return jsonErr(g.rid, "Ugyldig landkode", 422, "validation");
+    }
     return jsonOk(g.rid, { pack: buildCountryReviewPack(country as CountryCode) });
   }
 
