@@ -1,10 +1,10 @@
 {
-  "writtenAt": "2026-07-17T08:24:48.044Z",
+  "writtenAt": "2026-07-17T09:11:13.353Z",
   "decision": "DURABLE_PIPELINE_ACTIVE",
   "last": {
-    "runId": "local-2026-07-17T08-24-44-951Z-12dc4df1",
-    "started_at": "2026-07-17T08:24:44.953Z",
-    "completed_at": "2026-07-17T08:24:47.908Z",
+    "runId": "29569004405",
+    "started_at": "2026-07-17T09:10:54.344Z",
+    "completed_at": "2026-07-17T09:11:13.295Z",
     "replies_found": 0,
     "messages_classified": 0,
     "follow_ups_sent": 0,
@@ -16,7 +16,7 @@
       "smtp": "PASS",
       "error": null
     },
-    "secretSource": "file:.env.local",
+    "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
     "quotes_waiting": 0,
     "owner_batch": "WAITING_FOR_QUOTES",
     "notify_owner": false,
@@ -40,13 +40,13 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-07-17T08:24:47.908Z",
-      "nextScheduledRun": "2026-07-17T09:00:00.000Z"
+      "lastSuccessfulRun": "2026-07-17T09:11:13.295Z",
+      "nextScheduledRun": "2026-07-17T12:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
       "smtp": "PASS",
-      "secretSource": "file:.env.local"
+      "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
     },
     "dueFollowUps": [
       {
@@ -105,7 +105,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-07-17T08:24:47.927Z",
-    "runId": "local-2026-07-17T08-24-44-951Z-12dc4df1"
+    "updatedAt": "2026-07-17T09:11:13.302Z",
+    "runId": "29569004405"
   }
 }
