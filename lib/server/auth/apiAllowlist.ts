@@ -2,7 +2,7 @@
  * DC-011 / Fase 3 — explicit API auth allowlist (no wildcards in Set).
  * Dynamic App Router segments are matched via ALLOWLIST_DYNAMIC (documented exceptions).
  *
- * Total: 90 routes (83 path + 2 GET-only + 5 dynamic). Includes 16NO.2 Norway legal docs list + [type].
+ * Total: 91 routes (84 path + 2 GET-only + 5 dynamic). Includes 16NO.4 Norway MVA threshold cron.
  */
 
 /** Exact paths only — verified fail-closed / anon (a)–(d) / api-key in route files. */
@@ -30,6 +30,7 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/cron/check-deviations",
   "/api/cron/cleanup-invites",
   "/api/cron/commission-settlement",
+  "/api/cron/norway-mva-threshold",
   "/api/cron/daily-order-summary",
   "/api/cron/daily-sanity",
   "/api/cron/experiments",
