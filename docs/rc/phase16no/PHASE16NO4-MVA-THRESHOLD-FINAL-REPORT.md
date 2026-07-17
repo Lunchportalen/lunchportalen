@@ -11,7 +11,7 @@
 | Field | Value |
 |-------|--------|
 | Previous production SHA | `38b18c38742e1b50eb727f6bf807e1a1499f69fb` |
-| MVA release SHA | `9827efc8dbe6f4f5bf4d9b59acf43ef95b485ca4` |
+| MVA release SHA | `fe79096920b20c9e5ea22b72b1476c6cf08a7781` (tip; feature `9827efc8`) |
 | Deployment ID | unchanged (production not redeployed) |
 | Migration head before | `20260902120000` |
 | Migration head after | *(not applied)* — target `20260904120000` after `20260903120000` |
