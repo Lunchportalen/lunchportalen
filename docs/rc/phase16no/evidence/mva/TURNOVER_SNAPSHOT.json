@@ -9,7 +9,7 @@
   },
   "taxableServiceTurnoverMinor": 0,
   "thresholdMinor": 5000000,
-  "thresholdNok": "50000.00",
+  "thresholdMajorUnits": "50000.00",
   "alertAtMinor": 4000000,
   "alert": false,
   "crossed": false,

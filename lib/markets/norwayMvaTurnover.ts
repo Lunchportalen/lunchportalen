@@ -2,11 +2,11 @@
  * Phase 16NO.1 — track Lunchportalen AS taxable platform-service turnover
  * (commission net excl. MVA), not catering providers' food sales.
  *
- * Skatteetaten registration threshold for ordinary businesses: NOK 50 000
- * (ex VAT) over a 12-month period — owner must register when obligation arises.
+ * Skatteetaten registration threshold for ordinary businesses: 50 000
+ * major units (ex VAT) over a 12-month period — owner must register when obligation arises.
  */
 
-export const NORWAY_MVA_REGISTRATION_THRESHOLD_MINOR = 5_000_000n; // NOK 50_000.00
+export const NORWAY_MVA_REGISTRATION_THRESHOLD_MINOR = BigInt(5_000_000); // 50_000.00 major units
 export const NORWAY_MVA_OWNER_ALERT_RATIO_BPS = 8000; // alert at 80% of threshold
 
 export type NorwayMvaTurnoverSnapshot = {
@@ -31,10 +31,10 @@ export function evaluateNorwayMvaTurnover(input: {
       ? input.taxableServiceTurnoverMinor
       : BigInt(input.taxableServiceTurnoverMinor);
   const threshold = NORWAY_MVA_REGISTRATION_THRESHOLD_MINOR;
-  const alertAt = (threshold * BigInt(NORWAY_MVA_OWNER_ALERT_RATIO_BPS)) / 10000n;
-  const remaining = turnover >= threshold ? 0n : threshold - turnover;
+  const alertAt = (threshold * BigInt(NORWAY_MVA_OWNER_ALERT_RATIO_BPS)) / BigInt(10000);
+  const remaining = turnover >= threshold ? BigInt(0) : threshold - turnover;
   const percentOfThresholdBps =
-    threshold === 0n ? 0 : Number((turnover * 10000n) / threshold);
+    threshold === BigInt(0) ? 0 : Number((turnover * BigInt(10000)) / threshold);
   const mvaRegistered = input.mvaRegistered === true;
   return {
     taxableServiceTurnoverMinor: turnover,

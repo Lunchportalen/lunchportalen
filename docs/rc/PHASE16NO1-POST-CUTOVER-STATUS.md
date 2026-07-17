@@ -31,14 +31,14 @@ ACTIVE. GitHub `Production` environment requires reviewer. Cancelled stuck pendi
 RESTORE_REHEARSAL_LIMITED. PITR not available via current API/plan surface; physical backups present. Runbook: `docs/rc/PHASE16NO1-RESTORE-REHEARSAL-LIMITED.md`.
 
 ### GATE 4 — MVA-safe operating mode
-PLATFORM_REAL_MVA_INVOICING = BLOCKED. Issue + deliver of real commission invoices gated. Turnover tracker uses platform commission net (threshold NOK 50 000). Current accrued taxable service turnover: **NOK 0.00**.
+PLATFORM_REAL_MVA_INVOICING = BLOCKED. Issue + deliver of real commission invoices gated. Turnover tracker uses platform commission net (threshold 50 000 major units). Current accrued taxable service turnover: **0.00**.
 
 ## Active risks
 
 1. Full data-bearing PITR restore rehearsal not yet proven on this plan/API.
 2. Legal clickwrap productization still stub-level (not forged LEGAL_APPROVED).
 3. MVA registration pending — real platform VAT invoices must remain blocked.
-4. Production runtime still needs exact-SHA redeploy to pick up deliver-path MVA block if not yet on `79d3e67b` build that includes that commit (cutover SHA predates deliver-gate patch until redeploy).
+4. Deliver-path MVA block ships with 16NO.1 controlled redeploy after commercial-hardcode/BigInt fix.
 
 ## Decision
 

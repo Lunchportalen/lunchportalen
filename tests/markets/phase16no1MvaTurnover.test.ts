@@ -7,7 +7,7 @@ import {
 describe("Phase 16NO.1 — Norway MVA turnover gate", () => {
   it("tracks platform commission net, alerts at 80%, blocks real invoicing until registered", () => {
     const mid = evaluateNorwayMvaTurnover({
-      taxableServiceTurnoverMinor: 4_000_000n, // NOK 40_000
+      taxableServiceTurnoverMinor: BigInt(4_000_000), // 40_000.00 major units
       mvaRegistered: false,
     });
     expect(mid.thresholdMinor).toBe(NORWAY_MVA_REGISTRATION_THRESHOLD_MINOR);
@@ -16,14 +16,14 @@ describe("Phase 16NO.1 — Norway MVA turnover gate", () => {
     expect(mid.PLATFORM_REAL_MVA_INVOICING).toBe("BLOCKED");
 
     const over = evaluateNorwayMvaTurnover({
-      taxableServiceTurnoverMinor: 5_000_000n,
+      taxableServiceTurnoverMinor: BigInt(5_000_000),
       mvaRegistered: false,
     });
     expect(over.crossed).toBe(true);
-    expect(over.remainingMinor).toBe(0n);
+    expect(over.remainingMinor).toBe(BigInt(0));
 
     const registered = evaluateNorwayMvaTurnover({
-      taxableServiceTurnoverMinor: 6_000_000n,
+      taxableServiceTurnoverMinor: BigInt(6_000_000),
       mvaRegistered: true,
     });
     expect(registered.PLATFORM_REAL_MVA_INVOICING).toBe("ELIGIBLE");
