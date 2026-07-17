@@ -65,16 +65,16 @@ describe("Phase 16NO — global commercial model 21 countries", () => {
 
   it("Norway platform invoice example: 10000 → 500 + 125 = 625", () => {
     // NOK minor units: 10_000.00 = 1_000_000
-    const ex = norwayPlatformInvoiceExample(1_000_000n);
-    expect(ex.customerNetMinor).toBe(1_000_000n);
-    expect(ex.foodMvaMinor).toBe(150_000n);
-    expect(ex.customerGrossMinor).toBe(1_150_000n);
-    expect(ex.commissionNetMinor).toBe(50_000n);
-    expect(ex.commissionMvaMinor).toBe(12_500n);
-    expect(ex.platformInvoiceTotalMinor).toBe(62_500n);
+    const ex = norwayPlatformInvoiceExample(BigInt(1_000_000));
+    expect(ex.customerNetMinor).toBe(BigInt(1_000_000));
+    expect(ex.foodMvaMinor).toBe(BigInt(150_000));
+    expect(ex.customerGrossMinor).toBe(BigInt(1_150_000));
+    expect(ex.commissionNetMinor).toBe(BigInt(50_000));
+    expect(ex.commissionMvaMinor).toBe(BigInt(12_500));
+    expect(ex.platformInvoiceTotalMinor).toBe(BigInt(62_500));
     expect(ex.taxCode).toBe("NO_PLATFORM_SERVICE_STANDARD_VAT_25");
     expect(NORWAY_PLATFORM_INVOICE_WORDING).toContain("5 %");
     // Must NOT be 5% of gross 11500
-    expect(ex.commissionNetMinor).not.toBe(57_500n);
+    expect(ex.commissionNetMinor).not.toBe(BigInt(57_500));
   });
 });

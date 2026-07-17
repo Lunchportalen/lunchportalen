@@ -79,7 +79,7 @@ export function assertGlobalCommercialModelLocked(): void {
 }
 
 /** Norway platform invoice example: 10_000 net → 500 + 125 = 625. */
-export function norwayPlatformInvoiceExample(customerNetMinor: bigint = 1_000_000n): {
+export function norwayPlatformInvoiceExample(customerNetMinor: bigint = BigInt(1_000_000)): {
   customerNetMinor: bigint;
   foodMvaMinor: bigint;
   customerGrossMinor: bigint;
@@ -88,9 +88,10 @@ export function norwayPlatformInvoiceExample(customerNetMinor: bigint = 1_000_00
   platformInvoiceTotalMinor: bigint;
   taxCode: typeof NO_PLATFORM_TAX_CODE;
 } {
-  const commissionNetMinor = (customerNetMinor * BigInt(COMMISSION_RATE_BPS)) / 10_000n;
-  const commissionMvaMinor = (commissionNetMinor * BigInt(NO_PLATFORM_VAT_BPS)) / 10_000n;
-  const foodMvaMinor = (customerNetMinor * 1500n) / 10_000n;
+  const tenThousand = BigInt(10_000);
+  const commissionNetMinor = (customerNetMinor * BigInt(COMMISSION_RATE_BPS)) / tenThousand;
+  const commissionMvaMinor = (commissionNetMinor * BigInt(NO_PLATFORM_VAT_BPS)) / tenThousand;
+  const foodMvaMinor = (customerNetMinor * BigInt(1500)) / tenThousand;
   return {
     customerNetMinor,
     foodMvaMinor,
