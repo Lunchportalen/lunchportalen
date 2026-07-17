@@ -1,0 +1,40 @@
+{
+  "phase": "16NO.3",
+  "cleaned_at_utc": "2026-07-17T22:18:16Z",
+  "recovery_supabase": {
+    "ref": "msecmoqfncvxrucnlpmm",
+    "deleted": true,
+    "delete_http_status": 200,
+    "workflow_run": "29617454933",
+    "pause_attempt": "rejected_not_free_tier_then_deleted"
+  },
+  "recovery_vercel": {
+    "project": "lunchportalen-16no",
+    "project_id": "prj_FNTZVuwP5SWT5AVo5RkTZR1rY2sH",
+    "env_vars_deleted": 17,
+    "deployments_removed": 6,
+    "project_deleted_http_status": 204
+  },
+  "temporary_credentials": {
+    "github_secrets_deleted": [
+      "VERCEL_TOKEN",
+      "VERCEL_ORG_ID",
+      "VERCEL_PROJECT_ID_16NO"
+    ],
+    "database_passwords_stored_in_repo": 0,
+    "service_role_keys_stored_in_repo": 0,
+    "tokens_printed_in_evidence": 0,
+    "note": "Local Vercel CLI token briefly appeared in a failed promote error stream; operator should rotate Vercel token if policy requires"
+  },
+  "production_post_cleanup": {
+    "app_health_ok": true,
+    "app_sha": "38b18c38742e1b50eb727f6bf807e1a1499f69fb",
+    "supabase_ref_present": "hkpokyapzarefrgqzkos",
+    "recovery_ref_absent": true,
+    "migration_head": "20260902120000",
+    "norway_ordering_enabled": true,
+    "other_countries_enabled": 0,
+    "mva_invoice_block": true,
+    "production_mutations_this_phase": 0
+  }
+}

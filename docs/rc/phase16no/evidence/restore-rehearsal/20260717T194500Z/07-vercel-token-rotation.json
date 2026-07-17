@@ -1,0 +1,56 @@
+{
+  "phase": "16NO.3A",
+  "completed_at_utc": "2026-07-17T22:38:00Z",
+  "incident_class": "LOCAL_CLI_TOKEN_EXPOSURE_IN_SHELL_OUTPUT",
+  "token": {
+    "type": "vercel_cli_access_token",
+    "prefix_family": "vca_",
+    "length": 60,
+    "sha256_12": "e82d4c2707c2",
+    "revoked_via": "DELETE /v3/user/tokens/current",
+    "revoke_http": 200,
+    "post_revoke_user_http": 403,
+    "old_token_rejected": true,
+    "replacement_created": false,
+    "replacement_reason": "Not operationally required for production; Vercel CLI re-auth deferred to owner when needed"
+  },
+  "purge": {
+    "github_secrets_vercel": "ABSENT",
+    "local_env_vercel_token": "CLEARED",
+    "powershell_history_full_token": "NOT_PRESENT",
+    "vercel_cli_auth_json": "WIPED",
+    "temp_token_files": "REMOVED_IF_PRESENT",
+    "cursor_terminals_redacted": true,
+    "agent_transcripts_vca_like": 0,
+    "actions_logs_vca_like": {
+      "29614413883": 0,
+      "29616327013": 0,
+      "29616976177": 0,
+      "29617454933": 0
+    },
+    "repository_working_tree_vca_like": 0
+  },
+  "verification": {
+    "VERCEL_EXPOSED_TOKEN_REVOKED": "YES",
+    "TOKEN_REPOSITORY_MATCHES": 0,
+    "UNAUTHORISED_VERCEL_ACTIVITY": 0,
+    "unauthorised_activity_basis": "Production SHA unchanged; production health PASS; no Vercel GH secrets; recovery Vercel project already deleted; no vca_ patterns in Actions logs for 16NO.3 runs. Full Vercel account audit UI review deferred (CLI unauthenticated after revoke).",
+    "PRODUCTION_HEALTH": "PASS",
+    "production_sha": "38b18c38742e1b50eb727f6bf807e1a1499f69fb",
+    "RESTORE_REHEARSAL": "PASS",
+    "production_auto_deploy_lock": "ACTIVE_PER_16NO1_EVIDENCE",
+    "production_migration_lock": "ACTIVE_PER_16NO1_EVIDENCE"
+  },
+  "cost": {
+    "recovery_project_ref_deleted": "msecmoqfncvxrucnlpmm",
+    "org_project_create_cost_api_usd_monthly": 10,
+    "actual_invoice_line_item": "OWNER_DASHBOARD_BILLING_REQUIRED",
+    "note": "Supabase MCP get_cost for org returns mirrored monthly project create amount USD 10. Exact charged line for deleted recovery project must be confirmed in Supabase billing UI."
+  },
+  "decision": "SECURITY_CLEANUP_PASS",
+  "owner_followups": [
+    "Confirm Supabase billing line for Lunchportalen v2 / msecmoqfncvxrucnlpmm if invoice detail required",
+    "Optional: review Vercel account activity in Dashboard for 2026-07-17",
+    "Re-run vercel login only when CLI access is needed again"
+  ]
+}

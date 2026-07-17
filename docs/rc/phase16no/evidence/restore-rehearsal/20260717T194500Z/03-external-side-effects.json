@@ -1,0 +1,31 @@
+{
+  "phase": "16NO.3",
+  "rehearsal_completed_at_utc": "2026-07-17T21:12:00Z",
+  "recovery_project_ref": "msecmoqfncvxrucnlpmm",
+  "external_calls": {
+    "ehf": 0,
+    "stripe": 0,
+    "tripletex": 0,
+    "email_outbound": 0,
+    "webhooks_dispatched": 0,
+    "status": "PASS"
+  },
+  "internal_side_effects": {
+    "outbox_pending_created": 3,
+    "outbox_event_types": ["order.set", "rollup.rebuild"],
+    "commission_ledger_rows_created": 1,
+    "provider_commission_invoices_created": 0,
+    "synthetic_auth_user_created": 1,
+    "synthetic_tenant_rows_created": true,
+    "note": "Outbox rows are internal async queue entries only; cron audit_log_create_partitions remains inactive"
+  },
+  "secrets_exposed_in_evidence": 0,
+  "real_user_pii_in_evidence": 0,
+  "production_mutations": 0,
+  "projects_touched": ["msecmoqfncvxrucnlpmm"],
+  "projects_explicitly_avoided": ["hkpokyapzarefrgqzkos", "uigxsboqeruxflgzqztl"],
+  "kill_switch_restored": true,
+  "norway_ordering_after_restore": true,
+  "blockers": [],
+  "overall": "PASS"
+}

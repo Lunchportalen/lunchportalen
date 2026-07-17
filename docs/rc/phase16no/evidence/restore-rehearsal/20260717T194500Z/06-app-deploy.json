@@ -1,0 +1,28 @@
+{
+  "phase": "16NO.3",
+  "exact_sha": "38b18c38742e1b50eb727f6bf807e1a1499f69fb",
+  "isolated_vercel_project": "lunchportalen-16no",
+  "alias": "https://lunchportalen-16no.vercel.app",
+  "production_alias_untouched": "https://app.lunchportalen.no",
+  "recovery_supabase_url": "https://msecmoqfncvxrucnlpmm.supabase.co",
+  "health": {
+    "ok": true,
+    "version": "38b18c38742e1b50eb727f6bf807e1a1499f69fb",
+    "summary_status": "ok",
+    "supabase": "ok",
+    "env": "ok",
+    "checked_at_utc": "2026-07-17T22:13:11.287Z"
+  },
+  "flags": {
+    "RECOVERY_REHEARSAL": true,
+    "LP_RESEND_LIVE_SEND": false,
+    "LUNCHPORTALEN_MVA_REGISTERED": false,
+    "PLATFORM_INVOICE_VAT_25_ENABLED": false,
+    "stripe": "off"
+  },
+  "gh_workflow_runs": {
+    "recovery_deploy_preview": "29614413883",
+    "set_recovery_env": "29616327013",
+    "set_cron_secret": "29616976177"
+  }
+}
