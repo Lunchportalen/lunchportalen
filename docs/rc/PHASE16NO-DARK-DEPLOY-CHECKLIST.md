@@ -1,6 +1,6 @@
 ﻿# PHASE 16NO â€” DARK DEPLOY CHECKLIST (reversible prep)
 
-**NORWAY_RELEASE_SHA:** `608e87ee6090ae56da8c6f5064337ea3dbd78e53` (update after new commits)  
+**NORWAY_RELEASE_SHA:** `e23b627eb35c82f72b2b5bf753ea8c571e0c3627` (resolve tip via `git rev-parse origin/release/norway-first-live` before dark deploy)  
 **Production URL:** https://app.lunchportalen.no  
 **Mode:** dark â€” Norway fiscal flags OFF
 

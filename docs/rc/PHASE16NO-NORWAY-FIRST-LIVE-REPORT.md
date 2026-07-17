@@ -6,7 +6,7 @@
 ## Release
 
 - Previous production SHA: `98b3b15e258966dd61ad967af5876982bcfcb959` (verified via `/api/health`)
-- Norway release SHA: `608e87ee6090ae56da8c6f5064337ea3dbd78e53` (`release/norway-first-live`)
+- Norway release SHA: `e23b627eb35c82f72b2b5bf753ea8c571e0c3627` (`release/norway-first-live`)
 - SOURCE_RC_SHA: `b88aaf99780e0a5d71404e831fd87eb90031fb6e`
 - Deployment ID: NOT APPLIED (fiscal activation blocked)
 - Production URL: https://app.lunchportalen.no
