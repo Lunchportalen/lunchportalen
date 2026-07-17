@@ -54,11 +54,14 @@ describe("Phase 16NO — global commercial model 21 countries", () => {
     }
   });
 
-  it("Norway fiscal path requires accountant confirmation", () => {
+  it("Norway fiscal path requires accountant confirmation even when owner confirmed", () => {
+    process.env.OWNER_NORWAY_TAX_MODEL_CONFIRMATION = "CONFIRMED";
     delete process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION;
     delete process.env.COUNTRY_NO_PRODUCTION_ENABLED;
     const readiness = evaluateNorwayFirstReadiness();
     expect(readiness.decision).toBe("NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED");
+    expect(readiness.ownerTaxModelConfirmed).toBe(true);
+    expect(readiness.accountantTaxConfirmed).toBe(false);
     expect(readiness.otherCountriesDisabled).toBe(20);
     expect(() => assertCountryMarketAccess("NO", "order")).toThrow(/ACCOUNTANT_NORWAY_TAX_CONFIRMATION_REQUIRED/);
   });

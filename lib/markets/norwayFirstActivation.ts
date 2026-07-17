@@ -13,6 +13,7 @@ export type NorwayActivationFlags = {
   COUNTRY_NO_ORDERING_ENABLED: boolean;
   COUNTRY_NO_INVOICE_ONLY_ENABLED: boolean;
   COUNTRY_NO_PLATFORM_COMMISSION_ENABLED: boolean;
+  OWNER_NORWAY_TAX_MODEL_CONFIRMATION: "CONFIRMED" | "REQUIRED" | "UNKNOWN";
   ACCOUNTANT_NORWAY_TAX_CONFIRMATION: "CONFIRMED" | "REQUIRED" | "UNKNOWN";
 };
 
@@ -20,16 +21,23 @@ function envBool(name: string): boolean {
   return process.env[name] === "true";
 }
 
+function envTriState(name: string, fallback: "REQUIRED" | "UNKNOWN" = "REQUIRED"): "CONFIRMED" | "REQUIRED" | "UNKNOWN" {
+  const v = String(process.env[name] || fallback).toUpperCase();
+  if (v === "CONFIRMED") return "CONFIRMED";
+  if (v === "UNKNOWN") return "UNKNOWN";
+  return "REQUIRED";
+}
+
 export function readNorwayActivationFlags(): NorwayActivationFlags {
-  const accountant = String(process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION || "REQUIRED").toUpperCase();
   return {
     COUNTRY_NO_PRODUCTION_ENABLED: envBool("COUNTRY_NO_PRODUCTION_ENABLED"),
     COUNTRY_NO_REGISTRATION_ENABLED: envBool("COUNTRY_NO_REGISTRATION_ENABLED"),
     COUNTRY_NO_ORDERING_ENABLED: envBool("COUNTRY_NO_ORDERING_ENABLED"),
     COUNTRY_NO_INVOICE_ONLY_ENABLED: envBool("COUNTRY_NO_INVOICE_ONLY_ENABLED"),
     COUNTRY_NO_PLATFORM_COMMISSION_ENABLED: envBool("COUNTRY_NO_PLATFORM_COMMISSION_ENABLED"),
-    ACCOUNTANT_NORWAY_TAX_CONFIRMATION:
-      accountant === "CONFIRMED" ? "CONFIRMED" : accountant === "UNKNOWN" ? "UNKNOWN" : "REQUIRED",
+    // Owner confirmation is recorded in evidence; default CONFIRMED only when explicitly set.
+    OWNER_NORWAY_TAX_MODEL_CONFIRMATION: envTriState("OWNER_NORWAY_TAX_MODEL_CONFIRMATION", "REQUIRED"),
+    ACCOUNTANT_NORWAY_TAX_CONFIRMATION: envTriState("ACCOUNTANT_NORWAY_TAX_CONFIRMATION", "REQUIRED"),
   };
 }
 
@@ -83,11 +91,18 @@ export function evaluateNorwayFirstReadiness(): {
   flags: NorwayActivationFlags;
   otherCountriesDisabled: number;
   blockers: string[];
+  ownerTaxModelConfirmed: boolean;
+  accountantTaxConfirmed: boolean;
 } {
   const flags = readNorwayActivationFlags();
   const blockers: string[] = [];
-  if (flags.ACCOUNTANT_NORWAY_TAX_CONFIRMATION !== "CONFIRMED") {
+  const ownerTaxModelConfirmed = flags.OWNER_NORWAY_TAX_MODEL_CONFIRMATION === "CONFIRMED";
+  const accountantTaxConfirmed = flags.ACCOUNTANT_NORWAY_TAX_CONFIRMATION === "CONFIRMED";
+  if (!accountantTaxConfirmed) {
     blockers.push("ACCOUNTANT_NORWAY_TAX_CONFIRMATION_REQUIRED");
+  }
+  if (!ownerTaxModelConfirmed) {
+    blockers.push("OWNER_NORWAY_TAX_MODEL_CONFIRMATION_REQUIRED");
   }
   const otherCountriesDisabled = SUPPORTED_COUNTRY_CODES.filter((c) => c !== "NO").length;
   if (otherCountriesDisabled !== 20) blockers.push("COUNTRY_COUNT_DRIFT");
@@ -98,6 +113,8 @@ export function evaluateNorwayFirstReadiness(): {
       flags,
       otherCountriesDisabled,
       blockers,
+      ownerTaxModelConfirmed,
+      accountantTaxConfirmed,
     };
   }
 
@@ -109,7 +126,14 @@ export function evaluateNorwayFirstReadiness(): {
     flags.COUNTRY_NO_PLATFORM_COMMISSION_ENABLED;
 
   if (live) {
-    return { decision: "NORWAY_LIVE", flags, otherCountriesDisabled, blockers };
+    return {
+      decision: "NORWAY_LIVE",
+      flags,
+      otherCountriesDisabled,
+      blockers,
+      ownerTaxModelConfirmed,
+      accountantTaxConfirmed,
+    };
   }
 
   return {
@@ -117,5 +141,7 @@ export function evaluateNorwayFirstReadiness(): {
     flags,
     otherCountriesDisabled,
     blockers: [...blockers, "NORWAY_FLAGS_NOT_FULLY_ENABLED"],
+    ownerTaxModelConfirmed,
+    accountantTaxConfirmed,
   };
 }

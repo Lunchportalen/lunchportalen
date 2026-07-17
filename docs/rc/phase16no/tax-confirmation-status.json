@@ -1,0 +1,28 @@
+{
+  "OWNER_NORWAY_TAX_MODEL_CONFIRMATION": "CONFIRMED",
+  "ACCOUNTANT_NORWAY_TAX_CONFIRMATION": "REQUIRED",
+  "updatedAt": "2026-07-17T15:10:00.000Z",
+  "ownerEvidence": {
+    "path": "docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md",
+    "confirmedBy": "owner",
+    "model": {
+      "providerIsSeller": true,
+      "providerInvoicesCustomer": true,
+      "foodIncludingProviderDeliveryMvaBps": 1500,
+      "platformCommissionBps": 500,
+      "platformCommissionBase": "net_excluding_mva",
+      "platformServiceMvaBps": 2500,
+      "platformInvoicesEndCustomer": false,
+      "platformCollectsFoodPayment": false,
+      "taxCode": "NO_PLATFORM_SERVICE_STANDARD_VAT_25"
+    }
+  },
+  "accountantEvidence": {
+    "found": false,
+    "packet": "docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md",
+    "blocksFiscalActivation": true
+  },
+  "productionOrdering": "DISABLED",
+  "productionCommissionInvoicing": "DISABLED",
+  "decision": "NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED"
+}

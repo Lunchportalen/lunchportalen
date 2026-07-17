@@ -1,6 +1,8 @@
 {
   "ACCOUNTANT_NORWAY_TAX_CONFIRMATION": "REQUIRED",
-  "searchedAt": "2026-07-17T14:50:00.000Z",
+  "OWNER_NORWAY_TAX_MODEL_CONFIRMATION": "CONFIRMED",
+  "searchedAt": "2026-07-17T15:10:00.000Z",
+  "ownerEvidencePath": "docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md",
   "evidenceFound": false,
   "acceptedEvidenceTypes": [
     "written_email_from_accountant",
@@ -10,6 +12,7 @@
   ],
   "rejectedAsEvidence": [
     "owner_discussion",
+    "owner_confirmation_alone",
     "ai_output",
     "source_code",
     "skatteetaten_research_pointer_only",
@@ -27,6 +30,7 @@
     "release_branch",
     "migration_inventory",
     "dark_deploy_preparation",
-    "backup_rehearsal_preparation"
+    "backup_rehearsal_preparation",
+    "staging_migration_of_norway_first_gates"
   ]
 }
