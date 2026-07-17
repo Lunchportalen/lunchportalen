@@ -42,7 +42,13 @@ const STARTED_AT = new Date();
 const NOW = () => new Date();
 
 const log = (...a) => process.stdout.write(`[${NOW().toISOString()}] ${a.map(String).join(" ")}\n`);
-const load = (p, fb) => (fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : fb);
+const load = (p, fb) => {
+  if (!fs.existsSync(p)) return fb;
+  // Strip UTF-8 BOM (PowerShell Set-Content can inject it)
+  const raw = fs.readFileSync(p, "utf8").replace(/^\uFEFF/, "");
+  if (!raw.trim()) return fb;
+  return JSON.parse(raw);
+};
 const save = (p, o) => {
   fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, JSON.stringify(o, null, 2) + "\n");

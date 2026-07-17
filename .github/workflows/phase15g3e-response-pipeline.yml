@@ -89,16 +89,14 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           STATE_DIR="${RUNNER_TEMP}/phase15g3e-state"
           rm -rf "$STATE_DIR"
           mkdir -p "$STATE_DIR"
           cd "$STATE_DIR"
           git init -b "$PIPELINE_STATE_BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          # GITHUB_TOKEN provided via job env from secrets.GITHUB_TOKEN
           if git fetch --depth=1 origin "$PIPELINE_STATE_BRANCH" 2>/dev/null; then
             git checkout -f FETCH_HEAD
             git checkout -B "$PIPELINE_STATE_BRANCH"
@@ -110,6 +108,10 @@ jobs:
             --exclude 'form-screenshots' \
             --exclude '*.png' \
             "${GITHUB_WORKSPACE}/docs/rc/phase15g3e/" docs/rc/phase15g3e/
+          # Ensure lock file has no UTF-8 BOM
+          if [ -f docs/rc/phase15g3e/pipeline-lock.json ]; then
+            sed -i '1s/^\xEF\xBB\xBF//' docs/rc/phase15g3e/pipeline-lock.json || true
+          fi
           for f in PHASE15G3E2-PIPELINE-HEARTBEAT.md PHASE15G3E2-DURABLE-PIPELINE-REPORT.md PHASE15G3E-OWNER-MATERIAL-NOTIFICATION.md PHASE15G3E-OWNER-CONTRACT-PAYMENT-BATCH.md; do
             if [ -f "${GITHUB_WORKSPACE}/docs/rc/$f" ]; then
               cp "${GITHUB_WORKSPACE}/docs/rc/$f" "docs/rc/$f"
