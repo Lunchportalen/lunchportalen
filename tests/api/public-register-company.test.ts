@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { describe, test, expect, vi, beforeEach } from "vitest";
+import { requiredNorwayDocumentsForRole } from "@/lib/legal/norwayDocuments";
 
 const rpcMock = vi.fn();
 const fromMock = vi.fn();
@@ -8,6 +9,15 @@ const persistedRegistrationRow = {
   company_id: registeredCompanyId,
   created_at: "2026-01-01T00:00:00Z",
 };
+
+function norwayCompanyLegalAcceptances() {
+  return requiredNorwayDocumentsForRole("company").map((d) => ({
+    documentType: d.documentType,
+    documentVersion: d.version,
+    documentChecksum: d.checksum,
+    accepted: true,
+  }));
+}
 
 vi.mock("@/lib/supabase/admin", () => ({
   supabaseAdmin: () => ({
@@ -153,6 +163,7 @@ describe("POST /api/public/register-company", () => {
         postal_code: "5000",
         postal_city: "Bergen",
         consent_accepted: true,
+        norway_legal_acceptances: norwayCompanyLegalAcceptances(),
         weekday_meal_tiers: {
           mon: "BASIS",
           tue: "BASIS",
@@ -194,6 +205,7 @@ describe("POST /api/public/register-company", () => {
         postal_code: "9999",
         postal_city: "Utenfor",
         consent_accepted: true,
+        norway_legal_acceptances: norwayCompanyLegalAcceptances(),
         weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
         delivery_window_from: "11:00",
         delivery_window_to: "13:00",
@@ -227,6 +239,7 @@ describe("POST /api/public/register-company", () => {
         postal_code: "5000",
         postal_city: "Bergen",
         consent_accepted: true,
+        norway_legal_acceptances: norwayCompanyLegalAcceptances(),
         provider_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
         weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
         delivery_window_from: "11:00",
@@ -268,6 +281,7 @@ describe("POST /api/public/register-company", () => {
         postal_code: "5000",
         postal_city: "Bergen",
         consent_accepted: true,
+        norway_legal_acceptances: norwayCompanyLegalAcceptances(),
         provider_id: "'; drop table providers; --",
         weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
         delivery_window_from: "11:00",
@@ -297,6 +311,7 @@ describe("POST /api/public/register-company", () => {
       postal_code: "9999",
       postal_city: "Utenfor",
       consent_accepted: true,
+      norway_legal_acceptances: norwayCompanyLegalAcceptances(),
       weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
       delivery_window_from: "11:00",
       delivery_window_to: "13:00",
@@ -349,6 +364,7 @@ describe("POST /api/public/register-company", () => {
         postal_code: "5000",
         postal_city: "Bergen",
         accept: true,
+        norway_legal_acceptances: norwayCompanyLegalAcceptances(),
         weekday_meal_tiers: { mon: "BASIS", tue: "BASIS", wed: "BASIS", thu: "BASIS", fri: "BASIS" },
         delivery_window_from: "11:00",
         delivery_window_to: "13:00",

@@ -8,6 +8,9 @@ import type { NextRequest } from "next/server";
 import { makeRid } from "@/lib/http/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseRegistrationPlanPayload } from "@/lib/registration/weekdayMealTiers";
+import { validateNorwayAcceptanceBatch } from "@/lib/legal/norwayAcceptanceValidate";
+import { buildNorwayLegalPendingPayload } from "@/lib/legal/norwayAcceptanceGate";
+import { norwayClientMeta } from "@/lib/legal/norwayClientMeta";
 
 type RegisterBody = {
   orgnr?: unknown;
@@ -47,6 +50,9 @@ type RegisterBody = {
   /** Fase 5: eksplisitt leverandørvalg når flere dekker postnummeret. */
   provider_id?: unknown;
   providerId?: unknown;
+  /** 16NO.2 — versioned Norway clickwrap batch (required). */
+  norway_legal_acceptances?: unknown;
+  norwayLegalAcceptances?: unknown;
 };
 
 type RegisterRpcOut = {
@@ -229,6 +235,21 @@ export async function POST(req: NextRequest) {
       return err(rid, 400, plan.code, plan.message);
     }
 
+    const legalBatch = validateNorwayAcceptanceBatch({
+      role: "company",
+      acceptances: (body.norway_legal_acceptances ?? body.norwayLegalAcceptances) as any,
+    });
+    if (legalBatch.ok === false) {
+      return err(
+        rid,
+        422,
+        legalBatch.code,
+        legalBatch.code === "UNCHECKED_BLOCKED"
+          ? "Du må eksplisitt akseptere alle norske vilkår."
+          : "Gyldig aksept av norske vilkår kreves før innsending.",
+      );
+    }
+
     const admin = supabaseAdmin();
 
     const { count: recentCount, error: recentErr } = await admin
@@ -301,6 +322,14 @@ export async function POST(req: NextRequest) {
     }
     const registrationCreatedAt = safeStr((regRow as any)?.created_at ?? "");
 
+    const meta = norwayClientMeta(req);
+    const pendingLegal = buildNorwayLegalPendingPayload({
+      role: "company",
+      items: legalBatch.items,
+      clientIp: meta.ip,
+      userAgent: meta.userAgent,
+    });
+
     const { error: planErr } = await admin
       .from("company_registrations")
       .update({
@@ -309,6 +338,7 @@ export async function POST(req: NextRequest) {
         delivery_window_to: plan.commercial.delivery_window_to,
         terms_binding_months: plan.commercial.terms_binding_months,
         terms_notice_months: plan.commercial.terms_notice_months,
+        norway_legal_pending: pendingLegal,
       })
       .eq("company_id", companyId);
 

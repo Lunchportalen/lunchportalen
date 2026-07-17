@@ -2,7 +2,7 @@
  * DC-011 / Fase 3 — explicit API auth allowlist (no wildcards in Set).
  * Dynamic App Router segments are matched via ALLOWLIST_DYNAMIC (documented exceptions).
  *
- * Total: 87 routes (82 path + 2 GET-only + 3 dynamic). GET-only: global header/footer public read.
+ * Total: 90 routes (83 path + 2 GET-only + 5 dynamic). Includes 16NO.2 Norway legal docs list + [type].
  */
 
 /** Exact paths only — verified fail-closed / anon (a)–(d) / api-key in route files. */
@@ -79,6 +79,8 @@ export const API_AUTH_ALLOWLIST: ReadonlySet<string> = new Set([
   "/api/public/register",
   "/api/public/register-company",
   "/api/public/search",
+  // 16NO.2 — public Norway document metadata for clickwrap (version + checksum).
+  "/api/legal/norway/documents",
   "/api/register",
   "/api/social/redirect",
   "/api/social/track",
@@ -109,6 +111,8 @@ const ALLOWLIST_DYNAMIC: ReadonlyArray<(pathname: string) => boolean> = [
   (p) => /^\/api\/public\/forms\/[^/]+$/.test(p),
   (p) => /^\/api\/public\/forms\/[^/]+\/schema$/.test(p),
   (p) => /^\/api\/webhooks\/tripletex-provider\/[^/]+$/.test(p),
+  // 16NO.2 — public document body by type (exact version linked from checkbox).
+  (p) => /^\/api\/legal\/norway\/documents\/[^/]+$/.test(p),
 ];
 
 export function isApiAuthAllowlisted(pathname: string, method?: string): boolean {

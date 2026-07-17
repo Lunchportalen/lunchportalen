@@ -99,8 +99,22 @@ export async function GET(req: Request) {
     const scope = await resolveEmployeeWeekScope(req, _rid);
     if (scope.ok === false) return scope.response;
 
-    const { companyId, locationId } = scope;
+    const { companyId, locationId, userId: employeeUserId } = scope;
     const admin = supabaseAdmin();
+
+    // 16NO.2 — employee clickwrap gate (server-side; UI alone is not enough).
+    try {
+      const { assertNorwayLegalAcceptances } = await import("@/lib/legal/norwayAcceptanceGate");
+      await assertNorwayLegalAcceptances({ subjectType: "employee", subjectId: employeeUserId });
+    } catch (e: any) {
+      if (String(e?.code || e?.message || "").includes("NORWAY_LEGAL_ACCEPTANCE_REQUIRED")) {
+        return jsonError(403, _rid, "NORWAY_LEGAL_ACCEPTANCE_REQUIRED", "Aksept av vilkår kreves før ukevisning.", {
+          missing: e?.missing ?? [],
+          stale: e?.stale ?? [],
+        });
+      }
+      throw e;
+    }
 
     const { data: agr, error: agrErr } = await admin
       .from("agreements")

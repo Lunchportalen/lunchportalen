@@ -11,8 +11,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import EmployeeWeekClient from "./EmployeeWeekClient";
+import { EmployeeNorwayLegalGate } from "@/components/legal/EmployeeNorwayLegalGate";
 
 import { requireActiveAgreement } from "@/lib/agreements/requireActiveAgreement";
+import { evaluateNorwayLegalGate } from "@/lib/legal/norwayAcceptanceGate";
 import { readLocalDevAuthSession } from "@/lib/auth/devBypass";
 import type { Role } from "@/lib/auth/role";
 import { normalizeRoleDefaultEmployee } from "@/lib/auth/role";
@@ -642,6 +644,18 @@ export default async function EmployeeWeekPage({
   }
 
   const companyId = String(pRes.data.company_id);
+
+  if (role === "employee") {
+    const legalGate = await evaluateNorwayLegalGate({
+      subjectType: "employee",
+      subjectId: data.user.id,
+    });
+    if (!legalGate.ok) {
+      return (
+        <EmployeeNorwayLegalGate userId={data.user.id} companyId={companyId} />
+      );
+    }
+  }
 
   const admin = await adminClientOrNull();
   if (!admin) {

@@ -9,6 +9,9 @@ import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { parseGrowthAbFromCookieHeader } from "@/lib/growth/growthAbCookie";
 import { isValidNoPhone, normalizeNoPhone } from "@/lib/phone/no";
 import { VAT_RATE } from "@/lib/menu-publish/tierPricing";
+import { validateNorwayAcceptanceBatch } from "@/lib/legal/norwayAcceptanceValidate";
+import { persistNorwayAcceptanceBatch } from "@/lib/legal/norwayAcceptanceGate";
+import { norwayClientMeta } from "@/lib/legal/norwayClientMeta";
 
 /* =========================================================
    Types
@@ -509,6 +512,21 @@ export async function POST(req: NextRequest) {
   if (!pickBool(terms?.accepted_terms)) return jsonError(rid, 400, "VALIDATION", "Du må akseptere avtalevilkårene");
   if (!pickBool(terms?.accepted_credit_check)) return jsonError(rid, 400, "VALIDATION", "Du må samtykke til kredittvurdering for å opprette bedrift");
 
+  const norwayLegalBatch = validateNorwayAcceptanceBatch({
+    role: "company",
+    acceptances: (body?.norway_legal_acceptances ?? body?.norwayLegalAcceptances ?? terms?.norway_legal_acceptances) as any,
+  });
+  if (norwayLegalBatch.ok === false) {
+    return jsonError(
+      rid,
+      422,
+      norwayLegalBatch.code,
+      norwayLegalBatch.code === "UNCHECKED_BLOCKED"
+        ? "Du må eksplisitt akseptere alle norske vilkår."
+        : "Gyldig aksept av norske vilkår kreves før innsending.",
+    );
+  }
+
   // Delivery/location validation
   if (!delivery) return jsonError(rid, 400, "VALIDATION", "Leveringsinfo mangler");
   if (!location) return jsonError(rid, 400, "VALIDATION", "Lokasjon mangler");
@@ -705,6 +723,21 @@ export async function POST(req: NextRequest) {
         notice_months: Number(terms?.notice_months ?? 3),
       });
       if (insTerms.error && !isTableMissingError(insTerms.error)) return await fail(insTerms.error);
+    }
+
+    // 16NO.2 — immutable versioned Norway clickwrap (requires actor = new company_admin).
+    {
+      const meta = norwayClientMeta(req);
+      const legalPersist = await persistNorwayAcceptanceBatch({
+        subjectType: "company",
+        subjectId: companyId!,
+        organizationId: companyId,
+        actorUserId: userId!,
+        items: norwayLegalBatch.items,
+        clientIp: meta.ip,
+        userAgent: meta.userAgent,
+      });
+      if (legalPersist.ok === false) return await fail(new Error(legalPersist.code));
     }
 
     try {
