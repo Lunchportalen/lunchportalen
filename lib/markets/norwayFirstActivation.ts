@@ -32,7 +32,14 @@ function envBool(name: string): boolean {
   return v === "true" || v === "yes" || v === "1";
 }
 
-function envTriState(
+function envOwnerTriState(name: string, fallback: "REQUIRED" | "UNKNOWN" = "REQUIRED"): "CONFIRMED" | "REQUIRED" | "UNKNOWN" {
+  const v = String(process.env[name] || fallback).toUpperCase();
+  if (v === "CONFIRMED") return "CONFIRMED";
+  if (v === "UNKNOWN") return "UNKNOWN";
+  return "REQUIRED";
+}
+
+function envAccountantTriState(
   name: string,
   fallback: "REQUIRED" | "UNKNOWN" | "NOT_REQUIRED_FOR_CUTOVER" = "REQUIRED",
 ): "CONFIRMED" | "REQUIRED" | "UNKNOWN" | "NOT_REQUIRED_FOR_CUTOVER" {
@@ -58,12 +65,12 @@ export function readNorwayActivationFlags(): NorwayActivationFlags {
     COUNTRY_NO_ORDERING_ENABLED: envBool("COUNTRY_NO_ORDERING_ENABLED"),
     COUNTRY_NO_INVOICE_ONLY_ENABLED: envBool("COUNTRY_NO_INVOICE_ONLY_ENABLED"),
     COUNTRY_NO_PLATFORM_COMMISSION_ENABLED: envBool("COUNTRY_NO_PLATFORM_COMMISSION_ENABLED"),
-    OWNER_NORWAY_TAX_MODEL_CONFIRMATION: envTriState("OWNER_NORWAY_TAX_MODEL_CONFIRMATION", "REQUIRED"),
+    OWNER_NORWAY_TAX_MODEL_CONFIRMATION: envOwnerTriState("OWNER_NORWAY_TAX_MODEL_CONFIRMATION", "REQUIRED"),
     OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY: envBool(
       "OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY",
     ),
     ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER: envBool("ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER"),
-    ACCOUNTANT_NORWAY_TAX_CONFIRMATION: envTriState(
+    ACCOUNTANT_NORWAY_TAX_CONFIRMATION: envAccountantTriState(
       "ACCOUNTANT_NORWAY_TAX_CONFIRMATION",
       "NOT_REQUIRED_FOR_CUTOVER",
     ),

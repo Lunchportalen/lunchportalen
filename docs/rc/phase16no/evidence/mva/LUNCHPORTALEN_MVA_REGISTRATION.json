@@ -1,0 +1,17 @@
+{
+  "LUNCHPORTALEN_MVA_REGISTERED": false,
+  "PLATFORM_INVOICE_VAT_25_ENABLED": false,
+  "legalCompanyName": "LUNCHPORTALEN AS",
+  "organisationNumber": "937155239",
+  "mvaRegistrationStatus": "NOT_REGISTERED_IN_MVAREGISTERET",
+  "evidenceSource": "Brønnøysundregistrene Enhetsregisteret API",
+  "evidenceUrl": "https://data.brreg.no/enhetsregisteret/api/enheter/937155239",
+  "evidenceTimestampUtc": "2026-07-17T16:53:18.025Z",
+  "evidenceChecksumSha256": "19032673fbeec4b6102ab97cb2207b74ddf018ba106828faaf13df3c788a9ed2",
+  "rawPath": "docs/rc/phase16no/evidence/mva/brreg-937155239.raw.json",
+  "registrertIForetaksregisteret": true,
+  "stiftelsesdato": "2026-01-21",
+  "registreringsdatoEnhetsregisteret": "2026-02-13",
+  "NORWAY_TAX_MODEL_STATUS": "OWNER_APPROVED_WITH_OFFICIAL_SOURCE_SUPPORT",
+  "note": "Do not invent MVA status. Do not append MVA to org number. Do not issue real MVA invoices while false."
+}
