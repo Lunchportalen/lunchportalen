@@ -584,6 +584,23 @@ Låser:
 
 ---
 
+# ADR-020 – Global agency commission model (all 21 countries)
+
+## Context
+Phase 16NO requires one immutable commercial model across all launch countries, with Norway-first production activation and fail-closed fiscal gates until accountant confirmation.
+
+## Decision
+Adopt `agency_commission_invoice_only_v1` for all 21 countries. Full text: [ADR-020-global-agency-commission-model.md](./ADR-020-global-agency-commission-model.md).
+
+## Consequences
++ Identical agency model worldwide
++ Country tax treatment may vary without changing who sells/invoices food
++ Norway-first activation without enabling the other 20 countries
+− Accountant confirmation required before Norway fiscal live
+− Global 21-country simultaneous cutover remains separately gated
+
+---
+
 # KONKLUSJON
 
 Lunchportalen sin arkitektur er basert på:
@@ -604,8 +621,9 @@ Enhver endring i:
 - Agreement-modell
 - Market/commercial config (ADR-017)
 - Global menu profile & provider commercial model (ADR-019)
+- Global agency commission model (ADR-020)
 - UI locale vs. market/currency coupling
 
-må føre til ny ADR-oppføring eller ADR-017/ADR-019 amendment.
+må føre til ny ADR-oppføring eller ADR-017/ADR-019/ADR-020 amendment.
 
 Arkitektur skal aldri endres implisitt.

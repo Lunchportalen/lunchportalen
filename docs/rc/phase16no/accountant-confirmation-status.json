@@ -1,0 +1,32 @@
+{
+  "ACCOUNTANT_NORWAY_TAX_CONFIRMATION": "REQUIRED",
+  "searchedAt": "2026-07-17T14:50:00.000Z",
+  "evidenceFound": false,
+  "acceptedEvidenceTypes": [
+    "written_email_from_accountant",
+    "signed_document",
+    "accounting_memorandum",
+    "formal_confirmation_in_evidence_set"
+  ],
+  "rejectedAsEvidence": [
+    "owner_discussion",
+    "ai_output",
+    "source_code",
+    "skatteetaten_research_pointer_only",
+    "outreach_rfp_without_reply"
+  ],
+  "packet": "docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md",
+  "blocks": [
+    "COUNTRY_NO_ORDERING_ENABLED",
+    "COUNTRY_NO_PLATFORM_COMMISSION_ENABLED",
+    "COUNTRY_NO_INVOICE_ONLY_ENABLED",
+    "NORWAY_LIVE"
+  ],
+  "allows": [
+    "reversible_technical_preparation",
+    "release_branch",
+    "migration_inventory",
+    "dark_deploy_preparation",
+    "backup_rehearsal_preparation"
+  ]
+}
