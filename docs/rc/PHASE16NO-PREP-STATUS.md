@@ -1,8 +1,8 @@
-# PHASE 16NO — REVERSIBLE PREP STATUS
+﻿# PHASE 16NO â€” REVERSIBLE PREP STATUS
 
 **Updated:** 2026-07-17T15:25:00Z  
 **Decision:** `NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED`  
-**NORWAY_RELEASE_SHA:** `ef456beb7020dceb8489d742c03475a8afccb613`
+**NORWAY_RELEASE_SHA:** `608e87ee6090ae56da8c6f5064337ea3dbd78e53`
 
 ## Confirmations
 
@@ -19,10 +19,10 @@
 1. Owner tax model confirmation recorded (not treated as accountant approval)
 2. Dark-deploy checklist written (all fiscal flags false)
 3. Legal/privacy gate inventory written
-4. Production backup metadata workflow PASS — [run 29591062152](https://github.com/Lunchportalen/lunchportalen/actions/runs/29591062152)
-5. Staging Norway-first gate rehearsal — fail-closed verified (`uigxsboqeruxflgzqztl`)
+4. Production backup metadata workflow PASS â€” [run 29591062152](https://github.com/Lunchportalen/lunchportalen/actions/runs/29591062152)
+5. Staging Norway-first gate rehearsal â€” fail-closed verified (`uigxsboqeruxflgzqztl`)
 6. Invariant tests + CI gates PASS
-7. Restore rehearsal runbook prepared (`PHASE16NO-RESTORE-REHEARSAL.md`) — **not executed**
+7. Restore rehearsal runbook prepared (`PHASE16NO-RESTORE-REHEARSAL.md`) â€” **not executed**
 8. Accountant evidence intake scaffold prepared (PENDING placeholder only)
 9. Production app/DB unchanged; ordering/commission remain disabled
 10. Production migration head still `20260818120000`

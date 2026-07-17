@@ -1,8 +1,8 @@
-# PHASE 16NO — DARK DEPLOY CHECKLIST (reversible prep)
+﻿# PHASE 16NO â€” DARK DEPLOY CHECKLIST (reversible prep)
 
-**NORWAY_RELEASE_SHA:** `ef456beb7020dceb8489d742c03475a8afccb613` (update after new commits)  
+**NORWAY_RELEASE_SHA:** `608e87ee6090ae56da8c6f5064337ea3dbd78e53` (update after new commits)  
 **Production URL:** https://app.lunchportalen.no  
-**Mode:** dark — Norway fiscal flags OFF
+**Mode:** dark â€” Norway fiscal flags OFF
 
 ## Required env on production deploy (all false / required)
 
@@ -16,7 +16,7 @@ ACCOUNTANT_NORWAY_TAX_CONFIRMATION=REQUIRED
 OWNER_NORWAY_TAX_MODEL_CONFIRMATION=CONFIRMED
 ```
 
-## Phase A — dark deployment (when unlocked)
+## Phase A â€” dark deployment (when unlocked)
 
 1. Keep Vercel production ignore-build lock until exact-SHA deploy window.
 2. Deploy exact `NORWAY_RELEASE_SHA` with flags above (no ordering/commission).
@@ -26,15 +26,15 @@ OWNER_NORWAY_TAX_MODEL_CONFIRMATION=CONFIRMED
 6. Verify non-NO country access remains blocked.
 7. Re-lock production auto-deploy.
 
-## Phase B — migration (only after backup + rehearsal PASS)
+## Phase B â€” migration (only after backup + rehearsal PASS)
 
 1. Run `prod-backup-read-only` evidence.
 2. Restore rehearsal on isolated environment.
-3. Apply migration range `20260819120000` → `20260902120000` on rehearsal.
+3. Apply migration range `20260819120000` â†’ `20260902120000` on rehearsal.
 4. Manual authorised production migrate workflow only.
 5. Do **not** set Norway fiscal flags until accountant evidence stored.
 
-## Phase C — Norway activation (blocked)
+## Phase C â€” Norway activation (blocked)
 
 Blocked until:
 

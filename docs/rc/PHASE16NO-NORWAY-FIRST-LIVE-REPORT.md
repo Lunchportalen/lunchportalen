@@ -1,4 +1,4 @@
-# PHASE 16NO — NORWAY FIRST LIVE REPORT
+﻿# PHASE 16NO â€” NORWAY FIRST LIVE REPORT
 
 **Generated:** 2026-07-17T15:25:00Z  
 **Decision:** `NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED`
@@ -6,7 +6,7 @@
 ## Release
 
 - Previous production SHA: `98b3b15e258966dd61ad967af5876982bcfcb959` (verified via `/api/health`)
-- Norway release SHA: `ef456beb7020dceb8489d742c03475a8afccb613` (`release/norway-first-live`)
+- Norway release SHA: `608e87ee6090ae56da8c6f5064337ea3dbd78e53` (`release/norway-first-live`)
 - SOURCE_RC_SHA: `b88aaf99780e0a5d71404e831fd87eb90031fb6e`
 - Deployment ID: NOT APPLIED (fiscal activation blocked)
 - Production URL: https://app.lunchportalen.no
@@ -14,7 +14,7 @@
 - Migration head before: `20260818120000`
 - Migration head after: unchanged (production not migrated)
 - Applied migrations: none (production)
-- Target migration range: `20260819120000` → `20260902120000` (excludes review-ops `20260901120000`)
+- Target migration range: `20260819120000` â†’ `20260902120000` (excludes review-ops `20260901120000`)
 - Production locks after release: ACTIVE (unchanged)
 
 ## Country activation
