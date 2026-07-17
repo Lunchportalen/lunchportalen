@@ -1,10 +1,10 @@
 {
-  "writtenAt": "2026-07-17T09:36:55.313Z",
+  "writtenAt": "2026-07-17T12:28:53.763Z",
   "decision": "DURABLE_PIPELINE_ACTIVE",
   "last": {
-    "runId": "29570529697",
-    "started_at": "2026-07-17T09:36:29.155Z",
-    "completed_at": "2026-07-17T09:36:55.257Z",
+    "runId": "29580317377",
+    "started_at": "2026-07-17T12:28:33.268Z",
+    "completed_at": "2026-07-17T12:28:53.700Z",
     "replies_found": 0,
     "messages_classified": 0,
     "follow_ups_sent": 0,
@@ -40,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-07-17T09:36:55.257Z",
-      "nextScheduledRun": "2026-07-17T12:00:00.000Z"
+      "lastSuccessfulRun": "2026-07-17T12:28:53.700Z",
+      "nextScheduledRun": "2026-07-17T15:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -105,7 +105,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-07-17T09:36:55.264Z",
-    "runId": "29570529697"
+    "updatedAt": "2026-07-17T12:28:53.708Z",
+    "runId": "29580317377"
   }
 }
