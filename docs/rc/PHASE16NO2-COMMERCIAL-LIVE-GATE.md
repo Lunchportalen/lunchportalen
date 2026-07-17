@@ -50,6 +50,20 @@ Source: `lib/legal/norwayDocuments.ts`
 - Status remains: `RESTORE_REHEARSAL_LIMITED`
 - Runbook: `docs/rc/PHASE16NO1-RESTORE-REHEARSAL-LIMITED.md` (updated)
 
+## Production evidence (2026-07-17)
+
+- Feature SHA deployed: `38b18c38742e1b50eb727f6bf807e1a1499f69fb`
+- Redeploy alias: `https://app.lunchportalen.no` · deployment `lunchportalen-1n2l2fcyj`
+- `APP_VERSION` / health `version`: `38b18c38742e1b50eb727f6bf807e1a1499f69fb`
+- Health: PASS (`summary.status=ok`, release_identity ok)
+- Migration applied: `norway_legal_clickwrap_enforcement` (`20260903120000`) — columns `organization_id`, `actor_user_id`, `client_ip`, `user_agent` present
+- Other countries order-allowed count: `0` / 20
+- Public docs API: `GET /api/legal/norway/documents?role=company` → `OWNER_APPROVED_EXTERNAL_REVIEW_PENDING`
+- Branch tip (tests/allowlist follow-ups): see `git log` on `release/norway-first-live`
+
 ## Decision
 
-See final report section below after deploy evidence is attached.
+**`NORWAY_COMMERCIAL_LIVE_READY_MVA_INVOICING_BLOCKED`**
+
+Not `NORWAY_LEGAL_GATE_FAILED`. Not `ROLLBACK_REQUIRED`.  
+Legal status remains `OWNER_APPROVED_EXTERNAL_REVIEW_PENDING` (external review still pending; never claimed LEGAL_APPROVED).
