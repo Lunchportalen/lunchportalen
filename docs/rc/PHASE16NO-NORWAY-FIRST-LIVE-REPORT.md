@@ -1,12 +1,12 @@
 # PHASE 16NO — NORWAY FIRST LIVE REPORT
 
-**Generated:** 2026-07-17  
+**Generated:** 2026-07-17T15:25:00Z  
 **Decision:** `NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED`
 
 ## Release
 
 - Previous production SHA: `98b3b15e258966dd61ad967af5876982bcfcb959` (verified via `/api/health`)
-- Norway release SHA: *(pending push of `release/norway-first-live` tip)*
+- Norway release SHA: `a40acaf387d397868239af827b8906884d29e23a` (`release/norway-first-live`)
 - SOURCE_RC_SHA: `b88aaf99780e0a5d71404e831fd87eb90031fb6e`
 - Deployment ID: NOT APPLIED (fiscal activation blocked)
 - Production URL: https://app.lunchportalen.no
@@ -42,13 +42,15 @@
 
 ## Norway tax model
 
-- Food MVA configuration: 15% (provider responsibility — researched; accountant confirm required)
-- Provider-arranged delivery: 15% with food (confirm required)
-- External transport treatment: 25% to provider (confirm required)
+- Food MVA configuration: 15% (provider responsibility)
+- Provider-arranged delivery: 15% with food
+- External transport treatment: 25% to provider (packet item 3)
 - Platform commission VAT: 25%
 - Tax code: `NO_PLATFORM_SERVICE_STANDARD_VAT_25`
+- Owner confirmation: **CONFIRMED** (`docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md`)
 - Accountant confirmation: **REQUIRED**
-- Evidence reference: `docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md` · `docs/rc/phase16no/accountant-confirmation-status.json`
+- Evidence packet: `docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md`
+- Intake scaffold: `docs/evidence/accountant/`
 
 ## Golden Path
 
@@ -67,8 +69,9 @@
 
 ## Safety
 
-- Backup: not yet executed this phase (required before production migrate)
-- Restore rehearsal: not yet executed this phase
+- Backup metadata: PASS ([run 29591062152](https://github.com/Lunchportalen/lunchportalen/actions/runs/29591062152); latest backup `1135896161`)
+- Restore rehearsal: PREPARED_NOT_EXECUTED (`docs/rc/PHASE16NO-RESTORE-REHEARSAL.md`)
+- Staging gate rehearsal: PASS (fail-closed)
 - RLS: remains required; new activation table RLS-enabled
 - Data loss: none
 - Duplicate orders/invoices/commission: none (no prod fiscal writes)
@@ -91,15 +94,21 @@
 4. Locked global commercial model + ADR-020
 5. Norway-first activation module + DB migration `20260902120000`
 6. CI gates + invariant tests PASS
-7. Accountant confirmation packet prepared
-8. Migration inventory classified
+7. Owner tax model confirmation recorded with checksum
+8. Accountant confirmation packet + intake scaffold prepared
+9. Migration inventory classified
+10. Dark-deploy + legal/privacy checklists written
+11. Production backup metadata captured
+12. Staging Norway-first gates rehearsed fail-closed
+13. Restore rehearsal runbook prepared (execution pending ops window)
 
 ## Owner interruption (required)
 
 **Provide written accountant confirmation** of the six Norway model points in  
-`docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md`.
+`docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md`, then store under  
+`docs/evidence/accountant/` and run the record script.
 
-Until then: no production migration, no Norway ordering, no commission invoicing.
+Until then: no production migration activation of fiscal flags, no Norway ordering, no commission invoicing.
 
 ## Decision
 

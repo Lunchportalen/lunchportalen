@@ -3,13 +3,15 @@
 **Status:** `ACCOUNTANT_NORWAY_TAX_CONFIRMATION = REQUIRED`  
 **Date prepared:** 2026-07-17  
 **Prepared for:** Lunchportalen AS accountant (written confirmation required)  
-**Company:** Lunchportalen AS · org.nr 937155239
+**Company:** Lunchportalen AS · org.nr 937155239  
+**Owner model confirmation:** CONFIRMED (`docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md`) — **not** a substitute for accountant confirmation
 
 ## Why this is required
 
 No written accountant confirmation of the exact Norway tax/invoice model was found in
-project evidence, email archives, or approved documentation. Owner discussion, AI
-output, and source code are **not** accepted as accountant approval.
+project evidence, email archives, or approved documentation. Owner discussion (even when
+`OWNER_NORWAY_TAX_MODEL_CONFIRMATION=CONFIRMED`), AI output, and source code are **not**
+accepted as accountant approval.
 
 Real Norway production ordering and platform commission invoicing must not activate
 until this confirmation is received and recorded.
