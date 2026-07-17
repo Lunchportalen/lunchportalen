@@ -14,8 +14,8 @@
 | Production deploy lock | ACTIVE |
 | Production migration lock | ACTIVE |
 | Restore rehearsal | RESTORE_REHEARSAL_LIMITED |
-| Current production SHA | `79d3e67b968e80f93f13e25d14222af271c6b052` |
-| Current deployment ID | `dpl_CRh2dwQZJpMvb1PbhdXxENns7dWW` |
+| Current production SHA | `72072e8fa910db9ed9109b1566bdd7d05d57768d` |
+| Current deployment ID | `dpl_ERhQLiGxLNGR3YGVs1b1uFxch7qh` |
 | Other countries disabled | 20/20 |
 | Stripe | OFF |
 
@@ -38,7 +38,7 @@ PLATFORM_REAL_MVA_INVOICING = BLOCKED. Issue + deliver of real commission invoic
 1. Full data-bearing PITR restore rehearsal not yet proven on this plan/API.
 2. Legal clickwrap productization still stub-level (not forged LEGAL_APPROVED).
 3. MVA registration pending — real platform VAT invoices must remain blocked.
-4. Deliver-path MVA block ships with 16NO.1 controlled redeploy after commercial-hardcode/BigInt fix.
+4. Full data PITR still LIMITED (see restore runbook).
 
 ## Decision
 

@@ -13,9 +13,9 @@
 | Before | `if [ "$VERCEL_ENV" = "production" ]; then echo "[14D.1] skip production git auto-deploy"; exit 0; fi; echo "[14D.1] allow non-production build"; exit 1` |
 | After | `if [ "$VERCEL_ENV" = "production" ]; then echo "[16NO.1] PRODUCTION_AUTO_DEPLOY_LOCK skip git auto-deploy"; exit 0; fi; echo "[16NO.1] allow non-production build"; exit 1` |
 | Semantics | Git-triggered **production** builds exit 0 → skipped. Preview/staging still build (exit 1). Controlled CLI/exact-SHA deploy remains possible. |
-| Validation | Current production health still `ok` on SHA `79d3e67b968e80f93f13e25d14222af271c6b052`; deployment `dpl_CRh2dwQZJpMvb1PbhdXxENns7dWW` not replaced by this lock refresh. |
-| Current production SHA | `79d3e67b968e80f93f13e25d14222af271c6b052` |
-| Current deployment ID | `dpl_CRh2dwQZJpMvb1PbhdXxENns7dWW` |
+| Validation | Lock remains active after controlled CLI redeploy; git auto-deploy still skipped for production. |
+| Current production SHA | `72072e8fa910db9ed9109b1566bdd7d05d57768d` |
+| Current deployment ID | `dpl_ERhQLiGxLNGR3YGVs1b1uFxch7qh` |
 | Umbraco / Azure / lunchportalen.no | untouched |
 
 ## GATE 2 — Production migration lock
