@@ -126,6 +126,13 @@ export async function deliverCommissionInvoice(
   invoiceId: string,
   opts?: { force?: boolean },
 ): Promise<{ ok: true; recipients: string[] } | { ok: false; code: string }> {
+  // Do not transmit real platform invoices while Merverdiavgiftsregisteret is unverified.
+  try {
+    assertPlatformMvaInvoiceAllowed();
+  } catch (e) {
+    const code = e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "PLATFORM_MVA_BLOCKED";
+    return { ok: false, code };
+  }
   const a = admin();
   const { data: inv } = await a.from("provider_commission_invoices").select(INVOICE_FIELDS + ", sent_to_emails_snapshot").eq("id", invoiceId).maybeSingle();
   if (!inv) return { ok: false, code: "COMMISSION_INVOICE_NOT_FOUND" };

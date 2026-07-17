@@ -1,0 +1,6 @@
+﻿{
+    "projectId":  "prj_AJZzlPmgfbDyl05B44bwfymevnri",
+    "commandForIgnoringBuildStep":  "if [ \"$VERCEL_ENV\" = \"production\" ]; then echo \"[16NO.1] PRODUCTION_AUTO_DEPLOY_LOCK skip git auto-deploy\"; exit 0; fi; echo \"[16NO.1] allow non-production build\"; exit 1",
+    "name":  "lunchportalen",
+    "capturedAt":  "2026-07-17T17:45:50.0851363Z"
+}

@@ -1,0 +1,20 @@
+﻿{
+    "projectId":  "prj_AJZzlPmgfbDyl05B44bwfymevnri",
+    "link":  {
+                 "type":  "github",
+                 "repo":  "lunchportalen",
+                 "repoId":  1156432839,
+                 "org":  "Lunchportalen",
+                 "repoOwnerId":  261239180,
+                 "gitCredentialId":  "cred_04dff263155dfbf2ad0c88abb22d1ae224ad0bcb",
+                 "productionBranch":  "main",
+                 "createdAt":  1776506998626,
+                 "updatedAt":  1776506998626,
+                 "deployHooks":  [
+
+                                 ]
+             },
+    "commandForIgnoringBuildStep":  "if [ \"$VERCEL_ENV\" = \"production\" ]; then echo \"[14D.1] skip production git auto-deploy\"; exit 0; fi; echo \"[14D.1] allow non-production build\"; exit 1",
+    "name":  "lunchportalen",
+    "capturedAt":  "2026-07-17T17:45:49.7244405Z"
+}
