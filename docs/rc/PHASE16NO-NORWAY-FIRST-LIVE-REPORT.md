@@ -1,115 +1,101 @@
-﻿# PHASE 16NO â€” NORWAY FIRST LIVE REPORT
+﻿# PHASE 16NO — NORWAY FIRST LIVE REPORT
 
-**Generated:** 2026-07-17T15:25:00Z  
-**Decision:** `NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED`
+**Generated:** 2026-07-17T17:35:00Z  
+**Final decision:** `NORWAY_TECHNICALLY_LIVE_PLATFORM_INVOICING_AWAITS_MVA_REGISTRATION`
 
-## Release
+## Owner tax decision
 
-- Previous production SHA: `98b3b15e258966dd61ad967af5876982bcfcb959` (verified via `/api/health`)
-- Norway release SHA: `e23b627eb35c82f72b2b5bf753ea8c571e0c3627` (`release/norway-first-live`)
-- SOURCE_RC_SHA: `b88aaf99780e0a5d71404e831fd87eb90031fb6e`
-- Deployment ID: NOT APPLIED (fiscal activation blocked)
-- Production URL: https://app.lunchportalen.no
-- Deployment time: N/A
-- Migration head before: `20260818120000`
-- Migration head after: unchanged (production not migrated)
-- Applied migrations: none (production)
-- Target migration range: `20260819120000` â†’ `20260902120000` (excludes review-ops `20260901120000`)
-- Production locks after release: ACTIVE (unchanged)
+| Key | Value |
+|-----|--------|
+| OWNER_NORWAY_TAX_MODEL_CONFIRMATION | CONFIRMED |
+| OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY | YES |
+| ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER | YES |
+| ACCOUNTANT_NORWAY_TAX_CONFIRMATION | NOT_REQUIRED_FOR_CUTOVER |
+| Accountant confirmation required for cutover | **NO** |
+| NORWAY_TAX_MODEL_STATUS | `OWNER_APPROVED_WITH_OFFICIAL_SOURCE_SUPPORT` |
+
+Do **not** represent as accountant approved, externally reviewed, or independently certified.
+
+## MVA registration
+
+| Key | Value |
+|-----|--------|
+| Legal name | LUNCHPORTALEN AS |
+| Org.nr | 937155239 |
+| LUNCHPORTALEN_MVA_REGISTERED | **NO** |
+| PLATFORM_INVOICE_VAT_25_ENABLED | **FALSE** |
+| Source | Brønnøysundregistrene Enhetsregisteret API |
+| Evidence SHA-256 | `19032673fbeec4b6102ab97cb2207b74ddf018ba106828faaf13df3c788a9ed2` |
+| Owner action | `docs/rc/phase16no/evidence/mva/OWNER_MVA_REGISTRATION_ACTION.md` |
+
+## Release control
+
+| Key | Value |
+|-----|--------|
+| VERIFIED_NORWAY_RELEASE_SHA | `79d3e67b968e80f93f13e25d14222af271c6b052` |
+| SOURCE_RC_SHA | `b88aaf99780e0a5d71404e831fd87eb90031fb6e` |
+| Production baseline app SHA (before) | `98b3b15e258966dd61ad967af5876982bcfcb959` |
+| Production app SHA (after) | `79d3e67b968e80f93f13e25d14222af271c6b052` (`APP_VERSION`) |
+| Production DB head (before) | `20260818120000` |
+| Production DB head (after) | `20260902120000` |
+| Migration range applied | `20260819120000` → `20260902120000` (excluded `20260901120000`) |
+| Backup | PASS — run `29598013983` / latest physical `1135896161` |
+| Deployment | `dpl` aliased to https://app.lunchportalen.no |
 
 ## Country activation
 
-- Norway production: DISABLED (awaiting accountant)
-- Norway registration: DISABLED
-- Norway ordering: DISABLED
-- Norway invoice_only: DISABLED
-- Norway commission: DISABLED
-- Other countries disabled: 20/20 (runtime + DB trigger)
-- Non-Norway bypass attempts: blocked by design (`COUNTRY_PRODUCTION_DISABLED`)
+| Key | Value |
+|-----|--------|
+| Norway production | ENABLED |
+| Norway registration | ENABLED |
+| Norway ordering | ENABLED |
+| Norway invoice_only (payment mode) | ENABLED |
+| Norway commission calculation | ENABLED |
+| Real platform MVA invoicing | **BLOCKED** (MVA not registered) |
+| Other countries disabled | 20/20 |
+| Global 21-country kill switch | false |
 
-## Business model
+## Business / tax model
 
-- Commercial model ID: `agency_commission_invoice_only_v1`
-- Provider is seller: YES (21/21)
-- Provider invoices customer: YES (21/21)
-- Platform invoices provider: YES (21/21)
-- Platform collects customer funds: NO (0/21)
-- Commission rate: 500 bps (5%)
-- Commission basis: net excluding customer tax
+- Commercial model: `agency_commission_invoice_only_v1`
+- Commission: 5% of net excl. customer MVA
+- Platform service VAT code: `NO_PLATFORM_SERVICE_STANDARD_VAT_25` (eligible only after MVA registration)
 - Stripe: OFF
-- Country model consistency: LOCKED (US marketplace_facilitator override removed)
-- 21-country invariant test: PASS (`npm run test:phase16no`)
 
-## Norway tax model
+## Canary / financial balance (unit + gate)
 
-- Food MVA configuration: 15% (provider responsibility)
-- Provider-arranged delivery: 15% with food
-- External transport treatment: 25% to provider (packet item 3)
-- Platform commission VAT: 25%
-- Tax code: `NO_PLATFORM_SERVICE_STANDARD_VAT_25`
-- Owner confirmation: **CONFIRMED** (`docs/rc/phase16no/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md`)
-- Accountant confirmation: **REQUIRED**
-- Evidence packet: `docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md`
-- Intake scaffold: `docs/rc/phase16no/evidence/accountant/`
+| Line | Amount |
+|------|--------|
+| Customer net | NOK 10 000,00 |
+| Food MVA 15% | NOK 1 500,00 |
+| Commission net 5% | NOK 500,00 |
+| Commission MVA 25% | NOK 125,00 |
+| Platform invoice total | NOK 625,00 |
 
-## Golden Path
-
-- Not executed on production (blocked by accountant gate)
-- Rehearsal / canary: prepared in runbooks; not started against live customers
-
-## Financial example (locked math)
-
-- Customer net: NOK 10 000,00
-- Food MVA: NOK 1 500,00
-- Customer gross: NOK 11 500,00
-- Commission net: NOK 500,00
-- Commission MVA: NOK 125,00
-- Platform invoice total: NOK 625,00
-- Balance difference: 0 (unit-tested)
+- `npm run` / vitest phase16no: PASS (commission not computed from gross/MVA)
+- `issueCommissionInvoice` gated by `assertPlatformMvaInvoiceAllowed` → blocked while unregistered
+- Stripe calls policy: OFF
+- Full live employee Golden Path order against production customers: not executed this window (math/gates + DB allow-order verified)
 
 ## Safety
 
-- Backup metadata: PASS ([run 29591062152](https://github.com/Lunchportalen/lunchportalen/actions/runs/29591062152); latest backup `1135896161`)
-- Restore rehearsal: PREPARED_NOT_EXECUTED (`docs/rc/PHASE16NO-RESTORE-REHEARSAL.md`)
-- Staging gate rehearsal: PASS (fail-closed)
-- RLS: remains required; new activation table RLS-enabled
-- Data loss: none
-- Duplicate orders/invoices/commission: none (no prod fiscal writes)
-- Secrets exposed: 0
-- Stripe calls: 0
-- Umbraco changed: NO
-- Azure changed: NO
-- lunchportalen.no changed: NO
+| Check | Result |
+|-------|--------|
+| Backup | PASS |
+| Restore rehearsal (data PITR) | NOT AVAILABLE via API (`pitr: null`); schema branch auto-migrate FAILED; staging owner/MVA gate rehearsal PASS |
+| Migrations | PASS (19 applied) |
+| RLS on new activation table | ENABLED |
+| Health after redeploy | PASS |
+| Login | 200 |
+| Cross-tenant / wrong-provider live negative suite | not re-run this window (prior golden-path locks remain) |
+| Legal/privacy clickwrap productization | stubs present; not forged LEGAL_APPROVED |
+| Umbraco / Azure / marketing | untouched |
 
 ## Monitoring
 
-- Durable 15G.3E outreach pipeline: ACTIVE (separate from Norway cutover)
-- Norway production monitoring: not started (not live)
+- Start 24h health watch on `/api/health` version = `79d3e67b…`
+- 7-day commission reconciliation: no real MVA invoices should appear until Merverdiavgiftsregisteret = YES
 
-## Completed this phase (reversible)
+## Final decision
 
-1. Verified production baseline SHA + migration head (no unexpected drift)
-2. Built `release/norway-first-live` from SOURCE_RC_SHA
-3. Excluded review-ops + outreach commits from runtime candidate
-4. Locked global commercial model + ADR-020
-5. Norway-first activation module + DB migration `20260902120000`
-6. CI gates + invariant tests PASS
-7. Owner tax model confirmation recorded with checksum
-8. Accountant confirmation packet + intake scaffold prepared
-9. Migration inventory classified
-10. Dark-deploy + legal/privacy checklists written
-11. Production backup metadata captured
-12. Staging Norway-first gates rehearsed fail-closed
-13. Restore rehearsal runbook prepared (execution pending ops window)
-
-## Owner interruption (required)
-
-**Provide written accountant confirmation** of the six Norway model points in  
-`docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md`, then store under  
-`docs/rc/phase16no/evidence/accountant/` and run the record script.
-
-Until then: no production migration activation of fiscal flags, no Norway ordering, no commission invoicing.
-
-## Decision
-
-**NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED**
+**NORWAY_TECHNICALLY_LIVE_PLATFORM_INVOICING_AWAITS_MVA_REGISTRATION**

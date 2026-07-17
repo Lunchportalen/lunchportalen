@@ -1,30 +1,12 @@
 {
   "OWNER_NORWAY_TAX_MODEL_CONFIRMATION": "CONFIRMED",
-  "ACCOUNTANT_NORWAY_TAX_CONFIRMATION": "REQUIRED",
-  "updatedAt": "2026-07-17T15:30:00.000Z",
-  "ownerEvidence": {
-    "path": "docs/rc/phase16no/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md",
-    "sha256": "54bb193b787c916722c1d535fc6ea46453ee370496e9840926ec72ebe0de4548",
-    "confirmedBy": "owner",
-    "model": {
-      "providerIsSeller": true,
-      "providerInvoicesCustomer": true,
-      "foodIncludingProviderDeliveryMvaBps": 1500,
-      "platformCommissionBps": 500,
-      "platformCommissionBase": "net_excluding_mva",
-      "platformServiceMvaBps": 2500,
-      "platformInvoicesEndCustomer": false,
-      "platformCollectsFoodPayment": false,
-      "taxCode": "NO_PLATFORM_SERVICE_STANDARD_VAT_25"
-    }
-  },
-  "accountantEvidence": {
-    "found": false,
-    "intakePath": "docs/rc/phase16no/evidence/accountant/",
-    "packet": "docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md",
-    "blocksFiscalActivation": true
-  },
-  "productionOrdering": "DISABLED",
-  "productionCommissionInvoicing": "DISABLED",
-  "decision": "NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED"
+  "OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY": "YES",
+  "ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER": "YES",
+  "ACCOUNTANT_NORWAY_TAX_CONFIRMATION": "NOT_REQUIRED_FOR_CUTOVER",
+  "ACCOUNTANT_CONFIRMATION_REQUIRED_FOR_CUTOVER": false,
+  "NORWAY_TAX_MODEL_STATUS": "OWNER_APPROVED_WITH_OFFICIAL_SOURCE_SUPPORT",
+  "LUNCHPORTALEN_MVA_REGISTERED": false,
+  "PLATFORM_INVOICE_VAT_25_ENABLED": false,
+  "updatedAt": "2026-07-17T17:35:00.000Z",
+  "decision": "NORWAY_TECHNICALLY_LIVE_PLATFORM_INVOICING_AWAITS_MVA_REGISTRATION"
 }
