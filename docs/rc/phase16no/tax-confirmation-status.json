@@ -1,9 +1,10 @@
 {
   "OWNER_NORWAY_TAX_MODEL_CONFIRMATION": "CONFIRMED",
   "ACCOUNTANT_NORWAY_TAX_CONFIRMATION": "REQUIRED",
-  "updatedAt": "2026-07-17T15:10:00.000Z",
+  "updatedAt": "2026-07-17T15:30:00.000Z",
   "ownerEvidence": {
-    "path": "docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md",
+    "path": "docs/rc/phase16no/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md",
+    "sha256": "54bb193b787c916722c1d535fc6ea46453ee370496e9840926ec72ebe0de4548",
     "confirmedBy": "owner",
     "model": {
       "providerIsSeller": true,
@@ -19,6 +20,7 @@
   },
   "accountantEvidence": {
     "found": false,
+    "intakePath": "docs/rc/phase16no/evidence/accountant/",
     "packet": "docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md",
     "blocksFiscalActivation": true
   },

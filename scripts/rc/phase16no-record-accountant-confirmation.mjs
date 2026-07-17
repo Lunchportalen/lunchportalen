@@ -13,11 +13,14 @@ const evidenceIdx = args.indexOf("--evidence");
 const evidenceRel =
   evidenceIdx >= 0 && args[evidenceIdx + 1]
     ? args[evidenceIdx + 1]
-    : "docs/evidence/accountant/ACCOUNTANT_NORWAY_TAX_CONFIRMATION.md";
+    : "docs/rc/phase16no/evidence/accountant/ACCOUNTANT_NORWAY_TAX_CONFIRMATION.md";
 
 const evidencePath = path.resolve(root, evidenceRel);
 const statusPath = path.resolve(root, "docs/rc/phase16no/accountant-confirmation-status.json");
-const shaPath = path.resolve(root, "docs/evidence/accountant/ACCOUNTANT_NORWAY_TAX_CONFIRMATION.sha256");
+const shaPath = path.resolve(
+  root,
+  "docs/rc/phase16no/evidence/accountant/ACCOUNTANT_NORWAY_TAX_CONFIRMATION.sha256",
+);
 
 const REQUIRED_AFFIRMATIONS = [
   { id: "provider_seller", re: /catering|provider|leverand[oø]r|selger/i },

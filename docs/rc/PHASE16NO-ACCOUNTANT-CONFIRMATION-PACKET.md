@@ -4,7 +4,7 @@
 **Date prepared:** 2026-07-17  
 **Prepared for:** Lunchportalen AS accountant (written confirmation required)  
 **Company:** Lunchportalen AS · org.nr 937155239  
-**Owner model confirmation:** CONFIRMED (`docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md`) — **not** a substitute for accountant confirmation
+**Owner model confirmation:** CONFIRMED (`docs/rc/phase16no/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md`) — **not** a substitute for accountant confirmation
 
 ## Why this is required
 
@@ -51,9 +51,9 @@ Invoice wording:
 
 ## How to record confirmation (operator)
 
-1. Store the evidence under `docs/evidence/accountant/` (no customer PII).
-2. Record checksum, date, author, and exact approved model.
-3. Set env/DB:
+1. Store the evidence under `docs/rc/phase16no/evidence/accountant/` (no customer PII).
+2. Run `node scripts/rc/phase16no-record-accountant-confirmation.mjs --evidence <file>`.
+3. Set env/DB (authorised operator only):
    - `ACCOUNTANT_NORWAY_TAX_CONFIRMATION=CONFIRMED`
    - `country_production_activation.accountant_tax_confirmation = 'CONFIRMED'` for `NO`
 4. Only then enable Norway ordering/commission flags.

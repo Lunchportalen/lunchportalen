@@ -9,10 +9,10 @@
 | Gate | Status |
 |------|--------|
 | OWNER_NORWAY_TAX_MODEL_CONFIRMATION | **CONFIRMED** |
-| Evidence | `docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md` |
+| Evidence | `docs/rc/phase16no/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md` |
 | SHA-256 | `54bb193b787c916722c1d535fc6ea46453ee370496e9840926ec72ebe0de4548` |
 | ACCOUNTANT_NORWAY_TAX_CONFIRMATION | **REQUIRED** |
-| Intake | `docs/evidence/accountant/` + `scripts/rc/phase16no-record-accountant-confirmation.mjs` |
+| Intake | `docs/rc/phase16no/evidence/accountant/` + `scripts/rc/phase16no-record-accountant-confirmation.mjs` |
 
 ## Completed reversible prep
 
@@ -37,7 +37,7 @@
 
 ## Next after accountant evidence
 
-1. Store written accountant confirmation under `docs/evidence/accountant/`
+1. Store written accountant confirmation under `docs/rc/phase16no/evidence/accountant/`
 2. Run `node scripts/rc/phase16no-record-accountant-confirmation.mjs --evidence <file>`
 3. Authorised operator sets `ACCOUNTANT_NORWAY_TAX_CONFIRMATION=CONFIRMED` in env/DB
 4. Restore rehearsal PASS (Option A in restore runbook)

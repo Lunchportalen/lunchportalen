@@ -47,10 +47,10 @@
 - External transport treatment: 25% to provider (packet item 3)
 - Platform commission VAT: 25%
 - Tax code: `NO_PLATFORM_SERVICE_STANDARD_VAT_25`
-- Owner confirmation: **CONFIRMED** (`docs/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md`)
+- Owner confirmation: **CONFIRMED** (`docs/rc/phase16no/evidence/owner/OWNER_NORWAY_TAX_MODEL_CONFIRMATION.md`)
 - Accountant confirmation: **REQUIRED**
 - Evidence packet: `docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md`
-- Intake scaffold: `docs/evidence/accountant/`
+- Intake scaffold: `docs/rc/phase16no/evidence/accountant/`
 
 ## Golden Path
 
@@ -106,7 +106,7 @@
 
 **Provide written accountant confirmation** of the six Norway model points in  
 `docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md`, then store under  
-`docs/evidence/accountant/` and run the record script.
+`docs/rc/phase16no/evidence/accountant/` and run the record script.
 
 Until then: no production migration activation of fiscal flags, no Norway ordering, no commission invoicing.
 
