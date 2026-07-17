@@ -8,7 +8,14 @@ import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { opsLog } from "@/lib/ops/log";
-import { assertPlatformMvaInvoiceAllowed } from "@/lib/markets/norwayFirstActivation";
+import {
+  assertPlatformInvoiceWithoutMvaAllowed,
+  assertPlatformMvaInvoiceAllowed,
+} from "@/lib/markets/norwayFirstActivation";
+import {
+  assertNorwayCommissionInvoiceTransmittable,
+  NORWAY_PRE_REGISTRATION_INVOICE_NOTE_NB,
+} from "@/lib/markets/norwayMvaController";
 
 function admin() {
   return supabaseAdmin() as any;
@@ -102,11 +109,27 @@ export async function closeAndInvoice(p: {
 }
 
 export async function issueCommissionInvoice(invoiceId: string, actor: string | null) {
-  // Real platform MVA invoices require Merverdiavgiftsregisteret registration.
+  // Phase 16NO.4: allow without-MVA pre-registration; block MVA until registered;
+  // hold transmission when crossing event is pending.
   try {
-    assertPlatformMvaInvoiceAllowed();
+    const { data: inv } = await admin()
+      .from("provider_commission_invoices")
+      .select("id, tax_amount_minor")
+      .eq("id", invoiceId)
+      .maybeSingle();
+    if (!inv) return { ok: false as const, code: "COMMISSION_INVOICE_NOT_FOUND" };
+    const tax = Number(inv.tax_amount_minor ?? 0);
+    if (tax > 0) {
+      assertPlatformMvaInvoiceAllowed();
+    } else {
+      assertPlatformInvoiceWithoutMvaAllowed();
+    }
+    await assertNorwayCommissionInvoiceTransmittable(invoiceId);
   } catch (e) {
-    const code = e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "PLATFORM_MVA_BLOCKED";
+    const code =
+      e && typeof e === "object" && "code" in e
+        ? String((e as { code: string }).code)
+        : "PLATFORM_INVOICE_BLOCKED";
     return { ok: false as const, code };
   }
   const { data, error } = await admin().rpc("lp_commission_invoice_issue", {
@@ -126,17 +149,30 @@ export async function deliverCommissionInvoice(
   invoiceId: string,
   opts?: { force?: boolean },
 ): Promise<{ ok: true; recipients: string[] } | { ok: false; code: string }> {
-  // Do not transmit real platform invoices while Merverdiavgiftsregisteret is unverified.
-  try {
-    assertPlatformMvaInvoiceAllowed();
-  } catch (e) {
-    const code = e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "PLATFORM_MVA_BLOCKED";
-    return { ok: false, code };
-  }
   const a = admin();
-  const { data: inv } = await a.from("provider_commission_invoices").select(INVOICE_FIELDS + ", sent_to_emails_snapshot").eq("id", invoiceId).maybeSingle();
+  const { data: inv } = await a
+    .from("provider_commission_invoices")
+    .select(INVOICE_FIELDS + ", sent_to_emails_snapshot, tax_amount_minor")
+    .eq("id", invoiceId)
+    .maybeSingle();
   if (!inv) return { ok: false, code: "COMMISSION_INVOICE_NOT_FOUND" };
   if (!inv.invoice_number) return { ok: false, code: "COMMISSION_INVOICE_NOT_ISSUED" };
+
+  try {
+    const tax = Number(inv.tax_amount_minor ?? 0);
+    if (tax > 0) {
+      assertPlatformMvaInvoiceAllowed();
+    } else {
+      assertPlatformInvoiceWithoutMvaAllowed();
+    }
+    await assertNorwayCommissionInvoiceTransmittable(invoiceId);
+  } catch (e) {
+    const code =
+      e && typeof e === "object" && "code" in e
+        ? String((e as { code: string }).code)
+        : "PLATFORM_INVOICE_BLOCKED";
+    return { ok: false, code };
+  }
 
   const recipients = (Array.isArray(inv.sent_to_emails_snapshot) ? inv.sent_to_emails_snapshot : [])
     .map((e: unknown) => safeStr(e).toLowerCase())
@@ -145,7 +181,12 @@ export async function deliverCommissionInvoice(
 
   const nf = new Intl.NumberFormat("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const amount = nf.format(Number(inv.total_amount_minor) / 100);
+  const taxMinor = Number(inv.tax_amount_minor ?? 0);
   const kindLabel = inv.kind === "CREDIT" ? "Kreditfaktura" : "Provisjonsfaktura";
+  const mvaNote =
+    taxMinor === 0
+      ? `\n\n${NORWAY_PRE_REGISTRATION_INVOICE_NOTE_NB}\n`
+      : `\n\nMerverdiavgift (25 %) er beregnet på plattformprovisjonen.\n`;
   const eventKey = `commission.invoice.email:${invoiceId}`;
 
   // Idempotent levering: allerede enqueued (f.eks. daglig cron-replay) → aldri
@@ -165,9 +206,13 @@ export async function deliverCommissionInvoice(
           from: "Lunchportalen <no-reply@lunchportalen.no>",
           to: recipients.join(", "),
           subject: `${kindLabel} ${inv.invoice_number} – Lunchportalen (5 % plattformprovisjon)`,
-          bodyText: `Hei,\n\n${kindLabel} ${inv.invoice_number} fra Lunchportalen.\n\nBeløp: ${amount} ${inv.currency} (5 % av netto lunsjsalg ekskl. MVA)\n${inv.due_date ? `Forfallsdato: ${inv.due_date}\n` : ""}\nBetaling skjer via bankoverføring (ingen kortbetaling). Detaljert grunnlag er tilgjengelig i leverandørflaten under «Provisjon».\n\nMed vennlig hilsen\nLunchportalen`,
+          bodyText: `Hei,\n\n${kindLabel} ${inv.invoice_number} fra Lunchportalen.\n\nBeløp: ${amount} ${inv.currency} (5 % av netto lunsjsalg ekskl. kundens MVA)\n${inv.due_date ? `Forfallsdato: ${inv.due_date}\n` : ""}${mvaNote}\nBetaling skjer via bankoverføring (ingen kortbetaling). Detaljert grunnlag er tilgjengelig i leverandørflaten under «Provisjon».\n\nMed vennlig hilsen\nLunchportalen`,
           invoice_id: invoiceId,
           invoice_number: inv.invoice_number,
+          tax_treatment:
+            taxMinor === 0
+              ? "NO_PLATFORM_SERVICE_NOT_REGISTERED_NO_VAT"
+              : "NO_PLATFORM_SERVICE_STANDARD_VAT_25",
         },
         status: "PENDING",
         attempts: 0,

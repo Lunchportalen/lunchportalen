@@ -21,6 +21,7 @@ const SECONDARY_NAV = [
   { label: "Operasjoner", href: "/superadmin/operations" },
   { label: "Global", href: "/superadmin/global" },
   { label: "Menyprofiler", href: "/superadmin/menu-profiles" },
+  { label: "MVA-terskel", href: "/superadmin/mva-terskel" },
 ];
 
 function isActive(pathname: string, href: string): boolean {

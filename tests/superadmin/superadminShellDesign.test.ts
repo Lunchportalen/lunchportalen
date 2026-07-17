@@ -44,6 +44,7 @@ describe("Superadmin shell design system", () => {
       "/superadmin/control-tower",
       "/superadmin/operations",
       "/superadmin/global",
+      "/superadmin/mva-terskel",
     ]) {
       expect(nav).toContain(href);
     }

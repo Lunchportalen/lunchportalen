@@ -10,8 +10,8 @@ import type { LegalDocumentType } from "@/lib/legal/legalDocumentRegistry";
 export const NORWAY_LEGAL_STATUS = "OWNER_APPROVED_EXTERNAL_REVIEW_PENDING" as const;
 export const NORWAY_LEGAL_LOCALE = "nb-NO" as const;
 export const NORWAY_LEGAL_COUNTRY = "NO" as const;
-export const NORWAY_LEGAL_VERSION = "1.0.0-owner-2026-07-17" as const;
-export const NORWAY_LEGAL_EFFECTIVE_DATE = "2026-07-17" as const;
+export const NORWAY_LEGAL_VERSION = "1.1.0-owner-2026-07-18" as const;
+export const NORWAY_LEGAL_EFFECTIVE_DATE = "2026-07-18" as const;
 
 export type NorwaySubjectRole = "provider" | "company" | "employee";
 
@@ -97,6 +97,7 @@ export function buildNorwayLegalDocuments(): NorwayLegalDocument[] {
       "Lunchportalen leverer tilgang til og bruk av plattformen. Lunchportalen er ikke selger av mat.",
       "## Provisjon",
       "Cateringfirmaet betaler Lunchportalen 5 % av netto ordreverdi ekskl. kundens merverdiavgift for plattformtjenesten.",
+      "MVA legges til når det er lovpålagt. Før MVA-registrering kan faktura utstedes uten MVA; grensekryssende eller senere fakturaer kan holdes tilbake til registrering er bekreftet.",
     ]),
     doc("company_terms", "Vilkår for bedriftskunde", [
       "## Partene",
@@ -156,7 +157,12 @@ export function buildNorwayLegalDocuments(): NorwayLegalDocument[] {
       "## Plattformfaktura",
       "Lunchportalen fakturerer cateringfirmaet 5 % av netto ordreverdi ekskl. kundens merverdiavgift.",
       "## MVA på plattformprovisjon",
-      "Reell MVA på plattformfaktura krever at Lunchportalen AS er registrert i Merverdiavgiftsregisteret. Inntil da utstedes ikke reell MVA-faktura.",
+      "MVA legges til på plattformprovisjonen når dette er lovpålagt, typisk 25 % etter at Lunchportalen AS er registrert i Merverdiavgiftsregisteret.",
+      "Før slik registrering kan Lunchportalen utstede reell provisjonsfaktura uten MVA. Dette er ikke fritak eller nullsats.",
+      "Hvis en enkelt provisjonshendelse bringer Lunchportalen AS over registreringsgrensen, kan faktura for den hendelsen og senere hendelser holdes tilbake mens MVA-registrering behandles.",
+      "Etter offisiell registrering kan MVA beregnes på hele den grensekryssende leveransen. Der det er påkrevd kan kreditnota og ny faktura, eller separat MVA-faktura, brukes.",
+      "## Cateringfirmaets ansvar",
+      "Cateringfirmaet forblir alene ansvarlig for matsalg og korrekt kundebehandling av merverdiavgift.",
     ]),
   ];
 }

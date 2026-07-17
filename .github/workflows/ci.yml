@@ -70,6 +70,12 @@ jobs:
       - name: CI Guard
         run: npm run ci:guard
 
+      - name: Phase 16NO commercial gates
+        run: npm run ci:phase16no-gates
+
+      - name: Phase 16NO.4 MVA threshold gates
+        run: npm run ci:phase16no4-gates
+
       - name: Protected Golden Path guard (PR)
         if: github.event_name == 'pull_request'
         env:

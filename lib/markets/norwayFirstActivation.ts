@@ -106,9 +106,38 @@ export function assertPlatformMvaInvoiceAllowed(): void {
   }
 }
 
+/**
+ * Pre-registration real commission invoices WITHOUT MVA.
+ * Env layer only — runtime hold/crossing enforcement is in norwayMvaController.
+ */
+export function assertPlatformInvoiceWithoutMvaAllowed(): void {
+  const flags = readNorwayActivationFlags();
+  if (!isOwnerTaxCutoverApproved(flags)) {
+    throw Object.assign(new Error("OWNER_NORWAY_TAX_CUTOVER_NOT_APPROVED"), {
+      code: "OWNER_NORWAY_TAX_CUTOVER_NOT_APPROVED",
+    });
+  }
+  if (!flags.COUNTRY_NO_PRODUCTION_ENABLED || !flags.COUNTRY_NO_PLATFORM_COMMISSION_ENABLED) {
+    throw Object.assign(new Error("NORWAY_COMMISSION_DISABLED"), {
+      code: "NORWAY_COMMISSION_DISABLED",
+    });
+  }
+  if (!flags.COUNTRY_NO_INVOICE_ONLY_ENABLED) {
+    throw Object.assign(new Error("NORWAY_INVOICE_DISABLED"), {
+      code: "NORWAY_INVOICE_DISABLED",
+    });
+  }
+}
+
 export function assertCountryMarketAccess(
   countryCode: string,
-  action: "register" | "order" | "invoice" | "commission" | "platform_mva_invoice",
+  action:
+    | "register"
+    | "order"
+    | "invoice"
+    | "commission"
+    | "platform_mva_invoice"
+    | "platform_invoice_without_mva",
 ): void {
   const cc = String(countryCode || "").trim().toUpperCase() as CountryCode;
   if (!SUPPORTED_COUNTRY_CODES.includes(cc)) {
@@ -145,6 +174,9 @@ export function assertCountryMarketAccess(
   }
   if (action === "platform_mva_invoice") {
     assertPlatformMvaInvoiceAllowed();
+  }
+  if (action === "platform_invoice_without_mva") {
+    assertPlatformInvoiceWithoutMvaAllowed();
   }
 }
 
