@@ -134,6 +134,7 @@
     "fs-extra": "^11.3.4",
     "glob": "^13.0.6",
     "graphlib": "^2.1.8",
+    "imapflow": "^1.4.7",
     "lucide-react": "^0.460.0",
     "ml-matrix": "^6.12.1",
     "next": "15.5.18",

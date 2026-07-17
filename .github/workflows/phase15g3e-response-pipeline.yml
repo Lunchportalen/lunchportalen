@@ -36,6 +36,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       LUNCHPORTALEN_POST_MAILBOX_PASSWORD: ${{ secrets.LUNCHPORTALEN_POST_MAILBOX_PASSWORD }}
       NODE_TLS_REJECT_UNAUTHORIZED: "1"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout workflow code
@@ -96,6 +97,7 @@ jobs:
           cd "$STATE_DIR"
           git init -b "$PIPELINE_STATE_BRANCH"
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # GITHUB_TOKEN provided via job env from secrets.GITHUB_TOKEN
           if git fetch --depth=1 origin "$PIPELINE_STATE_BRANCH" 2>/dev/null; then
             git checkout -f FETCH_HEAD
             git checkout -B "$PIPELINE_STATE_BRANCH"
