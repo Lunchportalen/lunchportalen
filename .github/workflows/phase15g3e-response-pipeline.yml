@@ -63,10 +63,11 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install mailbox pipeline dependencies
+        run: |
+          # Minimal deps only — avoid full-app npm ci lock drift for this non-deploy RC job
+          npm install --no-save --no-audit --no-fund imapflow@1.4.7 nodemailer@9.0.1 dotenv@17.2.4
 
       - name: Guard — mailbox secret present
         run: |
