@@ -1,0 +1,101 @@
+{
+  "submissions": [
+    {
+      "firmId": "thomson-reuters-pagero",
+      "status": "CONFIRMED",
+      "submittedAt": "2026-07-17T00:20:58.752Z",
+      "confirmationReference": "confirmation_page",
+      "finalUrl": "https://s1575097598.t.eloqua.com/e/DefaultFormSubmitConfirmation.aspx",
+      "screenshot": "C:\\prosjekter\\lunchportalen-15g\\docs\\rc\\phase15g3e\\form-screenshots\\thomson-reuters-pagero-fix-after.png"
+    },
+    {
+      "firmId": "azets-nordic",
+      "status": "CONFIRMED",
+      "submittedAt": "2026-07-17T00:38:01.461Z",
+      "confirmationReference": "confirmation_page",
+      "finalUrl": "https://www.azets.com/en/contact-us",
+      "screenshot": "docs\\rc\\phase15g3e\\form-screenshots\\azets-nordic-hs-after.png"
+    },
+    {
+      "firmId": "bird-bird-privacy-legal",
+      "status": "CONFIRMED",
+      "submittedAt": "2026-07-17T07:48:10.967Z",
+      "confirmationReference": "history:https://www.twobirds.com/en/contact/thank-you",
+      "finalUrl": "https://www.twobirds.com/en/contact/thank-you",
+      "screenshot": "C:\\prosjekter\\lunchportalen-15g\\docs\\rc\\phase15g3e\\form-screenshots\\bird-bird-privacy-legal-owner-session-prefilled.png",
+      "evidenceKinds": [
+        "owner_attestation",
+        "history_thankyou_url"
+      ],
+      "channel": "web_form_captcha_owner",
+      "historyThankYou": {
+        "visitedAt": "2026-07-17T07:46:15.226Z",
+        "title": "Thank you - Bird & Bird",
+        "url": "https://www.twobirds.com/en/contact/thank-you"
+      }
+    },
+    {
+      "firmId": "ncc-group-security",
+      "status": "CONFIRMED",
+      "submittedAt": "2026-07-17T07:48:10.967Z",
+      "confirmationReference": "history:https://www.nccgroup.com/contact-sales/thank-you/",
+      "finalUrl": "https://www.nccgroup.com/contact-sales/thank-you/",
+      "screenshot": "C:\\prosjekter\\lunchportalen-15g\\docs\\rc\\phase15g3e\\form-screenshots\\ncc-group-security-owner-session-prefilled.png",
+      "evidenceKinds": [
+        "owner_attestation",
+        "history_thankyou_url"
+      ],
+      "channel": "web_form_captcha_owner",
+      "historyThankYou": {
+        "visitedAt": "2026-07-17T07:41:38.084Z",
+        "title": "Thank you | NCC Group",
+        "url": "https://www.nccgroup.com/contact-sales/thank-you/"
+      }
+    },
+    {
+      "firmId": "semantix-transperfect",
+      "status": "CONFIRMED",
+      "submittedAt": "2026-07-17T07:48:10.967Z",
+      "confirmationReference": "history:https://www.semantix.com/thank-you",
+      "finalUrl": "https://www.semantix.com/thank-you",
+      "screenshot": "C:\\prosjekter\\lunchportalen-15g\\docs\\rc\\phase15g3e\\form-screenshots\\semantix-transperfect-owner-session-prefilled.png",
+      "evidenceKinds": [
+        "confirmation_email",
+        "owner_attestation",
+        "history_thankyou_url"
+      ],
+      "channel": "web_form_captcha_owner",
+      "historyThankYou": {
+        "visitedAt": "2026-07-17T07:41:11.680Z",
+        "title": "Thank you | Semantix",
+        "url": "https://www.semantix.com/thank-you"
+      }
+    },
+    {
+      "firmId": "transperfect-direct",
+      "status": "CONFIRMED",
+      "submittedAt": "2026-07-17T07:48:10.967Z",
+      "confirmationReference": "email:<006ee316-98c3-4466-a39b-f0b260847337@iad4s13mta0997.xt.local>",
+      "finalUrl": "https://www.transperfect.com/contact",
+      "screenshot": "C:\\prosjekter\\lunchportalen-15g\\docs\\rc\\phase15g3e\\form-screenshots\\transperfect-direct-owner-session-prefilled.png",
+      "evidenceKinds": [
+        "confirmation_email",
+        "owner_attestation"
+      ],
+      "channel": "web_form_captcha_owner"
+    },
+    {
+      "firmId": "ey-indirect-tax",
+      "status": "CONFIRMED",
+      "submittedAt": "2026-07-17T07:48:10.967Z",
+      "confirmationReference": "email:<1886008676.18965.1784273623690@marketo-platform--email-sender-prod-trigger-cluster-b87ff6j5dsh>",
+      "finalUrl": "https://www.ey.com/en_no/about-us/connect-with-us",
+      "screenshot": "C:\\prosjekter\\lunchportalen-15g\\docs\\rc\\phase15g3e\\form-screenshots\\ey-indirect-tax-owner-session-prefilled.png",
+      "evidenceKinds": [
+        "confirmation_email",
+        "owner_attestation"
+      ],
+      "channel": "web_form_captcha_owner"
+    }
+  ]
+}

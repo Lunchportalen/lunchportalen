@@ -1,0 +1,48 @@
+From: Lunchportalen <post@lunchportalen.no>
+To: (WEB_FORM_ONLY — see channel below)
+Reply-To: post@lunchportalen.no
+Subject: [Lunchportalen] Independent review RFP — NCC Group — RC b88aaf99780e
+Thread: LP-15G3E-ncc-group-security-b88aaf99780e
+Status: READY_WEB_FORM_ONLY
+To-source: https://www.nccgroup.com/technical-assurance (inquiry / scoping)
+Pack: docs/rc/phase15g3e/procurement-packs.json#ncc-group-security
+
+Dear NCC Group team,
+
+Lunchportalen (lunchportalen.no) requests a formal quotation and named-reviewer proposal for independent compliance review ahead of a multi-country release candidate.
+
+Sender: Lunchportalen <post@lunchportalen.no>
+Reply-To: post@lunchportalen.no
+Thread reference: LP-15G3E-ncc-group-security-b88aaf99780e
+
+RELEASE BINDING
+- Technical RC SHA: b88aaf99780e0a5d71404e831fd87eb90031fb6e
+- Staging migration head: 20260901120000
+- Approvals must bind to the exact SHA and evidence checksums we provide
+- No production secrets or customer PII will be shared
+
+REQUESTED SCOPE
+Lane: security
+Recommended scopes: security-global
+Region groups: global
+
+PLEASE PROVIDE
+1) Confirmation you can cover the listed countries/locales with qualified independent reviewers
+2) Named reviewer identities (full name, organization email, credential type/reference — no secret values)
+3) Conflict-of-interest declaration willingness (no equity in Lunchportalen; no self-approval)
+4) Quote (fixed fee or capped T&M) for: review + written decision + one revision cycle
+5) Expected turnaround (target: 7–10 business days per batch)
+6) Contract/MSA assumptions and any data-processing terms required before pack access
+
+DATA ACCESS BOUNDARIES
+- Staging / redacted evidence packs only
+- No production database
+- No customer PII
+- No plaintext secrets (vault references only)
+
+We will send procurement pack details and evidence-pack links after NDA/DPA alignment.
+Please reply to this thread. Do not include passwords, API keys, or personal data of end customers.
+
+Kind regards,
+Lunchportalen Global Compliance Program
+post@lunchportalen.no

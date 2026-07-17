@@ -1,0 +1,67 @@
+{
+  "items": [
+    {
+      "firmId": "ey-indirect-tax",
+      "messageId": "seed:ey-indirect-tax:contact.us@ey.com",
+      "subject": "Thomas Andre, thank you for your message",
+      "from": "contact.us@ey.com",
+      "classification": "FORM_CONFIRMATION_ACK",
+      "date": null,
+      "seededFrom": "phase15g3e1-outreach-complete-pipeline.json",
+      "processedAt": "2026-07-17T08:15:43.366Z"
+    },
+    {
+      "firmId": "transperfect-direct",
+      "messageId": "seed:transperfect-direct:Maria@mail.transperfect.com",
+      "subject": "Thank you for reaching out.",
+      "from": "Maria@mail.transperfect.com",
+      "classification": "FORM_CONFIRMATION_ACK",
+      "date": null,
+      "seededFrom": "phase15g3e1-outreach-complete-pipeline.json",
+      "processedAt": "2026-07-17T08:15:43.367Z"
+    },
+    {
+      "firmId": "semantix-transperfect",
+      "messageId": "seed:semantix-transperfect:julia.e@semantix.com",
+      "subject": "Thank you for your request!",
+      "from": "julia.e@semantix.com",
+      "classification": "FORM_CONFIRMATION_ACK",
+      "date": null,
+      "seededFrom": "phase15g3e1-outreach-complete-pipeline.json",
+      "processedAt": "2026-07-17T08:15:43.367Z"
+    }
+  ],
+  "byMessageId": {
+    "seed:ey-indirect-tax:contact.us@ey.com": {
+      "firmId": "ey-indirect-tax",
+      "messageId": "seed:ey-indirect-tax:contact.us@ey.com",
+      "subject": "Thomas Andre, thank you for your message",
+      "from": "contact.us@ey.com",
+      "classification": "FORM_CONFIRMATION_ACK",
+      "date": null,
+      "seededFrom": "phase15g3e1-outreach-complete-pipeline.json",
+      "processedAt": "2026-07-17T08:15:43.366Z"
+    },
+    "seed:transperfect-direct:Maria@mail.transperfect.com": {
+      "firmId": "transperfect-direct",
+      "messageId": "seed:transperfect-direct:Maria@mail.transperfect.com",
+      "subject": "Thank you for reaching out.",
+      "from": "Maria@mail.transperfect.com",
+      "classification": "FORM_CONFIRMATION_ACK",
+      "date": null,
+      "seededFrom": "phase15g3e1-outreach-complete-pipeline.json",
+      "processedAt": "2026-07-17T08:15:43.367Z"
+    },
+    "seed:semantix-transperfect:julia.e@semantix.com": {
+      "firmId": "semantix-transperfect",
+      "messageId": "seed:semantix-transperfect:julia.e@semantix.com",
+      "subject": "Thank you for your request!",
+      "from": "julia.e@semantix.com",
+      "classification": "FORM_CONFIRMATION_ACK",
+      "date": null,
+      "seededFrom": "phase15g3e1-outreach-complete-pipeline.json",
+      "processedAt": "2026-07-17T08:15:43.367Z"
+    }
+  },
+  "lastPollAt": "2026-07-17T08:24:47.848Z"
+}
