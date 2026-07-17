@@ -27,16 +27,21 @@ export type CountryCommercialInvariant = {
   paymentMode: "invoice_only";
   stripeEnabled: false;
   productionEnabled: boolean;
-  taxProfileStatus: "approved_norway" | "pending_external_approval";
+  taxProfileStatus: "owner_approved_with_official_source_support" | "pending_owner_approval";
 };
 
 /** Server-enforced production eligibility — defaults keep non-NO disabled. */
 export function isCountryProductionEnabled(countryCode: CountryCode): boolean {
   if (countryCode !== "NO") return false;
-  return (
-    process.env.COUNTRY_NO_PRODUCTION_ENABLED === "true" &&
-    process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION === "CONFIRMED"
-  );
+  const owner =
+    process.env.OWNER_NORWAY_TAX_MODEL_CONFIRMATION === "CONFIRMED" &&
+    (process.env.OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY === "true" ||
+      process.env.OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY === "YES") &&
+    (process.env.ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER === "true" ||
+      process.env.ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER === "YES" ||
+      process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION === "NOT_REQUIRED_FOR_CUTOVER" ||
+      process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION === "CONFIRMED");
+  return process.env.COUNTRY_NO_PRODUCTION_ENABLED === "true" && owner;
 }
 
 export function buildCountryInvariant(countryCode: CountryCode): CountryCommercialInvariant {
@@ -54,9 +59,11 @@ export function buildCountryInvariant(countryCode: CountryCode): CountryCommerci
     stripeEnabled: false,
     productionEnabled: isCountryProductionEnabled(countryCode),
     taxProfileStatus:
-      countryCode === "NO" && process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION === "CONFIRMED"
-        ? "approved_norway"
-        : "pending_external_approval",
+      countryCode === "NO" && isCountryProductionEnabled("NO")
+        ? "owner_approved_with_official_source_support"
+        : countryCode === "NO" && process.env.OWNER_NORWAY_TAX_MODEL_CONFIRMATION === "CONFIRMED"
+          ? "owner_approved_with_official_source_support"
+          : "pending_owner_approval",
   };
 }
 

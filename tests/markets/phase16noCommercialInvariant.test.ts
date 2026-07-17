@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { SUPPORTED_COUNTRY_CODES } from "@/lib/markets/supportedMarkets";
 import { MARKET_LOCALES } from "@/lib/markets/supportedMarkets";
 import { LAUNCH_CURRENCY_CODES } from "@/lib/money/minorUnits";
@@ -13,11 +13,39 @@ import {
 } from "@/lib/markets/commercialModelInvariant";
 import {
   assertCountryMarketAccess,
+  assertPlatformMvaInvoiceAllowed,
   evaluateNorwayFirstReadiness,
   isOtherCountryProductionBlocked,
+  NORWAY_TAX_MODEL_STATUS,
 } from "@/lib/markets/norwayFirstActivation";
 
+const OWNER_ENV = [
+  "OWNER_NORWAY_TAX_MODEL_CONFIRMATION",
+  "OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY",
+  "ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER",
+  "ACCOUNTANT_NORWAY_TAX_CONFIRMATION",
+  "COUNTRY_NO_PRODUCTION_ENABLED",
+  "COUNTRY_NO_REGISTRATION_ENABLED",
+  "COUNTRY_NO_ORDERING_ENABLED",
+  "COUNTRY_NO_INVOICE_ONLY_ENABLED",
+  "COUNTRY_NO_PLATFORM_COMMISSION_ENABLED",
+  "LUNCHPORTALEN_MVA_REGISTERED",
+  "PLATFORM_INVOICE_VAT_25_ENABLED",
+] as const;
+
+const saved: Record<string, string | undefined> = {};
+
 describe("Phase 16NO — global commercial model 21 countries", () => {
+  beforeEach(() => {
+    for (const k of OWNER_ENV) saved[k] = process.env[k];
+  });
+  afterEach(() => {
+    for (const k of OWNER_ENV) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  });
+
   it("registry counts: 21 countries, 24 locales, 11 currencies", () => {
     expect(SUPPORTED_COUNTRY_CODES).toHaveLength(21);
     expect(MARKET_LOCALES).toHaveLength(24);
@@ -54,20 +82,29 @@ describe("Phase 16NO — global commercial model 21 countries", () => {
     }
   });
 
-  it("Norway fiscal path requires accountant confirmation even when owner confirmed", () => {
+  it("owner waiver unblocks Norway cutover; accountant is not required", () => {
     process.env.OWNER_NORWAY_TAX_MODEL_CONFIRMATION = "CONFIRMED";
-    delete process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION;
-    delete process.env.COUNTRY_NO_PRODUCTION_ENABLED;
+    process.env.OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY = "YES";
+    process.env.ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER = "YES";
+    process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION = "NOT_REQUIRED_FOR_CUTOVER";
+    process.env.COUNTRY_NO_PRODUCTION_ENABLED = "true";
+    process.env.COUNTRY_NO_ORDERING_ENABLED = "true";
+    process.env.COUNTRY_NO_REGISTRATION_ENABLED = "true";
+    process.env.COUNTRY_NO_INVOICE_ONLY_ENABLED = "true";
+    process.env.COUNTRY_NO_PLATFORM_COMMISSION_ENABLED = "true";
+    process.env.LUNCHPORTALEN_MVA_REGISTERED = "false";
+    process.env.PLATFORM_INVOICE_VAT_25_ENABLED = "false";
+
     const readiness = evaluateNorwayFirstReadiness();
-    expect(readiness.decision).toBe("NORWAY_READY_ACCOUNTANT_CONFIRMATION_REQUIRED");
-    expect(readiness.ownerTaxModelConfirmed).toBe(true);
-    expect(readiness.accountantTaxConfirmed).toBe(false);
+    expect(readiness.accountantConfirmationRequired).toBe(false);
+    expect(readiness.norwayTaxModelStatus).toBe(NORWAY_TAX_MODEL_STATUS);
+    expect(readiness.decision).toBe("NORWAY_TECHNICALLY_LIVE_PLATFORM_INVOICING_AWAITS_MVA_REGISTRATION");
     expect(readiness.otherCountriesDisabled).toBe(20);
-    expect(() => assertCountryMarketAccess("NO", "order")).toThrow(/ACCOUNTANT_NORWAY_TAX_CONFIRMATION_REQUIRED/);
+    expect(() => assertCountryMarketAccess("NO", "order")).not.toThrow();
+    expect(() => assertPlatformMvaInvoiceAllowed()).toThrow(/PLATFORM_MVA_INVOICE_REQUIRES_MVA_REGISTRATION/);
   });
 
   it("Norway platform invoice example: 10000 → 500 + 125 = 625", () => {
-    // NOK minor units: 10_000.00 = 1_000_000
     const ex = norwayPlatformInvoiceExample(BigInt(1_000_000));
     expect(ex.customerNetMinor).toBe(BigInt(1_000_000));
     expect(ex.foodMvaMinor).toBe(BigInt(150_000));
@@ -77,7 +114,6 @@ describe("Phase 16NO — global commercial model 21 countries", () => {
     expect(ex.platformInvoiceTotalMinor).toBe(BigInt(62_500));
     expect(ex.taxCode).toBe("NO_PLATFORM_SERVICE_STANDARD_VAT_25");
     expect(NORWAY_PLATFORM_INVOICE_WORDING).toContain("5 %");
-    // Must NOT be 5% of gross 11500
     expect(ex.commissionNetMinor).not.toBe(BigInt(57_500));
   });
 });

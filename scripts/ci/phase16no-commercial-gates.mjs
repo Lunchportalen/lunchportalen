@@ -76,9 +76,13 @@ if (adr.includes("agency_commission_invoice_only_v1") && adr.includes("all 21 co
   pass("ADR_020_PRESENT");
 } else fail("ADR_020_PRESENT", "missing ADR");
 
-if (fs.existsSync("docs/rc/PHASE16NO-ACCOUNTANT-CONFIRMATION-PACKET.md")) {
-  pass("ACCOUNTANT_PACKET_PRESENT");
-} else fail("ACCOUNTANT_PACKET_PRESENT", "missing");
+if (norwaySrc.includes("ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER") && norwaySrc.includes("PLATFORM_MVA_INVOICE_REQUIRES_MVA_REGISTRATION")) {
+  pass("OWNER_WAIVER_AND_MVA_INVOICE_GATE");
+} else fail("OWNER_WAIVER_AND_MVA_INVOICE_GATE", "missing owner waiver / MVA invoice gate");
+
+if (fs.existsSync("docs/rc/phase16no/evidence/mva/LUNCHPORTALEN_MVA_REGISTRATION.json")) {
+  pass("MVA_REGISTRATION_EVIDENCE_PRESENT");
+} else fail("MVA_REGISTRATION_EVIDENCE_PRESENT", "missing Brønnøysund evidence");
 
 if (failures.length) {
   process.stdout.write(`\nPHASE16NO_GATES: FAIL (${failures.length})\n`);

@@ -8,6 +8,7 @@ import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { opsLog } from "@/lib/ops/log";
+import { assertPlatformMvaInvoiceAllowed } from "@/lib/markets/norwayFirstActivation";
 
 function admin() {
   return supabaseAdmin() as any;
@@ -101,6 +102,13 @@ export async function closeAndInvoice(p: {
 }
 
 export async function issueCommissionInvoice(invoiceId: string, actor: string | null) {
+  // Real platform MVA invoices require Merverdiavgiftsregisteret registration.
+  try {
+    assertPlatformMvaInvoiceAllowed();
+  } catch (e) {
+    const code = e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "PLATFORM_MVA_BLOCKED";
+    return { ok: false as const, code };
+  }
   const { data, error } = await admin().rpc("lp_commission_invoice_issue", {
     p_invoice_id: invoiceId,
     p_actor_user_id: actor,

@@ -1,0 +1,52 @@
+{
+  "backups": [
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-17T05:07:31.069Z",
+      "id_present": true
+    },
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-16T05:06:52.168Z",
+      "id_present": true
+    },
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-15T05:09:44.012Z",
+      "id_present": true
+    },
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-14T05:04:08.677Z",
+      "id_present": true
+    },
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-13T05:07:14.906Z",
+      "id_present": true
+    },
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-12T05:09:53.413Z",
+      "id_present": true
+    },
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-11T05:07:03.386Z",
+      "id_present": true
+    },
+    {
+      "status": "COMPLETED",
+      "type": null,
+      "timestamp": "2026-07-10T05:04:03.771Z",
+      "id_present": true
+    }
+  ]
+}
