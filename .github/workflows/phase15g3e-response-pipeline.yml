@@ -1,0 +1,156 @@
+# Phase 15G.3E.2 — Durable response / quote / follow-up pipeline
+# Runs every 3 hours. No production deploy. No production migration.
+# Secrets: LUNCHPORTALEN_POST_MAILBOX_PASSWORD (GitHub Actions encrypted secret only)
+# State: persisted to branch rc/phase15g3e-pipeline-state (not a production deploy)
+
+name: "Phase15G.3E Response Pipeline"
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+  PIPELINE_STATE_BRANCH: rc/phase15g3e-pipeline-state
+
+on:
+  schedule:
+    # Every 3 hours UTC
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Manual run reason"
+        required: false
+        default: "operator-dispatch"
+
+concurrency:
+  group: phase15g3e-response-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      LUNCHPORTALEN_POST_MAILBOX_PASSWORD: ${{ secrets.LUNCHPORTALEN_POST_MAILBOX_PASSWORD }}
+      NODE_TLS_REJECT_UNAUTHORIZED: "1"
+
+    steps:
+      - name: Checkout workflow code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Restore durable pipeline state
+        run: |
+          set -euo pipefail
+          git fetch origin "$PIPELINE_STATE_BRANCH" || echo "State branch not yet created"
+          if git rev-parse --verify "origin/$PIPELINE_STATE_BRANCH" >/dev/null 2>&1; then
+            git checkout "origin/$PIPELINE_STATE_BRANCH" -- docs/rc/phase15g3e \
+              docs/rc/PHASE15G3E2-PIPELINE-HEARTBEAT.md \
+              docs/rc/PHASE15G3E-OWNER-MATERIAL-NOTIFICATION.md \
+              docs/rc/PHASE15G3E2-DURABLE-PIPELINE-REPORT.md \
+              2>/dev/null || true
+            echo "Restored state from origin/$PIPELINE_STATE_BRANCH"
+          else
+            echo "Using seeded state from default branch (if present)"
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Guard — mailbox secret present
+        run: |
+          if [ -z "${LUNCHPORTALEN_POST_MAILBOX_PASSWORD:-}" ]; then
+            echo "::error::LUNCHPORTALEN_POST_MAILBOX_PASSWORD secret missing"
+            exit 1
+          fi
+          echo "Secret present (value not logged)"
+
+      - name: Run durable pipeline
+        id: pipeline
+        run: node scripts/rc/phase15g3e-durable-pipeline.mjs
+
+      - name: Write durable report
+        if: always()
+        run: node scripts/rc/phase15g3e2-write-durable-report.mjs || true
+
+      - name: Persist state to pipeline state branch
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          STATE_DIR="${RUNNER_TEMP}/phase15g3e-state"
+          rm -rf "$STATE_DIR"
+          mkdir -p "$STATE_DIR"
+          cd "$STATE_DIR"
+          git init -b "$PIPELINE_STATE_BRANCH"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch --depth=1 origin "$PIPELINE_STATE_BRANCH" 2>/dev/null; then
+            git checkout -f FETCH_HEAD
+            git checkout -B "$PIPELINE_STATE_BRANCH"
+          fi
+
+          mkdir -p docs/rc/phase15g3e
+          rsync -a --delete \
+            --exclude 'browser-profile-forms' \
+            --exclude 'form-screenshots' \
+            --exclude '*.png' \
+            "${GITHUB_WORKSPACE}/docs/rc/phase15g3e/" docs/rc/phase15g3e/
+          for f in PHASE15G3E2-PIPELINE-HEARTBEAT.md PHASE15G3E2-DURABLE-PIPELINE-REPORT.md PHASE15G3E-OWNER-MATERIAL-NOTIFICATION.md PHASE15G3E-OWNER-CONTRACT-PAYMENT-BATCH.md; do
+            if [ -f "${GITHUB_WORKSPACE}/docs/rc/$f" ]; then
+              cp "${GITHUB_WORKSPACE}/docs/rc/$f" "docs/rc/$f"
+            fi
+          done
+
+          git add docs/rc
+          if git diff --cached --quiet; then
+            echo "No state changes to persist"
+            exit 0
+          fi
+          git commit -m "chore(rc): phase15g3e durable pipeline state run ${GITHUB_RUN_ID}"
+          git push -u origin "HEAD:$PIPELINE_STATE_BRANCH"
+
+      - name: Owner material notification issue
+        if: steps.pipeline.outputs.notify_owner == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const bodyPath = 'docs/rc/PHASE15G3E-OWNER-MATERIAL-NOTIFICATION.md';
+            const body = fs.existsSync(bodyPath)
+              ? fs.readFileSync(bodyPath, 'utf8')
+              : 'Material owner event — see pipeline artifacts.';
+            const title = `[15G.3E] Owner action required — run ${process.env.GITHUB_RUN_ID}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: body + `\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n`,
+              labels: ['phase15g3e', 'owner-action-required'],
+            });
+
+      - name: Upload run evidence (no secrets)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: phase15g3e-pipeline-${{ github.run_id }}
+          path: |
+            docs/rc/phase15g3e/durable-pipeline-last.json
+            docs/rc/phase15g3e/pipeline-heartbeat.json
+            docs/rc/phase15g3e/active-pipeline-cycle.json
+            docs/rc/phase15g3e/owner-material-notification.json
+            docs/rc/PHASE15G3E2-PIPELINE-HEARTBEAT.md
+            docs/rc/PHASE15G3E2-DURABLE-PIPELINE-REPORT.md
+          if-no-files-found: warn
+          retention-days: 30

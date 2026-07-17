@@ -1,0 +1,108 @@
+{
+  "rebuiltAt": "2026-07-17T08:07:38.604Z",
+  "calendar": "business_days_mon_fri",
+  "rule": "first=+4bd, second=+5bd after first",
+  "items": [
+    {
+      "firmId": "deloitte-global-indirect-tax",
+      "channel": "email",
+      "threadRef": "LP-15G3E-deloitte-global-indirect-tax-b88aaf99780e",
+      "followUpDueAt": "2026-07-22T22:47:30.786Z",
+      "secondFollowUpDueAt": "2026-07-29T22:47:30.786Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "bdo-dach-vat",
+      "channel": "email",
+      "threadRef": "LP-15G3E-bdo-dach-vat-b88aaf99780e",
+      "followUpDueAt": "2026-07-22T22:47:30.955Z",
+      "secondFollowUpDueAt": "2026-07-29T22:47:30.955Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "conta-as-peppol-no",
+      "channel": "email",
+      "threadRef": "LP-15G3E-conta-as-peppol-no-b88aaf99780e",
+      "followUpDueAt": "2026-07-22T22:47:31.118Z",
+      "secondFollowUpDueAt": "2026-07-29T22:47:31.118Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "thomson-reuters-pagero",
+      "channel": "web_form",
+      "threadRef": "LP-15G3E-FORM-thomson-reuters-pagero",
+      "followUpDueAt": "2026-07-23T00:20:58.752Z",
+      "secondFollowUpDueAt": "2026-07-30T00:20:58.752Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "azets-nordic",
+      "channel": "web_form",
+      "threadRef": "LP-15G3E-FORM-azets-nordic",
+      "followUpDueAt": "2026-07-23T00:38:01.461Z",
+      "secondFollowUpDueAt": "2026-07-30T00:38:01.461Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "bird-bird-privacy-legal",
+      "channel": "web_form",
+      "threadRef": "LP-15G3E-FORM-bird-bird-privacy-legal",
+      "followUpDueAt": "2026-07-23T07:48:10.967Z",
+      "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "ncc-group-security",
+      "channel": "web_form",
+      "threadRef": "LP-15G3E-FORM-ncc-group-security",
+      "followUpDueAt": "2026-07-23T07:48:10.967Z",
+      "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "semantix-transperfect",
+      "channel": "web_form",
+      "threadRef": "LP-15G3E-FORM-semantix-transperfect",
+      "followUpDueAt": "2026-07-23T07:48:10.967Z",
+      "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "transperfect-direct",
+      "channel": "web_form",
+      "threadRef": "LP-15G3E-FORM-transperfect-direct",
+      "followUpDueAt": "2026-07-23T07:48:10.967Z",
+      "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    },
+    {
+      "firmId": "ey-indirect-tax",
+      "channel": "web_form",
+      "threadRef": "LP-15G3E-FORM-ey-indirect-tax",
+      "followUpDueAt": "2026-07-23T07:48:10.967Z",
+      "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
+      "backupEscalationAfterSecond": true,
+      "status": "SCHEDULED",
+      "calendar": "business_days_mon_fri"
+    }
+  ],
+  "lastCycleAt": "2026-07-17T08:24:47.895Z"
+}

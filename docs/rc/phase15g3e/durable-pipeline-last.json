@@ -1,0 +1,31 @@
+{
+  "runId": "local-2026-07-17T08-24-44-951Z-12dc4df1",
+  "started_at": "2026-07-17T08:24:44.953Z",
+  "completed_at": "2026-07-17T08:24:47.908Z",
+  "replies_found": 0,
+  "messages_classified": 0,
+  "follow_ups_sent": 0,
+  "failures": [],
+  "next_due_action": "2026-07-22T22:47:30.786Z",
+  "secrets_exposed": 0,
+  "mailbox": {
+    "imap": "PASS",
+    "smtp": "PASS",
+    "error": null
+  },
+  "secretSource": "file:.env.local",
+  "quotes_waiting": 0,
+  "owner_batch": "WAITING_FOR_QUOTES",
+  "notify_owner": false,
+  "follow_up_dates": {
+    "firstDueVerified": true,
+    "secondDueVerified": true,
+    "firstDue": "2026-07-22",
+    "secondDue": "2026-07-29",
+    "calendar": "business_days_mon_fri",
+    "emailThreadRetention": "same thread via In-Reply-To / References",
+    "backupAfterSecondOnly": true
+  },
+  "duplicate_sends": 0,
+  "Decision": "DURABLE_PIPELINE_ACTIVE"
+}

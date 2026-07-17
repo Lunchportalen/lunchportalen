@@ -1,0 +1,694 @@
+{
+  "researchedAt": "2026-07-16",
+  "firms": [
+    {
+      "firmId": "deloitte-global-indirect-tax",
+      "companyName": "Deloitte (Global Indirect Tax & Trade)",
+      "officialWebsite": "https://www.deloitte.com/global/en/services/tax/services/indirect-tax.html",
+      "countriesCoveredClaimed": [
+        "NO",
+        "SE",
+        "DK",
+        "FI",
+        "DE",
+        "AT",
+        "CH",
+        "NL",
+        "BE",
+        "FR",
+        "ES",
+        "IT",
+        "PT",
+        "GR",
+        "PL",
+        "RO",
+        "CZ",
+        "IE",
+        "GB",
+        "US",
+        "CA"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "VAT/GST/sales-tax advisory",
+        "Multi-country indirect tax compliance",
+        "E-invoicing / digital reporting advisory",
+        "Registration and audit readiness"
+      ],
+      "relevantCredentialsPublic": [
+        "Global Big Four professional services network",
+        "Published global indirect tax practice (public service pages)"
+      ],
+      "publicContactChannel": "https://www.deloitte.com/global/en/services/tax/services/indirect-tax.html (practice contact / local member firm intake)",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "MEDIUM",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Quote-based engagement (not publicly listed for this scope)",
+      "sourceLinks": [
+        "https://www.deloitte.com/global/en/services/tax/services/indirect-tax.html",
+        "https://www.deloitte.com/uk/en/services/tax/services/indirect-tax-vat-gst-compliance.html"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "tax-* (21 countries via coordinated member firms)",
+        "invoice-* / e-invoice advisory overlap where engagement letter permits"
+      ],
+      "lane": "tax",
+      "regionGroups": [
+        "Nordic",
+        "DACH",
+        "Benelux",
+        "SouthEU",
+        "CEE",
+        "UKIE",
+        "USA",
+        "Canada"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Preferred multi-country tax umbrella. Per-country signing partners must still be named after engagement; grouping not proven until credentials list each country."
+    },
+    {
+      "firmId": "ey-indirect-tax",
+      "companyName": "EY (Global Indirect Tax / VAT GST)",
+      "officialWebsite": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes",
+      "countriesCoveredClaimed": [
+        "NO",
+        "SE",
+        "DK",
+        "FI",
+        "DE",
+        "AT",
+        "CH",
+        "NL",
+        "BE",
+        "FR",
+        "ES",
+        "IT",
+        "PT",
+        "GR",
+        "PL",
+        "RO",
+        "CZ",
+        "IE",
+        "GB",
+        "US",
+        "CA"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "VAT/GST/SUT advisory",
+        "Global compliance outsourcing",
+        "Cross-border indirect tax"
+      ],
+      "relevantCredentialsPublic": [
+        "Global Big Four network",
+        "Published Worldwide VAT/GST guides"
+      ],
+      "publicContactChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "MEDIUM",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Quote-based",
+      "sourceLinks": [
+        "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "tax-* backup umbrella"
+      ],
+      "lane": "tax",
+      "regionGroups": [
+        "Nordic",
+        "DACH",
+        "Benelux",
+        "SouthEU",
+        "CEE",
+        "UKIE",
+        "USA",
+        "Canada"
+      ],
+      "rankInLane": 2,
+      "roleInShortlist": "BACKUP",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Backup if Deloitte declines scope, timeline, or independence terms."
+    },
+    {
+      "firmId": "rsm-global-vat",
+      "companyName": "RSM International (Global VAT compliance network)",
+      "officialWebsite": "https://rsmus.com/services/business-tax/international-tax/global-vat-compliance-and-reporting.html",
+      "countriesCoveredClaimed": [
+        "NO",
+        "SE",
+        "DK",
+        "FI",
+        "DE",
+        "AT",
+        "CH",
+        "NL",
+        "BE",
+        "FR",
+        "ES",
+        "IT",
+        "PT",
+        "GR",
+        "PL",
+        "RO",
+        "CZ",
+        "IE",
+        "GB",
+        "US",
+        "CA"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "Mid-market global VAT compliance",
+        "Registration/filing coordination",
+        "Digital reporting"
+      ],
+      "relevantCredentialsPublic": [
+        "RSM International member firm network (120+ countries claimed publicly)"
+      ],
+      "publicContactChannel": "https://rsmus.com/services/business-tax/international-tax/global-vat-compliance-and-reporting.html + local RSM member firm contact pages",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "MEDIUM",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Quote-based (typically mid-market vs Big Four)",
+      "sourceLinks": [
+        "https://rsmus.com/services/business-tax/international-tax/global-vat-compliance-and-reporting.html",
+        "https://www.rsm.global/news/rsm-europe-hits-19bn-revenue-fuelled-demand-regulatory-compliance"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "tax-* cost/speed alternative"
+      ],
+      "lane": "tax",
+      "regionGroups": [
+        "Nordic",
+        "DACH",
+        "Benelux",
+        "SouthEU",
+        "CEE",
+        "UKIE",
+        "USA",
+        "Canada"
+      ],
+      "rankInLane": 3,
+      "roleInShortlist": "ALTERNATIVE",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Strong mid-market alternative; still requires named local reviewers per country."
+    },
+    {
+      "firmId": "azets-nordic",
+      "companyName": "Azets",
+      "officialWebsite": "https://azets.com/",
+      "countriesCoveredClaimed": [
+        "NO",
+        "SE",
+        "DK",
+        "FI",
+        "GB",
+        "IE",
+        "RO",
+        "EE"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "Accounting",
+        "Tax/VAT",
+        "Payroll",
+        "Advisory (Nordics + selected markets)"
+      ],
+      "relevantCredentialsPublic": [
+        "Public Nordic multi-country footprint",
+        "ISAE 3402-certified payroll claims (public pages)"
+      ],
+      "publicContactChannel": "https://azets.com/ (country site contact / Nordic inquiry)",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "LOW",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Quote-based SME/mid-market",
+      "sourceLinks": [
+        "https://azets.com/",
+        "https://www.azets.com/en-dk/about-azets",
+        "https://www.azets.com/en-dk/services/nordic-services/nordic-payroll"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "tax-NO",
+        "tax-SE",
+        "tax-DK",
+        "tax-FI",
+        "invoice-NO/SE/DK/FI (if engagement permits)"
+      ],
+      "lane": "tax",
+      "regionGroups": [
+        "Nordic"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Preferred Nordic specialist lane alongside or under Deloitte coordination. Do not claim GB/IE/RO/EE for Lunchportalen scopes unless engagement letter includes them."
+    },
+    {
+      "firmId": "bdo-dach-vat",
+      "companyName": "BDO (Germany / Austria / Switzerland member firms — VAT)",
+      "officialWebsite": "https://www.bdo.de/en-gb/services-en/tax-legal/value-added-tax",
+      "countriesCoveredClaimed": [
+        "DE",
+        "AT",
+        "CH"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "VAT advisory",
+        "VAT compliance",
+        "Cross-border VAT via BDO network"
+      ],
+      "relevantCredentialsPublic": [
+        "National BDO member firm VAT practices (public)"
+      ],
+      "publicContactChannel": "DE: https://www.bdo.de/en-gb/services-en/tax-legal/value-added-tax · AT: info@bdo.at / https://www.bdo.at/en-gb/contact · CH: https://www.ch-acc.bdo.global/en-gb/services/tax/vat",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "LOW",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Quote-based",
+      "sourceLinks": [
+        "https://www.bdo.de/en-gb/services-en/tax-legal/value-added-tax",
+        "https://www.bdo.at/en-gb/contact",
+        "https://www.ch-acc.bdo.global/en-gb/services/tax/vat"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "tax-DE",
+        "tax-AT",
+        "tax-CH"
+      ],
+      "lane": "tax",
+      "regionGroups": [
+        "DACH"
+      ],
+      "rankInLane": 2,
+      "roleInShortlist": "BACKUP",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "DACH regional backup/specialist if Deloitte DACH timeline is slow. Three member firms — separate engagement letters likely."
+    },
+    {
+      "firmId": "avalara-na",
+      "companyName": "Avalara",
+      "officialWebsite": "https://www.avalara.com/us/en/index.html",
+      "countriesCoveredClaimed": [
+        "US",
+        "CA"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "US sales & use tax calculation/filing",
+        "Canada GST/HST/PST support (platform + compliance services)",
+        "Registrations / nexus advisory (scoped engagement)"
+      ],
+      "relevantCredentialsPublic": [
+        "Public US/Canada indirect tax compliance platform + professional services"
+      ],
+      "publicContactChannel": "https://www.avalara.com/us/en/index.html (sales / contact)",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "MEDIUM",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Subscription + services quote (public pricing not fixed for advisory review)",
+      "sourceLinks": [
+        "https://www.avalara.com/us/en/index.html",
+        "https://www.vertexinc.com/solutions/products/vertex-indirect-tax-returns-north-america"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "tax-US",
+        "tax-CA",
+        "registration credential advisory US/CA"
+      ],
+      "lane": "tax",
+      "regionGroups": [
+        "USA",
+        "Canada"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Preferred NA tax specialist. Vertex is documented backup platform/vendor family for NA returns."
+    },
+    {
+      "firmId": "thomson-reuters-pagero",
+      "companyName": "Thomson Reuters ONESOURCE Pagero",
+      "officialWebsite": "https://europe.thomsonreuters.com/compliance/peppol",
+      "countriesCoveredClaimed": [
+        "NO",
+        "SE",
+        "DK",
+        "FI",
+        "DE",
+        "AT",
+        "CH",
+        "NL",
+        "BE",
+        "FR",
+        "ES",
+        "IT",
+        "PT",
+        "GR",
+        "PL",
+        "RO",
+        "CZ",
+        "IE",
+        "GB"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "Peppol Access Point / Service Provider",
+        "E-invoicing / CTC compliance platforms",
+        "Multi-jurisdiction document exchange"
+      ],
+      "relevantCredentialsPublic": [
+        "Public claim: Peppol service provider across Peppol jurisdictions",
+        "Listed in OpenPeppol ecosystem (Pagero / TR lineage)"
+      ],
+      "publicContactChannel": "https://europe.thomsonreuters.com/contact · https://europe.thomsonreuters.com/compliance/peppol",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "MEDIUM",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Quote-based platform + services",
+      "sourceLinks": [
+        "https://europe.thomsonreuters.com/compliance/peppol",
+        "https://europe.thomsonreuters.com/contact",
+        "https://peppol.org/members/peppol-certified-service-providers/"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "invoice-* (Peppol/CTC countries)",
+        "E_INVOICE_APPROVAL / NOT_APPLICABLE decisions support"
+      ],
+      "lane": "invoice_einvoice",
+      "regionGroups": [
+        "Nordic",
+        "DACH",
+        "Benelux",
+        "SouthEU",
+        "CEE",
+        "UKIE"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Preferred pan-European e-invoice/Peppol specialist. Independent tax sign-off still required from tax lane."
+    },
+    {
+      "firmId": "conta-as-peppol-no",
+      "companyName": "Conta AS",
+      "officialWebsite": "https://www.conta.no",
+      "countriesCoveredClaimed": [
+        "NO"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "Peppol AP + SMP (Norway)",
+        "E-invoicing access"
+      ],
+      "relevantCredentialsPublic": [
+        "OpenPeppol certified AP/SMP under DFØ (public registry)"
+      ],
+      "publicContactChannel": "peppol@conta.no (listed on OpenPeppol certified providers page) · https://www.conta.no",
+      "estimatedScopeFit": "PARTIAL",
+      "conflictRisk": "LOW",
+      "independenceRisk": "LOW",
+      "pricingModelPublic": "Quote-based / product pricing (public list not verified here)",
+      "sourceLinks": [
+        "https://peppol.org/members/peppol-certified-service-providers/",
+        "https://www.conta.no"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "invoice-NO",
+        "E_INVOICE Norway channel"
+      ],
+      "lane": "invoice_einvoice",
+      "regionGroups": [
+        "Nordic"
+      ],
+      "rankInLane": 2,
+      "roleInShortlist": "BACKUP",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Norway Peppol specialist backup if pan-EU Pagero path is delayed."
+    },
+    {
+      "firmId": "bird-bird-privacy-legal",
+      "companyName": "Bird & Bird",
+      "officialWebsite": "https://www.twobirds.com/en/capabilities/practices/privacy-and-data-protection",
+      "countriesCoveredClaimed": [
+        "GB",
+        "IE",
+        "DE",
+        "FR",
+        "NL",
+        "BE",
+        "AT",
+        "ES",
+        "IT",
+        "PT",
+        "PL",
+        "RO",
+        "CZ",
+        "GR",
+        "FI",
+        "SE",
+        "DK",
+        "US"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "Privacy & data protection / GDPR",
+        "Technology & commercial counsel",
+        "Food & beverage regulatory (sector practice)",
+        "Article 27 representative services (via privacy solutions — confirm in engagement)"
+      ],
+      "relevantCredentialsPublic": [
+        "Chambers-recognized data protection practice (public rankings pages)",
+        "International tech-focused law firm network"
+      ],
+      "publicContactChannel": "https://www.twobirds.com/en/capabilities/practices/privacy-and-data-protection (office contact)",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "MEDIUM",
+      "independenceRisk": "MEDIUM",
+      "pricingModelPublic": "Law firm time/matter quote",
+      "sourceLinks": [
+        "https://www.twobirds.com/en/capabilities/practices/privacy-and-data-protection",
+        "https://www.twobirds.com/en/capabilities/practices/compliance-and-disputes/food-and-beverage-regulatory",
+        "https://chambers.com/department/bird-bird-data-protection-global-2:1113:80:1:35"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "privacy-* (EEA/UK + coordinated addenda)",
+        "legal-* (marketplace/commercial where qualified locally)"
+      ],
+      "lane": "privacy",
+      "regionGroups": [
+        "Nordic",
+        "DACH",
+        "Benelux",
+        "SouthEU",
+        "CEE",
+        "UKIE",
+        "USA"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Preferred privacy umbrella + strong legal candidate. Norway/Switzerland/Canada counsel coverage must be confirmed in engagement letter before assigning those scopes. No invented local partners."
+    },
+    {
+      "firmId": "semantix-transperfect",
+      "companyName": "Semantix (TransPerfect family)",
+      "officialWebsite": "https://www.semantix.com/",
+      "countriesCoveredClaimed": [],
+      "localesCoveredClaimed": "ALL_24_CANDIDATE",
+      "services": [
+        "Software/app localization",
+        "Website translation",
+        "Native linguistic review",
+        "Legal/marketing adaptation"
+      ],
+      "relevantCredentialsPublic": [
+        "Nordic LSP; part of TransPerfect family (public)"
+      ],
+      "publicContactChannel": "https://www.semantix.com/ · https://www.transperfect.com/contact",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "LOW",
+      "independenceRisk": "LOW",
+      "pricingModelPublic": "Quote-based by language pair / volume",
+      "sourceLinks": [
+        "https://www.semantix.com/",
+        "https://www.semantix.com/solutions",
+        "https://www.transperfect.com/contact"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "native-* (24 locales)"
+      ],
+      "lane": "native_localization",
+      "regionGroups": [
+        "multilingual localization"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Preferred localization vendor to staff native reviewers for all 24 locales. Named native reviewers still required per locale; vendor PM is not a substitute for native approval identity."
+    },
+    {
+      "firmId": "transperfect-direct",
+      "companyName": "TransPerfect",
+      "officialWebsite": "https://www.transperfect.com/",
+      "countriesCoveredClaimed": [],
+      "localesCoveredClaimed": "ALL_24_CANDIDATE",
+      "services": [
+        "Enterprise localization",
+        "GlobalLink TMS",
+        "Linguistic QA / UI review"
+      ],
+      "relevantCredentialsPublic": [
+        "Global LSP; 200+ languages claimed publicly"
+      ],
+      "publicContactChannel": "https://www.transperfect.com/contact · +1 212.689.5555 (NY HQ public)",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "LOW",
+      "independenceRisk": "LOW",
+      "pricingModelPublic": "Enterprise quote",
+      "sourceLinks": [
+        "https://www.transperfect.com/",
+        "https://www.transperfect.com/contact"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "native-* backup"
+      ],
+      "lane": "native_localization",
+      "regionGroups": [
+        "multilingual localization"
+      ],
+      "rankInLane": 2,
+      "roleInShortlist": "BACKUP",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Backup / direct enterprise path if Semantix Nordic intake is insufficient."
+    },
+    {
+      "firmId": "ncc-group-security",
+      "companyName": "NCC Group",
+      "officialWebsite": "https://www.nccgroup.com/technical-assurance",
+      "countriesCoveredClaimed": [
+        "ALL"
+      ],
+      "localesCoveredClaimed": [],
+      "services": [
+        "Penetration testing",
+        "Application security assessment",
+        "Technical assurance"
+      ],
+      "relevantCredentialsPublic": [
+        "CREST member company claims (public)",
+        "NCSC/CHECK-related accreditations (public marketing)"
+      ],
+      "publicContactChannel": "https://www.nccgroup.com/technical-assurance (inquiry / scoping)",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "LOW",
+      "independenceRisk": "LOW",
+      "pricingModelPublic": "Scoped engagement / day-rate models (public marketplace listings exist historically)",
+      "sourceLinks": [
+        "https://www.nccgroup.com/technical-assurance",
+        "https://www.nccgroup.com/penetration-testing-services/"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "security-global"
+      ],
+      "lane": "security",
+      "regionGroups": [
+        "global"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "DRAFT_READY",
+      "notes": "Preferred independent security reviewer for review-ops access/RLS/audit/secret-ref model. Scope must exclude production secrets and customer PII."
+    },
+    {
+      "firmId": "internal-product-owner",
+      "companyName": "Lunchportalen (internal product owner)",
+      "officialWebsite": "https://lunchportalen.no",
+      "countriesCoveredClaimed": [
+        "ALL"
+      ],
+      "localesCoveredClaimed": "ALL_24_CANDIDATE",
+      "services": [
+        "PRODUCT_OWNER_APPROVAL for all-or-nothing global cutover"
+      ],
+      "relevantCredentialsPublic": [
+        "Named product owner / release authority (owner-supplied identity)"
+      ],
+      "publicContactChannel": "Owner decision in Cursor chat / Superadmin product-owner approval path",
+      "estimatedScopeFit": "HIGH",
+      "conflictRisk": "MEDIUM",
+      "independenceRisk": "HIGH",
+      "pricingModelPublic": "N/A (internal)",
+      "sourceLinks": [
+        "docs/rc/PHASE15G3D-OWNER-ACTION-PACKET.md"
+      ],
+      "confidence": "HIGH",
+      "recommendedScopes": [
+        "product-owner-global"
+      ],
+      "lane": "product_owner",
+      "regionGroups": [
+        "global"
+      ],
+      "rankInLane": 1,
+      "roleInShortlist": "PREFERRED",
+      "outreachStatus": "OWNER_HOLD",
+      "notes": "Self-approval of tax/legal/privacy packs is forbidden. Product-owner seat is cutover gate only."
+    }
+  ],
+  "preferredByLane": {
+    "tax": [
+      "deloitte-global-indirect-tax",
+      "azets-nordic",
+      "avalara-na"
+    ],
+    "legal": [
+      "bird-bird-privacy-legal"
+    ],
+    "invoice_einvoice": [
+      "thomson-reuters-pagero"
+    ],
+    "privacy": [
+      "bird-bird-privacy-legal"
+    ],
+    "native_localization": [
+      "semantix-transperfect"
+    ],
+    "security": [
+      "ncc-group-security"
+    ],
+    "product_owner": [
+      "internal-product-owner"
+    ]
+  },
+  "scopesCoveredByPreferredPlan": [
+    "tax×21 (Deloitte umbrella + Azets Nordic + Avalara US/CA)",
+    "legal×21 (Bird & Bird + confirmed local addenda — Norway/CH/CA TBD in engagement)",
+    "invoice/e-invoice×21 (Pagero/TR + Conta NO backup)",
+    "privacy×21 (Bird & Bird)",
+    "native×24 (Semantix/TransPerfect)",
+    "security×1 (NCC Group)",
+    "product_owner×1 (internal)"
+  ],
+  "scopesStillUncoveredUntilEngagement": [
+    "All 110 scopes remain REVIEWER_REQUIRED until named humans are onboarded",
+    "legal-NO / privacy-NO / legal-CH / privacy-CH / legal-CA / privacy-CA require explicit engagement confirmation"
+  ],
+  "note": "Registry contains organizations only. No fictitious reviewer identities. No outreach sent."
+}

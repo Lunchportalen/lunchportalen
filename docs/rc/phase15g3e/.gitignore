@@ -1,0 +1,4 @@
+﻿browser-profile-forms/
+form-screenshots/
+*.png
+.env*
