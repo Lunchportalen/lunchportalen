@@ -42,8 +42,12 @@ jobs:
       SANITY_DATASET: staging
       SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+      NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
       LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
       APP_VERSION: ${{ inputs.app_sha || github.sha }}
+      RC_MODE: "true"
 
     steps:
       - name: Refuse production refs
@@ -92,18 +96,26 @@ jobs:
       - name: Start staging runtime of exact SHA
         run: |
           set -euo pipefail
+          : "${SYSTEM_MOTOR_SECRET:?missing}"
+          : "${CRON_SECRET:?missing}"
           npx next start -H 127.0.0.1 -p 3000 > /tmp/next-start.log 2>&1 &
           echo $! > /tmp/next.pid
-          for i in $(seq 1 60); do
-            if curl -fsS "http://127.0.0.1:3000/api/health" >/tmp/health.json; then
-              echo "health_ok"
-              cat /tmp/health.json
+          for i in $(seq 1 90); do
+            CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" "http://127.0.0.1:3000/api/health" || true)
+            echo "health_attempt=${i} http=${CODE}"
+            if [ "$CODE" = "200" ]; then
+              python3 - <<'PY'
+          import json
+          h=json.load(open("/tmp/health.json",encoding="utf-8"))
+          print("ok=", h.get("ok"), "version=", (h.get("data") or {}).get("version") or h.get("version"))
+          PY
               exit 0
             fi
             sleep 2
           done
           echo "::error::health timeout"
-          cat /tmp/next-start.log || true
+          cat /tmp/health.json || true
+          tail -n 200 /tmp/next-start.log || true
           exit 1
 
       - name: HTTP certification (63 + 24 + canaries)
