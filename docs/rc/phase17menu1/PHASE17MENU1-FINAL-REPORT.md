@@ -9,7 +9,7 @@ Native culinary approvals remain **0/21** (not claimed). Production deploy / mig
 | Field | Value |
 |-------|--------|
 | Branch | `release/global-menu-universes-21` |
-| Release SHA | see `git rev-parse HEAD` after commit below |
+| Release SHA | `6c142a1f1b1b84a3f880f4ceb4caa43e4e38403d` |
 | Worktree | cleaned after 17MENU.1 seed evidence commit |
 | Staging project | `uigxsboqeruxflgzqztl` |
 | Staging migrations | `phase17menu_package_entitlements_canonical` + `phase17menu1_enterprise_contracts_staging` **applied** |

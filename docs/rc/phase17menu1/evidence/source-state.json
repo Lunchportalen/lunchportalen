@@ -1,7 +1,7 @@
 ﻿{
   "PHASE17MENU_WORKTREE": "CLEAN_AFTER_SEED_COMMIT",
   "branch": "release/global-menu-universes-21",
-  "PHASE17MENU_RELEASE_SHA": "PENDING_COMMIT",
+  "PHASE17MENU_RELEASE_SHA": "6c142a1f1b1b84a3f880f4ceb4caa43e4e38403d",
   "PHASE17MENU_BASELINE_SHA": "65fe1953203d92f239c5e340d5064d4b13a58e07",
   "production_sha_untouched": "771a4207e9743fd232971eb95ecc27e45723a89d",
   "staging_project": "uigxsboqeruxflgzqztl",
