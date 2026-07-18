@@ -44,7 +44,21 @@ async function main() {
     useCdn: false,
   });
 
-  const docs: Record<string, unknown>[] = [];
+  type MealIdeaSeed = {
+    _id: string;
+    _type: "mealIdea";
+    countryCode: string;
+    menuProfileId: string;
+    dishKey: { _type: "slug"; current: string };
+    title: string;
+    category: string;
+    description: string;
+    tags: string[];
+    allergens: string[];
+    costTier: string;
+    isActive: boolean;
+  };
+  const docs: MealIdeaSeed[] = [];
   for (const cc of COUNTRIES) {
     const bankPath = path.join(
       process.cwd(),
