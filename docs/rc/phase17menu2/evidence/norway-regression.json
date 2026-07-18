@@ -1,21 +1,10 @@
 {
   "phase": "17MENU.2",
   "TECHNICAL_PASS": false,
-  "PRODUCTION_MUTATIONS": 0,
+  "norway_live_regression": "NOT_RUN_AUTH_GATED",
+  "production_mutations": 0,
   "production_deploy_migration": "NOT_APPROVED",
-  "production_health_http": {
-    "url": "https://app.lunchportalen.no/api/health",
-    "ok": true,
-    "note": "Read-only probe; no mutations"
-  },
-  "preview_health_http": {
-    "url": "https://lunchportalen-3nq3g7kmc-lunchportalen.vercel.app/api/health",
-    "status": 302,
-    "gate": "vercel_sso"
-  },
-  "norway_live_menu_http_regression": "NOT_RUN_PREVIEW_AUTH_GATED",
-  "OTHER_COUNTRIES_PRODUCTION_DISABLED": "CLAIMED_BASELINE_UNVERIFIED_VIA_LIVE_HTTP",
-  "MVA_THRESHOLD_AUTOMATION_LIVE": "BASELINE_CLAIM_NOT_RE_PROBED_IN_17MENU2",
-  "STRIPE": "OFF_BASELINE",
+  "other_countries_disabled_claim": "UNVERIFIED_LIVE",
+  "note": "Norway live HTTP regression blocked by preview auth gate; production untouched.",
   "redacted": true
 }

@@ -11,7 +11,9 @@
     "lunchCategory_with_countryCode": 126,
     "lunchCategory_with_items": 105,
     "warm_meal_empty_items": 21,
-    "mealIdea": 0,
+    "mealIdea": 1155,
+    "mealIdea_countries": 21,
+    "mealIdea_not_generation_eligible_marker": 1155,
     "recipe_docs": 0,
     "marketProfile": 0,
     "menuDay": 274,
@@ -21,11 +23,13 @@
   "gates": {
     "COUNTRY_MENU_UNIVERSE_CONTENT": "0/21",
     "COUNTRIES_WITH_CATEGORY_SHELL_ONLY": 21,
-    "COUNTRIES_WITHOUT_WARM_RECIPES": 21,
-    "WARM_BANKS_PRESENT_IN_SANITY": "0/21",
-    "mealIdea_count": 0,
+    "COUNTRIES_WITHOUT_PRODUCTION_READY_WARM_RECIPES": 21,
+    "WARM_BANKS_PRESENT_IN_SANITY": "21/21",
+    "WARM_BANKS_GENERATION_ELIGIBLE": "0/21",
+    "mealIdea_count": 1155,
     "recipe_docs": 0,
-    "marketProfile": 0
+    "marketProfile": 0,
+    "empty_warm_category_shells": 21
   },
   "category_shell_pattern": "/^[A-Z]{2} (Sandwich|Salad box|Sushi|Poke bowl|Thai) [AB]$/",
   "countries": [
@@ -305,8 +309,9 @@
   ],
   "notes": [
     "Category items are shells like 'AT Sandwich A' — not native menu universes.",
-    "warm_meal / varmrett categories have empty items for all 21 countries.",
-    "mealIdea / recipe / marketProfile counts are 0 in Sanity staging."
+    "warm_meal / varmrett lunchCategory items remain empty (warm bank is mealIdea).",
+    "mealIdea warm banks seeded (1155/21) but marked NOT generation-eligible until full recipe contract.",
+    "recipe / marketProfile document types remain 0."
   ],
   "redacted": true,
   "secrets": 0,

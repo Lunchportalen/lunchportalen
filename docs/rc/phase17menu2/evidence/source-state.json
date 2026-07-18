@@ -1,8 +1,8 @@
 {
   "phase": "17MENU.2",
   "branch": "release/global-menu-universes-21",
-  "branch_tip": "1061142b705fb78b772343636b9d220be02f923d",
-  "git_HEAD": "1061142b705fb78b772343636b9d220be02f923d",
+  "branch_tip_baseline": "1061142b705fb78b772343636b9d220be02f923d",
+  "git_HEAD": "6ce4b01c9208e707d7f8b9a466afe80b8608b274",
   "sanity": {
     "project": "4udoq5d8",
     "dataset": "staging"

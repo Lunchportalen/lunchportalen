@@ -1,0 +1,14 @@
+{
+  "projectId": "4udoq5d8",
+  "dataset": "staging",
+  "seededAt": "2026-07-18T14:06:45.000Z",
+  "source": "docs/rc/phase17menu1/evidence/warm-banks",
+  "expectedDocs": 1155,
+  "mealIdeaWithCountryCode": 1155,
+  "uniqueCountryCodes": 21,
+  "queries": {
+    "mealIdeaWithCountryCode": "count(*[_type==\"mealIdea\" && defined(countryCode)])",
+    "uniqueCountryCodes": "count(array::unique(*[_type==\"mealIdea\" && defined(countryCode)].countryCode))",
+    "perspective": "published"
+  }
+}

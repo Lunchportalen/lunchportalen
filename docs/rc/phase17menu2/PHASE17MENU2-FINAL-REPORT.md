@@ -14,7 +14,7 @@ Working decision until live gates pass: **`GLOBAL_MENU_UNIVERSES_REVIEW_READY`**
 | Field | Value |
 |-------|--------|
 | Branch | `release/global-menu-universes-21` |
-| Branch tip | `1061142b705fb78b772343636b9d220be02f923d` |
+| Branch tip | see `git rev-parse HEAD` (baseline open: `1061142b`) |
 | Sanity project / dataset | `4udoq5d8` / `staging` |
 | Staging Supabase | `uigxsboqeruxflgzqztl` |
 | Production Supabase | `hkpokyapzarefrgqzkos` (**not mutated**) |
@@ -31,7 +31,8 @@ Working decision until live gates pass: **`GLOBAL_MENU_UNIVERSES_REVIEW_READY`**
 | COUNTRY_MENU_UNIVERSE_CONTENT | **0/21** |
 | COUNTRIES_WITH_CATEGORY_SHELL_ONLY | **21** |
 | COUNTRIES_WITHOUT_WARM_RECIPES | **21** |
-| WARM_BANKS_PRESENT_IN_SANITY | **0/21** |
+| WARM_BANKS_PRESENT_IN_SANITY | **21/21** (1155 `mealIdea` stubs) |
+| WARM_BANKS_GENERATION_ELIGIBLE | **0/21** (not production-ready) |
 | REAL_CITATION_AUDIT | **FAIL** (synthesized observations) |
 | HTTP_PACKAGE_FLOWS | **0/63** |
 | LIVE_LOCALE | **0/24** |
@@ -52,7 +53,8 @@ Working decision until live gates pass: **`GLOBAL_MENU_UNIVERSES_REVIEW_READY`**
 | `lunchCategory` with `countryCode` | 126 |
 | with items | 105 |
 | `varmrett` / warm empty items | 21 |
-| `mealIdea` | 0 |
+| `mealIdea` with country | 1155 (21 countries) |
+| generation-eligible warm recipes | 0 |
 | recipe docs | 0 |
 | `marketProfile` | 0 |
 | `menuDay` | 274 |
