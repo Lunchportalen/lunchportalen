@@ -31,6 +31,8 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/smoke/_first-menu-order-smoke.mjs",
   // PHASE 17MENU.2B — staging-only synthetic matrix + HTTP cert (uigx refuse-prod).
   "scripts/phase17menu2b/",
+  // PHASE 17MENU.2D — staging-only capacity/ledger/i18n cert (uigx refuse-prod).
+  "scripts/phase17menu2d/",
 
   // #92 standing authz gate — validates staging integration env before vitest (no service-role usage here).
   "scripts/ci/run-suspend-rpc-integration.mjs",
