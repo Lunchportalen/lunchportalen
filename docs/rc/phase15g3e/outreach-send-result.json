@@ -1,0 +1,74 @@
+{
+  "ranAt": "2026-07-16T22:47:31.118Z",
+  "from": "Lunchportalen <post@lunchportalen.no>",
+  "sent": [
+    {
+      "firmId": "deloitte-global-indirect-tax",
+      "to": "fvestli@deloitte.no",
+      "threadRef": "LP-15G3E-deloitte-global-indirect-tax-b88aaf99780e",
+      "providerMessageId": "<d8ddb3b2-8fab-f191-3cc7-f758f03de906@lunchportalen.no>",
+      "smtpResponse": "250 OK id=1wkUrb-000000017i6-2DG8",
+      "sentAt": "2026-07-16T22:47:30.786Z",
+      "followUpDueAt": "2026-07-20T22:47:30.786Z",
+      "status": "SENT"
+    },
+    {
+      "firmId": "bdo-dach-vat",
+      "to": "info@bdo.at",
+      "threadRef": "LP-15G3E-bdo-dach-vat-b88aaf99780e",
+      "providerMessageId": "<fb19ead5-9c3c-dcf7-73f1-4d2d19fba252@lunchportalen.no>",
+      "smtpResponse": "250 OK id=1wkUrb-000000017iB-2v55",
+      "sentAt": "2026-07-16T22:47:30.955Z",
+      "followUpDueAt": "2026-07-20T22:47:30.955Z",
+      "status": "SENT"
+    },
+    {
+      "firmId": "conta-as-peppol-no",
+      "to": "peppol@conta.no",
+      "threadRef": "LP-15G3E-conta-as-peppol-no-b88aaf99780e",
+      "providerMessageId": "<74b1bf63-9091-f8d0-8081-1294e899768f@lunchportalen.no>",
+      "smtpResponse": "250 OK id=1wkUrb-000000017iI-3bgU",
+      "sentAt": "2026-07-16T22:47:31.118Z",
+      "followUpDueAt": "2026-07-20T22:47:31.118Z",
+      "status": "SENT"
+    }
+  ],
+  "blocked": [
+    {
+      "firmId": "ey-indirect-tax",
+      "status": "WEB_FORM_ONLY"
+    },
+    {
+      "firmId": "azets-nordic",
+      "status": "WEB_FORM_ONLY"
+    },
+    {
+      "firmId": "avalara-na",
+      "status": "WEB_FORM_ONLY"
+    },
+    {
+      "firmId": "thomson-reuters-pagero",
+      "status": "WEB_FORM_ONLY"
+    },
+    {
+      "firmId": "bird-bird-privacy-legal",
+      "status": "WEB_FORM_ONLY"
+    },
+    {
+      "firmId": "semantix-transperfect",
+      "status": "WEB_FORM_ONLY"
+    },
+    {
+      "firmId": "transperfect-direct",
+      "status": "WEB_FORM_ONLY"
+    },
+    {
+      "firmId": "ncc-group-security",
+      "status": "WEB_FORM_ONLY"
+    }
+  ],
+  "followUpPolicy": {
+    "firstDays": 4,
+    "secondDays": 5
+  }
+}

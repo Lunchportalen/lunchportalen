@@ -1,0 +1,111 @@
+{
+  "writtenAt": "2026-07-17T08:24:48.044Z",
+  "decision": "DURABLE_PIPELINE_ACTIVE",
+  "last": {
+    "runId": "local-2026-07-17T08-24-44-951Z-12dc4df1",
+    "started_at": "2026-07-17T08:24:44.953Z",
+    "completed_at": "2026-07-17T08:24:47.908Z",
+    "replies_found": 0,
+    "messages_classified": 0,
+    "follow_ups_sent": 0,
+    "failures": [],
+    "next_due_action": "2026-07-22T22:47:30.786Z",
+    "secrets_exposed": 0,
+    "mailbox": {
+      "imap": "PASS",
+      "smtp": "PASS",
+      "error": null
+    },
+    "secretSource": "file:.env.local",
+    "quotes_waiting": 0,
+    "owner_batch": "WAITING_FOR_QUOTES",
+    "notify_owner": false,
+    "follow_up_dates": {
+      "firstDueVerified": true,
+      "secondDueVerified": true,
+      "firstDue": "2026-07-22",
+      "secondDue": "2026-07-29",
+      "calendar": "business_days_mon_fri",
+      "emailThreadRetention": "same thread via In-Reply-To / References",
+      "backupAfterSecondOnly": true
+    },
+    "duplicate_sends": 0,
+    "Decision": "DURABLE_PIPELINE_ACTIVE"
+  },
+  "heartbeat": {
+    "scheduler": {
+      "type": "GitHub Actions schedule",
+      "workflow": "phase15g3e-response-pipeline.yml",
+      "cadence": "every 3 hours (cron: 0 */3 * * *)",
+      "cron": "0 */3 * * *",
+      "enabled": true,
+      "localTerminalDependency": "NONE",
+      "lastSuccessfulRun": "2026-07-17T08:24:47.908Z",
+      "nextScheduledRun": "2026-07-17T09:00:00.000Z"
+    },
+    "mailbox": {
+      "imap": "PASS",
+      "smtp": "PASS",
+      "secretSource": "file:.env.local"
+    },
+    "dueFollowUps": [
+      {
+        "firmId": "deloitte-global-indirect-tax",
+        "next": "2026-07-22T22:47:30.786Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "bdo-dach-vat",
+        "next": "2026-07-22T22:47:30.955Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "conta-as-peppol-no",
+        "next": "2026-07-22T22:47:31.118Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "thomson-reuters-pagero",
+        "next": "2026-07-23T00:20:58.752Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "azets-nordic",
+        "next": "2026-07-23T00:38:01.461Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "bird-bird-privacy-legal",
+        "next": "2026-07-23T07:48:10.967Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "ncc-group-security",
+        "next": "2026-07-23T07:48:10.967Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "semantix-transperfect",
+        "next": "2026-07-23T07:48:10.967Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "transperfect-direct",
+        "next": "2026-07-23T07:48:10.967Z",
+        "status": "SCHEDULED"
+      },
+      {
+        "firmId": "ey-indirect-tax",
+        "next": "2026-07-23T07:48:10.967Z",
+        "status": "SCHEDULED"
+      }
+    ],
+    "quotesWaiting": 0,
+    "failuresRequiringAction": [],
+    "secretsExposed": 0,
+    "productionLocks": "ACTIVE",
+    "stripe": "OFF",
+    "updatedAt": "2026-07-17T08:24:47.927Z",
+    "runId": "local-2026-07-17T08-24-44-951Z-12dc4df1"
+  }
+}

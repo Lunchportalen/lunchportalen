@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "firmId": "ey-indirect-tax",
+      "lastClassification": "FORM_CONFIRMATION_ACK",
+      "lastMessageId": "seed:ey-indirect-tax:contact.us@ey.com",
+      "lastFrom": "contact.us@ey.com",
+      "lastSubject": "Thomas Andre, thank you for your message",
+      "updatedAt": "2026-07-17T08:15:43.367Z"
+    },
+    {
+      "firmId": "transperfect-direct",
+      "lastClassification": "FORM_CONFIRMATION_ACK",
+      "lastMessageId": "seed:transperfect-direct:Maria@mail.transperfect.com",
+      "lastFrom": "Maria@mail.transperfect.com",
+      "lastSubject": "Thank you for reaching out.",
+      "updatedAt": "2026-07-17T08:15:43.367Z"
+    },
+    {
+      "firmId": "semantix-transperfect",
+      "lastClassification": "FORM_CONFIRMATION_ACK",
+      "lastMessageId": "seed:semantix-transperfect:julia.e@semantix.com",
+      "lastFrom": "julia.e@semantix.com",
+      "lastSubject": "Thank you for your request!",
+      "updatedAt": "2026-07-17T08:15:43.367Z"
+    }
+  ]
+}

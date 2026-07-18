@@ -1,0 +1,34 @@
+﻿name: phase16no3-delete-recovery-supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      recovery_project_ref:
+        required: true
+        default: "msecmoqfncvxrucnlpmm"
+
+permissions:
+  contents: read
+
+jobs:
+  delete_recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete recovery Supabase project only
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ inputs.recovery_project_ref }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${SUPABASE_ACCESS_TOKEN}"
+          case "$REF" in
+            hkpokyapzarefrgqzkos|uigxsboqeruxflgzqztl) echo "::error::refused"; exit 1 ;;
+          esac
+          test "$REF" = "msecmoqfncvxrucnlpmm"
+          CODE=$(curl -sS -o /tmp/del.json -w "%{http_code}" -X DELETE \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H "Accept: application/json" \
+            "https://api.supabase.com/v1/projects/${REF}")
+          echo "http_status=${CODE}"
+          head -c 200 /tmp/del.json || true
+          test "$CODE" = "200" -o "$CODE" = "204"
