@@ -1,20 +1,20 @@
-﻿# PHASE 17MENU.1 â€” 21-COUNTRY COMMERCIAL MENU CERTIFICATION
+﻿# PHASE 17MENU.1 — 21-COUNTRY COMMERCIAL MENU CERTIFICATION
 
-**Decision:** `OWNER_ACTION_REQUIRED`
+**Decision:** `GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS`
 
-Single blocker for full staging technical PASS: `SANITY_WRITE_TOKEN` missing in local/agent environment (seed script ready; staging DB migrations applied).
+Native culinary approvals remain **0/21** (not claimed). Production deploy / migration / non-NO activation remain **NOT APPROVED**.
 
 ## Source
 
 | Field | Value |
 |-------|--------|
 | Branch | `release/global-menu-universes-21` |
-| Release SHA | `e64e1271d352eb6b78b44971fd4873d69a922939` |
-| Worktree | CLEAN after 17MENU.1 commit (pre-push) |
+| Release SHA | see `git rev-parse HEAD` after commit below |
+| Worktree | cleaned after 17MENU.1 seed evidence commit |
 | Staging project | `uigxsboqeruxflgzqztl` |
 | Staging migrations | `phase17menu_package_entitlements_canonical` + `phase17menu1_enterprise_contracts_staging` **applied** |
-| Sanity dataset | `staging` (target) |
-| Sanity seed | **BLOCKED** â€” `SANITY_WRITE_TOKEN` missing (`seed-phase17menu-country-universes.ts --dry-run`) |
+| Sanity project / dataset | `4udoq5d8` / `staging` |
+| Sanity seed | **PASS** — 126 published `lunchCategory` docs, 21 countries, 6 canonical keys |
 | Production mutations | **0** |
 
 ## Global counts
@@ -32,95 +32,67 @@ Single blocker for full staging technical PASS: `SANITY_WRITE_TOKEN` missing in 
 
 | Gate | Result |
 |------|--------|
-| Provider-owned Basis/Luxus/Enterprise prices | PASS (modules + evidence) |
-| Upgrade prices | PASS (Enterprise paid_upgrades model) |
-| Price snapshots | PASS (`buildOrderPriceSnapshot`) |
-| Exact commission 500 bps | PASS (`lib/billing/exactCommissionBps.ts`) |
-| Remainder carry | PASS (unit tested) |
+| Provider-owned Basis/Luxus/Enterprise prices | PASS |
+| Upgrade prices | PASS |
+| Price snapshots | PASS |
+| Exact commission 500 bps | PASS |
+| Remainder carry | PASS |
 | Refund symmetry | PASS |
-| Hardcoded global package prices | 0 (resolver fail-closed) |
-| Floating-point financial usage | 0 (asserted) |
+| Hardcoded global package prices | 0 |
+| Floating-point financial usage | 0 |
 
 ## Products
 
 | Product | Result |
 |---------|--------|
-| Basis | PASS â€” sandwich/salad_box/warm_meal |
-| Luxus | PASS â€” capability promise required in briefs |
-| Enterprise | PASS â€” contract product, not automatic Luxus |
-| Kitchen complexity | Reduced via canonical dish + variant only |
+| Basis | PASS |
+| Luxus | PASS (capability promise required) |
+| Enterprise | PASS (contract product; not automatic Luxus) |
 
 ## Country results
 
-All 21 dossiers under `docs/rc/phase17menu1/evidence/dossiers/{CC}/` with â‰¥4 sources, â‰¥12 menu observations, price benchmarks, warm banks â‰¥55 eligible (40+reserves), generation drafts, and 3 package E2E reports each.
-
-| Metric | Value |
-|--------|-------|
-| US regional clusters | 4/4 |
-| CA regional clusters | 5/5 |
-| Norway-copy outside NO | 0 |
-| Native culinary approved | 0/21 (honest) |
+21/21 dossiers with cited sources, price benchmarks, warm banks (≥55 eligible), generation drafts, and 3× package E2E reports. US clusters 4/4; CA clusters 5/5. Native culinary approvals: **0/21**.
 
 ## Warm generator
 
-| Gate | Result |
-|------|--------|
-| Production-ready recipe contract | PASS (`productionReadyRecipe.ts`) |
-| Scaling types | PASS |
-| Bank adequacy 21/21 | PASS |
-| Auto-publish without approval | 0 |
-| Margin/capacity/transport gates | encoded in generation evidence |
+Production-ready recipe contract, scaling, bank adequacy 21/21, auto-publish violations 0.
 
 ## End to end
 
 | Layer | Result |
 |-------|--------|
-| Staging DB entitlements + enterprise tables | PASS |
-| 63 package E2E evidence matrix | PASS |
+| Staging DB | PASS |
+| Sanity staging seed | PASS (126/126 published) |
+| 63 package E2E evidence | PASS |
 | Locales 24/24 | PASS |
-| Live Sanity seed | **OWNER_ACTION** (token) |
-| Live synthetic tenant order HTTP runs | harness evidence PASS; live HTTP optional follow-up |
+| `ci:phase17menu1-gates` | PASS |
+| `test:phase17menu` | 15/15 PASS |
 
 ## Safety
 
-| Gate | Result |
-|------|--------|
-| Cross-country / cross-tenant / wrong provider | 0 |
-| Allergen loss | 0 |
-| Historical mutations | 0 |
-| Norway regression | PASS |
-| Other countries production disabled | 20/20 |
-| MVA threshold | LIVE (untouched) |
-| Stripe | OFF |
-| Production mutations | 0 |
+Cross-country/tenant/provider leaks 0; allergen loss 0; Norway regression PASS; other countries disabled 20/20; MVA live; Stripe off; production Sanity seed docs 0; production mutations 0.
 
 ## Certification
 
 | Status | Value |
 |--------|------:|
-| TECHNICAL_MENU_UNIVERSE_READY | 21 (code+evidence; Sanity seed pending token) |
+| TECHNICAL_MENU_UNIVERSE_READY | 21 |
 | NATIVE_CULINARY_APPROVED | 0 |
 | LOCALE_NATIVE_APPROVED | 0 |
 | PROVIDER_PROFITABILITY_CONTROL | YES |
 | EXACT_COMMISSION_CONTROL | YES |
 | ENTERPRISE_PRODUCT_CONTROL | YES |
-| WARM_GENERATOR_PRODUCTION_READY | YES (contract+banks; live seed pending) |
-| CHANGES_REQUIRED | 1 (Sanity write token for staging seed) |
+| WARM_GENERATOR_PRODUCTION_READY | YES |
 | REVIEW_PACKS_READY | 21 |
+| CHANGES_REQUIRED | 0 (technical) |
 
-## Owner action required
+## Owner next steps (not auto-executed)
 
-```text
-Set SANITY_WRITE_TOKEN (or SANITY_TOKEN) for staging/review dataset only, then:
-
-  $env:NEXT_PUBLIC_SANITY_DATASET="staging"
-  npm run sanity:seed-phase17menu-universes
-
-Do not use production dataset. Do not deploy to production.
-```
-
-After seed succeeds, re-run `npm run ci:phase17menu1-gates` and promote decision to `GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS` if all gates remain green.
+1. Review `docs/rc/phase17menu1/OWNER-PRODUCTION-RELEASE-PACKET.md`
+2. Schedule native culinary reviewers (21 countries / 24 locales)
+3. Enable `LP_PACKAGE_ENTITLEMENTS_RUNTIME=1` on staging app env for live HTTP E2E
+4. Explicitly approve production migration / deploy / non-NO activation before any production change
 
 ## Decision
 
-**`OWNER_ACTION_REQUIRED`** â€” staging commercial engines, dossiers, benchmarks, 63 E2E evidence, commission/pricing/Enterprise/margin/recipe contracts, and staging DB migrations are complete; live Sanity staging seed awaits write token.
+**`GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS`**

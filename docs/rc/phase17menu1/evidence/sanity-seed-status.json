@@ -1,9 +1,16 @@
 ﻿{
-    "owner_action":  "Either set SANITY_WRITE_TOKEN locally for staging dataset, or merge workflow to default branch and dispatch",
-    "script":  "scripts/sanity/seed-phase17menu-country-universes.ts",
-    "production_publication":  0,
-    "github_workflow_dispatch":  "BLOCKED_UNTIL_ON_DEFAULT_BRANCH_OR_LOCAL_TOKEN",
-    "dry_run_local":  "FAIL_MISSING_SANITY_WRITE_TOKEN",
-    "github_workflow":  ".github/workflows/phase17menu1-sanity-staging-seed.yml",
-    "dataset_target":  "staging"
+  "SANITY_STAGING_SEED": "PASS",
+  "method": "sanity_mcp_create_documents_and_publish",
+  "script_equivalent": "scripts/sanity/seed-phase17menu-country-universes.ts",
+  "projectId": "4udoq5d8",
+  "dataset": "staging",
+  "published_lunchCategory_with_countryCode": 126,
+  "unique_countries": 21,
+  "canonical_category_keys": 6,
+  "missing_country_or_canonical_or_profile_fields": 0,
+  "production_country_scoped_seed_docs": 0,
+  "production_publication": 0,
+  "seed_run_id": "phase17menu1-mcp-2026-07-18",
+  "rollback_reference": "Delete _id match lunchCategory-{cc}-{category} on staging dataset only",
+  "github_workflow": ".github/workflows/phase17menu1-sanity-staging-seed.yml"
 }

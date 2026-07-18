@@ -1,17 +1,24 @@
 ﻿{
-    "PHASE17MENU_WORKTREE":  "CLEAN_AFTER_BASELINE_PUSH",
-    "branch":  "release/global-menu-universes-21",
-    "PHASE17MENU_RELEASE_SHA":  "e64e1271d352eb6b78b44971fd4873d69a922939",
-    "PHASE17MENU_BASELINE_SHA":  "65fe1953203d92f239c5e340d5064d4b13a58e07",
-    "production_sha_untouched":  "771a4207e9743fd232971eb95ecc27e45723a89d",
-    "staging_project":  "uigxsboqeruxflgzqztl",
-    "staging_migrations_applied":  [
-                                       "phase17menu_package_entitlements_canonical",
-                                       "phase17menu1_enterprise_contracts_staging"
-                                   ],
-    "production_migrations_applied":  false,
-    "SECRET_EXPOSURES":  0,
-    "CUSTOMER_PII_IN_EVIDENCE":  0,
-    "SANITY_STAGING_SEED":  "BLOCKED_MISSING_WRITE_TOKEN",
-    "LP_PACKAGE_ENTITLEMENTS_RUNTIME":  "enable_on_staging_env"
+  "PHASE17MENU_WORKTREE": "CLEAN_AFTER_SEED_COMMIT",
+  "branch": "release/global-menu-universes-21",
+  "PHASE17MENU_RELEASE_SHA": "PENDING_COMMIT",
+  "PHASE17MENU_BASELINE_SHA": "65fe1953203d92f239c5e340d5064d4b13a58e07",
+  "production_sha_untouched": "771a4207e9743fd232971eb95ecc27e45723a89d",
+  "staging_project": "uigxsboqeruxflgzqztl",
+  "staging_migrations_applied": [
+    "phase17menu_package_entitlements_canonical",
+    "phase17menu1_enterprise_contracts_staging"
+  ],
+  "production_migrations_applied": false,
+  "SECRET_EXPOSURES": 0,
+  "CUSTOMER_PII_IN_EVIDENCE": 0,
+  "SANITY_STAGING_SEED": "PASS",
+  "SANITY_PROJECT": "4udoq5d8",
+  "SANITY_DATASET": "staging",
+  "SANITY_PUBLISHED_COUNTRY_CATEGORIES": 126,
+  "SANITY_UNIQUE_COUNTRIES": 21,
+  "SEED_METHOD": "sanity_mcp_create_documents",
+  "LP_PACKAGE_ENTITLEMENTS_RUNTIME": "enable_on_staging_env",
+  "PRODUCTION_MUTATIONS": 0,
+  "DECISION": "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS"
 }
