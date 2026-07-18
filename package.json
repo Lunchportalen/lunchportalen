@@ -131,7 +131,7 @@
     "@sanity/webhook": "^4.0.4",
     "@sentry/nextjs": "^10.53.1",
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.47.6",
+    "@supabase/supabase-js": "2.93.3",
     "eslint-plugin-design-tokens": "file:eslint-plugin-design-tokens",
     "framer-motion": "^12.38.0",
     "fs-extra": "^11.3.4",
