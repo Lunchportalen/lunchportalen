@@ -243,11 +243,13 @@ async function main() {
     for (const pkg of PACKAGES) {
       const coName = `${MARK} ${cc} ${pkg}`;
       const contactEmail = `${cc.toLowerCase()}-${pkg.toLowerCase()}-admin@staging.lunchportalen.test`;
+      // Deterministic reuse by contact_email only — provider_id may change across early seed runs.
       const { data: existingCo } = await admin
         .from("companies")
         .select("id, default_location_id")
         .eq("contact_email", contactEmail)
-        .eq("provider_id", pid)
+        .order("created_at", { ascending: true })
+        .limit(1)
         .maybeSingle();
       let companyId = String(existingCo?.id ?? crypto.randomUUID());
       let locationId = String(existingCo?.default_location_id ?? crypto.randomUUID());
@@ -438,6 +440,13 @@ async function main() {
           location_id: locationId,
           full_name: `${MARK} ${role}`,
         }, { onConflict: "id" });
+        // Stale ACTIVE orders from prior company_id rebinds fail tg_orders_hydrate_core_fields.
+        await admin
+          .from("orders")
+          .update({ status: "CANCELLED", updated_at: new Date().toISOString() })
+          .eq("user_id", uid)
+          .eq("status", "ACTIVE")
+          .in("date", dates);
         // Week/orders gate calls Norway legal acceptances for all employees.
         for (const documentType of ["employee_terms", "privacy_notice"]) {
           const doc = getNorwayDocument(/** @type {any} */ (documentType));

@@ -173,6 +173,14 @@ async function main() {
 
     // Week retrieval (offset covers seeded service dates)
     const week = await httpJson(base, `/api/week?weekOffset=${weekOffset}`, { token, cookie });
+    // Clear any leftover ACTIVE order on the cert date before SET (idempotent seed rebinds).
+    await httpJson(base, "/api/orders", {
+      method: "POST",
+      token,
+      cookie,
+      body: { date: orderDate, action: "cancel" },
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+    });
     const orderBody = {
       date: orderDate,
       action: "set",
@@ -383,6 +391,14 @@ async function main() {
       continue;
     }
     const week = await httpJson(base, `/api/week?weekOffset=${weekOffset}`, { token, cookie, locale });
+    await httpJson(base, "/api/orders", {
+      method: "POST",
+      token,
+      cookie,
+      locale,
+      body: { date: orderDate, action: "cancel" },
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+    });
     const order = await httpJson(base, "/api/orders", {
       method: "POST",
       token,
