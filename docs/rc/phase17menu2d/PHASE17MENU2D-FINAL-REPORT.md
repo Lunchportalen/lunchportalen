@@ -4,9 +4,9 @@
 
 - Branch: `release/global-menu-universes-21`
 - Start SHA: `f08f2a83377262c2da157cba3dfb5aaee280711c`
-- Final SHA: *(set to remote tip after push)*
-- Staging deployed SHA: local Next production build of release branch + staging Supabase `uigxsboqeruxflgzqztl`
-- GHA run IDs: pending workflow `phase17menu2d-staging-cert` after push
+- Final SHA: `6f36945b0d273e0a0baaa1c48827dfdaae23e13c`
+- Staging deployed SHA: local Next production build of `6f36945b` + staging Supabase `uigxsboqeruxflgzqztl` (migrations applied on staging)
+- GHA run IDs: `phase17menu2d-staging-cert` dispatched on push path / workflow_dispatch
 - Worktree: `C:\prosjekter\lunchportalen-16no`
 - Production mutations: **0**
 
