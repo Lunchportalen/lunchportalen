@@ -41,6 +41,10 @@ const CHOICE_SKUS = {
   thai: "thaimat",
 };
 
+/** Must match lp_order_set v_expect_cents tier gates (BASIS/LUXUS/ENTERPRISE). */
+const TIER_PRICE_NOK = { BASIS: 90, LUXUS: 130, ENTERPRISE: 170 };
+const TIER_PRICE_CENTS = { BASIS: 9000, LUXUS: 13000, ENTERPRISE: 17000 };
+
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
 }
@@ -196,7 +200,7 @@ async function main() {
 
     // Price rules per package
     for (const pkg of PACKAGES) {
-      const amount = pkg === "BASIS" ? 8900 : pkg === "LUXUS" ? 11900 : 10900;
+      const amount = TIER_PRICE_CENTS[pkg];
       await admin.from("provider_price_rules").upsert(
         {
           provider_id: pid,
@@ -303,8 +307,8 @@ async function main() {
         await admin.from("companies").update({ default_location_id: locationId }).eq("id", companyId);
       }
 
-      const price =
-        pkg === "BASIS" ? 89 : pkg === "LUXUS" ? 119 : 109;
+      const price = TIER_PRICE_NOK[pkg];
+      const priceCents = TIER_PRICE_CENTS[pkg];
       const { data: existingAg } = await admin
         .from("agreements")
         .select("id")
@@ -334,7 +338,7 @@ async function main() {
           company_id: companyId,
           country_code: cc,
           currency: "NOK",
-          base_price_minor: 10900,
+          base_price_minor: TIER_PRICE_CENTS.ENTERPRISE,
           base_price_version: "17menu2b.v1",
           included_categories: ["warm_meal", "sandwich", "salad_box"],
           included_upgrades: [],
@@ -374,17 +378,23 @@ async function main() {
         for (const sku of skus) {
           const p = productBySku[sku];
           if (!p) continue;
-          await admin.from("menu_service_day_items").insert({
-            menu_service_day_id: msd.id,
-            product_id: p.id,
-            product_name_snapshot: p.name,
-            unit_name_snapshot: "porsjon",
-            offered_price_cents_ex_vat: price * 100,
-            vat_rate_snapshot: 0.15,
-            quantity: 1,
-            sort_order: 10 + i,
-            is_optional: false,
-          });
+          const { error: msdiErr } = await admin.from("menu_service_day_items").upsert(
+            {
+              menu_service_day_id: msd.id,
+              product_id: p.id,
+              product_name_snapshot: p.name,
+              unit_name_snapshot: "porsjon",
+              offered_price_cents_ex_vat: priceCents,
+              vat_rate_snapshot: 0.15,
+              quantity: 1,
+              sort_order: 10 + i,
+              is_optional: false,
+            },
+            { onConflict: "menu_service_day_id,product_id" },
+          );
+          if (msdiErr && !/duplicate|unique/i.test(msdiErr.message)) {
+            throw new Error(`msdi ${cc}/${pkg}/${sku}: ${msdiErr.message}`);
+          }
           i += 1;
         }
       }

@@ -237,7 +237,7 @@ async function main() {
         historicalMutations += 1;
       }
       // restore
-      const restore = co.package === "BASIS" ? 89 : co.package === "LUXUS" ? 119 : 109;
+      const restore = co.package === "BASIS" ? 90 : co.package === "LUXUS" ? 130 : 170;
       await admin.from("agreements").update({ price_per_meal_nok: restore }).eq("company_id", co.company_id);
     }
 
