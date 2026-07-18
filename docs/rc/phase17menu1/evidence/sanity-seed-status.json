@@ -1,7 +1,9 @@
-{
-  "dataset_target": "staging",
-  "script": "scripts/sanity/seed-phase17menu-country-universes.ts",
-  "dry_run": "FAIL_MISSING_SANITY_WRITE_TOKEN",
-  "production_publication": 0,
-  "owner_action": "Provide SANITY_WRITE_TOKEN for staging/review dataset only"
+﻿{
+    "owner_action":  "Either set SANITY_WRITE_TOKEN locally for staging dataset, or merge workflow to default branch and dispatch",
+    "script":  "scripts/sanity/seed-phase17menu-country-universes.ts",
+    "production_publication":  0,
+    "github_workflow_dispatch":  "BLOCKED_UNTIL_ON_DEFAULT_BRANCH_OR_LOCAL_TOKEN",
+    "dry_run_local":  "FAIL_MISSING_SANITY_WRITE_TOKEN",
+    "github_workflow":  ".github/workflows/phase17menu1-sanity-staging-seed.yml",
+    "dataset_target":  "staging"
 }
