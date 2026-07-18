@@ -1,0 +1,700 @@
+{
+  "phase": "17MENU.2D",
+  "staging_ref": "uigxsboqeruxflgzqztl",
+  "COMMISSION_LEDGER_PROOF": "63/63",
+  "COMMISSION_LEDGER_EARN_DIFFERENCE": 0,
+  "COMMISSION_LEDGER_REVERSAL_DIFFERENCE": 0,
+  "DUPLICATE_COMMISSION_EVENTS": 0,
+  "ORPHAN_COMMISSION_EVENTS": 0,
+  "COMMISSION_EVENTS_WITHOUT_EXACT_NUMERATOR": 0,
+  "COMMISSION_EVENTS_WITHOUT_PRICE_VERSION": 0,
+  "REMAINDER_CARRY_PERIODS_TESTED": 3,
+  "COMMISSION_REMAINDER_LOSS": 0,
+  "COMMISSION_SETTLEMENT_IDEMPOTENCY_ERRORS": 0,
+  "FINAL_ROUNDING_ADJUSTMENT_EXPLICIT": "PASS",
+  "flows": [
+    {
+      "country": "NO",
+      "package": "BASIS",
+      "company_id": "e4ad1533-9680-4380-88bf-b4b4c783bee9",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "NO",
+      "package": "LUXUS",
+      "company_id": "432e6f98-5cf6-489b-bdd6-04a89f19158a",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "NO",
+      "package": "ENTERPRISE",
+      "company_id": "4b107145-c440-4e7c-93dd-2b3a8af60fb3",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "SE",
+      "package": "BASIS",
+      "company_id": "58f59cc3-f747-4412-ba20-16f25cfc74af",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "SE",
+      "package": "LUXUS",
+      "company_id": "423da273-0981-4db6-bed8-16be85e82aff",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "SE",
+      "package": "ENTERPRISE",
+      "company_id": "1f3663b5-d391-4c17-a9a7-b2bae96d5e37",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "DK",
+      "package": "BASIS",
+      "company_id": "9675bfe6-d5e3-4ab1-aa97-5a849702b881",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "DK",
+      "package": "LUXUS",
+      "company_id": "6195575b-6253-48b0-9126-38569b7f02af",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "DK",
+      "package": "ENTERPRISE",
+      "company_id": "b32c77ac-584e-4be3-8772-eb610c34f2b4",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "FI",
+      "package": "BASIS",
+      "company_id": "a37fca2a-2ba9-4fe3-80b0-71967cba13cf",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "FI",
+      "package": "LUXUS",
+      "company_id": "bc7786c3-9148-494f-8d82-cffcd4e62440",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "FI",
+      "package": "ENTERPRISE",
+      "company_id": "78727612-4aeb-4df2-a787-edbba1c804ad",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "GB",
+      "package": "BASIS",
+      "company_id": "e7a06923-feca-45d9-9aed-ca32f330a306",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "GB",
+      "package": "LUXUS",
+      "company_id": "9c386e9c-a972-4c8e-a9f8-5d128a172ae2",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "GB",
+      "package": "ENTERPRISE",
+      "company_id": "e9e94aa9-54e3-4c91-a6b0-615c3e4edcc8",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "DE",
+      "package": "BASIS",
+      "company_id": "52f1691c-1044-492b-ab68-67bcce8cfb76",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "DE",
+      "package": "LUXUS",
+      "company_id": "beb41211-b25d-41fa-89e0-9266d1e7d35a",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "DE",
+      "package": "ENTERPRISE",
+      "company_id": "987a5ad8-c1d2-497c-b354-bddd61f44b58",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "FR",
+      "package": "BASIS",
+      "company_id": "0edea194-33cc-4a02-8651-cab0eef7490e",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "FR",
+      "package": "LUXUS",
+      "company_id": "7e44d8a5-b7d6-4ac8-8cc3-1509c26b0cb0",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "FR",
+      "package": "ENTERPRISE",
+      "company_id": "af4b7b54-5e41-4d25-8c16-35b69ad30fba",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "ES",
+      "package": "BASIS",
+      "company_id": "6bf64f46-7dd9-4d8b-88d1-510e6d28a4ab",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "ES",
+      "package": "LUXUS",
+      "company_id": "f58eaf5e-274f-4dc3-a6fe-f22b330891ab",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "ES",
+      "package": "ENTERPRISE",
+      "company_id": "0bb00f23-1c97-4a83-909d-ae1351684726",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "IT",
+      "package": "BASIS",
+      "company_id": "1a436bdf-a348-4f24-be27-bce949c72c18",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "IT",
+      "package": "LUXUS",
+      "company_id": "e940698b-5177-4789-b7f7-86856338889e",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "IT",
+      "package": "ENTERPRISE",
+      "company_id": "e4ee956b-4674-4cc0-a6f8-ed354b0a0321",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "NL",
+      "package": "BASIS",
+      "company_id": "a94bf36a-1cb4-4f51-85bf-12fd2cd7ae4a",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "NL",
+      "package": "LUXUS",
+      "company_id": "a10749e7-dfb1-4341-b158-8090ac8ae61d",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "NL",
+      "package": "ENTERPRISE",
+      "company_id": "42289d87-2bcc-40e3-ae3f-c7c80a8b9573",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "BE",
+      "package": "BASIS",
+      "company_id": "695e7cf9-b4c2-43a0-98c3-b8a987631f66",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "BE",
+      "package": "LUXUS",
+      "company_id": "acc54f6f-cdae-470d-9efa-79d3935eb698",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "BE",
+      "package": "ENTERPRISE",
+      "company_id": "6df4afd2-eb1e-4724-89f5-872e30b1814a",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CH",
+      "package": "BASIS",
+      "company_id": "74468465-6ce7-4765-b720-23ffc79865c7",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CH",
+      "package": "LUXUS",
+      "company_id": "3cc75562-b77c-43e8-bef6-f602b054183d",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CH",
+      "package": "ENTERPRISE",
+      "company_id": "31e3994d-38d3-48bf-ab11-2e34701157cb",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "AT",
+      "package": "BASIS",
+      "company_id": "a36bd1b5-8a38-4508-a540-4d3abc3eeb1a",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "AT",
+      "package": "LUXUS",
+      "company_id": "06c35327-d3b5-4d94-b44f-e19883b162fa",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "AT",
+      "package": "ENTERPRISE",
+      "company_id": "db3305d5-7508-4060-b0b2-aceceb69362b",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "IE",
+      "package": "BASIS",
+      "company_id": "93c12c29-e498-4ae0-9eb5-6c420e41e66b",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "IE",
+      "package": "LUXUS",
+      "company_id": "70d36a02-7323-4657-9365-3c0c7ddf50ff",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "IE",
+      "package": "ENTERPRISE",
+      "company_id": "7b43e2b6-4845-406f-b571-ca012c5ebd03",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "PL",
+      "package": "BASIS",
+      "company_id": "73d8398f-0779-43a2-b544-4aae5957f53e",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "PL",
+      "package": "LUXUS",
+      "company_id": "e0b01782-a8e5-4641-ba9c-8957170050fe",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "PL",
+      "package": "ENTERPRISE",
+      "company_id": "df77215d-51ed-4ac3-b378-db55facd75d6",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "RO",
+      "package": "BASIS",
+      "company_id": "970178d5-315f-4e30-9752-523153447332",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "RO",
+      "package": "LUXUS",
+      "company_id": "75b07367-3344-41a6-8ef5-1bfe39527ff2",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "RO",
+      "package": "ENTERPRISE",
+      "company_id": "d34a3382-1860-4711-9f98-4c0e7963a51d",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CZ",
+      "package": "BASIS",
+      "company_id": "e2013e87-b74c-48d9-beca-a3fdfa868161",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CZ",
+      "package": "LUXUS",
+      "company_id": "0d010630-c792-4ceb-8f9c-e5c15d7950c5",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CZ",
+      "package": "ENTERPRISE",
+      "company_id": "7403a190-456e-41b7-bce3-295a5382d69a",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "PT",
+      "package": "BASIS",
+      "company_id": "97e1021f-a269-4ec7-a900-6e4d8bad9414",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "PT",
+      "package": "LUXUS",
+      "company_id": "a330fb03-82e9-407e-b37e-f7d7933b2ef2",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "PT",
+      "package": "ENTERPRISE",
+      "company_id": "dc8510d7-a6fe-41fd-82e2-8856f9c470a2",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "GR",
+      "package": "BASIS",
+      "company_id": "d8d18625-eaee-4bdb-9c86-80bdd2682995",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "GR",
+      "package": "LUXUS",
+      "company_id": "8eda3222-5385-467d-abfd-342635c1982e",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "GR",
+      "package": "ENTERPRISE",
+      "company_id": "dfcd28fd-292c-4694-96db-4756954019e1",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "US",
+      "package": "BASIS",
+      "company_id": "6c0de3df-0456-48e0-bc8e-c3b9ae94d41d",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "US",
+      "package": "LUXUS",
+      "company_id": "e30b486e-a299-42c5-a832-ab9469136de0",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "US",
+      "package": "ENTERPRISE",
+      "company_id": "0e33538c-4133-4cd0-b914-8f16b76e5e75",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CA",
+      "package": "BASIS",
+      "company_id": "5fad9ca2-16c2-4cff-ae06-877bc9a8f91b",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CA",
+      "package": "LUXUS",
+      "company_id": "5efa9513-b804-44d0-a3b9-a1efe2e47c34",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    },
+    {
+      "country": "CA",
+      "package": "ENTERPRISE",
+      "company_id": "8120af4d-bd93-4762-be27-ad646c48d276",
+      "ok": true,
+      "reason": null,
+      "earned": 1,
+      "reversals": 1,
+      "localEarnDiff": 0
+    }
+  ],
+  "remainder": {
+    "periods_tested": 3,
+    "loss": 0,
+    "duplication": 0,
+    "idempotency_errors": 0,
+    "total_diff": 0,
+    "steps": [
+      {
+        "period": "2099-01",
+        "settle": {
+          "ok": true,
+          "earned": 0,
+          "carry_in": 0,
+          "reversed": 0,
+          "carry_out": 0,
+          "idempotent": false,
+          "invoice_minor": 0,
+          "period_numerator": 0
+        }
+      },
+      {
+        "period": "2099-02",
+        "settle": {
+          "ok": true,
+          "earned": 0,
+          "carry_in": 0,
+          "reversed": 0,
+          "carry_out": 0,
+          "idempotent": false,
+          "invoice_minor": 0,
+          "period_numerator": 0
+        }
+      },
+      {
+        "period": "2099-03",
+        "settle": {
+          "ok": true,
+          "earned": 0,
+          "carry_in": 0,
+          "reversed": 0,
+          "carry_out": 0,
+          "idempotent": false,
+          "invoice_minor": 0,
+          "period_numerator": 0
+        }
+      }
+    ],
+    "final_rounding": {
+      "ok": true,
+      "carry": 0,
+      "adjusted": false
+    }
+  }
+}

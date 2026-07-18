@@ -200,6 +200,25 @@ export function mapOrderWriteError(err: PostgresRpcError): MappedOrderWriteError
       logLevel: "warn",
     };
   }
+  // Phase 17MENU.2D: atomic dish-day capacity (DB FOR UPDATE) — never oversell.
+  if (mUpper.includes("CAPACITY_EXCEEDED")) {
+    return {
+      status: 409,
+      code: "CAPACITY_EXCEEDED",
+      message: "Kapasiteten for denne retten er fullbooket for valgt dag.",
+      errorType: "rpc",
+      logLevel: "warn",
+    };
+  }
+  if (mUpper.includes("CAPACITY_QTY_INVALID")) {
+    return {
+      status: 400,
+      code: "CAPACITY_QTY_INVALID",
+      message: "Ugyldig antall for kapasitetsreservasjon.",
+      errorType: "rpc",
+      logLevel: "warn",
+    };
+  }
 
   return {
     status: 500,

@@ -497,21 +497,31 @@
             "title": "Pedido cancelado",
             "summary": "Um pedido foi cancelado."
           },
-          "provider.customer.restore.success": {
-            "title": "Cliente restaurado",
-            "summary": "Relação com o cliente reativada."
-          },
-          "provider.customer.restore.attempt": {
-            "title": "Restauro iniciado",
-            "summary": "Tentativa de restauro do cliente."
-          },
-          "provider.customer.archive.success": {
-            "title": "Cliente arquivado",
-            "summary": "Cliente arquivado junto do fornecedor."
-          },
-          "provider.customer.hard_delete.success": {
-            "title": "Cliente removido",
-            "summary": "Cliente removido da lista do fornecedor."
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Cliente restaurado",
+                  "summary": "Relação com o cliente reativada."
+                },
+                "attempt": {
+                  "title": "Restauro iniciado",
+                  "summary": "Tentativa de restauro do cliente."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Cliente arquivado",
+                  "summary": "Cliente arquivado junto do fornecedor."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Cliente removido",
+                  "summary": "Cliente removido da lista do fornecedor."
+                }
+              }
+            }
           }
         }
       },

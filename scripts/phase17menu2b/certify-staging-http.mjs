@@ -404,7 +404,7 @@ async function main() {
       token,
       cookie,
       locale,
-      body: { date: orderDate, action: "set", choice_key: "paasmurt" },
+      body: { date: orderDate, action: "set", choice_key: "varmmat" },
       headers: { "Idempotency-Key": crypto.randomUUID() },
     });
     localeFlows.push({
@@ -492,7 +492,8 @@ async function main() {
     LIVE_LOCALE_HTTP_E2E: `${localeOk}/24`,
     PROVIDER_PRICE_HTTP_PROOF: `${priceProofs.filter((p) => p.snapshot_unit_price_nok != null).length}/63`,
     HISTORICAL_PRICE_MUTATIONS: historicalMutations,
-    COMMISSION_HTTP_PROOF: `${commissionProofs.length + packageFlows.filter((f) => f.commissionOk).length}/63`,
+    // 17MENU.2D: only count genuine persisted ledger rows (no pending_or_skipped inflation).
+    COMMISSION_HTTP_PROOF: `${packageFlows.filter((f) => f.commissionOk).length}/63`,
     COMMISSION_RATE_BPS: COMMISSION_BPS,
     COMMISSION_TOTAL_DIFFERENCE: commissionDiff,
     COMMISSION_REMAINDER_LOSS: remainderLoss,

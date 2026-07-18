@@ -497,21 +497,31 @@
             "title": "Order cancelled",
             "summary": "An order was cancelled."
           },
-          "provider.customer.restore.success": {
-            "title": "Customer restored",
-            "summary": "Customer relationship reactivated."
-          },
-          "provider.customer.restore.attempt": {
-            "title": "Restore started",
-            "summary": "Customer restore attempted."
-          },
-          "provider.customer.archive.success": {
-            "title": "Customer archived",
-            "summary": "Customer archived with provider."
-          },
-          "provider.customer.hard_delete.success": {
-            "title": "Customer removed",
-            "summary": "Customer removed from provider list."
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Customer restored",
+                  "summary": "Customer relationship reactivated."
+                },
+                "attempt": {
+                  "title": "Restore started",
+                  "summary": "Customer restore attempted."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Customer archived",
+                  "summary": "Customer archived with provider."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Customer removed",
+                  "summary": "Customer removed from provider list."
+                }
+              }
+            }
           }
         }
       },

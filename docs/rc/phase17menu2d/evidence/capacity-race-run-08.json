@@ -1,0 +1,21 @@
+{
+  "run": 8,
+  "service_date": "2026-07-23",
+  "http": {
+    "accepted": 50,
+    "rejected_capacity": 50,
+    "other_errors": 0
+  },
+  "db": {
+    "reserved_qty": 50,
+    "capacity_limit": 50,
+    "active_orders": 74,
+    "order_item_qty": 50,
+    "reserve_event_sum": 50,
+    "company_mismatch": 0
+  },
+  "CAPACITY_OVERSELL": 0,
+  "CAPACITY_REMAINING": 0,
+  "pass": true,
+  "sample_other": []
+}

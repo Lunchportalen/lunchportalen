@@ -1,0 +1,832 @@
+{
+  "phase": "17MENU.2D",
+  "staging_ref": "uigxsboqeruxflgzqztl",
+  "VISUAL_LOCALE_E2E": "24/24",
+  "DESKTOP_LOCALE_E2E": "24/24",
+  "MOBILE_LOCALE_E2E": "24/24",
+  "NORWEGIAN_VISUAL_FALLBACK_OUTSIDE_NO": 0,
+  "UNTRANSLATED_INTERNAL_KEYS": 0,
+  "MOJIBAKE_ERRORS": 0,
+  "CRITICAL_LAYOUT_OVERFLOWS": 0,
+  "NOTE": "HTML/runtime probe — not Playwright pixel native linguistic approval",
+  "desktop": [
+    {
+      "locale": "nb-NO",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "sv-SE",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "da-DK",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fi-FI",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-GB",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "de-DE",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-FR",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "es-ES",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "it-IT",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "nl-NL",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "nl-BE",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-BE",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "de-CH",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-CH",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "de-AT",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-IE",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "pl-PL",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "ro-RO",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "cs-CZ",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "pt-PT",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "el-GR",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-US",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-CA",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-CA",
+      "viewport": "desktop",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "mobile": [
+    {
+      "locale": "nb-NO",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "sv-SE",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "da-DK",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fi-FI",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-GB",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "de-DE",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-FR",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "es-ES",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "it-IT",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "nl-NL",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "nl-BE",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-BE",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "de-CH",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-CH",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "de-AT",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-IE",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "pl-PL",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "ro-RO",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "cs-CZ",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "pt-PT",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "el-GR",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-US",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "en-CA",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    },
+    {
+      "locale": "fr-CA",
+      "viewport": "mobile",
+      "routes": [
+        {
+          "route": "week",
+          "status": 200,
+          "issues": []
+        },
+        {
+          "route": "login",
+          "status": 307,
+          "issues": []
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

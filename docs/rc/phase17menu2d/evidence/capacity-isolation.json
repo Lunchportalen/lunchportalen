@@ -1,0 +1,16 @@
+{
+  "phase": "17MENU.2D",
+  "staging_ref": "uigxsboqeruxflgzqztl",
+  "HOT_PROVIDER_CAPACITY": "PASS",
+  "hot": {
+    "accepted": 5,
+    "rejected": 15
+  },
+  "MULTI_PROVIDER_ISOLATION": "PASS",
+  "multi_ok": 10,
+  "DELIVERY_DATE_CAPACITY_ISOLATION": "PASS",
+  "dateB_reserved": 0,
+  "VARIANT_CAPACITY_ISOLATION": "PASS",
+  "varmrett_reserved_after_sushi_fill": 0,
+  "CROSS_TENANT_FAILURES_UNDER_CAPACITY": 0
+}

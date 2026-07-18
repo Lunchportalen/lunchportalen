@@ -1,0 +1,173 @@
+{
+  "LIVE_LOCALE_HTTP_E2E": "24/24",
+  "flows": [
+    {
+      "locale": "nb-NO",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "sv-SE",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "da-DK",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "fi-FI",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "en-GB",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "de-DE",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "fr-FR",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "es-ES",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "it-IT",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "nl-NL",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "nl-BE",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "fr-BE",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "de-CH",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "fr-CH",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "de-AT",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "en-IE",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "pl-PL",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "ro-RO",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "cs-CZ",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "pt-PT",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "el-GR",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "en-US",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "en-CA",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    },
+    {
+      "locale": "fr-CA",
+      "ok": true,
+      "week_status": 200,
+      "order_status": 200,
+      "order_error": null
+    }
+  ]
+}

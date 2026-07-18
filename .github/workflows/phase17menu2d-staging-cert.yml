@@ -1,0 +1,162 @@
+# PHASE 17MENU.2D — atomic capacity + commission ledger + visual i18n staging cert.
+# Never production. Never app.lunchportalen.no.
+name: phase17menu2d-staging-cert
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_sha:
+        description: Exact commit SHA to certify (empty = workflow SHA)
+        required: false
+        default: ""
+  push:
+    branches:
+      - release/global-menu-universes-21
+    paths:
+      - ".github/workflows/phase17menu2d-staging-cert.yml"
+      - "scripts/phase17menu2d/**"
+      - "docs/rc/phase17menu2d/**"
+      - "supabase/migrations/20260907120000_phase17menu2d_atomic_capacity_commission.sql"
+      - "supabase/migrations/20260907130000_phase17menu2d_commission_exact_writepath.sql"
+      - "lib/orders/mapOrderWriteError.ts"
+      - "messages/**"
+      - "i18n/request.ts"
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: staging
+    env:
+      PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: staging
+      SANITY_DATASET: staging
+      SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+      NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+      LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
+      APP_VERSION: ${{ inputs.app_sha || github.sha }}
+      RC_MODE: "true"
+      PHASE17MENU2D_CAPACITY_RUNS: "10"
+
+    steps:
+      - name: Refuse production refs
+        run: |
+          set -euo pipefail
+          test "${PROJECT_REF}" = "uigxsboqeruxflgzqztl"
+          case "${NEXT_PUBLIC_SUPABASE_URL}" in
+            *uigxsboqeruxflgzqztl*) ;;
+            *) echo "::error::staging URL mismatch"; exit 2 ;;
+          esac
+          case "${NEXT_PUBLIC_SUPABASE_URL}" in
+            *hkpokyapzarefrgqzkos*) echo "::error::production supabase"; exit 2 ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.app_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Seed synthetic matrix (staging DB)
+        run: npx tsx scripts/phase17menu2b/seed-synthetic-matrix.mjs
+
+      - name: Ensure billing profiles + provider memberships
+        run: |
+          set -euo pipefail
+          node scripts/phase17menu2d/ensure-billing-profiles.mjs
+
+      - name: Build Next against staging
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          PUBLIC_APP_URL: http://127.0.0.1:3000
+          LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
+
+      - name: Start staging runtime of exact SHA
+        run: |
+          set -euo pipefail
+          : "${SYSTEM_MOTOR_SECRET:?missing}"
+          : "${CRON_SECRET:?missing}"
+          npx next start -H 127.0.0.1 -p 3000 > /tmp/next-start.log 2>&1 &
+          echo $! > /tmp/next.pid
+          for i in $(seq 1 90); do
+            CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" "http://127.0.0.1:3000/api/health" || true)
+            echo "health_attempt=${i} http=${CODE}"
+            if [ "$CODE" = "200" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::health timeout"
+          tail -n 200 /tmp/next-start.log || true
+          exit 1
+
+      - name: Capacity race 10×100→50/50
+        env:
+          PHASE17MENU2D_BASE_URL: http://127.0.0.1:3000
+          PHASE17MENU2B_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase17menu2d/capacity-race.mjs
+
+      - name: Capacity isolation suite
+        run: node scripts/phase17menu2d/capacity-isolation.mjs
+
+      - name: Commission ledger + remainder
+        env:
+          PHASE17MENU2D_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase17menu2d/commission-ledger-cert.mjs
+
+      - name: Cutoff + idempotency
+        env:
+          PHASE17MENU2D_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase17menu2d/cutoff-idempotency-cert.mjs
+
+      - name: HTTP regression 63 package flows
+        env:
+          PHASE17MENU2B_BASE_URL: http://127.0.0.1:3000
+          LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
+        run: node scripts/phase17menu2b/certify-staging-http.mjs
+
+      - name: Locale HTTP 24/24
+        env:
+          PHASE17MENU2D_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase17menu2d/locale-http-cert.mjs
+
+      - name: Visual locales 24 desktop+mobile
+        env:
+          PHASE17MENU2D_BASE_URL: http://127.0.0.1:3000
+          PHASE17MENU2B_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase17menu2d/visual-locales-cert.mjs
+
+      - name: Production safety probe (read-only)
+        run: node scripts/phase17menu2b/production-safety-probe.mjs
+
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase17menu2d-evidence
+          path: docs/rc/phase17menu2d/
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/next.pid ]; then kill "$(cat /tmp/next.pid)" || true; fi

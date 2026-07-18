@@ -1,0 +1,223 @@
+{
+  "phase": "17MENU.2D",
+  "staging_ref": "uigxsboqeruxflgzqztl",
+  "CAPACITY_RACE_RUNS": "10/10",
+  "CAPACITY_RACE_ACCEPTED_TOTAL": 500,
+  "CAPACITY_RACE_REJECTED_TOTAL": 500,
+  "CAPACITY_RACE_OTHER_ERRORS": 0,
+  "CAPACITY_RACE_OVERSELL": 0,
+  "CAPACITY_RACE_DEADLOCKS": 0,
+  "all_pass": true,
+  "runs": [
+    {
+      "run": 1,
+      "service_date": "2026-07-21",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 75,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 2,
+      "service_date": "2026-07-22",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 50,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 3,
+      "service_date": "2026-07-23",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 50,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 4,
+      "service_date": "2026-07-24",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 50,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 5,
+      "service_date": "2026-07-27",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 50,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 6,
+      "service_date": "2026-07-21",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 91,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 7,
+      "service_date": "2026-07-22",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 78,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 8,
+      "service_date": "2026-07-23",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 74,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 9,
+      "service_date": "2026-07-24",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 74,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    },
+    {
+      "run": 10,
+      "service_date": "2026-07-27",
+      "http": {
+        "accepted": 50,
+        "rejected_capacity": 50,
+        "other_errors": 0
+      },
+      "db": {
+        "reserved_qty": 50,
+        "capacity_limit": 50,
+        "active_orders": 72,
+        "order_item_qty": 50,
+        "reserve_event_sum": 50,
+        "company_mismatch": 0
+      },
+      "CAPACITY_OVERSELL": 0,
+      "CAPACITY_REMAINING": 0,
+      "pass": true,
+      "sample_other": []
+    }
+  ]
+}

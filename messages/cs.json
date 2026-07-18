@@ -497,21 +497,31 @@
             "title": "Objednávka zrušena",
             "summary": "Objednávka byla zrušena."
           },
-          "provider.customer.restore.success": {
-            "title": "Zákazník obnoven",
-            "summary": "Zákaznický vztah znovu aktivován."
-          },
-          "provider.customer.restore.attempt": {
-            "title": "Obnovení zahájeno",
-            "summary": "Proběhl pokus o obnovení zákazníka."
-          },
-          "provider.customer.archive.success": {
-            "title": "Zákazník archivován",
-            "summary": "Zákazník archivován u dodavatele."
-          },
-          "provider.customer.hard_delete.success": {
-            "title": "Zákazník odebrán",
-            "summary": "Zákazník odebrán ze seznamu dodavatele."
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Zákazník obnoven",
+                  "summary": "Zákaznický vztah znovu aktivován."
+                },
+                "attempt": {
+                  "title": "Obnovení zahájeno",
+                  "summary": "Proběhl pokus o obnovení zákazníka."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Zákazník archivován",
+                  "summary": "Zákazník archivován u dodavatele."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Zákazník odebrán",
+                  "summary": "Zákazník odebrán ze seznamu dodavatele."
+                }
+              }
+            }
           }
         }
       },

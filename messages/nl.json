@@ -497,21 +497,31 @@
             "title": "Bestelling geannuleerd",
             "summary": "Een bestelling is geannuleerd."
           },
-          "provider.customer.restore.success": {
-            "title": "Klant hersteld",
-            "summary": "De klantrelatie is weer geactiveerd."
-          },
-          "provider.customer.restore.attempt": {
-            "title": "Herstel gestart",
-            "summary": "Het herstel van de klant is geprobeerd."
-          },
-          "provider.customer.archive.success": {
-            "title": "Klant gearchiveerd",
-            "summary": "De klant is gearchiveerd bij de leverancier."
-          },
-          "provider.customer.hard_delete.success": {
-            "title": "Klant verwijderd",
-            "summary": "De klant is verwijderd uit de leverancierslijst."
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Klant hersteld",
+                  "summary": "De klantrelatie is weer geactiveerd."
+                },
+                "attempt": {
+                  "title": "Herstel gestart",
+                  "summary": "Het herstel van de klant is geprobeerd."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Klant gearchiveerd",
+                  "summary": "De klant is gearchiveerd bij de leverancier."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Klant verwijderd",
+                  "summary": "De klant is verwijderd uit de leverancierslijst."
+                }
+              }
+            }
           }
         }
       },

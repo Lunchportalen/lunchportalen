@@ -497,21 +497,31 @@
             "title": "Ordre kansellert",
             "summary": "En bestilling er kansellert."
           },
-          "provider.customer.restore.success": {
-            "title": "Kunde gjenopprettet",
-            "summary": "Kundeforholdet er aktivert igjen."
-          },
-          "provider.customer.restore.attempt": {
-            "title": "Gjenoppretting startet",
-            "summary": "Gjenoppretting av kunde ble forsøkt."
-          },
-          "provider.customer.archive.success": {
-            "title": "Kunde arkivert",
-            "summary": "Kunden er arkivert hos leverandør."
-          },
-          "provider.customer.hard_delete.success": {
-            "title": "Kunde fjernet",
-            "summary": "Kunden er fjernet fra leverandørlisten."
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Kunde gjenopprettet",
+                  "summary": "Kundeforholdet er aktivert igjen."
+                },
+                "attempt": {
+                  "title": "Gjenoppretting startet",
+                  "summary": "Gjenoppretting av kunde ble forsøkt."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Kunde arkivert",
+                  "summary": "Kunden er arkivert hos leverandør."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Kunde fjernet",
+                  "summary": "Kunden er fjernet fra leverandørlisten."
+                }
+              }
+            }
           }
         }
       },

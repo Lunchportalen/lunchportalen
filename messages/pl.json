@@ -497,21 +497,31 @@
             "title": "Zamówienie anulowane",
             "summary": "Zamówienie zostało anulowane."
           },
-          "provider.customer.restore.success": {
-            "title": "Klient przywrócony",
-            "summary": "Relacja z klientem została ponownie aktywowana."
-          },
-          "provider.customer.restore.attempt": {
-            "title": "Rozpoczęto przywracanie",
-            "summary": "Podjęto próbę przywrócenia klienta."
-          },
-          "provider.customer.archive.success": {
-            "title": "Klient zarchiwizowany",
-            "summary": "Klient zarchiwizowany u dostawcy."
-          },
-          "provider.customer.hard_delete.success": {
-            "title": "Klient usunięty",
-            "summary": "Klient usunięty z listy dostawcy."
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Klient przywrócony",
+                  "summary": "Relacja z klientem została ponownie aktywowana."
+                },
+                "attempt": {
+                  "title": "Rozpoczęto przywracanie",
+                  "summary": "Podjęto próbę przywrócenia klienta."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Klient zarchiwizowany",
+                  "summary": "Klient zarchiwizowany u dostawcy."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Klient usunięty",
+                  "summary": "Klient usunięty z listy dostawcy."
+                }
+              }
+            }
           }
         }
       },

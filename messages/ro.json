@@ -497,21 +497,31 @@
             "title": "Comandă anulată",
             "summary": "O comandă a fost anulată."
           },
-          "provider.customer.restore.success": {
-            "title": "Client restaurat",
-            "summary": "Relația cu clientul a fost reactivată."
-          },
-          "provider.customer.restore.attempt": {
-            "title": "Restaurare începută",
-            "summary": "S-a încercat restaurarea clientului."
-          },
-          "provider.customer.archive.success": {
-            "title": "Client arhivat",
-            "summary": "Client arhivat la furnizor."
-          },
-          "provider.customer.hard_delete.success": {
-            "title": "Client eliminat",
-            "summary": "Client eliminat din lista furnizorului."
+          "provider": {
+            "customer": {
+              "restore": {
+                "success": {
+                  "title": "Client restaurat",
+                  "summary": "Relația cu clientul a fost reactivată."
+                },
+                "attempt": {
+                  "title": "Restaurare începută",
+                  "summary": "S-a încercat restaurarea clientului."
+                }
+              },
+              "archive": {
+                "success": {
+                  "title": "Client arhivat",
+                  "summary": "Client arhivat la furnizor."
+                }
+              },
+              "hard_delete": {
+                "success": {
+                  "title": "Client eliminat",
+                  "summary": "Client eliminat din lista furnizorului."
+                }
+              }
+            }
           }
         }
       },

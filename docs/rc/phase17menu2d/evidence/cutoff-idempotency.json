@@ -1,0 +1,43 @@
+{
+  "phase": "17MENU.2D",
+  "staging_ref": "uigxsboqeruxflgzqztl",
+  "cutoff_authority": "database/server via lp_company_cutoff_context + now()",
+  "CUTOFF_AT_BOUNDARY": "authoritative_received_at < cutoff_at (existing market timezone cutoff)",
+  "CLIENT_CLOCK_BYPASSES": 0,
+  "TIMEZONE_BYPASSES": 0,
+  "DST_DECISION_ERRORS": 0,
+  "CUTOFF_DECISION_MISMATCH": 0,
+  "order_idempotency": {
+    "serial_statuses": [
+      200,
+      200,
+      200
+    ],
+    "concurrent_statuses": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "active_orders_after": 1
+  },
+  "cancel_idempotency": {
+    "serial_statuses": [
+      200,
+      200,
+      200
+    ],
+    "concurrent_statuses": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ]
+  },
+  "ORDER_IDEMPOTENCY_DUPLICATES": 0,
+  "CANCELLATION_IDEMPOTENCY_DUPLICATES": 0,
+  "CAPACITY_DUPLICATE_RESERVATIONS": 0,
+  "FINANCIAL_DUPLICATE_REVERSALS": 0
+}
