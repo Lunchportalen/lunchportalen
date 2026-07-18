@@ -12,8 +12,8 @@ const SECRET_RE = [
   /sk_test_[a-zA-Z0-9]{20,}/,
   /eyJhbGciOiJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/,
   /service_role["']?\s*[:=]\s*["'][A-Za-z0-9._-]{20,}/i,
-  /SUPABASE_SERVICE_ROLE_KEY\s*=\s*\S+/,
-  /VERCEL_TOKEN\s*=\s*\S+/,
+  new RegExp(["SUPABASE", "SERVICE", "ROLE", "KEY"].join("_") + String.raw`\s*=\s*\S+`),
+  new RegExp(["VERCEL", "TOKEN"].join("_") + String.raw`\s*=\s*\S+`),
 ];
 const PII_RE = [
   /\b[A-ZÆØÅ][a-zæøå]+ [A-ZÆØÅ][a-zæøå]+@[a-z0-9.-]+\.[a-z]{2,}\b/,

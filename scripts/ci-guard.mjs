@@ -29,6 +29,9 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/smoke/provision-smoke-user.mjs",
   "scripts/smoke/seed-e2e-users.mjs",
   "scripts/smoke/_first-menu-order-smoke.mjs",
+  // PHASE 17MENU.2B — staging-only synthetic matrix + HTTP cert (uigx refuse-prod).
+  "scripts/phase17menu2b/",
+
   // #92 standing authz gate — validates staging integration env before vitest (no service-role usage here).
   "scripts/ci/run-suspend-rpc-integration.mjs",
   // E2E self-heal probe — admin password-sync invalidates session (uigx only).
