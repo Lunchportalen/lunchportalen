@@ -371,7 +371,7 @@ async function main() {
     });
     localeFlows.push({
       locale,
-      ok: week.status < 500 && order.status < 500,
+      ok: week.status === 200 && (order.status === 200 || order.json?.ok === true),
       week_status: week.status,
       order_status: order.status,
       identity_mutation: 0,
