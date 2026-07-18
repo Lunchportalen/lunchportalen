@@ -84,7 +84,7 @@ jobs:
           node scripts/phase17menu2b/scan-evidence-safety.mjs
 
       - name: Seed synthetic matrix (staging DB)
-        run: node scripts/phase17menu2b/seed-synthetic-matrix.mjs
+        run: npx tsx scripts/phase17menu2b/seed-synthetic-matrix.mjs
 
       - name: Build Next against staging
         run: npm run build

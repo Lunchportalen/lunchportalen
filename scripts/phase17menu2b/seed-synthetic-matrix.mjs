@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import { getNorwayDocument } from "../../lib/legal/norwayDocuments.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
@@ -98,7 +99,13 @@ async function main() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const password = process.env.PHASE17MENU2B_SYNTH_PASSWORD || `Synth2b-${crypto.randomBytes(12).toString("base64url")}`;
+  const password =
+    process.env.PHASE17MENU2B_SYNTH_PASSWORD ||
+    `Synth2b-${crypto.createHash("sha256").update(`phase17menu2b-${STAGING_REF}`).digest("hex").slice(0, 24)}`;
+  // Persist for later job steps before long seed work.
+  if (process.env.GITHUB_ENV) {
+    fs.appendFileSync(process.env.GITHUB_ENV, `PHASE17MENU2B_SYNTH_PASSWORD=${password}\n`);
+  }
   const dates = nextServiceDates(5);
   const matrix = {
     phase: "17MENU.2B",
@@ -322,6 +329,25 @@ async function main() {
           location_id: locationId,
           full_name: `${MARK} ${role}`,
         }, { onConflict: "id" });
+        // Week/orders gate calls Norway legal acceptances for all employees.
+        for (const documentType of ["employee_terms", "privacy_notice"]) {
+          const doc = getNorwayDocument(/** @type {any} */ (documentType));
+          if (!doc) throw new Error(`missing norway doc ${documentType}`);
+          await admin.from("legal_acceptances").insert({
+            subject_type: "employee",
+            subject_id: uid,
+            organization_id: companyId,
+            actor_user_id: uid,
+            country_code: "NO",
+            locale: "nb-NO",
+            document_type: documentType,
+            document_version: doc.version,
+            document_checksum: doc.checksum,
+            accepted_at: new Date().toISOString(),
+            acceptance_method: "synthetic_seed",
+            audit_hash: crypto.createHash("sha256").update(`${uid}:${documentType}:${doc.version}`).digest("hex"),
+          }).then(() => null).catch(() => null);
+        }
       }
 
       // Provider admin (not customer of self — separate company not used as customer)
@@ -357,11 +383,6 @@ async function main() {
       });
       matrix.users.push({ email: empEmail, role: "employee", country: cc, package: pkg });
     }
-  }
-
-  // Password is written only to GITHUB_ENV style sidecar when requested — never to evidence.
-  if (process.env.GITHUB_ENV) {
-    fs.appendFileSync(process.env.GITHUB_ENV, `PHASE17MENU2B_SYNTH_PASSWORD=${password}\n`);
   }
 
   const redacted = {

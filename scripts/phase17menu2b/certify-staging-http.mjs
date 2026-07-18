@@ -30,10 +30,33 @@ function commissionExactNumerator(net) {
   return Number(net) * COMMISSION_BPS;
 }
 
-async function httpJson(base, pathname, { method = "GET", token, body, headers = {}, locale } = {}) {
+function mergeSetCookie(existing, setCookieHeaders) {
+  const jar = new Map();
+  for (const part of String(existing || "")
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean)) {
+    const i = part.indexOf("=");
+    if (i > 0) jar.set(part.slice(0, i), part.slice(i + 1));
+  }
+  const list = Array.isArray(setCookieHeaders)
+    ? setCookieHeaders
+    : setCookieHeaders
+      ? [setCookieHeaders]
+      : [];
+  for (const raw of list) {
+    const first = String(raw).split(";")[0];
+    const i = first.indexOf("=");
+    if (i > 0) jar.set(first.slice(0, i), first.slice(i + 1));
+  }
+  return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
+}
+
+async function httpJson(base, pathname, { method = "GET", token, cookie, body, headers = {}, locale } = {}) {
   const h = {
     Accept: "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(cookie ? { Cookie: cookie } : {}),
     ...(locale ? { "Accept-Language": locale } : {}),
     ...headers,
   };
@@ -50,14 +73,32 @@ async function httpJson(base, pathname, { method = "GET", token, body, headers =
   } catch {
     json = { raw: text.slice(0, 400) };
   }
-  return { status: res.status, json, ok: res.ok };
+  const setCookie =
+    typeof res.headers.getSetCookie === "function"
+      ? res.headers.getSetCookie()
+      : res.headers.get("set-cookie")
+        ? [res.headers.get("set-cookie")]
+        : [];
+  return { status: res.status, json, ok: res.ok, setCookie };
 }
 
-async function signIn(url, anon, email, password) {
+async function signInSession(base, url, anon, email, password) {
   const client = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(`login ${email}: ${error.message}`);
-  return data.session.access_token;
+  if (error || !data.session) throw new Error(`login ${email}: ${error?.message || "no session"}`);
+  const session = data.session;
+  const sessRes = await httpJson(base, "/api/auth/session", {
+    method: "POST",
+    body: {
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    },
+  });
+  if (!sessRes.ok) {
+    throw new Error(`session_cookie ${email}: http=${sessRes.status} ${JSON.stringify(sessRes.json).slice(0, 180)}`);
+  }
+  const cookie = mergeSetCookie("", sessRes.setCookie);
+  return { token: session.access_token, cookie };
 }
 
 function nextOrderDate() {
@@ -73,7 +114,10 @@ async function main() {
   const url = String(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
   const anon = String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "");
   const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "");
-  const password = String(process.env.PHASE17MENU2B_SYNTH_PASSWORD ?? "");
+  const password = String(
+    process.env.PHASE17MENU2B_SYNTH_PASSWORD ||
+      `Synth2b-${crypto.createHash("sha256").update(`phase17menu2b-${STAGING_REF}`).digest("hex").slice(0, 24)}`,
+  );
   if (!base || !url || !anon || !serviceKey || !password) {
     console.error("Missing BASE_URL / staging supabase / synth password");
     process.exit(2);
@@ -116,15 +160,16 @@ async function main() {
   for (const co of matrix.companies ?? []) {
     const email = `${String(co.country).toLowerCase()}-${String(co.package).toLowerCase()}-emp@staging.lunchportalen.test`;
     let token;
+    let cookie;
     try {
-      token = await signIn(url, anon, email, password);
+      ({ token, cookie } = await signInSession(base, url, anon, email, password));
     } catch (e) {
       packageFlows.push({ country: co.country, package: co.package, ok: false, error: String(e.message ?? e) });
       continue;
     }
 
     // Week retrieval
-    const week = await httpJson(base, "/api/week?weekOffset=0", { token });
+    const week = await httpJson(base, "/api/week?weekOffset=0", { token, cookie });
     const orderBody = {
       date: orderDate,
       action: "set",
@@ -133,6 +178,7 @@ async function main() {
     const orderRes = await httpJson(base, "/api/orders", {
       method: "POST",
       token,
+      cookie,
       body: orderBody,
       headers: { "Idempotency-Key": crypto.randomUUID() },
     });
@@ -143,6 +189,7 @@ async function main() {
       const deny = await httpJson(base, "/api/orders", {
         method: "POST",
         token,
+        cookie,
         body: { date: orderDate, action: "set", choice_key: "sushi" },
         headers: { "Idempotency-Key": crypto.randomUUID() },
       });
@@ -196,7 +243,7 @@ async function main() {
         }
       }
       kitchenOk = true;
-      const pack = await httpJson(base, `/api/provider/packing-list?date=${orderDate}`, { token });
+      const pack = await httpJson(base, `/api/provider/packing-list?date=${orderDate}`, { token, cookie });
       packingOk = pack.status === 200 || pack.status === 401 || pack.status === 403; // employee may be denied; service path counted below
       const { data: ledger } = await admin
         .from("commission_ledger")
@@ -228,6 +275,7 @@ async function main() {
       const cancelRes = await httpJson(base, "/api/orders", {
         method: "POST",
         token,
+        cookie,
         body: { date: cancelDate, action: "cancel" },
         headers: { "Idempotency-Key": crypto.randomUUID() },
       });
@@ -275,6 +323,7 @@ async function main() {
       const leak = await httpJson(base, "/api/orders", {
         method: "POST",
         token,
+        cookie,
         body: { date: orderDate, action: "set", choice_key: "varmmat", company_id: other.company_id },
         headers: { "Idempotency-Key": crypto.randomUUID() },
       });
@@ -289,16 +338,18 @@ async function main() {
     if (!co) break;
     const email = `${String(co.country).toLowerCase()}-basis-emp@staging.lunchportalen.test`;
     let token;
+    let cookie;
     try {
-      token = await signIn(url, anon, email, password);
+      ({ token, cookie } = await signInSession(base, url, anon, email, password));
     } catch (e) {
       localeFlows.push({ locale, ok: false, error: String(e.message ?? e) });
       continue;
     }
-    const week = await httpJson(base, "/api/week?weekOffset=0", { token, locale });
+    const week = await httpJson(base, "/api/week?weekOffset=0", { token, cookie, locale });
     const order = await httpJson(base, "/api/orders", {
       method: "POST",
       token,
+      cookie,
       locale,
       body: { date: orderDate, action: "set", choice_key: "paasmurt" },
       headers: { "Idempotency-Key": crypto.randomUUID() },
@@ -323,18 +374,21 @@ async function main() {
   let idempotentDupes = 0;
   if (canaryCompany) {
     const email = `${String(canaryCompany.country).toLowerCase()}-basis-emp@staging.lunchportalen.test`;
-    const token = await signIn(url, anon, email, password).catch(() => null);
-    if (token) {
+    const authed = await signInSession(base, url, anon, email, password).catch(() => null);
+    if (authed) {
+      const { token, cookie } = authed;
       const idem = crypto.randomUUID();
       const a = await httpJson(base, "/api/orders", {
         method: "POST",
         token,
+        cookie,
         body: { date: orderDate, action: "set", choice_key: "salatboks" },
         headers: { "Idempotency-Key": idem },
       });
       const b = await httpJson(base, "/api/orders", {
         method: "POST",
         token,
+        cookie,
         body: { date: orderDate, action: "set", choice_key: "salatboks" },
         headers: { "Idempotency-Key": idem },
       });
@@ -354,6 +408,7 @@ async function main() {
           httpJson(base, "/api/orders", {
             method: "POST",
             token,
+            cookie,
             body: { date: orderDate, action: "set", choice_key: "varmmat" },
             headers: { "Idempotency-Key": crypto.randomUUID() },
           }),
