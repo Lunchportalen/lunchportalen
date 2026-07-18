@@ -419,7 +419,10 @@ async function main() {
             sort_order: 10 + i,
             is_optional: false,
           });
-          if (msdiErr) throw new Error(`msdi ${cc}/${pkg}/${sku}: ${msdiErr.message}`);
+          // Concurrent GHA seed runs can race on the unique (menu_service_day_id, product_id).
+          if (msdiErr && !/duplicate|unique/i.test(msdiErr.message)) {
+            throw new Error(`msdi ${cc}/${pkg}/${sku}: ${msdiErr.message}`);
+          }
           i += 1;
         }
       }
