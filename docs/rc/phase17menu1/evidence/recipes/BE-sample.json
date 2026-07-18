@@ -1,0 +1,92 @@
+{
+  "country_code": "BE",
+  "sample_recipe": {
+    "dish_key": "be-warm-01",
+    "recipe_version": "17menu1.1",
+    "locales": [
+      "fr-BE",
+      "nl-BE"
+    ],
+    "review_status": "generation_eligible",
+    "yield": {
+      "reference_batch": 20,
+      "finished_yield": 20,
+      "portion_weight_g": 400,
+      "trimming_loss_bps": 500,
+      "cooking_loss_bps": 800,
+      "expected_waste_bps": 300
+    },
+    "ingredients": [
+      {
+        "ingredient_key": "be-protein-chicken",
+        "quantity_milli": 120000,
+        "unit": "g",
+        "edible_yield_bps": 9000,
+        "allergen_relation": [],
+        "substitutions": [
+          "tofu"
+        ],
+        "season": [
+          "helår"
+        ],
+        "country_availability": true,
+        "cost_minor_per_unit": 4,
+        "scaling": "linear"
+      }
+    ],
+    "production": {
+      "steps": [
+        "prep",
+        "cook",
+        "hold",
+        "pack"
+      ],
+      "active_labor_minutes": 45,
+      "passive_time_minutes": 30,
+      "equipment": [
+        "oven"
+      ],
+      "batch_limit": 40,
+      "cooking_temperature_c": 180,
+      "core_temperature_c": 75,
+      "holding_temperature_c": 65,
+      "maximum_hold_minutes": 90,
+      "packing_start_offset_minutes": -40,
+      "dispatch_deadline_offset_minutes": -20
+    },
+    "delivery": {
+      "packing_method": "sealed_tray",
+      "sauce_separation": true,
+      "texture_risk": "low",
+      "transport_durability": "high",
+      "maximum_transport_minutes": 90,
+      "reheating_suitability": true
+    },
+    "economics": {
+      "ingredients_per_portion_minor": 320,
+      "packaging_minor": 40,
+      "labor_minor": 180,
+      "waste_minor": 30,
+      "energy_minor": 20,
+      "delivery_allocation_minor": 50,
+      "commission_exact_numerator": 425000,
+      "total_variable_cost_minor": 640,
+      "contribution_minor": 168,
+      "contribution_bps": 1800
+    },
+    "menu_quality": {
+      "protein_main": "chicken",
+      "cuisine_style": "local_contemporary",
+      "dietary_tags": [],
+      "season": [
+        "helår"
+      ],
+      "spice": "mild",
+      "color": "mixed",
+      "texture": "soft",
+      "side": "veg",
+      "sauce": "light",
+      "repeat_group": "poultry-a"
+    }
+  }
+}

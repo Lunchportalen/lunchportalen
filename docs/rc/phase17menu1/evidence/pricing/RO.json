@@ -1,0 +1,20 @@
+{
+  "country_code": "RO",
+  "currency": "RON",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 3500,
+      "price_version": "RO-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 4800,
+      "price_version": "RO-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 5800,
+      "price_version": "RO-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

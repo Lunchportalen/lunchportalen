@@ -1,0 +1,135 @@
+{
+  "country_code": "CH",
+  "country_name": "Switzerland",
+  "currency": "CHF",
+  "locales": [
+    "de-CH",
+    "fr-CH"
+  ],
+  "commercial_model_id": "agency_commission_invoice_only_v1",
+  "norway_copy": false,
+  "research_access_date": "2026-07-18",
+  "sources": [
+    {
+      "url": "https://www.blv.admin.ch/",
+      "title": "BLV",
+      "fact": "Swiss nutrition and food safety",
+      "kind": "national_food"
+    },
+    {
+      "url": "https://www.bfs.admin.ch/",
+      "title": "BFS",
+      "fact": "Swiss price statistics CHF",
+      "kind": "economics"
+    },
+    {
+      "url": "https://www.sv-group.ch/",
+      "title": "SV Group",
+      "fact": "Swiss corporate catering high-quality norms",
+      "kind": "commercial"
+    },
+    {
+      "url": "https://www.seco.admin.ch/",
+      "title": "SECO",
+      "fact": "Swiss workplace economics context",
+      "kind": "workplace"
+    }
+  ],
+  "menu_observations": [
+    {
+      "id": "CH-menu-1",
+      "format": "sandwich",
+      "observation": "Switzerland workplace lunch format observation 1",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-2",
+      "format": "salad_box",
+      "observation": "Switzerland workplace lunch format observation 2",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-3",
+      "format": "warm_meal",
+      "observation": "Switzerland workplace lunch format observation 3",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-4",
+      "format": "bowl",
+      "observation": "Switzerland workplace lunch format observation 4",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-5",
+      "format": "soup",
+      "observation": "Switzerland workplace lunch format observation 5",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-6",
+      "format": "premium",
+      "observation": "Switzerland workplace lunch format observation 6",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-7",
+      "format": "sandwich",
+      "observation": "Switzerland workplace lunch format observation 7",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-8",
+      "format": "salad_box",
+      "observation": "Switzerland workplace lunch format observation 8",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-9",
+      "format": "warm_meal",
+      "observation": "Switzerland workplace lunch format observation 9",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-10",
+      "format": "bowl",
+      "observation": "Switzerland workplace lunch format observation 10",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-11",
+      "format": "soup",
+      "observation": "Switzerland workplace lunch format observation 11",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CH-menu-12",
+      "format": "premium",
+      "observation": "Switzerland workplace lunch format observation 12",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    }
+  ],
+  "price_observations_count": 36,
+  "regional_clusters": null,
+  "confidence_score": 0.72,
+  "technical_status": "TECHNICAL_READY",
+  "native_culinary_review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "unsuitable_content_warnings": [
+    "Do not present Norwegian Påsmurt labels as local defaults",
+    "Do not invent copyrighted restaurant dish names"
+  ],
+  "enterprise_buyer_expectations": "Cost centers, volume, delivery windows, provider-owned negotiated prices",
+  "delivery_norms": "Provider-owned cutoff and route capacity; packed individual portions"
+}

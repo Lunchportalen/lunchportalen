@@ -1,0 +1,20 @@
+{
+  "country_code": "DE",
+  "currency": "EUR",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 750,
+      "price_version": "DE-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1100,
+      "price_version": "DE-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1350,
+      "price_version": "DE-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

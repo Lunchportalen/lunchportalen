@@ -1,0 +1,20 @@
+{
+  "country_code": "GB",
+  "currency": "GBP",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 650,
+      "price_version": "GB-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 950,
+      "price_version": "GB-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1200,
+      "price_version": "GB-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

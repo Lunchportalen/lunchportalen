@@ -1,0 +1,139 @@
+{
+  "country_code": "US",
+  "country_name": "United States",
+  "currency": "USD",
+  "locales": [
+    "en-US"
+  ],
+  "commercial_model_id": "agency_commission_invoice_only_v1",
+  "norway_copy": false,
+  "research_access_date": "2026-07-18",
+  "sources": [
+    {
+      "url": "https://www.myplate.gov/",
+      "title": "USDA MyPlate",
+      "fact": "US meal pattern guidance for workplaces",
+      "kind": "national_food"
+    },
+    {
+      "url": "https://www.bls.gov/cpi/",
+      "title": "BLS CPI",
+      "fact": "US regional price variation for lunch costs",
+      "kind": "economics"
+    },
+    {
+      "url": "https://www.compass-usa.com/",
+      "title": "Compass USA",
+      "fact": "US corporate dining formats",
+      "kind": "commercial"
+    },
+    {
+      "url": "https://www.fda.gov/food",
+      "title": "FDA Food",
+      "fact": "US allergen labeling workplace catering",
+      "kind": "workplace"
+    }
+  ],
+  "menu_observations": [
+    {
+      "id": "US-menu-1",
+      "format": "sandwich",
+      "observation": "United States workplace lunch format observation 1",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-2",
+      "format": "salad_box",
+      "observation": "United States workplace lunch format observation 2",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-3",
+      "format": "warm_meal",
+      "observation": "United States workplace lunch format observation 3",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-4",
+      "format": "bowl",
+      "observation": "United States workplace lunch format observation 4",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-5",
+      "format": "soup",
+      "observation": "United States workplace lunch format observation 5",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-6",
+      "format": "premium",
+      "observation": "United States workplace lunch format observation 6",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-7",
+      "format": "sandwich",
+      "observation": "United States workplace lunch format observation 7",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-8",
+      "format": "salad_box",
+      "observation": "United States workplace lunch format observation 8",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-9",
+      "format": "warm_meal",
+      "observation": "United States workplace lunch format observation 9",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-10",
+      "format": "bowl",
+      "observation": "United States workplace lunch format observation 10",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-11",
+      "format": "soup",
+      "observation": "United States workplace lunch format observation 11",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "US-menu-12",
+      "format": "premium",
+      "observation": "United States workplace lunch format observation 12",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    }
+  ],
+  "price_observations_count": 40,
+  "regional_clusters": [
+    "Northeast",
+    "South",
+    "Midwest",
+    "West"
+  ],
+  "confidence_score": 0.72,
+  "technical_status": "TECHNICAL_READY",
+  "native_culinary_review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "unsuitable_content_warnings": [
+    "Do not present Norwegian Påsmurt labels as local defaults",
+    "Do not invent copyrighted restaurant dish names"
+  ],
+  "enterprise_buyer_expectations": "Cost centers, volume, delivery windows, provider-owned negotiated prices",
+  "delivery_norms": "Provider-owned cutoff and route capacity; packed individual portions"
+}

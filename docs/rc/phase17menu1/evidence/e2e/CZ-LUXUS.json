@@ -1,0 +1,31 @@
+{
+  "country_code": "CZ",
+  "package_key": "LUXUS",
+  "steps": {
+    "provider_price": "PASS",
+    "menu_publication": "PASS",
+    "employee_rendering": "PASS",
+    "selection": "PASS",
+    "subchoice": "PASS",
+    "entitlement": "PASS",
+    "order": "PASS",
+    "price_snapshot": "PASS",
+    "commission_numerator": 8250000,
+    "commission_rate_bps": 500,
+    "cutoff": "PASS",
+    "provider_order": "PASS",
+    "production": "PASS",
+    "batch_plan": "PASS",
+    "packing": "PASS",
+    "delivery": "PASS",
+    "delivered": "PASS",
+    "provider_invoice_basis": "PASS",
+    "commission_recognition": "PASS",
+    "refund_reversal": "PASS",
+    "financial_reconciliation": "PASS",
+    "audit": "PASS",
+    "cross_tenant_denial": "PASS",
+    "cross_country_denial": "PASS"
+  },
+  "result": "PASS"
+}

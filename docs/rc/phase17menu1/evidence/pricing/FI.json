@@ -1,0 +1,20 @@
+{
+  "country_code": "FI",
+  "currency": "EUR",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 1050,
+      "price_version": "FI-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1350,
+      "price_version": "FI-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1550,
+      "price_version": "FI-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

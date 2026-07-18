@@ -1,0 +1,20 @@
+{
+  "country_code": "PL",
+  "currency": "PLN",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 2800,
+      "price_version": "PL-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 3900,
+      "price_version": "PL-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 4800,
+      "price_version": "PL-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

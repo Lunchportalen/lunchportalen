@@ -1,0 +1,20 @@
+{
+  "country_code": "IT",
+  "currency": "EUR",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 850,
+      "price_version": "IT-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1200,
+      "price_version": "IT-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1500,
+      "price_version": "IT-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

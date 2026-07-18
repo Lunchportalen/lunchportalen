@@ -1,0 +1,30 @@
+{
+  "country_code": "RO",
+  "basis": {
+    "promise": "Reliable delicious affordable firm lunch",
+    "categories": [
+      "sandwich",
+      "salad_box",
+      "warm_meal"
+    ]
+  },
+  "luxus": {
+    "promise": "More variation with controlled premium complexity",
+    "categories": [
+      "sandwich",
+      "salad_box",
+      "warm_meal",
+      "sushi",
+      "poke_bowl",
+      "thai"
+    ],
+    "capability_promise_required": true
+  },
+  "enterprise": {
+    "promise": "Provider-company contract product with warm meal core",
+    "automatic_luxus_inheritance": false,
+    "included_core": [
+      "warm_meal"
+    ]
+  }
+}

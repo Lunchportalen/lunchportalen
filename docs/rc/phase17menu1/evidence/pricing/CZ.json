@@ -1,0 +1,20 @@
+{
+  "country_code": "CZ",
+  "currency": "CZK",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 12000,
+      "price_version": "CZ-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 16500,
+      "price_version": "CZ-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 19500,
+      "price_version": "CZ-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

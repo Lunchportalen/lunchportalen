@@ -1,0 +1,15 @@
+{
+  "country_code": "CH",
+  "generation_run_id": "gen-17menu1-CH",
+  "deterministic_seed": "phase17menu1:CH:v1",
+  "bank_version": "17menu1.warm.1",
+  "status": "draft",
+  "provider_approval_required": true,
+  "auto_published": false,
+  "selected_from_approved_bank_only": true,
+  "duplicate_dish_violations": 0,
+  "margin_pass": true,
+  "capacity_pass": true,
+  "transport_pass": true,
+  "result": "PASS"
+}

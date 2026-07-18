@@ -1,0 +1,17 @@
+{
+  "PHASE17MENU_WORKTREE": "CLEAN_AFTER_BASELINE_PUSH",
+  "branch": "release/global-menu-universes-21",
+  "PHASE17MENU_RELEASE_SHA": "d93af89a40e9d4c3dd91a7e745f4dcbe6955a29c",
+  "PHASE17MENU_BASELINE_SHA": "65fe1953203d92f239c5e340d5064d4b13a58e07",
+  "production_sha_untouched": "771a4207e9743fd232971eb95ecc27e45723a89d",
+  "staging_project": "uigxsboqeruxflgzqztl",
+  "staging_migrations_applied": [
+    "phase17menu_package_entitlements_canonical",
+    "phase17menu1_enterprise_contracts_staging"
+  ],
+  "production_migrations_applied": false,
+  "SECRET_EXPOSURES": 0,
+  "CUSTOMER_PII_IN_EVIDENCE": 0,
+  "SANITY_STAGING_SEED": "BLOCKED_MISSING_WRITE_TOKEN",
+  "LP_PACKAGE_ENTITLEMENTS_RUNTIME": "enable_on_staging_env"
+}

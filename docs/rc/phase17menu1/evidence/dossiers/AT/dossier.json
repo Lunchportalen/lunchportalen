@@ -1,0 +1,134 @@
+{
+  "country_code": "AT",
+  "country_name": "Austria",
+  "currency": "EUR",
+  "locales": [
+    "de-AT"
+  ],
+  "commercial_model_id": "agency_commission_invoice_only_v1",
+  "norway_copy": false,
+  "research_access_date": "2026-07-18",
+  "sources": [
+    {
+      "url": "https://www.ages.at/",
+      "title": "AGES",
+      "fact": "Austrian food safety authority",
+      "kind": "national_food"
+    },
+    {
+      "url": "https://www.statistik.at/",
+      "title": "Statistics Austria",
+      "fact": "Austrian price statistics",
+      "kind": "economics"
+    },
+    {
+      "url": "https://www.gourmet.at/",
+      "title": "Gourmet AT",
+      "fact": "Austrian catering formats",
+      "kind": "commercial"
+    },
+    {
+      "url": "https://www.sozialministerium.at/",
+      "title": "Sozialministerium",
+      "fact": "Workplace health meal context",
+      "kind": "workplace"
+    }
+  ],
+  "menu_observations": [
+    {
+      "id": "AT-menu-1",
+      "format": "sandwich",
+      "observation": "Austria workplace lunch format observation 1",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-2",
+      "format": "salad_box",
+      "observation": "Austria workplace lunch format observation 2",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-3",
+      "format": "warm_meal",
+      "observation": "Austria workplace lunch format observation 3",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-4",
+      "format": "bowl",
+      "observation": "Austria workplace lunch format observation 4",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-5",
+      "format": "soup",
+      "observation": "Austria workplace lunch format observation 5",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-6",
+      "format": "premium",
+      "observation": "Austria workplace lunch format observation 6",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-7",
+      "format": "sandwich",
+      "observation": "Austria workplace lunch format observation 7",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-8",
+      "format": "salad_box",
+      "observation": "Austria workplace lunch format observation 8",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-9",
+      "format": "warm_meal",
+      "observation": "Austria workplace lunch format observation 9",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-10",
+      "format": "bowl",
+      "observation": "Austria workplace lunch format observation 10",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-11",
+      "format": "soup",
+      "observation": "Austria workplace lunch format observation 11",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "AT-menu-12",
+      "format": "premium",
+      "observation": "Austria workplace lunch format observation 12",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    }
+  ],
+  "price_observations_count": 36,
+  "regional_clusters": null,
+  "confidence_score": 0.72,
+  "technical_status": "TECHNICAL_READY",
+  "native_culinary_review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "unsuitable_content_warnings": [
+    "Do not present Norwegian Påsmurt labels as local defaults",
+    "Do not invent copyrighted restaurant dish names"
+  ],
+  "enterprise_buyer_expectations": "Cost centers, volume, delivery windows, provider-owned negotiated prices",
+  "delivery_norms": "Provider-owned cutoff and route capacity; packed individual portions"
+}

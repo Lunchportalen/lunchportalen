@@ -1,0 +1,27 @@
+name: Phase 17MENU.1 Sanity staging seed
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Seed country universes into staging dataset only
+        env:
+          SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: staging
+          SANITY_DATASET: staging
+        run: |
+          set -euo pipefail
+          test -n "${SANITY_WRITE_TOKEN}"
+          test -n "${NEXT_PUBLIC_SANITY_PROJECT_ID}"
+          npx tsx scripts/sanity/seed-phase17menu-country-universes.ts

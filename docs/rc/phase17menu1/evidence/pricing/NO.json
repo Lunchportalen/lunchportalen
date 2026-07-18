@@ -1,0 +1,20 @@
+{
+  "country_code": "NO",
+  "currency": "NOK",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 9900,
+      "price_version": "NO-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 13900,
+      "price_version": "NO-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 16900,
+      "price_version": "NO-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

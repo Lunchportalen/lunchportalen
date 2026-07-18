@@ -1,0 +1,20 @@
+{
+  "country_code": "DK",
+  "currency": "DKK",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 6500,
+      "price_version": "DK-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 9500,
+      "price_version": "DK-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 11500,
+      "price_version": "DK-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

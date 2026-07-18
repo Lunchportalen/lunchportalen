@@ -1,0 +1,607 @@
+{
+  "country_code": "DE",
+  "operating_days_per_week": 5,
+  "repeat_exclusion_weeks": 8,
+  "base_repeat_requirement": 40,
+  "constraint_reserve": 5,
+  "seasonal_reserve": 5,
+  "dietary_reserve": 5,
+  "required_eligible_bank": 55,
+  "eligible_dish_count": 55,
+  "simulated_eligible_per_day": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+  ],
+  "days_with_fewer_than_three": 0,
+  "adequate": true,
+  "dishes": [
+    {
+      "dish_key": "de-warm-01",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-02",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-03",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-04",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-05",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-06",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 2050
+    },
+    {
+      "dish_key": "de-warm-07",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 2100
+    },
+    {
+      "dish_key": "de-warm-08",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-09",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-10",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-11",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-12",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-13",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 2050
+    },
+    {
+      "dish_key": "de-warm-14",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 2100
+    },
+    {
+      "dish_key": "de-warm-15",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-16",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-17",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-18",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-19",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-20",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 2050
+    },
+    {
+      "dish_key": "de-warm-21",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 2100
+    },
+    {
+      "dish_key": "de-warm-22",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-23",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-24",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-25",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-26",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-27",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 2050
+    },
+    {
+      "dish_key": "de-warm-28",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 2100
+    },
+    {
+      "dish_key": "de-warm-29",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-30",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-31",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-32",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-33",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-34",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 2050
+    },
+    {
+      "dish_key": "de-warm-35",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 2100
+    },
+    {
+      "dish_key": "de-warm-36",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-37",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-38",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-39",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-40",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-41",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 2050
+    },
+    {
+      "dish_key": "de-warm-42",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 2100
+    },
+    {
+      "dish_key": "de-warm-43",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-44",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-45",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-46",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-47",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-48",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 2050
+    },
+    {
+      "dish_key": "de-warm-49",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 2100
+    },
+    {
+      "dish_key": "de-warm-50",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 1800
+    },
+    {
+      "dish_key": "de-warm-51",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 380,
+      "contribution_bps": 1850
+    },
+    {
+      "dish_key": "de-warm-52",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 390,
+      "contribution_bps": 1900
+    },
+    {
+      "dish_key": "de-warm-53",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 400,
+      "contribution_bps": 1950
+    },
+    {
+      "dish_key": "de-warm-54",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 410,
+      "contribution_bps": 2000
+    },
+    {
+      "dish_key": "de-warm-55",
+      "recipe_version": "17menu1.1",
+      "generation_eligible": true,
+      "locales": [
+        "de-DE"
+      ],
+      "portion_weight_g": 420,
+      "contribution_bps": 2050
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "COUNTRY_DOSSIERS": 21,
+  "COUNTRY_PRICE_BENCHMARKS": 21,
+  "COUNTRY_WARM_BANKS": 21,
+  "COUNTRY_PACKAGE_E2E": 63,
+  "LOCALES": 24,
+  "US_REGIONAL_CLUSTERS": 4,
+  "CA_REGIONAL_CLUSTERS": 5,
+  "AUTO_PUBLICATION_WITHOUT_PROVIDER_APPROVAL": 0,
+  "ENTERPRISE_AUTOMATIC_LUXUS_INHERITANCE": 0,
+  "GLOBAL_HARDCODED_PACKAGE_PRICES": 0,
+  "countries": [
+    {
+      "country": "NO",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "SE",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "DK",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "FI",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "GB",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "DE",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "FR",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "ES",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "IT",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "NL",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "BE",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "CH",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "AT",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "IE",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "PL",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "RO",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "CZ",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "PT",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "GR",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "US",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    },
+    {
+      "country": "CA",
+      "dossier": true,
+      "benchmark": true,
+      "warm_adequate": true,
+      "e2e_packages": 3
+    }
+  ],
+  "result": "PASS"
+}

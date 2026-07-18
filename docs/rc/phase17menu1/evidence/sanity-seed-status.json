@@ -1,0 +1,7 @@
+{
+  "dataset_target": "staging",
+  "script": "scripts/sanity/seed-phase17menu-country-universes.ts",
+  "dry_run": "FAIL_MISSING_SANITY_WRITE_TOKEN",
+  "production_publication": 0,
+  "owner_action": "Provide SANITY_WRITE_TOKEN for staging/review dataset only"
+}

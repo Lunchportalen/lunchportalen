@@ -1,0 +1,20 @@
+{
+  "country_code": "CH",
+  "currency": "CHF",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 1400,
+      "price_version": "CH-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1900,
+      "price_version": "CH-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 2300,
+      "price_version": "CH-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

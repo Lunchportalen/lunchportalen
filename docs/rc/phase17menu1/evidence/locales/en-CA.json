@@ -1,0 +1,14 @@
+{
+  "locale": "en-CA",
+  "category_labels": "PASS",
+  "item_labels": "PASS",
+  "variants": "PASS",
+  "allergens": "PASS",
+  "kitchen_names": "PASS",
+  "order_summaries": "PASS",
+  "identity_mutations": 0,
+  "price_mutations": 0,
+  "entitlement_mutations": 0,
+  "norwegian_fallback": "NONE",
+  "result": "PASS"
+}

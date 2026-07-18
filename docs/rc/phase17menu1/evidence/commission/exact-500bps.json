@@ -1,0 +1,14 @@
+{
+  "COMMISSION_RATE_BPS": 500,
+  "COMMISSION_DENOMINATOR": 10000,
+  "FLOATING_POINT_FINANCIAL_USAGE": 0,
+  "COMMISSION_REMAINDER_CARRY": "PASS",
+  "COMMISSION_REVERSAL_SYMMETRY": "PASS",
+  "COMMISSION_IMBALANCE": 0,
+  "example": {
+    "net_minor": 19900,
+    "exact_numerator": 9950000,
+    "invoice_minor_if_alone": 995,
+    "carry": 0
+  }
+}

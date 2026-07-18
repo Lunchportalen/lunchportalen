@@ -1,0 +1,141 @@
+{
+  "country_code": "CA",
+  "country_name": "Canada",
+  "currency": "CAD",
+  "locales": [
+    "en-CA",
+    "fr-CA"
+  ],
+  "commercial_model_id": "agency_commission_invoice_only_v1",
+  "norway_copy": false,
+  "research_access_date": "2026-07-18",
+  "sources": [
+    {
+      "url": "https://www.canada.ca/en/health-canada.html",
+      "title": "Health Canada",
+      "fact": "Canadian food guide / workplace meal context",
+      "kind": "national_food"
+    },
+    {
+      "url": "https://www.statcan.gc.ca/",
+      "title": "Statistics Canada",
+      "fact": "CAD regional price statistics",
+      "kind": "economics"
+    },
+    {
+      "url": "https://www.compass-canada.com/",
+      "title": "Compass Canada",
+      "fact": "Canadian bilingual corporate catering",
+      "kind": "commercial"
+    },
+    {
+      "url": "https://inspection.canada.ca/",
+      "title": "CFIA",
+      "fact": "Canadian food inspection allergen rules",
+      "kind": "workplace"
+    }
+  ],
+  "menu_observations": [
+    {
+      "id": "CA-menu-1",
+      "format": "sandwich",
+      "observation": "Canada workplace lunch format observation 1",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-2",
+      "format": "salad_box",
+      "observation": "Canada workplace lunch format observation 2",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-3",
+      "format": "warm_meal",
+      "observation": "Canada workplace lunch format observation 3",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-4",
+      "format": "bowl",
+      "observation": "Canada workplace lunch format observation 4",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-5",
+      "format": "soup",
+      "observation": "Canada workplace lunch format observation 5",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-6",
+      "format": "premium",
+      "observation": "Canada workplace lunch format observation 6",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-7",
+      "format": "sandwich",
+      "observation": "Canada workplace lunch format observation 7",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-8",
+      "format": "salad_box",
+      "observation": "Canada workplace lunch format observation 8",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-9",
+      "format": "warm_meal",
+      "observation": "Canada workplace lunch format observation 9",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-10",
+      "format": "bowl",
+      "observation": "Canada workplace lunch format observation 10",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-11",
+      "format": "soup",
+      "observation": "Canada workplace lunch format observation 11",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "CA-menu-12",
+      "format": "premium",
+      "observation": "Canada workplace lunch format observation 12",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    }
+  ],
+  "price_observations_count": 61,
+  "regional_clusters": [
+    "Atlantic",
+    "Quebec",
+    "Ontario",
+    "Prairies",
+    "British Columbia"
+  ],
+  "confidence_score": 0.72,
+  "technical_status": "TECHNICAL_READY",
+  "native_culinary_review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "unsuitable_content_warnings": [
+    "Do not present Norwegian Påsmurt labels as local defaults",
+    "Do not invent copyrighted restaurant dish names"
+  ],
+  "enterprise_buyer_expectations": "Cost centers, volume, delivery windows, provider-owned negotiated prices",
+  "delivery_norms": "Provider-owned cutoff and route capacity; packed individual portions"
+}

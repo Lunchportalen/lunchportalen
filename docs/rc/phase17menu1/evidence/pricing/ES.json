@@ -1,0 +1,20 @@
+{
+  "country_code": "ES",
+  "currency": "EUR",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 800,
+      "price_version": "ES-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1150,
+      "price_version": "ES-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1400,
+      "price_version": "ES-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

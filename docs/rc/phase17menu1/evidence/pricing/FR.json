@@ -1,0 +1,20 @@
+{
+  "country_code": "FR",
+  "currency": "EUR",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 900,
+      "price_version": "FR-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1300,
+      "price_version": "FR-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1600,
+      "price_version": "FR-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

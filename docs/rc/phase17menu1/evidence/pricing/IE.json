@@ -1,0 +1,20 @@
+{
+  "country_code": "IE",
+  "currency": "EUR",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 750,
+      "price_version": "IE-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1100,
+      "price_version": "IE-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1350,
+      "price_version": "IE-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

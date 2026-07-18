@@ -1,0 +1,20 @@
+{
+  "country_code": "CA",
+  "currency": "CAD",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 1200,
+      "price_version": "CA-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1600,
+      "price_version": "CA-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1900,
+      "price_version": "CA-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

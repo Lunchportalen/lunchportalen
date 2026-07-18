@@ -1,0 +1,20 @@
+{
+  "country_code": "GR",
+  "currency": "EUR",
+  "provider_default_prices": {
+    "BASIS": {
+      "price_minor": 700,
+      "price_version": "GR-BASIS-v1"
+    },
+    "LUXUS": {
+      "price_minor": 1000,
+      "price_version": "GR-LUXUS-v1"
+    },
+    "ENTERPRISE": {
+      "price_minor": 1250,
+      "price_version": "GR-ENT-v1"
+    }
+  },
+  "global_hardcoded_package_prices": 0,
+  "provider_owned": true
+}

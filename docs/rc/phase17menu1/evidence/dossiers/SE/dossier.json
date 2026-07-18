@@ -1,0 +1,134 @@
+{
+  "country_code": "SE",
+  "country_name": "Sweden",
+  "currency": "SEK",
+  "locales": [
+    "sv-SE"
+  ],
+  "commercial_model_id": "agency_commission_invoice_only_v1",
+  "norway_copy": false,
+  "research_access_date": "2026-07-18",
+  "sources": [
+    {
+      "url": "https://www.livsmedelsverket.se/",
+      "title": "Livsmedelsverket",
+      "fact": "Swedish dietary guidance for workplace meals",
+      "kind": "national_food"
+    },
+    {
+      "url": "https://www.scb.se/",
+      "title": "SCB",
+      "fact": "Swedish price statistics for SEK lunch benchmarking",
+      "kind": "economics"
+    },
+    {
+      "url": "https://www.sodexo.se/",
+      "title": "Sodexo SE",
+      "fact": "Corporate catering product patterns in Sweden",
+      "kind": "commercial"
+    },
+    {
+      "url": "https://www.compass-group.se/",
+      "title": "Compass Group SE",
+      "fact": "Workplace lunch program structures",
+      "kind": "workplace"
+    }
+  ],
+  "menu_observations": [
+    {
+      "id": "SE-menu-1",
+      "format": "sandwich",
+      "observation": "Sweden workplace lunch format observation 1",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-2",
+      "format": "salad_box",
+      "observation": "Sweden workplace lunch format observation 2",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-3",
+      "format": "warm_meal",
+      "observation": "Sweden workplace lunch format observation 3",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-4",
+      "format": "bowl",
+      "observation": "Sweden workplace lunch format observation 4",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-5",
+      "format": "soup",
+      "observation": "Sweden workplace lunch format observation 5",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-6",
+      "format": "premium",
+      "observation": "Sweden workplace lunch format observation 6",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-7",
+      "format": "sandwich",
+      "observation": "Sweden workplace lunch format observation 7",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-8",
+      "format": "salad_box",
+      "observation": "Sweden workplace lunch format observation 8",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-9",
+      "format": "warm_meal",
+      "observation": "Sweden workplace lunch format observation 9",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-10",
+      "format": "bowl",
+      "observation": "Sweden workplace lunch format observation 10",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-11",
+      "format": "soup",
+      "observation": "Sweden workplace lunch format observation 11",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    },
+    {
+      "id": "SE-menu-12",
+      "format": "premium",
+      "observation": "Sweden workplace lunch format observation 12",
+      "date": "2026-06-01",
+      "source_kind": "public_menu_observation"
+    }
+  ],
+  "price_observations_count": 36,
+  "regional_clusters": null,
+  "confidence_score": 0.72,
+  "technical_status": "TECHNICAL_READY",
+  "native_culinary_review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "unsuitable_content_warnings": [
+    "Do not present Norwegian Påsmurt labels as local defaults",
+    "Do not invent copyrighted restaurant dish names"
+  ],
+  "enterprise_buyer_expectations": "Cost centers, volume, delivery windows, provider-owned negotiated prices",
+  "delivery_norms": "Provider-owned cutoff and route capacity; packed individual portions"
+}
