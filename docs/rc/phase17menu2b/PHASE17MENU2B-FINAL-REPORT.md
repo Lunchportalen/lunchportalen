@@ -1,11 +1,11 @@
-﻿# PHASE 17MENU.2B â€” REAL STAGING MENU CERTIFICATION
+﻿# PHASE 17MENU.2B — REAL STAGING MENU CERTIFICATION
 
 ## Source
 
 - Branch: `release/global-menu-universes-21`
-- Release SHA: `967adb1244a353ee5c0a5e3fd517c94a112ca3b8`
+- Release SHA: see `evidence/release-sha.json` / branch tip after push
 - Worktree: `C:\prosjekter\lunchportalen-16no`
-- Staging URL: GHA `next start` on exact SHA against staging Supabase (`VERCEL_TOKEN` not in repo secrets â€” preview deploy deferred)
+- Staging URL: GHA `next start` on exact SHA against staging Supabase (`VERCEL_TOKEN` not in repo secrets — preview deploy deferred)
 - Staging deployed SHA: _(pending GHA `phase17menu2b-staging-cert`)_
 - Supabase target: `uigxsboqeruxflgzqztl`
 - Sanity target: `4udoq5d8` / `staging`
@@ -53,7 +53,7 @@
 - Generation-ready banks: **21/21**
 - Eight-week country runs: **21/21**
 - Days generated: **840**
-- Minimum alternatives: **0** days with &lt;3 eligible
+- Minimum alternatives: **0** days with fewer than 3 eligible
 - Auto-publications: **0**
 
 ## Localization
@@ -79,4 +79,3 @@
 Do not declare `GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS` until GHA staging HTTP cert shows 63/63 + 24/24 + entitlement ACTIVE + dossiers complete with real citations + concurrency canaries green.
 
 `OWNER_AUTHENTICATION_REQUIRED` applies only if staging deploy must use Vercel CLI/token (not present in repo secrets) and GHA next-start path is insufficient for owner acceptance.
-

@@ -1,7 +1,7 @@
 ﻿{
-  "PHASE17MENU2B_RELEASE_SHA": "967adb1244a353ee5c0a5e3fd517c94a112ca3b8",
+  "PHASE17MENU2B_RELEASE_SHA": "4460c88c7b5ce129bbc4a3deb25920c5b2990181",
   "branch": "release/global-menu-universes-21",
-  "recorded_at": "2026-07-18T15:30:00.000Z",
+  "note": "Tip at record time; final SHA is HEAD after this commit lands",
   "production_sha_locked": "771a4207e9743fd232971eb95ecc27e45723a89d",
   "PRODUCTION_MUTATIONS": 0
 }
