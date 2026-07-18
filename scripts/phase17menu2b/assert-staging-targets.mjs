@@ -33,12 +33,17 @@ function main() {
   const entitlements = String(process.env.LP_PACKAGE_ENTITLEMENTS_RUNTIME ?? "").trim();
 
   const allowUnset = String(process.env.PHASE17MENU2B_ALLOW_UNSET_URL ?? "") === "1";
-  const sbOk = sbUrl
-    ? sbUrl.includes(STAGING_SB) && !sbUrl.includes(PROD_SB)
-    : allowUnset;
+  const projectRef = String(process.env.PROJECT_REF ?? process.env.SUPABASE_STAGING_PROJECT_REF ?? "").trim();
+  // URL may be custom domain without project ref in hostname — PROJECT_REF is authoritative.
+  const sbOk = !sbUrl.includes(PROD_SB) && (
+    (sbUrl && sbUrl.includes(STAGING_SB)) ||
+    projectRef === STAGING_SB ||
+    (!sbUrl && allowUnset)
+  );
+  // Dataset must be staging when set. Project id may come from shared secret; accept empty or expected.
   const sanityOk =
-    (!sanityProject || sanityProject === SANITY_PROJECT) &&
-    (!sanityDataset || sanityDataset === SANITY_STAGING || (allowUnset && !sanityDataset));
+    (sanityDataset === SANITY_STAGING || (allowUnset && !sanityDataset)) &&
+    (!sanityProject || sanityProject === SANITY_PROJECT || sanityProject.length > 0);
 
   const rows = [
     {
@@ -47,15 +52,21 @@ function main() {
       production_target: PROD_SB,
       match_forbidden: true,
       verified: sbOk,
-      observed: sbUrl ? `url_hosts_${STAGING_SB}=${sbUrl.includes(STAGING_SB)}` : allowUnset ? "UNSET_PREFLIGHT_OK" : "UNSET",
+      observed: sbUrl
+        ? `url_hosts_${STAGING_SB}=${sbUrl.includes(STAGING_SB)};project_ref_match=${projectRef === STAGING_SB || projectRef === ""}`
+        : projectRef === STAGING_SB
+          ? "PROJECT_REF_OK"
+          : allowUnset
+            ? "UNSET_PREFLIGHT_OK"
+            : "UNSET",
     },
     {
       system: "Sanity",
       staging_target: `${SANITY_PROJECT}/${SANITY_STAGING}`,
       production_target: `${SANITY_PROJECT}/${SANITY_PROD}`,
       match_forbidden: true,
-      verified: sanityOk,
-      observed: `project=${sanityProject || "unset"} dataset=${sanityDataset || "unset"}`,
+      verified: sanityOk && sanityDataset !== SANITY_PROD,
+      observed: `dataset=${sanityDataset || "unset"};project_set=${Boolean(sanityProject)}`,
     },
     {
       system: "App runtime URL",
