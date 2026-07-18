@@ -1,0 +1,237 @@
+{
+  "total_recipes": 1155,
+  "countries": [
+    {
+      "country": "NO",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Ovnsbakt bønner med poteter",
+        "Panne torsk med rotgrønnsaker",
+        "Gryte kylling med bygg"
+      ]
+    },
+    {
+      "country": "SE",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Ugnsbakad linser med potatis",
+        "Stek torsk med rotfrukter",
+        "Gryta kyckling med matvete"
+      ]
+    },
+    {
+      "country": "DK",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Ovnbagt bønner med kartofler",
+        "Stegt torsk med rodfrugter",
+        "Gryde kylling med byg"
+      ]
+    },
+    {
+      "country": "FI",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Uunissa pavut ja peruna",
+        "Paistettu siika ja juurekset",
+        "Pata kana ja ohra"
+      ]
+    },
+    {
+      "country": "GB",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Roast chickpeas with potatoes",
+        "Pan-fried cod with vegetables",
+        "Stewed chicken with couscous"
+      ]
+    },
+    {
+      "country": "DE",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Ofen linsen mit kartoffeln",
+        "Pfanne kabeljau mit gemüse",
+        "Eintopf hähnchen mit spätzle"
+      ]
+    },
+    {
+      "country": "FR",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Rôti de lentilles et pommes",
+        "Poêlé de cabillaud et légumes",
+        "Mijoté de poulet et riz"
+      ]
+    },
+    {
+      "country": "ES",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Horneado de garbanzos con patatas",
+        "Plancha de bacalao con verduras",
+        "Guiso de pollo con arroz"
+      ]
+    },
+    {
+      "country": "IT",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Al forno di ceci con patate",
+        "In padella di merluzzo con verdure",
+        "Brasato di pollo con riso"
+      ]
+    },
+    {
+      "country": "NL",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Oven linzen met aardappelen",
+        "Pan kabeljauw met groenten",
+        "Stoof kip met rijst"
+      ]
+    },
+    {
+      "country": "BE",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Four lentilles / pommes",
+        "Poêle cabillaud / légumes",
+        "Mijoté poulet / riz"
+      ]
+    },
+    {
+      "country": "CH",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Ofen linsen mit kartoffeln",
+        "Pfanne eglí mit gemüse",
+        "Geschmort poulet mit risotto"
+      ]
+    },
+    {
+      "country": "AT",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Ofen linsen mit erdäpfel",
+        "Pfanne forelle mit gemüse",
+        "Eintopf hendl mit knödel"
+      ]
+    },
+    {
+      "country": "IE",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Roast beans with potatoes",
+        "Pan cod with veg",
+        "Stew chicken with rice"
+      ]
+    },
+    {
+      "country": "PL",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Pieczony soczewica z ziemniaki",
+        "Smażony dorsz z warzywa",
+        "Gulasz kurczak z kasza"
+      ]
+    },
+    {
+      "country": "RO",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Cuptor de fasole cu cartofi",
+        "Tigaie de cod cu legume",
+        "Tocăniță de pui cu orez"
+      ]
+    },
+    {
+      "country": "CZ",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Pečené čočka s brambory",
+        "Smažené treska s zelenina",
+        "Guláš kuře s knedlíky"
+      ]
+    },
+    {
+      "country": "PT",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Forno de grão com batata",
+        "Frigideira de bacalhau com legumes",
+        "Guisado de frango com arroz"
+      ]
+    },
+    {
+      "country": "GR",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "φούρνος φακές με πατάτες",
+        "τηγάνι μπακαλιάρος με λαχανικά",
+        "στιφάδο κοτόπουλο με ρύζι"
+      ]
+    },
+    {
+      "country": "US",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Roasted black beans with potatoes",
+        "Grilled cod with vegetables",
+        "Braised chicken with rice"
+      ]
+    },
+    {
+      "country": "CA",
+      "recipes": 55,
+      "generation_eligible": 55,
+      "missing_mandatory_fields": 0,
+      "sample_titles": [
+        "Roast lentils with potatoes",
+        "Pan cod with vegetables",
+        "Stew chicken with rice"
+      ]
+    }
+  ],
+  "RECIPE_VERSION": "17menu2a.1"
+}

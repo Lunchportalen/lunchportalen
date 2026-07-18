@@ -1,0 +1,141 @@
+{
+  "country_code": "DK",
+  "access_date": "2026-07-18",
+  "real_citations_only": true,
+  "complete": false,
+  "counts": {
+    "price_observations": 5,
+    "menu_observations": 3,
+    "sources": 5
+  },
+  "sources": [
+    {
+      "url": "https://frokostfirmaet.dk/frokostordning-pris",
+      "title": "Frokostfirmaet pris",
+      "kind": "commercial",
+      "fact": "Danish frokostordning typically 45–85 DKK/person/day"
+    },
+    {
+      "url": "https://nooncph.dk/",
+      "title": "noon Copenhagen",
+      "kind": "commercial",
+      "fact": "64 DKK per kuvert ex VAT & delivery"
+    },
+    {
+      "url": "https://www.madklubben.dk/en/search/lunch-scheme-copenhagen",
+      "title": "Madklubben lunch schemes",
+      "kind": "workplace",
+      "fact": "Corporate lunch schemes from DKK 65/person"
+    },
+    {
+      "url": "https://officeguru.com/dnk/en/services/lunch-catering",
+      "title": "Officeguru lunch catering",
+      "kind": "workplace",
+      "fact": "Marketplace listings ~45–70 DKK/meal with min pax"
+    },
+    {
+      "url": "https://www.foedevarestyrelsen.dk/",
+      "title": "Fødevarestyrelsen",
+      "kind": "national_food",
+      "fact": "Danish food authority allergen/safety context"
+    }
+  ],
+  "price_observations": [
+    {
+      "id": "DK-p1",
+      "source": "https://frokostfirmaet.dk/frokostordning-pris",
+      "access_date": "2026-07-18",
+      "geography": "Denmark",
+      "offering": "Frokostordning band",
+      "price_ex_tax_minor": 5500,
+      "currency": "DKK",
+      "delivery_included": true,
+      "minimum_order": 8,
+      "package_equivalent": "basis",
+      "confidence": 0.75,
+      "note": "Band midpoint of published 45–85 DKK"
+    },
+    {
+      "id": "DK-p2",
+      "source": "https://nooncph.dk/",
+      "access_date": "2026-07-18",
+      "geography": "Copenhagen",
+      "offering": "Daily kuvert",
+      "price_ex_tax_minor": 6400,
+      "currency": "DKK",
+      "delivery_included": false,
+      "minimum_order": null,
+      "package_equivalent": "basis",
+      "confidence": 0.9
+    },
+    {
+      "id": "DK-p3",
+      "source": "https://www.madklubben.dk/en/search/lunch-scheme-copenhagen",
+      "access_date": "2026-07-18",
+      "geography": "Copenhagen/Zealand",
+      "offering": "Lunch scheme",
+      "price_ex_tax_minor": 6500,
+      "currency": "DKK",
+      "delivery_included": null,
+      "minimum_order": null,
+      "package_equivalent": "basis",
+      "confidence": 0.85
+    },
+    {
+      "id": "DK-p4",
+      "source": "https://officeguru.com/dnk/en/services/lunch-catering",
+      "access_date": "2026-07-18",
+      "geography": "Denmark",
+      "offering": "Vendor listing Madklubben",
+      "price_ex_tax_minor": 6400,
+      "currency": "DKK",
+      "delivery_included": null,
+      "minimum_order": 5,
+      "package_equivalent": "basis",
+      "confidence": 0.8
+    },
+    {
+      "id": "DK-p5",
+      "source": "https://officeguru.com/dnk/en/services/lunch-catering",
+      "access_date": "2026-07-18",
+      "geography": "Denmark",
+      "offering": "Vendor listing Gastro By Bøgh",
+      "price_ex_tax_minor": 6900,
+      "currency": "DKK",
+      "delivery_included": null,
+      "minimum_order": 15,
+      "package_equivalent": "luxus",
+      "confidence": 0.75
+    }
+  ],
+  "menu_observations": [
+    {
+      "id": "DK-m1",
+      "source": "https://nooncph.dk/",
+      "access_date": "2026-07-18",
+      "geography": "Copenhagen",
+      "offering": "Chef-developed daily lunch",
+      "format": "warm_meal",
+      "confidence": 0.85
+    },
+    {
+      "id": "DK-m2",
+      "source": "https://www.madklubben.dk/en/search/lunch-scheme-copenhagen",
+      "access_date": "2026-07-18",
+      "geography": "Copenhagen",
+      "offering": "Multiple lunch schemes incl vegetarian",
+      "format": "salad_box",
+      "confidence": 0.8
+    },
+    {
+      "id": "DK-m3",
+      "source": "https://frokostfirmaet.dk/frokostordning-pris",
+      "access_date": "2026-07-18",
+      "geography": "Denmark",
+      "offering": "Buffet-style frokostordning",
+      "format": "warm_meal",
+      "confidence": 0.7
+    }
+  ],
+  "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+}

@@ -1,0 +1,364 @@
+{
+  "batchSize": 5,
+  "countries": {
+    "NO": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "NO-000",
+        "NO-001",
+        "NO-002",
+        "NO-003",
+        "NO-004",
+        "NO-005",
+        "NO-006",
+        "NO-007",
+        "NO-008",
+        "NO-009",
+        "NO-010"
+      ]
+    },
+    "SE": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "SE-000",
+        "SE-001",
+        "SE-002",
+        "SE-003",
+        "SE-004",
+        "SE-005",
+        "SE-006",
+        "SE-007",
+        "SE-008",
+        "SE-009",
+        "SE-010"
+      ]
+    },
+    "DK": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "DK-000",
+        "DK-001",
+        "DK-002",
+        "DK-003",
+        "DK-004",
+        "DK-005",
+        "DK-006",
+        "DK-007",
+        "DK-008",
+        "DK-009",
+        "DK-010"
+      ]
+    },
+    "FI": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "FI-000",
+        "FI-001",
+        "FI-002",
+        "FI-003",
+        "FI-004",
+        "FI-005",
+        "FI-006",
+        "FI-007",
+        "FI-008",
+        "FI-009",
+        "FI-010"
+      ]
+    },
+    "GB": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "GB-000",
+        "GB-001",
+        "GB-002",
+        "GB-003",
+        "GB-004",
+        "GB-005",
+        "GB-006",
+        "GB-007",
+        "GB-008",
+        "GB-009",
+        "GB-010"
+      ]
+    },
+    "DE": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "DE-000",
+        "DE-001",
+        "DE-002",
+        "DE-003",
+        "DE-004",
+        "DE-005",
+        "DE-006",
+        "DE-007",
+        "DE-008",
+        "DE-009",
+        "DE-010"
+      ]
+    },
+    "FR": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "FR-000",
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-006",
+        "FR-007",
+        "FR-008",
+        "FR-009",
+        "FR-010"
+      ]
+    },
+    "ES": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "ES-000",
+        "ES-001",
+        "ES-002",
+        "ES-003",
+        "ES-004",
+        "ES-005",
+        "ES-006",
+        "ES-007",
+        "ES-008",
+        "ES-009",
+        "ES-010"
+      ]
+    },
+    "IT": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "IT-000",
+        "IT-001",
+        "IT-002",
+        "IT-003",
+        "IT-004",
+        "IT-005",
+        "IT-006",
+        "IT-007",
+        "IT-008",
+        "IT-009",
+        "IT-010"
+      ]
+    },
+    "NL": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "NL-000",
+        "NL-001",
+        "NL-002",
+        "NL-003",
+        "NL-004",
+        "NL-005",
+        "NL-006",
+        "NL-007",
+        "NL-008",
+        "NL-009",
+        "NL-010"
+      ]
+    },
+    "BE": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "BE-000",
+        "BE-001",
+        "BE-002",
+        "BE-003",
+        "BE-004",
+        "BE-005",
+        "BE-006",
+        "BE-007",
+        "BE-008",
+        "BE-009",
+        "BE-010"
+      ]
+    },
+    "CH": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "CH-000",
+        "CH-001",
+        "CH-002",
+        "CH-003",
+        "CH-004",
+        "CH-005",
+        "CH-006",
+        "CH-007",
+        "CH-008",
+        "CH-009",
+        "CH-010"
+      ]
+    },
+    "AT": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "AT-000",
+        "AT-001",
+        "AT-002",
+        "AT-003",
+        "AT-004",
+        "AT-005",
+        "AT-006",
+        "AT-007",
+        "AT-008",
+        "AT-009",
+        "AT-010"
+      ]
+    },
+    "IE": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "IE-000",
+        "IE-001",
+        "IE-002",
+        "IE-003",
+        "IE-004",
+        "IE-005",
+        "IE-006",
+        "IE-007",
+        "IE-008",
+        "IE-009",
+        "IE-010"
+      ]
+    },
+    "PL": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "PL-000",
+        "PL-001",
+        "PL-002",
+        "PL-003",
+        "PL-004",
+        "PL-005",
+        "PL-006",
+        "PL-007",
+        "PL-008",
+        "PL-009",
+        "PL-010"
+      ]
+    },
+    "RO": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "RO-000",
+        "RO-001",
+        "RO-002",
+        "RO-003",
+        "RO-004",
+        "RO-005",
+        "RO-006",
+        "RO-007",
+        "RO-008",
+        "RO-009",
+        "RO-010"
+      ]
+    },
+    "CZ": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "CZ-000",
+        "CZ-001",
+        "CZ-002",
+        "CZ-003",
+        "CZ-004",
+        "CZ-005",
+        "CZ-006",
+        "CZ-007",
+        "CZ-008",
+        "CZ-009",
+        "CZ-010"
+      ]
+    },
+    "PT": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "PT-000",
+        "PT-001",
+        "PT-002",
+        "PT-003",
+        "PT-004",
+        "PT-005",
+        "PT-006",
+        "PT-007",
+        "PT-008",
+        "PT-009",
+        "PT-010"
+      ]
+    },
+    "GR": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "GR-000",
+        "GR-001",
+        "GR-002",
+        "GR-003",
+        "GR-004",
+        "GR-005",
+        "GR-006",
+        "GR-007",
+        "GR-008",
+        "GR-009",
+        "GR-010"
+      ]
+    },
+    "US": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "US-000",
+        "US-001",
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008",
+        "US-009",
+        "US-010"
+      ]
+    },
+    "CA": {
+      "docCount": 55,
+      "batchCount": 11,
+      "batches": [
+        "CA-000",
+        "CA-001",
+        "CA-002",
+        "CA-003",
+        "CA-004",
+        "CA-005",
+        "CA-006",
+        "CA-007",
+        "CA-008",
+        "CA-009",
+        "CA-010"
+      ]
+    }
+  },
+  "totalBatches": 231,
+  "totalDocs": 1155
+}

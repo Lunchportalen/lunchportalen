@@ -1,0 +1,64 @@
+{
+  "country_code": "NO",
+  "access_date": "2026-07-18",
+  "real_citations_only": true,
+  "complete": false,
+  "counts": {
+    "price_observations": 1,
+    "menu_observations": 1,
+    "sources": 4
+  },
+  "sources": [
+    {
+      "url": "https://happycatering.no/vare-menyer/bedriftslunsj/",
+      "title": "Happy Catering bedriftslunsj",
+      "kind": "workplace",
+      "fact": "Oslo-area daily workplace lunch buffet from NOK 120 ex VAT; min ~20 employees"
+    },
+    {
+      "url": "https://www.matprat.no/",
+      "title": "Matprat",
+      "kind": "national_food",
+      "fact": "Norwegian everyday meal culture reference for bread and hot dishes"
+    },
+    {
+      "url": "https://www.ssb.no/priser-og-prisindekser",
+      "title": "SSB priser",
+      "kind": "economics",
+      "fact": "Official Norwegian price statistics context for NOK catering costs"
+    },
+    {
+      "url": "https://www.mattilsynet.no/",
+      "title": "Mattilsynet",
+      "kind": "workplace",
+      "fact": "Food safety / allergen framework for catering operators"
+    }
+  ],
+  "price_observations": [
+    {
+      "id": "NO-p1",
+      "source": "https://happycatering.no/vare-menyer/bedriftslunsj/",
+      "access_date": "2026-07-18",
+      "geography": "Oslo/Lillestrøm",
+      "offering": "Daily lunch buffet",
+      "price_ex_tax_minor": 12000,
+      "currency": "NOK",
+      "delivery_included": false,
+      "minimum_order": 20,
+      "package_equivalent": "basis",
+      "confidence": 0.8
+    }
+  ],
+  "menu_observations": [
+    {
+      "id": "NO-m1",
+      "source": "https://happycatering.no/vare-menyer/bedriftslunsj/",
+      "access_date": "2026-07-18",
+      "geography": "Oslo",
+      "offering": "Warm dish + salads + bread",
+      "format": "warm_meal",
+      "confidence": 0.8
+    }
+  ],
+  "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+}

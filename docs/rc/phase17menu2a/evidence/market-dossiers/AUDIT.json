@@ -1,0 +1,176 @@
+{
+  "COUNTRY_PRICE_EVIDENCE_COMPLETE": "0/21",
+  "COUNTRY_MENU_EVIDENCE_COMPLETE": "0/21",
+  "COUNTRY_DOSSIERS_WITHOUT_REAL_CITATIONS": 19,
+  "countries": [
+    {
+      "country": "NO",
+      "complete": false,
+      "priceN": 1,
+      "menuN": 1,
+      "sourcesN": 4,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "SE",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "DK",
+      "complete": false,
+      "priceN": 5,
+      "menuN": 3,
+      "sourcesN": 5,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "FI",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "GB",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "DE",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "FR",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "ES",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "IT",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "NL",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "BE",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "CH",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "AT",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "IE",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "PL",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "RO",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "CZ",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "PT",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "GR",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "US",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    },
+    {
+      "country": "CA",
+      "complete": false,
+      "priceN": 0,
+      "menuN": 0,
+      "sourcesN": 0,
+      "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+    }
+  ],
+  "note": "Honest incomplete status until ≥12 independent price and menu observations per country are curated from public sources."
+}

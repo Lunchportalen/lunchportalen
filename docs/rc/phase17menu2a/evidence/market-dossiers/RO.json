@@ -1,0 +1,15 @@
+{
+  "country_code": "RO",
+  "access_date": "2026-07-18",
+  "real_citations_only": true,
+  "complete": false,
+  "counts": {
+    "price_observations": 0,
+    "menu_observations": 0,
+    "sources": 0
+  },
+  "sources": [],
+  "price_observations": [],
+  "menu_observations": [],
+  "status": "INCOMPLETE_NEEDS_MORE_PUBLIC_EVIDENCE"
+}

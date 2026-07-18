@@ -1,0 +1,114 @@
+{
+  "LIVE_WARM_GENERATION": "21/21",
+  "WARM_DAYS_GENERATED": 840,
+  "GENERATION_FROM_STUB": 0,
+  "NON_BANK_FREE_TEXT_DISHES": 0,
+  "AUTO_PUBLICATION_WITHOUT_PROVIDER_APPROVAL": 0,
+  "countries": [
+    {
+      "country": "NO",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "SE",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "DK",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "FI",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "GB",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "DE",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "FR",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "ES",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "IT",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "NL",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "BE",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "CH",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "AT",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "IE",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "PL",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "RO",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "CZ",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "PT",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "GR",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "US",
+      "days": 40,
+      "min_alternatives": 4
+    },
+    {
+      "country": "CA",
+      "days": 40,
+      "min_alternatives": 4
+    }
+  ]
+}

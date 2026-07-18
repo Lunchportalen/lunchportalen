@@ -1,0 +1,8 @@
+{
+  "project": "uigxsboqeruxflgzqztl",
+  "synthetic_providers": 21,
+  "slug_prefix": "p17menu2a-",
+  "billing_model": "invoice_only",
+  "note": "Isolated staging providers for 17MENU.2A. Companies/employees/HTTP require service-role auth to complete.",
+  "PRODUCTION_MUTATIONS": 0
+}

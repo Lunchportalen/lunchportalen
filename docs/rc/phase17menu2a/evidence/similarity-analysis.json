@@ -1,0 +1,131 @@
+{
+  "method": "ingredient_core+protein+side+sauce+first_step",
+  "norway_clone_countries": 0,
+  "countries": [
+    {
+      "country": "NO",
+      "norway_clone": false,
+      "shared_signature_pct": 0
+    },
+    {
+      "country": "SE",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "DK",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "FI",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "GB",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "DE",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "FR",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "ES",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "IT",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "NL",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "BE",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "CH",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "AT",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "IE",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "PL",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "RO",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "CZ",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "PT",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "GR",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "US",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    },
+    {
+      "country": "CA",
+      "norway_clone": false,
+      "shared_signature_pct": 0,
+      "shared_count": 0
+    }
+  ]
+}
