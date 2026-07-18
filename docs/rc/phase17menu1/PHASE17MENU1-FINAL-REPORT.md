@@ -9,7 +9,7 @@ Single blocker for full staging technical PASS: `SANITY_WRITE_TOKEN` missing in 
 | Field | Value |
 |-------|--------|
 | Branch | `release/global-menu-universes-21` |
-| Release SHA | `d93af89a40e9d4c3dd91a7e745f4dcbe6955a29c` |
+| Release SHA | `9342066dceedd7521e63fad2f6cfed4675628962` |
 | Worktree | CLEAN after 17MENU.1 commit (pre-push) |
 | Staging project | `uigxsboqeruxflgzqztl` |
 | Staging migrations | `phase17menu_package_entitlements_canonical` + `phase17menu1_enterprise_contracts_staging` **applied** |

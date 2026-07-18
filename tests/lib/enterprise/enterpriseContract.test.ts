@@ -4,9 +4,10 @@ import {
   assertEnterpriseContract,
   enterpriseEmployeeVisibility,
   enterpriseIsNotAutomaticLuxus,
+  type EnterpriseContract,
 } from "@/lib/enterprise/enterpriseContract";
 
-const base = {
+const base: EnterpriseContract = {
   contract_id: "ent-1",
   provider_id: "p1",
   company_id: "c1",
@@ -14,9 +15,9 @@ const base = {
   currency: "NOK",
   base_price_minor: 17000,
   base_price_version: "v1",
-  included_categories: ["warm_meal", "sandwich"] as const,
-  included_upgrades: ["premium_side"] as const,
-  paid_upgrades: [{ upgrade_key: "dessert" as const, price_minor: 2500, price_version: "u1" }],
+  included_categories: ["warm_meal", "sandwich"],
+  included_upgrades: ["premium_side"],
+  paid_upgrades: [{ upgrade_key: "dessert", price_minor: 2500, price_version: "u1" }],
   minimum_daily_quantity: 10,
   contractual_volume: 200,
   delivery_points: ["loc-1"],
@@ -34,15 +35,14 @@ const base = {
 
 describe("enterpriseContract", () => {
   it("requires warm meal and is not automatic Luxus", () => {
-    expect(() => assertEnterpriseContract({ ...base, included_categories: ["sandwich"] as any })).toThrow(
-      /ENTERPRISE_MISSING_WARM_MEAL/,
-    );
-    expect(enterpriseIsNotAutomaticLuxus(base as any)).toBe(true);
+    const invalid: EnterpriseContract = { ...base, included_categories: ["sandwich"] };
+    expect(() => assertEnterpriseContract(invalid)).toThrow(/ENTERPRISE_MISSING_WARM_MEAL/);
+    expect(enterpriseIsNotAutomaticLuxus(base)).toBe(true);
   });
 
   it("shows included / paid upgrade / unavailable", () => {
-    expect(enterpriseEmployeeVisibility(base as any, "warm_meal").visibility).toBe("included");
-    expect(enterpriseEmployeeVisibility(base as any, "sandwich", "dessert").visibility).toBe("paid_upgrade");
-    expect(enterpriseEmployeeVisibility(base as any, "sushi").visibility).toBe("unavailable");
+    expect(enterpriseEmployeeVisibility(base, "warm_meal").visibility).toBe("included");
+    expect(enterpriseEmployeeVisibility(base, "sandwich", "dessert").visibility).toBe("paid_upgrade");
+    expect(enterpriseEmployeeVisibility(base, "sushi").visibility).toBe("unavailable");
   });
 });
