@@ -1,0 +1,114 @@
+# PHASE 17MENU.2B — staging-only certification of exact branch SHA.
+# Never production. Never app.lunchportalen.no.
+name: phase17menu2b-staging-cert
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_sha:
+        description: Exact commit SHA to certify
+        required: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: staging
+    env:
+      PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: staging
+      SANITY_DATASET: staging
+      SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
+      SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
+      LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
+      APP_VERSION: ${{ inputs.app_sha }}
+
+    steps:
+      - name: Refuse production refs
+        run: |
+          set -euo pipefail
+          test "${PROJECT_REF}" = "uigxsboqeruxflgzqztl"
+          case "${NEXT_PUBLIC_SUPABASE_URL}" in
+            *uigxsboqeruxflgzqztl*) ;;
+            *) echo "::error::staging URL mismatch"; exit 2 ;;
+          esac
+          case "${NEXT_PUBLIC_SUPABASE_URL}" in
+            *hkpokyapzarefrgqzkos*) echo "::error::production supabase"; exit 2 ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.app_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Offline audits + warm generation
+        run: |
+          set -euo pipefail
+          node scripts/phase17menu2b/assert-staging-targets.mjs
+          node scripts/phase17menu2b/audit-recipe-quality.mjs
+          node scripts/phase17menu2b/audit-country-specificity.mjs
+          node scripts/phase17menu2b/run-warm-generation-2b.mjs
+          node scripts/phase17menu2b/scan-evidence-safety.mjs
+
+      - name: Seed synthetic matrix (staging DB)
+        run: node scripts/phase17menu2b/seed-synthetic-matrix.mjs
+
+      - name: Build Next against staging
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          PUBLIC_APP_URL: http://127.0.0.1:3000
+          LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
+
+      - name: Start staging runtime of exact SHA
+        run: |
+          set -euo pipefail
+          npx next start -H 127.0.0.1 -p 3000 > /tmp/next-start.log 2>&1 &
+          echo $! > /tmp/next.pid
+          for i in $(seq 1 60); do
+            if curl -fsS "http://127.0.0.1:3000/api/health" >/tmp/health.json; then
+              echo "health_ok"
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::health timeout"
+          cat /tmp/next-start.log || true
+          exit 1
+
+      - name: HTTP certification (63 + 24 + canaries)
+        env:
+          PHASE17MENU2B_BASE_URL: http://127.0.0.1:3000
+          LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
+        run: node scripts/phase17menu2b/certify-staging-http.mjs
+
+      - name: Safety rescan
+        run: node scripts/phase17menu2b/scan-evidence-safety.mjs
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase17menu2b-evidence
+          path: docs/rc/phase17menu2b/
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/next.pid ]; then kill "$(cat /tmp/next.pid)" || true; fi

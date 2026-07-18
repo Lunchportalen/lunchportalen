@@ -1,0 +1,62 @@
+{
+  "access_date": "2026-07-18",
+  "real_citations_only": true,
+  "countries": {
+    "US": {
+      "price_count": 30,
+      "menu_count": 14,
+      "source_count": 10,
+      "workplace_sources": 7,
+      "commercial_sources": 3,
+      "regional_clusters": [
+        "Northeast",
+        "South",
+        "Midwest",
+        "West"
+      ],
+      "complete": true,
+      "shortfall": null,
+      "currency": "USD",
+      "locales": [
+        "en-US"
+      ]
+    },
+    "CA": {
+      "price_count": 33,
+      "menu_count": 14,
+      "source_count": 13,
+      "workplace_sources": 11,
+      "commercial_sources": 2,
+      "regional_clusters": [
+        "Atlantic",
+        "Quebec",
+        "Ontario",
+        "Prairies",
+        "British Columbia"
+      ],
+      "locales_covered": [
+        "en-CA",
+        "fr-CA"
+      ],
+      "complete": true,
+      "shortfall": null,
+      "currency": "CAD",
+      "locales": [
+        "en-CA",
+        "fr-CA"
+      ]
+    }
+  },
+  "totals": {
+    "price_observations": 63,
+    "menu_observations": 28,
+    "sources": 23,
+    "countries_complete": 2
+  },
+  "notes": [
+    "All prices taken from public pages fetched/searched 2026-07-18; no fabricated URLs or SKUs.",
+    "US Grubhub Potbelly NYC listing (US-p05) is platform merchant pricing — lower confidence.",
+    "CA fr-CA coverage via Montréal traiteur menus + Québec corporatif pricing guides; en-CA via Toronto/Vancouver/Calgary/Halifax operators.",
+    "Range midpoints/floors used where sources publish bands; exact SKUs preferred when available."
+  ]
+}

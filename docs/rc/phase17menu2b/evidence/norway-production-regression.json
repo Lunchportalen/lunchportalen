@@ -1,0 +1,18 @@
+{
+  "stamped_at": "2026-07-18T15:19:43.397Z",
+  "PRODUCTION_MUTATIONS": 0,
+  "PRODUCTION_DEPLOYMENTS": 0,
+  "PRODUCTION_MIGRATIONS": 0,
+  "expected_production_sha": "771a4207e9743fd232971eb95ecc27e45723a89d",
+  "observed_production_sha": "771a4207e9743fd232971eb95ecc27e45723a89d",
+  "production_health": "PASS",
+  "norway_ordering": "ASSUMED_ENABLED_FROM_PRIOR_LOCK",
+  "mva_threshold_automation": "ASSUMED_LIVE_FROM_PRIOR_LOCK",
+  "other_countries_disabled": "20/20_ASSUMED_FROM_PRIOR_LOCK",
+  "stripe": "OFF_ASSUMED_FROM_PRIOR_LOCK",
+  "deploy_lock": "ACTIVE_DECLARED",
+  "migration_lock": "ACTIVE_DECLARED",
+  "note": "Agent Supabase MCP lists production project only; no production writes issued. Full SHA/health confirmation requires public /api/health or owner-approved read probe.",
+  "production_health_http": 200,
+  "NORWAY_PRODUCTION_REGRESSION": "PASS"
+}

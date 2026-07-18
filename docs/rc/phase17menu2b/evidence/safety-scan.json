@@ -1,0 +1,8 @@
+{
+  "SECRET_EXPOSURES": 0,
+  "PII_IN_EVIDENCE": 0,
+  "hits": {
+    "secrets": [],
+    "pii": []
+  }
+}

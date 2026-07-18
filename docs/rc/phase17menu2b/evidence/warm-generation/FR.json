@@ -1,0 +1,813 @@
+{
+  "country_code": "FR",
+  "bank_version": "17menu2a.1",
+  "days_generated": 40,
+  "selected": [
+    {
+      "day_index": 0,
+      "week": 1,
+      "weekday": 1,
+      "season": "winter",
+      "dish_key": "fr-warm-01",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 429,
+      "commission_exact_numerator": 550000,
+      "eligible_alternatives_before_selection": 14,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 1,
+      "week": 1,
+      "weekday": 2,
+      "season": "winter",
+      "dish_key": "fr-warm-09",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Vapeur de agneau et quinoa",
+      "contribution_minor": 450,
+      "commission_exact_numerator": 575000,
+      "eligible_alternatives_before_selection": 13,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 2,
+      "week": 1,
+      "weekday": 3,
+      "season": "winter",
+      "dish_key": "fr-warm-17",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Poêlé de tofu et légumes",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 12,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 3,
+      "week": 1,
+      "weekday": 4,
+      "season": "winter",
+      "dish_key": "fr-warm-25",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de boeuf et salade",
+      "contribution_minor": 489,
+      "commission_exact_numerator": 625000,
+      "eligible_alternatives_before_selection": 11,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 4,
+      "week": 1,
+      "weekday": 5,
+      "season": "winter",
+      "dish_key": "fr-warm-33",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de poulet et riz",
+      "contribution_minor": 507,
+      "commission_exact_numerator": 650000,
+      "eligible_alternatives_before_selection": 10,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 5,
+      "week": 2,
+      "weekday": 1,
+      "season": "spring",
+      "dish_key": "fr-warm-22",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Poêlé de cabillaud et légumes",
+      "contribution_minor": 429,
+      "commission_exact_numerator": 550000,
+      "eligible_alternatives_before_selection": 14,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 6,
+      "week": 2,
+      "weekday": 2,
+      "season": "spring",
+      "dish_key": "fr-warm-30",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de dinde et salade",
+      "contribution_minor": 450,
+      "commission_exact_numerator": 575000,
+      "eligible_alternatives_before_selection": 13,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 7,
+      "week": 2,
+      "weekday": 3,
+      "season": "spring",
+      "dish_key": "fr-warm-38",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de crevettes et riz",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 12,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 8,
+      "week": 2,
+      "weekday": 4,
+      "season": "spring",
+      "dish_key": "fr-warm-46",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 489,
+      "commission_exact_numerator": 625000,
+      "eligible_alternatives_before_selection": 11,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 9,
+      "week": 2,
+      "weekday": 5,
+      "season": "spring",
+      "dish_key": "fr-warm-54",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Vapeur de porc et quinoa",
+      "contribution_minor": 507,
+      "commission_exact_numerator": 650000,
+      "eligible_alternatives_before_selection": 10,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 10,
+      "week": 3,
+      "weekday": 1,
+      "season": "summer",
+      "dish_key": "fr-warm-43",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de poulet et riz",
+      "contribution_minor": 429,
+      "commission_exact_numerator": 550000,
+      "eligible_alternatives_before_selection": 14,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 11,
+      "week": 3,
+      "weekday": 2,
+      "season": "summer",
+      "dish_key": "fr-warm-51",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 450,
+      "commission_exact_numerator": 575000,
+      "eligible_alternatives_before_selection": 13,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 12,
+      "week": 3,
+      "weekday": 3,
+      "season": "summer",
+      "dish_key": "fr-warm-03",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de poulet et riz",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 12,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 13,
+      "week": 3,
+      "weekday": 4,
+      "season": "summer",
+      "dish_key": "fr-warm-15",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de boeuf et salade",
+      "contribution_minor": 429,
+      "commission_exact_numerator": 550000,
+      "eligible_alternatives_before_selection": 11,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 14,
+      "week": 3,
+      "weekday": 5,
+      "season": "summer",
+      "dish_key": "fr-warm-27",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Poêlé de tofu et légumes",
+      "contribution_minor": 528,
+      "commission_exact_numerator": 675000,
+      "eligible_alternatives_before_selection": 10,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 15,
+      "week": 4,
+      "weekday": 1,
+      "season": "autumn",
+      "dish_key": "fr-warm-12",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Poêlé de cabillaud et légumes",
+      "contribution_minor": 507,
+      "commission_exact_numerator": 650000,
+      "eligible_alternatives_before_selection": 13,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 16,
+      "week": 4,
+      "weekday": 2,
+      "season": "autumn",
+      "dish_key": "fr-warm-24",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Vapeur de porc et quinoa",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 12,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 17,
+      "week": 4,
+      "weekday": 3,
+      "season": "autumn",
+      "dish_key": "fr-warm-36",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 429,
+      "commission_exact_numerator": 550000,
+      "eligible_alternatives_before_selection": 11,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 18,
+      "week": 4,
+      "weekday": 4,
+      "season": "autumn",
+      "dish_key": "fr-warm-48",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de crevettes et riz",
+      "contribution_minor": 528,
+      "commission_exact_numerator": 675000,
+      "eligible_alternatives_before_selection": 10,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 19,
+      "week": 4,
+      "weekday": 5,
+      "season": "autumn",
+      "dish_key": "fr-warm-08",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de crevettes et riz",
+      "contribution_minor": 429,
+      "commission_exact_numerator": 550000,
+      "eligible_alternatives_before_selection": 9,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 20,
+      "week": 5,
+      "weekday": 1,
+      "season": "winter",
+      "dish_key": "fr-warm-21",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 546,
+      "commission_exact_numerator": 700000,
+      "eligible_alternatives_before_selection": 9,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 21,
+      "week": 5,
+      "weekday": 2,
+      "season": "winter",
+      "dish_key": "fr-warm-45",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de boeuf et salade",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 8,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 22,
+      "week": 5,
+      "weekday": 3,
+      "season": "winter",
+      "dish_key": "fr-warm-13",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de poulet et riz",
+      "contribution_minor": 528,
+      "commission_exact_numerator": 675000,
+      "eligible_alternatives_before_selection": 7,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 23,
+      "week": 5,
+      "weekday": 4,
+      "season": "winter",
+      "dish_key": "fr-warm-53",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de poulet et riz",
+      "contribution_minor": 489,
+      "commission_exact_numerator": 625000,
+      "eligible_alternatives_before_selection": 6,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 24,
+      "week": 5,
+      "weekday": 5,
+      "season": "winter",
+      "dish_key": "fr-warm-49",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Vapeur de agneau et quinoa",
+      "contribution_minor": 546,
+      "commission_exact_numerator": 700000,
+      "eligible_alternatives_before_selection": 5,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 25,
+      "week": 6,
+      "weekday": 1,
+      "season": "spring",
+      "dish_key": "fr-warm-42",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Poêlé de cabillaud et légumes",
+      "contribution_minor": 546,
+      "commission_exact_numerator": 700000,
+      "eligible_alternatives_before_selection": 9,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 26,
+      "week": 6,
+      "weekday": 2,
+      "season": "spring",
+      "dish_key": "fr-warm-10",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de dinde et salade",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 8,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 27,
+      "week": 6,
+      "weekday": 3,
+      "season": "spring",
+      "dish_key": "fr-warm-50",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de dinde et salade",
+      "contribution_minor": 429,
+      "commission_exact_numerator": 550000,
+      "eligible_alternatives_before_selection": 7,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 28,
+      "week": 6,
+      "weekday": 4,
+      "season": "spring",
+      "dish_key": "fr-warm-26",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 507,
+      "commission_exact_numerator": 650000,
+      "eligible_alternatives_before_selection": 6,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 29,
+      "week": 6,
+      "weekday": 5,
+      "season": "spring",
+      "dish_key": "fr-warm-34",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Vapeur de porc et quinoa",
+      "contribution_minor": 528,
+      "commission_exact_numerator": 675000,
+      "eligible_alternatives_before_selection": 5,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 30,
+      "week": 7,
+      "weekday": 1,
+      "season": "summer",
+      "dish_key": "fr-warm-23",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de poulet et riz",
+      "contribution_minor": 450,
+      "commission_exact_numerator": 575000,
+      "eligible_alternatives_before_selection": 9,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 31,
+      "week": 7,
+      "weekday": 2,
+      "season": "summer",
+      "dish_key": "fr-warm-55",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de boeuf et salade",
+      "contribution_minor": 528,
+      "commission_exact_numerator": 675000,
+      "eligible_alternatives_before_selection": 8,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 32,
+      "week": 7,
+      "weekday": 3,
+      "season": "summer",
+      "dish_key": "fr-warm-35",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de boeuf et salade",
+      "contribution_minor": 546,
+      "commission_exact_numerator": 700000,
+      "eligible_alternatives_before_selection": 7,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 33,
+      "week": 7,
+      "weekday": 4,
+      "season": "summer",
+      "dish_key": "fr-warm-31",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 6,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 34,
+      "week": 7,
+      "weekday": 5,
+      "season": "summer",
+      "dish_key": "fr-warm-47",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Poêlé de tofu et légumes",
+      "contribution_minor": 507,
+      "commission_exact_numerator": 650000,
+      "eligible_alternatives_before_selection": 5,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 35,
+      "week": 8,
+      "weekday": 1,
+      "season": "autumn",
+      "dish_key": "fr-warm-28",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Mijoté de crevettes et riz",
+      "contribution_minor": 546,
+      "commission_exact_numerator": 700000,
+      "eligible_alternatives_before_selection": 8,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 36,
+      "week": 8,
+      "weekday": 2,
+      "season": "autumn",
+      "dish_key": "fr-warm-16",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Rôti de lentilles et pommes",
+      "contribution_minor": 450,
+      "commission_exact_numerator": 575000,
+      "eligible_alternatives_before_selection": 7,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 37,
+      "week": 8,
+      "weekday": 3,
+      "season": "autumn",
+      "dish_key": "fr-warm-20",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Gratiné de dinde et salade",
+      "contribution_minor": 528,
+      "commission_exact_numerator": 675000,
+      "eligible_alternatives_before_selection": 6,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 38,
+      "week": 8,
+      "weekday": 4,
+      "season": "autumn",
+      "dish_key": "fr-warm-44",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Vapeur de porc et quinoa",
+      "contribution_minor": 450,
+      "commission_exact_numerator": 575000,
+      "eligible_alternatives_before_selection": 5,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    },
+    {
+      "day_index": 39,
+      "week": 8,
+      "weekday": 5,
+      "season": "autumn",
+      "dish_key": "fr-warm-52",
+      "recipe_version": "17menu2a.1",
+      "employee_title": "Poêlé de cabillaud et légumes",
+      "contribution_minor": 468,
+      "commission_exact_numerator": 600000,
+      "eligible_alternatives_before_selection": 4,
+      "provider_approval_required": true,
+      "auto_published": false,
+      "status": "draft_awaiting_provider_approval"
+    }
+  ],
+  "rejected_sample": [
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-05",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-09",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-13",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-17",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-21",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-25",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-29",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-33",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-37",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-41",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-45",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-49",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 0,
+      "dish_key": "fr-warm-53",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-05",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-13",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-17",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-21",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-25",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-29",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-33",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-37",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-41",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-45",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-49",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 1,
+      "dish_key": "fr-warm-53",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-05",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-13",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-21",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-25",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-29",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-33",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-37",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-41",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-45",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-49",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 2,
+      "dish_key": "fr-warm-53",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 3,
+      "dish_key": "fr-warm-05",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 3,
+      "dish_key": "fr-warm-13",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 3,
+      "dish_key": "fr-warm-21",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    },
+    {
+      "day_index": 3,
+      "dish_key": "fr-warm-29",
+      "reason": "NOT_SELECTED_AFTER_CONSTRAINTS"
+    }
+  ],
+  "rejected_count": 330,
+  "AUTO_PUBLICATION_WITHOUT_PROVIDER_APPROVAL": 0,
+  "GENERATION_FROM_STUB": 0,
+  "NON_BANK_FREE_TEXT_DISHES": 0
+}

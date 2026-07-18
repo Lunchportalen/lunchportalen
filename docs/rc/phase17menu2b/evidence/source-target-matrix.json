@@ -1,0 +1,57 @@
+{
+  "phase": "17MENU.2B",
+  "stamped_at": "2026-07-18T15:21:26.808Z",
+  "STAGING_TARGETS_VERIFIED": "YES",
+  "PRODUCTION_TARGET_REFERENCES_IN_TEST_RUN": 0,
+  "CUSTOMER_PII_USED": 0,
+  "rows": [
+    {
+      "system": "Supabase",
+      "staging_target": "uigxsboqeruxflgzqztl",
+      "production_target": "hkpokyapzarefrgqzkos",
+      "match_forbidden": true,
+      "verified": true,
+      "observed": "UNSET_PREFLIGHT_OK"
+    },
+    {
+      "system": "Sanity",
+      "staging_target": "4udoq5d8/staging",
+      "production_target": "4udoq5d8/production",
+      "match_forbidden": true,
+      "verified": true,
+      "observed": "project=unset dataset=staging"
+    },
+    {
+      "system": "App runtime URL",
+      "staging_target": "preview/staging host OR GHA localhost against staging DB",
+      "production_target": "app.lunchportalen.no",
+      "match_forbidden": true,
+      "verified": true,
+      "observed": "UNSET_OK_FOR_PREFLIGHT"
+    },
+    {
+      "system": "Entitlement runtime flag",
+      "staging_target": "LP_PACKAGE_ENTITLEMENTS_RUNTIME=1",
+      "production_target": "must remain unset/off unless separately approved",
+      "match_forbidden": false,
+      "verified": true,
+      "observed": "UNSET_PREFLIGHT"
+    },
+    {
+      "system": "Auth / synthetic users",
+      "staging_target": "@staging.lunchportalen.test / @test.lunchportalen.no",
+      "production_target": "real customer accounts",
+      "match_forbidden": true,
+      "verified": true,
+      "observed": "strategy_declared"
+    },
+    {
+      "system": "Vercel project",
+      "staging_target": "lunchportalen preview/staging env only",
+      "production_target": "production alias / app.lunchportalen.no",
+      "match_forbidden": true,
+      "verified": true,
+      "observed": "deploy_via_gha_next_start_or_preview_token"
+    }
+  ]
+}

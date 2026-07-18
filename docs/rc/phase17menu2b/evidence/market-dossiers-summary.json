@@ -1,0 +1,239 @@
+{
+  "COUNTRY_DOSSIERS": "21/21",
+  "COUNTRY_PRICE_EVIDENCE_COMPLETE": "21/21",
+  "COUNTRY_MENU_EVIDENCE_COMPLETE": "21/21",
+  "COUNTRY_DOSSIERS_WITHOUT_REAL_CITATIONS": 0,
+  "rows": [
+    {
+      "country": "NO",
+      "present": true,
+      "price": 16,
+      "menu": 13,
+      "sources": 9,
+      "workplace": 6,
+      "commercial": 2,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "SE",
+      "present": true,
+      "price": 18,
+      "menu": 14,
+      "sources": 8,
+      "workplace": 4,
+      "commercial": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "DK",
+      "present": true,
+      "price": 18,
+      "menu": 13,
+      "sources": 9,
+      "workplace": 5,
+      "commercial": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "FI",
+      "present": true,
+      "price": 17,
+      "menu": 13,
+      "sources": 7,
+      "workplace": 3,
+      "commercial": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "GB",
+      "present": true,
+      "price": 18,
+      "menu": 14,
+      "sources": 10,
+      "workplace": 2,
+      "commercial": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "DE",
+      "present": true,
+      "price": 15,
+      "menu": 15,
+      "sources": 6,
+      "workplace": 2,
+      "commercial": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "FR",
+      "present": true,
+      "price": 14,
+      "menu": 14,
+      "sources": 9,
+      "workplace": 4,
+      "commercial": 5,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "ES",
+      "present": true,
+      "price": 19,
+      "menu": 13,
+      "sources": 5,
+      "workplace": 3,
+      "commercial": 2,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "IT",
+      "present": true,
+      "price": 16,
+      "menu": 13,
+      "sources": 6,
+      "workplace": 3,
+      "commercial": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "NL",
+      "present": true,
+      "price": 12,
+      "menu": 12,
+      "sources": 5,
+      "workplace": 3,
+      "commercial": 2,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "BE",
+      "present": true,
+      "price": 12,
+      "menu": 12,
+      "sources": 6,
+      "workplace": 4,
+      "commercial": 2,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "CH",
+      "present": true,
+      "price": 15,
+      "menu": 14,
+      "sources": 5,
+      "workplace": 2,
+      "commercial": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "AT",
+      "present": true,
+      "price": 14,
+      "menu": 13,
+      "sources": 7,
+      "workplace": 3,
+      "commercial": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "IE",
+      "present": true,
+      "price": 19,
+      "menu": 14,
+      "sources": 7,
+      "workplace": 3,
+      "commercial": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "PL",
+      "present": true,
+      "price": 13,
+      "menu": 12,
+      "sources": 5,
+      "workplace": 3,
+      "commercial": 2,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "RO",
+      "present": true,
+      "price": 14,
+      "menu": 12,
+      "sources": 8,
+      "workplace": 4,
+      "commercial": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "CZ",
+      "present": true,
+      "price": 13,
+      "menu": 12,
+      "sources": 7,
+      "workplace": 3,
+      "commercial": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "PT",
+      "present": true,
+      "price": 12,
+      "menu": 12,
+      "sources": 6,
+      "workplace": 3,
+      "commercial": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "GR",
+      "present": true,
+      "price": 16,
+      "menu": 12,
+      "sources": 9,
+      "workplace": 4,
+      "commercial": 5,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "US",
+      "present": true,
+      "price": 30,
+      "menu": 14,
+      "sources": 10,
+      "workplace": 7,
+      "commercial": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    {
+      "country": "CA",
+      "present": true,
+      "price": 33,
+      "menu": 14,
+      "sources": 13,
+      "workplace": 11,
+      "commercial": 2,
+      "complete": true,
+      "shortfall": []
+    }
+  ]
+}

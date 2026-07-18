@@ -1,0 +1,123 @@
+{
+  "phase": "17MENU.2B",
+  "audited_at": "2026-07-18T15:21:27.103Z",
+  "source": "docs/rc/phase17menu2a/recipe-banks",
+  "RECIPES_AUDITED": "1155/1155",
+  "RECIPES_STRUCTURALLY_COMPLETE": 1155,
+  "RECIPES_WITH_MISSING_REQUIRED_FIELDS": 0,
+  "RECIPES_WITH_UNVERIFIED_ESTIMATES": 1155,
+  "RECIPES_WITH_PROVIDER_ACTUAL_COSTS": 0,
+  "RECIPES_WITH_SUPPLIER_OR_CATALOG": 0,
+  "RECIPES_WITH_COUNTRY_BENCHMARKS": 1155,
+  "FABRICATED_COST_SOURCES": 0,
+  "FABRICATED_RECIPE_CITATIONS": 0,
+  "per_country": {
+    "NO": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "SE": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "DK": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "FI": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "GB": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "DE": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "FR": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "ES": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "IT": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "NL": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "BE": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "CH": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "AT": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "IE": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "PL": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "RO": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "CZ": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "PT": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "GR": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "US": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    },
+    "CA": {
+      "recipes": 55,
+      "structurally_complete": 55,
+      "missing_required": 0
+    }
+  },
+  "sample_missing": [],
+  "note": "Technical generation eligibility may use country_benchmark / estimate_requiring_provider_review. Provider publication still requires provider review. No invented supplier URLs."
+}

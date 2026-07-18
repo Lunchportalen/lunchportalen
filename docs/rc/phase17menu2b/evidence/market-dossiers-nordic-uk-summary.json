@@ -1,0 +1,74 @@
+{
+  "access_date": "2026-07-18",
+  "real_citations_only": true,
+  "dossier_dir": "docs/rc/phase17menu2b/market-dossiers",
+  "countries": {
+    "NO": {
+      "currency": "NOK",
+      "price_count": 16,
+      "menu_count": 13,
+      "source_count": 9,
+      "workplace_sources": 6,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": []
+    },
+    "SE": {
+      "currency": "SEK",
+      "price_count": 18,
+      "menu_count": 14,
+      "source_count": 8,
+      "workplace_sources": 4,
+      "commercial_sources": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    "DK": {
+      "currency": "DKK",
+      "price_count": 18,
+      "menu_count": 13,
+      "source_count": 9,
+      "workplace_sources": 5,
+      "commercial_sources": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    "FI": {
+      "currency": "EUR",
+      "price_count": 17,
+      "menu_count": 13,
+      "source_count": 7,
+      "workplace_sources": 3,
+      "commercial_sources": 3,
+      "complete": true,
+      "shortfall": []
+    },
+    "GB": {
+      "currency": "GBP",
+      "price_count": 18,
+      "menu_count": 14,
+      "source_count": 10,
+      "workplace_sources": 2,
+      "commercial_sources": 4,
+      "complete": true,
+      "shortfall": []
+    },
+    "IE": {
+      "currency": "EUR",
+      "price_count": 19,
+      "menu_count": 14,
+      "source_count": 7,
+      "workplace_sources": 3,
+      "commercial_sources": 3,
+      "complete": true,
+      "shortfall": []
+    }
+  },
+  "totals": {
+    "price_count": 106,
+    "menu_count": 81,
+    "source_count": 50,
+    "countries_complete": 6,
+    "countries_total": 6
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "provider_actual": 0,
+  "supplier_catalog": 0,
+  "country_benchmark": 1155,
+  "estimate_requiring_provider_review": 1155,
+  "fabricated_cost_sources": 0,
+  "fabricated_recipe_citations": 0,
+  "provenance_rule": "PROVIDER_ACTUAL | SUPPLIER_OR_CATALOG | COUNTRY_BENCHMARK | ESTIMATE_REQUIRING_PROVIDER_REVIEW"
+}

@@ -1,0 +1,201 @@
+{
+  "access_date": "2026-07-18",
+  "phase": "17MENU.2B",
+  "real_citations_only": true,
+  "countries_total": 13,
+  "countries_complete": 13,
+  "countries_incomplete": 0,
+  "totals": {
+    "price_observations": 179,
+    "menu_observations": 166,
+    "sources": 75
+  },
+  "countries": [
+    {
+      "country_code": "DE",
+      "currency": "EUR",
+      "locales": [
+        "de-DE"
+      ],
+      "price_count": 15,
+      "menu_count": 15,
+      "source_count": 6,
+      "workplace_sources": 2,
+      "commercial_sources": 4,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "FR",
+      "currency": "EUR",
+      "locales": [
+        "fr-FR"
+      ],
+      "price_count": 14,
+      "menu_count": 14,
+      "source_count": 7,
+      "workplace_sources": 2,
+      "commercial_sources": 5,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "ES",
+      "currency": "EUR",
+      "locales": [
+        "es-ES"
+      ],
+      "price_count": 19,
+      "menu_count": 13,
+      "source_count": 5,
+      "workplace_sources": 3,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "IT",
+      "currency": "EUR",
+      "locales": [
+        "it-IT"
+      ],
+      "price_count": 16,
+      "menu_count": 13,
+      "source_count": 6,
+      "workplace_sources": 3,
+      "commercial_sources": 3,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "NL",
+      "currency": "EUR",
+      "locales": [
+        "nl-NL"
+      ],
+      "price_count": 12,
+      "menu_count": 12,
+      "source_count": 5,
+      "workplace_sources": 3,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "BE",
+      "currency": "EUR",
+      "locales": [
+        "nl-BE",
+        "fr-BE"
+      ],
+      "price_count": 12,
+      "menu_count": 12,
+      "source_count": 6,
+      "workplace_sources": 4,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "CH",
+      "currency": "CHF",
+      "locales": [
+        "de-CH",
+        "fr-CH",
+        "it-CH"
+      ],
+      "price_count": 15,
+      "menu_count": 14,
+      "source_count": 5,
+      "workplace_sources": 2,
+      "commercial_sources": 3,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "AT",
+      "currency": "EUR",
+      "locales": [
+        "de-AT"
+      ],
+      "price_count": 14,
+      "menu_count": 13,
+      "source_count": 7,
+      "workplace_sources": 3,
+      "commercial_sources": 4,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "PL",
+      "currency": "PLN",
+      "locales": [
+        "pl-PL"
+      ],
+      "price_count": 13,
+      "menu_count": 12,
+      "source_count": 5,
+      "workplace_sources": 3,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "RO",
+      "currency": "RON",
+      "locales": [
+        "ro-RO"
+      ],
+      "price_count": 13,
+      "menu_count": 12,
+      "source_count": 6,
+      "workplace_sources": 4,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "CZ",
+      "currency": "CZK",
+      "locales": [
+        "cs-CZ"
+      ],
+      "price_count": 12,
+      "menu_count": 12,
+      "source_count": 5,
+      "workplace_sources": 3,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "PT",
+      "currency": "EUR",
+      "locales": [
+        "pt-PT"
+      ],
+      "price_count": 12,
+      "menu_count": 12,
+      "source_count": 6,
+      "workplace_sources": 3,
+      "commercial_sources": 3,
+      "complete": true,
+      "shortfall": null
+    },
+    {
+      "country_code": "GR",
+      "currency": "EUR",
+      "locales": [
+        "el-GR"
+      ],
+      "price_count": 12,
+      "menu_count": 12,
+      "source_count": 6,
+      "workplace_sources": 4,
+      "commercial_sources": 2,
+      "complete": true,
+      "shortfall": null
+    }
+  ],
+  "note": "Honest shortfalls recorded where public unit prices or dish-level menus were scarce. BE/CH language regions encoded in geography fields only."
+}

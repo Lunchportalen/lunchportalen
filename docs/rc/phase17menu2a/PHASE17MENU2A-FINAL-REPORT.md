@@ -26,6 +26,7 @@ Recipe/generation technical layer is green. Full `GLOBAL_MENU_UNIVERSES_TECHNICA
 | Gate | Result |
 |------|--------|
 | Structured recipes | **1155 / 1155** |
+| Sanity staging sync (`productionReadyRecipe`) | **1155 / 1155 published** |
 | Generation-eligible | **21/21 banks (≥55 each)** |
 | Country-specific banks | **21/21** |
 | NORWAY_RECIPE_CLONE_COUNTRIES | **0** |
@@ -54,7 +55,6 @@ Cost basis labels used: `country_benchmark` and `estimate_requiring_provider_rev
 
 | Gate | Status |
 |------|--------|
-| Sanity mealIdea `productionReadyRecipe` sync | In progress via MCP / `sync-recipes-sanity-staging.mjs` |
 | Market dossiers ≥12+12 real observations | **0/21 complete** (DK/NO partial real citations started; others incomplete — honest) |
 | `LP_PACKAGE_ENTITLEMENTS_RUNTIME=1` on staging app | Needs Vercel login (owner credential) |
 | Preview HTTP (Vercel SSO 302) | Needs SSO bypass or local app + staging |
@@ -62,13 +62,19 @@ Cost basis labels used: `country_benchmark` and `estimate_requiring_provider_rev
 | LIVE_LOCALE_HTTP_E2E 24/24 | Same |
 | Staging service-role for synthetic employees | Missing in agent env (`OWNER` credential) |
 
+### Sanity staging sync (done)
+
+| Gate | Status |
+|------|--------|
+| Published `mealIdea` with `productionReadyRecipe` | **1155 / 1155** (`4udoq5d8` / `staging`) |
+| Evidence | `docs/rc/phase17menu2a/evidence/sanity-recipe-sync-status.json` |
+
 ---
 
 ## Owner credentials only (not ordinary work)
 
 1. `vercel login` → set `LP_PACKAGE_ENTITLEMENTS_RUNTIME=1` on preview/staging **only**
 2. Preview SSO bypass **or** staging `SUPABASE_SERVICE_ROLE_KEY` for local Next + HTTP E2E users
-3. Optional: `SANITY_WRITE_TOKEN` if MCP sync does not finish all 1155 patches
 
 ---
 
