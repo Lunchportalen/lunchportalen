@@ -191,22 +191,15 @@ async function main() {
       }).then(() => null).catch(() => null);
 
       for (const key of ENTITLEMENTS[pkg]) {
-        await admin.from("provider_package_entitlements").upsert(
-          {
-            provider_id: pid,
-            package_key: pkg,
-            entitlement_key: key,
-            is_enabled: true,
-          },
-          { onConflict: "provider_id,package_key,entitlement_key" },
-        ).then(() => null).catch(async () => {
-          await admin.from("provider_package_entitlements").insert({
-            provider_id: pid,
-            package_key: pkg,
-            entitlement_key: key,
-            is_enabled: true,
-          });
+        const { error: eIns } = await admin.from("provider_package_entitlements").insert({
+          provider_id: pid,
+          package_key: pkg,
+          entitlement_key: key,
+          is_enabled: true,
         });
+        if (eIns && !/duplicate|unique/i.test(eIns.message)) {
+          throw new Error(`entitlement ${cc}/${pkg}/${key}: ${eIns.message}`);
+        }
       }
     }
 

@@ -182,6 +182,17 @@ async function main() {
       body: orderBody,
       headers: { "Idempotency-Key": crypto.randomUUID() },
     });
+    if (packageFlows.length === 0) {
+      console.log(
+        "FIRST_FLOW_DEBUG",
+        JSON.stringify({
+          week_status: week.status,
+          week_json: week.json,
+          order_status: orderRes.status,
+          order_json: orderRes.json,
+        }).slice(0, 1200),
+      );
+    }
 
     // Forbidden category attempt for BASIS
     let forbiddenOk = true;
@@ -283,7 +294,11 @@ async function main() {
       deliveryOk = true;
     }
 
-    const flowOk = week.status < 500 && orderRes.status < 500 && forbiddenOk && !!order?.id;
+    const flowOk =
+      week.status === 200 &&
+      (orderRes.status === 200 || orderRes.json?.ok === true) &&
+      forbiddenOk &&
+      !!order?.id;
     if (flowOk && co.package === "BASIS") basisOk += 1;
     if (flowOk && co.package === "LUXUS") luxusOk += 1;
     if (flowOk && co.package === "ENTERPRISE") enterpriseOk += 1;
