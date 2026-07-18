@@ -343,7 +343,7 @@ async function main() {
       deliveryOk,
     });
 
-    // Isolation: try foreign company_id in body (must not succeed)
+    // Isolation: foreign company_id in body must not bind the order to that company.
     const other = (matrix.companies ?? []).find((c) => c.company_id !== co.company_id);
     if (other) {
       const leak = await httpJson(base, "/api/orders", {
@@ -353,7 +353,18 @@ async function main() {
         body: { date: orderDate, action: "set", choice_key: "varmmat", company_id: other.company_id },
         headers: { "Idempotency-Key": crypto.randomUUID() },
       });
-      const leaked = leak.json?.ok === true && leak.status === 200;
+      let leaked = false;
+      if (leak.json?.ok === true && leak.status === 200) {
+        const orderId = leak.json?.orderId ?? leak.json?.data?.orderId ?? null;
+        if (orderId) {
+          const { data: placed } = await admin
+            .from("orders")
+            .select("company_id")
+            .eq("id", orderId)
+            .maybeSingle();
+          leaked = String(placed?.company_id ?? "") === String(other.company_id);
+        }
+      }
       isolation.push({ country: co.country, package: co.package, cross_company_leak: leaked });
     }
   }

@@ -332,6 +332,32 @@ async function main() {
         : await admin.from("agreements").insert(agreementPayload);
       if (aErr) throw new Error(`agreement ${cc}/${pkg}: ${aErr.message}`);
 
+      const { data: agreementRow } = await admin
+        .from("agreements")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+      const agreementId = String(agreementRow?.id ?? existingAg?.id ?? "");
+      if (!agreementId) throw new Error(`agreement id missing ${cc}/${pkg}`);
+
+      // Trigger sync_agreement_delivery_days_from_legacy_jsonb defaults day tiers to BASIS.
+      // lp_order_set prices MSDI via per-day tier — force package tier on Mon–Fri.
+      for (const weekday of ["mon", "tue", "wed", "thu", "fri"]) {
+        const { error: addErr } = await admin.from("agreement_delivery_days").upsert(
+          { agreement_id: agreementId, weekday, tier: pkg },
+          { onConflict: "agreement_id,weekday" },
+        );
+        if (addErr) {
+          const { error: addUp } = await admin
+            .from("agreement_delivery_days")
+            .update({ tier: pkg })
+            .eq("agreement_id", agreementId)
+            .eq("weekday", weekday);
+          if (addUp) throw new Error(`agreement_delivery_days ${cc}/${pkg}/${weekday}: ${addUp.message || addErr.message}`);
+        }
+      }
+
       if (pkg === "ENTERPRISE") {
         await admin.from("provider_enterprise_contracts").insert({
           provider_id: pid,
@@ -374,27 +400,24 @@ async function main() {
           .filter((k) => k !== "enterprise_upgrade")
           .map((k) => CHOICE_SKUS[k])
           .filter(Boolean);
+        // Replace items for this service day (no reliable unique constraint for upsert).
+        await admin.from("menu_service_day_items").delete().eq("menu_service_day_id", msd.id);
         let i = 0;
         for (const sku of skus) {
           const p = productBySku[sku];
           if (!p) continue;
-          const { error: msdiErr } = await admin.from("menu_service_day_items").upsert(
-            {
-              menu_service_day_id: msd.id,
-              product_id: p.id,
-              product_name_snapshot: p.name,
-              unit_name_snapshot: "porsjon",
-              offered_price_cents_ex_vat: priceCents,
-              vat_rate_snapshot: 0.15,
-              quantity: 1,
-              sort_order: 10 + i,
-              is_optional: false,
-            },
-            { onConflict: "menu_service_day_id,product_id" },
-          );
-          if (msdiErr && !/duplicate|unique/i.test(msdiErr.message)) {
-            throw new Error(`msdi ${cc}/${pkg}/${sku}: ${msdiErr.message}`);
-          }
+          const { error: msdiErr } = await admin.from("menu_service_day_items").insert({
+            menu_service_day_id: msd.id,
+            product_id: p.id,
+            product_name_snapshot: p.name,
+            unit_name_snapshot: "porsjon",
+            offered_price_cents_ex_vat: priceCents,
+            vat_rate_snapshot: 0.15,
+            quantity: 1,
+            sort_order: 10 + i,
+            is_optional: false,
+          });
+          if (msdiErr) throw new Error(`msdi ${cc}/${pkg}/${sku}: ${msdiErr.message}`);
           i += 1;
         }
       }
