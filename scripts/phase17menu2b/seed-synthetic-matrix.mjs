@@ -336,7 +336,7 @@ async function main() {
             document_version: doc.version,
             document_checksum: doc.checksum,
             accepted_at: new Date().toISOString(),
-            acceptance_method: "synthetic_seed",
+            acceptance_method: "clickwrap",
             audit_hash: crypto.createHash("sha256").update(`${uid}:${documentType}:${doc.version}`).digest("hex"),
           });
           if (lErr && !/duplicate|unique/i.test(lErr.message)) {
