@@ -1,0 +1,380 @@
+[
+  {
+    "country": "NO",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "NO",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "NO",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "SE",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "SE",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "SE",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "DK",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "DK",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "DK",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "FI",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "FI",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "FI",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "GB",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "GB",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "GB",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "DE",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "DE",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "DE",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "FR",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "FR",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "FR",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "ES",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "ES",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "ES",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "IT",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "IT",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "IT",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "NL",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "NL",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "NL",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "BE",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "BE",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "BE",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "CH",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "CH",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "CH",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "AT",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "AT",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "AT",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "IE",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "IE",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "IE",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "PL",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "PL",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "PL",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "RO",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "RO",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "RO",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "CZ",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "CZ",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "CZ",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "PT",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "PT",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "PT",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "GR",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "GR",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "GR",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "US",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "US",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "US",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  },
+  {
+    "country": "CA",
+    "package": "BASIS",
+    "snapshot_unit_price_nok": 90,
+    "historical_mutation": false
+  },
+  {
+    "country": "CA",
+    "package": "LUXUS",
+    "snapshot_unit_price_nok": 130,
+    "historical_mutation": false
+  },
+  {
+    "country": "CA",
+    "package": "ENTERPRISE",
+    "snapshot_unit_price_nok": 170,
+    "historical_mutation": false
+  }
+]

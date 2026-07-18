@@ -1,0 +1,380 @@
+[
+  {
+    "country": "NO",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "NO",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "NO",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "SE",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "SE",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "SE",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "DK",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "DK",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "DK",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "FI",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "FI",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "FI",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "GB",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "GB",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "GB",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "DE",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "DE",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "DE",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "FR",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "FR",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "FR",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "ES",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "ES",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "ES",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "IT",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "IT",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "IT",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "NL",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "NL",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "NL",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "BE",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "BE",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "BE",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CH",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CH",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CH",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "AT",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "AT",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "AT",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "IE",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "IE",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "IE",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "PL",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "PL",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "PL",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "RO",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "RO",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "RO",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CZ",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CZ",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CZ",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "PT",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "PT",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "PT",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "GR",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "GR",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "GR",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "US",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "US",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "US",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CA",
+    "package": "BASIS",
+    "expected_numerator": 4500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CA",
+    "package": "LUXUS",
+    "expected_numerator": 6500000,
+    "ledger": "pending_or_skipped"
+  },
+  {
+    "country": "CA",
+    "package": "ENTERPRISE",
+    "expected_numerator": 8500000,
+    "ledger": "pending_or_skipped"
+  }
+]

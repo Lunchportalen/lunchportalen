@@ -1,0 +1,320 @@
+{
+  "CROSS_TENANT_FAILURES": 0,
+  "isolation": [
+    {
+      "country": "NO",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "NO",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "NO",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "SE",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "SE",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "SE",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "DK",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "DK",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "DK",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "FI",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "FI",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "FI",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "GB",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "GB",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "GB",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "DE",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "DE",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "DE",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "FR",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "FR",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "FR",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "ES",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "ES",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "ES",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "IT",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "IT",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "IT",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "NL",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "NL",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "NL",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "BE",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "BE",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "BE",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CH",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CH",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CH",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "AT",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "AT",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "AT",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "IE",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "IE",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "IE",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "PL",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "PL",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "PL",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "RO",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "RO",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "RO",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CZ",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CZ",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CZ",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "PT",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "PT",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "PT",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "GR",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "GR",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "GR",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "US",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "US",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "US",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CA",
+      "package": "BASIS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CA",
+      "package": "LUXUS",
+      "cross_company_leak": false
+    },
+    {
+      "country": "CA",
+      "package": "ENTERPRISE",
+      "cross_company_leak": false
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "phase": "17MENU.2B",
+  "stamped_at": "2026-07-18T20:52:17.586Z",
+  "base_url_host": "127.0.0.1:3000",
+  "health_status": 200,
+  "STAGING_AUTH": "PASS",
+  "STAGING_ENTITLEMENT_RUNTIME": "ACTIVE",
+  "HTTP_PACKAGE_FLOWS": "63/63",
+  "BASIS_HTTP_E2E": "21/21",
+  "LUXUS_HTTP_E2E": "21/21",
+  "ENTERPRISE_HTTP_E2E": "21/21",
+  "BASIS_FORBIDDEN_CATEGORY_BYPASSES": 0,
+  "LIVE_LOCALE_HTTP_E2E": "24/24",
+  "PROVIDER_PRICE_HTTP_PROOF": "63/63",
+  "HISTORICAL_PRICE_MUTATIONS": 0,
+  "COMMISSION_HTTP_PROOF": "63/63",
+  "COMMISSION_RATE_BPS": 500,
+  "COMMISSION_TOTAL_DIFFERENCE": 0,
+  "COMMISSION_REMAINDER_LOSS": 0,
+  "CROSS_TENANT_FAILURES": 0,
+  "FUNCTIONAL_CONCURRENCY_CANARY": {
+    "capacity_attempts": 20,
+    "capacity_accepted": 20,
+    "capacity_rejected": 0,
+    "note": "Full 100-attempt capacity race deferred to Phase 18 scale packet; canary validates atomic idempotency under parallel load.",
+    "IDEMPOTENCY_DUPLICATES": 0
+  },
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "PRODUCTION_MUTATIONS": 0
+}

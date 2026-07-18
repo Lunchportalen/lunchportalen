@@ -1,0 +1,1092 @@
+{
+  "phase": "17MENU.2B",
+  "stamped_at": "2026-07-18T20:13:26.613Z",
+  "staging_ref": "uigxsboqeruxflgzqztl",
+  "MARK": "PHASE17MENU2B_SYNTHETIC",
+  "service_dates": [
+    "2026-07-21",
+    "2026-07-22",
+    "2026-07-23",
+    "2026-07-24",
+    "2026-07-27"
+  ],
+  "providers": [
+    {
+      "country": "NO",
+      "id": "4e979e4c-a8df-4475-963e-25d7079df846",
+      "slug": "p17menu2b-no",
+      "reused": true
+    },
+    {
+      "country": "SE",
+      "id": "0b12d169-3f7d-4628-9737-c600e7e478ab",
+      "slug": "p17menu2b-se",
+      "reused": true
+    },
+    {
+      "country": "DK",
+      "id": "233dec85-773d-4226-ac5b-6c64816172df",
+      "slug": "p17menu2b-dk",
+      "reused": true
+    },
+    {
+      "country": "FI",
+      "id": "4461c5f3-8d53-41a8-b227-0bf452903fce",
+      "slug": "p17menu2b-fi",
+      "reused": true
+    },
+    {
+      "country": "GB",
+      "id": "a233efe4-1eee-49f9-8508-270c38d097e1",
+      "slug": "p17menu2b-gb",
+      "reused": true
+    },
+    {
+      "country": "DE",
+      "id": "3e9129ee-9455-4934-b900-898d5cd75e18",
+      "slug": "p17menu2b-de",
+      "reused": true
+    },
+    {
+      "country": "FR",
+      "id": "81815a7e-d02b-4b7a-bf7f-2231b10455ba",
+      "slug": "p17menu2b-fr",
+      "reused": true
+    },
+    {
+      "country": "ES",
+      "id": "470e5506-5f85-4082-8991-3ac00019c3e8",
+      "slug": "p17menu2b-es",
+      "reused": true
+    },
+    {
+      "country": "IT",
+      "id": "4c2fcc49-2774-4dad-a637-285a5dd0a21f",
+      "slug": "p17menu2b-it",
+      "reused": true
+    },
+    {
+      "country": "NL",
+      "id": "f59bcef3-deac-46c9-99e9-76dbc4807ec2",
+      "slug": "p17menu2b-nl",
+      "reused": true
+    },
+    {
+      "country": "BE",
+      "id": "f9203ffd-f301-426f-991e-d6e5b0572d94",
+      "slug": "p17menu2b-be",
+      "reused": true
+    },
+    {
+      "country": "CH",
+      "id": "3d724da7-bbc2-442b-b2f2-932cf4f88369",
+      "slug": "p17menu2b-ch",
+      "reused": true
+    },
+    {
+      "country": "AT",
+      "id": "d90f22c6-3a83-40b6-8d93-bf8e805801b6",
+      "slug": "p17menu2b-at",
+      "reused": true
+    },
+    {
+      "country": "IE",
+      "id": "deb3331e-8131-4cad-a1f6-34f1b7bcf24c",
+      "slug": "p17menu2b-ie",
+      "reused": true
+    },
+    {
+      "country": "PL",
+      "id": "388346ff-45ff-4831-a19e-2e759ede0673",
+      "slug": "p17menu2b-pl",
+      "reused": true
+    },
+    {
+      "country": "RO",
+      "id": "a55d019c-5ec7-4f7f-ac67-d8fd3b4e683e",
+      "slug": "p17menu2b-ro",
+      "reused": true
+    },
+    {
+      "country": "CZ",
+      "id": "f56779fb-e7d8-4c98-9ccc-5e8aa876429e",
+      "slug": "p17menu2b-cz",
+      "reused": true
+    },
+    {
+      "country": "PT",
+      "id": "6fa834d1-e296-45cc-824f-da53a241cbf8",
+      "slug": "p17menu2b-pt",
+      "reused": true
+    },
+    {
+      "country": "GR",
+      "id": "21673096-8779-4c07-a844-56bc20d348be",
+      "slug": "p17menu2b-gr",
+      "reused": true
+    },
+    {
+      "country": "US",
+      "id": "25df3fe3-8e94-47aa-857e-9dbfe6f99679",
+      "slug": "p17menu2b-us",
+      "reused": true
+    },
+    {
+      "country": "CA",
+      "id": "d91aec16-35f1-4425-b95a-516583cda083",
+      "slug": "p17menu2b-ca",
+      "reused": true
+    }
+  ],
+  "companies": [
+    {
+      "country": "NO",
+      "package": "BASIS",
+      "company_id": "e4ad1533-9680-4380-88bf-b4b4c783bee9",
+      "location_id": "708bd5f2-bd71-47c3-ad43-c323742a8238",
+      "provider_id": "4e979e4c-a8df-4475-963e-25d7079df846",
+      "employee_email": "no-basis-emp@staging.lunchportalen.test",
+      "admin_email": "no-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "NO",
+      "package": "LUXUS",
+      "company_id": "432e6f98-5cf6-489b-bdd6-04a89f19158a",
+      "location_id": "67fa4b8a-5167-4365-a7fd-1aa511450a6d",
+      "provider_id": "4e979e4c-a8df-4475-963e-25d7079df846",
+      "employee_email": "no-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "no-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "NO",
+      "package": "ENTERPRISE",
+      "company_id": "4b107145-c440-4e7c-93dd-2b3a8af60fb3",
+      "location_id": "420bc409-6761-4080-832d-d72ad6c79d14",
+      "provider_id": "4e979e4c-a8df-4475-963e-25d7079df846",
+      "employee_email": "no-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "no-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "SE",
+      "package": "BASIS",
+      "company_id": "58f59cc3-f747-4412-ba20-16f25cfc74af",
+      "location_id": "f622cc7d-d3fd-455f-aef3-b3c891d4a747",
+      "provider_id": "0b12d169-3f7d-4628-9737-c600e7e478ab",
+      "employee_email": "se-basis-emp@staging.lunchportalen.test",
+      "admin_email": "se-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "SE",
+      "package": "LUXUS",
+      "company_id": "423da273-0981-4db6-bed8-16be85e82aff",
+      "location_id": "e8841575-12c5-4310-a874-76dcef75ea33",
+      "provider_id": "0b12d169-3f7d-4628-9737-c600e7e478ab",
+      "employee_email": "se-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "se-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "SE",
+      "package": "ENTERPRISE",
+      "company_id": "1f3663b5-d391-4c17-a9a7-b2bae96d5e37",
+      "location_id": "fbe33273-09c5-4fb0-b1a0-405fe11fad95",
+      "provider_id": "0b12d169-3f7d-4628-9737-c600e7e478ab",
+      "employee_email": "se-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "se-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "DK",
+      "package": "BASIS",
+      "company_id": "9675bfe6-d5e3-4ab1-aa97-5a849702b881",
+      "location_id": "4fdb1a4e-b490-43c0-a068-a17c08e83c61",
+      "provider_id": "233dec85-773d-4226-ac5b-6c64816172df",
+      "employee_email": "dk-basis-emp@staging.lunchportalen.test",
+      "admin_email": "dk-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "DK",
+      "package": "LUXUS",
+      "company_id": "6195575b-6253-48b0-9126-38569b7f02af",
+      "location_id": "bad49d75-7c28-4d6a-b214-5621451778ae",
+      "provider_id": "233dec85-773d-4226-ac5b-6c64816172df",
+      "employee_email": "dk-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "dk-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "DK",
+      "package": "ENTERPRISE",
+      "company_id": "b32c77ac-584e-4be3-8772-eb610c34f2b4",
+      "location_id": "7a3c34bd-4443-47cf-b236-ced86c4010fa",
+      "provider_id": "233dec85-773d-4226-ac5b-6c64816172df",
+      "employee_email": "dk-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "dk-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "FI",
+      "package": "BASIS",
+      "company_id": "a37fca2a-2ba9-4fe3-80b0-71967cba13cf",
+      "location_id": "c5fab124-a2b9-4448-98ad-7c8fa1036284",
+      "provider_id": "4461c5f3-8d53-41a8-b227-0bf452903fce",
+      "employee_email": "fi-basis-emp@staging.lunchportalen.test",
+      "admin_email": "fi-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "FI",
+      "package": "LUXUS",
+      "company_id": "bc7786c3-9148-494f-8d82-cffcd4e62440",
+      "location_id": "9b12e1df-53f3-46d2-9e4a-df924650396a",
+      "provider_id": "4461c5f3-8d53-41a8-b227-0bf452903fce",
+      "employee_email": "fi-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "fi-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "FI",
+      "package": "ENTERPRISE",
+      "company_id": "78727612-4aeb-4df2-a787-edbba1c804ad",
+      "location_id": "5cc765b7-f8e1-4558-a40c-1e6fa4a659df",
+      "provider_id": "4461c5f3-8d53-41a8-b227-0bf452903fce",
+      "employee_email": "fi-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "fi-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "GB",
+      "package": "BASIS",
+      "company_id": "e7a06923-feca-45d9-9aed-ca32f330a306",
+      "location_id": "bef4ca42-6ee1-47f9-bb76-30de3c84eb81",
+      "provider_id": "a233efe4-1eee-49f9-8508-270c38d097e1",
+      "employee_email": "gb-basis-emp@staging.lunchportalen.test",
+      "admin_email": "gb-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "GB",
+      "package": "LUXUS",
+      "company_id": "9c386e9c-a972-4c8e-a9f8-5d128a172ae2",
+      "location_id": "e771c53a-b40a-4b85-b48c-9b4b7623732a",
+      "provider_id": "a233efe4-1eee-49f9-8508-270c38d097e1",
+      "employee_email": "gb-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "gb-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "GB",
+      "package": "ENTERPRISE",
+      "company_id": "e9e94aa9-54e3-4c91-a6b0-615c3e4edcc8",
+      "location_id": "c4b24f3a-9472-4f05-ac88-9452bd9df370",
+      "provider_id": "a233efe4-1eee-49f9-8508-270c38d097e1",
+      "employee_email": "gb-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "gb-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "DE",
+      "package": "BASIS",
+      "company_id": "52f1691c-1044-492b-ab68-67bcce8cfb76",
+      "location_id": "19c8212c-60a5-46ba-a2d3-5e2cd5a112e5",
+      "provider_id": "3e9129ee-9455-4934-b900-898d5cd75e18",
+      "employee_email": "de-basis-emp@staging.lunchportalen.test",
+      "admin_email": "de-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "DE",
+      "package": "LUXUS",
+      "company_id": "beb41211-b25d-41fa-89e0-9266d1e7d35a",
+      "location_id": "da9c87e9-1583-43b4-8b11-7afa89f8c045",
+      "provider_id": "3e9129ee-9455-4934-b900-898d5cd75e18",
+      "employee_email": "de-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "de-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "DE",
+      "package": "ENTERPRISE",
+      "company_id": "987a5ad8-c1d2-497c-b354-bddd61f44b58",
+      "location_id": "3b6b5aa2-63a1-47bf-b94c-be6b33bc73b9",
+      "provider_id": "3e9129ee-9455-4934-b900-898d5cd75e18",
+      "employee_email": "de-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "de-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "FR",
+      "package": "BASIS",
+      "company_id": "0edea194-33cc-4a02-8651-cab0eef7490e",
+      "location_id": "eea4c94c-7eea-4b0f-adcc-3398ec793aaa",
+      "provider_id": "81815a7e-d02b-4b7a-bf7f-2231b10455ba",
+      "employee_email": "fr-basis-emp@staging.lunchportalen.test",
+      "admin_email": "fr-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "FR",
+      "package": "LUXUS",
+      "company_id": "7e44d8a5-b7d6-4ac8-8cc3-1509c26b0cb0",
+      "location_id": "9f5ef41b-1688-44f3-bcdd-f17b5cb495b4",
+      "provider_id": "81815a7e-d02b-4b7a-bf7f-2231b10455ba",
+      "employee_email": "fr-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "fr-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "FR",
+      "package": "ENTERPRISE",
+      "company_id": "af4b7b54-5e41-4d25-8c16-35b69ad30fba",
+      "location_id": "f07700b3-11e5-400a-99f0-db79d56adb1a",
+      "provider_id": "81815a7e-d02b-4b7a-bf7f-2231b10455ba",
+      "employee_email": "fr-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "fr-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "ES",
+      "package": "BASIS",
+      "company_id": "6bf64f46-7dd9-4d8b-88d1-510e6d28a4ab",
+      "location_id": "1b61235e-9e60-44ba-92db-9975fffbdb37",
+      "provider_id": "470e5506-5f85-4082-8991-3ac00019c3e8",
+      "employee_email": "es-basis-emp@staging.lunchportalen.test",
+      "admin_email": "es-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "ES",
+      "package": "LUXUS",
+      "company_id": "f58eaf5e-274f-4dc3-a6fe-f22b330891ab",
+      "location_id": "4da5a393-f868-49ac-b5d6-b01f259e1af1",
+      "provider_id": "470e5506-5f85-4082-8991-3ac00019c3e8",
+      "employee_email": "es-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "es-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "ES",
+      "package": "ENTERPRISE",
+      "company_id": "0bb00f23-1c97-4a83-909d-ae1351684726",
+      "location_id": "ffbc0c6a-2b94-443c-8413-4d74b4786dfc",
+      "provider_id": "470e5506-5f85-4082-8991-3ac00019c3e8",
+      "employee_email": "es-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "es-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "IT",
+      "package": "BASIS",
+      "company_id": "1a436bdf-a348-4f24-be27-bce949c72c18",
+      "location_id": "a855e98a-6bda-4496-9dfe-651428a6c25d",
+      "provider_id": "4c2fcc49-2774-4dad-a637-285a5dd0a21f",
+      "employee_email": "it-basis-emp@staging.lunchportalen.test",
+      "admin_email": "it-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "IT",
+      "package": "LUXUS",
+      "company_id": "e940698b-5177-4789-b7f7-86856338889e",
+      "location_id": "d331d949-0465-44dc-b1bd-42f027b4be5c",
+      "provider_id": "4c2fcc49-2774-4dad-a637-285a5dd0a21f",
+      "employee_email": "it-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "it-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "IT",
+      "package": "ENTERPRISE",
+      "company_id": "e4ee956b-4674-4cc0-a6f8-ed354b0a0321",
+      "location_id": "abfda562-71b6-4ecc-8ebf-469c7133f333",
+      "provider_id": "4c2fcc49-2774-4dad-a637-285a5dd0a21f",
+      "employee_email": "it-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "it-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "NL",
+      "package": "BASIS",
+      "company_id": "a94bf36a-1cb4-4f51-85bf-12fd2cd7ae4a",
+      "location_id": "3e273899-bf8c-4d93-96ca-33dc7ac89994",
+      "provider_id": "f59bcef3-deac-46c9-99e9-76dbc4807ec2",
+      "employee_email": "nl-basis-emp@staging.lunchportalen.test",
+      "admin_email": "nl-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "NL",
+      "package": "LUXUS",
+      "company_id": "a10749e7-dfb1-4341-b158-8090ac8ae61d",
+      "location_id": "2c19b18b-39d1-40b3-a41e-474fe60923e6",
+      "provider_id": "f59bcef3-deac-46c9-99e9-76dbc4807ec2",
+      "employee_email": "nl-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "nl-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "NL",
+      "package": "ENTERPRISE",
+      "company_id": "42289d87-2bcc-40e3-ae3f-c7c80a8b9573",
+      "location_id": "c8952364-bda1-4731-885c-02e7fa06a8f0",
+      "provider_id": "f59bcef3-deac-46c9-99e9-76dbc4807ec2",
+      "employee_email": "nl-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "nl-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "BE",
+      "package": "BASIS",
+      "company_id": "695e7cf9-b4c2-43a0-98c3-b8a987631f66",
+      "location_id": "1c47e957-93c2-4486-8577-2fda9089ff5a",
+      "provider_id": "f9203ffd-f301-426f-991e-d6e5b0572d94",
+      "employee_email": "be-basis-emp@staging.lunchportalen.test",
+      "admin_email": "be-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "BE",
+      "package": "LUXUS",
+      "company_id": "acc54f6f-cdae-470d-9efa-79d3935eb698",
+      "location_id": "3f450ae3-67ef-4cf9-a828-02bc75ef80ba",
+      "provider_id": "f9203ffd-f301-426f-991e-d6e5b0572d94",
+      "employee_email": "be-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "be-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "BE",
+      "package": "ENTERPRISE",
+      "company_id": "6df4afd2-eb1e-4724-89f5-872e30b1814a",
+      "location_id": "2b0e80bd-d980-45e4-bdc5-4f2013c33458",
+      "provider_id": "f9203ffd-f301-426f-991e-d6e5b0572d94",
+      "employee_email": "be-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "be-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CH",
+      "package": "BASIS",
+      "company_id": "74468465-6ce7-4765-b720-23ffc79865c7",
+      "location_id": "59084a20-e7e6-47e5-9a04-03d6b9ffab42",
+      "provider_id": "3d724da7-bbc2-442b-b2f2-932cf4f88369",
+      "employee_email": "ch-basis-emp@staging.lunchportalen.test",
+      "admin_email": "ch-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CH",
+      "package": "LUXUS",
+      "company_id": "3cc75562-b77c-43e8-bef6-f602b054183d",
+      "location_id": "39bf6c4b-63fd-47fe-8692-45346aea5808",
+      "provider_id": "3d724da7-bbc2-442b-b2f2-932cf4f88369",
+      "employee_email": "ch-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "ch-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CH",
+      "package": "ENTERPRISE",
+      "company_id": "31e3994d-38d3-48bf-ab11-2e34701157cb",
+      "location_id": "6a03d64c-8dda-4923-8276-9fb85c18d905",
+      "provider_id": "3d724da7-bbc2-442b-b2f2-932cf4f88369",
+      "employee_email": "ch-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "ch-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "AT",
+      "package": "BASIS",
+      "company_id": "a36bd1b5-8a38-4508-a540-4d3abc3eeb1a",
+      "location_id": "f750982f-cdbf-4220-b41d-5b1774c56f84",
+      "provider_id": "d90f22c6-3a83-40b6-8d93-bf8e805801b6",
+      "employee_email": "at-basis-emp@staging.lunchportalen.test",
+      "admin_email": "at-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "AT",
+      "package": "LUXUS",
+      "company_id": "06c35327-d3b5-4d94-b44f-e19883b162fa",
+      "location_id": "d07c7c07-5a5d-47f7-b43b-ece87e802670",
+      "provider_id": "d90f22c6-3a83-40b6-8d93-bf8e805801b6",
+      "employee_email": "at-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "at-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "AT",
+      "package": "ENTERPRISE",
+      "company_id": "db3305d5-7508-4060-b0b2-aceceb69362b",
+      "location_id": "9e0b600c-8e81-4688-a655-77f36bf37f51",
+      "provider_id": "d90f22c6-3a83-40b6-8d93-bf8e805801b6",
+      "employee_email": "at-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "at-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "IE",
+      "package": "BASIS",
+      "company_id": "93c12c29-e498-4ae0-9eb5-6c420e41e66b",
+      "location_id": "8bed76db-3e78-4dde-81fc-13226413c2c9",
+      "provider_id": "deb3331e-8131-4cad-a1f6-34f1b7bcf24c",
+      "employee_email": "ie-basis-emp@staging.lunchportalen.test",
+      "admin_email": "ie-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "IE",
+      "package": "LUXUS",
+      "company_id": "70d36a02-7323-4657-9365-3c0c7ddf50ff",
+      "location_id": "24dd93e2-78ad-4286-96da-2571cb88afff",
+      "provider_id": "deb3331e-8131-4cad-a1f6-34f1b7bcf24c",
+      "employee_email": "ie-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "ie-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "IE",
+      "package": "ENTERPRISE",
+      "company_id": "7b43e2b6-4845-406f-b571-ca012c5ebd03",
+      "location_id": "19e92a23-01d1-4311-8028-0bf6ec644264",
+      "provider_id": "deb3331e-8131-4cad-a1f6-34f1b7bcf24c",
+      "employee_email": "ie-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "ie-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "PL",
+      "package": "BASIS",
+      "company_id": "73d8398f-0779-43a2-b544-4aae5957f53e",
+      "location_id": "02cb77b7-946e-41db-920b-528bbe312108",
+      "provider_id": "388346ff-45ff-4831-a19e-2e759ede0673",
+      "employee_email": "pl-basis-emp@staging.lunchportalen.test",
+      "admin_email": "pl-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "PL",
+      "package": "LUXUS",
+      "company_id": "e0b01782-a8e5-4641-ba9c-8957170050fe",
+      "location_id": "131947b1-857b-42a8-8453-9c0c82efff26",
+      "provider_id": "388346ff-45ff-4831-a19e-2e759ede0673",
+      "employee_email": "pl-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "pl-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "PL",
+      "package": "ENTERPRISE",
+      "company_id": "df77215d-51ed-4ac3-b378-db55facd75d6",
+      "location_id": "15c73496-763b-4127-9330-2d7fbc959d67",
+      "provider_id": "388346ff-45ff-4831-a19e-2e759ede0673",
+      "employee_email": "pl-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "pl-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "RO",
+      "package": "BASIS",
+      "company_id": "970178d5-315f-4e30-9752-523153447332",
+      "location_id": "5d73a94b-52c9-4d76-a16a-195afb79649e",
+      "provider_id": "a55d019c-5ec7-4f7f-ac67-d8fd3b4e683e",
+      "employee_email": "ro-basis-emp@staging.lunchportalen.test",
+      "admin_email": "ro-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "RO",
+      "package": "LUXUS",
+      "company_id": "75b07367-3344-41a6-8ef5-1bfe39527ff2",
+      "location_id": "f92fb40a-54dc-4cfa-a4af-f1d5a5259f3e",
+      "provider_id": "a55d019c-5ec7-4f7f-ac67-d8fd3b4e683e",
+      "employee_email": "ro-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "ro-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "RO",
+      "package": "ENTERPRISE",
+      "company_id": "d34a3382-1860-4711-9f98-4c0e7963a51d",
+      "location_id": "491a79e0-4905-47d2-8b40-d017c60a21d6",
+      "provider_id": "a55d019c-5ec7-4f7f-ac67-d8fd3b4e683e",
+      "employee_email": "ro-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "ro-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CZ",
+      "package": "BASIS",
+      "company_id": "e2013e87-b74c-48d9-beca-a3fdfa868161",
+      "location_id": "3051cc04-fbc4-47d2-87ba-190ee3fd9efd",
+      "provider_id": "f56779fb-e7d8-4c98-9ccc-5e8aa876429e",
+      "employee_email": "cz-basis-emp@staging.lunchportalen.test",
+      "admin_email": "cz-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CZ",
+      "package": "LUXUS",
+      "company_id": "0d010630-c792-4ceb-8f9c-e5c15d7950c5",
+      "location_id": "5639cad9-e22d-484b-a557-78be512b38a2",
+      "provider_id": "f56779fb-e7d8-4c98-9ccc-5e8aa876429e",
+      "employee_email": "cz-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "cz-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CZ",
+      "package": "ENTERPRISE",
+      "company_id": "7403a190-456e-41b7-bce3-295a5382d69a",
+      "location_id": "d9a65141-b83a-4b76-8e6b-14b09a0b3073",
+      "provider_id": "f56779fb-e7d8-4c98-9ccc-5e8aa876429e",
+      "employee_email": "cz-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "cz-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "PT",
+      "package": "BASIS",
+      "company_id": "97e1021f-a269-4ec7-a900-6e4d8bad9414",
+      "location_id": "9e1a5122-c016-4a28-8c84-a45fd7ae528f",
+      "provider_id": "6fa834d1-e296-45cc-824f-da53a241cbf8",
+      "employee_email": "pt-basis-emp@staging.lunchportalen.test",
+      "admin_email": "pt-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "PT",
+      "package": "LUXUS",
+      "company_id": "a330fb03-82e9-407e-b37e-f7d7933b2ef2",
+      "location_id": "7d606799-29a8-4229-8d6d-db102dbcd5e2",
+      "provider_id": "6fa834d1-e296-45cc-824f-da53a241cbf8",
+      "employee_email": "pt-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "pt-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "PT",
+      "package": "ENTERPRISE",
+      "company_id": "dc8510d7-a6fe-41fd-82e2-8856f9c470a2",
+      "location_id": "06700726-40ba-4b4f-8d3b-fdebe903e1df",
+      "provider_id": "6fa834d1-e296-45cc-824f-da53a241cbf8",
+      "employee_email": "pt-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "pt-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "GR",
+      "package": "BASIS",
+      "company_id": "d8d18625-eaee-4bdb-9c86-80bdd2682995",
+      "location_id": "27663b76-bb28-489a-af0c-6f06f64b902c",
+      "provider_id": "21673096-8779-4c07-a844-56bc20d348be",
+      "employee_email": "gr-basis-emp@staging.lunchportalen.test",
+      "admin_email": "gr-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "GR",
+      "package": "LUXUS",
+      "company_id": "8eda3222-5385-467d-abfd-342635c1982e",
+      "location_id": "d88af43f-7f55-4a64-81df-3cf68c2af017",
+      "provider_id": "21673096-8779-4c07-a844-56bc20d348be",
+      "employee_email": "gr-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "gr-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "GR",
+      "package": "ENTERPRISE",
+      "company_id": "dfcd28fd-292c-4694-96db-4756954019e1",
+      "location_id": "109be779-98f7-4846-bb0e-327e66f4db08",
+      "provider_id": "21673096-8779-4c07-a844-56bc20d348be",
+      "employee_email": "gr-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "gr-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "US",
+      "package": "BASIS",
+      "company_id": "6c0de3df-0456-48e0-bc8e-c3b9ae94d41d",
+      "location_id": "4f381eb6-a919-40f4-9d8e-f4971aa25b68",
+      "provider_id": "25df3fe3-8e94-47aa-857e-9dbfe6f99679",
+      "employee_email": "us-basis-emp@staging.lunchportalen.test",
+      "admin_email": "us-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "US",
+      "package": "LUXUS",
+      "company_id": "e30b486e-a299-42c5-a832-ab9469136de0",
+      "location_id": "fa8e3a8a-b576-48b9-ae1a-d3eeb0a9ffc6",
+      "provider_id": "25df3fe3-8e94-47aa-857e-9dbfe6f99679",
+      "employee_email": "us-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "us-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "US",
+      "package": "ENTERPRISE",
+      "company_id": "0e33538c-4133-4cd0-b914-8f16b76e5e75",
+      "location_id": "2733d556-ae58-4269-b7c8-b37d37193d4f",
+      "provider_id": "25df3fe3-8e94-47aa-857e-9dbfe6f99679",
+      "employee_email": "us-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "us-enterprise-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CA",
+      "package": "BASIS",
+      "company_id": "5fad9ca2-16c2-4cff-ae06-877bc9a8f91b",
+      "location_id": "f5c336d1-24d6-4019-add8-a1d6d0a44ac6",
+      "provider_id": "d91aec16-35f1-4425-b95a-516583cda083",
+      "employee_email": "ca-basis-emp@staging.lunchportalen.test",
+      "admin_email": "ca-basis-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CA",
+      "package": "LUXUS",
+      "company_id": "5efa9513-b804-44d0-a3b9-a1efe2e47c34",
+      "location_id": "03e9e31b-78a2-4cfb-9b14-2e2b22e7d666",
+      "provider_id": "d91aec16-35f1-4425-b95a-516583cda083",
+      "employee_email": "ca-luxus-emp@staging.lunchportalen.test",
+      "admin_email": "ca-luxus-admin@staging.lunchportalen.test"
+    },
+    {
+      "country": "CA",
+      "package": "ENTERPRISE",
+      "company_id": "8120af4d-bd93-4762-be27-ad646c48d276",
+      "location_id": "1d571dd0-7f28-4cd6-bbdc-a30bedb07f52",
+      "provider_id": "d91aec16-35f1-4425-b95a-516583cda083",
+      "employee_email": "ca-enterprise-emp@staging.lunchportalen.test",
+      "admin_email": "ca-enterprise-admin@staging.lunchportalen.test"
+    }
+  ],
+  "users": [
+    {
+      "email": "no-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "NO",
+      "package": "BASIS"
+    },
+    {
+      "email": "no-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "NO",
+      "package": "LUXUS"
+    },
+    {
+      "email": "no-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "NO",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "se-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "SE",
+      "package": "BASIS"
+    },
+    {
+      "email": "se-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "SE",
+      "package": "LUXUS"
+    },
+    {
+      "email": "se-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "SE",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "dk-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "DK",
+      "package": "BASIS"
+    },
+    {
+      "email": "dk-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "DK",
+      "package": "LUXUS"
+    },
+    {
+      "email": "dk-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "DK",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "fi-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "FI",
+      "package": "BASIS"
+    },
+    {
+      "email": "fi-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "FI",
+      "package": "LUXUS"
+    },
+    {
+      "email": "fi-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "FI",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "gb-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "GB",
+      "package": "BASIS"
+    },
+    {
+      "email": "gb-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "GB",
+      "package": "LUXUS"
+    },
+    {
+      "email": "gb-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "GB",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "de-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "DE",
+      "package": "BASIS"
+    },
+    {
+      "email": "de-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "DE",
+      "package": "LUXUS"
+    },
+    {
+      "email": "de-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "DE",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "fr-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "FR",
+      "package": "BASIS"
+    },
+    {
+      "email": "fr-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "FR",
+      "package": "LUXUS"
+    },
+    {
+      "email": "fr-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "FR",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "es-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "ES",
+      "package": "BASIS"
+    },
+    {
+      "email": "es-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "ES",
+      "package": "LUXUS"
+    },
+    {
+      "email": "es-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "ES",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "it-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "IT",
+      "package": "BASIS"
+    },
+    {
+      "email": "it-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "IT",
+      "package": "LUXUS"
+    },
+    {
+      "email": "it-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "IT",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "nl-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "NL",
+      "package": "BASIS"
+    },
+    {
+      "email": "nl-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "NL",
+      "package": "LUXUS"
+    },
+    {
+      "email": "nl-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "NL",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "be-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "BE",
+      "package": "BASIS"
+    },
+    {
+      "email": "be-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "BE",
+      "package": "LUXUS"
+    },
+    {
+      "email": "be-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "BE",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "ch-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CH",
+      "package": "BASIS"
+    },
+    {
+      "email": "ch-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CH",
+      "package": "LUXUS"
+    },
+    {
+      "email": "ch-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CH",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "at-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "AT",
+      "package": "BASIS"
+    },
+    {
+      "email": "at-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "AT",
+      "package": "LUXUS"
+    },
+    {
+      "email": "at-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "AT",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "ie-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "IE",
+      "package": "BASIS"
+    },
+    {
+      "email": "ie-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "IE",
+      "package": "LUXUS"
+    },
+    {
+      "email": "ie-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "IE",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "pl-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "PL",
+      "package": "BASIS"
+    },
+    {
+      "email": "pl-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "PL",
+      "package": "LUXUS"
+    },
+    {
+      "email": "pl-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "PL",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "ro-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "RO",
+      "package": "BASIS"
+    },
+    {
+      "email": "ro-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "RO",
+      "package": "LUXUS"
+    },
+    {
+      "email": "ro-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "RO",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "cz-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CZ",
+      "package": "BASIS"
+    },
+    {
+      "email": "cz-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CZ",
+      "package": "LUXUS"
+    },
+    {
+      "email": "cz-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CZ",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "pt-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "PT",
+      "package": "BASIS"
+    },
+    {
+      "email": "pt-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "PT",
+      "package": "LUXUS"
+    },
+    {
+      "email": "pt-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "PT",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "gr-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "GR",
+      "package": "BASIS"
+    },
+    {
+      "email": "gr-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "GR",
+      "package": "LUXUS"
+    },
+    {
+      "email": "gr-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "GR",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "us-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "US",
+      "package": "BASIS"
+    },
+    {
+      "email": "us-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "US",
+      "package": "LUXUS"
+    },
+    {
+      "email": "us-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "US",
+      "package": "ENTERPRISE"
+    },
+    {
+      "email": "ca-basis-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CA",
+      "package": "BASIS"
+    },
+    {
+      "email": "ca-luxus-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CA",
+      "package": "LUXUS"
+    },
+    {
+      "email": "ca-enterprise-emp@staging.lunchportalen.test",
+      "role": "employee",
+      "country": "CA",
+      "package": "ENTERPRISE"
+    }
+  ],
+  "PRODUCTION_MUTATIONS": 0,
+  "password_present": true
+}

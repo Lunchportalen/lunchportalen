@@ -1,0 +1,443 @@
+[
+  {
+    "country": "NO",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "NO",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "NO",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "SE",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "SE",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "SE",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "DK",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "DK",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "DK",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "FI",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "FI",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "FI",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "GB",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "GB",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "GB",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "DE",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "DE",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "DE",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "FR",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "FR",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "FR",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "ES",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "ES",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "ES",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "IT",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "IT",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "IT",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "NL",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "NL",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "NL",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "BE",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "BE",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "BE",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CH",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CH",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CH",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "AT",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "AT",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "AT",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "IE",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "IE",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "IE",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "PL",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "PL",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "PL",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "RO",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "RO",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "RO",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CZ",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CZ",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CZ",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "PT",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "PT",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "PT",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "GR",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "GR",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "GR",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "US",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "US",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "US",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CA",
+    "package": "BASIS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CA",
+    "package": "LUXUS",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  },
+  {
+    "country": "CA",
+    "package": "ENTERPRISE",
+    "kitchenOk": true,
+    "packingOk": true,
+    "deliveryOk": true
+  }
+]

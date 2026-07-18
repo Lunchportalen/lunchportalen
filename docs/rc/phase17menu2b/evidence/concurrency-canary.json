@@ -1,0 +1,7 @@
+{
+  "capacity_attempts": 20,
+  "capacity_accepted": 20,
+  "capacity_rejected": 0,
+  "note": "Full 100-attempt capacity race deferred to Phase 18 scale packet; canary validates atomic idempotency under parallel load.",
+  "IDEMPOTENCY_DUPLICATES": 0
+}
