@@ -9,8 +9,15 @@ on:
         description: Exact commit SHA to certify (empty = workflow SHA)
         required: false
         default: ""
+  push:
+    branches:
+      - release/global-menu-universes-21
+    paths:
+      - ".github/workflows/phase17menu2b-staging-cert.yml"
+      - "scripts/phase17menu2b/**"
+      - "docs/rc/phase17menu2b/**"
   pull_request:
-    branches: [main, master, "release/**"]
+    branches: [main]
     paths:
       - ".github/workflows/phase17menu2b-staging-cert.yml"
       - "scripts/phase17menu2b/**"
