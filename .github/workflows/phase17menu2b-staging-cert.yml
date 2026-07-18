@@ -6,8 +6,15 @@ on:
   workflow_dispatch:
     inputs:
       app_sha:
-        description: Exact commit SHA to certify
-        required: true
+        description: Exact commit SHA to certify (empty = workflow SHA)
+        required: false
+        default: ""
+  pull_request:
+    branches: [main, master, "release/**"]
+    paths:
+      - ".github/workflows/phase17menu2b-staging-cert.yml"
+      - "scripts/phase17menu2b/**"
+      - "docs/rc/phase17menu2b/**"
 
 permissions:
   contents: read
@@ -29,7 +36,7 @@ jobs:
       SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
       SYSTEM_MOTOR_SECRET: ${{ secrets.SYSTEM_MOTOR_SECRET }}
       LP_PACKAGE_ENTITLEMENTS_RUNTIME: "1"
-      APP_VERSION: ${{ inputs.app_sha }}
+      APP_VERSION: ${{ inputs.app_sha || github.sha }}
 
     steps:
       - name: Refuse production refs
@@ -46,7 +53,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.app_sha }}
+          ref: ${{ inputs.app_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
