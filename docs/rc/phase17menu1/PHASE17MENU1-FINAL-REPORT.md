@@ -1,4 +1,4 @@
-# PHASE 17MENU.1 — 21-COUNTRY COMMERCIAL MENU CERTIFICATION
+﻿# PHASE 17MENU.1 â€” 21-COUNTRY COMMERCIAL MENU CERTIFICATION
 
 **Decision:** `OWNER_ACTION_REQUIRED`
 
@@ -9,12 +9,12 @@ Single blocker for full staging technical PASS: `SANITY_WRITE_TOKEN` missing in 
 | Field | Value |
 |-------|--------|
 | Branch | `release/global-menu-universes-21` |
-| Release SHA | `9342066dceedd7521e63fad2f6cfed4675628962` |
+| Release SHA | `e64e1271d352eb6b78b44971fd4873d69a922939` |
 | Worktree | CLEAN after 17MENU.1 commit (pre-push) |
 | Staging project | `uigxsboqeruxflgzqztl` |
 | Staging migrations | `phase17menu_package_entitlements_canonical` + `phase17menu1_enterprise_contracts_staging` **applied** |
 | Sanity dataset | `staging` (target) |
-| Sanity seed | **BLOCKED** — `SANITY_WRITE_TOKEN` missing (`seed-phase17menu-country-universes.ts --dry-run`) |
+| Sanity seed | **BLOCKED** â€” `SANITY_WRITE_TOKEN` missing (`seed-phase17menu-country-universes.ts --dry-run`) |
 | Production mutations | **0** |
 
 ## Global counts
@@ -45,14 +45,14 @@ Single blocker for full staging technical PASS: `SANITY_WRITE_TOKEN` missing in 
 
 | Product | Result |
 |---------|--------|
-| Basis | PASS — sandwich/salad_box/warm_meal |
-| Luxus | PASS — capability promise required in briefs |
-| Enterprise | PASS — contract product, not automatic Luxus |
+| Basis | PASS â€” sandwich/salad_box/warm_meal |
+| Luxus | PASS â€” capability promise required in briefs |
+| Enterprise | PASS â€” contract product, not automatic Luxus |
 | Kitchen complexity | Reduced via canonical dish + variant only |
 
 ## Country results
 
-All 21 dossiers under `docs/rc/phase17menu1/evidence/dossiers/{CC}/` with ≥4 sources, ≥12 menu observations, price benchmarks, warm banks ≥55 eligible (40+reserves), generation drafts, and 3 package E2E reports each.
+All 21 dossiers under `docs/rc/phase17menu1/evidence/dossiers/{CC}/` with â‰¥4 sources, â‰¥12 menu observations, price benchmarks, warm banks â‰¥55 eligible (40+reserves), generation drafts, and 3 package E2E reports each.
 
 | Metric | Value |
 |--------|-------|
@@ -123,4 +123,4 @@ After seed succeeds, re-run `npm run ci:phase17menu1-gates` and promote decision
 
 ## Decision
 
-**`OWNER_ACTION_REQUIRED`** — staging commercial engines, dossiers, benchmarks, 63 E2E evidence, commission/pricing/Enterprise/margin/recipe contracts, and staging DB migrations are complete; live Sanity staging seed awaits write token.
+**`OWNER_ACTION_REQUIRED`** â€” staging commercial engines, dossiers, benchmarks, 63 E2E evidence, commission/pricing/Enterprise/margin/recipe contracts, and staging DB migrations are complete; live Sanity staging seed awaits write token.
