@@ -2,22 +2,7 @@
  * Phase 16NO CI gate — global commercial model + Norway-first constraints.
  * Exit 0 = PASS. Exit 1 = block deploy.
  */
-import { createRequire } from "node:module";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-
-const root = process.cwd();
-
-async function load(rel) {
-  return import(pathToFileURL(path.join(root, rel)).href);
-}
-
-const { SUPPORTED_COUNTRY_CODES, MARKET_LOCALES } = await load("lib/markets/supportedMarkets.ts").catch(async () => {
-  // ts may not resolve via node — run via vitest in CI primarily; this is a lightweight assert on compiled patterns
-  return null;
-});
-
-// Prefer vitest as source of truth; this script validates env + static invariants when TS import works.
+// Prefer vitest as source of truth; this script validates static file invariants (no TS runtime import).
 const failures = [];
 
 function pass(name) {
