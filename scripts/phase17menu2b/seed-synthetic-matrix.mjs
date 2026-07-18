@@ -129,9 +129,11 @@ async function main() {
     const providerId = crypto.randomUUID();
     const slug = `${SLUG_PREFIX}${cc.toLowerCase()}`;
     const provName = `${MARK} Provider ${cc}`;
+    const { data: existingProv } = await admin.from("providers").select("id").eq("slug", slug).maybeSingle();
+    const pid = String(existingProv?.id ?? providerId);
     const { error: pErr } = await admin.from("providers").upsert(
       {
-        id: providerId,
+        id: pid,
         name: provName,
         slug,
         contact_email: `provider-${cc.toLowerCase()}@staging.lunchportalen.test`,
@@ -141,25 +143,22 @@ async function main() {
       },
       { onConflict: "slug" },
     );
-    if (pErr) {
-      // reuse existing slug
-      const { data: existing } = await admin.from("providers").select("id").eq("slug", slug).maybeSingle();
-      if (!existing?.id) throw new Error(`provider ${cc}: ${pErr.message}`);
-      matrix.providers.push({ country: cc, id: existing.id, slug, reused: true });
-    } else {
-      await admin.from("organizations").upsert({
-        id: providerId,
-        type: "provider",
-        name: provName,
-        slug,
-        status: "ACTIVE",
-        legacy_source: "provider",
-      });
-      matrix.providers.push({ country: cc, id: providerId, slug, reused: false });
-    }
+    if (pErr) throw new Error(`provider ${cc}: ${pErr.message}`);
 
-    const { data: provRow } = await admin.from("providers").select("id").eq("slug", slug).single();
-    const pid = String(provRow.id);
+    // provider_package_entitlements FK → organizations(id); mirror provider id into organizations.
+    const { error: oErr } = await admin.from("organizations").upsert({
+      id: pid,
+      type: "provider",
+      name: provName,
+      slug,
+      status: "ACTIVE",
+      legacy_source: "provider",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "id" });
+    if (oErr) throw new Error(`organization ${cc}: ${oErr.message}`);
+
+    matrix.providers.push({ country: cc, id: pid, slug, reused: Boolean(existingProv?.id) });
 
     // Price rules per package
     for (const pkg of PACKAGES) {
@@ -326,7 +325,7 @@ async function main() {
         for (const documentType of ["employee_terms", "privacy_notice"]) {
           const doc = getNorwayDocument(/** @type {any} */ (documentType));
           if (!doc) throw new Error(`missing norway doc ${documentType}`);
-          await admin.from("legal_acceptances").insert({
+          const { error: lErr } = await admin.from("legal_acceptances").insert({
             subject_type: "employee",
             subject_id: uid,
             organization_id: companyId,
@@ -339,7 +338,10 @@ async function main() {
             accepted_at: new Date().toISOString(),
             acceptance_method: "synthetic_seed",
             audit_hash: crypto.createHash("sha256").update(`${uid}:${documentType}:${doc.version}`).digest("hex"),
-          }).then(() => null).catch(() => null);
+          });
+          if (lErr && !/duplicate|unique/i.test(lErr.message)) {
+            throw new Error(`legal_acceptance ${email}/${documentType}: ${lErr.message}`);
+          }
         }
       }
 
