@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-07-17T17:50:00.000Z",
+  "basis": "Lunchportalen platform commission net excl. MVA (not provider food sales)",
+  "sources": {
+    "commission_periods.rounded_commission_minor_sum": 0,
+    "provider_commission_invoices.amount_ex_tax_minor_sum": 0,
+    "issued_invoice_count": 0,
+    "draft_invoice_count": 0
+  },
+  "taxableServiceTurnoverMinor": 0,
+  "thresholdMinor": 5000000,
+  "thresholdMajorUnits": "50000.00",
+  "alertAtMinor": 4000000,
+  "alert": false,
+  "crossed": false,
+  "LUNCHPORTALEN_MVA_REGISTERED": false,
+  "PLATFORM_REAL_MVA_INVOICING": "BLOCKED",
+  "ownerActionPath": "docs/rc/phase16no/evidence/mva/OWNER_MVA_REGISTRATION_ACTION.md"
+}

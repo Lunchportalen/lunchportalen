@@ -59,6 +59,22 @@ export async function transitionMarketApproval(p: {
 
 /** Kommersiell aktivering (fakturagate) — speiler DB-funksjonen. */
 export async function isMarketCommerciallyActive(countryCode: string): Promise<boolean> {
+  // Phase 16NO: fail-closed app-side mirror before RPC (other countries never commercially active).
+  // Accountant confirmation is not a cutover gate when owner waiver is set.
+  const cc = String(countryCode || "").trim().toUpperCase();
+  if (cc !== "NO") return false;
+  const ownerOk =
+    process.env.OWNER_NORWAY_TAX_MODEL_CONFIRMATION === "CONFIRMED" &&
+    (process.env.OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY === "true" ||
+      process.env.OWNER_ACCEPTS_NORWAY_TAX_CLASSIFICATION_RESPONSIBILITY === "YES") &&
+    (process.env.ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER === "true" ||
+      process.env.ACCOUNTANT_CONFIRMATION_WAIVED_BY_OWNER === "YES" ||
+      process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION === "NOT_REQUIRED_FOR_CUTOVER" ||
+      process.env.ACCOUNTANT_NORWAY_TAX_CONFIRMATION === "CONFIRMED");
+  if (!ownerOk) return false;
+  if (process.env.COUNTRY_NO_PRODUCTION_ENABLED !== "true") return false;
+  if (process.env.COUNTRY_NO_INVOICE_ONLY_ENABLED !== "true") return false;
+
   const admin = supabaseAdmin() as any;
   const { data } = await admin.rpc("lp_market_commercially_active", { p_country_code: countryCode });
   return data === true;

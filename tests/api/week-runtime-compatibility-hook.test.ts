@@ -43,6 +43,11 @@ vi.mock("@/lib/week/loadEmployeeWeekMenusFromMsdi", () => ({
 
 vi.mock("@/lib/ops/log", () => ({ opsLog: opsLogMock }));
 
+vi.mock("@/lib/legal/norwayAcceptanceGate", () => ({
+  assertNorwayLegalAcceptances: vi.fn(async () => undefined),
+  evaluateNorwayLegalGate: vi.fn(async () => ({ ok: true, missing: [], stale: [], required: [] })),
+}));
+
 vi.mock("@/lib/cms/menuDay", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/cms/menuDay")>();
   return {

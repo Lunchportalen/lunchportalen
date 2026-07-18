@@ -27,12 +27,14 @@ describe("no-implicit-bypass (DC-011 middleware)", () => {
     }
   });
 
-  test("API_AUTH_ALLOWLIST_SIZE is 88", () => {
+  test("API_AUTH_ALLOWLIST_SIZE is 91", () => {
     // 86 → 88: SEC-001 added /api/webhooks/stripe-billing-payments + stripe-provider-setup.
     // 88 → 85: Fase 3 removed 3 duplicate invite-completion routes.
     // 85 → 87: Fase 4 added /api/public/provider-registration + /api/auth/register-provider-admin.
     // 87 → 88: Fase 9 added /api/cron/commission-settlement (cron-secret gated).
-    expect(API_AUTH_ALLOWLIST_SIZE).toBe(88);
+    // 88 → 90: 16NO.2 Norway legal documents GET + documents/[type] dynamic.
+    // 90 → 91: 16NO.4 /api/cron/norway-mva-threshold (cron-secret gated).
+    expect(API_AUTH_ALLOWLIST_SIZE).toBe(91);
   });
 
   test("non-allowlisted /api/* returns JSON 401 path exists", () => {

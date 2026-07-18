@@ -1,0 +1,67 @@
+﻿{
+  "phase": "16NO.3",
+  "rehearsal_started_at_utc": "2026-07-17T19:41:59Z",
+  "operator": "cursor-agent",
+  "production": {
+    "app_url": "https://app.lunchportalen.no",
+    "app_sha": "38b18c38742e1b50eb727f6bf807e1a1499f69fb",
+    "deployment_id": "dpl_8B1yGxcLccWLx642kaUSJ3K7q1m1",
+    "deployment_url": "https://lunchportalen-1n2l2fcyj-lunchportalen.vercel.app",
+    "health": "PASS",
+    "supabase_ref": "hkpokyapzarefrgqzkos",
+    "region": "eu-west-1",
+    "postgres": "17.6.1.063",
+    "migration_head": "20260902120000",
+    "norway_ordering_enabled": true,
+    "other_countries_disabled": "20/20",
+    "mva_invoice_block": "BLOCKED",
+    "deploy_lock": "ACTIVE",
+    "migration_lock": "ACTIVE",
+    "production_mutations": 0,
+    "production_deployments": 0,
+    "production_migrations": 0
+  },
+  "backup": {
+    "backup_id": 1135896161,
+    "backup_type": "DAILY_PHYSICAL_BACKUP",
+    "is_physical_backup": true,
+    "status": "COMPLETED",
+    "inserted_at": "2026-07-17T05:07:31.069Z",
+    "pitr_enabled": false,
+    "walg_enabled": true,
+    "region": "eu-west-1",
+    "evidence_run": "29608489889",
+    "snapshot_rpo_seconds": 52655,
+    "recovery_class": "DAILY_PHYSICAL_BACKUP"
+  },
+  "source_manifest_aggregates": {
+    "companies": 5,
+    "providers": 9,
+    "profiles": 50,
+    "auth_users": 50,
+    "orders": 17,
+    "legal_acceptances": 0,
+    "audit_events": 453,
+    "storage_buckets": 1,
+    "rls_enabled_public_tables": 198,
+    "public_tables": 198
+  },
+  "storage": {
+    "runtime_dependency": "NON_CRITICAL_FOR_GOLDEN_PATH",
+    "buckets": [
+      {
+        "id": "provider-logos",
+        "public": true,
+        "object_count": 1,
+        "total_bytes": 26784,
+        "critical_for_ordering": false,
+        "note": "Logo assets only; agreements/media buckets absent in prod"
+      }
+    ],
+    "storage_restore_required_for_golden_path": false
+  },
+  "blocker": {
+    "decision": "CLEARED",
+    "reason": "Owner completed Dashboard restore-to-new-project (backup 1135896161 → msecmoqfncvxrucnlpmm). Phase continued to RESTORE_REHEARSAL_PASS; see PHASE16NO3-FINAL-REPORT.md."
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "phase": "16NO.3",
+  "rehearsal_completed_at_utc": "2026-07-17T21:12:00Z",
+  "recovery_project_ref": "msecmoqfncvxrucnlpmm",
+  "golden_path": {
+    "method": "lp_order_set via request.jwt.claim.sub simulation (authenticated role)",
+    "employee_id": "a1630001-0004-4000-8000-000000000004",
+    "service_date": "2026-07-21",
+    "choice_key": "varmrett",
+    "order_id": "4531f4d9-4b51-451d-94b0-3f7afddb10ea",
+    "status": "ORDERED",
+    "company_id": "a1630001-0002-4000-8000-000000000002",
+    "provider_id": "a1630001-0001-4000-8000-000000000001",
+    "financial_minor_nok": {
+      "net": 9000,
+      "food_mva": 1350,
+      "gross": 10350
+    },
+    "currency_code": "NOK",
+    "result": "PASS"
+  },
+  "financial_canary": {
+    "order_id": "a1630001-0010-4000-8000-000000000010",
+    "order_line_id": "a1630001-0011-4000-8000-000000000011",
+    "service_date": "2026-07-22",
+    "status": "DELIVERED",
+    "targets_minor_nok": {
+      "net": 10000,
+      "food_mva": 1500,
+      "gross": 11500,
+      "commission": 500,
+      "platform_mva_calc": 125,
+      "internal_total": 625
+    },
+    "verified_order_row": {
+      "net": 10000,
+      "food_mva": 1500,
+      "gross": 11500
+    },
+    "verified_sql_math": {
+      "net": 10000,
+      "food_mva": 1500,
+      "gross": 11500,
+      "commission": 500,
+      "platform_mva_calc": 125,
+      "internal_total": 625
+    },
+    "verified_snapshot": {
+      "line_subtotal_ex_tax_minor": 10000,
+      "line_tax_minor": 1500,
+      "line_total_inc_tax_minor": 11500,
+      "commission_rate_bps": 500
+    },
+    "commission_ledger": {
+      "rows_for_canary_order": 1,
+      "commission_basis_amount_minor": 10000,
+      "commission_amount_exact": 500,
+      "idempotency_key": "commission:ORDER_COMPLETED:a1630001-0010-4000-8000-000000000010:a1630001-0011-4000-8000-000000000011"
+    },
+    "platform_mva_invoice_gate": {
+      "lp_country_production_allowed_NO_platform_mva_invoice": false,
+      "provider_commission_invoices_created": 0,
+      "result": "PASS"
+    },
+    "result": "PASS"
+  },
+  "idempotency": {
+    "write_path": "private.lp_billing_post_delivered_commission_unchecked (2 passes)",
+    "pass1_inserted": 1,
+    "pass2_inserted": 0,
+    "duplicate_commission_rows": 0,
+    "duplicate_invoice_rows": 0,
+    "final_commission_row_count": 1,
+    "result": "PASS"
+  },
+  "kill_switch": {
+    "action": "ordering_enabled=false then restore true",
+    "owner_confirmations_preserved": true,
+    "during_kill": {
+      "ordering_enabled": false,
+      "lp_country_production_allowed_NO_order": false,
+      "lp_country_production_allowed_NO_platform_mva_invoice": false
+    },
+    "after_restore": {
+      "ordering_enabled": true,
+      "lp_country_production_allowed_NO_order": true,
+      "lp_country_production_allowed_NO_platform_mva_invoice": false
+    },
+    "result": "PASS"
+  },
+  "cross_tenant": {
+    "rls_as_synthetic_employee": {
+      "total_visible_orders": 2,
+      "synthetic_company_orders": 2,
+      "pettersen_leak_count": 0
+    },
+    "isolation_columns_on_created_rows": {
+      "company_hash": "de851ff2",
+      "provider_hash": "65804d4a",
+      "distinct_from_pilot_hashes": true
+    },
+    "result": "PASS"
+  },
+  "exercise_notes": {
+    "lp_order_set": "EXERCISED (JWT sub simulation)",
+    "lp_order_advance_status": "NOT_EXERCISED (canary DELIVERED set directly as postgres for financial canary)",
+    "lp_billing_post_commission": "EXERCISED via private unchecked RPC (service_role equivalent)",
+    "platform_mva_invoice_create": "NOT_ATTEMPTED (gate false — correct fail-closed)",
+    "auth_users_create": "EXERCISED (synthetic employee via SQL insert)"
+  },
+  "overall": "PASS"
+}

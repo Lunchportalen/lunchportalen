@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  NorwayLegalClickwrap,
+  type NorwayLegalAcceptancePayload,
+} from "@/components/legal/NorwayLegalClickwrap";
 
 export type MarketOption = {
   countryCode: string;
@@ -61,6 +65,7 @@ export default function ProviderRegistrationForm({ markets, languageLabels }: Pr
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [norwayLegal, setNorwayLegal] = useState<NorwayLegalAcceptancePayload[] | null>(null);
 
   function onCountryChange(next: string) {
     setCountry(next);
@@ -83,6 +88,9 @@ export default function ProviderRegistrationForm({ markets, languageLabels }: Pr
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) return setError("Ugyldig e-post.");
     if (contactName.trim().length < 2) return setError("Kontaktperson må fylles ut.");
     if (market?.timezoneRequired && !timezone) return setError("Velg tidssone for dette markedet (USA/Canada).");
+    if (country === "NO" && !norwayLegal?.length) {
+      return setError("Du må akseptere alle norske leverandørvilkår før innsending.");
+    }
 
     setSubmitting(true);
     try {
@@ -105,6 +113,7 @@ export default function ProviderRegistrationForm({ markets, languageLabels }: Pr
           tax_registration: taxRegistration.trim() || undefined,
           order_email: orderEmail.trim() || undefined,
           coverage_wish: coverageWish.trim() || undefined,
+          ...(country === "NO" && norwayLegal ? { norway_legal_acceptances: norwayLegal } : {}),
         }),
       });
       const json = await res.json().catch(() => null);
@@ -226,10 +235,12 @@ export default function ProviderRegistrationForm({ markets, languageLabels }: Pr
         <textarea className={fieldClass()} rows={3} value={coverageWish} onChange={(e) => setCoverageWish(e.target.value)} placeholder="F.eks. postnummer eller byer dere leverer til (valgfritt)" />
       </div>
 
+      {country === "NO" ? <NorwayLegalClickwrap role="provider" onChange={setNorwayLegal} /> : null}
+
       <button
         type="submit"
         name="submit-provider-registration"
-        disabled={submitting}
+        disabled={submitting || (country === "NO" && !norwayLegal?.length)}
         className="min-h-14 w-full rounded-full border border-white/15 bg-[linear-gradient(135deg,rgb(17_17_17)_0%,rgb(36_28_40)_100%)] px-6 py-4 text-base font-extrabold tracking-tight text-white transition duration-200 hover:-translate-y-0.5 disabled:opacity-60"
       >
         {submitting ? "Sender …" : "Send søknad"}

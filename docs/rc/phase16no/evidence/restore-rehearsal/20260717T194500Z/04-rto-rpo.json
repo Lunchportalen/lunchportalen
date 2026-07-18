@@ -1,0 +1,38 @@
+{
+  "phase": "16NO.3",
+  "measured_at_utc": "2026-07-17T22:18:00Z",
+  "backup": {
+    "backup_id": 1135896161,
+    "backup_type": "DAILY_PHYSICAL_BACKUP",
+    "inserted_at": "2026-07-17T05:07:31.069Z",
+    "pitr_enabled": false
+  },
+  "recovery_project": {
+    "ref": "msecmoqfncvxrucnlpmm",
+    "restore_started_at": "2026-07-17T19:55:52.286Z",
+    "restore_completed_at": "2026-07-17T19:55:52.286Z",
+    "note": "Supabase project created_at used as restore start; project reported ACTIVE_HEALTHY on first operator poll after owner Dashboard restore completed"
+  },
+  "rpo": {
+    "snapshot_rpo_seconds": 53301,
+    "snapshot_rpo_hours": 14.81,
+    "class": "DAILY_PHYSICAL_BACKUP_NO_PITR",
+    "formula": "restore_started_at - backup.inserted_at"
+  },
+  "rto": {
+    "database_restore_rto_seconds": 0,
+    "database_restore_rto_note": "Physical restore-to-new completed before operator access; created_at equals first observed ACTIVE_HEALTHY window for this rehearsal",
+    "application_deploy_ready_at": "2026-07-17T22:13:11.287Z",
+    "application_rto_seconds": 8240,
+    "application_rto_note": "From restore_started_at to recovery alias /api/health ok=true with exact SHA",
+    "full_service_rto_seconds": 8240,
+    "cleanup_completed_at": "2026-07-17T22:18:04Z"
+  },
+  "cost": {
+    "cost_approved": "OWNER_CONFIRMED_VIA_DASHBOARD",
+    "org_project_create_cost_api_usd_monthly": 10,
+    "actual_invoice_line_item": "OWNER_DASHBOARD_BILLING_REQUIRED",
+    "amount_recorded_in_chat": false,
+    "note": "Owner confirmed COST_APPROVED. Supabase MCP get_cost(org) returns USD 10/month project class. Exact charged line for deleted recovery project msecmoqfncvxrucnlpmm must be confirmed in Supabase billing UI."
+  }
+}

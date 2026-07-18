@@ -1,0 +1,24 @@
+{
+  "VERIFIED_NORWAY_RELEASE_SHA": "79d3e67b968e80f93f13e25d14222af271c6b052",
+  "SOURCE_RC_SHA": "b88aaf99780e0a5d71404e831fd87eb90031fb6e",
+  "migrationRange": {
+    "fromExclusiveProductionHead": "20260818120000",
+    "toInclusive": "20260902120000",
+    "excluded": ["20260901120000"],
+    "appliedCount": 19
+  },
+  "productionBaselineAppSha": "98b3b15e258966dd61ad967af5876982bcfcb959",
+  "productionAppShaAfter": "79d3e67b968e80f93f13e25d14222af271c6b052",
+  "productionDbHeadBefore": "20260818120000",
+  "productionDbHeadAfter": "20260902120000",
+  "backupReference": {
+    "workflow": "prod-backup-read-only",
+    "run": "29598013983",
+    "latestPhysicalBackupId": "1135896161"
+  },
+  "NORWAY_TAX_MODEL_STATUS": "OWNER_APPROVED_WITH_OFFICIAL_SOURCE_SUPPORT",
+  "ACCOUNTANT_CONFIRMATION_REQUIRED": false,
+  "LUNCHPORTALEN_MVA_REGISTERED": false,
+  "PLATFORM_INVOICE_VAT_25_ENABLED": false,
+  "decision": "NORWAY_TECHNICALLY_LIVE_PLATFORM_INVOICING_AWAITS_MVA_REGISTRATION"
+}

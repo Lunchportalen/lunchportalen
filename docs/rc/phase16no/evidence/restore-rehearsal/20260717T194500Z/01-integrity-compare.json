@@ -1,0 +1,57 @@
+{
+  "phase": "16NO.3",
+  "rehearsal_completed_at_utc": "2026-07-17T21:12:00Z",
+  "recovery_project_ref": "msecmoqfncvxrucnlpmm",
+  "production_project_ref_untouched": "hkpokyapzarefrgqzkos",
+  "schema": {
+    "migration_head": "20260902120000",
+    "migration_count": 89,
+    "status": "PASS"
+  },
+  "source_manifest_compare": {
+    "companies": { "baseline": 5, "recovery": 6, "delta": "+1 synthetic", "status": "PASS" },
+    "providers": { "baseline": 9, "recovery": 10, "delta": "+1 synthetic", "status": "PASS" },
+    "profiles": { "baseline": 50, "recovery": 51, "delta": "+1 synthetic employee", "status": "PASS" },
+    "auth_users": { "baseline": 50, "recovery": 51, "delta": "+1 synthetic", "status": "PASS" },
+    "orders": { "baseline": 17, "recovery": 19, "delta": "+2 synthetic only", "status": "PASS" },
+    "commission_ledger": { "baseline": 0, "recovery": 1, "delta": "+1 canary row", "status": "PASS" },
+    "provider_commission_invoices": { "baseline": 0, "recovery": 0, "status": "PASS" }
+  },
+  "pilot_tenant_immutability": {
+    "pettersen_company_hash": "d8cdd99f",
+    "pettersen_provider_hash": "38c6cbd2",
+    "pettersen_order_count": 5,
+    "pettersen_mutated": false,
+    "melhus_provider_hash": "38c6cbd2",
+    "status": "PASS"
+  },
+  "norway_gates": {
+    "ordering_enabled": true,
+    "platform_commission_enabled": true,
+    "platform_mva_invoice_allowed": false,
+    "mva_registered": false,
+    "other_countries_production_enabled": 0,
+    "status": "PASS"
+  },
+  "cron": {
+    "audit_log_create_partitions_active": false,
+    "status": "PASS"
+  },
+  "outbox": {
+    "pending_before_rehearsal": 0,
+    "pending_after_rehearsal": 3,
+    "note": "3 PENDING outbox rows from lp_order_set golden-path write; no external dispatch observed",
+    "status": "PASS_WITH_NOTE"
+  },
+  "synthetic_tenant": {
+    "provider_id": "a1630001-0001-4000-8000-000000000001",
+    "provider_name": "RECOVERY_16NO3_PROVIDER",
+    "company_id": "a1630001-0002-4000-8000-000000000002",
+    "company_name": "RECOVERY_16NO3_COMPANY",
+    "location_id": "a1630001-0003-4000-8000-000000000003",
+    "employee_profile_id": "a1630001-0004-4000-8000-000000000004",
+    "company_hash": "de851ff2",
+    "provider_hash": "65804d4a"
+  },
+  "overall": "PASS"
+}

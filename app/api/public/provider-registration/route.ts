@@ -10,6 +10,9 @@ import { jsonErr, jsonOk, makeRid } from "@/lib/http/respond";
 import { hasSupabaseAdminConfig } from "@/lib/supabase/admin";
 import { providerRegistrationSchema } from "@/lib/public/providerRegistrationSchema";
 import { rateLimit } from "@/lib/security/rateLimit";
+import { validateNorwayAcceptanceBatch } from "@/lib/legal/norwayAcceptanceValidate";
+import { buildNorwayLegalPendingPayload } from "@/lib/legal/norwayAcceptanceGate";
+import { norwayClientMeta } from "@/lib/legal/norwayClientMeta";
 
 function clientIp(req: NextRequest) {
   const xf = req.headers.get("x-forwarded-for");
@@ -64,6 +67,37 @@ export async function POST(req: NextRequest) {
   }
 
   const d = parsed.data;
+
+  // 16NO.2: Norway provider clickwrap required; other countries stay blocked upstream.
+  let pendingLegal: ReturnType<typeof buildNorwayLegalPendingPayload> | null = null;
+  if (d.country_code === "NO") {
+    const bodyRec = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    const legalBatch = validateNorwayAcceptanceBatch({
+      role: "provider",
+      acceptances: (bodyRec.norway_legal_acceptances ?? bodyRec.norwayLegalAcceptances) as
+        | import("@/lib/legal/norwayAcceptanceValidate").NorwayAcceptanceInput[]
+        | null
+        | undefined,
+    });
+    if (legalBatch.ok === false) {
+      return jsonErr(
+        rid,
+        legalBatch.code === "UNCHECKED_BLOCKED"
+          ? "Du må eksplisitt akseptere alle norske leverandørvilkår."
+          : "Gyldig aksept av norske vilkår kreves før innsending.",
+        422,
+        legalBatch.code,
+      );
+    }
+    const meta = norwayClientMeta(req);
+    pendingLegal = buildNorwayLegalPendingPayload({
+      role: "provider",
+      items: legalBatch.items,
+      clientIp: meta.ip,
+      userAgent: meta.userAgent,
+    });
+  }
+
   const payload = {
     company_name: d.company_name,
     org_number: d.org_number || null,
@@ -90,6 +124,13 @@ export async function POST(req: NextRequest) {
     if (error) return mapRpcError(rid, String(error.message ?? ""));
 
     const registrationId = (data as { registration_id?: string } | null)?.registration_id ?? null;
+
+    if (registrationId && pendingLegal) {
+      await (admin as any)
+        .from("provider_registrations")
+        .update({ norway_legal_pending: pendingLegal })
+        .eq("id", registrationId);
+    }
 
     // Best-effort ops alert (never blocks the applicant).
     try {

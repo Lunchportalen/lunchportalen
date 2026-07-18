@@ -118,18 +118,43 @@ function runVitestJsonReport() {
   const dir = mkdtempSync(join(tmpdir(), "suspend-rpc-gate-"));
   const reportPath = join(dir, "vitest.json");
   try {
-    execFileSync(
-      "npx",
-      [
-        "vitest",
-        "run",
-        SUSPEND_RPC_TEST_FILE,
-        "--pool=threads",
-        "--reporter=json",
-        `--outputFile=${reportPath}`,
-      ],
-      { stdio: "inherit", env: process.env },
-    );
+    try {
+      execFileSync(
+        "npx",
+        [
+          "vitest",
+          "run",
+          SUSPEND_RPC_TEST_FILE,
+          "--pool=threads",
+          "--reporter=default",
+          "--reporter=json",
+          `--outputFile=${reportPath}`,
+        ],
+        { stdio: "inherit", env: process.env },
+      );
+    } catch (err) {
+      // Keep failure details visible in CI logs even when vitest exits non-zero.
+      try {
+        const report = JSON.parse(readFileSync(reportPath, "utf8"));
+        console.error(
+          `suspend-rpc-gate vitest summary: total=${report.numTotalTests ?? "?"} passed=${report.numPassedTests ?? "?"} failed=${report.numFailedTests ?? "?"} pending=${report.numPendingTests ?? "?"} success=${report.success}`,
+        );
+        const files = Array.isArray(report.testResults) ? report.testResults : [];
+        for (const file of files) {
+          const assertions = Array.isArray(file?.assertionResults) ? file.assertionResults : [];
+          for (const a of assertions) {
+            if (String(a?.status ?? "") === "failed") {
+              console.error(`FAIL ${a?.fullName ?? a?.title ?? "?"}`);
+              const msgs = Array.isArray(a?.failureMessages) ? a.failureMessages : [];
+              for (const m of msgs.slice(0, 3)) console.error(String(m).slice(0, 1200));
+            }
+          }
+        }
+      } catch {
+        /* report unreadable */
+      }
+      throw err;
+    }
     return JSON.parse(readFileSync(reportPath, "utf8"));
   } finally {
     rmSync(dir, { recursive: true, force: true });

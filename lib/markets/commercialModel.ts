@@ -24,6 +24,7 @@ export type MarketCommercialModel = {
 };
 
 const DEFAULT: Omit<MarketCommercialModel, "countryCode"> = {
+  // Phase 16NO: immutable agency model for all 21 countries (no US override).
   platformRole: "disclosed_agent",
   invoiceIssuer: "provider",
   taxLiableParty: "provider",
@@ -34,13 +35,6 @@ const DEFAULT: Omit<MarketCommercialModel, "countryCode"> = {
 export const MARKET_COMMERCIAL_MODELS: Record<CountryCode, MarketCommercialModel> = Object.fromEntries(
   SUPPORTED_COUNTRY_CODES.map((c) => [c, { countryCode: c, ...DEFAULT }]),
 ) as Record<CountryCode, MarketCommercialModel>;
-
-/** US may require marketplace facilitator analysis — still DRAFT until counsel approves. */
-MARKET_COMMERCIAL_MODELS.US = {
-  ...MARKET_COMMERCIAL_MODELS.US,
-  platformRole: "marketplace_facilitator",
-  reviewStatus: "DRAFT",
-};
 
 export function assertCommissionIsFivePercent(model: MarketCommercialModel): void {
   if (model.commissionBps !== 500) {

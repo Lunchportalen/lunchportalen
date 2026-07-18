@@ -11,6 +11,10 @@ import {
   type WeekdayMealTiers,
 } from "@/lib/registration/weekdayMealTiers";
 import { getTierDisplayLabel } from "@/lib/tiers/displayLabels";
+import {
+  NorwayLegalClickwrap,
+  type NorwayLegalAcceptancePayload,
+} from "@/components/legal/NorwayLegalClickwrap";
 
 type RegisterResponse = {
   ok?: boolean;
@@ -210,6 +214,7 @@ export default function CompanyRegistrationForm({
   // postnummeret må firma velge eksplisitt (server håndhever fail-closed).
   const [providerChoices, setProviderChoices] = useState<Array<{ id: string; name: string }>>([]);
   const [providerId, setProviderId] = useState<string>("");
+  const [norwayLegal, setNorwayLegal] = useState<NorwayLegalAcceptancePayload[] | null>(null);
 
   const postalDigits = onlyDigits(state.postalCode);
   useEffect(() => {
@@ -245,7 +250,7 @@ export default function CompanyRegistrationForm({
   }, [postalDigits]);
 
   const validationError = useMemo(() => validateCompanyRegistrationForm(state), [state]);
-  const canSubmit = !blocked && !pending && !validationError;
+  const canSubmit = !blocked && !pending && !validationError && Array.isArray(norwayLegal) && norwayLegal.length > 0;
   const submitted = receipt?.ok === true && receipt?.persisted === true;
   const receiptReference =
     (typeof receipt?.companyId === "string" && receipt.companyId.trim()) ||
@@ -274,6 +279,11 @@ export default function CompanyRegistrationForm({
       return;
     }
 
+    if (!norwayLegal?.length) {
+      setError("Du må akseptere alle norske vilkår før innsending.");
+      return;
+    }
+
     setPending(true);
 
     try {
@@ -295,6 +305,7 @@ export default function CompanyRegistrationForm({
           postal_code: onlyDigits(state.postalCode),
           postal_city: state.postalCity.trim(),
           consent_accepted: true,
+          norway_legal_acceptances: norwayLegal,
           ...(providerId ? { provider_id: providerId } : {}),
           weekday_meal_tiers: state.weekdayTiers,
           delivery_window_from: state.deliveryWindowFrom.trim(),
@@ -708,6 +719,9 @@ export default function CompanyRegistrationForm({
                     <div className={sectionClass}>
                       <p className={sectionKickerClass}>Bekreftelse</p>
                       <h3 className={sectionTitleClass}>Fullmakt og innsending</h3>
+                      <div className="mt-6">
+                        <NorwayLegalClickwrap role="company" onChange={setNorwayLegal} />
+                      </div>
                       <label className="mt-6 flex items-start gap-4 rounded-[1.5rem] bg-[#fbf7ef] p-4 text-sm leading-6 text-[#34302a]">
           <input
             type="checkbox"
