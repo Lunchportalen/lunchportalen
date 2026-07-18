@@ -6,6 +6,7 @@ import { getLunchCategoryStaticItemsByPlanTier, getLunchCategoryStaticItemsByPla
 import type { PlanTier } from "@/lib/cms/menuDayContract";
 import { normalizeMealTypeKey } from "@/lib/cms/mealTypeKey";
 import { menuDayQueryOptsFromScope, type MenuScopeDecision } from "@/lib/menu/providerMenuScope";
+import { opsLog } from "@/lib/ops/log";
 
 export type ResolveOrderDayItemResult =
   | { ok: true; item_key: string | null; item_title_snapshot: string | null }
@@ -33,6 +34,8 @@ export async function resolveOrderDayItemPersist(params: {
   clientItemKey: string | null;
   menuScope?: MenuScopeDecision;
 }): Promise<ResolveOrderDayItemResult> {
+  // Align with /api/week: Sanity outage must not hard-fail order writes when
+  // MSDI/static catalog (or null item_key for single-choice categories) can proceed.
   let menus: MenuDay[] = [];
   if (params.menuScope?.mode !== "fail-closed") {
     try {
@@ -41,20 +44,30 @@ export async function resolveOrderDayItemPersist(params: {
         params.planTier,
         params.menuScope?.mode === "scoped" ? menuDayQueryOptsFromScope(params.menuScope) : undefined,
       );
-    } catch {
-      return {
-        ok: false,
-        status: 503,
-        code: "MENU_LOOKUP_FAILED",
-        message: "Menyinnhold er midlertidig utilgjengelig — prøv igjen.",
-      };
+    } catch (e: unknown) {
+      opsLog("orders.menu_lookup_soft_fail", {
+        date: params.date,
+        planTier: params.planTier,
+        detail: String((e as { message?: string })?.message ?? e).slice(0, 200),
+      });
+      menus = [];
     }
   }
 
-  const staticItemsByCategory =
-    params.menuScope?.mode === "scoped"
-      ? await getLunchCategoryStaticItemsByPlanTierForProvider(params.menuScope.providerId, params.planTier)
-      : await getLunchCategoryStaticItemsByPlanTier(params.planTier);
+  let staticItemsByCategory: Awaited<ReturnType<typeof getLunchCategoryStaticItemsByPlanTier>> = {};
+  try {
+    staticItemsByCategory =
+      params.menuScope?.mode === "scoped"
+        ? await getLunchCategoryStaticItemsByPlanTierForProvider(params.menuScope.providerId, params.planTier)
+        : await getLunchCategoryStaticItemsByPlanTier(params.planTier);
+  } catch (e: unknown) {
+    opsLog("orders.lunch_category_soft_fail", {
+      date: params.date,
+      planTier: params.planTier,
+      detail: String((e as { message?: string })?.message ?? e).slice(0, 200),
+    });
+    staticItemsByCategory = {};
+  }
   const categories = buildMenuDayCategories({ planTier: params.planTier, menus, staticItemsByCategory });
   const want = normChoiceKey(params.choiceKey);
   const cat = categories.find((c) => normChoiceKey(c.key) === want);

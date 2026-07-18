@@ -38,7 +38,7 @@ const CHOICE_SKUS = {
   warm_meal: "varmrett",
   sushi: "sushi",
   poke_bowl: "pokebowl",
-  thai: "thai",
+  thai: "thaimat",
 };
 
 function ensureDir(p) {
@@ -112,11 +112,45 @@ async function main() {
     stamped_at: new Date().toISOString(),
     staging_ref: STAGING_REF,
     MARK,
+    service_dates: dates,
     providers: [],
     companies: [],
     users: [],
     PRODUCTION_MUTATIONS: 0,
   };
+
+  // Staging system_settings baseline — empty table → SETTINGS_UNAVAILABLE risk under some caches.
+  {
+    const { data: existingSettings } = await admin.from("system_settings").select("id").limit(1).maybeSingle();
+    if (!existingSettings?.id) {
+      const { error: sErr } = await admin.from("system_settings").insert({
+        site_name: "Lunchportalen Staging",
+        support_email: "staging@lunchportalen.test",
+        ai_enabled: false,
+        autopilot_enabled: false,
+        toggles: {
+          enforce_cutoff: true,
+          require_active_agreement: true,
+          employee_self_service: true,
+          company_admin_can_order: true,
+          strict_mode: true,
+          email_backup: false,
+        },
+        killswitch: {
+          orders: false,
+          cancellations: false,
+          emails: false,
+          kitchen_feed: false,
+          global: false,
+        },
+        retention: { orders_months: 18, audit_years: 5 },
+        config: { [MARK]: true },
+      });
+      if (sErr && !/duplicate|unique/i.test(sErr.message)) {
+        throw new Error(`system_settings seed: ${sErr.message}`);
+      }
+    }
+  }
 
   const { data: products } = await admin
     .from("products")
@@ -203,34 +237,81 @@ async function main() {
     }
 
     for (const pkg of PACKAGES) {
-      const companyId = crypto.randomUUID();
-      const locationId = crypto.randomUUID();
       const coName = `${MARK} ${cc} ${pkg}`;
-      const { error: cErr } = await admin.from("companies").insert({
-        id: companyId,
-        name: coName,
-        status: "ACTIVE",
-        orgnr: `9${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`,
-        provider_id: pid,
-        employee_count: 40,
-        contact_name: "Synth Admin",
-        contact_email: `${cc.toLowerCase()}-${pkg.toLowerCase()}-admin@staging.lunchportalen.test`,
-        contact_phone: "40000000",
-        address: `${cc} Synth Street 1`,
-        billing_country: cc,
-      });
-      if (cErr) throw new Error(`company ${cc}/${pkg}: ${cErr.message}`);
-      await admin.from("company_locations").insert({
-        id: locationId,
-        company_id: companyId,
-        name: "Hovedlokasjon",
-        address: `${cc} Synth Street 1`,
-      });
-      await admin.from("companies").update({ default_location_id: locationId }).eq("id", companyId);
+      const contactEmail = `${cc.toLowerCase()}-${pkg.toLowerCase()}-admin@staging.lunchportalen.test`;
+      const { data: existingCo } = await admin
+        .from("companies")
+        .select("id, default_location_id")
+        .eq("contact_email", contactEmail)
+        .eq("provider_id", pid)
+        .maybeSingle();
+      let companyId = String(existingCo?.id ?? crypto.randomUUID());
+      let locationId = String(existingCo?.default_location_id ?? crypto.randomUUID());
+
+      if (existingCo?.id) {
+        const { error: cUp } = await admin
+          .from("companies")
+          .update({
+            name: coName,
+            status: "ACTIVE",
+            provider_id: pid,
+            contact_name: "Synth Admin",
+            contact_email: contactEmail,
+            contact_phone: "40000000",
+            address: `${cc} Synth Street 1`,
+            billing_country: cc,
+            employee_count: 40,
+          })
+          .eq("id", companyId);
+        if (cUp) throw new Error(`company update ${cc}/${pkg}: ${cUp.message}`);
+        if (!existingCo.default_location_id) {
+          const { error: locErr } = await admin.from("company_locations").insert({
+            id: locationId,
+            company_id: companyId,
+            name: "Hovedlokasjon",
+            address: `${cc} Synth Street 1`,
+          });
+          if (locErr && !/duplicate|unique/i.test(locErr.message)) {
+            throw new Error(`location ${cc}/${pkg}: ${locErr.message}`);
+          }
+          await admin.from("companies").update({ default_location_id: locationId }).eq("id", companyId);
+        } else {
+          locationId = String(existingCo.default_location_id);
+        }
+      } else {
+        const { error: cErr } = await admin.from("companies").insert({
+          id: companyId,
+          name: coName,
+          status: "ACTIVE",
+          orgnr: `9${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`,
+          provider_id: pid,
+          employee_count: 40,
+          contact_name: "Synth Admin",
+          contact_email: contactEmail,
+          contact_phone: "40000000",
+          address: `${cc} Synth Street 1`,
+          billing_country: cc,
+        });
+        if (cErr) throw new Error(`company ${cc}/${pkg}: ${cErr.message}`);
+        const { error: locErr } = await admin.from("company_locations").insert({
+          id: locationId,
+          company_id: companyId,
+          name: "Hovedlokasjon",
+          address: `${cc} Synth Street 1`,
+        });
+        if (locErr) throw new Error(`location ${cc}/${pkg}: ${locErr.message}`);
+        await admin.from("companies").update({ default_location_id: locationId }).eq("id", companyId);
+      }
 
       const price =
         pkg === "BASIS" ? 89 : pkg === "LUXUS" ? 119 : 109;
-      const { error: aErr } = await admin.from("agreements").insert({
+      const { data: existingAg } = await admin
+        .from("agreements")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+      const agreementPayload = {
         company_id: companyId,
         location_id: locationId,
         provider_id: pid,
@@ -239,9 +320,12 @@ async function main() {
         delivery_days: ["mon", "tue", "wed", "thu", "fri"],
         slot_start: "11:00",
         slot_end: "13:00",
-        starts_at: new Date().toISOString(),
+        starts_at: new Date(Date.now() - 86400_000).toISOString(),
         price_per_meal_nok: price,
-      });
+      };
+      const { error: aErr } = existingAg?.id
+        ? await admin.from("agreements").update(agreementPayload).eq("id", existingAg.id)
+        : await admin.from("agreements").insert(agreementPayload);
       if (aErr) throw new Error(`agreement ${cc}/${pkg}: ${aErr.message}`);
 
       if (pkg === "ENTERPRISE") {
@@ -306,7 +390,7 @@ async function main() {
       }
 
       const empEmail = `${cc.toLowerCase()}-${pkg.toLowerCase()}-emp@staging.lunchportalen.test`;
-      const adminEmail = `${cc.toLowerCase()}-${pkg.toLowerCase()}-admin@staging.lunchportalen.test`;
+      const adminEmail = contactEmail;
       const empId = await upsertAuthUser(admin, empEmail, password, { [MARK]: true, country: cc, package: pkg });
       const admId = await upsertAuthUser(admin, adminEmail, password, { [MARK]: true, role: "company_admin" });
       for (const [uid, role, email] of [

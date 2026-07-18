@@ -155,7 +155,10 @@ async function main() {
   let commissionDiff = 0;
   let remainderLoss = 0;
 
-  const orderDate = nextOrderDate();
+  const seededDates = Array.isArray(matrix.service_dates) ? matrix.service_dates.filter(Boolean) : [];
+  const orderDate = seededDates[1] || seededDates[0] || nextOrderDate();
+  // Prefer upcoming week when cert runs on weekend / after current Mon–Fri window.
+  const weekOffset = seededDates.some((d) => String(d) >= String(new Date().toISOString().slice(0, 10))) ? 1 : 0;
 
   for (const co of matrix.companies ?? []) {
     const email = `${String(co.country).toLowerCase()}-${String(co.package).toLowerCase()}-emp@staging.lunchportalen.test`;
@@ -168,8 +171,8 @@ async function main() {
       continue;
     }
 
-    // Week retrieval
-    const week = await httpJson(base, "/api/week?weekOffset=0", { token, cookie });
+    // Week retrieval (offset covers seeded service dates)
+    const week = await httpJson(base, `/api/week?weekOffset=${weekOffset}`, { token, cookie });
     const orderBody = {
       date: orderDate,
       action: "set",
@@ -186,11 +189,16 @@ async function main() {
       console.log(
         "FIRST_FLOW_DEBUG",
         JSON.stringify({
+          order_date: orderDate,
+          week_offset: weekOffset,
           week_status: week.status,
-          week_json: week.json,
+          week_ok: week.json?.ok,
+          week_menu_failed: week.json?.data?.sanity?.menuFetchFailed,
           order_status: orderRes.status,
+          order_error: orderRes.json?.error ?? orderRes.json?.code ?? null,
+          order_message: orderRes.json?.message ?? null,
           order_json: orderRes.json,
-        }).slice(0, 1200),
+        }).slice(0, 2500),
       );
     }
 
@@ -309,6 +317,9 @@ async function main() {
       ok: flowOk,
       week_status: week.status,
       order_status: orderRes.status,
+      order_error: orderRes.json?.error ?? orderRes.json?.code ?? null,
+      order_message: typeof orderRes.json?.message === "string" ? orderRes.json.message.slice(0, 160) : null,
+      order_date: orderDate,
       order_id: order?.id ?? null,
       unit_price_nok: snapPrice,
       kitchenOk,
@@ -360,7 +371,7 @@ async function main() {
       localeFlows.push({ locale, ok: false, error: String(e.message ?? e) });
       continue;
     }
-    const week = await httpJson(base, "/api/week?weekOffset=0", { token, cookie, locale });
+    const week = await httpJson(base, `/api/week?weekOffset=${weekOffset}`, { token, cookie, locale });
     const order = await httpJson(base, "/api/orders", {
       method: "POST",
       token,
@@ -374,6 +385,7 @@ async function main() {
       ok: week.status === 200 && (order.status === 200 || order.json?.ok === true),
       week_status: week.status,
       order_status: order.status,
+      order_error: order.json?.error ?? order.json?.code ?? null,
       identity_mutation: 0,
       price_mutation: 0,
       entitlement_mutation: 0,
