@@ -1,0 +1,144 @@
+{
+  "country_code": "BE",
+  "total_menu_items": 15,
+  "unique_country_specific_items": 15,
+  "shared_international_items": 0,
+  "items_inherited_from_global_bank": 0,
+  "items_adapted_locally": 15,
+  "localization_completeness": [
+    {
+      "locale": "fr-BE",
+      "status": "TECHNICAL_READY"
+    },
+    {
+      "locale": "nl-BE",
+      "status": "TECHNICAL_READY"
+    }
+  ],
+  "warm_bank_size": 36,
+  "warm_bank_minimum_required": 30,
+  "unsupported_or_fallback_items": [],
+  "norway_clone": false,
+  "items": [
+    {
+      "country_code": "BE",
+      "category_key": "sandwich",
+      "item_key": "be-sandwich-variant-a",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "sandwich",
+      "item_key": "be-sandwich-variant-b",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "sandwich",
+      "item_key": "be-sandwich-variant-c",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "sandwich",
+      "item_key": "be-sandwich-variant-veg",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "salad_box",
+      "item_key": "be-salad_box-protein-a",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "salad_box",
+      "item_key": "be-salad_box-protein-b",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "salad_box",
+      "item_key": "be-salad_box-protein-veg",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "sushi",
+      "item_key": "be-sushi-sushi-pack",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "poke_bowl",
+      "item_key": "be-poke_bowl-protein-a",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "poke_bowl",
+      "item_key": "be-poke_bowl-protein-b",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "poke_bowl",
+      "item_key": "be-poke_bowl-protein-veg",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "thai",
+      "item_key": "be-thai-noodle",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "thai",
+      "item_key": "be-thai-stir-fry",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "thai",
+      "item_key": "be-thai-curry-mild",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    },
+    {
+      "country_code": "BE",
+      "category_key": "warm_meal",
+      "item_key": "be-warm_meal-from-bank",
+      "inherited_from_global_bank": false,
+      "adapted_locally": true,
+      "norway_clone": false
+    }
+  ]
+}

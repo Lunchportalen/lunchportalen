@@ -1,0 +1,17 @@
+{
+  "country_code": "GB",
+  "package_key": "BASIS",
+  "categories": [
+    "sandwich",
+    "salad_box",
+    "warm_meal"
+  ],
+  "entitlement_source": "provider_package_entitlements",
+  "basis_cannot_order": [
+    "sushi",
+    "poke_bowl",
+    "thai",
+    "enterprise_upgrade"
+  ],
+  "result": "PASS"
+}

@@ -39,6 +39,40 @@ export default defineType({
 
   fields: [
     defineField({
+      name: "countryCode",
+      title: "Country code",
+      type: "string",
+      description: "ISO market country (Phase 17MENU). Must match provider market; never fall back to NO for non-NO.",
+      options: {
+        list: [
+          "NO", "SE", "DK", "FI", "GB", "DE", "FR", "ES", "IT", "NL",
+          "BE", "CH", "AT", "IE", "PL", "RO", "CZ", "PT", "GR", "US", "CA",
+        ].map((c) => ({ title: c, value: c })),
+        layout: "dropdown",
+      },
+      initialValue: "NO",
+    }),
+    defineField({
+      name: "menuProfileId",
+      title: "Menu profile id",
+      type: "string",
+    }),
+    defineField({
+      name: "canonicalCategoryKey",
+      title: "Canonical package category",
+      type: "string",
+      options: {
+        list: [
+          { title: "sandwich", value: "sandwich" },
+          { title: "salad_box", value: "salad_box" },
+          { title: "warm_meal", value: "warm_meal" },
+          { title: "sushi", value: "sushi" },
+          { title: "poke_bowl", value: "poke_bowl" },
+          { title: "thai", value: "thai" },
+        ],
+      },
+    }),
+    defineField({
       name: "provider",
       title: "Leverandør",
       type: "reference",

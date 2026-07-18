@@ -1,0 +1,447 @@
+{
+  "country_code": "CH",
+  "bank_version": "17menu.warm.1",
+  "operating_days_per_week": 5,
+  "generation_horizon_weeks": 4,
+  "repeat_exclusion_window_days": 10,
+  "dietary_coverage_requirements": [
+    "vegetarian_weekly"
+  ],
+  "calculated_minimum_size": 30,
+  "actual_size": 36,
+  "insufficient": false,
+  "dishes": [
+    {
+      "dish_key": "ch-warm-01",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-02",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-03",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-04",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-05",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-06",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-07",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-08",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-09",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-10",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-11",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-12",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-13",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-14",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-15",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-16",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-17",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-18",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-19",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-20",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-21",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-22",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-23",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-24",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-25",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-26",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-27",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-28",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-29",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-30",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-31",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-32",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-33",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-34",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-35",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ch-warm-36",
+      "country_code": "CH",
+      "profile_id": "swiss_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "country_code": "FI",
+  "package_key": "ENTERPRISE",
+  "categories": [
+    "sandwich",
+    "salad_box",
+    "warm_meal",
+    "sushi",
+    "poke_bowl",
+    "thai",
+    "enterprise_upgrade"
+  ],
+  "entitlement_source": "provider_package_entitlements",
+  "basis_cannot_order": [],
+  "result": "PASS"
+}

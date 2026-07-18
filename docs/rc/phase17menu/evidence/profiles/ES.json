@@ -1,0 +1,43 @@
+{
+  "country_code": "ES",
+  "profile_id": "spanish_menu_del_dia",
+  "profile_version": "17menu.1.0",
+  "effective_date": "2026-07-18",
+  "review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "primary_lunch_conventions": "plato del día",
+  "common_bread_sandwich_styles": "bocadillo",
+  "common_salad_styles": "ensalada",
+  "relevant_sushi_conventions": "sushi urbano",
+  "locally_suitable_thai_choices": "comida tailandesa",
+  "locally_suitable_poke_choices": "poke",
+  "warm_lunch_conventions": "plato del día",
+  "common_proteins": [
+    "chicken",
+    "fish",
+    "pork_or_beef_local",
+    "vegetarian"
+  ],
+  "common_vegetarian_patterns": [
+    "egg_dairy_allowed_office_default",
+    "plant_forward_option"
+  ],
+  "seasonality": "temperate_four_season_office_cycle",
+  "portion_expectations": "single_office_portion",
+  "spice_expectations": "mild_default_with_optional_heat_where_local",
+  "common_dietary_requirements": [
+    "vegetarian",
+    "gluten_awareness",
+    "dairy_awareness"
+  ],
+  "allergen_considerations": "EU1169_or_local_equivalent_labels_on_stable_item_keys",
+  "local_ingredient_naming": "Spain local naming for breads/proteins",
+  "unsuitable_or_misleading_menu_naming": "Do not present Norwegian Påsmurt labels as local defaults",
+  "source_references": [
+    "AESAN",
+    "Spanish menú del día office norms"
+  ],
+  "locales": [
+    "es-ES"
+  ],
+  "currency": "EUR"
+}

@@ -1,0 +1,14 @@
+{
+  "country_code": "US",
+  "generation_run_id": "gen-17menu-US-staging",
+  "deterministic_seed": "phase17menu:US:v1",
+  "input_bank_version": "17menu.warm.1",
+  "status": "draft",
+  "provider_approval_required": true,
+  "auto_published": false,
+  "selected_from_approved_bank_only": true,
+  "duplicate_dish_violations": 0,
+  "allergen_check": "PASS",
+  "locale_check": "PASS",
+  "result": "PASS"
+}

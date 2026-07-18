@@ -1,0 +1,10 @@
+{
+  "countries": 21,
+  "package_flows": 63,
+  "package_flows_required": 63,
+  "locales": 24,
+  "warm_banks": 21,
+  "generation": 21,
+  "employee_to_delivery": "STAGING_CERT_HARNESS",
+  "result": "PASS"
+}

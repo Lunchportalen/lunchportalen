@@ -507,12 +507,42 @@ async function verifyProviderConfigFoundation() {
     [melhusId],
   );
   const byPkg = Object.fromEntries(entCount.map((r) => [r.package_key, Number(r.c)]));
-  if (byPkg.BASIS !== 4 || byPkg.LUXUS !== 7 || byPkg.ENTERPRISE !== 7) {
+  // Pre-17MENU: BASIS=4 LUXUS=7 ENTERPRISE=7.
+  // Post dual-write migration: counts increase; require minimums + canonical key presence.
+  if ((byPkg.BASIS ?? 0) < 4 || (byPkg.LUXUS ?? 0) < 7 || (byPkg.ENTERPRISE ?? 0) < 7) {
     throw new Error(
-      `provider_package_entitlements Melhus seed mismatch: expected BASIS=4 LUXUS=7 ENTERPRISE=7, got ${JSON.stringify(byPkg)}`,
+      `provider_package_entitlements Melhus seed mismatch: expected minima BASIS>=4 LUXUS>=7 ENTERPRISE>=7, got ${JSON.stringify(byPkg)}`,
     );
   }
-  console.log("OK: provider_package_entitlements Melhus seed (BASIS=4, LUXUS=7, ENTERPRISE=7)");
+  const { rows: canonicalKeys } = await client.query(
+    `SELECT entitlement_key
+     FROM public.provider_package_entitlements
+     WHERE provider_id = $1
+       AND entitlement_key = ANY($2::text[])`,
+    [
+      melhusId,
+      [
+        "menu_category:sandwich",
+        "menu_category:salad_box",
+        "menu_category:warm_meal",
+        "menu_category:poke_bowl",
+        "enterprise_upgrade",
+        // legacy dual-read still acceptable
+        "menu_category:paasmurt",
+        "menu_category:salat",
+        "menu_category:varmrett",
+      ],
+    ],
+  );
+  const keySet = new Set(canonicalKeys.map((r) => r.entitlement_key));
+  const hasLegacyOrCanonicalSandwich =
+    keySet.has("menu_category:sandwich") || keySet.has("menu_category:paasmurt");
+  if (!hasLegacyOrCanonicalSandwich) {
+    throw new Error("provider_package_entitlements missing sandwich/paasmurt entitlement for Melhus");
+  }
+  console.log(
+    `OK: provider_package_entitlements Melhus seed (BASIS=${byPkg.BASIS}, LUXUS=${byPkg.LUXUS}, ENTERPRISE=${byPkg.ENTERPRISE}; dual-read keys ok)`,
+  );
 }
 
 async function verifySpinePhase2AuthHookShadow() {

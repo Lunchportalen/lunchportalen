@@ -1,0 +1,447 @@
+{
+  "country_code": "NO",
+  "bank_version": "17menu.warm.1",
+  "operating_days_per_week": 5,
+  "generation_horizon_weeks": 4,
+  "repeat_exclusion_window_days": 10,
+  "dietary_coverage_requirements": [
+    "vegetarian_weekly"
+  ],
+  "calculated_minimum_size": 30,
+  "actual_size": 36,
+  "insufficient": false,
+  "dishes": [
+    {
+      "dish_key": "no-warm-01",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "no-warm-02",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-03",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-04",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-05",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-06",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "no-warm-07",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-08",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-09",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-10",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-11",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "no-warm-12",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-13",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-14",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-15",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-16",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "no-warm-17",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-18",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-19",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-20",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-21",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "no-warm-22",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-23",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-24",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-25",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-26",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "no-warm-27",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-28",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-29",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-30",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-31",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "no-warm-32",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-33",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-34",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-35",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "no-warm-36",
+      "country_code": "NO",
+      "profile_id": "norwegian_company_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    }
+  ]
+}

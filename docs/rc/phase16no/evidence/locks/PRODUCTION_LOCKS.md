@@ -26,3 +26,16 @@
 | Mechanism | GitHub Environment `Production` requires reviewer `Lunchportalen`; prod migrate job only on `push` to `main` with environment gate |
 | PENDING_PRODUCTION_MIGRATION_WORKFLOWS | **0** (cancelled stuck run `29504427529` from 2026-07-16 that had no jobs started) |
 | New migrations run in 16NO.1 | **none** |
+
+---
+
+## 16NO.4B revalidation (2026-07-18)
+
+| Field | Value |
+|-------|--------|
+| PRODUCTION_MIGRATION_LOCK | **ACTIVE** (`can_admins_bypass=false`, `prevent_self_review=true`) |
+| PRODUCTION_AUTO_DEPLOY_LOCK | **ACTIVE** (`commandForIgnoringBuildStep` still `[16NO.1] PRODUCTION_AUTO_DEPLOY_LOCK…`) |
+| PENDING_PRODUCTION_MIGRATIONS | **0** (cancelled stale waiting run `29014055885`; 16NO.4 run `29629468104` already cancelled) |
+| Production SHA | `771a4207e9743fd232971eb95ecc27e45723a89d` |
+| Migration head | `20260904120000` |
+| Evidence | `docs/rc/phase16no/PHASE16NO4B-POST-RELEASE-HYGIENE.md` |

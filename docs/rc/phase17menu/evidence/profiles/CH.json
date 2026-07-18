@@ -1,0 +1,45 @@
+{
+  "country_code": "CH",
+  "profile_id": "swiss_german_office_lunch",
+  "profile_version": "17menu.1.0",
+  "effective_date": "2026-07-18",
+  "review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "primary_lunch_conventions": "warmes Mittagessen",
+  "common_bread_sandwich_styles": "belegte Brote / sandwich",
+  "common_salad_styles": "Salat",
+  "relevant_sushi_conventions": "Sushi",
+  "locally_suitable_thai_choices": "Thai",
+  "locally_suitable_poke_choices": "Poke",
+  "warm_lunch_conventions": "warmes Mittagessen",
+  "common_proteins": [
+    "chicken",
+    "fish",
+    "pork_or_beef_local",
+    "vegetarian"
+  ],
+  "common_vegetarian_patterns": [
+    "egg_dairy_allowed_office_default",
+    "plant_forward_option"
+  ],
+  "seasonality": "temperate_four_season_office_cycle",
+  "portion_expectations": "single_office_portion",
+  "spice_expectations": "mild_default_with_optional_heat_where_local",
+  "common_dietary_requirements": [
+    "vegetarian",
+    "gluten_awareness",
+    "dairy_awareness"
+  ],
+  "allergen_considerations": "EU1169_or_local_equivalent_labels_on_stable_item_keys",
+  "local_ingredient_naming": "Switzerland local naming for breads/proteins",
+  "unsuitable_or_misleading_menu_naming": "Do not present Norwegian Påsmurt labels as local defaults",
+  "source_references": [
+    "BLV Swiss nutrition",
+    "Swiss corporate catering multilingual"
+  ],
+  "locales": [
+    "de-CH",
+    "fr-CH"
+  ],
+  "currency": "CHF",
+  "profile_note": "One Swiss market-food profile; locales de-CH+fr-CH"
+}

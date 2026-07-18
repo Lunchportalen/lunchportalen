@@ -36,6 +36,16 @@ import { persistMvoOnOrder } from "@/lib/mvo/persistOrderMvo";
 import { fanoutLpOrderSetOutboxBestEffort } from "@/lib/orderBackup/outbox";
 import { getAgreementStatus, type Tier } from "@/lib/auth/agreementStatus";
 import { PLAN_ORDER_CHOICE_KEYS } from "@/lib/cms/menuDayContract";
+import {
+  canonicalFromNorwayOrderChoice,
+  norwayOrderChoiceForCanonical,
+  type PackageKey,
+} from "@/lib/menu/canonicalPackageCategories";
+import {
+  assertChoiceEntitled,
+  isPackageEntitlementsRuntimeEnabled,
+  resolvePackageEntitlements,
+} from "@/lib/providers/resolvePackageEntitlements";
 import { mapOrderWriteError } from "@/lib/orders/mapOrderWriteError";
 import { captureServerMessage } from "@/lib/sentry/capture";
 
@@ -289,6 +299,49 @@ async function writeOrder(req: NextRequest, forcedAction?: "SET" | "CANCEL") {
           menuScope = menuScopeDecision(await resolveProviderMenuScopeForCompany(supabaseAdmin(), cid));
         } catch (e: unknown) {
           menuScope = { mode: "fail-closed", reason: safeStr((e as { message?: string })?.message) || "SCOPE_LOOKUP_FAILED" };
+        }
+
+        // PHASE 17MENU: server-side package entitlement enforcement (never client-decided).
+        // Dual-path: hardcoded PLAN_ORDER_CHOICE_KEYS already checked; entitlements clip further.
+        if (menuScope.mode === "scoped" && finalChoiceKey) {
+          const canonical = canonicalFromNorwayOrderChoice(finalChoiceKey);
+          if (!canonical) {
+            return jsonOrderWriteErr(rid, 422, "INVALID_CHOICE", "Valget er ikke tillatt for denne dagen.", {
+              tier: resolvedTier,
+              choice_key: finalChoiceKey,
+            });
+          }
+          try {
+            const entitlement = await resolvePackageEntitlements(supabaseAdmin(), {
+              providerId: menuScope.providerId,
+              packageKey: resolvedTier as PackageKey,
+            });
+            assertChoiceEntitled(entitlement, canonical);
+            if (isPackageEntitlementsRuntimeEnabled()) {
+              const entitledChoices = entitlement.orderableCategories.map(norwayOrderChoiceForCanonical);
+              if (!entitledChoices.includes(finalChoiceKey as (typeof entitledChoices)[number])) {
+                return jsonOrderWriteErr(rid, 403, "PACKAGE_ENTITLEMENT_DENIED", "Pakken tillater ikke dette menyvalget.", {
+                  tier: resolvedTier,
+                  choice_key: finalChoiceKey,
+                  available_choices: entitledChoices,
+                });
+              }
+            }
+          } catch (e: unknown) {
+            const msg = safeStr((e as { message?: string })?.message);
+            if (msg.startsWith("PACKAGE_ENTITLEMENT_DENIED")) {
+              return jsonOrderWriteErr(rid, 403, "PACKAGE_ENTITLEMENT_DENIED", "Pakken tillater ikke dette menyvalget.", {
+                tier: resolvedTier,
+                choice_key: finalChoiceKey,
+              });
+            }
+            if (isPackageEntitlementsRuntimeEnabled()) {
+              return jsonOrderWriteErr(rid, 403, "ENTITLEMENTS_UNAVAILABLE", "Pakkerettigheter kunne ikke verifiseres.", {
+                detail: msg.slice(0, 200),
+              });
+            }
+            // Soft path: contract fallback already applied inside resolver when rows missing.
+          }
         }
         if (menuScope.mode !== "scoped") {
           opsLog("orders.menuScope", {

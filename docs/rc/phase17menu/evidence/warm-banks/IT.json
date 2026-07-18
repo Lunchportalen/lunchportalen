@@ -1,0 +1,447 @@
+{
+  "country_code": "IT",
+  "bank_version": "17menu.warm.1",
+  "operating_days_per_week": 5,
+  "generation_horizon_weeks": 4,
+  "repeat_exclusion_window_days": 10,
+  "dietary_coverage_requirements": [
+    "vegetarian_weekly"
+  ],
+  "calculated_minimum_size": 30,
+  "actual_size": 36,
+  "insufficient": false,
+  "dishes": [
+    {
+      "dish_key": "it-warm-01",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "it-warm-02",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-03",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-04",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-05",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-06",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "it-warm-07",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-08",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-09",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-10",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-11",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "it-warm-12",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-13",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-14",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-15",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-16",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "it-warm-17",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-18",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-19",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-20",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-21",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "it-warm-22",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-23",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-24",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-25",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-26",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "it-warm-27",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-28",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-29",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-30",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-31",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "it-warm-32",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-33",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-34",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-35",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "it-warm-36",
+      "country_code": "IT",
+      "profile_id": "italian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    }
+  ]
+}

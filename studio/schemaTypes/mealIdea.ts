@@ -9,6 +9,33 @@ export default defineType({
 
   fields: [
     defineField({
+      name: "countryCode",
+      title: "Country code",
+      type: "string",
+      description: "ISO market country (Phase 17MENU). Default NO for legacy Norwegian bank.",
+      options: {
+        list: [
+          "NO", "SE", "DK", "FI", "GB", "DE", "FR", "ES", "IT", "NL",
+          "BE", "CH", "AT", "IE", "PL", "RO", "CZ", "PT", "GR", "US", "CA",
+        ].map((c) => ({ title: c, value: c })),
+        layout: "dropdown",
+      },
+      initialValue: "NO",
+    }),
+    defineField({
+      name: "menuProfileId",
+      title: "Menu profile id",
+      type: "string",
+      description: "Market food profile id (Phase 17MENU).",
+    }),
+    defineField({
+      name: "dishKey",
+      title: "Stable dish key",
+      type: "slug",
+      description: "Stable machine identity for warm-dish bank item (not localized title).",
+      options: { maxLength: 80 },
+    }),
+    defineField({
       name: "title",
       title: "Navn",
       type: "string",

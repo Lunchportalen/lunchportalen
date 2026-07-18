@@ -1,0 +1,447 @@
+{
+  "country_code": "RO",
+  "bank_version": "17menu.warm.1",
+  "operating_days_per_week": 5,
+  "generation_horizon_weeks": 4,
+  "repeat_exclusion_window_days": 10,
+  "dietary_coverage_requirements": [
+    "vegetarian_weekly"
+  ],
+  "calculated_minimum_size": 30,
+  "actual_size": 36,
+  "insufficient": false,
+  "dishes": [
+    {
+      "dish_key": "ro-warm-01",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-02",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-03",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-04",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-05",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-06",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-07",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-08",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-09",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-10",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-11",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-12",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-13",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-14",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-15",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-16",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-17",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-18",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-19",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-20",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-21",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-22",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-23",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-24",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-25",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-26",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-27",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-28",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-29",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-30",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-31",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-32",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-33",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-34",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-35",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "ro-warm-36",
+      "country_code": "RO",
+      "profile_id": "romanian_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "country_code": "FR",
+  "package_key": "LUXUS",
+  "categories": [
+    "sandwich",
+    "salad_box",
+    "warm_meal",
+    "sushi",
+    "poke_bowl",
+    "thai"
+  ],
+  "entitlement_source": "provider_package_entitlements",
+  "basis_cannot_order": [],
+  "result": "PASS"
+}

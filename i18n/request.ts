@@ -32,6 +32,8 @@ export default getRequestConfig(async () => {
   return {
     locale,
     messages,
+    // Phase 17MENU / #503: prevent ENVIRONMENT_FALLBACK markup mismatches in CI + SSR.
+    timeZone: "Europe/Oslo",
     onError(error) {
       if (error.code === "MISSING_MESSAGE") return;
       console.error(error);

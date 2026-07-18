@@ -1,0 +1,447 @@
+{
+  "country_code": "NL",
+  "bank_version": "17menu.warm.1",
+  "operating_days_per_week": 5,
+  "generation_horizon_weeks": 4,
+  "repeat_exclusion_window_days": 10,
+  "dietary_coverage_requirements": [
+    "vegetarian_weekly"
+  ],
+  "calculated_minimum_size": 30,
+  "actual_size": 36,
+  "insufficient": false,
+  "dishes": [
+    {
+      "dish_key": "nl-warm-01",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-02",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-03",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-04",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-05",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-06",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-07",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-08",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-09",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-10",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-11",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-12",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-13",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-14",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-15",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-16",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-17",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-18",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-19",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-20",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-21",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-22",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-23",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-24",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-25",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-26",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-27",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-28",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-29",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-30",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-31",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-32",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-33",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-34",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-35",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "standard"
+      ]
+    },
+    {
+      "dish_key": "nl-warm-36",
+      "country_code": "NL",
+      "profile_id": "dutch_office_lunch",
+      "publication_status": "draft_approved_for_staging",
+      "allergens": [
+        "declared"
+      ],
+      "dietary_tags": [
+        "vegetarian"
+      ]
+    }
+  ]
+}

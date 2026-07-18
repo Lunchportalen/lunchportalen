@@ -1,0 +1,43 @@
+{
+  "country_code": "SE",
+  "profile_id": "swedish_lunch",
+  "profile_version": "17menu.1.0",
+  "effective_date": "2026-07-18",
+  "review_status": "NATIVE_CULINARY_REVIEW_PENDING",
+  "primary_lunch_conventions": "varm lunch / husmanskost-inspired",
+  "common_bread_sandwich_styles": "smörgås / knäcke",
+  "common_salad_styles": "sallad with skinka/kyckling",
+  "relevant_sushi_conventions": "lunch sushi packs common in cities",
+  "locally_suitable_thai_choices": "Thai takeaway lunch norms",
+  "locally_suitable_poke_choices": "poke bowls in urban SE",
+  "warm_lunch_conventions": "varm lunch / husmanskost-inspired",
+  "common_proteins": [
+    "chicken",
+    "fish",
+    "pork_or_beef_local",
+    "vegetarian"
+  ],
+  "common_vegetarian_patterns": [
+    "egg_dairy_allowed_office_default",
+    "plant_forward_option"
+  ],
+  "seasonality": "temperate_four_season_office_cycle",
+  "portion_expectations": "single_office_portion",
+  "spice_expectations": "mild_default_with_optional_heat_where_local",
+  "common_dietary_requirements": [
+    "vegetarian",
+    "gluten_awareness",
+    "dairy_awareness"
+  ],
+  "allergen_considerations": "EU1169_or_local_equivalent_labels_on_stable_item_keys",
+  "local_ingredient_naming": "Sweden local naming for breads/proteins",
+  "unsuitable_or_misleading_menu_naming": "Do not present Norwegian Påsmurt labels as local defaults",
+  "source_references": [
+    "Livsmedelsverket dietary patterns",
+    "Swedish office catering menus"
+  ],
+  "locales": [
+    "sv-SE"
+  ],
+  "currency": "SEK"
+}

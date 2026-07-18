@@ -1,0 +1,25 @@
+{
+  "NORWAY_MENU_REGRESSION": "PASS",
+  "baseline_sha": "771a4207e9743fd232971eb95ecc27e45723a89d",
+  "checks": {
+    "norway_ordering": "ENABLED",
+    "basis": "PASS",
+    "luxus": "PASS",
+    "enterprise": "PASS",
+    "fixed_choices": "PASS",
+    "subchoices": "PASS",
+    "warm_dish": "PASS",
+    "week_flow": "PASS",
+    "production": "PASS",
+    "packing": "PASS",
+    "delivery": "PASS",
+    "legal_clickwrap": "PASS",
+    "mva_threshold_automation": "YES",
+    "commission": "ENABLED",
+    "country_gates_other_disabled": "20/20",
+    "stripe": "OFF",
+    "canonical_adapter_preserves_paasmurt": "PASS"
+  },
+  "protected_golden_path_impact": "Adapter + entitlement soft-read; lp_order_set category slugs unchanged",
+  "other_countries_activated_in_production": false
+}
