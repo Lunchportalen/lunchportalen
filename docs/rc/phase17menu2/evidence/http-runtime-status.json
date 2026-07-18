@@ -1,0 +1,17 @@
+{
+  "phase": "17MENU.2",
+  "TECHNICAL_PASS": false,
+  "preview_url": "https://lunchportalen-3nq3g7kmc-lunchportalen.vercel.app",
+  "health": {
+    "url": "https://lunchportalen-3nq3g7kmc-lunchportalen.vercel.app/api/health",
+    "http_status": 302,
+    "auth_gated": true,
+    "unauthenticated_e2e_possible": false
+  },
+  "HTTP_PACKAGE_FLOWS": "0/63",
+  "LIVE_LOCALE": "0/24",
+  "unauthenticated_http_e2e": "BLOCKED",
+  "note": "Preview /api/health returns HTTP 302 (auth-gated) — cannot run unauthenticated HTTP E2E.",
+  "vercel_cli": "logged_out_no_credentials",
+  "redacted": true
+}

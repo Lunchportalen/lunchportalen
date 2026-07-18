@@ -1,0 +1,11 @@
+{
+  "phase": "17MENU.2",
+  "TECHNICAL_PASS": false,
+  "production_mutations": 0,
+  "production_deploy_migration": "NOT_APPROVED",
+  "production_supabase_mutated": false,
+  "cross_tenant_live_proof": "NOT_RUN",
+  "staging_not_21x3_isolated_matrix": true,
+  "note": "Live isolation matrix not certified; staging entitlement/pricing rows do not form 21×3 country package isolation.",
+  "redacted": true
+}

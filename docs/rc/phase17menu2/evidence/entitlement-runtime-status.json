@@ -1,0 +1,19 @@
+{
+  "phase": "17MENU.2",
+  "TECHNICAL_PASS": false,
+  "staging_supabase": "uigxsboqeruxflgzqztl",
+  "production_supabase": "hkpokyapzarefrgqzkos",
+  "production_mutations": 0,
+  "LP_PACKAGE_ENTITLEMENTS_RUNTIME": "UNVERIFIED",
+  "staging_counts": {
+    "entitlements": 30,
+    "enterprise_contracts": 0,
+    "price_rules": 3,
+    "remainder_carry": 0,
+    "companies": 193,
+    "providers": 53
+  },
+  "isolated_21x3_matrix": false,
+  "note": "Staging counts are NOT a 21×3 isolated country×package matrix. Runtime flag cannot be verified ACTIVE on staging app.",
+  "redacted": true
+}

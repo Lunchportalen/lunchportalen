@@ -1,0 +1,314 @@
+{
+  "phase": "17MENU.2",
+  "decision": "OWNER_ACTION_REQUIRED",
+  "TECHNICAL_PASS": false,
+  "inventory_source": "sanity_public_groq",
+  "sanity": {
+    "project": "4udoq5d8",
+    "dataset": "staging"
+  },
+  "counts": {
+    "lunchCategory_with_countryCode": 126,
+    "lunchCategory_with_items": 105,
+    "warm_meal_empty_items": 21,
+    "mealIdea": 0,
+    "recipe_docs": 0,
+    "marketProfile": 0,
+    "menuDay": 274,
+    "menuDay_with_countryCode": 0,
+    "provider": 1
+  },
+  "gates": {
+    "COUNTRY_MENU_UNIVERSE_CONTENT": "0/21",
+    "COUNTRIES_WITH_CATEGORY_SHELL_ONLY": 21,
+    "COUNTRIES_WITHOUT_WARM_RECIPES": 21,
+    "WARM_BANKS_PRESENT_IN_SANITY": "0/21",
+    "mealIdea_count": 0,
+    "recipe_docs": 0,
+    "marketProfile": 0
+  },
+  "category_shell_pattern": "/^[A-Z]{2} (Sandwich|Salad box|Sushi|Poke bowl|Thai) [AB]$/",
+  "countries": [
+    {
+      "country": "NO",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "NO Poke bowl A",
+        "NO Poke bowl B",
+        "NO Salad box A",
+        "NO Salad box B",
+        "NO Sandwich A",
+        "NO Sandwich B"
+      ]
+    },
+    {
+      "country": "SE",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "SE Poke bowl A",
+        "SE Poke bowl B",
+        "SE Salad box A",
+        "SE Salad box B",
+        "SE Sandwich A",
+        "SE Sandwich B"
+      ]
+    },
+    {
+      "country": "DK",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "DK Poke bowl A",
+        "DK Poke bowl B",
+        "DK Salad box A",
+        "DK Salad box B",
+        "DK Sandwich A",
+        "DK Sandwich B"
+      ]
+    },
+    {
+      "country": "FI",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "FI Poke bowl A",
+        "FI Poke bowl B",
+        "FI Salad box A",
+        "FI Salad box B",
+        "FI Sandwich A",
+        "FI Sandwich B"
+      ]
+    },
+    {
+      "country": "GB",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "GB Poke bowl A",
+        "GB Poke bowl B",
+        "GB Salad box A",
+        "GB Salad box B",
+        "GB Sandwich A",
+        "GB Sandwich B"
+      ]
+    },
+    {
+      "country": "DE",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "DE Poke bowl A",
+        "DE Poke bowl B",
+        "DE Salad box A",
+        "DE Salad box B",
+        "DE Sandwich A",
+        "DE Sandwich B"
+      ]
+    },
+    {
+      "country": "FR",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "FR Poke bowl A",
+        "FR Poke bowl B",
+        "FR Salad box A",
+        "FR Salad box B",
+        "FR Sandwich A",
+        "FR Sandwich B"
+      ]
+    },
+    {
+      "country": "ES",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "ES Poke bowl A",
+        "ES Poke bowl B",
+        "ES Salad box A",
+        "ES Salad box B",
+        "ES Sandwich A",
+        "ES Sandwich B"
+      ]
+    },
+    {
+      "country": "IT",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "IT Poke bowl A",
+        "IT Poke bowl B",
+        "IT Salad box A",
+        "IT Salad box B",
+        "IT Sandwich A",
+        "IT Sandwich B"
+      ]
+    },
+    {
+      "country": "NL",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "NL Poke bowl A",
+        "NL Poke bowl B",
+        "NL Salad box A",
+        "NL Salad box B",
+        "NL Sandwich A",
+        "NL Sandwich B"
+      ]
+    },
+    {
+      "country": "BE",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "BE Poke bowl A",
+        "BE Poke bowl B",
+        "BE Salad box A",
+        "BE Salad box B",
+        "BE Sandwich A",
+        "BE Sandwich B"
+      ]
+    },
+    {
+      "country": "CH",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "CH Poke bowl A",
+        "CH Poke bowl B",
+        "CH Salad box A",
+        "CH Salad box B",
+        "CH Sandwich A",
+        "CH Sandwich B"
+      ]
+    },
+    {
+      "country": "AT",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "AT Poke bowl A",
+        "AT Poke bowl B",
+        "AT Salad box A",
+        "AT Salad box B",
+        "AT Sandwich A",
+        "AT Sandwich B"
+      ]
+    },
+    {
+      "country": "IE",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "IE Poke bowl A",
+        "IE Poke bowl B",
+        "IE Salad box A",
+        "IE Salad box B",
+        "IE Sandwich A",
+        "IE Sandwich B"
+      ]
+    },
+    {
+      "country": "PL",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "PL Poke bowl A",
+        "PL Poke bowl B",
+        "PL Salad box A",
+        "PL Salad box B",
+        "PL Sandwich A",
+        "PL Sandwich B"
+      ]
+    },
+    {
+      "country": "RO",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "RO Poke bowl A",
+        "RO Poke bowl B",
+        "RO Salad box A",
+        "RO Salad box B",
+        "RO Sandwich A",
+        "RO Sandwich B"
+      ]
+    },
+    {
+      "country": "CZ",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "CZ Poke bowl A",
+        "CZ Poke bowl B",
+        "CZ Salad box A",
+        "CZ Salad box B",
+        "CZ Sandwich A",
+        "CZ Sandwich B"
+      ]
+    },
+    {
+      "country": "PT",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "PT Poke bowl A",
+        "PT Poke bowl B",
+        "PT Salad box A",
+        "PT Salad box B",
+        "PT Sandwich A",
+        "PT Sandwich B"
+      ]
+    },
+    {
+      "country": "GR",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "GR Poke bowl A",
+        "GR Poke bowl B",
+        "GR Salad box A",
+        "GR Salad box B",
+        "GR Sandwich A",
+        "GR Sandwich B"
+      ]
+    },
+    {
+      "country": "US",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "US Poke bowl A",
+        "US Poke bowl B",
+        "US Salad box A",
+        "US Salad box B",
+        "US Sandwich A",
+        "US Sandwich B"
+      ]
+    },
+    {
+      "country": "CA",
+      "item_title_count": 10,
+      "category_shell_only": true,
+      "sample_titles": [
+        "CA Poke bowl A",
+        "CA Poke bowl B",
+        "CA Salad box A",
+        "CA Salad box B",
+        "CA Sandwich A",
+        "CA Sandwich B"
+      ]
+    }
+  ],
+  "notes": [
+    "Category items are shells like 'AT Sandwich A' — not native menu universes.",
+    "warm_meal / varmrett categories have empty items for all 21 countries.",
+    "mealIdea / recipe / marketProfile counts are 0 in Sanity staging."
+  ],
+  "redacted": true,
+  "secrets": 0,
+  "pii": 0
+}

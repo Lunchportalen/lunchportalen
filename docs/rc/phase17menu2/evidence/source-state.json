@@ -1,0 +1,24 @@
+{
+  "phase": "17MENU.2",
+  "branch": "release/global-menu-universes-21",
+  "branch_tip": "1061142b705fb78b772343636b9d220be02f923d",
+  "git_HEAD": "1061142b705fb78b772343636b9d220be02f923d",
+  "sanity": {
+    "project": "4udoq5d8",
+    "dataset": "staging"
+  },
+  "staging_supabase": "uigxsboqeruxflgzqztl",
+  "production_supabase": "hkpokyapzarefrgqzkos",
+  "production_mutations": 0,
+  "production_deploy_migration": "NOT_APPROVED",
+  "vercel_cli": "logged_out_no_credentials",
+  "preview_url": "https://lunchportalen-3nq3g7kmc-lunchportalen.vercel.app",
+  "LP_PACKAGE_ENTITLEMENTS_RUNTIME": "UNVERIFIED",
+  "DECISION": "OWNER_ACTION_REQUIRED",
+  "TECHNICAL_PASS": false,
+  "PREVIOUS_GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "NOT_ACCEPTED",
+  "WORKING_DECISION": "GLOBAL_MENU_UNIVERSES_REVIEW_READY",
+  "SECRET_EXPOSURES": 0,
+  "CUSTOMER_PII_IN_EVIDENCE": 0,
+  "redacted": true
+}

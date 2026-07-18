@@ -1,6 +1,8 @@
 ﻿# PHASE 17MENU.1 — 21-COUNTRY COMMERCIAL MENU CERTIFICATION
 
-**Decision:** `GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS`
+> **Superseded note (17MENU.2):** `GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS` is **withdrawn / not accepted** for live runtime. Live staging certification is required under Phase 17MENU.2 (`OWNER_ACTION_REQUIRED`; working decision `GLOBAL_MENU_UNIVERSES_REVIEW_READY` until live gates pass). See `docs/rc/phase17menu2/PHASE17MENU2-FINAL-REPORT.md`.
+
+**Decision (historical 17MENU.1 artifact):** `GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS` — **withdrawn pending live gates**
 
 Native culinary approvals remain **0/21** (not claimed). Production deploy / migration / non-NO activation remain **NOT APPROVED**.
 

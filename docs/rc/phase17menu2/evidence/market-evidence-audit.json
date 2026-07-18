@@ -1,0 +1,672 @@
+{
+  "phase": "17MENU.2",
+  "TECHNICAL_PASS": false,
+  "REAL_CITATION_AUDIT": "FAIL",
+  "dossiers_audited": 21,
+  "benchmarks_audited": 21,
+  "countries_pass": 0,
+  "countries_fail": 21,
+  "synthetic_marker_hits": 1058,
+  "detection": {
+    "synthesized_text": true,
+    "observation_n_pattern": true,
+    "source_ref_public_catering_observation": true
+  },
+  "note": "Market dossiers/benchmarks contain synthesized observations (source_ref public_catering_observation_*, notes Synthesized) — fail real citation audit.",
+  "countries": [
+    {
+      "country": "NO",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/NO/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/NO/dossier.json",
+          "id": "NO-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/NO/dossier.json",
+          "id": "NO-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/NO/dossier.json",
+          "id": "NO-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/NO/dossier.json",
+          "id": "NO-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "SE",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/SE/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/SE/dossier.json",
+          "id": "SE-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/SE/dossier.json",
+          "id": "SE-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/SE/dossier.json",
+          "id": "SE-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/SE/dossier.json",
+          "id": "SE-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "DK",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/DK/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/DK/dossier.json",
+          "id": "DK-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/DK/dossier.json",
+          "id": "DK-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/DK/dossier.json",
+          "id": "DK-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/DK/dossier.json",
+          "id": "DK-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "FI",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/FI/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/FI/dossier.json",
+          "id": "FI-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/FI/dossier.json",
+          "id": "FI-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/FI/dossier.json",
+          "id": "FI-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/FI/dossier.json",
+          "id": "FI-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "GB",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/GB/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/GB/dossier.json",
+          "id": "GB-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/GB/dossier.json",
+          "id": "GB-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/GB/dossier.json",
+          "id": "GB-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/GB/dossier.json",
+          "id": "GB-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "DE",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/DE/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/DE/dossier.json",
+          "id": "DE-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/DE/dossier.json",
+          "id": "DE-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/DE/dossier.json",
+          "id": "DE-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/DE/dossier.json",
+          "id": "DE-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "FR",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/FR/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/FR/dossier.json",
+          "id": "FR-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/FR/dossier.json",
+          "id": "FR-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/FR/dossier.json",
+          "id": "FR-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/FR/dossier.json",
+          "id": "FR-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "ES",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/ES/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/ES/dossier.json",
+          "id": "ES-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/ES/dossier.json",
+          "id": "ES-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/ES/dossier.json",
+          "id": "ES-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/ES/dossier.json",
+          "id": "ES-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "IT",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/IT/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/IT/dossier.json",
+          "id": "IT-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/IT/dossier.json",
+          "id": "IT-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/IT/dossier.json",
+          "id": "IT-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/IT/dossier.json",
+          "id": "IT-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "NL",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/NL/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/NL/dossier.json",
+          "id": "NL-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/NL/dossier.json",
+          "id": "NL-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/NL/dossier.json",
+          "id": "NL-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/NL/dossier.json",
+          "id": "NL-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "BE",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/BE/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/BE/dossier.json",
+          "id": "BE-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/BE/dossier.json",
+          "id": "BE-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/BE/dossier.json",
+          "id": "BE-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/BE/dossier.json",
+          "id": "BE-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "CH",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/CH/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/CH/dossier.json",
+          "id": "CH-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CH/dossier.json",
+          "id": "CH-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CH/dossier.json",
+          "id": "CH-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CH/dossier.json",
+          "id": "CH-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "AT",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/AT/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/AT/dossier.json",
+          "id": "AT-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/AT/dossier.json",
+          "id": "AT-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/AT/dossier.json",
+          "id": "AT-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/AT/dossier.json",
+          "id": "AT-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "IE",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/IE/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/IE/dossier.json",
+          "id": "IE-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/IE/dossier.json",
+          "id": "IE-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/IE/dossier.json",
+          "id": "IE-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/IE/dossier.json",
+          "id": "IE-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "PL",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/PL/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/PL/dossier.json",
+          "id": "PL-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/PL/dossier.json",
+          "id": "PL-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/PL/dossier.json",
+          "id": "PL-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/PL/dossier.json",
+          "id": "PL-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "RO",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/RO/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/RO/dossier.json",
+          "id": "RO-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/RO/dossier.json",
+          "id": "RO-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/RO/dossier.json",
+          "id": "RO-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/RO/dossier.json",
+          "id": "RO-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "CZ",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/CZ/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/CZ/dossier.json",
+          "id": "CZ-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CZ/dossier.json",
+          "id": "CZ-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CZ/dossier.json",
+          "id": "CZ-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CZ/dossier.json",
+          "id": "CZ-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "PT",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/PT/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/PT/dossier.json",
+          "id": "PT-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/PT/dossier.json",
+          "id": "PT-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/PT/dossier.json",
+          "id": "PT-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/PT/dossier.json",
+          "id": "PT-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "GR",
+      "real_citation_audit": "FAIL",
+      "finding_count": 49,
+      "sample_findings": [
+        {
+          "file": "dossiers/GR/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/GR/dossier.json",
+          "id": "GR-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/GR/dossier.json",
+          "id": "GR-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/GR/dossier.json",
+          "id": "GR-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/GR/dossier.json",
+          "id": "GR-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "US",
+      "real_citation_audit": "FAIL",
+      "finding_count": 53,
+      "sample_findings": [
+        {
+          "file": "dossiers/US/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/US/dossier.json",
+          "id": "US-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/US/dossier.json",
+          "id": "US-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/US/dossier.json",
+          "id": "US-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/US/dossier.json",
+          "id": "US-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    },
+    {
+      "country": "CA",
+      "real_citation_audit": "FAIL",
+      "finding_count": 74,
+      "sample_findings": [
+        {
+          "file": "dossiers/CA/dossier.json",
+          "marker": "Synthesized or observation N text"
+        },
+        {
+          "file": "dossiers/CA/dossier.json",
+          "id": "CA-menu-1",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CA/dossier.json",
+          "id": "CA-menu-2",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CA/dossier.json",
+          "id": "CA-menu-3",
+          "marker": "synthetic menu observation"
+        },
+        {
+          "file": "dossiers/CA/dossier.json",
+          "id": "CA-menu-4",
+          "marker": "synthetic menu observation"
+        }
+      ]
+    }
+  ],
+  "redacted": true,
+  "secrets": 0,
+  "pii": 0
+}

@@ -1,0 +1,139 @@
+{
+  "phase": "17MENU.2",
+  "TECHNICAL_PASS": false,
+  "WARM_BANKS_PRESENT_IN_SANITY": "0/21",
+  "WARM_BANKS_JSON_ON_DISK_PHASE17MENU1": "21/21",
+  "mealIdea_in_sanity": 0,
+  "recipe_docs_in_sanity": 0,
+  "LIVE_WARM_GENERATION": "0/21",
+  "note": "Warm banks exist only as generated JSON under phase17menu1 evidence, NOT as Sanity mealIdea.",
+  "countries": [
+    {
+      "country": "NO",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "SE",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "DK",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "FI",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "GB",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "DE",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "FR",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "ES",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "IT",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "NL",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "BE",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "CH",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "AT",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "IE",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "PL",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "RO",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "CZ",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "PT",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "GR",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "US",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    },
+    {
+      "country": "CA",
+      "warm_bank_json_on_disk": true,
+      "eligible_dish_count": 55,
+      "present_in_sanity_as_mealIdea": false
+    }
+  ],
+  "redacted": true
+}

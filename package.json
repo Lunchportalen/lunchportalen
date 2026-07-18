@@ -26,6 +26,8 @@
     "ci:phase16no4-gates": "node scripts/ci/phase16no4-mva-threshold-gates.mjs",
     "ci:phase17menu-gates": "node scripts/ci/verify-phase17menu-gates.mjs",
     "ci:phase17menu1-gates": "node scripts/ci/verify-phase17menu1-gates.mjs",
+    "ci:phase17menu2-gates": "node scripts/phase17menu2/certify-live-staging.mjs",
+    "phase17menu2:certify": "node scripts/phase17menu2/certify-live-staging.mjs",
     "phase17menu1:evidence": "node scripts/phase17menu1/generate-commercial-evidence.mjs",
     "test:phase17menu": "vitest run tests/lib/menu/canonicalPackageCategories.test.ts tests/lib/providers/resolvePackageEntitlements.test.ts tests/lib/menu-publish/warmDishGenerationAudit.test.ts tests/lib/cms/menuDayCountryFilter.test.ts tests/lib/billing/exactCommissionBps.test.ts tests/lib/enterprise/enterpriseContract.test.ts --config vitest.config.ts",
     "test:phase17menu1": "npm run test:phase17menu && npm run ci:phase17menu1-gates",
