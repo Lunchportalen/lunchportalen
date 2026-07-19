@@ -4,7 +4,7 @@
 
 - Branch: `release/global-menu-universes-21`
 - Start SHA: `f08f2a83377262c2da157cba3dfb5aaee280711c`
-- Certified SHA (remote tip at TECHNICAL_PASS): `e9b0596d9b68b06b3dfb45b3cd0365b1d10ffba4`
+- Certified SHA: remote tip of `release/global-menu-universes-21` at TECHNICAL_PASS (= GHA headSha of the latest SUCCESS row below)
 - Engine SHA (capacity teardown + HTTP 63/63 fix): `1e2d24d9861631f8ccafb22d48c4f425f746d2ae`
 - Staging target: Supabase `uigxsboqeruxflgzqztl` + Sanity `4udoq5d8` / `staging`
 - Worktree: `C:\prosjekter\lunchportalen-16no`
@@ -14,8 +14,9 @@
 
 | Run ID | Event | Head SHA | Conclusion |
 |--------|-------|----------|------------|
-| [29673601965](https://github.com/Lunchportalen/lunchportalen/actions/runs/29673601965) | push | `e9b0596d` | **SUCCESS** (tip = certified SHA) |
-| [29671384968](https://github.com/Lunchportalen/lunchportalen/actions/runs/29671384968) | push | `1e2d24d9` | **SUCCESS** (engine closure) |
+| [29675435079](https://github.com/Lunchportalen/lunchportalen/actions/runs/29675435079) | workflow_dispatch | `583dfd34` | **SUCCESS** |
+| [29673601965](https://github.com/Lunchportalen/lunchportalen/actions/runs/29673601965) | push | `e9b0596d` | **SUCCESS** |
+| [29671384968](https://github.com/Lunchportalen/lunchportalen/actions/runs/29671384968) | push | `1e2d24d9` | **SUCCESS** |
 | [29669451575](https://github.com/Lunchportalen/lunchportalen/actions/runs/29669451575) | workflow_dispatch | `3fbbc011` | failure (HTTP 60/63 — capacity pools left full) |
 | [29666168394](https://github.com/Lunchportalen/lunchportalen/actions/runs/29666168394) | workflow_dispatch | `0248d3c5` | failure (auth seed pagination) |
 | [29665877037](https://github.com/Lunchportalen/lunchportalen/actions/runs/29665877037) | push | `1e5713aa` | failure (seed race) |
@@ -80,7 +81,5 @@
 ## Decision
 
 **GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS = YES**
-
-Remote tip `e9b0596d9b68b06b3dfb45b3cd0365b1d10ffba4` equals GHA headSha of successful run **29673601965**.
 
 Do not deploy Phase 17MENU to production.
