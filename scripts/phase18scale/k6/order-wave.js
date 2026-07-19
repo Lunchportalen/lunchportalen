@@ -86,7 +86,7 @@ export default function () {
   const idem = `p18-ord-${s.user_id}-${serviceDate}-${__ITER}-${__VU}`;
   const res = http.post(
     `${base}/api/orders`,
-    JSON.stringify({ date: serviceDate, action: "set", choice_key: "varmmat" }),
+    JSON.stringify({ date: serviceDate, action: "set", choice_key: "varmmat" }), // maps to Varmrett MSDI
     {
       headers: {
         "Content-Type": "application/json",

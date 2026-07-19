@@ -89,8 +89,24 @@ async function main() {
       .eq("sku", "varmrett")
       .eq("company_id", co.id)
       .maybeSingle();
-    if (prod?.id) productId = prod.id;
-    else {
+    // lp_order_set maps choice_key varmmat → product_categories slug "varmrett".
+    let categoryId = null;
+    {
+      const { data: cat } = await admin.from("product_categories").select("id").eq("name", "Varmrett").maybeSingle();
+      if (cat?.id) categoryId = cat.id;
+      else {
+        const { data: created } = await admin
+          .from("product_categories")
+          .insert({ name: "Varmrett", sort_order: 11 })
+          .select("id")
+          .maybeSingle();
+        categoryId = created?.id ?? null;
+      }
+    }
+    if (prod?.id) {
+      productId = prod.id;
+      if (categoryId) await admin.from("products").update({ category_id: categoryId }).eq("id", productId);
+    } else {
       const { data: ins } = await admin
         .from("products")
         .insert({
@@ -103,6 +119,7 @@ async function main() {
           currency_code: "NOK",
           is_active: true,
           is_visible: true,
+          category_id: categoryId,
         })
         .select("id")
         .maybeSingle();

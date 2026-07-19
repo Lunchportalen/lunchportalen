@@ -1,0 +1,9 @@
+{
+  "phase": "18SCALE",
+  "HTTP_SAMPLE_N": 200,
+  "SET_OK": 200,
+  "SET_FAIL": 0,
+  "CANCEL_OK": 200,
+  "CANCEL_FAIL": 0,
+  "stamped_at": "2026-07-19T16:27:24.971Z"
+}
