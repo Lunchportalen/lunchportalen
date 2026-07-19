@@ -524,6 +524,25 @@ async function main() {
   };
   fs.writeFileSync(path.join(OUT, "capacity-race-summary.json"), JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary, null, 2));
+
+  // Opt-in pools must not remain full for later package HTTP / locale cert steps.
+  for (const d of availableDates) {
+    await admin
+      .from("dish_day_capacity_events")
+      .delete()
+      .eq("provider_id", company.provider_id)
+      .eq("service_date", d)
+      .eq("choice_key", CHOICE_POOL);
+    await admin
+      .from("dish_day_capacity")
+      .delete()
+      .eq("provider_id", company.provider_id)
+      .eq("service_date", d)
+      .eq("choice_key", CHOICE_POOL);
+  }
+  summary.CAPACITY_POOLS_TEARDOWN = "PASS";
+  fs.writeFileSync(path.join(OUT, "capacity-race-summary.json"), JSON.stringify(summary, null, 2));
+
   if (!summary.all_pass) process.exit(2);
 }
 

@@ -160,6 +160,19 @@ async function main() {
   // Prefer upcoming week when cert runs on weekend / after current Mon–Fri window.
   const weekOffset = seededDates.some((d) => String(d) >= String(new Date().toISOString().slice(0, 10))) ? 1 : 0;
 
+  // Capacity is opt-in when a dish_day_capacity row exists. Prior 2D race/isolation
+  // harnesses must not leave full pools that fail package HTTP with CAPACITY_EXCEEDED.
+  const clearDates = seededDates.length ? seededDates : [orderDate];
+  const providerIds = [
+    ...new Set((matrix.companies ?? []).map((c) => c.provider_id).filter(Boolean)),
+  ];
+  for (const pid of providerIds) {
+    for (const d of clearDates) {
+      await admin.from("dish_day_capacity_events").delete().eq("provider_id", pid).eq("service_date", d);
+      await admin.from("dish_day_capacity").delete().eq("provider_id", pid).eq("service_date", d);
+    }
+  }
+
   for (const co of matrix.companies ?? []) {
     const email = `${String(co.country).toLowerCase()}-${String(co.package).toLowerCase()}-emp@staging.lunchportalen.test`;
     let token;
