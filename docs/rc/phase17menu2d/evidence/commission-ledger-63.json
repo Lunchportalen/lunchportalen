@@ -655,11 +655,9 @@
         "period": "2099-01",
         "settle": {
           "ok": true,
-          "earned": 0,
           "carry_in": 0,
-          "reversed": 0,
           "carry_out": 0,
-          "idempotent": false,
+          "idempotent": true,
           "invoice_minor": 0,
           "period_numerator": 0
         }
@@ -668,11 +666,9 @@
         "period": "2099-02",
         "settle": {
           "ok": true,
-          "earned": 0,
           "carry_in": 0,
-          "reversed": 0,
           "carry_out": 0,
-          "idempotent": false,
+          "idempotent": true,
           "invoice_minor": 0,
           "period_numerator": 0
         }
@@ -681,11 +677,9 @@
         "period": "2099-03",
         "settle": {
           "ok": true,
-          "earned": 0,
           "carry_in": 0,
-          "reversed": 0,
           "carry_out": 0,
-          "idempotent": false,
+          "idempotent": true,
           "invoice_minor": 0,
           "period_numerator": 0
         }

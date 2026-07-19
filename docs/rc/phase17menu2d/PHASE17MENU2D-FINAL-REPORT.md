@@ -4,11 +4,23 @@
 
 - Branch: `release/global-menu-universes-21`
 - Start SHA: `f08f2a83377262c2da157cba3dfb5aaee280711c`
-- Final SHA: `6f36945b0d273e0a0baaa1c48827dfdaae23e13c`
-- Staging deployed SHA: local Next production build of `6f36945b` + staging Supabase `uigxsboqeruxflgzqztl` (migrations applied on staging)
-- GHA run IDs: `phase17menu2d-staging-cert` dispatched on push path / workflow_dispatch
+- Certified SHA (full GHA SUCCESS): `1e2d24d9861631f8ccafb22d48c4f425f746d2ae`
+- Staging target: Supabase `uigxsboqeruxflgzqztl` + Sanity `4udoq5d8` / `staging`
 - Worktree: `C:\prosjekter\lunchportalen-16no`
 - Production mutations: **0**
+
+### GitHub Actions certification runs
+
+| Run ID | Event | Head SHA | Conclusion |
+|--------|-------|----------|------------|
+| [29671384968](https://github.com/Lunchportalen/lunchportalen/actions/runs/29671384968) | push | `1e2d24d9` | **SUCCESS** (closure) |
+| [29669451575](https://github.com/Lunchportalen/lunchportalen/actions/runs/29669451575) | workflow_dispatch | `3fbbc011` | failure (HTTP 60/63 — capacity pools left full) |
+| [29666168394](https://github.com/Lunchportalen/lunchportalen/actions/runs/29666168394) | workflow_dispatch | `0248d3c5` | failure (auth seed pagination) |
+| [29665877037](https://github.com/Lunchportalen/lunchportalen/actions/runs/29665877037) | push | `1e5713aa` | failure (seed race) |
+| [29665876709](https://github.com/Lunchportalen/lunchportalen/actions/runs/29665876709) | workflow_dispatch | `1e5713aa` | failure (seed race) |
+| [29665711247](https://github.com/Lunchportalen/lunchportalen/actions/runs/29665711247) | push | `6f36945b` | failure (seed race) |
+
+Successful closure artifact: `docs/rc/phase17menu2d/gha-29671384968/`
 
 ## Capacity
 
@@ -16,47 +28,38 @@
 - Lock scope: `provider_id + service_date + choice_key` (e.g. `varmrett`)
 - Race attempts: 100
 - Capacity: 50
-- Accepted: 50 per run
-- Rejected: 50 per run (`CAPACITY_EXCEEDED` → HTTP 409)
+- Accepted: **50** per run (500 total)
+- Rejected: **50** per run (500 total, `CAPACITY_EXCEEDED` → HTTP 409)
 - Other errors: 0
 - Repeated runs: **10/10**
 - Oversell: **0**
 - Deadlocks: **0**
-- Hot-provider result: **PASS** (5/15 of 20)
-- Multi-provider isolation: **PASS** (10/10)
+- Pool teardown after race: **PASS** (does not poison later package HTTP)
+- Hot-provider result: **PASS**
+- Multi-provider isolation: **PASS**
 - Date/variant isolation: **PASS**
 
 ## Cutoff and idempotency
 
 - Cutoff authority: database/server via `lp_company_cutoff_context` + `now()`
-- Before / at / after boundary: existing market-timezone cutoff (accepted when authoritative time before cutoff)
 - Client-clock bypasses: **0**
-- Order retries: serial+concurrent same idempotency key → one ACTIVE order
-- Cancellation retries: serial+concurrent → no duplicates
-- Duplicate events: **0**
+- Order / cancellation idempotency duplicates: **0**
 
 ## Commission ledger
 
 - Persisted earned events: **PASS**
 - Persisted reversal events: **PASS**
 - 63-flow proof: **63/63**
-- Price versions: present (`snap:<order_line_id>`)
-- Exact numerators: `basis × 500`
-- Customer tax excluded: basis = ex-VAT line subtotal
-- Upgrade value: covered in Enterprise flows
-- Partial/full reversals: full cancel path verified (`reversal_of` + negated exact numerator)
-- Duplicate events: **0**
-- Orphan events: **0**
 - Earn difference: **0**
 - Reversal difference: **0**
+- Duplicate / orphan events: **0**
 
 ## Remainder and settlement
 
-- Periods tested: **3** (`2099-01`…`2099-03`)
-- Carry in/out: preserved across periods
+- Periods tested: **3**
 - Remainder loss: **0**
-- Settlement idempotency: **0** errors
-- Final rounding: **PASS** (`lp_billing_final_rounding_adjustment` → `ROUNDING_ADJUSTMENT`)
+- Settlement idempotency errors: **0**
+- Final rounding: **PASS**
 - Total financial difference: **0**
 
 ## Visual localization
@@ -64,47 +67,37 @@
 - HTTP locales: **24/24**
 - Desktop locales: **24/24**
 - Mobile locales: **24/24**
-- Norwegian fallback: **0**
-- Internal keys: **0** (dotted next-intl keys nested under `provider.customer.*`)
+- Norwegian fallback outside NO: **0**
+- Internal keys: **0**
 - Mojibake: **0**
 - Critical overflows: **0**
-- Employee / kitchen / packing views: HTML runtime probe + provider-meny INVALID_KEY remediation
-- Issue #503: **CLOSED_WITH_RUNTIME_EVIDENCE** (after push + evidence links)
+- Issue #503: **CLOSED** (`CLOSED_WITH_RUNTIME_EVIDENCE`)
 
 ## Regression
 
 - Package HTTP flows: **63/63**
-- Basis / Luxus / Enterprise: **21/21** each
-- Provider prices: **63/63**
-- Kitchen / packing / delivery: flags green in 2B cert path
-- Cross-tenant: **0**
-- Cross-country / wrong provider: **0**
+- Cross-tenant / cross-country / wrong provider: **0**
 
 ## Production safety
 
-- Production SHA: `771a4207e9743fd232971eb95ecc27e45723a89d` (unchanged)
-- Migration head: unchanged (prod read-only)
-- Health: **PASS**
-- Norway ordering: enabled (unchanged)
-- MVA threshold: live (unchanged)
-- Other countries: disabled 20/20
-- Stripe: off
-- Deploy / migration locks: active
+- Production SHA baseline (untouched): `771a4207e9743fd232971eb95ecc27e45723a89d`
+- Production mutations: **0**
+- Other countries production disabled: **20/20**
+- Stripe calls: **0**
 
-## Status boundaries
-
-- Native culinary approved: **0/21**
-- Locale native approved: **0/24**
-- Global scale certified: **NO**
-
-## Decision
-
-**GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS**
-
-Keep:
+## Status boundaries (unchanged)
 
 - `GLOBAL_SCALE_CERTIFIED = NO`
 - `NATIVE_CULINARY_APPROVED = 0/21`
 - `LOCALE_NATIVE_APPROVED = 0/24`
+- `PRODUCTION_DEPLOYMENT = NOT APPROVED`
+
+## Decision
+
+**GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS = YES**
+
+Certified against remote tip SHA `1e2d24d9861631f8ccafb22d48c4f425f746d2ae` via GHA run **29671384968** (all gates SUCCESS).
 
 Do not deploy Phase 17MENU to production.
+Native culinary and locale approval remain closed.
+Global scale certification remains **NO**.

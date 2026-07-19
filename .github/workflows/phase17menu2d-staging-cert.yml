@@ -15,12 +15,15 @@ on:
     paths:
       - ".github/workflows/phase17menu2d-staging-cert.yml"
       - "scripts/phase17menu2d/**"
-      - "docs/rc/phase17menu2d/**"
+      - "scripts/phase17menu2b/seed-synthetic-matrix.mjs"
+      - "scripts/phase17menu2b/certify-staging-http.mjs"
       - "supabase/migrations/20260907120000_phase17menu2d_atomic_capacity_commission.sql"
       - "supabase/migrations/20260907130000_phase17menu2d_commission_exact_writepath.sql"
       - "lib/orders/mapOrderWriteError.ts"
       - "messages/**"
       - "i18n/request.ts"
+    # docs/rc/phase17menu2d/** intentionally excluded — report/evidence stamps must not
+    # move the certified tip without a code change.
 
 permissions:
   contents: read
