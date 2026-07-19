@@ -66,18 +66,41 @@ function assertStaging(url) {
   if (url.includes(PROD_REF)) throw new Error("REFUSE_PRODUCTION");
 }
 
-async function upsertAuthUser(admin, email, password, meta) {
-  const listed = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-  const existing = (listed.data?.users ?? []).find((u) => u.email === email);
-  if (existing) {
-    await admin.auth.admin.updateUserById(existing.id, {
-      password,
-      email_confirm: true,
-      user_metadata: meta,
-      app_metadata: { ...(existing.app_metadata ?? {}), [MARK]: true },
-    });
-    return existing.id;
+async function findAuthUserByEmail(admin, email) {
+  const want = String(email).toLowerCase();
+  const perPage = 1000;
+  const maxPages = 50;
+  for (let page = 1; page <= maxPages; page += 1) {
+    const listed = await admin.auth.admin.listUsers({ page, perPage });
+    if (listed.error) throw new Error(`auth.listUsers: ${listed.error.message}`);
+    const users = listed.data?.users ?? [];
+    const hit = users.find((u) => String(u.email ?? "").toLowerCase() === want);
+    if (hit) return hit;
+    if (users.length < perPage) return null;
   }
+  throw new Error("auth.listUsers pagination safety stop");
+}
+
+function isAlreadyRegisteredError(message) {
+  const lower = String(message ?? "").toLowerCase();
+  return lower.includes("already been registered") || lower.includes("already registered");
+}
+
+async function updateAuthUser(admin, existing, password, meta) {
+  const { error } = await admin.auth.admin.updateUserById(existing.id, {
+    password,
+    email_confirm: true,
+    user_metadata: meta,
+    app_metadata: { ...(existing.app_metadata ?? {}), [MARK]: true },
+  });
+  if (error) throw new Error(`auth.updateUser ${existing.email}: ${error.message}`);
+  return existing.id;
+}
+
+async function upsertAuthUser(admin, email, password, meta) {
+  const existing = await findAuthUserByEmail(admin, email);
+  if (existing) return updateAuthUser(admin, existing, password, meta);
+
   const created = await admin.auth.admin.createUser({
     email,
     password,
@@ -85,8 +108,17 @@ async function upsertAuthUser(admin, email, password, meta) {
     user_metadata: meta,
     app_metadata: { [MARK]: true },
   });
-  if (created.error) throw new Error(`auth.createUser ${email}: ${created.error.message}`);
-  return created.data.user.id;
+  if (!created.error) return created.data.user.id;
+
+  // Concurrent seed / partial page races: treat "already registered" as upsert.
+  if (!isAlreadyRegisteredError(created.error.message)) {
+    throw new Error(`auth.createUser ${email}: ${created.error.message}`);
+  }
+  const raced = await findAuthUserByEmail(admin, email);
+  if (!raced) {
+    throw new Error(`auth.createUser ${email}: reported existing but not found after pagination`);
+  }
+  return updateAuthUser(admin, raced, password, meta);
 }
 
 async function main() {
