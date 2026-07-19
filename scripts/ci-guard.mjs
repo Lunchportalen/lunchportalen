@@ -33,6 +33,8 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/phase17menu2b/",
   // PHASE 17MENU.2D — staging-only capacity/ledger/i18n cert (uigx refuse-prod).
   "scripts/phase17menu2d/",
+  // PHASE 18SCALE — dedicated load-env seed/harness (local/branch; refuse-prod).
+  "scripts/phase18scale/",
 
   // #92 standing authz gate — validates staging integration env before vitest (no service-role usage here).
   "scripts/ci/run-suspend-rpc-integration.mjs",

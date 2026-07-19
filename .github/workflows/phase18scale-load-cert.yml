@@ -1,0 +1,179 @@
+# PHASE 18SCALE — manual full load certification (never production).
+name: phase18scale-load-cert
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_sha:
+        description: Exact commit SHA to certify
+        required: false
+        default: ""
+      soak_hours:
+        description: Soak duration hours (8–24)
+        required: false
+        default: "8"
+      seed_providers:
+        description: Provider count (default 1000)
+        required: false
+        default: "1000"
+      seed_companies:
+        description: Company count (default 2000)
+        required: false
+        default: "2000"
+      seed_employees:
+        description: Employee count (default 100000)
+        required: false
+        default: "100000"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1440
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_ALLOW_STAGING_ISOLATION: "0"
+      APP_VERSION: ${{ inputs.app_sha || github.sha }}
+      PHASE18_SOAK_HOURS: ${{ inputs.soak_hours }}
+      PHASE18_SEED_PROVIDERS: ${{ inputs.seed_providers }}
+      PHASE18_SEED_COMPANIES: ${{ inputs.seed_companies }}
+      PHASE18_SEED_EMPLOYEES: ${{ inputs.seed_employees }}
+      RC_MODE: "true"
+
+    steps:
+      - name: Refuse production targets
+        run: |
+          set -euo pipefail
+          case "${NEXT_PUBLIC_SUPABASE_URL}" in
+            *hkpokyapzarefrgqzkos*) echo "::error::production supabase forbidden"; exit 2 ;;
+          esac
+          case "${PHASE18_BASE_URL}" in
+            *app.lunchportalen.no*) echo "::error::production app forbidden"; exit 2 ;;
+          esac
+          test -n "${PHASE18_LOAD_REF}"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.app_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Seed scale matrix
+        run: node scripts/phase18scale/seed-scale-matrix.mjs
+
+      - name: Issue auth sessions
+        run: node scripts/phase18scale/issue-auth-sessions.mjs
+
+      - name: Build Next against load env
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ secrets.PHASE18_BASE_URL }}
+          PUBLIC_APP_URL: ${{ secrets.PHASE18_BASE_URL }}
+
+      - name: Start runtime
+        run: |
+          set -euo pipefail
+          npx next start -H 127.0.0.1 -p 3000 > /tmp/next-start.log 2>&1 &
+          echo $! > /tmp/next.pid
+          export PHASE18_BASE_URL=http://127.0.0.1:3000
+          for i in $(seq 1 90); do
+            CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" "http://127.0.0.1:3000/api/health" || true)
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 2
+          done
+          tail -n 200 /tmp/next-start.log || true
+          exit 1
+
+      - name: Order wave 100k/30m
+        env:
+          PHASE18_BASE_URL: http://127.0.0.1:3000
+          PHASE18_WAVE_LABEL: orders-30m
+          PHASE18_WAVE_DURATION: 30m
+          PHASE18_ORDER_TARGET: "100000"
+          PHASE18_ORDER_ARRIVAL_RATE: "56"
+        run: node scripts/phase18scale/order-wave.mjs
+
+      - name: Order wave 100k/15m headroom
+        env:
+          PHASE18_BASE_URL: http://127.0.0.1:3000
+          PHASE18_WAVE_LABEL: orders-15m
+          PHASE18_WAVE_DURATION: 15m
+          PHASE18_ORDER_TARGET: "100000"
+          PHASE18_ORDER_ARRIVAL_RATE: "112"
+        run: node scripts/phase18scale/order-wave.mjs
+
+      - name: Cancellation wave 50k/10m
+        env:
+          PHASE18_BASE_URL: http://127.0.0.1:3000
+          PHASE18_WAVE_LABEL: cancel-10m
+          PHASE18_WAVE_DURATION: 10m
+          PHASE18_CANCEL_TARGET: "50000"
+          PHASE18_CANCEL_ARRIVAL_RATE: "84"
+        run: node scripts/phase18scale/cancellation-wave.mjs
+
+      - name: Cancellation wave 50k/5m headroom
+        env:
+          PHASE18_BASE_URL: http://127.0.0.1:3000
+          PHASE18_WAVE_LABEL: cancel-5m
+          PHASE18_WAVE_DURATION: 5m
+          PHASE18_CANCEL_TARGET: "50000"
+          PHASE18_CANCEL_ARRIVAL_RATE: "167"
+        run: node scripts/phase18scale/cancellation-wave.mjs
+
+      - name: Cutoff boundary
+        env:
+          PHASE18_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase18scale/cutoff-boundary-wave.mjs
+
+      - name: Hot provider
+        env:
+          PHASE18_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase18scale/hot-provider-wave.mjs
+
+      - name: Production freeze check
+        run: node scripts/phase18scale/production-freeze-check.mjs
+
+      - name: Financial reconciliation
+        run: node scripts/phase18scale/financial-reconciliation.mjs
+
+      - name: Failure injection
+        run: node scripts/phase18scale/failure-injection.mjs
+
+      - name: Soak
+        env:
+          PHASE18_BASE_URL: http://127.0.0.1:3000
+        run: node scripts/phase18scale/soak-runner.mjs
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18scale-evidence
+          path: docs/rc/phase18scale/
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/next.pid ]; then kill "$(cat /tmp/next.pid)" || true; fi

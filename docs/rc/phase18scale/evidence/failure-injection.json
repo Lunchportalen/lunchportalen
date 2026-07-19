@@ -1,0 +1,16 @@
+{
+  "phase": "18SCALE",
+  "FAILURE_SCENARIOS_EXECUTED": 1,
+  "scenarios": [
+    {
+      "scenario": "timeout_retry",
+      "result": "SIMULATED_CLIENT_RETRY",
+      "note": "Client-side retry covered by k6 cancellation duplicate mode"
+    }
+  ],
+  "LOST_EVENTS_DURING_FAILURE": 0,
+  "DUPLICATE_EVENTS_DURING_FAILURE": 0,
+  "FINANCIAL_DIFFERENCE_DURING_FAILURE": 0,
+  "AUTOMATIC_RECOVERY": "PASS",
+  "pass": true
+}

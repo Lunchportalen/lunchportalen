@@ -140,3 +140,7 @@ _ci-snapshots-*/
 _ci-steg*/
 playwright-week-visual-report/
 .smoke-provision.*
+
+.env.phase18.local
+docs/rc/phase18scale/evidence/*.ndjson
+docs/rc/phase18scale/evidence/sessions*.ndjson

@@ -1,0 +1,54 @@
+{
+  "phase": "18SCALE",
+  "stamped_at": "2026-07-19T10:50:00.000Z",
+  "PHASE18_START_SHA": "c4df05397374648025024d67204d801cae6f93ea",
+  "PHASE18_ENGINE_SHA": "c4df05397374648025024d67204d801cae6f93ea",
+  "PHASE18_CERTIFIED_SHA": null,
+  "LOAD_ENVIRONMENT": "local_supabase_ephemeral",
+  "LOAD_ENVIRONMENT_ISOLATED": "YES",
+  "LOAD_APP_RUNTIME": "next_local_production_build",
+  "SUPABASE_TARGET": {
+    "mode": "local_docker",
+    "ref": "local",
+    "url_host": "127.0.0.1:54321",
+    "notes": "Dedicated ephemeral stack via `supabase start`. Not shared staging. Not production."
+  },
+  "SANITY_TARGET": {
+    "mode": "cached_or_blackhole",
+    "dataset": "local-load-or-staging-read-cache",
+    "write": false,
+    "notes": "Menu reads use seeded SQL menu_service_days; Sanity writes disabled for load."
+  },
+  "EXPLICITLY_FORBIDDEN": {
+    "production_ref": "hkpokyapzarefrgqzkos",
+    "production_url": "app.lunchportalen.no",
+    "shared_staging_full_destructive_load": "uigxsboqeruxflgzqztl"
+  },
+  "PRODUCTION_TARGET_REFERENCES": 0,
+  "PRODUCTION_SECRETS_COPIED": 0,
+  "REAL_CUSTOMER_PII": 0,
+  "REAL_EMAILS_SENT": 0,
+  "REAL_WEBHOOKS_SENT": 0,
+  "STRIPE_CALLS": 0,
+  "EMAIL_PROVIDER": "blackhole_inbucket_local",
+  "NOTIFICATION_PROVIDER": "blackhole",
+  "PAID_INFRASTRUCTURE": {
+    "used": false,
+    "alternatives_evaluated": [
+      {
+        "resource": "Supabase preview branch phase18-scale",
+        "provider": "Supabase",
+        "cost": "$0.01344/hour",
+        "max_estimate_72h": "$0.97",
+        "status": "NOT_USED_YET_local_preferred"
+      },
+      {
+        "resource": "New Supabase project",
+        "provider": "Supabase",
+        "cost": "$10/month",
+        "status": "NOT_USED"
+      }
+    ]
+  },
+  "ABORT_IF_AMBIGUOUS": true
+}

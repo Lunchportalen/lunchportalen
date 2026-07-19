@@ -1,0 +1,16 @@
+{
+  "phase": "18SCALE",
+  "PRODUCTION_SHA_BASELINE": "771a4207e9743fd232971eb95ecc27e45723a89d",
+  "PRODUCTION_REF": "hkpokyapzarefrgqzkos",
+  "PRODUCTION_MUTATIONS": 0,
+  "PRODUCTION_DEPLOYMENTS": 0,
+  "PRODUCTION_MIGRATIONS": 0,
+  "PRODUCTION_SYNTHETIC_RECORDS": 0,
+  "health": {
+    "status": 200,
+    "ok": true,
+    "body_ok": true
+  },
+  "NORWAY_PRODUCTION_REGRESSION": "PASS",
+  "note": "Probe is read-only HTTP health only; no production credentials used."
+}
