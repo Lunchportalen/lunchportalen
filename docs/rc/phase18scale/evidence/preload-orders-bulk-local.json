@@ -1,0 +1,15 @@
+{
+  "phase": "18SCALE",
+  "MARK": "PHASE18_SCALE_SYNTHETIC",
+  "mode": "local_sql_bulk_batched",
+  "service_date": "2026-07-20",
+  "target": 100000,
+  "totalInserted": null,
+  "LOCAL_ACTIVE_ORDERS": 100000,
+  "ORDERS_WITH_ITEMS": 100000,
+  "ORDERS_WITHOUT_PROVIDER": 0,
+  "ORDERS_WITHOUT_COMPANY": 0,
+  "ORDERS_WITHOUT_EMPLOYEE": 0,
+  "ORDERS_WITHOUT_AGREEMENT": 0,
+  "stamped_at": "2026-07-19T15:56:56.420Z"
+}

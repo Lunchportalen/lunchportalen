@@ -1,0 +1,9 @@
+﻿{
+  "RAMP_200_400_5000": "PASS",
+  "SEQUENTIAL_RERUN_DIFFERENCE": 0,
+  "authCreatesSecondPass": 0,
+  "authFromCacheSecondPass": 5000,
+  "durationMsFirst": 1571558,
+  "durationMsSecond": 447129,
+  "recordedAt": "2026-07-19T14:18:37.3507292+02:00"
+}

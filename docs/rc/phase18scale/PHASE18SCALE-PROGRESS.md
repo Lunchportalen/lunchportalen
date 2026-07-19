@@ -3,37 +3,50 @@
 ## Baseline
 
 - Branch: `release/global-menu-universes-21`
-- PHASE18_START_SHA / ENGINE_SHA: `c4df05397374648025024d67204d801cae6f93ea`
-- Prior 17MENU.2D GHA: `29678182861`
+- PHASE18_ENGINE_BASELINE_SHA: `c4df05397374648025024d67204d801cae6f93ea`
 - GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS: YES (unchanged)
 
-## Load environment
+## Local matrix — PASS
 
-- Mode: **local Supabase ephemeral** (`127.0.0.1:54321`)
-- Isolation: YES (not shared staging, not production)
-- Email: local Inbucket blackhole
-- Paid infrastructure used: **NO**
-- Fallback evaluated: Supabase branch @ $0.01344/hour (not activated)
+| Metric | Value |
+|--------|-------|
+| Providers | 1000 |
+| Companies | 2000 |
+| Employee profiles | 100000 |
+| Auth identities | 100000 |
+| Countries / locales / packages | 21 / 24 / 3 |
+| Active agreements | 2000 |
+| Published menus | 2000 |
+| Package entitlements | 16000 |
+| Active same-day orders (bulk setup) | 100000 |
+| Load sessions (cookie login pool) | 2250 (all companies) |
+| Auth idempotency / orphans | PASS / 0 |
 
-## Delivered so far
+### Auth method
 
-- `docs/rc/phase18scale/evidence/source-target-matrix.json`
-- Harness under `scripts/phase18scale/` (seed, sessions, k6 waves, cutoff, hot-provider, freeze, finance, soak, failure, cleanup)
-- Migration `20260908120000_phase18scale_production_snapshots.sql`
-- Manual workflow `.github/workflows/phase18scale-load-cert.yml`
-- ci-guard allowlist for `scripts/phase18scale/`
+1. GoTrue Admin API (first ~5k) with paginated email cache + retry
+2. Local SQL bulk Auth (5k–100k) — GoTrue-compatible (`instance_id`, empty token columns, shared bcrypt)
+3. Profile company/location SQL backfill (trigger creates bare profiles)
+4. Session pool via password + `/api/auth/login` cookies (middleware requires SSR cookies, not Bearer alone)
 
-## Next execution steps
+### Orders
 
-1. Finish `supabase db reset` on local stack
-2. Smoke seed (2/4/20) then full 1000/2000/100k
-3. Issue sessions + Next runtime + order/cancel waves
-4. Cutoff / freeze / finance / soak / breakpoint
-5. Final certification matrix → GLOBAL_SCALE_CERTIFIED only if all hard gates pass
+- Bulk batched SQL preload: **100000 ACTIVE** with order_items, provider/company/employee/agreement
+- HTTP order path: login cookies OK; MSDI choice mapping still being aligned for full HTTP waves (`varmmat` → MSDI)
+
+## Cloud
+
+See `evidence/cloud-target-assessment.json`.
+
+- Local cannot set `GLOBAL_SCALE_CERTIFIED`
+- Shared staging branch is **AVAILABLE_BUT_NOT_ISOLATED**
+- Isolated production-like cloud requires **Supabase preview branch** (paid, not activated)
 
 ## Status
 
-- GLOBAL_SCALE_CERTIFIED = NO (in progress)
+- LOCAL_CORRECTNESS_CERTIFIED = NO (HTTP waves / cutoff / soak pending)
+- GLOBAL_SCALE_CERTIFIED = NO
 - NATIVE_CULINARY_APPROVED = 0/21
 - LOCALE_NATIVE_APPROVED = 0/24
 - PRODUCTION_DEPLOYMENT = NOT APPROVED
+- PRODUCTION_MUTATIONS = 0

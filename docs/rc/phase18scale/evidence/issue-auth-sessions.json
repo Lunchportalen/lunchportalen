@@ -1,0 +1,19 @@
+{
+  "phase": "18SCALE",
+  "strategy": "coverage",
+  "TOTAL_EMPLOYEE_PROFILES": 100000,
+  "AUTH_IDENTITIES": 100000,
+  "ACTIVE_LOAD_SESSIONS": 2250,
+  "PEAK_CONCURRENT_SESSIONS": "n/a_until_load_wave",
+  "failed": 0,
+  "companies_covered": 2000,
+  "countries_covered": 21,
+  "locales_covered": 24,
+  "packages_covered": [
+    "BASIS",
+    "ENTERPRISE",
+    "LUXUS"
+  ],
+  "sessions_path": "sessions.ndjson",
+  "note": "Do not report ACTIVE_LOAD_SESSIONS as 100000 unless 100000 sessions were issued."
+}

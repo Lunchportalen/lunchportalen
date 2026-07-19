@@ -1,0 +1,13 @@
+{
+  "phase": "18SCALE",
+  "TOTAL_EMPLOYEE_PROFILES": 100000,
+  "countries": 21,
+  "locales": 24,
+  "packages": [
+    "BASIS",
+    "ENTERPRISE",
+    "LUXUS"
+  ],
+  "path": "employee-manifest.ndjson",
+  "stamped_at": "2026-07-19T14:02:14.524Z"
+}

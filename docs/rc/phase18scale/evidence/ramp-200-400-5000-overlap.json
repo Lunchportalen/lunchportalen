@@ -1,0 +1,14 @@
+﻿{
+  "RAMP_200_400_5000": "PASS",
+  "SEQUENTIAL_RERUN_DIFFERENCE": 0,
+  "OVERLAPPING_SEED_DUPLICATES": 0,
+  "OVERLAPPING_SEED_ORPHANS": 0,
+  "PROVIDER_IS_OWN_CUSTOMER": 0,
+  "CROSS_COUNTRY_REFERENCE_ERRORS": 0,
+  "AUTH_SEED_IDEMPOTENCY": "PASS",
+  "overlap_a_exit": 0,
+  "overlap_b_exit": 0,
+  "overlap_a_employees": 5000,
+  "overlap_b_employees": 5000,
+  "recordedAt": "2026-07-19T14:37:11.3395784+02:00"
+}

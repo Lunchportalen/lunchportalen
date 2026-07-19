@@ -24,6 +24,7 @@ import {
   currencyForCountry,
   timezoneForCountry,
   localeForEmployeeIndex,
+  preferredLocaleDbForEmployeeIndex,
   synthEmail,
   synthSlug,
   buildProviderWeights,
@@ -36,9 +37,21 @@ const PASSWORD =
   process.env.PHASE18_SYNTH_PASSWORD ||
   `P18Scale-${crypto.createHash("sha256").update("phase18scale-v1").digest("hex").slice(0, 24)}`;
 
-const dryProviders = Number(process.env.PHASE18_SEED_PROVIDERS || PROVIDER_COUNT);
-const dryCompanies = Number(process.env.PHASE18_SEED_COMPANIES || COMPANY_COUNT);
-const employeeTarget = Number(process.env.PHASE18_SEED_EMPLOYEES || EMPLOYEE_COUNT);
+function envInt(...keys) {
+  for (const k of keys) {
+    const v = process.env[k];
+    if (v != null && String(v).trim() !== "") {
+      const n = Number(v);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+// Prefer short knobs (PHASE18_PROVIDERS) over SEED_* so stale SEED_* cannot pin a prior ramp.
+// Use nullish coalescing — 0 must remain a valid employeeTarget (org-only seed).
+const dryProviders = envInt("PHASE18_PROVIDERS", "PHASE18_SEED_PROVIDERS") ?? PROVIDER_COUNT;
+const dryCompanies = envInt("PHASE18_COMPANIES", "PHASE18_SEED_COMPANIES") ?? COMPANY_COUNT;
+const employeeTarget = envInt("PHASE18_EMPLOYEES", "PHASE18_SEED_EMPLOYEES") ?? EMPLOYEE_COUNT;
 
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
@@ -55,30 +68,81 @@ function orgnr(i) {
   return String(900000000 + (i % 99999999)).padStart(9, "0");
 }
 
+/** @type {Map<string, {id:string,email?:string,app_metadata?:object}>|null} */
+let authEmailCache = null;
+
+async function warmAuthEmailCache(admin) {
+  if (authEmailCache) return authEmailCache;
+  authEmailCache = new Map();
+  const perPage = 1000;
+  for (let page = 1; page <= 500; page += 1) {
+    const listed = await admin.auth.admin.listUsers({ page, perPage });
+    if (listed.error) throw new Error(`auth.listUsers: ${listed.error.message}`);
+    const users = listed.data?.users ?? [];
+    for (const u of users) {
+      const email = String(u.email ?? "").toLowerCase();
+      if (email) authEmailCache.set(email, u);
+    }
+    if (users.length < perPage) break;
+  }
+  console.log(`auth_cache_warmed=${authEmailCache.size}`);
+  return authEmailCache;
+}
+
 async function findAuthUserByEmail(admin, email) {
   const want = String(email).toLowerCase();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const res = await fetch(`${url}/auth/v1/admin/users?email=${encodeURIComponent(want)}`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  await warmAuthEmailCache(admin);
+  if (authEmailCache.has(want)) return authEmailCache.get(want);
+
+  // Prefer email query when GoTrue supports it (misses after concurrent create).
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "");
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const res = await fetch(`${url}/auth/v1/admin/users?email=${encodeURIComponent(want)}`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const users = json?.users ?? [];
+      const hit = users.find((u) => String(u.email ?? "").toLowerCase() === want);
+      if (hit) {
+        authEmailCache.set(want, hit);
+        return hit;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+async function updateAuthUser(admin, existing, meta) {
+  const { error } = await admin.auth.admin.updateUserById(existing.id, {
+    password: PASSWORD,
+    email_confirm: true,
+    user_metadata: { ...meta, [MARK]: true },
+    app_metadata: { ...(existing.app_metadata ?? {}), [MARK]: true },
   });
-  if (!res.ok) return null;
-  const json = await res.json();
-  const users = json?.users ?? [];
-  return users.find((u) => String(u.email ?? "").toLowerCase() === want) ?? null;
+  if (error) throw new Error(`auth.updateUser ${existing.email}: ${error.message}`);
+  return existing.id;
+}
+
+function authAlreadyMarked(existing) {
+  const app = existing?.app_metadata ?? {};
+  const user = existing?.user_metadata ?? {};
+  return Boolean(app[MARK] || user[MARK] || app.phase18 || user.phase18);
 }
 
 async function upsertAuthUser(admin, email, meta) {
   const existing = await findAuthUserByEmail(admin, email);
   if (existing) {
-    await admin.auth.admin.updateUserById(existing.id, {
-      password: PASSWORD,
-      email_confirm: true,
-      user_metadata: { ...meta, [MARK]: true },
-      app_metadata: { ...(existing.app_metadata ?? {}), [MARK]: true },
-    });
-    return existing.id;
+    // Idempotent fast-path: skip Admin update when already synthetic-marked.
+    if (authAlreadyMarked(existing) && process.env.PHASE18_AUTH_FORCE_UPDATE !== "1") {
+      return existing.id;
+    }
+    return updateAuthUser(admin, existing, meta);
   }
+
   const created = await admin.auth.admin.createUser({
     email,
     password: PASSWORD,
@@ -86,11 +150,25 @@ async function upsertAuthUser(admin, email, meta) {
     user_metadata: { ...meta, [MARK]: true },
     app_metadata: { [MARK]: true },
   });
-  if (!created.error) return created.data.user.id;
+  if (!created.error) {
+    authEmailCache?.set(String(email).toLowerCase(), created.data.user);
+    return created.data.user.id;
+  }
+
   const msg = String(created.error.message || "").toLowerCase();
   if (msg.includes("already") && msg.includes("register")) {
-    const raced = await findAuthUserByEmail(admin, email);
-    if (raced) return raced.id;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      // Invalidate only after first miss; avoid thrashing full listUsers warm.
+      if (attempt > 0) authEmailCache = null;
+      const raced = await findAuthUserByEmail(admin, email);
+      if (raced) {
+        if (authAlreadyMarked(raced) && process.env.PHASE18_AUTH_FORCE_UPDATE !== "1") {
+          return raced.id;
+        }
+        return updateAuthUser(admin, raced, meta);
+      }
+      await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+    }
   }
   throw new Error(`auth.createUser ${email}: ${created.error.message}`);
 }
@@ -207,7 +285,7 @@ async function main() {
           contact_phone: "40000000",
           address: `${cc} Scale Street 1`,
           timezone: timezoneForCountry(cc),
-          preferred_locale: localeForEmployeeIndex(c),
+          preferred_locale: preferredLocaleDbForEmployeeIndex(c),
           billing_country: cc,
           orgnr: orgnr(c),
         })
@@ -223,7 +301,7 @@ async function main() {
         contact_phone: "40000000",
         address: `${cc} Scale Street 1`,
         timezone: timezoneForCountry(cc),
-        preferred_locale: localeForEmployeeIndex(c),
+        preferred_locale: preferredLocaleDbForEmployeeIndex(c),
         billing_country: cc,
         orgnr: orgnr(c),
         employee_count: 50,
@@ -304,48 +382,71 @@ async function main() {
 
   const employeeManifest = [];
   const empPerCompany = Math.max(1, Math.ceil(employeeTarget / companyRows.length));
+  const authConcurrency = Number(process.env.PHASE18_AUTH_CONCURRENCY || 12);
+  const jobs = [];
   let empCount = 0;
   for (let c = 0; c < companyRows.length && empCount < employeeTarget; c += 1) {
     const co = companyRows[c];
     const nHere = Math.min(empPerCompany, employeeTarget - empCount);
     for (let e = 0; e < nHere; e += 1) {
       const globalIndex = empCount;
-      const email = synthEmail("emp", globalIndex);
-      const userId = await upsertAuthUser(admin, email, {
-        country: co.country,
-        package: co.package,
-        locale: localeForEmployeeIndex(globalIndex),
-      });
-      await admin.from("profiles").upsert(
-        {
-          id: userId,
-          email,
-          role: "employee",
-          company_id: co.company_id,
-          location_id: co.location_id,
-          full_name: `P18 Emp ${globalIndex}`,
-          preferred_locale: localeForEmployeeIndex(globalIndex),
-          active: true,
-          is_active: true,
-        },
-        { onConflict: "id" },
-      );
-      employeeManifest.push({
-        user_id: userId,
-        email,
-        company_id: co.company_id,
-        location_id: co.location_id,
-        provider_id: co.provider_id,
-        country: co.country,
-        package: co.package,
-        locale: localeForEmployeeIndex(globalIndex),
-        index: globalIndex,
-      });
       empCount += 1;
-      if (empCount % 200 === 0) console.log(`employees ${empCount}/${employeeTarget}`);
+      jobs.push({ co, globalIndex });
     }
   }
-  report.SYNTHETIC_EMPLOYEES = empCount;
+
+  async function mapPool(items, limit, fn) {
+    const ret = new Array(items.length);
+    let i = 0;
+    async function worker() {
+      while (i < items.length) {
+        const idx = i;
+        i += 1;
+        ret[idx] = await fn(items[idx], idx);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
+    return ret;
+  }
+
+  const created = await mapPool(jobs, authConcurrency, async ({ co, globalIndex }) => {
+    const email = synthEmail("emp", globalIndex);
+    const userId = await upsertAuthUser(admin, email, {
+      country: co.country,
+      package: co.package,
+      locale: localeForEmployeeIndex(globalIndex),
+    });
+    const { error: profErr } = await admin.from("profiles").upsert(
+      {
+        id: userId,
+        email,
+        role: "employee",
+        company_id: co.company_id,
+        location_id: co.location_id,
+        full_name: `P18 Emp ${globalIndex}`,
+        preferred_locale: preferredLocaleDbForEmployeeIndex(globalIndex),
+        active: true,
+        is_active: true,
+      },
+      { onConflict: "id" },
+    );
+    if (profErr) throw new Error(`profile upsert ${email}: ${profErr.message}`);
+    if ((globalIndex + 1) % 200 === 0) console.log(`employees ${globalIndex + 1}/${employeeTarget}`);
+    return {
+      user_id: userId,
+      email,
+      company_id: co.company_id,
+      location_id: co.location_id,
+      provider_id: co.provider_id,
+      country: co.country,
+      package: co.package,
+      locale: localeForEmployeeIndex(globalIndex),
+      preferred_locale_db: preferredLocaleDbForEmployeeIndex(globalIndex),
+      index: globalIndex,
+    };
+  });
+  employeeManifest.push(...created);
+  report.SYNTHETIC_EMPLOYEES = employeeManifest.length;
 
   for (const co of companyRows) {
     const { data: msd, error: msdErr } = await admin

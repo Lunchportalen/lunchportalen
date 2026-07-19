@@ -57,6 +57,16 @@ export function localeForEmployeeIndex(i) {
   return LOCALES[i % LOCALES.length];
 }
 
+/** DB profiles.preferred_locale check allows language tags only (nb, en, …). */
+export function preferredLocaleDbForEmployeeIndex(i) {
+  const full = localeForEmployeeIndex(i);
+  const lang = String(full).split("-")[0].toLowerCase();
+  const allowed = new Set([
+    "nb", "en", "sv", "da", "fi", "de", "fr", "es", "it", "nl", "pl", "ro", "cs", "pt", "el",
+  ]);
+  return allowed.has(lang) ? lang : "en";
+}
+
 export function currencyForCountry(cc) {
   const map = {
     NO: "NOK", SE: "SEK", DK: "DKK", FI: "EUR", GB: "GBP", DE: "EUR", FR: "EUR",

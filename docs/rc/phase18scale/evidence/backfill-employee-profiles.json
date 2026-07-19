@@ -1,0 +1,11 @@
+{
+  "phase": "18SCALE",
+  "companies": 2000,
+  "employees": 100000,
+  "empPerCompany": 50,
+  "PROFILES_WITH_COMPANY": 100000,
+  "PROFILES_NULL_COMPANY": 0,
+  "DISTINCT_COMPANIES_ON_PROFILES": 2000,
+  "pass": true,
+  "stamped_at": "2026-07-19T13:52:14.887Z"
+}

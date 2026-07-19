@@ -46,19 +46,49 @@ export const options = {
   },
 };
 
+const password =
+  __ENV.PHASE18_SYNTH_PASSWORD ||
+  "P18Scale-REPLACE"; // set PHASE18_SYNTH_PASSWORD in wrapper
+
+const vuCookies = {};
+
+function cookieFor(s) {
+  const key = s.email;
+  if (vuCookies[key]) return vuCookies[key];
+  const login = http.post(
+    `${base}/api/auth/login`,
+    JSON.stringify({ email: s.email, password }),
+    { headers: { "Content-Type": "application/json", Accept: "application/json" }, timeout: "30s" },
+  );
+  const jar = http.cookieJar();
+  const cookies = jar.cookiesForURL(base) || {};
+  const names = Object.keys(cookies);
+  const hasSb = names.some((n) => n.startsWith("sb-") && n.includes("auth-token"));
+  if (login.status !== 200 || !hasSb) {
+    throw new Error(`login failed ${s.email} status=${login.status}`);
+  }
+  vuCookies[key] = true;
+  return true;
+}
+
 export default function () {
   if (!sessions.length) {
     orderOk.add(false);
     return;
   }
   const s = sessions[(__ITER + __VU) % sessions.length];
+  try {
+    cookieFor(s);
+  } catch {
+    orderOk.add(false);
+    return;
+  }
   const idem = `p18-ord-${s.user_id}-${serviceDate}-${__ITER}-${__VU}`;
   const res = http.post(
     `${base}/api/orders`,
     JSON.stringify({ date: serviceDate, action: "set", choice_key: "varmmat" }),
     {
       headers: {
-        Authorization: `Bearer ${s.access_token}`,
         "Content-Type": "application/json",
         Accept: "application/json",
         "Idempotency-Key": idem,

@@ -1,0 +1,69 @@
+{
+  "phase": "18SCALE",
+  "stamped_at": "2026-07-19T14:00:00.000Z",
+  "PHASE18_ENGINE_BASELINE_SHA": "c4df05397374648025024d67204d801cae6f93ea",
+  "candidates": [
+    {
+      "id": "local_supabase_ephemeral",
+      "classification": "AVAILABLE_AND_ISOLATED",
+      "url_host": "127.0.0.1:54321",
+      "role": "LOCAL_CORRECTNESS_ONLY",
+      "notes": "Full synthetic matrix populated. Cannot alone set GLOBAL_SCALE_CERTIFIED."
+    },
+    {
+      "id": "supabase_branch_staging",
+      "ref": "uigxsboqeruxflgzqztl",
+      "classification": "AVAILABLE_BUT_NOT_ISOLATED",
+      "reason": "Shared with Phase 17MENU cert / ongoing development; full 100k destructive load would disturb",
+      "role": "not used for full Phase 18 destructive load"
+    },
+    {
+      "id": "supabase_branch_staging_abc_signoff",
+      "ref": "iyrytpjacujscveivtfb",
+      "classification": "REQUIRES_PAID_UPGRADE",
+      "preview_status": "INACTIVE",
+      "notes": "Inactive preview branch; reactivation incurs compute cost"
+    },
+    {
+      "id": "production",
+      "ref": "hkpokyapzarefrgqzkos",
+      "classification": "UNSAFE",
+      "role": "forbidden"
+    },
+    {
+      "id": "new_supabase_preview_branch_phase18",
+      "classification": "REQUIRES_PAID_UPGRADE",
+      "provider": "Supabase",
+      "resource_class": "Preview branch (compute) on parent project",
+      "region": "eu-central-1 (parent project region — confirm in dashboard)",
+      "required_duration": "72 hours (seed + baseline + cert waves + 8h soak + margin)",
+      "maximum_estimated_cost": "$0.97 USD at $0.01344/hour × 72h",
+      "expected_automatic_cleanup_time": "Delete preview branch immediately after evidence archive (same day as soak end)",
+      "why_local_or_staging_insufficient": "Local Docker cannot certify production-like cloud RPS/latency/cost. Shared staging branch uigxsboqeruxflgzqztl is not isolated for destructive 100k load.",
+      "hard_gates_this_resource_certifies": [
+        "CLOUD_ENVIRONMENT_ISOLATED",
+        "ORDER_100K_30M",
+        "ORDER_100K_15M",
+        "CANCEL_50K_10M",
+        "CANCEL_50K_5M",
+        "STRESS_50K_60S",
+        "PRODUCTION_SNAPSHOTS_1000",
+        "EIGHT_HOUR_SOAK",
+        "MEASURED_CLOUD_BREAKPOINT",
+        "MEASURED_CLOUD_COST",
+        "GLOBAL_SCALE_CERTIFIED"
+      ],
+      "status": "NOT_ACTIVATED"
+    },
+    {
+      "id": "vercel_non_production_app",
+      "classification": "UNKNOWN",
+      "notes": "VERCEL_TOKEN exists in GitHub Actions secrets but not as a durable local session. staging.app may exist but must pair with an isolated DB, not shared staging.",
+      "role": "needs isolated Supabase branch before use"
+    }
+  ],
+  "decision_so_far": "Complete local correctness matrix first. Cloud GLOBAL_SCALE_CERTIFIED blocked until isolated paid-or-existing cloud stack is approved/activated.",
+  "CLOUD_ENVIRONMENT_ISOLATED": "NO",
+  "NEW_PAID_INFRASTRUCTURE": "NOT_USED",
+  "OWNER_RESOURCE_PACKET_READY": true
+}

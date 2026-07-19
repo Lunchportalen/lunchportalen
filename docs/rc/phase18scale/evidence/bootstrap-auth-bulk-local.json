@@ -1,0 +1,55 @@
+{
+  "phase": "18SCALE",
+  "mode": "local_sql_bulk",
+  "from": 50000,
+  "to": 100000,
+  "AUTH_BULK_CREATED_OR_PRESENT": 100000,
+  "AUTH_BULK_SKIPPED_EXISTING_EST": 0,
+  "TOTAL_P18_AUTH_USERS": 100000,
+  "VALID_SESSION_SAMPLE": "16/16",
+  "AUTH_SEED_IDEMPOTENCY": "PASS",
+  "samples": [
+    {
+      "email": "p18scale-emp-050000@load.lunchportalen.test",
+      "user_id": "69657a24-c7b6-4a2b-81f5-613d6cff71a1",
+      "ok": true
+    },
+    {
+      "email": "p18scale-emp-053125@load.lunchportalen.test",
+      "user_id": "01ef794f-50c2-4ef8-bb32-f2fb35d7621e",
+      "ok": true
+    },
+    {
+      "email": "p18scale-emp-056250@load.lunchportalen.test",
+      "user_id": "128c7339-d84b-44c6-bfa8-6a2e2a19fc5a",
+      "ok": true
+    },
+    {
+      "email": "p18scale-emp-059375@load.lunchportalen.test",
+      "user_id": "12832368-9085-43aa-8c64-aa2f541d52c6",
+      "ok": true
+    },
+    {
+      "email": "p18scale-emp-062500@load.lunchportalen.test",
+      "user_id": "422be128-609a-4707-96d6-7ef655271935",
+      "ok": true
+    },
+    {
+      "email": "p18scale-emp-065625@load.lunchportalen.test",
+      "user_id": "c3945d01-fbbb-4717-ba2f-ad9bc8bcc3a2",
+      "ok": true
+    },
+    {
+      "email": "p18scale-emp-068750@load.lunchportalen.test",
+      "user_id": "bcef94f2-69a4-439d-b614-fa06760815a1",
+      "ok": true
+    },
+    {
+      "email": "p18scale-emp-071875@load.lunchportalen.test",
+      "user_id": "8017f079-3d2c-4cd7-acc8-24f50dea13ea",
+      "ok": true
+    }
+  ],
+  "stamped_at": "2026-07-19T13:08:35.285Z",
+  "note": "Local-only. Cloud cert must use Admin API / supported import."
+}

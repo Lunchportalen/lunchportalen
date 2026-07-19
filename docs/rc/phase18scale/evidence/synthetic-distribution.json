@@ -1,10 +1,10 @@
 {
   "phase": "18SCALE",
-  "providers": 2,
-  "companies": 4,
-  "employees": 20,
-  "hottest_provider_weight": 0.6431758537525171,
-  "top10_provider_weight": 1,
+  "providers": 400,
+  "companies": 800,
+  "employees": 20000,
+  "hottest_provider_weight": 0.0972860880847204,
+  "top10_provider_weight": 0.3294168212327895,
   "service_date": "2026-07-20",
   "password_env": "PHASE18_SYNTH_PASSWORD"
 }
