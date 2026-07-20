@@ -382,7 +382,7 @@ async function main() {
 
   const employeeManifest = [];
   const empPerCompany = Math.max(1, Math.ceil(employeeTarget / companyRows.length));
-  const authConcurrency = Number(process.env.PHASE18_AUTH_CONCURRENCY || 12);
+  const authConcurrency = Number(process.env.PHASE18_AUTH_CONCURRENCY || 48);
   const jobs = [];
   let empCount = 0;
   for (let c = 0; c < companyRows.length && empCount < employeeTarget; c += 1) {
