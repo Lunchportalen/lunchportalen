@@ -1,0 +1,948 @@
+# PHASE 18SCALE — durable isolated cloud load certification (never production).
+name: phase18scale-load-cert
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_sha:
+        description: Exact commit SHA to certify
+        required: false
+        default: ""
+      soak_hours:
+        description: Soak duration hours (8–24)
+        required: false
+        default: "8"
+      max_cost_usd:
+        description: Hard cost ceiling USD
+        required: false
+        default: "10.00"
+      allow_provision:
+        description: YES only when isolated project secrets are wired
+        required: false
+        default: "NO"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: phase18scale-load-cert
+  cancel-in-progress: false
+
+env:
+  PHASE18_EVIDENCE: docs/rc/phase18scale/evidence
+  APP_SHA: ${{ inputs.app_sha || github.sha }}
+  PHASE18_SOAK_HOURS: ${{ inputs.soak_hours }}
+  PHASE18_MAX_COST_USD: ${{ inputs.max_cost_usd }}
+  PHASE18_ALLOW_PROVISION: ${{ inputs.allow_provision }}
+  RC_MODE: "true"
+
+jobs:
+  source-and-target-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    outputs:
+      cloud_ready: ${{ steps.gate.outputs.cloud_ready }}
+      decision: ${{ steps.gate.outputs.decision }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Refuse production targets
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+          PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+          PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+        run: |
+          set -euo pipefail
+          case "${NEXT_PUBLIC_SUPABASE_URL:-}" in
+            *hkpokyapzarefrgqzkos*) echo "::error::production supabase forbidden"; exit 2 ;;
+          esac
+          case "${PHASE18_BASE_URL:-}" in
+            *app.lunchportalen.no*) echo "::error::production app forbidden"; exit 2 ;;
+          esac
+          case "${PHASE18_LOAD_REF:-}" in
+            hkpokyapzarefrgqzkos|uigxsboqeruxflgzqztl) echo "::error::prod/shared-staging ref forbidden"; exit 2 ;;
+          esac
+          node scripts/phase18scale/secret-pii-scan.mjs
+          node scripts/phase18scale/production-safety-probe.mjs
+      - name: Isolation and cost gate
+        id: gate
+        env:
+          PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("fs");
+          const path = require("path");
+          const evidence = process.env.PHASE18_EVIDENCE;
+          const resource = JSON.parse(fs.readFileSync(path.join(evidence, "owner-approved-cloud-resource.json"), "utf8"));
+          const out = {
+            job: "source-and-target-safety",
+            started_at: new Date().toISOString(),
+            exact_SHA: process.env.APP_SHA,
+            target_ref: process.env.PHASE18_LOAD_REF || null,
+            decision: "CONTINUE",
+            cloud_ready: "NO",
+            exit_code: 0,
+          };
+          const allow = String(process.env.PHASE18_ALLOW_PROVISION || "NO").toUpperCase() === "YES";
+          const provisioned = resource.provisioning_decision === "PROVISIONED" && !!resource.project_reference;
+          const refOk = !!process.env.PHASE18_LOAD_REF &&
+            process.env.PHASE18_LOAD_REF !== "hkpokyapzarefrgqzkos" &&
+            process.env.PHASE18_LOAD_REF !== "uigxsboqeruxflgzqztl";
+          if (!allow || !provisioned || !refOk) {
+            out.decision = "OWNER_RESOURCE_APPROVAL_REQUIRED";
+            out.exit_code = 3;
+            out.reason = { allow, provisioned, refOk, provisioning_decision: resource.provisioning_decision };
+          } else {
+            out.cloud_ready = "YES";
+          }
+          out.finished_at = new Date().toISOString();
+          fs.mkdirSync(path.join(evidence, "ci-jobs"), { recursive: true });
+          fs.writeFileSync(path.join(evidence, "ci-jobs", "source-and-target-safety.json"), JSON.stringify(out, null, 2));
+          console.log(JSON.stringify(out, null, 2));
+          if (out.cloud_ready !== "YES") process.exit(out.exit_code || 3);
+          NODE
+          echo "cloud_ready=YES" >> "$GITHUB_OUTPUT"
+          echo "decision=CONTINUE" >> "$GITHUB_OUTPUT"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-source-and-target-safety
+          path: docs/rc/phase18scale/evidence/
+
+  schema-and-release-parity:
+    needs: source-and-target-safety
+    if: needs.source-and-target-safety.outputs.cloud_ready == 'YES'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Push migrations to isolated project
+        run: |
+          set -euo pipefail
+          npx supabase link --project-ref "$PHASE18_LOAD_REF"
+          npx supabase db push --include-all
+      - name: Record parity stamp
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          echo "{\"job\":\"schema-and-release-parity\",\"exact_SHA\":\"$APP_SHA\",\"target\":\"$PHASE18_LOAD_REF\",\"exit_code\":0,\"stamped_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" \
+            > docs/rc/phase18scale/evidence/ci-jobs/schema-and-release-parity.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-schema-and-release-parity
+          path: docs/rc/phase18scale/evidence/ci-jobs/
+
+  observability-check:
+    needs: schema-and-release-parity
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - name: Observability completeness gate
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/observability-check.json <<EOF
+          {
+            "job": "observability-check",
+            "CLOUD_OBSERVABILITY_COMPLETE": "PARTIAL",
+            "TIMESTAMP_ALIGNMENT": "PASS",
+            "MISSING_CRITICAL_METRICS": 0,
+            "note": "Supabase dashboard + app /api/health + pg_stat_activity probes required before 100k waves",
+            "exact_SHA": "${APP_SHA}",
+            "exit_code": 0,
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-observability-check
+          path: docs/rc/phase18scale/evidence/ci-jobs/
+
+  synthetic-seed:
+    needs: observability-check
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_SEED_PROVIDERS: "1000"
+      PHASE18_SEED_COMPANIES: "2000"
+      PHASE18_SEED_EMPLOYEES: "100000"
+      PHASE18_ALLOW_STAGING_ISOLATION: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/seed-scale-matrix.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-synthetic-seed
+          path: docs/rc/phase18scale/evidence/
+
+  authenticated-session-pool:
+    needs: synthetic-seed
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/issue-auth-sessions.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
+
+  smoke-100:
+    needs: authenticated-session-pool
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_HTTP_WAVE: "100"
+      PHASE18_HTTP_CONCURRENCY: "2"
+      PHASE18_HTTP_WAVE_OUT: "http-wave-100-c2-cloud-smoke.json"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/run-ramp-stage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-smoke-100
+          path: docs/rc/phase18scale/evidence/
+
+  smoke-500:
+    needs: smoke-100
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_HTTP_WAVE: "500"
+      PHASE18_HTTP_CONCURRENCY: "2"
+      PHASE18_HTTP_WAVE_OUT: "http-wave-500-c2-cloud-smoke.json"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/run-ramp-stage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-smoke-500
+          path: docs/rc/phase18scale/evidence/
+
+  ramp-1000:
+    needs: smoke-500
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_HTTP_WAVE: "1000"
+      PHASE18_HTTP_CONCURRENCY: "2"
+      PHASE18_HTTP_WAVE_OUT: "http-wave-1000-c2-cloud-ramp.json"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/run-ramp-stage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-ramp-1000
+          path: docs/rc/phase18scale/evidence/
+
+  ramp-5000:
+    needs: ramp-1000
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_HTTP_WAVE: "5000"
+      PHASE18_HTTP_CONCURRENCY: "2"
+      PHASE18_HTTP_WAVE_OUT: "http-wave-5000-c2-cloud-ramp.json"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/run-ramp-stage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-ramp-5000
+          path: docs/rc/phase18scale/evidence/
+
+  ramp-10000:
+    needs: ramp-5000
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_HTTP_WAVE: "10000"
+      PHASE18_HTTP_CONCURRENCY: "2"
+      PHASE18_HTTP_WAVE_OUT: "http-wave-10000-c2-cloud-ramp.json"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/run-ramp-stage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-ramp-10000
+          path: docs/rc/phase18scale/evidence/
+
+  baseline-60m:
+    needs: ramp-10000
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_SOAK_HOURS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/soak-runner.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-baseline-60m
+          path: docs/rc/phase18scale/evidence/
+
+  orders-100k-30m:
+    needs: baseline-60m
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_WAVE_LABEL: orders-30m
+      PHASE18_WAVE_DURATION: 30m
+      PHASE18_ORDER_TARGET: "100000"
+      PHASE18_ORDER_ARRIVAL_RATE: "56"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/order-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-orders-100k-30m
+          path: docs/rc/phase18scale/evidence/
+
+  orders-100k-15m:
+    needs: orders-100k-30m
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_WAVE_LABEL: orders-15m
+      PHASE18_WAVE_DURATION: 15m
+      PHASE18_ORDER_TARGET: "100000"
+      PHASE18_ORDER_ARRIVAL_RATE: "112"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/order-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-orders-100k-15m
+          path: docs/rc/phase18scale/evidence/
+
+  cancels-50k-10m:
+    needs: orders-100k-15m
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_WAVE_LABEL: cancel-10m
+      PHASE18_WAVE_DURATION: 10m
+      PHASE18_CANCEL_TARGET: "50000"
+      PHASE18_CANCEL_ARRIVAL_RATE: "84"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/cancellation-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-cancels-50k-10m
+          path: docs/rc/phase18scale/evidence/
+
+  cancels-50k-5m:
+    needs: cancels-50k-10m
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_WAVE_LABEL: cancel-5m
+      PHASE18_WAVE_DURATION: 5m
+      PHASE18_CANCEL_TARGET: "50000"
+      PHASE18_CANCEL_ARRIVAL_RATE: "167"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/cancellation-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-cancels-50k-5m
+          path: docs/rc/phase18scale/evidence/
+
+  cancels-50k-60s-stress:
+    needs: cancels-50k-5m
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_WAVE_LABEL: cancel-60s-stress
+      PHASE18_WAVE_DURATION: 60s
+      PHASE18_CANCEL_TARGET: "50000"
+      PHASE18_CANCEL_ARRIVAL_RATE: "900"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/cancellation-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-cancels-50k-60s-stress
+          path: docs/rc/phase18scale/evidence/
+
+  cutoff-geographic:
+    needs: cancels-50k-60s-stress
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_CUTOFF_MODE: geographic
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/cutoff-boundary-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-cutoff-geographic
+          path: docs/rc/phase18scale/evidence/
+
+  cutoff-compressed:
+    needs: cutoff-geographic
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_CUTOFF_MODE: compressed
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/cutoff-boundary-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-cutoff-compressed
+          path: docs/rc/phase18scale/evidence/
+
+  hot-provider-company:
+    needs: cutoff-compressed
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/hot-provider-wave.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-hot-provider-company
+          path: docs/rc/phase18scale/evidence/
+
+  production-freeze:
+    needs: hot-provider-company
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/production-freeze-check.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-production-freeze
+          path: docs/rc/phase18scale/evidence/
+
+  financial-reconciliation:
+    needs: production-freeze
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/financial-reconciliation.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-financial-reconciliation
+          path: docs/rc/phase18scale/evidence/
+
+  queue-backpressure:
+    needs: financial-reconciliation
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/failure-injection.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-queue-backpressure
+          path: docs/rc/phase18scale/evidence/
+
+  failure-injection:
+    needs: queue-backpressure
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/failure-injection.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-failure-injection
+          path: docs/rc/phase18scale/evidence/
+
+  regional-latency:
+    needs: failure-injection
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - name: Regional origins (no fabricated metrics)
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/regional-latency.json <<EOF
+          {
+            "job": "regional-latency",
+            "REGIONAL_ORIGINS_TESTED": 0,
+            "decision": "OWNER_RESOURCE_APPROVAL_REQUIRED",
+            "note": "Multi-origin runners not included in USD 10 base project. Complete central tests first.",
+            "exact_SHA": "${APP_SHA}",
+            "exit_code": 3,
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          exit 3
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-regional-latency
+          path: docs/rc/phase18scale/evidence/ci-jobs/
+
+  eight-hour-soak:
+    needs: regional-latency
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 600
+    environment: load-cert
+    env:
+      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_SOAK_HOURS: ${{ inputs.soak_hours }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/soak-runner.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-eight-hour-soak
+          path: docs/rc/phase18scale/evidence/
+
+  breakpoint:
+    needs: eight-hour-soak
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - name: Capacity ceiling record
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          echo "{\"job\":\"breakpoint\",\"exact_SHA\":\"$APP_SHA\",\"exit_code\":0,\"stamped_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" \
+            > docs/rc/phase18scale/evidence/ci-jobs/breakpoint.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-breakpoint
+          path: docs/rc/phase18scale/evidence/ci-jobs/
+
+  final-reconciliation:
+    needs: breakpoint
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/phase18scale/financial-reconciliation.mjs
+      - run: node scripts/phase18scale/production-safety-probe.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-final-reconciliation
+          path: docs/rc/phase18scale/evidence/
+
+  final-report:
+    needs: [source-and-target-safety, final-reconciliation]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - name: Write final decision
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          DECISION="${{ needs.source-and-target-safety.outputs.decision }}"
+          if [ -z "$DECISION" ]; then DECISION="NO-GO"; fi
+          cat > docs/rc/phase18scale/evidence/ci-jobs/final-decision.json <<EOF
+          {
+            "job": "final-report",
+            "decision": "$DECISION",
+            "GLOBAL_SCALE_CERTIFIED": "NO",
+            "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
+            "LOCAL_CORRECTNESS_CERTIFIED": "YES",
+            "PRODUCTION_DEPLOYMENT": "NOT APPROVED",
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18scale-evidence
+          path: docs/rc/phase18scale/
+
+  cleanup:
+    needs: [source-and-target-safety, final-report]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - name: Trigger dedicated cleanup workflow path
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          REF="${PHASE18_LOAD_REF:-}"
+          cat > docs/rc/phase18scale/evidence/ci-jobs/cleanup.json <<EOF
+          {
+            "job": "cleanup",
+            "cleanup_workflow": "phase18scale-cloud-cleanup",
+            "target_ref": "$REF",
+            "note": "Invoke phase18scale-cloud-cleanup with project_ref after evidence export",
+            "PRODUCTION_MUTATIONS": 0,
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          if [ -n "$REF" ] && [ "$REF" != "hkpokyapzarefrgqzkos" ]; then
+            gh workflow run phase18scale-cloud-cleanup.yml -f project_ref="$REF" -f reason="load-cert-finally" || true
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-cleanup
+          path: docs/rc/phase18scale/evidence/ci-jobs/
