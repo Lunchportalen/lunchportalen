@@ -1,0 +1,34 @@
+name: phase18-prepare-runtime
+description: Resolve isolated Supabase keys and start Next.js for Phase 18 HTTP load jobs
+inputs:
+  start_next:
+    description: Build and start Next.js on 127.0.0.1:3000
+    required: false
+    default: "true"
+  health_path:
+    description: Health check path
+    required: false
+    default: "/api/health"
+runs:
+  using: composite
+  steps:
+    - name: Resolve isolated keys
+      shell: bash
+      run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+    - name: Start Next runtime
+      if: inputs.start_next == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        npm run build
+        npx next start -H 127.0.0.1 -p 3000 > /tmp/next.log 2>&1 &
+        echo $! > /tmp/next.pid
+        export PHASE18_BASE_URL=http://127.0.0.1:3000
+        echo "PHASE18_BASE_URL=$PHASE18_BASE_URL" >> "$GITHUB_ENV"
+        for i in $(seq 1 90); do
+          CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$PHASE18_BASE_URL${{ inputs.health_path }}" || true)
+          if [ "$CODE" = "200" ]; then exit 0; fi
+          sleep 2
+        done
+        tail -n 100 /tmp/next.log || true
+        exit 1
