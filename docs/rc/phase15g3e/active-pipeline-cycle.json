@@ -1,9 +1,9 @@
 {
-  "runId": "29723565752",
-  "started_at": "2026-07-20T07:07:12.614Z",
-  "completed_at": "2026-07-20T07:07:42.554Z",
-  "replies_found": 0,
-  "messages_classified": 0,
+  "runId": "29733697169",
+  "started_at": "2026-07-20T10:04:22.362Z",
+  "completed_at": "2026-07-20T10:04:45.574Z",
+  "replies_found": 1,
+  "messages_classified": 1,
   "follow_ups_sent": 0,
   "failures": [],
   "next_due_action": "2026-07-22T22:47:30.786Z",
@@ -14,9 +14,9 @@
     "error": null
   },
   "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
-  "quotes_waiting": 0,
-  "owner_batch": "WAITING_FOR_QUOTES",
-  "notify_owner": false,
+  "quotes_waiting": 1,
+  "owner_batch": "READY_FOR_OWNER",
+  "notify_owner": true,
   "follow_up_dates": {
     "firstDueVerified": true,
     "secondDueVerified": true,
@@ -27,7 +27,7 @@
     "backupAfterSecondOnly": true
   },
   "duplicate_sends": 0,
-  "Decision": "DURABLE_PIPELINE_ACTIVE",
+  "Decision": "OWNER_ACTION_REQUIRED",
   "Follow_up": {
     "dueNow": [],
     "sent": [],

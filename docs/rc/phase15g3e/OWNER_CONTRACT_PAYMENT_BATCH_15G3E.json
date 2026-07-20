@@ -1,6 +1,33 @@
 {
   "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
-  "status": "WAITING_FOR_QUOTES",
-  "updatedAt": "2026-07-20T07:07:42.554Z",
-  "firms": []
+  "status": "READY_FOR_OWNER",
+  "createdAt": "2026-07-20T10:04:45.574Z",
+  "firms": [
+    {
+      "firm": "TransPerfect",
+      "firmId": "transperfect-direct",
+      "scope": [
+        "native-* backup"
+      ],
+      "countriesLocales": [],
+      "proposedReviewers": "PENDING",
+      "validatedCredentials": "PENDING",
+      "price": "SEE_EMAIL_THREAD",
+      "turnaround": "SEE_EMAIL_THREAD",
+      "contractRequirements": "UNKNOWN",
+      "paymentRequirements": "UNKNOWN",
+      "recommendation": "NEGOTIATE",
+      "ownerDecisionsNeeded": [
+        "supplier_selection",
+        "contract_signature",
+        "cost_payment_approval"
+      ]
+    }
+  ],
+  "ownerOnly": [
+    "supplier selection",
+    "contract signature",
+    "cost/payment approval",
+    "mandatory legal/authority signature"
+  ]
 }

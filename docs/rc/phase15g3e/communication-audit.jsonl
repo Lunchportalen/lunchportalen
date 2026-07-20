@@ -1,2 +1,3 @@
 {"type":"RUN_COMPLETE","decision":"DURABLE_PIPELINE_ACTIVE","replies":0,"followUpsSent":0,"at":"2026-07-17T08:24:47.937Z","runId":"local-2026-07-17T08-24-44-951Z-12dc4df1"}
-{"type":"RUN_COMPLETE","decision":"DURABLE_PIPELINE_ACTIVE","replies":0,"followUpsSent":0,"at":"2026-07-20T07:07:42.562Z","runId":"29723565752"}
+{"type":"INBOUND_CLASSIFIED","firmId":"transperfect-direct","messageId":"<0a473371c9e246aca41c15621da247e3@transperfect.com>","classification":"QUOTE_RECEIVED","attachmentCount":1,"at":"2026-07-20T10:04:45.452Z","runId":"29733697169"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-07-20T10:04:45.582Z","runId":"29733697169"}
