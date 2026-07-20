@@ -203,80 +203,194 @@ async function main() {
 
   console.log(JSON.stringify({ seed: { dryProviders, dryCompanies, employeeTarget, serviceDate, ref } }));
 
-  const providerIds = [];
-  for (let p = 0; p < dryProviders; p += 1) {
-    const cc = countryForProviderIndex(p);
-    const slug = synthSlug("prov", p);
-    const pid = crypto.randomUUID();
-    const { data: existing } = await admin.from("providers").select("id").eq("slug", slug).maybeSingle();
-    const id = existing?.id || pid;
-    const { error: pErr } = await admin.from("providers").upsert(
-      {
-        id,
-        name: `P18 ${cc} Provider ${p}`,
-        slug,
-        contact_email: synthEmail("prov", p),
-        billing_model: "invoice_only",
-        status: "ACTIVE",
-        description: MARK,
-      },
-      { onConflict: "slug" },
-    );
-    if (pErr) throw new Error(`provider ${p}: ${pErr.message}`);
-    await admin.from("organizations").upsert(
-      {
-        id,
-        type: "provider",
-        name: `P18 ${cc} Provider ${p}`,
-        slug,
-        status: "ACTIVE",
-        legacy_source: "provider",
-      },
-      { onConflict: "id" },
-    ).then(() => null).catch(() => null);
-
-    for (const pkg of PACKAGES) {
-      await admin.from("provider_price_rules").upsert(
-        {
-          provider_id: id,
-          market_code: cc,
-          tier: pkg,
-          amount_ex_vat: pkg === "BASIS" ? 9000 : pkg === "LUXUS" ? 13000 : 17000,
-          currency: currencyForCountry(cc),
-          is_default: true,
-          source: "provider",
-          tax_basis: "ex_vat",
-        },
-        { onConflict: "provider_id,market_code,tier" },
-      ).then(() => null).catch(() => null);
+  async function pageSelect(table, columns, filterFn) {
+    const out = [];
+    for (let from = 0; from < 200_000; from += 1000) {
+      let q = admin.from(table).select(columns).range(from, from + 999);
+      q = filterFn(q);
+      const { data, error } = await q;
+      if (error) throw new Error(`${table} page ${from}: ${error.message}`);
+      if (!data?.length) break;
+      out.push(...data);
+      if (data.length < 1000) break;
     }
+    return out;
+  }
 
-    providerIds.push({ id, index: p, country: cc, slug });
-    if ((p + 1) % 50 === 0) console.log(`providers ${p + 1}/${dryProviders}`);
+  async function loadExistingProviders() {
+    const { count, error } = await admin
+      .from("providers")
+      .select("id", { count: "exact", head: true })
+      .like("slug", "p18scale-prov-%");
+    if (error) throw new Error(`provider count: ${error.message}`);
+    if ((count || 0) < dryProviders) return null;
+    const rows = await pageSelect("providers", "id,slug", (q) => q.like("slug", "p18scale-prov-%"));
+    const byIndex = new Map();
+    for (const r of rows) {
+      const m = String(r.slug || "").match(/p18scale-prov-(\d+)$/);
+      if (!m) continue;
+      const index = Number(m[1]);
+      byIndex.set(index, {
+        id: r.id,
+        index,
+        country: countryForProviderIndex(index),
+        slug: r.slug,
+      });
+    }
+    const providerIds = [];
+    for (let p = 0; p < dryProviders; p += 1) {
+      const hit = byIndex.get(p);
+      if (!hit) return null;
+      providerIds.push(hit);
+    }
+    console.log(`providers_fast_resume=${providerIds.length}`);
+    return providerIds;
+  }
+
+  async function loadExistingCompanies(providerIds) {
+    const { count, error } = await admin
+      .from("companies")
+      .select("id", { count: "exact", head: true })
+      .like("contact_email", "p18scale-co-%");
+    if (error) throw new Error(`company count: ${error.message}`);
+    if ((count || 0) < dryCompanies) return null;
+    const rows = await pageSelect(
+      "companies",
+      "id,default_location_id,provider_id,contact_email",
+      (q) => q.like("contact_email", "p18scale-co-%"),
+    );
+    const byIndex = new Map();
+    for (const r of rows) {
+      const m = String(r.contact_email || "").match(/p18scale-co-[a-z]+-(\d+)@/i);
+      if (!m) continue;
+      const index = Number(m[1]);
+      byIndex.set(index, r);
+    }
+    const companyRows = [];
+    for (let c = 0; c < dryCompanies; c += 1) {
+      const provider = providerIds[c % providerIds.length];
+      const pkg = packageForCompanyIndex(c);
+      const contactEmail = synthEmail(`co-${pkg.toLowerCase()}`, c);
+      const hit = byIndex.get(c);
+      if (!hit?.id || !hit.default_location_id) return null;
+      if (hit.provider_id && hit.provider_id === hit.id) report.PROVIDER_IS_OWN_CUSTOMER += 1;
+      companyRows.push({
+        company_id: hit.id,
+        location_id: hit.default_location_id,
+        provider_id: hit.provider_id || provider.id,
+        country: provider.country,
+        package: pkg,
+        index: c,
+        contact_email: contactEmail,
+      });
+    }
+    console.log(`companies_fast_resume=${companyRows.length}`);
+    return companyRows;
+  }
+
+  let providerIds = await loadExistingProviders();
+  if (!providerIds) {
+    providerIds = [];
+    for (let p = 0; p < dryProviders; p += 1) {
+      const cc = countryForProviderIndex(p);
+      const slug = synthSlug("prov", p);
+      const pid = crypto.randomUUID();
+      const { data: existing } = await admin.from("providers").select("id").eq("slug", slug).maybeSingle();
+      const id = existing?.id || pid;
+      const { error: pErr } = await admin.from("providers").upsert(
+        {
+          id,
+          name: `P18 ${cc} Provider ${p}`,
+          slug,
+          contact_email: synthEmail("prov", p),
+          billing_model: "invoice_only",
+          status: "ACTIVE",
+          description: MARK,
+        },
+        { onConflict: "slug" },
+      );
+      if (pErr) throw new Error(`provider ${p}: ${pErr.message}`);
+      await admin
+        .from("organizations")
+        .upsert(
+          {
+            id,
+            type: "provider",
+            name: `P18 ${cc} Provider ${p}`,
+            slug,
+            status: "ACTIVE",
+            legacy_source: "provider",
+          },
+          { onConflict: "id" },
+        )
+        .then(() => null)
+        .catch(() => null);
+
+      for (const pkg of PACKAGES) {
+        await admin
+          .from("provider_price_rules")
+          .upsert(
+            {
+              provider_id: id,
+              market_code: cc,
+              tier: pkg,
+              amount_ex_vat: pkg === "BASIS" ? 9000 : pkg === "LUXUS" ? 13000 : 17000,
+              currency: currencyForCountry(cc),
+              is_default: true,
+              source: "provider",
+              tax_basis: "ex_vat",
+            },
+            { onConflict: "provider_id,market_code,tier" },
+          )
+          .then(() => null)
+          .catch(() => null);
+      }
+
+      providerIds.push({ id, index: p, country: cc, slug });
+      if ((p + 1) % 50 === 0) console.log(`providers ${p + 1}/${dryProviders}`);
+    }
   }
   report.SYNTHETIC_PROVIDERS = providerIds.length;
 
-  const companyRows = [];
-  for (let c = 0; c < dryCompanies; c += 1) {
-    const provider = providerIds[c % providerIds.length];
-    const pkg = packageForCompanyIndex(c);
-    const cc = provider.country;
-    const contactEmail = synthEmail(`co-${pkg.toLowerCase()}`, c);
-    const coName = `P18 ${cc} ${pkg} Co ${c}`;
-    const { data: existingCo } = await admin
-      .from("companies")
-      .select("id, default_location_id, provider_id")
-      .eq("contact_email", contactEmail)
-      .limit(1)
-      .maybeSingle();
-
-    let companyId = existingCo?.id || crypto.randomUUID();
-    let locationId = existingCo?.default_location_id || crypto.randomUUID();
-
-    if (existingCo?.id) {
-      await admin
+  let companyRows = await loadExistingCompanies(providerIds);
+  if (!companyRows) {
+    companyRows = [];
+    for (let c = 0; c < dryCompanies; c += 1) {
+      const provider = providerIds[c % providerIds.length];
+      const pkg = packageForCompanyIndex(c);
+      const cc = provider.country;
+      const contactEmail = synthEmail(`co-${pkg.toLowerCase()}`, c);
+      const coName = `P18 ${cc} ${pkg} Co ${c}`;
+      const { data: existingCo } = await admin
         .from("companies")
-        .update({
+        .select("id, default_location_id, provider_id")
+        .eq("contact_email", contactEmail)
+        .limit(1)
+        .maybeSingle();
+
+      let companyId = existingCo?.id || crypto.randomUUID();
+      let locationId = existingCo?.default_location_id || crypto.randomUUID();
+
+      if (existingCo?.id) {
+        await admin
+          .from("companies")
+          .update({
+            name: coName,
+            status: "ACTIVE",
+            provider_id: provider.id,
+            contact_name: "P18 Admin",
+            contact_email: contactEmail,
+            contact_phone: "40000000",
+            address: `${cc} Scale Street 1`,
+            timezone: timezoneForCountry(cc),
+            preferred_locale: preferredLocaleDbForEmployeeIndex(c),
+            billing_country: cc,
+            orgnr: orgnr(c),
+          })
+          .eq("id", companyId);
+      } else {
+        const { error: cErr } = await admin.from("companies").insert({
+          id: companyId,
           name: coName,
           status: "ACTIVE",
           provider_id: provider.id,
@@ -288,61 +402,46 @@ async function main() {
           preferred_locale: preferredLocaleDbForEmployeeIndex(c),
           billing_country: cc,
           orgnr: orgnr(c),
-        })
-        .eq("id", companyId);
-    } else {
-      const { error: cErr } = await admin.from("companies").insert({
-        id: companyId,
-        name: coName,
-        status: "ACTIVE",
-        provider_id: provider.id,
-        contact_name: "P18 Admin",
-        contact_email: contactEmail,
-        contact_phone: "40000000",
-        address: `${cc} Scale Street 1`,
-        timezone: timezoneForCountry(cc),
-        preferred_locale: preferredLocaleDbForEmployeeIndex(c),
-        billing_country: cc,
-        orgnr: orgnr(c),
-        employee_count: 50,
-      });
-      if (cErr) throw new Error(`company ${c}: ${cErr.message}`);
-    }
+          employee_count: 50,
+        });
+        if (cErr) throw new Error(`company ${c}: ${cErr.message}`);
+      }
 
-    if (existingCo?.provider_id && existingCo.provider_id === companyId) {
-      report.PROVIDER_IS_OWN_CUSTOMER += 1;
-    }
+      if (existingCo?.provider_id && existingCo.provider_id === companyId) {
+        report.PROVIDER_IS_OWN_CUSTOMER += 1;
+      }
 
-    const { data: loc } = await admin
-      .from("company_locations")
-      .select("id")
-      .eq("company_id", companyId)
-      .limit(1)
-      .maybeSingle();
-    if (loc?.id) {
-      locationId = loc.id;
-    } else {
-      const { error: lErr } = await admin.from("company_locations").insert({
-        id: locationId,
+      const { data: loc } = await admin
+        .from("company_locations")
+        .select("id")
+        .eq("company_id", companyId)
+        .limit(1)
+        .maybeSingle();
+      if (loc?.id) {
+        locationId = loc.id;
+      } else {
+        const { error: lErr } = await admin.from("company_locations").insert({
+          id: locationId,
+          company_id: companyId,
+          name: "Hovedlokasjon",
+          address: `${cc} Scale Street 1`,
+          status: "ACTIVE",
+        });
+        if (lErr) throw new Error(`location ${c}: ${lErr.message}`);
+      }
+      await admin.from("companies").update({ default_location_id: locationId }).eq("id", companyId);
+
+      companyRows.push({
         company_id: companyId,
-        name: "Hovedlokasjon",
-        address: `${cc} Scale Street 1`,
-        status: "ACTIVE",
+        location_id: locationId,
+        provider_id: provider.id,
+        country: cc,
+        package: pkg,
+        index: c,
+        contact_email: contactEmail,
       });
-      if (lErr) throw new Error(`location ${c}: ${lErr.message}`);
+      if ((c + 1) % 100 === 0) console.log(`companies ${c + 1}/${dryCompanies}`);
     }
-    await admin.from("companies").update({ default_location_id: locationId }).eq("id", companyId);
-
-    companyRows.push({
-      company_id: companyId,
-      location_id: locationId,
-      provider_id: provider.id,
-      country: cc,
-      package: pkg,
-      index: c,
-      contact_email: contactEmail,
-    });
-    if ((c + 1) % 100 === 0) console.log(`companies ${c + 1}/${dryCompanies}`);
   }
   report.SYNTHETIC_COMPANIES = companyRows.length;
 
