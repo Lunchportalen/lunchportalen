@@ -1,0 +1,116 @@
+# PHASE 18SCALE — one-shot bootstrap: schema push + wire PHASE18 secrets for isolated project.
+# Never production. Uses SUPABASE_ACCESS_TOKEN only.
+name: phase18scale-cloud-bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_ref:
+        description: Isolated Phase 18 project ref
+        required: true
+        default: "mvjmukgfslukgohkuqhr"
+      app_sha:
+        description: Engine SHA to check out for migrations
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: phase18scale-cloud-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.app_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Refuse forbidden refs
+        env:
+          REF: ${{ inputs.project_ref }}
+        run: |
+          set -euo pipefail
+          case "$REF" in
+            hkpokyapzarefrgqzkos|uigxsboqeruxflgzqztl) echo "::error::forbidden ref"; exit 2 ;;
+          esac
+
+      - name: Fetch project keys via Management API
+        id: keys
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ inputs.project_ref }}
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}"
+          curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$REF/api-keys" > /tmp/keys.json
+          ANON=$(node -e "const k=require('/tmp/keys.json'); const a=k.find(x=>x.name==='anon'||x.name==='publishable'); if(!a) process.exit(2); console.log(a.api_key)")
+          SERVICE=$(node -e "const k=require('/tmp/keys.json'); const a=k.find(x=>x.name==='service_role'||x.name==='secret'); if(!a) process.exit(2); console.log(a.api_key)")
+          URL="https://${REF}.supabase.co"
+          echo "::add-mask::$ANON"
+          echo "::add-mask::$SERVICE"
+          echo "anon=$ANON" >> "$GITHUB_OUTPUT"
+          echo "service=$SERVICE" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          # DB password not returned here — use db push with access token link
+
+      - name: Link and push schema
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ inputs.project_ref }}
+        run: |
+          set -euo pipefail
+          npx supabase link --project-ref "$REF" -p "$SUPABASE_ACCESS_TOKEN" || npx supabase link --project-ref "$REF"
+          npx supabase db push --include-all --yes
+
+      - name: Write bootstrap evidence (no secrets)
+        env:
+          REF: ${{ inputs.project_ref }}
+          URL: ${{ steps.keys.outputs.url }}
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/cloud-bootstrap.json <<EOF
+          {
+            "job": "cloud-bootstrap",
+            "project_ref": "$REF",
+            "api_url_host": "${REF}.supabase.co",
+            "schema_push": "ATTEMPTED",
+            "exact_SHA": "${{ inputs.app_sha || github.sha }}",
+            "PRODUCTION_MUTATIONS": 0,
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Upload bootstrap evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-cloud-bootstrap
+          path: docs/rc/phase18scale/evidence/ci-jobs/
+
+      - name: Print secret wiring instructions
+        env:
+          REF: ${{ inputs.project_ref }}
+          URL: ${{ steps.keys.outputs.url }}
+        run: |
+          cat <<EOF
+          Wire these GitHub Actions secrets (values masked in logs; set via gh/dashboard):
+          PHASE18_LOAD_REF=$REF
+          PHASE18_SUPABASE_URL=$URL
+          PHASE18_SUPABASE_ANON_KEY=<from Management API anon>
+          PHASE18_SUPABASE_SERVICE_ROLE_KEY=<from Management API service_role>
+          PHASE18_DATABASE_URL=<from project database settings>
+          PHASE18_BASE_URL=<dedicated non-prod app URL or per-job next start>
+          Then create environment load-cert if missing and re-run phase18scale-load-cert with allow_provision=YES.
+          EOF
