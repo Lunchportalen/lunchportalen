@@ -262,23 +262,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - name: Resolve isolated keys
-        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
-      - name: Start Next runtime
-        run: |
-          set -euo pipefail
-          npm run build
-          npx next start -H 127.0.0.1 -p 3000 > /tmp/next.log 2>&1 &
-          echo $! > /tmp/next.pid
-          export PHASE18_BASE_URL=http://127.0.0.1:3000
-          echo "PHASE18_BASE_URL=$PHASE18_BASE_URL" >> "$GITHUB_ENV"
-          for i in $(seq 1 90); do
-            CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$PHASE18_BASE_URL/api/health" || true)
-            if [ "$CODE" = "200" ]; then exit 0; fi
-            sleep 2
-          done
-          tail -n 100 /tmp/next.log || true
-          exit 1
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -306,6 +290,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -333,6 +318,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -360,6 +346,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -387,6 +374,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -411,6 +399,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/soak-runner.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -438,6 +427,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/order-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -465,6 +455,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/order-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -492,6 +483,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/cancellation-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -519,6 +511,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/cancellation-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -546,6 +539,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/cancellation-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -570,6 +564,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/cutoff-boundary-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -594,6 +589,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/cutoff-boundary-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -607,7 +603,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: load-cert
-    env:
     steps:
       - uses: actions/checkout@v4
         with:
@@ -617,6 +612,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/hot-provider-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -630,7 +626,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: load-cert
-    env:
     steps:
       - uses: actions/checkout@v4
         with:
@@ -640,6 +635,9 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
+        with:
+          start_next: "false"
       - run: node scripts/phase18scale/production-freeze-check.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -653,7 +651,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: load-cert
-    env:
     steps:
       - uses: actions/checkout@v4
         with:
@@ -663,6 +660,9 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
+        with:
+          start_next: "false"
       - run: node scripts/phase18scale/financial-reconciliation.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -685,6 +685,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/failure-injection.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -707,6 +708,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/failure-injection.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -716,7 +718,7 @@ jobs:
 
   regional-latency:
     needs: failure-injection
-    if: success()
+    if: always() && needs.failure-injection.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: load-cert
@@ -738,7 +740,7 @@ jobs:
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
-          exit 3
+          echo "REGIONAL_DEFERRED=OWNER_RESOURCE_APPROVAL_REQUIRED"
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -746,7 +748,7 @@ jobs:
           path: docs/rc/phase18scale/evidence/ci-jobs/
 
   eight-hour-soak:
-    needs: regional-latency
+    needs: failure-injection
     if: success()
     runs-on: ubuntu-latest
     timeout-minutes: 600
@@ -762,6 +764,7 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
       - run: node scripts/phase18scale/soak-runner.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -796,7 +799,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: load-cert
-    env:
     steps:
       - uses: actions/checkout@v4
         with:
@@ -806,6 +808,9 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - uses: ./.github/actions/phase18-prepare-runtime
+        with:
+          start_next: "false"
       - run: node scripts/phase18scale/financial-reconciliation.mjs
       - run: node scripts/phase18scale/production-safety-probe.mjs
       - if: always()
