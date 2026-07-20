@@ -409,7 +409,21 @@ async function main() {
     return ret;
   }
 
-  const created = await mapPool(jobs, authConcurrency, async ({ co, globalIndex }) => {
+  await warmAuthEmailCache(admin);
+  const pendingJobs = jobs.filter(({ globalIndex }) => {
+    const email = synthEmail("emp", globalIndex).toLowerCase();
+    return !authEmailCache?.has(email);
+  });
+  console.log(
+    JSON.stringify({
+      employee_jobs_total: jobs.length,
+      employee_jobs_pending: pendingJobs.length,
+      employee_jobs_already_seeded: jobs.length - pendingJobs.length,
+      auth_concurrency: authConcurrency,
+    }),
+  );
+
+  const created = await mapPool(pendingJobs, authConcurrency, async ({ co, globalIndex }) => {
     const email = synthEmail("emp", globalIndex);
     const userId = await upsertAuthUser(admin, email, {
       country: co.country,
@@ -445,7 +459,33 @@ async function main() {
       index: globalIndex,
     };
   });
-  employeeManifest.push(...created);
+
+  // Rebuild full manifest from auth cache + newly created rows (restart-safe).
+  const createdByIndex = new Map(created.map((row) => [row.index, row]));
+  for (const { co, globalIndex } of jobs) {
+    const hit = createdByIndex.get(globalIndex);
+    if (hit) {
+      employeeManifest.push(hit);
+      continue;
+    }
+    const email = synthEmail("emp", globalIndex);
+    const existing = authEmailCache?.get(email.toLowerCase());
+    if (!existing?.id) {
+      throw new Error(`employee missing after seed filter: ${email}`);
+    }
+    employeeManifest.push({
+      user_id: existing.id,
+      email,
+      company_id: co.company_id,
+      location_id: co.location_id,
+      provider_id: co.provider_id,
+      country: co.country,
+      package: co.package,
+      locale: localeForEmployeeIndex(globalIndex),
+      preferred_locale_db: preferredLocaleDbForEmployeeIndex(globalIndex),
+      index: globalIndex,
+    });
+  }
   report.SYNTHETIC_EMPLOYEES = employeeManifest.length;
 
   for (const co of companyRows) {
