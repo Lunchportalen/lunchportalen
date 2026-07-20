@@ -1,4 +1,4 @@
-# PHASE 18SCALE — one-shot bootstrap: schema push + wire PHASE18 secrets for isolated project.
+﻿# PHASE 18SCALE â€” one-shot bootstrap: schema push + wire PHASE18 secrets for isolated project.
 # Never production. Uses SUPABASE_ACCESS_TOKEN only.
 name: phase18scale-cloud-bootstrap
 
@@ -8,7 +8,7 @@ on:
       project_ref:
         description: Isolated Phase 18 project ref
         required: true
-        default: "mvjmukgfslukgohkuqhr"
+        default: "arstaxredytrjcmqcwhh"
       app_sha:
         description: Engine SHA to check out for migrations
         required: false
@@ -63,7 +63,7 @@ jobs:
           echo "anon=$ANON" >> "$GITHUB_OUTPUT"
           echo "service=$SERVICE" >> "$GITHUB_OUTPUT"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-          # DB password not returned here — use db push with access token link
+          # DB password not returned here â€” use db push with access token link
 
       - name: Link and push schema
         env:

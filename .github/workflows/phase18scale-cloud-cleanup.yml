@@ -34,22 +34,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Refuse production refs
+      - name: Refuse production refs and require explicit delete intent
         env:
           INPUT_REF: ${{ inputs.project_ref || github.event.client_payload.project_ref }}
+          INPUT_REASON: ${{ inputs.reason || github.event.client_payload.reason || '' }}
         run: |
           set -euo pipefail
           REF="${INPUT_REF:-}"
+          REASON="${INPUT_REASON:-}"
           if [ -z "$REF" ] && [ -f docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json ]; then
             REF=$(node -e "const j=require('./docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json'); console.log(j.project_reference||'')")
           fi
           echo "TARGET_REF=$REF" >> "$GITHUB_ENV"
+          echo "REASON=$REASON" >> "$GITHUB_ENV"
           case "$REF" in
             "" ) echo "No project ref — nothing to delete"; echo "SKIP=1" >> "$GITHUB_ENV" ;;
             hkpokyapzarefrgqzkos) echo "::error::production ref forbidden"; exit 2 ;;
             uigxsboqeruxflgzqztl) echo "::error::shared staging ref forbidden for this cleanup path"; exit 2 ;;
             *) echo "SKIP=0" >> "$GITHUB_ENV" ;;
           esac
+          # workflow_dispatch must opt in — never delete on arm/verify/test reasons
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "$REASON" in
+              delete|force-expire|load-cert-finally|expired) echo "delete_intent=YES" ;;
+              *) echo "Non-delete reason '$REASON' — skip deletion"; echo "SKIP=1" >> "$GITHUB_ENV" ;;
+            esac
+          fi
 
       - name: Expiration gate (schedule)
         if: github.event_name == 'schedule'
@@ -62,10 +72,12 @@ jobs:
           const j = JSON.parse(fs.readFileSync(p, "utf8"));
           if (!j.expiration_timestamp || !j.project_reference) {
             console.log("not armed");
+            fs.appendFileSync(process.env.GITHUB_ENV, "SKIP=1\n");
             process.exit(0);
           }
           if (Date.now() < Date.parse(j.expiration_timestamp)) {
             console.log("not expired yet", j.expiration_timestamp);
+            fs.appendFileSync(process.env.GITHUB_ENV, "SKIP=1\n");
             process.exit(0);
           }
           console.log("expired — proceed delete", j.project_reference);

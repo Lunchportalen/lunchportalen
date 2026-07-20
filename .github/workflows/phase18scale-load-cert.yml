@@ -1,4 +1,4 @@
-# PHASE 18SCALE — durable isolated cloud load certification (never production).
+﻿# PHASE 18SCALE â€” durable isolated cloud load certification (never production).
 name: phase18scale-load-cert
 
 on:
@@ -9,7 +9,7 @@ on:
         required: false
         default: ""
       soak_hours:
-        description: Soak duration hours (8–24)
+        description: Soak duration hours (8â€“24)
         required: false
         default: "8"
       max_cost_usd:
@@ -939,10 +939,11 @@ jobs:
           }
           EOF
           if [ -n "$REF" ] && [ "$REF" != "hkpokyapzarefrgqzkos" ]; then
-            gh workflow run phase18scale-cloud-cleanup.yml -f project_ref="$REF" -f reason="load-cert-finally" || true
+            echo "Cleanup must be dispatched explicitly with reason=delete|force-expire|load-cert-finally after evidence export"
           fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: phase18-job-cleanup
           path: docs/rc/phase18scale/evidence/ci-jobs/
+
