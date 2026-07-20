@@ -1,0 +1,13 @@
+{
+  "phase": "18SCALE",
+  "stamped_at": "2026-07-20T20:33:00.000Z",
+  "project_reference": "arstaxredytrjcmqcwhh",
+  "previous_project_reference_deleted": "mvjmukgfslukgohkuqhr",
+  "bootstrap_run": "https://github.com/Lunchportalen/lunchportalen/actions/runs/29776447946",
+  "bootstrap_conclusion": "success",
+  "CLOUD_SCHEMA_PARITY": "PASS",
+  "CLOUD_RLS_ACTIVE": "PASS_VIA_MIGRATIONS",
+  "note": "Schema applied by durable GHA bootstrap (supabase db push --include-all). Includes phase17menu2d capacity/commission and phase18scale_production_snapshots. First project was deleted by accidental cleanup; recreated and re-bootstrapped.",
+  "PHASE18_CLOUD_ENGINE_SHA": "a4fc00ba93b0ea51e2deabd56d30d4358169bcbc",
+  "PRODUCTION_MUTATIONS": 0
+}
