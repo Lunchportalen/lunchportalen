@@ -1,0 +1,60 @@
+{
+  "phase": "18SCALE",
+  "stamped_at": "2026-07-20T19:42:00.000Z",
+  "ci_guard": "PASS",
+  "typecheck": "PASS",
+  "SECRET_EXPOSURES": 0,
+  "PII_IN_EVIDENCE": 0,
+  "classification": {
+    "REQUIRED_ENGINE": [
+      "scripts/phase18scale/attach-orphan-wave-monitor.ps1",
+      "scripts/phase18scale/check-ramp-status.ps1",
+      "scripts/phase18scale/http-correctness-wave.mjs",
+      "scripts/phase18scale/lib/local-db.mjs",
+      "scripts/phase18scale/phase18-ramp-supervisor.ps1",
+      "scripts/phase18scale/reconcile-partial-http-wave.mjs",
+      "scripts/phase18scale/reconcile-stage-gates.mjs",
+      "scripts/phase18scale/run-controlled-ramp.mjs",
+      "scripts/phase18scale/run-ramp-stage.mjs",
+      "scripts/phase18scale/spot-http-order.mjs",
+      "scripts/phase18scale/wave-watchdog.mjs",
+      "scripts/phase18scale/financial-reconciliation.mjs",
+      "scripts/phase18scale/load-env.mjs",
+      "scripts/phase18scale/production-freeze-check.mjs"
+    ],
+    "REQUIRED_WORKFLOW": [
+      ".github/workflows/phase18scale-load-cert.yml",
+      ".github/workflows/phase18scale-cloud-cleanup.yml"
+    ],
+    "REQUIRED_EVIDENCE": [
+      "docs/rc/phase18scale/PHASE18SCALE-PROGRESS.md",
+      "docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json",
+      "docs/rc/phase18scale/evidence/cloud-source-target-matrix.json",
+      "docs/rc/phase18scale/evidence/cloud-cert-decision.json",
+      "docs/rc/phase18scale/evidence/phase18-cloud-sha-state.json",
+      "docs/rc/phase18scale/evidence/engine-commit-inventory.json",
+      "docs/rc/phase18scale/evidence/live-ramp/final-exit.json",
+      "docs/rc/phase18scale/evidence/live-ramp/final-summary.json",
+      "docs/rc/phase18scale/evidence/live-ramp/ramp-10000-green.json",
+      "docs/rc/phase18scale/evidence/live-ramp/ramp-2500-green.json",
+      "docs/rc/phase18scale/evidence/http-wave-10000-c2-ramp.gates.json",
+      "docs/rc/phase18scale/evidence/http-wave-10000-c2-ramp.summary.json",
+      "docs/rc/phase18scale/evidence/http-wave-5000-c2-ramp.gates.json",
+      "docs/rc/phase18scale/evidence/http-wave-5000-c2-ramp.summary.json",
+      "docs/rc/phase18scale/evidence/http-wave-2500-c2-ramp.gates.json",
+      "docs/rc/phase18scale/evidence/http-wave-2500-c2-ramp.summary.json",
+      "docs/rc/phase18scale/evidence/http-wave-1000-c2-ramp.summary.json",
+      "docs/rc/phase18scale/evidence/financial-reconciliation.json",
+      "docs/rc/phase18scale/evidence/ensure-published-menus.json",
+      "docs/rc/phase18scale/evidence/issue-auth-sessions.json"
+    ],
+    "LOCAL_SECRET_OR_ENV": [".env.phase18.local"],
+    "DISPOSABLE_TEMP": ["temp/"]
+  },
+  "excluded_from_commit": [
+    ".env.phase18.local",
+    "temp/",
+    "docs/rc/phase18scale/evidence/*.ndjson",
+    "docs/rc/phase18scale/evidence/sessions*.ndjson"
+  ]
+}

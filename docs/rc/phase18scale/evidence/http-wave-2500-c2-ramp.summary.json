@@ -1,0 +1,49 @@
+{
+  "stage": "http-wave-2500-c2-ramp",
+  "pass": true,
+  "stamped_at": "2026-07-20T16:37:38.826Z",
+  "gates": {
+    "stage": "http-wave-2500-c2-ramp",
+    "target": 2500,
+    "concurrency": 2,
+    "service_date": "2026-07-21",
+    "db_target": {
+      "host": "127.0.0.1",
+      "port": "54322",
+      "database": "postgres",
+      "classification": "local",
+      "source": "PHASE18_DATABASE_URL"
+    },
+    "classification_prior_interruption": {
+      "HTTP_APPLICATION_STAGE": "PASS",
+      "POST_WAVE_RECONCILIATION": "FAIL_WRONG_DB_TARGET",
+      "APPLICATION_CAPACITY_FAILURE": "NOT_PROVEN",
+      "INFRASTRUCTURE_DOWN": "NO"
+    },
+    "RAMP_HTTP": "PASS",
+    "wave": {
+      "SET_OK": 2500,
+      "SET_FAIL": 0,
+      "CANCEL_OK": 2500,
+      "CANCEL_FAIL": 0
+    },
+    "PERSISTED_SET_SUCCESS": 2500,
+    "PERSISTED_CANCELLATION_SUCCESS": 2500,
+    "PERSISTED_MISSING": 0,
+    "PERSISTED_DUPLICATES": 0,
+    "UNKNOWN_OUTCOMES": 0,
+    "PRODUCTION_DIFFERENCE": 0,
+    "FINANCIAL_DIFFERENCE": 0,
+    "CROSS_TENANT_FAILURES": 0,
+    "WRONG_PROVIDER_FAILURES": 0,
+    "cancel_status_history_rows": 401,
+    "wave_unique_emails": 2500,
+    "SESSION_WRAP": false,
+    "LOGICAL_HTTP_SET_OK": 2500,
+    "PERSISTED_UNIQUE_ACTIVE": 2500,
+    "RAMP_RECONCILIATION": "PASS",
+    "pass": true,
+    "RAMP_2500_HTTP": "PASS",
+    "RAMP_2500_RECONCILIATION": "PASS"
+  }
+}

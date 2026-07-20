@@ -1,0 +1,74 @@
+{
+    "state":  "PASSED",
+    "stage":  10000,
+    "logical_target":  10000,
+    "done":  10000,
+    "setOk":  10000,
+    "setFail":  0,
+    "cancelOk":  10000,
+    "cancelFail":  0,
+    "retries":  0,
+    "persisted_missing":  0,
+    "persisted_duplicates":  0,
+    "production_difference":  0,
+    "financial_difference":  0,
+    "docker_health":  true,
+    "next_health":  true,
+    "postgres_active":  1,
+    "postgres_waiting":  0,
+    "last_heartbeat":  "2026-07-20T19:12:32.3475868Z",
+    "last_progress_timestamp":  "2026-07-20T18:32:06.732Z",
+    "PID":  null,
+    "child_PID":  null,
+    "exact_SHA":  "1a9639b5681bdae2422c43e875851a8381594036",
+    "service_date":  "2026-07-21",
+    "repo_root":  "C:\\prosjekter\\lunchportalen-16no",
+    "task_name":  "Lunchportalen-Phase18-LocalRamp",
+    "mode":  "FINALIZATION_REPAIR",
+    "classification":  {
+                           "DURABLE_RAMP_COMPLETE":  "YES",
+                           "HTTP_STAGE_10000":  "PASS",
+                           "APPLICATION_CAPACITY_FAILURE":  "NO",
+                           "SUPERVISOR_FINALIZATION_FAILURE":  "YES_REPAIRED"
+                       },
+    "stages":  {
+                   "10000@c2":  {
+                                    "RECONCILIATION":  "PASS",
+                                    "HTTP":  "PASS"
+                                },
+                   "5000@c2":  {
+                                   "RECONCILIATION":  "PASS",
+                                   "HTTP":  "PASS"
+                               },
+                   "2500@c2":  {
+                                   "RECONCILIATION":  "PASS",
+                                   "HTTP":  "PASS"
+                               },
+                   "1000@c2":  {
+                                   "RECONCILIATION":  "PASS",
+                                   "HTTP":  "PASS"
+                               }
+               },
+    "reconciliation":  {
+                           "command":  "PHASE18_SKIP_HTTP=1 PHASE18_HTTP_WAVE=10000 PHASE18_HTTP_CONCURRENCY=2 PHASE18_HTTP_WAVE_OUT=http-wave-10000-c2-ramp.json PHASE18_SERVICE_DATE=2026-07-21 PHASE18_FORCE_ISOLATED_LOCAL=1 node scripts/phase18scale/run-ramp-stage.mjs",
+                           "http_rerun":  false,
+                           "db_target":  {
+                                             "host":  "127.0.0.1",
+                                             "port":  "54322",
+                                             "database":  "postgres",
+                                             "classification":  "local",
+                                             "source":  "PHASE18_DATABASE_URL"
+                                         },
+                           "gates_path":  "docs/rc/phase18scale/evidence/http-wave-10000-c2-ramp.gates.json",
+                           "exit_code":  0
+                       },
+    "production_safety":  {
+                              "PRODUCTION_MUTATIONS":  0,
+                              "PRODUCTION_DEPLOYMENTS":  0,
+                              "FINANCIAL_EVENTS_RECONCILED":  "100%",
+                              "NORWAY_PRODUCTION_REGRESSION":  "PASS"
+                          },
+    "exit_reason":  "ALL_STAGES_PASS",
+    "exit_code":  0,
+    "stamped_at":  "2026-07-20T19:12:32.3475868Z"
+}

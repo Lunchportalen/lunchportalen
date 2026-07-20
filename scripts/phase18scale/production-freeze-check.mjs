@@ -7,12 +7,17 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { loadPhase18Env } from "./load-env.mjs";
+import { resolvePhase18DatabaseUrl } from "./lib/local-db.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
 
 async function main() {
   const { url } = loadPhase18Env();
+  const { identity: dbTarget } = resolvePhase18DatabaseUrl();
+  if (!/127\.0\.0\.1|localhost/i.test(url)) {
+    throw new Error(`SNAPSHOT_CHECK_NON_LOCAL_API: ${url}`);
+  }
   const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -38,6 +43,7 @@ async function main() {
 
   const report = {
     phase: "18SCALE",
+    db_target: dbTarget,
     service_date: serviceDate,
     providers_expected: providerIds.length,
     PRODUCTION_SNAPSHOTS: `${snapshots.length}/${providerIds.length}`,

@@ -1,0 +1,22 @@
+{
+  "phase": "18SCALE",
+  "MARK": "PHASE18_SCALE_SYNTHETIC",
+  "db_target": {
+    "host": "127.0.0.1",
+    "port": "54322",
+    "database": "postgres",
+    "classification": "local",
+    "source": "PHASE18_DATABASE_URL"
+  },
+  "api_host": "127.0.0.1:54321",
+  "companies": 1000,
+  "earned_events": 0,
+  "reversal_events": 0,
+  "COMMISSION_EARN_DIFFERENCE": 0,
+  "COMMISSION_REVERSAL_DIFFERENCE": 0,
+  "COMMISSION_REMAINDER_LOSS": 0,
+  "DUPLICATE_FINANCIAL_EVENTS": 0,
+  "ORPHAN_FINANCIAL_EVENTS": 0,
+  "FINANCIAL_EVENTS_RECONCILED": "100%",
+  "pass": true
+}

@@ -1,0 +1,19 @@
+{
+  "RAMP_2500_HTTP": "PASS",
+  "RAMP_2500_RECONCILIATION": "PASS",
+  "PERSISTED_SET_SUCCESS": 2500,
+  "PERSISTED_CANCELLATION_SUCCESS": 2500,
+  "PERSISTED_MISSING": 0,
+  "PERSISTED_DUPLICATES": 0,
+  "UNKNOWN_OUTCOMES": 0,
+  "PRODUCTION_DIFFERENCE": 0,
+  "FINANCIAL_DIFFERENCE": 0,
+  "CROSS_TENANT_FAILURES": 0,
+  "WRONG_PROVIDER_FAILURES": 0,
+  "http_rerun": false,
+  "reconcile_command": "PHASE18_SKIP_HTTP=1 node scripts/phase18scale/run-ramp-stage.mjs",
+  "db_target": { "host": "127.0.0.1", "port": 54322, "classification": "local" },
+  "prior_supervisor_failure": "null ExitCode treated as failure via PowerShell ($null -ne 0)",
+  "stamped_at": "2026-07-20T16:40:00.000Z",
+  "exact_SHA": "1a9639b5681bdae2422c43e875851a8381594036"
+}

@@ -67,6 +67,9 @@ export function loadPhase18Env(extraPaths = []) {
     "PHASE18_LOAD_REF",
     "PHASE18_BASE_URL",
     "PHASE18_ALLOW_STAGING_ISOLATION",
+    "PHASE18_DATABASE_URL",
+    "SUPABASE_LOCAL_DB_URL",
+    "PHASE18_SERVICE_DATE",
   ];
   for (const [k, v] of Object.entries(loaded)) {
     if (overrideKeys.includes(k) || process.env[k] == null || process.env[k] === "") {

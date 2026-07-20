@@ -1,0 +1,8 @@
+{
+  "stage": "http-wave-1000-c2-ramp",
+  "pass": true,
+  "stamped_at": "2026-07-20T15:05:30.000Z",
+  "RAMP_1000_HTTP": "PASS",
+  "RAMP_1000_RECONCILIATION": "PASS",
+  "note": "HTTP preserved from prior wave exit 0; reconciliation re-run against verified local Postgres 127.0.0.1:54322 after FAIL_WRONG_DB_TARGET fix."
+}

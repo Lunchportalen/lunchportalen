@@ -7,12 +7,17 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { loadPhase18Env, MARK } from "./load-env.mjs";
+import { resolvePhase18DatabaseUrl } from "./lib/local-db.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
 
 async function main() {
   const { url } = loadPhase18Env();
+  const { identity: dbTarget } = resolvePhase18DatabaseUrl();
+  if (!/127\.0\.0\.1|localhost/i.test(url)) {
+    throw new Error(`FINANCIAL_RECONCILE_NON_LOCAL_API: ${url}`);
+  }
   const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -56,6 +61,8 @@ async function main() {
   const report = {
     phase: "18SCALE",
     MARK,
+    db_target: dbTarget,
+    api_host: new URL(url).host,
     companies: ids.length,
     earned_events: earn,
     reversal_events: rev,

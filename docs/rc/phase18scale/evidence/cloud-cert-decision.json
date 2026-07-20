@@ -1,0 +1,69 @@
+{
+  "phase": "18SCALE",
+  "stamped_at": "2026-07-20T19:28:00.000Z",
+  "decision": "OWNER_RESOURCE_APPROVAL_REQUIRED",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
+  "LOCAL_CORRECTNESS_CERTIFIED": "YES",
+  "DURABLE_RAMP_COMPLETE": "YES",
+  "NATIVE_CULINARY_APPROVED": "0/21",
+  "LOCALE_NATIVE_APPROVED": "0/24",
+  "PRODUCTION_DEPLOYMENT": "NOT APPROVED",
+  "PRODUCTION_MUTATIONS": 0,
+  "PRODUCTION_DEPLOYMENTS": 0,
+  "NEW_PAID_INFRASTRUCTURE": "NOT_USED",
+  "PHASE18_CLOUD_START_SHA": "1a9639b5681bdae2422c43e875851a8381594036",
+  "PHASE18_CLOUD_ENGINE_SHA": "1a9639b5681bdae2422c43e875851a8381594036",
+  "PHASE18_CLOUD_CERTIFIED_SHA": null,
+  "LOCAL_REMOTE_SHA_MATCH": "YES",
+  "SECRET_EXPOSURES": 0,
+  "PII_IN_EVIDENCE": 0,
+  "resource_request": {
+    "exact_service": "Supabase",
+    "resource_class": "Isolated non-production project (preferred) or dedicated Phase-18-only preview parent that is not production",
+    "region": "eu-west-1",
+    "required_duration": "20–40 active hours typical; hard max 72 hours with automatic deletion",
+    "maximum_estimated_additional_cost_usd": 10.0,
+    "cost_classification": "PROVIDER_CALCULATOR_ESTIMATE",
+    "cost_source": "supabase_mcp_get_cost type=project → USD 10/month",
+    "branch_compute_reference": {
+      "amount_usd_per_hour": 0.01344,
+      "classification": "PROVIDER_CALCULATOR_ESTIMATE",
+      "source": "supabase_mcp_get_cost type=branch",
+      "note": "72h Micro compute alone ≈ USD 0.96768, leaving no budget for egress/disk/SLO compute upgrades"
+    },
+    "why_existing_resources_insufficient": [
+      "Only org project visible via MCP is production (hkpokyapzarefrgqzkos) — forbidden as load parent / customer-data risk",
+      "Shared staging branch uigxsboqeruxflgzqztl is not isolated and is MIGRATIONS_FAILED",
+      "Inactive preview iyrytpjacujscveivtfb reactivation still bills under production parent and lacks residual budget",
+      "Local Docker is correctness-green but cannot certify cloud RPS/latency/cost for GLOBAL_SCALE_CERTIFIED"
+    ],
+    "hard_gates_remain_blocked": [
+      "CLOUD_ENVIRONMENT_ISOLATED",
+      "CLOUD_SCHEMA_PARITY",
+      "CLOUD_DEPLOYED_SHA",
+      "CLOUD_OBSERVABILITY_COMPLETE",
+      "ORDER_100K_30M",
+      "ORDER_100K_15M",
+      "CANCEL_50K_10M",
+      "CANCEL_50K_5M",
+      "EIGHT_HOUR_SOAK",
+      "GLOBAL_SCALE_CERTIFIED"
+    ]
+  },
+  "actions_taken_without_spend": [
+    "git fetch/pull — LOCAL_REMOTE_SHA_MATCH=YES",
+    "secret/PII scan — 0/0",
+    "wrote owner-approved-cloud-resource.json (NOT_PROVISIONED)",
+    "wrote cloud-source-target-matrix.json (abort_before_load=true)",
+    "restructured .github/workflows/phase18scale-load-cert.yml into resumable jobs with cleanup if: always()",
+    "did not create/reactivate Supabase project or branch",
+    "did not deploy to Vercel/production/shared staging",
+    "did not start cloud load"
+  ],
+  "next_owner_choices": [
+    "Raise budget to at least USD 10/month for an isolated Supabase project + egress/disk margin for 100k cert + 8h soak",
+    "Provide an existing isolated non-production Supabase project (not production, not shared staging) already paid",
+    "Narrow certification scope (not requested here) — current gates require full cloud matrix"
+  ]
+}

@@ -3,49 +3,59 @@
 ## Baseline
 
 - Branch: `release/global-menu-universes-21`
-- PHASE18_ENGINE_BASELINE_SHA: `c4df05397374648025024d67204d801cae6f93ea`
+- PHASE18_ENGINE_BASELINE_SHA (Phase 17MENU.2D): `c4df05397374648025024d67204d801cae6f93ea`
+- PHASE18_CLOUD_START_SHA / ENGINE_SHA: `1a9639b5681bdae2422c43e875851a8381594036`
 - GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS: YES (unchanged)
 
-## Local matrix — PASS
+## Local correctness — CERTIFIED
 
-| Metric | Value |
-|--------|-------|
-| Providers | 1000 |
-| Companies | 2000 |
-| Employee profiles | 100000 |
-| Auth identities | 100000 |
-| Countries / locales / packages | 21 / 24 / 3 |
-| Active agreements | 2000 |
-| Published menus | 2000 |
-| Package entitlements | 16000 |
-| Active same-day orders (bulk setup) | 100000 |
-| Load sessions (cookie login pool) | 2250 (all companies) |
-| Auth idempotency / orphans | PASS / 0 |
+| Stage | HTTP | Reconciliation |
+|-------|------|----------------|
+| 1000@c2 | PASS | PASS |
+| 2500@c2 | PASS | PASS |
+| 5000@c2 | PASS | PASS |
+| 10000@c2 | PASS | PASS |
 
-### Auth method
+Local 10000: persisted SET/cancel 10000/10000; missing/duplicates/unknown 0; production/packing/delivery/financial/commission diffs 0; cross-tenant/wrong-provider/wrong-price 0.
 
-1. GoTrue Admin API (first ~5k) with paginated email cache + retry
-2. Local SQL bulk Auth (5k–100k) — GoTrue-compatible (`instance_id`, empty token columns, shared bcrypt)
-3. Profile company/location SQL backfill (trigger creates bare profiles)
-4. Session pool via password + `/api/auth/login` cookies (middleware requires SSR cookies, not Bearer alone)
+- LOCAL_CORRECTNESS_CERTIFIED = YES
+- DURABLE_RAMP_COMPLETE = YES
+- Evidence: `evidence/live-ramp/final-exit.json`, `ramp-10000-green.json`
 
-### Orders
+## Cloud certification — BLOCKED
 
-- Bulk batched SQL preload: **100000 ACTIVE** with order_items, provider/company/employee/agreement
-- HTTP order path: login cookies OK; MSDI choice mapping still being aligned for full HTTP waves (`varmmat` → MSDI)
+Decision: **OWNER_RESOURCE_APPROVAL_REQUIRED**
 
-## Cloud
+See:
 
-See `evidence/cloud-target-assessment.json`.
+- `evidence/owner-approved-cloud-resource.json`
+- `evidence/cloud-source-target-matrix.json`
+- `evidence/cloud-cert-decision.json`
+- `evidence/phase18-cloud-sha-state.json`
 
-- Local cannot set `GLOBAL_SCALE_CERTIFIED`
-- Shared staging branch is **AVAILABLE_BUT_NOT_ISOLATED**
-- Isolated production-like cloud requires **Supabase preview branch** (paid, not activated)
+| Gate | Value |
+|------|-------|
+| CLOUD_ENVIRONMENT_ISOLATED | NO |
+| ESTIMATED_TOTAL_COST | exceeds USD 0.97 |
+| NEW_PAID_INFRASTRUCTURE | NOT_USED |
+| GLOBAL_SCALE_CERTIFIED | NO |
 
-## Status
+MCP cost truth:
 
-- LOCAL_CORRECTNESS_CERTIFIED = NO (HTTP waves / cutoff / soak pending)
-- GLOBAL_SCALE_CERTIFIED = NO
+- Preview branch Micro: **USD 0.01344/hour** (`get_cost` type=branch)
+- New isolated project: **USD 10/month** (`get_cost` type=project) → over ceiling
+- Only listed org project: production `hkpokyapzarefrgqzkos` (forbidden parent)
+- Shared staging `uigxsboqeruxflgzqztl`: not isolated / MIGRATIONS_FAILED
+
+Durable CI: `.github/workflows/phase18scale-load-cert.yml` restructured into resumable jobs with `cleanup if: always()`; `target-safety` hard-fails until resource evidence says `PROVISIONED`.
+
+## Unresolved before cloud deploy
+
+- 11 required Phase 18 engine scripts are **untracked** locally (must be committed so CLOUD_DEPLOYED_SHA matches engine)
+- Do not delete local certification evidence
+
+## Locks unchanged
+
 - NATIVE_CULINARY_APPROVED = 0/21
 - LOCALE_NATIVE_APPROVED = 0/24
 - PRODUCTION_DEPLOYMENT = NOT APPROVED

@@ -1,0 +1,49 @@
+{
+    "exit_code":  0,
+    "exit_reason":  "ALL_STAGES_PASS",
+    "stage":  10000,
+    "child_PID":  null,
+    "exact_SHA":  "1a9639b5681bdae2422c43e875851a8381594036",
+    "stamped_at":  "2026-07-20T19:12:32.3475868Z",
+    "counters":  {
+                     "setOk":  10000,
+                     "done":  10000,
+                     "cancelOk":  10000,
+                     "setFail":  0,
+                     "cancelFail":  0
+                 },
+    "scheduled_task":  "Lunchportalen-Phase18-LocalRamp",
+    "reconciliation_command":  "PHASE18_SKIP_HTTP=1 PHASE18_HTTP_WAVE=10000 PHASE18_HTTP_CONCURRENCY=2 PHASE18_HTTP_WAVE_OUT=http-wave-10000-c2-ramp.json PHASE18_SERVICE_DATE=2026-07-21 PHASE18_FORCE_ISOLATED_LOCAL=1 node scripts/phase18scale/run-ramp-stage.mjs",
+    "reconciliation_exit_code":  0,
+    "http_rerun":  false,
+    "stages":  {
+                   "10000@c2":  {
+                                    "RECONCILIATION":  "PASS",
+                                    "HTTP":  "PASS"
+                                },
+                   "5000@c2":  {
+                                   "RECONCILIATION":  "PASS",
+                                   "HTTP":  "PASS"
+                               },
+                   "2500@c2":  {
+                                   "RECONCILIATION":  "PASS",
+                                   "HTTP":  "PASS"
+                               },
+                   "1000@c2":  {
+                                   "RECONCILIATION":  "PASS",
+                                   "HTTP":  "PASS"
+                               }
+               },
+    "production_safety":  {
+                              "PRODUCTION_MUTATIONS":  0,
+                              "PRODUCTION_DEPLOYMENTS":  0,
+                              "FINANCIAL_EVENTS_RECONCILED":  "100%",
+                              "NORWAY_PRODUCTION_REGRESSION":  "PASS"
+                          },
+    "classification":  {
+                           "DURABLE_RAMP_COMPLETE":  "YES",
+                           "HTTP_STAGE_10000":  "PASS",
+                           "APPLICATION_CAPACITY_FAILURE":  "NO",
+                           "SUPERVISOR_FINALIZATION_FAILURE":  "YES_REPAIRED"
+                       }
+}

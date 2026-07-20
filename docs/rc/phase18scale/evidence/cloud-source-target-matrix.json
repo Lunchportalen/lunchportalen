@@ -1,0 +1,62 @@
+{
+  "phase": "18SCALE",
+  "stamped_at": "2026-07-20T19:27:30.000Z",
+  "PHASE18_CLOUD_ENGINE_SHA": "1a9639b5681bdae2422c43e875851a8381594036",
+  "CLOUD_ENVIRONMENT_ISOLATED": "NO",
+  "CLOUD_SCHEMA_PARITY": "NOT_RUN",
+  "CLOUD_RLS_ACTIVE": "NOT_RUN",
+  "CLOUD_AUTH_ACTIVE": "NOT_RUN",
+  "CLOUD_SYNTHETIC_ONLY": "NOT_PROVEN",
+  "PRODUCTION_TARGET_REFERENCES": 0,
+  "REAL_EMAILS_SENT": 0,
+  "REAL_WEBHOOKS_SENT": 0,
+  "STRIPE_CALLS": 0,
+  "abort_before_load": true,
+  "abort_reason": "OWNER_RESOURCE_APPROVAL_REQUIRED — no isolated cloud target within USD 0.97 that is non-production and capable of 100k certification.",
+  "targets": {
+    "local_supabase": {
+      "host": "127.0.0.1:54321",
+      "db": "127.0.0.1:54322",
+      "role": "LOCAL_CORRECTNESS_CERTIFIED_ONLY",
+      "GLOBAL_SCALE_ELIGIBLE": false
+    },
+    "production_supabase": {
+      "ref": "hkpokyapzarefrgqzkos",
+      "role": "FORBIDDEN",
+      "used": false
+    },
+    "shared_staging_branch": {
+      "ref": "uigxsboqeruxflgzqztl",
+      "role": "FORBIDDEN_FOR_DESTRUCTIVE_100K",
+      "status": "MIGRATIONS_FAILED",
+      "used": false
+    },
+    "inactive_preview": {
+      "ref": "iyrytpjacujscveivtfb",
+      "role": "NOT_REACTIVATED",
+      "used": false
+    },
+    "isolated_phase18_cloud": {
+      "status": "NOT_PROVISIONED",
+      "app_runtime": "NOT_DEPLOYED",
+      "emails_blackholed": "N/A",
+      "webhooks_blackholed": "N/A",
+      "stripe": "OFF_BY_POLICY",
+      "sanity_mutations": "NONE"
+    }
+  },
+  "checks": {
+    "isolated_database": "FAIL_NO_RESOURCE",
+    "isolated_auth": "FAIL_NO_RESOURCE",
+    "isolated_storage": "FAIL_NO_RESOURCE",
+    "production_like_rls": "FAIL_NO_RESOURCE",
+    "schema_parity": "FAIL_NO_RESOURCE",
+    "exact_runtime_sha": "FAIL_ENGINE_UNTRACKED_AND_NO_DEPLOY",
+    "isolated_nextjs": "FAIL_NO_RESOURCE",
+    "synthetic_only_workers": "FAIL_NO_RESOURCE",
+    "no_production_aliases": "PASS_NO_CHANGES",
+    "no_production_secrets_in_load_target": "PASS_NO_TARGET",
+    "no_production_sanity_mutations": "PASS_NO_MUTATIONS",
+    "no_real_customer_data": "PASS_NO_CLOUD_CLONE"
+  }
+}

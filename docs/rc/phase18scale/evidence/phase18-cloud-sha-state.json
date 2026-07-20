@@ -1,0 +1,33 @@
+{
+  "phase": "18SCALE",
+  "stamped_at": "2026-07-20T19:26:30.000Z",
+  "branch": "release/global-menu-universes-21",
+  "PHASE18_CLOUD_START_SHA": "1a9639b5681bdae2422c43e875851a8381594036",
+  "PHASE18_CLOUD_ENGINE_SHA": "1a9639b5681bdae2422c43e875851a8381594036",
+  "PHASE18_CLOUD_CERTIFIED_SHA": null,
+  "PHASE17MENU_2D_CERTIFIED_SHA": "c4df05397374648025024d67204d801cae6f93ea",
+  "PRODUCTION_SHA_OBSERVED": "771a4207e9743fd232971eb95ecc27e45723a89d",
+  "LOCAL_REMOTE_SHA_MATCH": "YES",
+  "origin_tip": "1a9639b5681bdae2422c43e875851a8381594036",
+  "SECRET_EXPOSURES": 0,
+  "PII_IN_EVIDENCE": 0,
+  "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
+  "LOCAL_CORRECTNESS_CERTIFIED": "YES",
+  "DURABLE_RAMP_COMPLETE": "YES",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "untracked_required_engine_files": [
+    "scripts/phase18scale/run-ramp-stage.mjs",
+    "scripts/phase18scale/reconcile-stage-gates.mjs",
+    "scripts/phase18scale/lib/local-db.mjs",
+    "scripts/phase18scale/phase18-ramp-supervisor.ps1",
+    "scripts/phase18scale/check-ramp-status.ps1",
+    "scripts/phase18scale/http-correctness-wave.mjs",
+    "scripts/phase18scale/wave-watchdog.mjs",
+    "scripts/phase18scale/attach-orphan-wave-monitor.ps1",
+    "scripts/phase18scale/reconcile-partial-http-wave.mjs",
+    "scripts/phase18scale/run-controlled-ramp.mjs",
+    "scripts/phase18scale/spot-http-order.mjs"
+  ],
+  "CLOUD_ENGINE_COMMITTED": "NO",
+  "note": "Git tip matches origin, but required local-certification engine scripts are untracked and must be committed before any cloud deploy of PHASE18_CLOUD_ENGINE_SHA."
+}

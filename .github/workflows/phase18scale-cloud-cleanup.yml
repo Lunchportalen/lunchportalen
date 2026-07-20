@@ -1,0 +1,116 @@
+# PHASE 18SCALE — forced cleanup of isolated non-production Supabase project.
+# Never touches production. Runs on schedule (forced expiration) and on demand.
+name: phase18scale-cloud-cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_ref:
+        description: Isolated Phase 18 project ref to delete (never production)
+        required: true
+      reason:
+        description: cleanup reason
+        required: false
+        default: "manual"
+  repository_dispatch:
+    types: [phase18scale-cleanup]
+  schedule:
+    # Safety net every 6h — deletes only if evidence marks expiration passed
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: phase18scale-cloud-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse production refs
+        env:
+          INPUT_REF: ${{ inputs.project_ref || github.event.client_payload.project_ref }}
+        run: |
+          set -euo pipefail
+          REF="${INPUT_REF:-}"
+          if [ -z "$REF" ] && [ -f docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json ]; then
+            REF=$(node -e "const j=require('./docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json'); console.log(j.project_reference||'')")
+          fi
+          echo "TARGET_REF=$REF" >> "$GITHUB_ENV"
+          case "$REF" in
+            "" ) echo "No project ref — nothing to delete"; echo "SKIP=1" >> "$GITHUB_ENV" ;;
+            hkpokyapzarefrgqzkos) echo "::error::production ref forbidden"; exit 2 ;;
+            uigxsboqeruxflgzqztl) echo "::error::shared staging ref forbidden for this cleanup path"; exit 2 ;;
+            *) echo "SKIP=0" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Expiration gate (schedule)
+        if: github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("fs");
+          const p = "docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json";
+          if (!fs.existsSync(p)) { console.log("no resource file"); process.exit(0); }
+          const j = JSON.parse(fs.readFileSync(p, "utf8"));
+          if (!j.expiration_timestamp || !j.project_reference) {
+            console.log("not armed");
+            process.exit(0);
+          }
+          if (Date.now() < Date.parse(j.expiration_timestamp)) {
+            console.log("not expired yet", j.expiration_timestamp);
+            process.exit(0);
+          }
+          console.log("expired — proceed delete", j.project_reference);
+          NODE
+
+      - name: Delete isolated project via Management API
+        if: env.SKIP == '0'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN missing — cannot auto-delete; owner must delete manually"
+            exit 2
+          fi
+          CODE=$(curl -sS -o /tmp/del.json -w "%{http_code}" \
+            -X DELETE "https://api.supabase.com/v1/projects/${TARGET_REF}" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")
+          echo "delete_http=$CODE"
+          cat /tmp/del.json || true
+          case "$CODE" in
+            200|204|404) echo "delete_ok_or_absent" ;;
+            *) echo "::error::delete failed"; exit 2 ;;
+          esac
+
+      - name: Write cleanup evidence
+        if: always()
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/cloud-cleanup.json <<EOF
+          {
+            "job": "cleanup",
+            "workflow": "phase18scale-cloud-cleanup",
+            "target_ref": "${TARGET_REF:-}",
+            "event": "${{ github.event_name }}",
+            "reason": "${{ inputs.reason || github.event.client_payload.reason || 'scheduled_or_dispatch' }}",
+            "CLOUD_RESOURCE_DELETED": "ATTEMPTED",
+            "PRODUCTION_MUTATIONS": 0,
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Upload cleanup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-cloud-cleanup
+          path: docs/rc/phase18scale/evidence/ci-jobs/
