@@ -1,4 +1,4 @@
-﻿# PHASE 18SCALE â€” durable isolated cloud load certification (never production).
+# PHASE 18SCALE - durable isolated cloud load certification (never production).
 name: phase18scale-load-cert
 
 on:
@@ -40,6 +40,7 @@ env:
   PHASE18_SOAK_HOURS: ${{ inputs.soak_hours }}
   PHASE18_MAX_COST_USD: ${{ inputs.max_cost_usd }}
   PHASE18_ALLOW_PROVISION: ${{ inputs.allow_provision }}
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
   RC_MODE: "true"
 
 jobs:
@@ -125,12 +126,8 @@ jobs:
     timeout-minutes: 60
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -140,11 +137,13 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - name: Push migrations to isolated project
+      - name: Resolve keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Verify schema (push already done by bootstrap)
         run: |
           set -euo pipefail
           npx supabase link --project-ref "$PHASE18_LOAD_REF"
-          npx supabase db push --include-all
+          npx supabase migration list
       - name: Record parity stamp
         run: |
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
@@ -194,12 +193,7 @@ jobs:
     timeout-minutes: 360
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_SEED_PROVIDERS: "1000"
       PHASE18_SEED_COMPANIES: "2000"
       PHASE18_SEED_EMPLOYEES: "100000"
@@ -213,6 +207,8 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
       - run: node scripts/phase18scale/seed-scale-matrix.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -227,11 +223,7 @@ jobs:
     timeout-minutes: 180
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -241,6 +233,8 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
       - run: node scripts/phase18scale/issue-auth-sessions.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -255,12 +249,7 @@ jobs:
     timeout-minutes: 45
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_HTTP_WAVE: "100"
       PHASE18_HTTP_CONCURRENCY: "2"
       PHASE18_HTTP_WAVE_OUT: "http-wave-100-c2-cloud-smoke.json"
@@ -273,6 +262,23 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Start Next runtime
+        run: |
+          set -euo pipefail
+          npm run build
+          npx next start -H 127.0.0.1 -p 3000 > /tmp/next.log 2>&1 &
+          echo $! > /tmp/next.pid
+          export PHASE18_BASE_URL=http://127.0.0.1:3000
+          echo "PHASE18_BASE_URL=$PHASE18_BASE_URL" >> "$GITHUB_ENV"
+          for i in $(seq 1 90); do
+            CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$PHASE18_BASE_URL/api/health" || true)
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 2
+          done
+          tail -n 100 /tmp/next.log || true
+          exit 1
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -287,12 +293,7 @@ jobs:
     timeout-minutes: 60
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_HTTP_WAVE: "500"
       PHASE18_HTTP_CONCURRENCY: "2"
       PHASE18_HTTP_WAVE_OUT: "http-wave-500-c2-cloud-smoke.json"
@@ -319,12 +320,7 @@ jobs:
     timeout-minutes: 90
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_HTTP_WAVE: "1000"
       PHASE18_HTTP_CONCURRENCY: "2"
       PHASE18_HTTP_WAVE_OUT: "http-wave-1000-c2-cloud-ramp.json"
@@ -351,12 +347,7 @@ jobs:
     timeout-minutes: 180
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_HTTP_WAVE: "5000"
       PHASE18_HTTP_CONCURRENCY: "2"
       PHASE18_HTTP_WAVE_OUT: "http-wave-5000-c2-cloud-ramp.json"
@@ -383,12 +374,7 @@ jobs:
     timeout-minutes: 300
     environment: load-cert
     env:
-      PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_HTTP_WAVE: "10000"
       PHASE18_HTTP_CONCURRENCY: "2"
       PHASE18_HTTP_WAVE_OUT: "http-wave-10000-c2-cloud-ramp.json"
@@ -415,10 +401,6 @@ jobs:
     timeout-minutes: 90
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_SOAK_HOURS: "1"
     steps:
       - uses: actions/checkout@v4
@@ -443,10 +425,6 @@ jobs:
     timeout-minutes: 90
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_WAVE_LABEL: orders-30m
       PHASE18_WAVE_DURATION: 30m
       PHASE18_ORDER_TARGET: "100000"
@@ -474,10 +452,6 @@ jobs:
     timeout-minutes: 60
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_WAVE_LABEL: orders-15m
       PHASE18_WAVE_DURATION: 15m
       PHASE18_ORDER_TARGET: "100000"
@@ -505,10 +479,6 @@ jobs:
     timeout-minutes: 45
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_WAVE_LABEL: cancel-10m
       PHASE18_WAVE_DURATION: 10m
       PHASE18_CANCEL_TARGET: "50000"
@@ -536,10 +506,6 @@ jobs:
     timeout-minutes: 30
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_WAVE_LABEL: cancel-5m
       PHASE18_WAVE_DURATION: 5m
       PHASE18_CANCEL_TARGET: "50000"
@@ -567,10 +533,6 @@ jobs:
     timeout-minutes: 30
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_WAVE_LABEL: cancel-60s-stress
       PHASE18_WAVE_DURATION: 60s
       PHASE18_CANCEL_TARGET: "50000"
@@ -598,10 +560,6 @@ jobs:
     timeout-minutes: 60
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_CUTOFF_MODE: geographic
     steps:
       - uses: actions/checkout@v4
@@ -626,10 +584,6 @@ jobs:
     timeout-minutes: 60
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_CUTOFF_MODE: compressed
     steps:
       - uses: actions/checkout@v4
@@ -654,10 +608,6 @@ jobs:
     timeout-minutes: 45
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -681,9 +631,6 @@ jobs:
     timeout-minutes: 45
     environment: load-cert
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -707,9 +654,6 @@ jobs:
     timeout-minutes: 45
     environment: load-cert
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -808,10 +752,6 @@ jobs:
     timeout-minutes: 600
     environment: load-cert
     env:
-      PHASE18_BASE_URL: ${{ secrets.PHASE18_BASE_URL }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PHASE18_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
       PHASE18_SOAK_HOURS: ${{ inputs.soak_hours }}
     steps:
       - uses: actions/checkout@v4
@@ -857,9 +797,6 @@ jobs:
     timeout-minutes: 45
     environment: load-cert
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PHASE18_SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PHASE18_SUPABASE_SERVICE_ROLE_KEY }}
-      PHASE18_DATABASE_URL: ${{ secrets.PHASE18_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -922,7 +859,7 @@ jobs:
       - name: Trigger dedicated cleanup workflow path
         env:
           GH_TOKEN: ${{ github.token }}
-          PHASE18_LOAD_REF: ${{ secrets.PHASE18_LOAD_REF }}
+          PHASE18_LOAD_REF: ${{ inputs.project_ref }}
         run: |
           set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
