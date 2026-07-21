@@ -337,12 +337,23 @@ jobs:
           PHASE18_MENU_PATH_MODE: sessions
           PHASE18_HTTP_WAVE: "100"
         run: node scripts/phase18scale/audit-menu-path-preflight.mjs
+      - name: Company menu-path preflight (2000) before smoke HTTP
+        env:
+          PHASE18_MENU_PATH_MODE: companies
+        run: node scripts/phase18scale/audit-menu-path-preflight.mjs
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: phase18-job-smoke-100
-          path: docs/rc/phase18scale/evidence/
+          path: |
+            docs/rc/phase18scale/evidence/menu-path-preflight-sessions.json
+            docs/rc/phase18scale/evidence/menu-path-preflight-sessions.valid.ndjson
+            docs/rc/phase18scale/evidence/menu-path-preflight-sessions.invalid.ndjson
+            docs/rc/phase18scale/evidence/menu-path-preflight-companies.json
+            docs/rc/phase18scale/evidence/menu-path-preflight-companies.valid.ndjson
+            docs/rc/phase18scale/evidence/menu-path-preflight-companies.invalid.ndjson
+            docs/rc/phase18scale/evidence/
 
   smoke-500:
     needs: smoke-100

@@ -1,0 +1,22 @@
+{
+  "run_id": 29872128970,
+  "run_number": 22,
+  "workflow": "phase18scale-load-cert",
+  "engine_sha": "a6d70914605bc55f431119d7ef8f7741ea67be50",
+  "failed_job": "smoke-100",
+  "failed_step": "Session menu-path preflight (100 ops)",
+  "script": "scripts/phase18scale/audit-menu-path-preflight.mjs",
+  "function": "auditIdentity",
+  "error": "column profiles.provider_id does not exist",
+  "CLOUD_CERT_FAILED": "YES",
+  "CLOUD_DATABASE_CONNECTIVITY": "PASS",
+  "SYNTHETIC_SEED": "PASS",
+  "AUTHENTICATED_SESSION_POOL": "PASS",
+  "SMOKE_HTTP_WAVE_STARTED": "NO",
+  "PREFLIGHT_SCHEMA_QUERY_MISMATCH": "CONFIRMED",
+  "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "canonical_relation": "profiles.(company_id,location_id) → agreements(ACTIVE by company_id+location_id).provider_id → menu_service_days/items (lp_order_set)",
+  "profiles_has_provider_id": false,
+  "stamped_at": "2026-07-21T22:55:00.000Z"
+}

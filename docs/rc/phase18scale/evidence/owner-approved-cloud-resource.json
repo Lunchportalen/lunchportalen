@@ -32,6 +32,8 @@
   "CLOUD_PROJECT_CREATED": "YES",
   "smoke100_remediation_note": "GHA 29818328481 smoke-100 failed MENU_SERVICE_DAY_ITEM_NOT_FOUND due to null products.category_id; ensure-varmrett-product-categories + seed fix",
   "smoke100_subset_root_cause": "offered_price_mismatch LUXUS/ENTERPRISE agreements vs BASIS-priced MSDI; repaired 888 items / 444 products",
+  "smoke100_schema_mismatch_run_id": 29872128970,
+  "smoke100_schema_mismatch_root_cause": "auditIdentity selected profiles.provider_id which does not exist; canonical provider is agreements.provider_id via profiles.company_id+location_id (lp_order_set)",
   "network_failure_run_id": 29862108643,
   "network_failure_root_cause": "direct db.<ref>.supabase.co IPv6-only ENETUNREACH from GitHub-hosted runner; remediated to Supavisor session pooler aws-0-eu-west-1.pooler.supabase.com:5432",
   "CLOUD_DB_CONNECTION_METHOD": "supavisor_session_pooler_ipv4",

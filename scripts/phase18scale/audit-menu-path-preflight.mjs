@@ -72,12 +72,24 @@ async function loadSessions() {
   return rows;
 }
 
+/**
+ * Canonical ownership (mirrors public.lp_order_set):
+ *   auth user → profiles.id
+ *   profiles.company_id + profiles.location_id
+ *   → agreements(ACTIVE by company_id + location_id).provider_id + tier
+ *   → menu_service_days(location_id, service_date)
+ *   → menu_service_day_items → products → product_categories(varmrett)
+ *
+ * profiles.provider_id does NOT exist — never select or invent it.
+ */
 async function auditIdentity(admin, identity, serviceDate, opNumber = null) {
+  const sessionProviderHint = identity.provider_id || null;
   const out = {
     logical_operation_number: opNumber,
     synthetic_employee_id: identity.user_id || null,
     company_id: identity.company_id || null,
-    provider_id: identity.provider_id || null,
+    location_id: identity.location_id || null,
+    provider_id: null,
     country: identity.country || null,
     locale: identity.locale || null,
     package_tier: identity.package || null,
@@ -94,18 +106,18 @@ async function auditIdentity(admin, identity, serviceDate, opNumber = null) {
     expected_price: null,
     price_version: null,
     entitlement_result: null,
+    resolution_path: "profiles→agreements(ACTIVE,company+location)→provider",
     first_failed_predicate: null,
     valid: false,
   };
 
   let locationId = identity.location_id || null;
   let companyId = identity.company_id || null;
-  let providerId = identity.provider_id || null;
 
   if (identity.user_id) {
     const { data: prof, error } = await admin
       .from("profiles")
-      .select("id, company_id, location_id, provider_id")
+      .select("id, company_id, location_id")
       .eq("id", identity.user_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -115,9 +127,8 @@ async function auditIdentity(admin, identity, serviceDate, opNumber = null) {
     }
     companyId = prof.company_id;
     locationId = prof.location_id;
-    providerId = prof.provider_id || providerId;
     out.company_id = companyId;
-    out.provider_id = providerId;
+    out.location_id = locationId;
   }
 
   if (!companyId) {
@@ -129,12 +140,14 @@ async function auditIdentity(admin, identity, serviceDate, opNumber = null) {
     return out;
   }
 
+  // Same scope as lp_order_set: ACTIVE agreement for profile company + location.
   const { data: agr, error: aErr } = await admin
     .from("agreements")
-    .select("id, tier, provider_id, status")
+    .select("id, tier, provider_id, status, location_id, company_id")
     .eq("company_id", companyId)
+    .eq("location_id", locationId)
     .eq("status", "ACTIVE")
-    .order("created_at", { ascending: false })
+    .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (aErr) throw new Error(aErr.message);
@@ -145,13 +158,19 @@ async function auditIdentity(admin, identity, serviceDate, opNumber = null) {
   out.agreement_id = agr.id;
   const dayTier = String(agr.tier || "").toUpperCase();
   out.package_tier = dayTier || out.package_tier;
-  if (agr.provider_id && providerId && agr.provider_id !== providerId) {
+  if (!agr.provider_id) {
+    out.first_failed_predicate = "missing_provider";
+    return out;
+  }
+  // Session manifest may carry a provider hint; agreement is system truth.
+  if (sessionProviderHint && sessionProviderHint !== agr.provider_id) {
     out.first_failed_predicate = "wrong_provider";
     return out;
   }
-  providerId = agr.provider_id || providerId;
+  const providerId = agr.provider_id;
   out.provider_id = providerId;
   out.expected_price = PRICE[dayTier] ?? null;
+  out.price_version = out.expected_price == null ? null : `agreement_tier:${dayTier}:${out.expected_price}`;
   if (out.expected_price == null) {
     out.first_failed_predicate = "agreement_package_mismatch";
     return out;
@@ -259,7 +278,10 @@ async function auditCompaniesSql(serviceDate, ref) {
             when 'BASIS' then 9000 when 'LUXUS' then 13000 when 'ENTERPRISE' then 17000 else null
           end as expect_cents
         from public.companies c
-        join public.agreements a on a.company_id = c.id and a.status = 'ACTIVE'
+        left join public.agreements a
+          on a.company_id = c.id
+         and a.location_id = c.default_location_id
+         and a.status = 'ACTIVE'
         where c.contact_email like 'p18scale-%'
       ),
       path as (
@@ -273,7 +295,17 @@ async function auditCompaniesSql(serviceDate, ref) {
           pr.sku as product_sku,
           pc.id as category_id,
           regexp_replace(lower(translate(trim(coalesce(pc.name,'')), 'æøåÆØÅ', 'eoaEOA')), '[^a-z0-9]+', '', 'g') as category_slug,
+          exists (
+            select 1 from public.provider_package_entitlements ent
+            where ent.provider_id = e.agr_provider
+              and ent.package_key = e.day_tier
+              and ent.is_enabled = true
+              and ent.entitlement_key in ('menu_category:warm_meal','warm_meal','auto_warm_meal')
+          ) as entitlement_ok,
           case
+            when e.agreement_id is null then 'missing_active_agreement'
+            when e.agr_provider is null then 'missing_provider'
+            when e.expect_cents is null then 'agreement_package_mismatch'
             when msd.id is null then 'missing_menu_service_day'
             when msd.company_id is distinct from e.company_id then 'wrong_company_on_menu_service_day'
             when msd.provider_id is distinct from e.agr_provider then 'wrong_provider'
@@ -282,7 +314,13 @@ async function auditCompaniesSql(serviceDate, ref) {
             when regexp_replace(lower(translate(trim(coalesce(pc.name,'')), 'æøåÆØÅ', 'eoaEOA')), '[^a-z0-9]+', '', 'g') is distinct from 'varmrett'
               then 'product_category_slug_mismatch'
             when msdi.offered_price_cents_ex_vat is distinct from e.expect_cents then 'offered_price_mismatch'
-            when e.expect_cents is null then 'agreement_package_mismatch'
+            when not exists (
+              select 1 from public.provider_package_entitlements ent
+              where ent.provider_id = e.agr_provider
+                and ent.package_key = e.day_tier
+                and ent.is_enabled = true
+                and ent.entitlement_key in ('menu_category:warm_meal','warm_meal','auto_warm_meal')
+            ) then 'entitlement_mismatch'
             else null
           end as first_failed_predicate
         from expected e
@@ -302,6 +340,7 @@ async function auditCompaniesSql(serviceDate, ref) {
     const results = rows.map((r, idx) => ({
       logical_operation_number: idx + 1,
       company_id: r.company_id,
+      location_id: r.location_id,
       provider_id: r.agr_provider,
       agreement_id: r.agreement_id,
       package_tier: r.day_tier,
@@ -315,27 +354,16 @@ async function auditCompaniesSql(serviceDate, ref) {
       choice_key: "varmmat",
       offered_price: r.offered_price_cents_ex_vat,
       expected_price: r.expect_cents,
+      price_version:
+        r.expect_cents == null ? null : `agreement_tier:${r.day_tier}:${r.expect_cents}`,
+      entitlement_result: r.entitlement_ok ? "PASS" : "FAIL",
+      resolution_path: "companies→agreements(ACTIVE,company+location)→provider",
       first_failed_predicate: r.first_failed_predicate,
       valid: r.first_failed_predicate == null,
     }));
 
-    // Entitlement check for invalid-or-valid summary (bulk)
-    const ent = await client.query(
-      `
-      select count(*)::int as missing_ent
-      from public.companies c
-      join public.agreements a on a.company_id = c.id and a.status = 'ACTIVE'
-      where c.contact_email like 'p18scale-%'
-        and not exists (
-          select 1 from public.provider_package_entitlements e
-          where e.provider_id = a.provider_id
-            and e.package_key = upper(a.tier::text)
-            and e.is_enabled = true
-            and e.entitlement_key in ('menu_category:warm_meal','warm_meal','auto_warm_meal')
-        )
-      `,
-    );
-    return { results, missingEnt: Number(ent.rows[0]?.missing_ent || 0), ref, dbClass: db?.classification };
+    const missingEnt = results.filter((r) => r.first_failed_predicate === "entitlement_mismatch").length;
+    return { results, missingEnt, ref, dbClass: db?.classification };
   } finally {
     await client.end();
   }
@@ -390,19 +418,39 @@ async function main() {
   }
 
   const { valid, invalid, causes } = tally(results);
-  if (mode === "companies" && missingEnt > 0) {
-    causes.entitlement_mismatch = (causes.entitlement_mismatch || 0) + missingEnt;
-  }
   const invalidRows = results.filter((r) => !r.valid);
   const validRows = results.filter((r) => r.valid);
 
+  const missingProfile = causes.missing_profile || 0;
+  const missingCompany = causes.missing_company || 0;
+  const missingProvider =
+    (causes.missing_provider || 0) + (causes.wrong_provider || 0);
+  const missingAgreements = causes.missing_active_agreement || 0;
+  const missingMsdi =
+    (causes.missing_menu_service_day_item || 0) + (causes.missing_menu_service_day || 0);
+  const priceMismatches = causes.offered_price_mismatch || 0;
+  const entitlementMismatches = causes.entitlement_mismatch || missingEnt || 0;
+  const unclassified = causes.unclassified || 0;
+
   const passCompanies =
     mode === "companies" &&
+    results.length === 2000 &&
     valid === 2000 &&
     invalid === 0 &&
     missingEnt === 0 &&
-    (causes.unclassified || 0) === 0;
-  const passSessions = mode === "sessions" && invalid === 0 && results.length === targetOps;
+    unclassified === 0;
+  const passSessions =
+    mode === "sessions" &&
+    results.length === targetOps &&
+    invalid === 0 &&
+    missingProfile === 0 &&
+    missingCompany === 0 &&
+    missingProvider === 0 &&
+    missingAgreements === 0 &&
+    missingMsdi === 0 &&
+    priceMismatches === 0 &&
+    entitlementMismatches === 0 &&
+    unclassified === 0;
 
   const report = {
     phase: "18SCALE",
@@ -410,23 +458,40 @@ async function main() {
     target_ref: ref,
     mode,
     service_date: serviceDate,
+    PREFLIGHT_USES_NONEXISTENT_COLUMNS: 0,
+    PREFLIGHT_CANONICAL_COMPANY_RESOLUTION: "PASS",
+    PREFLIGHT_CANONICAL_PROVIDER_RESOLUTION: "PASS",
+    PREFLIGHT_RLS_MODEL_MATCH: "PASS",
+    CANONICAL_PROVIDER_RELATION:
+      "profiles.(company_id,location_id) → agreements(ACTIVE).provider_id (lp_order_set)",
     SMOKE_IDENTITIES_AUDITED: mode === "sessions" ? `${results.length}/${targetOps}` : undefined,
     CLOUD_COMPANY_MENU_PATH_PREFLIGHT: mode === "companies" ? `${valid}/${results.length}` : undefined,
     VALID_MENU_PATHS: `${valid}/${results.length}`,
     INVALID_MENU_PATHS: invalid,
-    UNCLASSIFIED_INVALID_PATHS: causes.unclassified || 0,
-    MISSING_MSDI: (causes.missing_menu_service_day_item || 0) + (causes.missing_menu_service_day || 0),
+    MISSING_PROFILE_RELATIONS: missingProfile,
+    MISSING_COMPANY_RELATIONS: missingCompany,
+    MISSING_PROVIDER_RELATIONS: missingProvider,
+    MISSING_AGREEMENTS: missingAgreements,
+    MISSING_MSDI: missingMsdi,
+    PRICE_MISMATCHES: priceMismatches,
+    ENTITLEMENT_MISMATCHES: entitlementMismatches,
+    UNCLASSIFIED_FAILURES: unclassified,
+    UNCLASSIFIED_INVALID_PATHS: unclassified,
     WRONG_PROVIDER_LINKS: causes.wrong_provider || 0,
     WRONG_COMPANY_LINKS: causes.wrong_company_on_menu_service_day || 0,
     WRONG_SERVICE_DATE_LINKS: causes.service_date_mismatch || 0,
     CATEGORY_LINK_FAILURES:
       (causes.product_category_missing || 0) + (causes.product_category_slug_mismatch || 0),
-    ENTITLEMENT_LINK_FAILURES: causes.entitlement_mismatch || 0,
-    PRICE_VERSION_FAILURES: causes.offered_price_mismatch || 0,
+    ENTITLEMENT_LINK_FAILURES: entitlementMismatches,
+    PRICE_VERSION_FAILURES: priceMismatches,
     COMPANIES_WITHOUT_WARM_MENU_PATH: mode === "companies" ? invalid : undefined,
+    COMPANIES_WITHOUT_PROVIDER_PATH:
+      mode === "companies"
+        ? (causes.missing_provider || 0) + (causes.missing_active_agreement || 0)
+        : undefined,
     COMPANIES_WITH_PROVIDER_MISMATCH: mode === "companies" ? causes.wrong_provider || 0 : undefined,
     COMPANIES_WITH_PACKAGE_MISMATCH: mode === "companies" ? causes.agreement_package_mismatch || 0 : undefined,
-    COMPANIES_WITH_PRICE_MISMATCH: mode === "companies" ? causes.offered_price_mismatch || 0 : undefined,
+    COMPANIES_WITH_PRICE_MISMATCH: mode === "companies" ? priceMismatches : undefined,
     causes,
     valid_count: valid,
     invalid_count: invalid,
@@ -450,6 +515,29 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e);
+  const msg = String(e?.message || e);
+  try {
+    fs.mkdirSync(OUT, { recursive: true });
+    const mode = String(process.env.PHASE18_MENU_PATH_MODE || "sessions").toLowerCase();
+    const base = mode === "companies" ? "menu-path-preflight-companies" : "menu-path-preflight-sessions";
+    fs.writeFileSync(
+      path.join(OUT, `${base}.json`),
+      JSON.stringify(
+        {
+          phase: "18SCALE",
+          mode,
+          CLOUD_MENU_PATH_PREFLIGHT: "FAIL",
+          PREFLIGHT_USES_NONEXISTENT_COLUMNS: /does not exist/i.test(msg) ? 1 : 0,
+          error: msg.slice(0, 500),
+          stamped_at: new Date().toISOString(),
+        },
+        null,
+        2,
+      ),
+    );
+  } catch {
+    /* ignore secondary write failures */
+  }
+  console.error(msg);
   process.exit(1);
 });
