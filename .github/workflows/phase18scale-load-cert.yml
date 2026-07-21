@@ -215,6 +215,12 @@ jobs:
         run: node scripts/phase18scale/ensure-agreements.mjs
       - name: Ensure varmrett product categories (lp_order_set MSDI link)
         run: node scripts/phase18scale/ensure-varmrett-product-categories.mjs
+      - name: Align menu path offered prices to agreement tiers
+        run: node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
+      - name: Company menu-path preflight (2000)
+        env:
+          PHASE18_MENU_PATH_MODE: companies
+        run: node scripts/phase18scale/audit-menu-path-preflight.mjs
       - name: Ensure package entitlements
         run: node scripts/phase18scale/ensure-package-entitlements.mjs
       - name: Entitlement seed idempotency (second run)
@@ -314,6 +320,13 @@ jobs:
           path: docs/rc/phase18scale/evidence/
       - name: Ensure varmrett product categories before smoke
         run: node scripts/phase18scale/ensure-varmrett-product-categories.mjs
+      - name: Align menu path offered prices before smoke
+        run: node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
+      - name: Session menu-path preflight (100 ops)
+        env:
+          PHASE18_MENU_PATH_MODE: sessions
+          PHASE18_HTTP_WAVE: "100"
+        run: node scripts/phase18scale/audit-menu-path-preflight.mjs
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
