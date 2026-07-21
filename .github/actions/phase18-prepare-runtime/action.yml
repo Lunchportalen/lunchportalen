@@ -15,11 +15,40 @@ runs:
     - name: Resolve isolated keys
       shell: bash
       run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
-    - name: Start Next runtime
-      if: inputs.start_next == 'true'
+    - name: Inject synthetic non-production runtime env
       shell: bash
       run: |
         set -euo pipefail
+        SHA="${APP_SHA:-${GITHUB_SHA:-phase18scale}}"
+        {
+          echo "RC_MODE=true"
+          echo "SYSTEM_MOTOR_SECRET=phase18-loadcert-synthetic-not-production"
+          echo "CRON_SECRET=phase18-loadcert-cron-synthetic"
+          echo "APP_VERSION=${SHA}"
+          echo "NEXT_PUBLIC_APP_VERSION=${SHA}"
+          echo "VERCEL_GIT_COMMIT_SHA=${SHA}"
+          echo "STRIPE_SECRET_KEY="
+          echo "PHASE18_LOADCERT=1"
+        } >> "$GITHUB_ENV"
+    - name: Start Next runtime
+      if: inputs.start_next == 'true'
+      shell: bash
+      env:
+        SYSTEM_MOTOR_SECRET: phase18-loadcert-synthetic-not-production
+        CRON_SECRET: phase18-loadcert-cron-synthetic
+        APP_VERSION: ${{ env.APP_SHA }}
+        NEXT_PUBLIC_APP_VERSION: ${{ env.APP_SHA }}
+        VERCEL_GIT_COMMIT_SHA: ${{ env.APP_SHA }}
+        RC_MODE: "true"
+        PHASE18_LOADCERT: "1"
+      run: |
+        set -euo pipefail
+        export SYSTEM_MOTOR_SECRET="${SYSTEM_MOTOR_SECRET}"
+        export CRON_SECRET="${CRON_SECRET}"
+        export APP_VERSION="${APP_VERSION:-$APP_SHA}"
+        export NEXT_PUBLIC_APP_VERSION="${NEXT_PUBLIC_APP_VERSION:-$APP_SHA}"
+        export VERCEL_GIT_COMMIT_SHA="${VERCEL_GIT_COMMIT_SHA:-$APP_SHA}"
+        export RC_MODE=true
         npm run build
         npx next start -H 127.0.0.1 -p 3000 > /tmp/next.log 2>&1 &
         echo $! > /tmp/next.pid
