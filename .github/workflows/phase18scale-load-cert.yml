@@ -211,6 +211,10 @@ jobs:
       - name: Resolve isolated keys
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
       - run: node scripts/phase18scale/seed-scale-matrix.mjs
+      - name: Ensure ACTIVE agreements
+        run: node scripts/phase18scale/ensure-agreements.mjs
+      - name: Ensure package entitlements
+        run: node scripts/phase18scale/ensure-package-entitlements.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
