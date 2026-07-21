@@ -1,5 +1,6 @@
 # PHASE 18SCALE — forced cleanup of isolated non-production Supabase project.
-# Never touches production. Runs on schedule (forced expiration) and on demand.
+# Independent of load-cert remaining running. Never touches production.
+# Deletes only on: schedule expiration, or explicit delete reasons.
 name: phase18scale-cloud-cleanup
 
 on:
@@ -53,7 +54,7 @@ jobs:
             uigxsboqeruxflgzqztl) echo "::error::shared staging ref forbidden for this cleanup path"; exit 2 ;;
             *) echo "SKIP=0" >> "$GITHUB_ENV" ;;
           esac
-          # workflow_dispatch must opt in — never delete on arm/verify/test reasons
+          # workflow_dispatch must opt in — never delete on arm/verify/test/preserve reasons
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             case "$REASON" in
               delete|force-expire|load-cert-finally|expired) echo "delete_intent=YES" ;;
@@ -84,6 +85,7 @@ jobs:
           NODE
 
       - name: Delete isolated project via Management API
+        id: delete
         if: env.SKIP == '0'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -98,27 +100,80 @@ jobs:
             -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")
           echo "delete_http=$CODE"
           cat /tmp/del.json || true
+          echo "DELETE_HTTP=$CODE" >> "$GITHUB_ENV"
           case "$CODE" in
             200|204|404) echo "delete_ok_or_absent" ;;
             *) echo "::error::delete failed"; exit 2 ;;
           esac
 
+      - name: Verify deletion through Supabase Management API
+        id: verify
+        if: env.SKIP == '0'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          CODE=$(curl -sS -o /tmp/get.json -w "%{http_code}" \
+            "https://api.supabase.com/v1/projects/${TARGET_REF}" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}")
+          echo "verify_http=$CODE"
+          cat /tmp/get.json || true
+          echo "VERIFY_HTTP=$CODE" >> "$GITHUB_ENV"
+          DELETED="NO"
+          BILLING_STOPPED="UNKNOWN"
+          case "$CODE" in
+            404)
+              DELETED="YES"
+              BILLING_STOPPED="YES"
+              ;;
+            200)
+              STATUS=$(node -e "try{const j=JSON.parse(require('fs').readFileSync('/tmp/get.json','utf8')); console.log(j.status||j.lifecycle||'')}catch{console.log('')}")
+              if echo "$STATUS" | grep -qiE 'inactive|removed|gone|deleted'; then
+                DELETED="YES"
+                BILLING_STOPPED="YES"
+              else
+                echo "::error::project still present after delete attempt status=$STATUS"
+                exit 2
+              fi
+              ;;
+            *)
+              echo "::error::unexpected verify status $CODE"
+              exit 2
+              ;;
+          esac
+          echo "CLOUD_RESOURCE_DELETED=$DELETED" >> "$GITHUB_ENV"
+          echo "BILLING_STOPPED=$BILLING_STOPPED" >> "$GITHUB_ENV"
+          echo "deleted=$DELETED" >> "$GITHUB_OUTPUT"
+
       - name: Write cleanup evidence
         if: always()
         run: |
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          DELETED="${CLOUD_RESOURCE_DELETED:-NO}"
+          if [ "${SKIP:-1}" = "1" ]; then
+            DELETED="NO"
+          fi
           cat > docs/rc/phase18scale/evidence/ci-jobs/cloud-cleanup.json <<EOF
           {
             "job": "cleanup",
             "workflow": "phase18scale-cloud-cleanup",
             "target_ref": "${TARGET_REF:-}",
             "event": "${{ github.event_name }}",
-            "reason": "${{ inputs.reason || github.event.client_payload.reason || 'scheduled_or_dispatch' }}",
-            "CLOUD_RESOURCE_DELETED": "ATTEMPTED",
+            "reason": "${REASON:-scheduled_or_dispatch}",
+            "skipped": "${SKIP:-}",
+            "delete_http": "${DELETE_HTTP:-}",
+            "verify_http": "${VERIFY_HTTP:-}",
+            "CLOUD_RESOURCE_DELETED": "$DELETED",
+            "BILLING_STOPPED": "${BILLING_STOPPED:-UNKNOWN}",
+            "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
+            "RESOURCE_LIFETIME_MAX": "72 HOURS",
+            "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "PRODUCTION_MUTATIONS": 0,
+            "deletion_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
+          cat docs/rc/phase18scale/evidence/ci-jobs/cloud-cleanup.json
 
       - name: Upload cleanup evidence
         if: always()

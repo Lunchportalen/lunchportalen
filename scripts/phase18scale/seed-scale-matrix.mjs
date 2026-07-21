@@ -310,9 +310,9 @@ async function main() {
         { onConflict: "slug" },
       );
       if (pErr) throw new Error(`provider ${p}: ${pErr.message}`);
-      await admin
-        .from("organizations")
-        .upsert(
+      {
+        const nowIso = new Date().toISOString();
+        const { error: orgErr } = await admin.from("organizations").upsert(
           {
             id,
             type: "provider",
@@ -320,11 +320,16 @@ async function main() {
             slug,
             status: "ACTIVE",
             legacy_source: "provider",
+            // organizations_customer_provider_presence_chk: provider ⇒ legacy_provider_id IS NULL
+            legacy_provider_id: null,
+            created_at: nowIso,
+            updated_at: nowIso,
+            metadata: { phase: "18SCALE", mark: MARK, country: cc },
           },
           { onConflict: "id" },
-        )
-        .then(() => null)
-        .catch(() => null);
+        );
+        if (orgErr) throw new Error(`organization ${p}: ${orgErr.message}`);
+      }
 
       for (const pkg of PACKAGES) {
         await admin

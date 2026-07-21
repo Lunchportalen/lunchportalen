@@ -215,6 +215,37 @@ jobs:
         run: node scripts/phase18scale/ensure-agreements.mjs
       - name: Ensure package entitlements
         run: node scripts/phase18scale/ensure-package-entitlements.mjs
+      - name: Entitlement seed idempotency (second run)
+        run: |
+          set -euo pipefail
+          node scripts/phase18scale/ensure-package-entitlements.mjs | tee /tmp/entitlement-run2.json
+          node <<'NODE'
+          const fs = require("fs");
+          const report = JSON.parse(fs.readFileSync("docs/rc/phase18scale/evidence/ensure-package-entitlements.json", "utf8"));
+          const ok =
+            report.CLOUD_ENTITLEMENT_SEED === "PASS" &&
+            Number(report.inserted) === 0 &&
+            Number(report.mutated_unexpectedly || 0) === 0 &&
+            Number(report.ENTITLEMENT_DUPLICATE_ROWS) === 0 &&
+            Number(report.ENTITLEMENT_MISSING_ROWS) === 0 &&
+            Number(report.ENTITLEMENT_PERSISTED_ROWS) === Number(report.ENTITLEMENT_EXPECTED_ROWS);
+          const out = {
+            ENTITLEMENT_SEED_IDEMPOTENCY: ok ? "PASS" : "FAIL",
+            inserted: report.inserted,
+            mutated_unexpectedly: report.mutated_unexpectedly || 0,
+            duplicates: report.ENTITLEMENT_DUPLICATE_ROWS,
+            missing: report.ENTITLEMENT_MISSING_ROWS,
+            expected: report.ENTITLEMENT_EXPECTED_ROWS,
+            persisted: report.ENTITLEMENT_PERSISTED_ROWS,
+            stamped_at: new Date().toISOString(),
+          };
+          fs.writeFileSync(
+            "docs/rc/phase18scale/evidence/ensure-package-entitlements-idempotency.json",
+            JSON.stringify(out, null, 2),
+          );
+          console.log(JSON.stringify(out, null, 2));
+          if (!ok) process.exit(2);
+          NODE
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -938,7 +969,15 @@ jobs:
           path: docs/rc/phase18scale/
 
   cleanup:
-    needs: [source-and-target-safety, final-report]
+    needs:
+      [
+        source-and-target-safety,
+        synthetic-seed,
+        ramp-10000,
+        eight-hour-soak,
+        final-reconciliation,
+        final-report,
+      ]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -947,27 +986,73 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.APP_SHA }}
-      - name: Trigger dedicated cleanup workflow path
+      - name: Resolve cleanup disposition (preserve vs delete)
+        id: disposition
         env:
           GH_TOKEN: ${{ github.token }}
           PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+          SEED_RESULT: ${{ needs.synthetic-seed.result }}
+          RAMP10K_RESULT: ${{ needs.ramp-10000.result }}
+          SOAK_RESULT: ${{ needs.eight-hour-soak.result }}
+          FINAL_RECON_RESULT: ${{ needs.final-reconciliation.result }}
+          FINAL_REPORT_RESULT: ${{ needs.final-report.result }}
         run: |
           set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
           REF="${PHASE18_LOAD_REF:-}"
-          cat > docs/rc/phase18scale/evidence/ci-jobs/cleanup.json <<EOF
+          # Delete only after full certification chain succeeded (recon after soak).
+          # Any resumable failure → preserve; forced expiration is independent workflow.
+          DELETE="NO"
+          if [ "${FINAL_RECON_RESULT:-}" = "success" ] && [ "${SOAK_RESULT:-}" = "success" ]; then
+            DELETE="YES"
+          fi
+          if [ "$DELETE" = "YES" ]; then
+            echo "disposition=DELETE" >> "$GITHUB_OUTPUT"
+            cat > docs/rc/phase18scale/evidence/ci-jobs/cleanup.json <<EOF
           {
             "job": "cleanup",
             "cleanup_workflow": "phase18scale-cloud-cleanup",
             "target_ref": "$REF",
-            "note": "Invoke phase18scale-cloud-cleanup with project_ref after evidence export",
+            "CLOUD_RESOURCE_DELETED": "PENDING_DISPATCH",
+            "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "NO",
+            "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
+            "RESOURCE_LIFETIME_MAX": "72 HOURS",
+            "TOTAL_APPROVED_COST_MAX": "USD 10.00",
+            "disposition": "DELETE_ON_SUCCESS",
             "PRODUCTION_MUTATIONS": 0,
             "exact_SHA": "${APP_SHA}",
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
-          if [ -n "$REF" ] && [ "$REF" != "hkpokyapzarefrgqzkos" ]; then
-            echo "Cleanup must be dispatched explicitly with reason=delete|force-expire|load-cert-finally after evidence export"
+            gh workflow run phase18scale-cloud-cleanup.yml \
+              -f project_ref="$REF" \
+              -f reason=load-cert-finally
+            echo "Dispatched phase18scale-cloud-cleanup reason=load-cert-finally"
+          else
+            echo "disposition=PRESERVE" >> "$GITHUB_OUTPUT"
+            cat > docs/rc/phase18scale/evidence/ci-jobs/cleanup.json <<EOF
+          {
+            "job": "cleanup",
+            "cleanup_workflow": "phase18scale-cloud-cleanup",
+            "target_ref": "$REF",
+            "CLOUD_RESOURCE_DELETED": "NO",
+            "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "YES",
+            "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
+            "RESOURCE_LIFETIME_MAX": "72 HOURS",
+            "TOTAL_APPROVED_COST_MAX": "USD 10.00",
+            "disposition": "PRESERVED_FOR_REMEDIATION",
+            "seed_result": "${SEED_RESULT:-}",
+            "ramp10k_result": "${RAMP10K_RESULT:-}",
+            "soak_result": "${SOAK_RESULT:-}",
+            "final_recon_result": "${FINAL_RECON_RESULT:-}",
+            "final_report_result": "${FINAL_REPORT_RESULT:-}",
+            "note": "Resumable certification failure — project kept; schedule cleanup remains armed",
+            "PRODUCTION_MUTATIONS": 0,
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+            echo "PRESERVED_FOR_REMEDIATION — not claiming CLOUD_RESOURCE_DELETED"
           fi
       - if: always()
         uses: actions/upload-artifact@v4

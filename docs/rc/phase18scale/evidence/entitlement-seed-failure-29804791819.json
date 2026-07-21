@@ -1,0 +1,54 @@
+{
+  "phase": "18SCALE",
+  "classification": {
+    "CLOUD_CERT_FAILED": "YES",
+    "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
+    "CLOUD_SEED_REMEDIATION_REQUIRED": "YES",
+    "GLOBAL_SCALE_CERTIFIED": "NO"
+  },
+  "gha_run": 29804791819,
+  "engine_sha": "ded9ab61b4e9d5213d8549400b92f8a987cfb38c",
+  "failure_job": "synthetic-seed",
+  "failure_step": "Ensure package entitlements",
+  "isolated_project_ref": "arstaxredytrjcmqcwhh",
+  "project_state_at_failure": "ACTIVE_HEALTHY",
+  "production_mutations": 0,
+  "exception": {
+    "type": "Postgres/PostgREST foreign_key_violation",
+    "code": "23503",
+    "constraint": "provider_package_entitlements_provider_id_fkey",
+    "message": "insert or update on table \"provider_package_entitlements\" violates foreign key constraint \"provider_package_entitlements_provider_id_fkey\"",
+    "http_status": 409,
+    "referenced_table": "organizations",
+    "fk_definition": "FOREIGN KEY (provider_id) REFERENCES organizations(id) ON DELETE CASCADE"
+  },
+  "failing_sample_rows": [
+    "p18scale-prov-0009 BASIS sandwich",
+    "p18scale-prov-0010 BASIS sandwich",
+    "p18scale-prov-0003 BASIS sandwich"
+  ],
+  "counts": {
+    "providers_present": 1000,
+    "organizations_present_at_diagnosis": 0,
+    "entitlement_expected_rows": 16000,
+    "entitlement_completed_ok_reported": 0,
+    "entitlement_fail_reported": 16000,
+    "entitlement_persisted_rows": 0,
+    "duplicate_count": 0,
+    "missing_count": 16000,
+    "retry_count": 0
+  },
+  "timing": {
+    "step_started_at": "2026-07-21T06:29:05.415Z",
+    "step_finished_approx": "2026-07-21T06:30:43Z",
+    "elapsed_seconds_approx": 98,
+    "agreements_completed_at": "2026-07-21T06:29:05.405Z",
+    "last_successful_checkpoint": "ensure-agreements (2000 ACTIVE) — entitlements had no durable checkpoint"
+  },
+  "root_cause": {
+    "summary": "provider_package_entitlements.provider_id FK requires organizations(id). Cloud project had 1000 providers and 0 organizations. Org upsert omitted created_at/updated_at (NOT NULL, no DB default) and/or set legacy_provider_id on provider rows (violates organizations_customer_provider_presence_chk: provider ⇒ legacy_provider_id IS NULL). Upsert errors were swallowed, so parent rows never persisted and every entitlement upsert failed with 23503.",
+    "not_root_cause": "serial-and-too-slow alone — failure was FK integrity, not timeout",
+    "secondary_constraint": "CHECK ((((type = 'provider'::org_type) AND (legacy_provider_id IS NULL)) OR ((type = 'customer'::org_type) AND (legacy_provider_id IS NOT NULL))))"
+  },
+  "stamped_at": "2026-07-21T09:00:00.000Z"
+}
