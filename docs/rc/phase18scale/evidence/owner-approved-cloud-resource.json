@@ -12,7 +12,7 @@
   "CLOUD_ENVIRONMENT_ISOLATED": "YES",
   "project_name": "lunchportalen-phase18scale-loadcert",
   "AUTO_DELETE_SCHEDULED": "YES",
-  "PHASE18_CLOUD_ENGINE_SHA": "61fcf5276f3b5a1990aea39f8e4525e297390c9a",
+  "PHASE18_CLOUD_ENGINE_SHA": "c9f53fde07f2c5c2664faa15c2e1cb5f413e19a3",
   "ESTIMATED_BASE_COST": 10,
   "PRODUCTION_PARENT": "NO",
   "service": "Supabase",
@@ -24,7 +24,7 @@
   "RESOURCE_LIFETIME_MAX": "72 HOURS",
   "TOTAL_APPROVED_COST_MAX": "USD 10.00",
   "remediation_note": "GHA 29804791819 failed at Ensure package entitlements (FK organizations). Project preserved for entitlement seed fix; do not delete until success/abort/expire.",
-  "stamped_at": "2026-07-21T21:00:39.267Z",
+  "stamped_at": "2026-07-21T23:04:02.455Z",
   "previous_project_reference_deleted": "mvjmukgfslukgohkuqhr",
   "PRODUCTION_PROJECT": "NO",
   "cost_classification": "PROVIDER_CALCULATOR_ESTIMATE",
@@ -37,7 +37,8 @@
   "network_failure_run_id": 29862108643,
   "network_failure_root_cause": "direct db.<ref>.supabase.co IPv6-only ENETUNREACH from GitHub-hosted runner; remediated to Supavisor session pooler aws-0-eu-west-1.pooler.supabase.com:5432",
   "CLOUD_DB_CONNECTION_METHOD": "supavisor_session_pooler_ipv4",
-  "elapsed_hours_at_remediation_stamp": 24.62,
-  "remaining_hours_at_remediation_stamp": 47.38,
-  "network_remediation_engine_sha": "61fcf5276f3b5a1990aea39f8e4525e297390c9a"
+  "elapsed_hours_at_remediation_stamp": 26.79,
+  "remaining_hours_at_remediation_stamp": 45.21,
+  "network_remediation_engine_sha": "61fcf5276f3b5a1990aea39f8e4525e297390c9a",
+  "smoke100_schema_remediation_engine_sha": "c9f53fde07f2c5c2664faa15c2e1cb5f413e19a3"
 }
