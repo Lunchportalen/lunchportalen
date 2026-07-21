@@ -121,7 +121,8 @@ async function main() {
 
   try {
     await client.connect();
-    tlsVerified = true; // Node pg with rejectUnauthorized:true completed handshake
+    // Handshake completed with rejectUnauthorized:true + vendored Supabase CA bundle.
+    tlsVerified = true;
     const one = await client.query("select 1::int as n");
     selectOk = Number(one.rows[0]?.n) === 1;
 

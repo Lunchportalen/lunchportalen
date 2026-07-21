@@ -4,12 +4,52 @@
  *
  * Cloud load-cert (PHASE18_LOADCERT=1) requires Supavisor session pooler (IPv4).
  * Direct db.<ref>.supabase.co is rejected (IPv6-only from GitHub-hosted runners).
+ *
+ * TLS: keep rejectUnauthorized=true and trust the vendored Supabase Root 2021 CA.
+ * Strip sslmode from the connection string before passing to node-postgres so the
+ * ssl object (including ca) is not overwritten by pg-connection-string.
  */
 import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { PROD_REF, STAGING_REF } from "../load-env.mjs";
 
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
 const LOCAL_PORT = 54322;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SUPABASE_CA_BUNDLE = path.resolve(
+  __dirname,
+  "../certs/supabase-pooler-ca-bundle.crt",
+);
+
+function loadSupabaseCaBundle() {
+  if (!fs.existsSync(SUPABASE_CA_BUNDLE)) {
+    throw new Error(`PHASE18_SUPABASE_CA_MISSING: ${SUPABASE_CA_BUNDLE}`);
+  }
+  const ca = fs.readFileSync(SUPABASE_CA_BUNDLE, "utf8");
+  if (!ca.includes("BEGIN CERTIFICATE")) {
+    throw new Error("PHASE18_SUPABASE_CA_INVALID");
+  }
+  return ca;
+}
+
+function connectionStringWithoutSslMode(url) {
+  const parsed = parseDbUrl(url);
+  parsed.searchParams.delete("sslmode");
+  parsed.searchParams.delete("sslrootcert");
+  parsed.searchParams.delete("sslcert");
+  parsed.searchParams.delete("sslkey");
+  return parsed.toString();
+}
+
+function cloudSslOptions() {
+  return {
+    rejectUnauthorized: true,
+    ca: loadSupabaseCaBundle(),
+    minVersion: "TLSv1.2",
+  };
+}
 
 export function redactIdentity(parsed, classification, source, extra = {}) {
   return {
@@ -121,6 +161,8 @@ export function assertIsolatedCloudPostgresUrl(url, source) {
     throw new Error(`PHASE18_CLOUD_DB_PORT_FORBIDDEN: ${port}`);
   }
 
+  // Keep sslmode=require on the stored URL for operators/psql; node-pg clients must
+  // strip it via createPhase18PgClient so ssl.ca is honored.
   parsed.searchParams.set("sslmode", "require");
   const identity = redactIdentity(
     {
@@ -135,13 +177,13 @@ export function assertIsolatedCloudPostgresUrl(url, source) {
     {
       connection_method: "supavisor_session_pooler_ipv4",
       project_ref: ref,
-      tls: "sslmode=require,rejectUnauthorized=true",
+      tls: "rejectUnauthorized=true,ca=supabase-pooler-ca-bundle.crt",
     },
   );
   return {
     connectionString: parsed.toString(),
     identity,
-    ssl: { rejectUnauthorized: true },
+    ssl: cloudSslOptions(),
   };
 }
 
@@ -268,10 +310,13 @@ export function createPhase18PgClient(pg, opts = {}) {
   const { connectionString, ssl, identity } = resolvePhase18DatabaseUrl({
     print: opts.print !== false,
   });
+  const useSsl = ssl === false ? false : ssl || cloudSslOptions();
   const client = new pg.Client({
-    connectionString,
-    ssl: ssl === false ? false : ssl || { rejectUnauthorized: true },
+    // Strip sslmode so node-postgres does not discard the verified ssl.ca object.
+    connectionString:
+      useSsl === false ? connectionString : connectionStringWithoutSslMode(connectionString),
+    ssl: useSsl,
     connectionTimeoutMillis: opts.connectionTimeoutMillis ?? 15000,
   });
-  return { client, identity, ssl };
+  return { client, identity, ssl: useSsl };
 }

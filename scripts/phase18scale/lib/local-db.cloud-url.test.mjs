@@ -69,6 +69,8 @@ assert.equal(ok.identity.host, "aws-0-eu-west-1.pooler.supabase.com");
 assert.equal(ok.identity.username, `postgres.${REF}`);
 assert.equal(ok.identity.database, "postgres");
 assert.equal(ok.ssl.rejectUnauthorized, true);
+assert.equal(typeof ok.ssl.ca, "string");
+assert.match(ok.ssl.ca, /BEGIN CERTIFICATE/);
 assert.match(ok.connectionString, /sslmode=require/);
 
 console.log(JSON.stringify({ local_db_cloud_url_tests: "PASS" }));
