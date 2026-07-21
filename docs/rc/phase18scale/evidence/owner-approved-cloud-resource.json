@@ -12,7 +12,7 @@
   "CLOUD_ENVIRONMENT_ISOLATED": "YES",
   "project_name": "lunchportalen-phase18scale-loadcert",
   "AUTO_DELETE_SCHEDULED": "YES",
-  "PHASE18_CLOUD_ENGINE_SHA": "672641e93072b1caa83f036af53e8ce24fdaaebf",
+  "PHASE18_CLOUD_ENGINE_SHA": "61fcf5276f3b5a1990aea39f8e4525e297390c9a",
   "ESTIMATED_BASE_COST": 10,
   "PRODUCTION_PARENT": "NO",
   "service": "Supabase",
@@ -24,7 +24,7 @@
   "RESOURCE_LIFETIME_MAX": "72 HOURS",
   "TOTAL_APPROVED_COST_MAX": "USD 10.00",
   "remediation_note": "GHA 29804791819 failed at Ensure package entitlements (FK organizations). Project preserved for entitlement seed fix; do not delete until success/abort/expire.",
-  "stamped_at": "2026-07-21T19:27:03.198Z",
+  "stamped_at": "2026-07-21T21:00:39.267Z",
   "previous_project_reference_deleted": "mvjmukgfslukgohkuqhr",
   "PRODUCTION_PROJECT": "NO",
   "cost_classification": "PROVIDER_CALCULATOR_ESTIMATE",
@@ -37,5 +37,5 @@
   "CLOUD_DB_CONNECTION_METHOD": "supavisor_session_pooler_ipv4",
   "elapsed_hours_at_remediation_stamp": 24.62,
   "remaining_hours_at_remediation_stamp": 47.38,
-  "stamped_at": "2026-07-21T20:45:00.000Z"
+  "network_remediation_engine_sha": "61fcf5276f3b5a1990aea39f8e4525e297390c9a"
 }
