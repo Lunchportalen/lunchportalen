@@ -73,8 +73,13 @@ jobs:
           case "${PHASE18_LOAD_REF:-}" in
             hkpokyapzarefrgqzkos|uigxsboqeruxflgzqztl|"") echo "::error::prod/shared-staging/empty ref forbidden"; exit 2 ;;
           esac
+          # GITHUB_ENV is only visible to subsequent steps — keep resolve alone here.
           node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
-          node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
+      - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
+        run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
+      - name: Secret/PII scan and production safety probe
+        run: |
+          set -euo pipefail
           node scripts/phase18scale/secret-pii-scan.mjs
           node scripts/phase18scale/production-safety-probe.mjs
       - name: Isolation and cost gate
@@ -179,11 +184,10 @@ jobs:
       - run: npm ci
       - name: Resolve isolated keys
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
-      - name: Cloud DB connectivity + pg_stat observability probe
-        run: |
-          set -euo pipefail
-          node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
-          node scripts/phase18scale/observability-pg-probe.mjs
+      - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
+        run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
+      - name: pg_stat observability probe
+        run: node scripts/phase18scale/observability-pg-probe.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:

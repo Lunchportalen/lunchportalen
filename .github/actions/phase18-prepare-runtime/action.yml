@@ -15,6 +15,7 @@ runs:
     - name: Resolve isolated keys
       shell: bash
       run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+    # Separate step: GITHUB_ENV from resolve is only available to later steps.
     - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
       shell: bash
       run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
