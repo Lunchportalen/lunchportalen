@@ -24,11 +24,12 @@
   "RESOURCE_LIFETIME_MAX": "72 HOURS",
   "TOTAL_APPROVED_COST_MAX": "USD 10.00",
   "remediation_note": "GHA 29804791819 failed at Ensure package entitlements (FK organizations). Project preserved for entitlement seed fix; do not delete until success/abort/expire.",
-  "stamped_at": "2026-07-21T11:45:25.514Z",
+  "stamped_at": "2026-07-21T19:27:03.198Z",
   "previous_project_reference_deleted": "mvjmukgfslukgohkuqhr",
   "PRODUCTION_PROJECT": "NO",
   "cost_classification": "PROVIDER_CALCULATOR_ESTIMATE",
   "resource": "isolated non-production project",
   "CLOUD_PROJECT_CREATED": "YES",
-  "smoke100_remediation_note": "GHA 29818328481 smoke-100 failed MENU_SERVICE_DAY_ITEM_NOT_FOUND due to null products.category_id; ensure-varmrett-product-categories + seed fix"
+  "smoke100_remediation_note": "GHA 29818328481 smoke-100 failed MENU_SERVICE_DAY_ITEM_NOT_FOUND due to null products.category_id; ensure-varmrett-product-categories + seed fix",
+  "smoke100_subset_root_cause": "offered_price_mismatch LUXUS/ENTERPRISE agreements vs BASIS-priced MSDI; repaired 888 items / 444 products"
 }

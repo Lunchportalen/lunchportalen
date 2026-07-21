@@ -1,0 +1,459 @@
+#!/usr/bin/env node
+/**
+ * Read-only menu-path preflight mirroring lp_order_set varmmat → varmrett lookup.
+ *
+ * PHASE18_MENU_PATH_MODE=sessions  — audit sessions.ndjson wrapped to PHASE18_HTTP_WAVE ops
+ * PHASE18_MENU_PATH_MODE=companies — audit all synthetic companies via SQL
+ *
+ * Never prints emails/tokens. Isolated-cloud / local only.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import readline from "node:readline";
+import { fileURLToPath } from "node:url";
+import pg from "pg";
+import { createClient } from "@supabase/supabase-js";
+import { loadPhase18Env, MARK, assertNotProduction, PROD_REF, STAGING_REF } from "./load-env.mjs";
+import { resolvePhase18DatabaseUrl } from "./lib/local-db.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
+const PRICE = { BASIS: 9000, LUXUS: 13000, ENTERPRISE: 17000 };
+
+function refuse(url, ref) {
+  assertNotProduction(url);
+  if (String(url).includes(PROD_REF) || ref === PROD_REF) throw new Error("PRODUCTION_TARGET_FORBIDDEN");
+  if (String(url).includes(STAGING_REF) || ref === STAGING_REF) {
+    throw new Error("SHARED_STAGING_TARGET_FORBIDDEN");
+  }
+}
+
+function resolveServiceDate() {
+  if (process.env.PHASE18_SERVICE_DATE) return process.env.PHASE18_SERVICE_DATE;
+  try {
+    const dist = JSON.parse(fs.readFileSync(path.join(OUT, "synthetic-distribution.json"), "utf8"));
+    if (dist.service_date) return String(dist.service_date);
+  } catch {
+    /* fall through */
+  }
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function categorySlug(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/æ/g, "e")
+    .replace(/ø/g, "o")
+    .replace(/å/g, "a")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+async function loadSessions() {
+  const p = path.join(OUT, "sessions.ndjson");
+  if (!fs.existsSync(p)) throw new Error("sessions.ndjson missing");
+  const rows = [];
+  const rl = readline.createInterface({ input: fs.createReadStream(p), crlfDelay: Infinity });
+  for await (const line of rl) {
+    if (!line.trim()) continue;
+    const s = JSON.parse(line);
+    rows.push({
+      user_id: s.user_id,
+      company_id: s.company_id,
+      provider_id: s.provider_id,
+      country: s.country || null,
+      locale: s.locale || null,
+      package: s.package || null,
+    });
+  }
+  return rows;
+}
+
+async function auditIdentity(admin, identity, serviceDate, opNumber = null) {
+  const out = {
+    logical_operation_number: opNumber,
+    synthetic_employee_id: identity.user_id || null,
+    company_id: identity.company_id || null,
+    provider_id: identity.provider_id || null,
+    country: identity.country || null,
+    locale: identity.locale || null,
+    package_tier: identity.package || null,
+    agreement_id: null,
+    service_date: serviceDate,
+    menu_service_day_id: null,
+    menu_service_day_item_id: null,
+    product_id: null,
+    product_sku: null,
+    product_category_id: null,
+    product_category_slug: null,
+    choice_key: "varmmat",
+    offered_price: null,
+    expected_price: null,
+    price_version: null,
+    entitlement_result: null,
+    first_failed_predicate: null,
+    valid: false,
+  };
+
+  let locationId = identity.location_id || null;
+  let companyId = identity.company_id || null;
+  let providerId = identity.provider_id || null;
+
+  if (identity.user_id) {
+    const { data: prof, error } = await admin
+      .from("profiles")
+      .select("id, company_id, location_id, provider_id")
+      .eq("id", identity.user_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!prof) {
+      out.first_failed_predicate = "missing_profile";
+      return out;
+    }
+    companyId = prof.company_id;
+    locationId = prof.location_id;
+    providerId = prof.provider_id || providerId;
+    out.company_id = companyId;
+    out.provider_id = providerId;
+  }
+
+  if (!companyId) {
+    out.first_failed_predicate = "missing_company";
+    return out;
+  }
+  if (!locationId) {
+    out.first_failed_predicate = "missing_location";
+    return out;
+  }
+
+  const { data: agr, error: aErr } = await admin
+    .from("agreements")
+    .select("id, tier, provider_id, status")
+    .eq("company_id", companyId)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (aErr) throw new Error(aErr.message);
+  if (!agr?.id) {
+    out.first_failed_predicate = "missing_active_agreement";
+    return out;
+  }
+  out.agreement_id = agr.id;
+  const dayTier = String(agr.tier || "").toUpperCase();
+  out.package_tier = dayTier || out.package_tier;
+  if (agr.provider_id && providerId && agr.provider_id !== providerId) {
+    out.first_failed_predicate = "wrong_provider";
+    return out;
+  }
+  providerId = agr.provider_id || providerId;
+  out.provider_id = providerId;
+  out.expected_price = PRICE[dayTier] ?? null;
+  if (out.expected_price == null) {
+    out.first_failed_predicate = "agreement_package_mismatch";
+    return out;
+  }
+
+  const { data: msd, error: mErr } = await admin
+    .from("menu_service_days")
+    .select("id, company_id, provider_id, service_date, state")
+    .eq("location_id", locationId)
+    .eq("service_date", serviceDate)
+    .in("state", ["published", "locked"])
+    .maybeSingle();
+  if (mErr) throw new Error(mErr.message);
+  if (!msd?.id) {
+    out.first_failed_predicate = "missing_menu_service_day";
+    return out;
+  }
+  out.menu_service_day_id = msd.id;
+  if (msd.company_id && msd.company_id !== companyId) {
+    out.first_failed_predicate = "wrong_company_on_menu_service_day";
+    return out;
+  }
+  if (msd.provider_id && providerId && msd.provider_id !== providerId) {
+    out.first_failed_predicate = "wrong_provider";
+    return out;
+  }
+
+  const { data: items, error: iErr } = await admin
+    .from("menu_service_day_items")
+    .select(
+      "id, product_id, offered_price_cents_ex_vat, products(id, sku, category_id, product_categories(id, name))",
+    )
+    .eq("menu_service_day_id", msd.id);
+  if (iErr) throw new Error(iErr.message);
+  if (!items?.length) {
+    out.first_failed_predicate = "missing_menu_service_day_item";
+    return out;
+  }
+
+  let matched = null;
+  for (const it of items) {
+    const prod = it.products;
+    if (!prod?.id) continue;
+    if (!prod.category_id || !prod.product_categories) {
+      out.first_failed_predicate = out.first_failed_predicate || "product_category_missing";
+      continue;
+    }
+    const slug = categorySlug(prod.product_categories.name);
+    if (slug !== "varmrett") {
+      out.first_failed_predicate = out.first_failed_predicate || "product_category_slug_mismatch";
+      continue;
+    }
+    if (it.offered_price_cents_ex_vat !== out.expected_price) {
+      out.first_failed_predicate = out.first_failed_predicate || "offered_price_mismatch";
+      continue;
+    }
+    matched = it;
+    out.product_category_id = prod.category_id;
+    out.product_category_slug = slug;
+    out.product_id = prod.id;
+    out.product_sku = prod.sku;
+    out.offered_price = it.offered_price_cents_ex_vat;
+    out.menu_service_day_item_id = it.id;
+    break;
+  }
+  if (!matched) {
+    out.first_failed_predicate = out.first_failed_predicate || "missing_menu_service_day_item";
+    return out;
+  }
+
+  const { data: ent } = await admin
+    .from("provider_package_entitlements")
+    .select("entitlement_key, is_enabled")
+    .eq("provider_id", providerId)
+    .eq("package_key", dayTier)
+    .eq("is_enabled", true);
+  const keys = new Set((ent || []).map((e) => String(e.entitlement_key)));
+  const entOk =
+    keys.has("menu_category:warm_meal") || keys.has("warm_meal") || keys.has("auto_warm_meal");
+  out.entitlement_result = entOk ? "PASS" : "FAIL";
+  if (!entOk) {
+    out.first_failed_predicate = "entitlement_mismatch";
+    return out;
+  }
+
+  out.first_failed_predicate = null;
+  out.valid = true;
+  return out;
+}
+
+async function auditCompaniesSql(serviceDate, ref) {
+  const db = resolvePhase18DatabaseUrl();
+  const client = new pg.Client({
+    connectionString: db.connectionString,
+    ssl: db.ssl === false ? false : db.ssl || { rejectUnauthorized: false },
+  });
+  await client.connect();
+  try {
+    const { rows } = await client.query(
+      `
+      with expected as (
+        select
+          c.id as company_id,
+          c.default_location_id as location_id,
+          a.id as agreement_id,
+          a.provider_id as agr_provider,
+          upper(coalesce(a.tier::text, '')) as day_tier,
+          case upper(coalesce(a.tier::text, ''))
+            when 'BASIS' then 9000 when 'LUXUS' then 13000 when 'ENTERPRISE' then 17000 else null
+          end as expect_cents
+        from public.companies c
+        join public.agreements a on a.company_id = c.id and a.status = 'ACTIVE'
+        where c.contact_email like 'p18scale-%'
+      ),
+      path as (
+        select e.*,
+          msd.id as msd_id,
+          msd.provider_id as msd_provider,
+          msd.company_id as msd_company,
+          msdi.id as msdi_id,
+          msdi.offered_price_cents_ex_vat,
+          pr.id as product_id,
+          pr.sku as product_sku,
+          pc.id as category_id,
+          regexp_replace(lower(translate(trim(coalesce(pc.name,'')), 'æøåÆØÅ', 'eoaEOA')), '[^a-z0-9]+', '', 'g') as category_slug,
+          case
+            when msd.id is null then 'missing_menu_service_day'
+            when msd.company_id is distinct from e.company_id then 'wrong_company_on_menu_service_day'
+            when msd.provider_id is distinct from e.agr_provider then 'wrong_provider'
+            when msdi.id is null then 'missing_menu_service_day_item'
+            when pc.id is null then 'product_category_missing'
+            when regexp_replace(lower(translate(trim(coalesce(pc.name,'')), 'æøåÆØÅ', 'eoaEOA')), '[^a-z0-9]+', '', 'g') is distinct from 'varmrett'
+              then 'product_category_slug_mismatch'
+            when msdi.offered_price_cents_ex_vat is distinct from e.expect_cents then 'offered_price_mismatch'
+            when e.expect_cents is null then 'agreement_package_mismatch'
+            else null
+          end as first_failed_predicate
+        from expected e
+        left join public.menu_service_days msd
+          on msd.location_id = e.location_id
+         and msd.service_date = $1::date
+         and msd.state in ('published','locked')
+        left join public.menu_service_day_items msdi on msdi.menu_service_day_id = msd.id
+        left join public.products pr on pr.id = msdi.product_id
+        left join public.product_categories pc on pc.id = pr.category_id
+      )
+      select * from path
+      `,
+      [serviceDate],
+    );
+
+    const results = rows.map((r, idx) => ({
+      logical_operation_number: idx + 1,
+      company_id: r.company_id,
+      provider_id: r.agr_provider,
+      agreement_id: r.agreement_id,
+      package_tier: r.day_tier,
+      service_date: serviceDate,
+      menu_service_day_id: r.msd_id,
+      menu_service_day_item_id: r.msdi_id,
+      product_id: r.product_id,
+      product_sku: r.product_sku,
+      product_category_id: r.category_id,
+      product_category_slug: r.category_slug,
+      choice_key: "varmmat",
+      offered_price: r.offered_price_cents_ex_vat,
+      expected_price: r.expect_cents,
+      first_failed_predicate: r.first_failed_predicate,
+      valid: r.first_failed_predicate == null,
+    }));
+
+    // Entitlement check for invalid-or-valid summary (bulk)
+    const ent = await client.query(
+      `
+      select count(*)::int as missing_ent
+      from public.companies c
+      join public.agreements a on a.company_id = c.id and a.status = 'ACTIVE'
+      where c.contact_email like 'p18scale-%'
+        and not exists (
+          select 1 from public.provider_package_entitlements e
+          where e.provider_id = a.provider_id
+            and e.package_key = upper(a.tier::text)
+            and e.is_enabled = true
+            and e.entitlement_key in ('menu_category:warm_meal','warm_meal','auto_warm_meal')
+        )
+      `,
+    );
+    return { results, missingEnt: Number(ent.rows[0]?.missing_ent || 0), ref, dbClass: db.identity?.classification };
+  } finally {
+    await client.end();
+  }
+}
+
+function tally(results) {
+  const causes = {};
+  let valid = 0;
+  let invalid = 0;
+  for (const r of results) {
+    if (r.valid) valid += 1;
+    else {
+      invalid += 1;
+      const c = r.first_failed_predicate || "unclassified";
+      causes[c] = (causes[c] || 0) + 1;
+    }
+  }
+  return { valid, invalid, causes };
+}
+
+async function main() {
+  const { url, ref } = loadPhase18Env();
+  refuse(url, ref);
+  const serviceDate = resolveServiceDate();
+  const mode = String(process.env.PHASE18_MENU_PATH_MODE || "sessions").toLowerCase();
+  const targetOps = Number(process.env.PHASE18_HTTP_WAVE || 100);
+
+  let results = [];
+  let missingEnt = 0;
+  if (mode === "companies") {
+    const out = await auditCompaniesSql(serviceDate, ref);
+    results = out.results;
+    missingEnt = out.missingEnt;
+    if (missingEnt > 0) {
+      for (const r of results) {
+        if (r.valid) {
+          /* keep valid unless we want to mark entitlement — bulk flag only in report */
+        }
+      }
+    }
+  } else {
+    const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const sessions = await loadSessions();
+    if (!sessions.length) throw new Error("no sessions");
+    for (let op = 0; op < targetOps; op += 1) {
+      const s = sessions[op % sessions.length];
+      results.push(await auditIdentity(admin, s, serviceDate, op));
+      if ((op + 1) % 25 === 0) console.log(`ops_audited ${op + 1}/${targetOps}`);
+    }
+  }
+
+  const { valid, invalid, causes } = tally(results);
+  if (mode === "companies" && missingEnt > 0) {
+    causes.entitlement_mismatch = (causes.entitlement_mismatch || 0) + missingEnt;
+  }
+  const invalidRows = results.filter((r) => !r.valid);
+  const validRows = results.filter((r) => r.valid);
+
+  const passCompanies =
+    mode === "companies" &&
+    valid === 2000 &&
+    invalid === 0 &&
+    missingEnt === 0 &&
+    (causes.unclassified || 0) === 0;
+  const passSessions = mode === "sessions" && invalid === 0 && results.length === targetOps;
+
+  const report = {
+    phase: "18SCALE",
+    MARK,
+    target_ref: ref,
+    mode,
+    service_date: serviceDate,
+    SMOKE_IDENTITIES_AUDITED: mode === "sessions" ? `${results.length}/${targetOps}` : undefined,
+    CLOUD_COMPANY_MENU_PATH_PREFLIGHT: mode === "companies" ? `${valid}/${results.length}` : undefined,
+    VALID_MENU_PATHS: `${valid}/${results.length}`,
+    INVALID_MENU_PATHS: invalid,
+    UNCLASSIFIED_INVALID_PATHS: causes.unclassified || 0,
+    MISSING_MSDI: (causes.missing_menu_service_day_item || 0) + (causes.missing_menu_service_day || 0),
+    WRONG_PROVIDER_LINKS: causes.wrong_provider || 0,
+    WRONG_COMPANY_LINKS: causes.wrong_company_on_menu_service_day || 0,
+    WRONG_SERVICE_DATE_LINKS: causes.service_date_mismatch || 0,
+    CATEGORY_LINK_FAILURES:
+      (causes.product_category_missing || 0) + (causes.product_category_slug_mismatch || 0),
+    ENTITLEMENT_LINK_FAILURES: causes.entitlement_mismatch || 0,
+    PRICE_VERSION_FAILURES: causes.offered_price_mismatch || 0,
+    COMPANIES_WITHOUT_WARM_MENU_PATH: mode === "companies" ? invalid : undefined,
+    COMPANIES_WITH_PROVIDER_MISMATCH: mode === "companies" ? causes.wrong_provider || 0 : undefined,
+    COMPANIES_WITH_PACKAGE_MISMATCH: mode === "companies" ? causes.agreement_package_mismatch || 0 : undefined,
+    COMPANIES_WITH_PRICE_MISMATCH: mode === "companies" ? causes.offered_price_mismatch || 0 : undefined,
+    causes,
+    valid_count: valid,
+    invalid_count: invalid,
+    invalid_sample: invalidRows.slice(0, 40),
+    stamped_at: new Date().toISOString(),
+  };
+
+  fs.mkdirSync(OUT, { recursive: true });
+  const base = mode === "companies" ? "menu-path-preflight-companies" : "menu-path-preflight-sessions";
+  fs.writeFileSync(path.join(OUT, `${base}.json`), JSON.stringify(report, null, 2));
+  fs.writeFileSync(
+    path.join(OUT, `${base}.valid.ndjson`),
+    validRows.map((r) => JSON.stringify(r)).join("\n") + (validRows.length ? "\n" : ""),
+  );
+  fs.writeFileSync(
+    path.join(OUT, `${base}.invalid.ndjson`),
+    invalidRows.map((r) => JSON.stringify(r)).join("\n") + (invalidRows.length ? "\n" : ""),
+  );
+  console.log(JSON.stringify(report, null, 2));
+  if (!(passCompanies || passSessions)) process.exit(2);
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

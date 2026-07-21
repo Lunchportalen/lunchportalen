@@ -1,0 +1,66 @@
+{
+  "phase": "18SCALE",
+  "gha_run": 29827664956,
+  "classification": {
+    "CLOUD_SMOKE_100": "FAIL",
+    "AUTH_SESSION_FAILURE": "NO",
+    "TOTAL_CATEGORY_BLACKOUT": "FIXED",
+    "SUBSET_MENU_PATH_FAILURE": "CONFIRMED",
+    "APPLICATION_SCALE_FAILURE": "NOT_PROVEN"
+  },
+  "wave": {
+    "done": 100,
+    "SET_OK": 81,
+    "SET_FAIL": 19,
+    "CANCEL_OK": 100,
+    "CANCEL_FAIL": 0,
+    "failCodes": { "set:MENU_SERVICE_DAY_ITEM_NOT_FOUND": 19 }
+  },
+  "root_cause": {
+    "first_failed_lookup_predicate": "offered_price_mismatch",
+    "detail": "lp_order_set requires menu_service_day_items.offered_price_cents_ex_vat to equal agreement day-tier expected cents (BASIS=9000, LUXUS=13000, ENTERPRISE=17000). After category link PASS, 444/2000 companies still had LUXUS/ENTERPRISE agreements with BASIS-priced (9000) varmrett MSDI rows (222 LUXUS + 222 ENTERPRISE). Smoke reused 74 sessions across 100 ops; 19 SETs hit those mismatched companies → MENU_SERVICE_DAY_ITEM_NOT_FOUND.",
+    "counts_before_repair_all_companies": {
+      "companies": 2000,
+      "missing_menu_service_day": 0,
+      "missing_menu_service_day_item": 0,
+      "product_category_missing": 0,
+      "product_category_slug_mismatch": 0,
+      "offered_price_mismatch": 444,
+      "wrong_provider": 0,
+      "valid_warm_path": 1556
+    },
+    "repair": {
+      "items_repaired": 888,
+      "products_repaired": 444,
+      "note": "888 = 444 companies × 2 service dates (2026-07-21, 2026-07-22)"
+    },
+    "counts_after_repair_all_companies": {
+      "companies": 2000,
+      "valid_warm_path": 2000,
+      "offered_price_mismatch": 0,
+      "missing_msd": 0,
+      "missing_msdi": 0,
+      "category_fail": 0,
+      "provider_mismatch": 0
+    },
+    "smoke_unique_users_after_repair": {
+      "uniq_users": 74,
+      "valid_now": 74,
+      "invalid_now": 0
+    }
+  },
+  "required_gates_target": {
+    "SMOKE_IDENTITIES_AUDITED": "100/100",
+    "VALID_MENU_PATHS": "100/100",
+    "UNCLASSIFIED_INVALID_PATHS": 0,
+    "MISSING_MSDI": 0,
+    "WRONG_PROVIDER_LINKS": 0,
+    "WRONG_COMPANY_LINKS": 0,
+    "WRONG_SERVICE_DATE_LINKS": 0,
+    "CATEGORY_LINK_FAILURES": 0,
+    "ENTITLEMENT_LINK_FAILURES": 0,
+    "PRICE_VERSION_FAILURES": 0,
+    "CLOUD_COMPANY_MENU_PATH_PREFLIGHT": "2000/2000"
+  },
+  "stamped_at": "2026-07-21T19:10:00.000Z"
+}
