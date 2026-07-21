@@ -451,16 +451,48 @@ async function main() {
   report.SYNTHETIC_COMPANIES = companyRows.length;
 
   // Catalog product is company-scoped — create varmrett per company as needed.
+  // lp_order_set maps choice_key varmmat → product_categories name slug "varmrett"
+  // via products.category_id; null category_id ⇒ MENU_SERVICE_DAY_ITEM_NOT_FOUND.
+  let varmrettCategoryId = null;
+  async function ensureVarmrettCategoryId() {
+    if (varmrettCategoryId) return varmrettCategoryId;
+    const { data: cat } = await admin
+      .from("product_categories")
+      .select("id")
+      .eq("name", "Varmrett")
+      .maybeSingle();
+    if (cat?.id) {
+      varmrettCategoryId = cat.id;
+      return varmrettCategoryId;
+    }
+    const { data: created, error } = await admin
+      .from("product_categories")
+      .insert({ name: "Varmrett", sort_order: 11 })
+      .select("id")
+      .maybeSingle();
+    if (error || !created?.id) throw new Error(`product_categories Varmrett: ${error?.message || "insert failed"}`);
+    varmrettCategoryId = created.id;
+    return varmrettCategoryId;
+  }
+
   const productByCompany = new Map();
   async function ensureProduct(companyId, pkg) {
     if (productByCompany.has(companyId)) return productByCompany.get(companyId);
+    const categoryId = await ensureVarmrettCategoryId();
     const { data: prod } = await admin
       .from("products")
-      .select("id")
+      .select("id, category_id")
       .eq("sku", "varmrett")
       .eq("company_id", companyId)
       .maybeSingle();
     if (prod?.id) {
+      if (prod.category_id !== categoryId) {
+        const { error: upErr } = await admin
+          .from("products")
+          .update({ category_id: categoryId })
+          .eq("id", prod.id);
+        if (upErr) throw new Error(`product category link ${companyId}: ${upErr.message}`);
+      }
       productByCompany.set(companyId, prod.id);
       return prod.id;
     }
@@ -476,6 +508,7 @@ async function main() {
         currency_code: "NOK",
         is_active: true,
         is_visible: true,
+        category_id: categoryId,
       })
       .select("id")
       .maybeSingle();

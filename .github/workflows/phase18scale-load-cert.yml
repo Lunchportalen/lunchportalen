@@ -213,6 +213,8 @@ jobs:
       - run: node scripts/phase18scale/seed-scale-matrix.mjs
       - name: Ensure ACTIVE agreements
         run: node scripts/phase18scale/ensure-agreements.mjs
+      - name: Ensure varmrett product categories (lp_order_set MSDI link)
+        run: node scripts/phase18scale/ensure-varmrett-product-categories.mjs
       - name: Ensure package entitlements
         run: node scripts/phase18scale/ensure-package-entitlements.mjs
       - name: Entitlement seed idempotency (second run)
@@ -310,6 +312,8 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Ensure varmrett product categories before smoke
+        run: node scripts/phase18scale/ensure-varmrett-product-categories.mjs
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,77 @@
+{
+  "phase": "18SCALE",
+  "classification": {
+    "CLOUD_CERT_FAILED": "YES",
+    "CLOUD_SEED": "PASS",
+    "CLOUD_SMOKE_100": "FAIL",
+    "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
+    "GLOBAL_SCALE_CERTIFIED": "NO"
+  },
+  "gha_run": 29818328481,
+  "engine_sha": "3ecbe599e541865bc8a8e63c0f314bd44931764d",
+  "failure_job": "smoke-100",
+  "failure_step": "Run node scripts/phase18scale/run-ramp-stage.mjs",
+  "command": "node scripts/phase18scale/run-ramp-stage.mjs → wave-watchdog.mjs → http-correctness-wave.mjs",
+  "process_exit_code": 2,
+  "exception": {
+    "name": "Error",
+    "message": "wave-watchdog.mjs exited 2",
+    "stack": "Error: wave-watchdog.mjs exited 2\n    at ChildProcess.<anonymous> (file:///.../scripts/phase18scale/run-ramp-stage.mjs:59:33)\n    at ChildProcess._handle.onexit (node:internal/child_process:293:12)",
+    "watchdog_wave_exit_code": 2
+  },
+  "http": {
+    "route": "POST /api/orders",
+    "logical_operation": "set (after cancel)",
+    "choice_key": "varmmat",
+    "api_error_code": "MENU_SERVICE_DAY_ITEM_NOT_FOUND",
+    "http_status": 409,
+    "response_body_shape": "{ ok:false, code:\"MENU_SERVICE_DAY_ITEM_NOT_FOUND\", ... }",
+    "target_url_classification": "PHASE18_BASE_URL=http://127.0.0.1:3000 (local Next against isolated cloud Supabase arstaxredytrjcmqcwhh)",
+    "SET_OK": 0,
+    "SET_FAIL": 100,
+    "CANCEL_OK": 100,
+    "CANCEL_FAIL": 0,
+    "failCodes": {
+      "set:MENU_SERVICE_DAY_ITEM_NOT_FOUND": 100
+    }
+  },
+  "identity_classification": {
+    "sessions_available": 74,
+    "session_source": "sessions.ndjson from authenticated-session-pool",
+    "service_date_evidence": "2026-07-22 (synthetic-distribution.json)",
+    "menu_days_present": {
+      "2026-07-21": 2000,
+      "2026-07-22": 2000
+    },
+    "menu_items_present": {
+      "2026-07-21": 2000,
+      "2026-07-22": 2000
+    }
+  },
+  "persisted_database_state": {
+    "project_ref": "arstaxredytrjcmqcwhh",
+    "varmrett_products_category_id": "NULL on sampled/all products",
+    "product_categories_named_Varmrett": 0,
+    "entitlements": 16000,
+    "organizations": 1000
+  },
+  "reconciliation_result": "wave exited 2 before/at gate failure; SET_OK=0 proves order write path rejected all sets",
+  "root_cause": {
+    "type": "menu-service-day/item failure (product category linkage)",
+    "summary": "lp_order_set resolves choice_key varmmat → product_categories slug varmrett via products.category_id. Seed created products sku=varmrett with category_id NULL and never inserted product_categories('Varmrett'). Join fails → MENU_SERVICE_DAY_ITEM_NOT_FOUND for all 100 sets. Cancels succeeded (no item lookup).",
+    "not": [
+      "missing cloud manifest",
+      "session/auth failure (cancels 100/100 OK)",
+      "agreement failure",
+      "entitlement failure",
+      "incorrect database target (isolated cloud confirmed)",
+      "harness parsing-only failure"
+    ]
+  },
+  "cleanup": {
+    "CLOUD_RESOURCE_DELETED": "NO",
+    "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "YES",
+    "FORCED_EXPIRATION_CLEANUP_ARMED": "YES"
+  },
+  "stamped_at": "2026-07-21T11:30:00.000Z"
+}
