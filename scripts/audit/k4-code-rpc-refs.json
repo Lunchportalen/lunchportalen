@@ -26,6 +26,13 @@
     "lp_batch_transition_and_sync_orders": [
       "lib/kitchen/batchTransitionRpc.ts"
     ],
+    "lp_billing_apply_payment_recovery_policy": [
+      "lib/billing/stripePaymentWebhook.ts",
+      "lib/billing/stripeProviderCharge.ts"
+    ],
+    "lp_billing_stripe_charge_dry_run": [
+      "lib/billing/stripeProviderCharge.ts"
+    ],
     "lp_capture_lead": [
       "app/api/public/leads/capture/route.ts"
     ],
@@ -102,6 +109,9 @@
     "lp_provider_complete_tripletex_connection": [
       "lib/integrations/tripletex/onboardingVerify.ts"
     ],
+    "lp_provider_create": [
+      "lib/provider-onboarding/createLiveWriteAdapters.ts"
+    ],
     "lp_provider_disconnect_tripletex": [
       "app/leverandor/innstillinger/tripletex/status/actions.ts"
     ],
@@ -150,7 +160,7 @@
       "app/leverandor/omrader/actions.ts"
     ]
   },
-  "count": 46,
+  "count": 49,
   "rpcs": [
     "claim_ai_jobs",
     "claim_repair_jobs",
@@ -160,6 +170,8 @@
     "lp_agreement_reject_pending",
     "lp_apply_tripletex_paid_status",
     "lp_batch_transition_and_sync_orders",
+    "lp_billing_apply_payment_recovery_policy",
+    "lp_billing_stripe_charge_dry_run",
     "lp_capture_lead",
     "lp_company_order_summary",
     "lp_company_register",
@@ -184,6 +196,7 @@
     "lp_provider_apply_connection_health_check",
     "lp_provider_complete_onboarding_provisioning",
     "lp_provider_complete_tripletex_connection",
+    "lp_provider_create",
     "lp_provider_disconnect_tripletex",
     "lp_provider_finalize_tripletex_connection",
     "lp_provider_generate_invoice_for_period",

@@ -4,7 +4,8 @@
       "lib/cms/design/getDesignSettings.ts",
       "lib/cms/overlays/registry.ts",
       "lib/cms/public/getOverlayByKey.ts",
-      "lib/public/blocks/renderOverlaySlot.tsx"
+      "lib/public/blocks/renderOverlaySlot.tsx",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/(app)/home/page.tsx": [
       "lib/cms/menuDay.ts",
@@ -28,6 +29,7 @@
       "lib/date/oslo.ts",
       "lib/employee/orderedMealDisplay.ts",
       "lib/hooks/useMediaQuery.ts",
+      "lib/tiers/displayLabels.ts",
       "lib/week/orderPatternsClient.ts",
       "lib/week/weekMenuReadiness.ts"
     ],
@@ -2207,7 +2209,8 @@
     ],
     "app/admin/dashboard/MyLunchCard.tsx": [
       "components/ui/button.tsx",
-      "lib/date/format.ts"
+      "lib/date/format.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/admin/dashboard/Sparkline.tsx": [],
     "app/admin/dashboard/page.tsx": [
@@ -4990,6 +4993,12 @@
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
+    "app/api/provider/billing/payment-method/setup/route.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/billing/stripeProviderSetup.ts",
+      "lib/http/respond.ts"
+    ],
     "app/api/provider/customers/[companyId]/agreement/route.ts": [
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
@@ -5096,6 +5105,20 @@
       "lib/providers/loadProviderSettingsMenuProfile.ts",
       "lib/providers/providerMenuPackageSurface.ts",
       "lib/providers/providerMenuProfileDiagnostic.ts"
+    ],
+    "app/api/provider/menu-generator/apply-week/route.ts": [
+      "lib/audit/log.ts",
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/http/respond.ts",
+      "lib/menu-generator/applyLocalizedGeneratedWeekMenu.ts",
+      "lib/menu-generator/applyLocalizedGeneratedWeekMenuBody.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/menu-generator/resolveProviderMenuRuntimeProfile.ts",
+      "lib/providers/loadProviderSettingsMenuProfile.ts",
+      "lib/providers/providerMenuProfileDiagnostic.ts",
+      "lib/sanity/client.ts"
     ],
     "app/api/provider/menu-generator/week-preview/route.ts": [
       "lib/auth/getAuthContext.ts",
@@ -5783,6 +5806,11 @@
       "lib/http/respond.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
+    ],
+    "app/api/superadmin/billing/stripe-charge/route.ts": [
+      "lib/billing/stripeProviderCharge.ts",
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts"
     ],
     "app/api/superadmin/break-glass/route.ts": [
       "lib/http/respond.ts",
@@ -6497,6 +6525,14 @@
       "lib/sanity/verifySanityWebhookSignature.ts",
       "lib/supabase/admin.ts"
     ],
+    "app/api/webhooks/stripe-billing-payments/route.ts": [
+      "lib/billing/stripePaymentWebhook.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/webhooks/stripe-provider-setup/route.ts": [
+      "lib/billing/stripeProviderSetup.ts",
+      "lib/http/respond.ts"
+    ],
     "app/api/webhooks/tripletex-provider/[providerId]/route.ts": [
       "lib/http/respond.ts",
       "lib/integrations/tripletex/agreementWebhookHandlers.ts",
@@ -6610,7 +6646,8 @@
       "components/kitchen/KitchenEmployeeAllergenExtra.tsx",
       "lib/date/oslo.ts",
       "lib/kitchen/buildProductionHierarchy.ts",
-      "lib/kitchen/kitchenFetch.ts"
+      "lib/kitchen/kitchenFetch.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/kitchen/KitchenRuntimeClient.tsx": [
       "app/kitchen/KitchenProductionPanel.tsx",
@@ -6620,7 +6657,8 @@
     "app/kitchen/KitchenView.tsx": [
       "lib/ai/demandEngine.ts",
       "lib/date/format.ts",
-      "lib/date/oslo.ts"
+      "lib/date/oslo.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/kitchen/layout.tsx": [
       "components/auth/BlockedAccess.tsx",
@@ -6649,7 +6687,8 @@
       "app/kitchen/print/KitchenPrintBody.tsx"
     ],
     "app/kitchen/report/KitchenReportClient.tsx": [
-      "lib/cms/mealTypeDisplayFallback.ts"
+      "lib/cms/mealTypeDisplayFallback.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/kitchen/report/page.tsx": [],
     "app/layout.tsx": [
@@ -6781,6 +6820,7 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
+      "lib/menu-generator/localizedMenuSurface.ts",
       "lib/menu-profile/featureFlag.ts",
       "lib/menu-profile/marketDefaults.ts",
       "lib/menu-profile/profileMenuRuntime.ts",
@@ -6854,7 +6894,8 @@
       "lib/cms/menuDay.ts",
       "lib/date/format.ts",
       "lib/date/week.ts",
-      "lib/supabase/server.ts"
+      "lib/supabase/server.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/min-side/page.tsx": [
       "lib/auth/redirect.ts",
@@ -7002,7 +7043,8 @@
       "lib/supabase/server.ts"
     ],
     "app/superadmin/agreements/agreements-client.tsx": [
-      "components/superadmin/shell/SuperadminShell.tsx"
+      "components/superadmin/shell/SuperadminShell.tsx",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/superadmin/agreements/page.tsx": [
       "app/superadmin/agreements/agreements-client.tsx",
@@ -7043,7 +7085,8 @@
       "lib/agreements/buildAgreementDocumentOverview.ts",
       "lib/agreements/contractBindingCompute.ts",
       "lib/date/format.ts",
-      "lib/date/oslo.ts"
+      "lib/date/oslo.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/superadmin/companies/[companyId]/ArchivePanel.tsx": [
       "lib/date/format.ts"
@@ -7067,7 +7110,8 @@
       "app/superadmin/companies/[companyId]/Actions.tsx"
     ],
     "app/superadmin/companies/[companyId]/agreement/agreementClient.tsx": [
-      "lib/agreements/types.ts"
+      "lib/agreements/types.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/superadmin/companies/[companyId]/agreement/page.tsx": [
       "app/superadmin/companies/[companyId]/agreement/agreementClient.tsx",
@@ -7398,7 +7442,8 @@
     "app/superadmin/registrations/page.tsx": [
       "app/superadmin/registrations/RegistrationDecisionActions.tsx",
       "lib/date/format.ts",
-      "lib/server/superadmin/loadCompanyRegistrationsInbox.ts"
+      "lib/server/superadmin/loadCompanyRegistrationsInbox.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "app/superadmin/sales-agent/SalesAgentClient.tsx": [
       "lib/sales/outreachQueueTypes.ts"
@@ -7572,17 +7617,20 @@
       "components/admin/SupportReportButton.tsx",
       "lib/agreement/currentAgreement.ts",
       "lib/date/oslo.ts",
-      "lib/supabase/admin.ts"
+      "lib/supabase/admin.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/admin/AgreementChangeRequestPanel.tsx": [
       "components/ui/card.tsx",
-      "lib/admin/agreement/types.ts"
+      "lib/admin/agreement/types.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/admin/AgreementDeliveryBasisView.tsx": [
       "components/admin/AdminTechnicalDetails.tsx",
       "lib/admin/agreement/types.ts",
       "lib/date/format.ts",
-      "lib/server/admin/loadCompanyOperationalBrief.ts"
+      "lib/server/admin/loadCompanyOperationalBrief.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/admin/BlockedState.tsx": [],
     "components/admin/CommandCenterKpis.tsx": [],
@@ -7669,7 +7717,8 @@
       "lib/auth/getAuthContext.ts"
     ],
     "components/auth/CompanyRegistrationForm.tsx": [
-      "lib/registration/weekdayMealTiers.ts"
+      "lib/registration/weekdayMealTiers.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/auth/EmployeeWarningBanner.tsx": [],
     "components/auth/LogoutButton.tsx": [
@@ -8126,7 +8175,8 @@
     "components/cms/HomePricingSection.tsx": [
       "lib/cms/design/designContract.ts",
       "lib/cms/design/getDesignSettings.ts",
-      "lib/cms/marketingMeals.ts"
+      "lib/cms/marketingMeals.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/cms/SortableBlockWrapper.tsx": [
       "components/backoffice/SortableBlock.tsx"
@@ -8397,7 +8447,8 @@
       "lib/onboarding/types.ts"
     ],
     "components/onboarding/PlanStep.tsx": [
-      "lib/onboarding/types.ts"
+      "lib/onboarding/types.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/onboarding/SummaryStep.tsx": [
       "lib/cms/mealTypeKey.ts",
@@ -8534,7 +8585,8 @@
       "lib/agreements/normalize.ts",
       "lib/providers/providerCustomerActionErrors.ts",
       "lib/providers/providerCustomerAgreementTypes.ts",
-      "lib/providers/providerCustomerBilling.ts"
+      "lib/providers/providerCustomerBilling.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ProviderCustomerRemovalDialog.tsx": [
       "lib/providers/providerCustomerActionErrors.ts"
@@ -8552,6 +8604,7 @@
       "components/providers/ProviderMenuCatalogView.tsx",
       "components/providers/ProviderMenuCommandHeader.tsx",
       "components/providers/ProviderMenuEditorPanel.tsx",
+      "components/providers/ProviderMenuLocalizedSurfaceBanner.tsx",
       "components/providers/ProviderMenuPricePreviewStrip.tsx",
       "components/providers/ProviderMenuProfileFixedCategoriesPanel.tsx",
       "components/providers/ProviderMenuProfilePresentationBanner.tsx",
@@ -8562,6 +8615,7 @@
       "components/providers/ProviderMenuWeekPlanner.tsx",
       "lib/cms/menuDayContract.ts",
       "lib/date/oslo.ts",
+      "lib/menu-generator/localizedMenuSurface.ts",
       "lib/provider-menu/lunchCategoryCatalog.ts",
       "lib/provider-menu/menuCategoryCanonical.ts",
       "lib/provider-menu/mergeProviderMenuSlots.ts",
@@ -8577,19 +8631,23 @@
       "lib/providers/providerMenuActionErrors.ts",
       "lib/providers/providerMenuPackageSurface.ts",
       "lib/providers/providerMenuPriceDisplay.ts",
-      "lib/providers/providerMenuPricePreviewDisplay.ts"
+      "lib/providers/providerMenuPricePreviewDisplay.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ProviderMenuCatalogEditor.tsx": [
       "lib/cms/menuDayContract.ts",
       "lib/provider-menu/lunchCategoryCatalog.ts",
-      "lib/providers/providerMenuActionErrors.ts"
+      "lib/providers/providerMenuActionErrors.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ProviderMenuCatalogView.tsx": [
       "components/providers/ProviderMenuCatalogEditor.tsx",
+      "components/providers/ProviderMenuLocalizedSurfaceBanner.tsx",
       "components/providers/ProviderMenuProfileFixedCategoriesPanel.tsx",
       "components/providers/ProviderMenuProfilePresentationBanner.tsx",
       "components/providers/ProviderMenuRuntimeMappingProposalPanel.tsx",
       "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/localizedMenuSurface.ts",
       "lib/provider-menu/lunchCategoryCatalog.ts",
       "lib/provider-menu/providerMenuCatalogReadModel.ts",
       "lib/provider-menu/providerMenuProfileFixedCategories.ts",
@@ -8600,11 +8658,13 @@
       "lib/cms/menuDayContract.ts",
       "lib/date/week.ts",
       "lib/i18n/localeRegistry.ts",
-      "lib/providers/providerMenuPriceDisplay.ts"
+      "lib/providers/providerMenuPriceDisplay.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ProviderMenuEditor.tsx": [
       "lib/cms/menuDayContract.ts",
-      "lib/providers/providerMenuActionErrors.ts"
+      "lib/providers/providerMenuActionErrors.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ProviderMenuEditorPanel.tsx": [
       "lib/cms/menuDayContract.ts",
@@ -8614,16 +8674,29 @@
       "lib/provider-menu/providerMenuTierContract.ts",
       "lib/provider-menu/providerMenuWorkspace.ts",
       "lib/providers/providerMenuPackageSurface.ts",
-      "lib/providers/providerMenuPriceDisplay.ts"
+      "lib/providers/providerMenuPriceDisplay.ts",
+      "lib/tiers/displayLabels.ts"
+    ],
+    "components/providers/ProviderMenuGeneratorApplyFlow.tsx": [
+      "lib/date/oslo.ts",
+      "lib/menu-generator/applyCatalogSafetyConstants.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/provider-menu/providerMenuGeneratorPresentation.ts"
     ],
     "components/providers/ProviderMenuGeneratorPreviewPanel.tsx": [
+      "components/providers/ProviderMenuGeneratorApplyFlow.tsx",
       "lib/provider-menu/providerMenuGeneratorPresentation.ts"
+    ],
+    "components/providers/ProviderMenuLocalizedSurfaceBanner.tsx": [
+      "lib/menu-generator/localizedMenuSurface.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ProviderMenuPricePreviewStrip.tsx": [
       "lib/cms/menuDayContract.ts",
       "lib/i18n/localeRegistry.ts",
       "lib/providers/providerMenuPriceDisplay.ts",
-      "lib/providers/providerMenuPricePreviewDisplay.ts"
+      "lib/providers/providerMenuPricePreviewDisplay.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ProviderMenuProfileDiagnostic.tsx": [
       "lib/providers/providerMenuProfileDiagnostic.ts"
@@ -8689,7 +8762,8 @@
     "components/providers/RegistrationApproveDialog.tsx": [
       "app/leverandor/registreringer/actions.ts",
       "lib/providers/loadProviderRegistrations.ts",
-      "lib/providers/providerRegistrationActionErrors.ts"
+      "lib/providers/providerRegistrationActionErrors.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/providers/ServiceAreaEditor.tsx": [
       "app/leverandor/omrader/actions.ts",
@@ -8783,7 +8857,8 @@
     ],
     "components/superadmin/FirmsTable.tsx": [
       "lib/date/format.ts",
-      "lib/superadmin/types.ts"
+      "lib/superadmin/types.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "components/superadmin/InvoiceRunDetailClient.tsx": [],
     "components/superadmin/InvoicesRunsTable.tsx": [],
@@ -8973,7 +9048,8 @@
     "components/week/WeekMenuNotificationToggle.tsx": [],
     "components/week/WeekMenuReadOnly.tsx": [
       "lib/date/format.ts",
-      "lib/http/unwrapClientJson.ts"
+      "lib/http/unwrapClientJson.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "lib/acquire/buyers.ts": [],
     "lib/acquire/strategy.ts": [
@@ -8982,7 +9058,8 @@
     "lib/acquire/targets.ts": [],
     "lib/admin/agreement/types.ts": [],
     "lib/admin/agreementLabel.ts": [
-      "lib/auth/agreementStatus.ts"
+      "lib/auth/agreementStatus.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "lib/admin/companyAdminCopy.ts": [],
     "lib/admin/companyOrderDisplay.ts": [],
@@ -10694,6 +10771,7 @@
       "lib/ops/log.ts",
       "lib/supabase/admin.ts"
     ],
+    "lib/billing/globalCommission.ts": [],
     "lib/billing/invoiceEngine.ts": [
       "lib/date/oslo.ts",
       "lib/integrations/tripletexEngine.ts",
@@ -10706,6 +10784,19 @@
     ],
     "lib/billing/periodYm.ts": [],
     "lib/billing/pricing.ts": [],
+    "lib/billing/providerBillingEngineSurface.ts": [],
+    "lib/billing/stripePaymentWebhook.ts": [
+      "lib/billing/stripeProviderSetup.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/billing/stripeProviderCharge.ts": [
+      "lib/billing/stripeProviderSetup.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/billing/stripeProviderSetup.ts": [
+      "lib/saas/billing.ts",
+      "lib/supabase/admin.ts"
+    ],
     "lib/board/data.ts": [
       "lib/exit/kpi.ts",
       "lib/revenue/aiRevenueForecast.ts"
@@ -11022,7 +11113,7 @@
       "lib/cms/menuDay.ts",
       "lib/cms/menuDayContract.ts",
       "lib/provider-menu/lunchCategoryCatalog.ts",
-      "lib/sanity/client.ts"
+      "lib/sanity/server.ts"
     ],
     "lib/cms/marketingMeals.ts": [
       "lib/cms/getMenusByMealTypes.ts",
@@ -12730,8 +12821,74 @@
       "lib/media/types.ts",
       "lib/media/validation.ts"
     ],
+    "lib/menu-generator/allergenMenuDayFormat.ts": [
+      "lib/menu-generator/types.ts",
+      "lib/provider-menu/lunchCategoryCatalog.ts"
+    ],
     "lib/menu-generator/allergens.ts": [
       "lib/menu-generator/types.ts"
+    ],
+    "lib/menu-generator/applyCapabilities.ts": [
+      "lib/menu-generator/types.ts",
+      "lib/provider-menu/lunchCategoryCatalog.ts"
+    ],
+    "lib/menu-generator/applyCatalogSafety.ts": [
+      "lib/menu-generator/applyCatalogSafetyConstants.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/menu-generator/fullApplyDiff.ts"
+    ],
+    "lib/menu-generator/applyCatalogSafetyConstants.ts": [],
+    "lib/menu-generator/applyLocalizedGeneratedWeekMenu.ts": [
+      "lib/cms/lunchCategory.ts",
+      "lib/menu-generator/applyCapabilities.ts",
+      "lib/menu-generator/applyCatalogSafety.ts",
+      "lib/menu-generator/applyLocalizedGeneratedWeekMenuBody.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/menu-generator/applyWeekMenuDiff.ts",
+      "lib/menu-generator/featureFlag.ts",
+      "lib/menu-generator/fullApplyDiff.ts",
+      "lib/menu-generator/fullApplyDomain.ts",
+      "lib/menu-generator/fullApplyWrite.ts",
+      "lib/menu-generator/providerMirrorPreflight.ts",
+      "lib/menu-generator/resolveProviderMenuRuntimeProfile.ts",
+      "lib/menu-generator/types.ts",
+      "lib/menu-profile/featureFlag.ts",
+      "lib/menu-profile/types.ts",
+      "lib/provider-menu/loadProviderMenuDays.ts",
+      "lib/provider-menu/providerMenuCatalogReadModel.ts",
+      "lib/provider-menu/providerMenuOrderLock.ts",
+      "lib/provider-menu/varmrettSharedWrite.ts",
+      "lib/providers/loadProviderSettingsMenuProfile.ts",
+      "lib/providers/providerMenuPackageSurface.ts"
+    ],
+    "lib/menu-generator/applyLocalizedGeneratedWeekMenuBody.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/applyTypes.ts"
+    ],
+    "lib/menu-generator/applyTypes.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/applyCapabilities.ts",
+      "lib/menu-generator/fullApplyDiff.ts",
+      "lib/menu-generator/providerMirrorPreflight.ts",
+      "lib/menu-generator/types.ts",
+      "lib/menu-profile/types.ts"
+    ],
+    "lib/menu-generator/applyWeekMenuDiff.ts": [
+      "lib/menu-generator/allergenMenuDayFormat.ts",
+      "lib/menu-generator/applyCatalogSafety.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/provider-menu/loadProviderMenuDays.ts",
+      "lib/provider-menu/menuCategoryCanonical.ts",
+      "lib/provider-menu/providerMenuOrderLock.ts",
+      "lib/providers/providerMenuPackageSurface.ts"
+    ],
+    "lib/menu-generator/applyWeekMenuMapper.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/allergenMenuDayFormat.ts",
+      "lib/menu-generator/applyWeekMenuDiff.ts",
+      "lib/menu-generator/generateProviderWeekMenu.ts",
+      "lib/menu-generator/types.ts",
+      "lib/menu-profile/types.ts"
     ],
     "lib/menu-generator/countryEconomyDefaults.ts": [
       "lib/menu-generator/types.ts",
@@ -12751,6 +12908,38 @@
     "lib/menu-generator/featureFlag.ts": [
       "lib/menu-profile/featureFlag.ts"
     ],
+    "lib/menu-generator/fullApplyDiff.ts": [
+      "lib/menu-generator/allergenMenuDayFormat.ts",
+      "lib/menu-generator/applyCapabilities.ts",
+      "lib/menu-generator/applyCatalogSafety.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/menu-generator/applyWeekMenuDiff.ts",
+      "lib/menu-generator/fullApplyDomain.ts",
+      "lib/menu-generator/types.ts",
+      "lib/provider-menu/loadProviderMenuDays.ts",
+      "lib/provider-menu/lunchCategoryCatalog.ts",
+      "lib/provider-menu/providerMenuOrderLock.ts"
+    ],
+    "lib/menu-generator/fullApplyDomain.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/allergenMenuDayFormat.ts",
+      "lib/menu-generator/applyCapabilities.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/menu-generator/generateProviderWeekMenu.ts",
+      "lib/menu-generator/localizedCategoryLabels.ts",
+      "lib/menu-generator/types.ts",
+      "lib/menu-profile/types.ts"
+    ],
+    "lib/menu-generator/fullApplyWrite.ts": [
+      "lib/menu-generator/applyCapabilities.ts",
+      "lib/menu-generator/applyCatalogSafety.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/menu-generator/fullApplyDiff.ts",
+      "lib/menu-generator/fullApplyDomain.ts",
+      "lib/menu-generator/types.ts",
+      "lib/provider-menu/lunchCategoryCatalog.ts",
+      "lib/provider-menu/menuCatalogWrite.ts"
+    ],
     "lib/menu-generator/generateProviderWeekMenu.ts": [
       "lib/cms/menuDayContract.ts",
       "lib/date/oslo.ts",
@@ -12762,21 +12951,41 @@
       "lib/menu-generator/types.ts"
     ],
     "lib/menu-generator/index.ts": [
+      "lib/menu-generator/allergenMenuDayFormat.ts",
       "lib/menu-generator/allergens.ts",
+      "lib/menu-generator/applyCapabilities.ts",
+      "lib/menu-generator/applyLocalizedGeneratedWeekMenu.ts",
+      "lib/menu-generator/applyTypes.ts",
+      "lib/menu-generator/applyWeekMenuDiff.ts",
+      "lib/menu-generator/applyWeekMenuMapper.ts",
       "lib/menu-generator/countryEconomyDefaults.ts",
       "lib/menu-generator/deterministicHash.ts",
       "lib/menu-generator/dishBanks/localeData.ts",
       "lib/menu-generator/employeeSafeMapper.ts",
       "lib/menu-generator/featureFlag.ts",
+      "lib/menu-generator/fullApplyDiff.ts",
+      "lib/menu-generator/fullApplyDomain.ts",
+      "lib/menu-generator/fullApplyWrite.ts",
       "lib/menu-generator/generateProviderWeekMenu.ts",
       "lib/menu-generator/itemKeys.ts",
+      "lib/menu-generator/localizedCategoryLabels.ts",
       "lib/menu-generator/localizedFixedDishBanks.ts",
+      "lib/menu-generator/localizedGeneratorSotControl.ts",
+      "lib/menu-generator/localizedGeneratorSotResolver.ts",
+      "lib/menu-generator/localizedMenuSurface.ts",
       "lib/menu-generator/providerAdminMapper.ts",
       "lib/menu-generator/resolveProviderMenuRuntimeProfile.ts",
+      "lib/menu-generator/sotFeatureFlag.ts",
+      "lib/menu-generator/sotMsdiItemMapping.ts",
+      "lib/menu-generator/sotMsdiMappingPolicy.ts",
       "lib/menu-generator/tierRules.ts",
       "lib/menu-generator/types.ts"
     ],
     "lib/menu-generator/itemKeys.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/types.ts"
+    ],
+    "lib/menu-generator/localizedCategoryLabels.ts": [
       "lib/cms/menuDayContract.ts",
       "lib/menu-generator/types.ts"
     ],
@@ -12786,11 +12995,36 @@
       "lib/menu-generator/types.ts",
       "lib/menu-profile/marketDefaults.ts"
     ],
+    "lib/menu-generator/localizedGeneratorSotControl.ts": [
+      "lib/menu-generator/localizedGeneratorSotResolver.ts",
+      "lib/menu-generator/sotFeatureFlag.ts",
+      "lib/menu-profile/featureFlag.ts"
+    ],
+    "lib/menu-generator/localizedGeneratorSotResolver.ts": [
+      "lib/menu-generator/sotFeatureFlag.ts",
+      "lib/menu-generator/sotMsdiItemMapping.ts",
+      "lib/menu-generator/sotMsdiMappingPolicy.ts",
+      "lib/menu-profile/featureFlag.ts"
+    ],
+    "lib/menu-generator/localizedMenuSurface.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/featureFlag.ts",
+      "lib/menu-generator/localizedCategoryLabels.ts",
+      "lib/menu-generator/localizedFixedDishBanks.ts",
+      "lib/menu-generator/resolveProviderMenuRuntimeProfile.ts",
+      "lib/menu-generator/types.ts",
+      "lib/menu-profile/featureFlag.ts",
+      "lib/menu-profile/registry.ts",
+      "lib/menu-profile/types.ts",
+      "lib/provider-menu/lunchCategoryCatalog.ts",
+      "lib/providers/loadProviderSettingsMenuProfile.ts"
+    ],
     "lib/menu-generator/providerAdminMapper.ts": [
       "lib/menu-generator/localizedFixedDishBanks.ts",
       "lib/menu-generator/types.ts",
       "lib/menu-profile/marketDefaults.ts"
     ],
+    "lib/menu-generator/providerMirrorPreflight.ts": [],
     "lib/menu-generator/resolveProviderMenuRuntimeProfile.ts": [
       "lib/menu-generator/countryEconomyDefaults.ts",
       "lib/menu-generator/localizedFixedDishBanks.ts",
@@ -12800,6 +13034,21 @@
       "lib/menu-profile/providerMenuProfileResolver.ts",
       "lib/menu-profile/registry.ts",
       "lib/menu-profile/types.ts"
+    ],
+    "lib/menu-generator/sotFeatureFlag.ts": [
+      "lib/menu-profile/featureFlag.ts"
+    ],
+    "lib/menu-generator/sotMsdiItemMapping.ts": [
+      "lib/cms/lunchCategory.ts",
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/countryEconomyDefaults.ts",
+      "lib/menu-profile/marketDefaults.ts",
+      "lib/menu-profile/types.ts",
+      "lib/menu-publish/tierPricing.ts"
+    ],
+    "lib/menu-generator/sotMsdiMappingPolicy.ts": [
+      "lib/menu-generator/sotFeatureFlag.ts",
+      "lib/menu-profile/featureFlag.ts"
     ],
     "lib/menu-generator/tierRules.ts": [
       "lib/cms/menuDayContract.ts",
@@ -12920,6 +13169,15 @@
       "lib/menu-publish/generateWeekMenu.ts"
     ],
     "lib/menu-publish/menuDaySyncShared.ts": [],
+    "lib/menu-publish/msdiLocalizedItemSnapshot.ts": [
+      "lib/cms/menuDayContract.ts",
+      "lib/menu-generator/sotMsdiItemMapping.ts",
+      "lib/menu-generator/sotMsdiMappingPolicy.ts",
+      "lib/menu-profile/featureFlag.ts"
+    ],
+    "lib/menu-publish/msdiSnapshotMode.ts": [
+      "lib/menu-generator/sotMsdiItemMapping.ts"
+    ],
     "lib/menu-publish/resolveMenuDayProvider.ts": [],
     "lib/menu-publish/runMenuWeekRollout.ts": [
       "lib/menu-publish/runMenuWeekRolloutCore.ts"
@@ -12936,6 +13194,8 @@
       "lib/cms/lunchCategory.ts",
       "lib/cms/menuDayContract.ts",
       "lib/menu-publish/menuDaySyncShared.ts",
+      "lib/menu-publish/msdiLocalizedItemSnapshot.ts",
+      "lib/menu-publish/msdiSnapshotMode.ts",
       "lib/menu-publish/tierPricing.ts",
       "lib/sanity/server.ts"
     ],
@@ -14003,11 +14263,13 @@
       "lib/cms/menuDayContract.ts",
       "lib/menu-profile/featureFlag.ts",
       "lib/menu-profile/noCategoryRuntimeMap.ts",
-      "lib/menu-profile/types.ts"
+      "lib/menu-profile/types.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "lib/provider-menu/providerMenuProfilePresentation.ts": [
       "lib/cms/menuDayContract.ts",
-      "lib/menu-profile/types.ts"
+      "lib/menu-profile/types.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "lib/provider-menu/providerMenuProfileWarmDishGeneration.ts": [
       "lib/menu-profile/featureFlag.ts",
@@ -14058,6 +14320,63 @@
       "lib/provider-menu/providerMenuOrderLock.ts",
       "lib/week/availability.ts"
     ],
+    "lib/provider-onboarding/createLiveReadAdapters.ts": [
+      "lib/menu-generator/providerMirrorPreflight.ts",
+      "lib/provider-onboarding/liveReadSnapshot.ts",
+      "lib/provider-onboarding/phaseCInventoryClassify.ts",
+      "lib/provider-onboarding/phaseCLocales.ts"
+    ],
+    "lib/provider-onboarding/createLiveWriteAdapters.ts": [
+      "lib/menu-generator/providerMirrorPreflight.ts",
+      "lib/provider-onboarding/createLiveReadAdapters.ts",
+      "lib/provider-onboarding/phaseCLocales.ts",
+      "lib/provider-onboarding/providerOnboardingExecute.ts"
+    ],
+    "lib/provider-onboarding/index.ts": [
+      "lib/provider-onboarding/createLiveReadAdapters.ts",
+      "lib/provider-onboarding/createLiveWriteAdapters.ts",
+      "lib/provider-onboarding/liveReadSnapshot.ts",
+      "lib/provider-onboarding/phaseCInventoryClassify.ts",
+      "lib/provider-onboarding/phaseCLocales.ts",
+      "lib/provider-onboarding/phaseCOnboardCli.ts",
+      "lib/provider-onboarding/providerOnboardingExecute.ts",
+      "lib/provider-onboarding/providerOnboardingPlan.ts",
+      "lib/provider-onboarding/providerOnboardingTypes.ts"
+    ],
+    "lib/provider-onboarding/liveReadSnapshot.ts": [
+      "lib/provider-onboarding/phaseCInventoryClassify.ts",
+      "lib/provider-onboarding/phaseCLocales.ts",
+      "lib/provider-onboarding/providerOnboardingTypes.ts"
+    ],
+    "lib/provider-onboarding/operatorLocalCredentials.ts": [],
+    "lib/provider-onboarding/phaseCInventoryClassify.ts": [
+      "lib/provider-onboarding/providerOnboardingTypes.ts"
+    ],
+    "lib/provider-onboarding/phaseCLocales.ts": [
+      "lib/menu-profile/types.ts"
+    ],
+    "lib/provider-onboarding/phaseCOnboardCli.ts": [
+      "lib/provider-onboarding/createLiveReadAdapters.ts",
+      "lib/provider-onboarding/liveReadSnapshot.ts",
+      "lib/provider-onboarding/phaseCLocales.ts",
+      "lib/provider-onboarding/providerOnboardingExecute.ts",
+      "lib/provider-onboarding/providerOnboardingPlan.ts",
+      "lib/provider-onboarding/providerOnboardingTypes.ts"
+    ],
+    "lib/provider-onboarding/phaseDLocales.ts": [
+      "lib/menu-profile/types.ts"
+    ],
+    "lib/provider-onboarding/providerOnboardingExecute.ts": [
+      "lib/provider-onboarding/operatorLocalCredentials.ts",
+      "lib/provider-onboarding/phaseCLocales.ts",
+      "lib/provider-onboarding/providerOnboardingPlan.ts",
+      "lib/provider-onboarding/providerOnboardingTypes.ts"
+    ],
+    "lib/provider-onboarding/providerOnboardingPlan.ts": [
+      "lib/provider-onboarding/phaseCLocales.ts",
+      "lib/provider-onboarding/providerOnboardingTypes.ts"
+    ],
+    "lib/provider-onboarding/providerOnboardingTypes.ts": [],
     "lib/providers/brandColor.ts": [],
     "lib/providers/customerTypes.ts": [
       "lib/providers/providerCustomerBilling.ts"
@@ -14140,7 +14459,8 @@
     ],
     "lib/providers/providerCustomerActionErrors.ts": [],
     "lib/providers/providerCustomerAgreementSurface.ts": [
-      "lib/providers/providerCustomerBilling.ts"
+      "lib/providers/providerCustomerBilling.ts",
+      "lib/tiers/displayLabels.ts"
     ],
     "lib/providers/providerCustomerAgreementTypes.ts": [
       "lib/agreements/normalize.ts",
@@ -15229,6 +15549,12 @@
       "lib/smart-menu/employeeApprovedTranslations.ts",
       "lib/smart-menu/translationStatus.ts"
     ],
+    "lib/smart-menu/providerOrderWindowSourceDays.ts": [
+      "lib/cms/menuDay.ts",
+      "lib/date/oslo.ts",
+      "lib/smart-menu/employeeApprovedTranslations.ts",
+      "lib/supabase/admin.ts"
+    ],
     "lib/smart-menu/providerTranslationApproval.ts": [
       "lib/i18n/localeRegistry.ts",
       "lib/smart-menu/translationStatus.ts",
@@ -15239,6 +15565,7 @@
       "lib/cms/lunchCategory.ts",
       "lib/provider-menu/providerMenuCatalogReadModel.ts",
       "lib/smart-menu/menuTranslationSources.ts",
+      "lib/smart-menu/providerOrderWindowSourceDays.ts",
       "lib/smart-menu/providerTranslationApproval.ts",
       "lib/smart-menu/translationCoverage.ts"
     ],
@@ -15798,6 +16125,7 @@
     "lib/tenant/context.ts": [],
     "lib/tenant/guard.ts": [],
     "lib/theme/ThemeProvider.tsx": [],
+    "lib/tiers/displayLabels.ts": [],
     "lib/toast/ToastProvider.tsx": [],
     "lib/types/database.ts": [],
     "lib/ui/apiErrorMessage.ts": [],
@@ -16108,6 +16436,28 @@
     "scripts/generate-prod-rls-capture.mjs": [],
     "scripts/generateAudit.ts": [],
     "scripts/generateFullAudit.ts": [],
+    "scripts/go-operator.mjs": [
+      "scripts/go-operator/constants.mjs",
+      "scripts/go-operator/pr.mjs",
+      "scripts/go-operator/safety.mjs",
+      "scripts/go-operator/tasks.mjs",
+      "scripts/go-operator/workspace.mjs"
+    ],
+    "scripts/go-operator/constants.mjs": [],
+    "scripts/go-operator/pr.mjs": [
+      "scripts/go-operator/safety.mjs"
+    ],
+    "scripts/go-operator/safety.mjs": [
+      "scripts/go-operator/constants.mjs"
+    ],
+    "scripts/go-operator/tasks.mjs": [
+      "scripts/go-operator/constants.mjs",
+      "scripts/go-operator/safety.mjs",
+      "scripts/go-operator/workspace.mjs"
+    ],
+    "scripts/go-operator/workspace.mjs": [
+      "scripts/go-operator/constants.mjs"
+    ],
     "scripts/k6/dc028-auth-flow.mjs": [],
     "scripts/k6/dc028-probe.mjs": [],
     "scripts/k6/diag-prod-pool-access.mjs": [],
@@ -16125,6 +16475,13 @@
       "lib/cms/providerSanityConstants.ts",
       "lib/menu-publish/calendar.ts",
       "lib/menu-publish/runMenuWeekRolloutCore.ts"
+    ],
+    "scripts/ops/provider-onboarding/phase-c-onboard-provider.mjs": [],
+    "scripts/ops/provider-onboarding/phase-c-onboard-provider.ts": [
+      "lib/provider-onboarding/createLiveReadAdapters.ts",
+      "lib/provider-onboarding/createLiveWriteAdapters.ts",
+      "lib/provider-onboarding/phaseCOnboardCli.ts",
+      "lib/provider-onboarding/providerOnboardingTypes.ts"
     ],
     "scripts/postdeploy-lib.mjs": [],
     "scripts/postdeploy.mjs": [
@@ -16265,6 +16622,7 @@
       "scripts/smoke/resolve-staging-database-url.mjs"
     ],
     "scripts/smoke/write-baseline-migration.mjs": [],
+    "scripts/staging/verify-main-to-staging-fast-forward.mjs": [],
     "scripts/system-test/context.ts": [],
     "scripts/system-test/runner.ts": [
       "scripts/system-test/context.ts",

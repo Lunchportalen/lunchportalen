@@ -3925,6 +3925,16 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/provider/billing/payment-method/setup/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/billing/payment-method/setup",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/provider/customers/[companyId]/agreement/route.ts",
       "methods": [
         "GET",
@@ -4014,6 +4024,16 @@
         "GET"
       ],
       "route": "/api/provider/menu-days/varmrett/suggestions",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/menu-generator/apply-week/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/menu-generator/apply-week",
       "rpc_calls": [],
       "uses_tables": []
     },
@@ -5077,6 +5097,16 @@
         "companies",
         "orders"
       ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/billing/stripe-charge/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/superadmin/billing/stripe-charge",
+      "rpc_calls": [],
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",
@@ -6464,6 +6494,26 @@
         "POST"
       ],
       "route": "/api/webhooks/sanity/menu-day",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/webhooks/stripe-billing-payments/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/webhooks/stripe-billing-payments",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/webhooks/stripe-provider-setup/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/webhooks/stripe-provider-setup",
       "rpc_calls": [],
       "uses_tables": []
     },
