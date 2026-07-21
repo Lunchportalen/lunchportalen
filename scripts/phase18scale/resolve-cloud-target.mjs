@@ -5,13 +5,26 @@
  *
  * PHASE18_DATABASE_URL uses Supavisor session-mode pooler (IPv4-capable).
  * Direct db.<ref>.supabase.co is IPv6-only and unreachable from GitHub-hosted runners.
+ *
+ * Password policy:
+ * - Prefer PHASE18_DB_PASSWORD secret when set.
+ * - Otherwise use deterministic isolated password.
+ * - Do NOT rotate via Management API on every job (causes pooler auth races).
+ * - Rotate only when probe auth fails, then verify with retries.
+ *
  * Prints KEY=value lines suitable for $GITHUB_ENV (never prints plaintext password alone).
  */
 import crypto from "node:crypto";
 import dns from "node:dns/promises";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import pg from "pg";
 
 const PROD = "hkpokyapzarefrgqzkos";
 const STAGING = "uigxsboqeruxflgzqztl";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CA_BUNDLE = path.join(__dirname, "certs/supabase-pooler-ca-bundle.crt");
 
 const ref = String(process.env.PHASE18_LOAD_REF || process.argv[2] || "").trim();
 const token = String(process.env.SUPABASE_ACCESS_TOKEN || "").trim();
@@ -28,6 +41,10 @@ if (!token) {
   console.error("SUPABASE_ACCESS_TOKEN required");
   process.exit(2);
 }
+if (ref.includes(PROD) || ref.includes(STAGING)) {
+  console.error("forbidden ref fragment");
+  process.exit(2);
+}
 
 async function fetchJson(url, init) {
   const res = await fetch(url, init);
@@ -39,6 +56,56 @@ async function fetchJson(url, init) {
     body = null;
   }
   return { ok: res.ok, status: res.status, body };
+}
+
+function buildDatabaseUrl(user, password, host) {
+  const encoded = encodeURIComponent(password);
+  return `postgresql://${user}:${encoded}@${host}:5432/postgres?sslmode=require`;
+}
+
+async function probePoolerAuth(databaseUrl) {
+  if (!fs.existsSync(CA_BUNDLE)) {
+    return { ok: false, error: "PHASE18_SUPABASE_CA_MISSING" };
+  }
+  const ca = fs.readFileSync(CA_BUNDLE, "utf8");
+  let parsed;
+  try {
+    parsed = new URL(databaseUrl);
+  } catch {
+    return { ok: false, error: "PHASE18_DB_URL_INVALID" };
+  }
+  parsed.searchParams.delete("sslmode");
+  const client = new pg.Client({
+    connectionString: parsed.toString(),
+    ssl: { rejectUnauthorized: true, ca, minVersion: "TLSv1.2" },
+    connectionTimeoutMillis: 10000,
+  });
+  try {
+    await client.connect();
+    const r = await client.query("select 1::int as n");
+    if (Number(r.rows[0]?.n) !== 1) return { ok: false, error: "SELECT_1_FAILED" };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e).slice(0, 200) };
+  } finally {
+    try {
+      await client.end();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+async function rotateDatabasePassword(password) {
+  const pwRes = await fetchJson(`https://api.supabase.com/v1/projects/${ref}/database/password`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ password }),
+  });
+  return pwRes;
 }
 
 const keysRes = await fetchJson(`https://api.supabase.com/v1/projects/${ref}/api-keys`, {
@@ -71,22 +138,9 @@ if (!region || !/^[a-z0-9-]+$/i.test(region)) {
 
 const url = `https://${ref}.supabase.co`;
 
-// Ephemeral DB password for isolated load-cert only (never production/staging).
 const dbPassword =
   process.env.PHASE18_DB_PASSWORD ||
   `P18c_${crypto.createHash("sha256").update(`phase18scale-db-${ref}`).digest("hex").slice(0, 28)}`;
-const pwRes = await fetchJson(`https://api.supabase.com/v1/projects/${ref}/database/password`, {
-  method: "PATCH",
-  headers: {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ password: dbPassword }),
-});
-if (!pwRes.ok) {
-  console.error(`database/password HTTP ${pwRes.status}`);
-  process.exit(2);
-}
 
 const poolerCandidates = [
   `aws-0-${region}.pooler.supabase.com`,
@@ -110,10 +164,51 @@ if (!poolerHost) {
   process.exit(2);
 }
 
-const encoded = encodeURIComponent(dbPassword);
 const user = `postgres.${ref}`;
-// Session mode (5432): required for multi-statement repair scripts from GHA (IPv4).
-const databaseUrl = `postgresql://${user}:${encoded}@${poolerHost}:5432/postgres?sslmode=require`;
+let databaseUrl = buildDatabaseUrl(user, dbPassword, poolerHost);
+let passwordAction = "reused_existing";
+
+const forceRotate = ["1", "true", "yes"].includes(
+  String(process.env.PHASE18_ROTATE_DB_PASSWORD || "").toLowerCase(),
+);
+
+let probe = await probePoolerAuth(databaseUrl);
+if (!probe.ok || forceRotate) {
+  const pwRes = await rotateDatabasePassword(dbPassword);
+  if (!pwRes.ok) {
+    console.error(`database/password HTTP ${pwRes.status}`);
+    process.exit(2);
+  }
+  passwordAction = forceRotate ? "forced_rotate" : "rotated_after_auth_fail";
+  databaseUrl = buildDatabaseUrl(user, dbPassword, poolerHost);
+
+  probe = { ok: false, error: "not_probed" };
+  for (let attempt = 1; attempt <= 8; attempt++) {
+    await new Promise((r) => setTimeout(r, 1500 * attempt));
+    probe = await probePoolerAuth(databaseUrl);
+    if (probe.ok) break;
+  }
+}
+
+if (!probe.ok) {
+  console.error(`PHASE18_POOLER_AUTH_PROBE_FAILED: ${probe.error || "unknown"}`);
+  process.exit(2);
+}
+
+// Redacted operational signal only (no password).
+console.error(
+  JSON.stringify({
+    phase18_resolve_cloud_target: {
+      ref,
+      region,
+      pooler_host: poolerHost,
+      connection_method: "supavisor_session_pooler_ipv4",
+      password_action: passwordAction,
+      auth_probe: "PASS",
+      tls: "rejectUnauthorized=true,ca=supabase-pooler-ca-bundle.crt",
+    },
+  }),
+);
 
 const lines = [
   `PHASE18_LOAD_REF=${ref}`,
@@ -121,6 +216,7 @@ const lines = [
   `PHASE18_DB_REGION=${region}`,
   `PHASE18_DB_CONNECTION_METHOD=supavisor_session_pooler_ipv4`,
   `PHASE18_DB_POOLER_HOST=${poolerHost}`,
+  `PHASE18_DB_PASSWORD_ACTION=${passwordAction}`,
   `NEXT_PUBLIC_SUPABASE_URL=${url}`,
   `SUPABASE_URL=${url}`,
   `PHASE18_SUPABASE_URL=${url}`,
