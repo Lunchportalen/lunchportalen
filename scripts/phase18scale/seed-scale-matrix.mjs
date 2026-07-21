@@ -587,41 +587,50 @@ async function main() {
   }
   report.SYNTHETIC_EMPLOYEES = employeeManifest.length;
 
-  for (const co of companyRows) {
-    const { data: msd, error: msdErr } = await admin
-      .from("menu_service_days")
-      .upsert(
-        {
-          company_id: co.company_id,
-          location_id: co.location_id,
-          service_date: serviceDate,
-          state: "published",
-          provider_id: co.provider_id,
-          cutoff_at: new Date(`${serviceDate}T06:00:00.000Z`).toISOString(),
-          published_at: new Date().toISOString(),
-        },
-        { onConflict: "location_id,service_date" },
-      )
-      .select("id")
-      .maybeSingle();
-    if (msdErr) {
-      console.warn(`msd ${co.index}: ${msdErr.message}`);
-      continue;
-    }
-    const productId = await ensureProduct(co.company_id, co.package);
-    if (msd?.id && productId) {
-      await admin.from("menu_service_day_items").delete().eq("menu_service_day_id", msd.id);
-      const { error: msdiErr } = await admin.from("menu_service_day_items").insert({
-        menu_service_day_id: msd.id,
-        product_id: productId,
-        product_name_snapshot: "Varmrett",
-        unit_name_snapshot: "porsjon",
-        offered_price_cents_ex_vat: co.package === "BASIS" ? 9000 : co.package === "LUXUS" ? 13000 : 17000,
-        vat_rate_snapshot: 0.15,
-        sort_order: 0,
-      });
-      if (msdiErr && !/duplicate|unique/i.test(msdiErr.message)) {
-        console.warn(`msdi ${co.index}: ${msdiErr.message}`);
+  const { count: existingMenuDays, error: menuCountErr } = await admin
+    .from("menu_service_days")
+    .select("id", { count: "exact", head: true })
+    .eq("service_date", serviceDate);
+  if (menuCountErr) throw new Error(`menu_service_days count: ${menuCountErr.message}`);
+  if ((existingMenuDays || 0) >= companyRows.length) {
+    console.log(`menu_days_fast_resume=${existingMenuDays}`);
+  } else {
+    for (const co of companyRows) {
+      const { data: msd, error: msdErr } = await admin
+        .from("menu_service_days")
+        .upsert(
+          {
+            company_id: co.company_id,
+            location_id: co.location_id,
+            service_date: serviceDate,
+            state: "published",
+            provider_id: co.provider_id,
+            cutoff_at: new Date(`${serviceDate}T06:00:00.000Z`).toISOString(),
+            published_at: new Date().toISOString(),
+          },
+          { onConflict: "location_id,service_date" },
+        )
+        .select("id")
+        .maybeSingle();
+      if (msdErr) {
+        console.warn(`msd ${co.index}: ${msdErr.message}`);
+        continue;
+      }
+      const productId = await ensureProduct(co.company_id, co.package);
+      if (msd?.id && productId) {
+        await admin.from("menu_service_day_items").delete().eq("menu_service_day_id", msd.id);
+        const { error: msdiErr } = await admin.from("menu_service_day_items").insert({
+          menu_service_day_id: msd.id,
+          product_id: productId,
+          product_name_snapshot: "Varmrett",
+          unit_name_snapshot: "porsjon",
+          offered_price_cents_ex_vat: co.package === "BASIS" ? 9000 : co.package === "LUXUS" ? 13000 : 17000,
+          vat_rate_snapshot: 0.15,
+          sort_order: 0,
+        });
+        if (msdiErr && !/duplicate|unique/i.test(msdiErr.message)) {
+          console.warn(`msdi ${co.index}: ${msdiErr.message}`);
+        }
       }
     }
   }

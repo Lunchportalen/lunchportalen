@@ -11,6 +11,7 @@ import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { loadPhase18Env } from "./load-env.mjs";
+import { localeForEmployeeIndex } from "./lib/matrix.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
@@ -24,6 +25,67 @@ async function loadManifest() {
     if (line.trim()) rows.push(JSON.parse(line));
   }
   return rows;
+}
+
+/** Cloud-safe rebuild when seed artifact is not present in this job workspace. */
+async function exportManifestFromCloud(admin) {
+  fs.mkdirSync(OUT, { recursive: true });
+  const companyCache = new Map();
+  async function companyMeta(companyId) {
+    if (!companyId) return {};
+    if (companyCache.has(companyId)) return companyCache.get(companyId);
+    const { data, error } = await admin
+      .from("companies")
+      .select("provider_id,billing_country,contact_email")
+      .eq("id", companyId)
+      .maybeSingle();
+    if (error) throw new Error(`company ${companyId}: ${error.message}`);
+    const meta = data || {};
+    companyCache.set(companyId, meta);
+    return meta;
+  }
+
+  const ws = fs.createWriteStream(MANIFEST);
+  let n = 0;
+  for (let from = 0; from < 500_000; from += 1000) {
+    const { data, error } = await admin
+      .from("profiles")
+      .select("id,email,company_id,location_id")
+      .like("email", "p18scale-emp-%@load.lunchportalen.test")
+      .order("email", { ascending: true })
+      .range(from, from + 999);
+    if (error) throw new Error(`profiles page ${from}: ${error.message}`);
+    if (!data?.length) break;
+    for (const p of data) {
+      const m = String(p.email || "").match(/p18scale-emp-(\d+)@/i);
+      const index = m ? Number(m[1]) : n;
+      const co = await companyMeta(p.company_id);
+      let pkg = "BASIS";
+      if (/co-luxus/i.test(co.contact_email || "")) pkg = "LUXUS";
+      else if (/co-enterprise/i.test(co.contact_email || "")) pkg = "ENTERPRISE";
+      ws.write(
+        `${JSON.stringify({
+          user_id: p.id,
+          email: p.email,
+          company_id: p.company_id,
+          location_id: p.location_id,
+          provider_id: co.provider_id,
+          country: co.billing_country || "NO",
+          package: pkg,
+          locale: localeForEmployeeIndex(index),
+          index,
+        })}\n`,
+      );
+      n += 1;
+    }
+    if (data.length < 1000) break;
+  }
+  await new Promise((resolve, reject) => {
+    ws.end(() => resolve());
+    ws.on("error", reject);
+  });
+  console.log(`manifest_exported_from_cloud=${n}`);
+  return n;
 }
 
 function pickCoverage(rows, extrasPerHot = 20) {
@@ -59,11 +121,14 @@ async function main() {
     process.env.PHASE18_SYNTH_PASSWORD ||
     `P18Scale-${crypto.createHash("sha256").update("phase18scale-v1").digest("hex").slice(0, 24)}`;
   process.env.PHASE18_SYNTH_PASSWORD = password;
-  if (!fs.existsSync(MANIFEST)) throw new Error(`missing ${MANIFEST} — run export-employee-manifest first`);
+  if (!fs.existsSync(MANIFEST)) {
+    const exported = await exportManifestFromCloud(admin);
+    if (exported < 1) throw new Error(`missing ${MANIFEST} and cloud export returned 0 rows`);
+  }
 
   const strategy = String(process.env.PHASE18_SESSION_STRATEGY || "coverage").toLowerCase();
   const limit = Number(process.env.PHASE18_SESSION_LIMIT || 0);
-  const concurrency = Number(process.env.PHASE18_SESSION_CONCURRENCY || 12);
+  const concurrency = Number(process.env.PHASE18_SESSION_CONCURRENCY || 48);
   const all = await loadManifest();
   let selected = strategy === "all" ? all : pickCoverage(all, Number(process.env.PHASE18_SESSION_HOT_EXTRAS || 20));
   if (limit > 0) selected = selected.slice(0, limit);

@@ -236,6 +236,12 @@ jobs:
       - run: npm ci
       - name: Resolve isolated keys
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download seed evidence (best effort)
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-synthetic-seed
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/issue-auth-sessions.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -264,6 +270,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -292,6 +303,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -320,6 +336,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -348,6 +369,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -376,6 +402,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/run-ramp-stage.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -401,6 +432,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/soak-runner.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -429,6 +465,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/order-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -457,6 +498,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/order-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -485,6 +531,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/cancellation-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -513,6 +564,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/cancellation-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -541,6 +597,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/cancellation-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -566,6 +627,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/cutoff-boundary-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -591,6 +657,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/cutoff-boundary-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -614,6 +685,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/hot-provider-wave.mjs
       - if: always()
         uses: actions/upload-artifact@v4
@@ -766,6 +842,11 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
       - run: node scripts/phase18scale/soak-runner.mjs
       - if: always()
         uses: actions/upload-artifact@v4
