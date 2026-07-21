@@ -24,6 +24,10 @@ on:
         description: YES to run against provisioned isolated project
         required: false
         default: "NO"
+      continue_past_smoke100:
+        description: YES only after smoke-100 passes and reconciles (default NO blocks smoke-500+)
+        required: false
+        default: "NO"
 
 permissions:
   contents: read
@@ -70,6 +74,7 @@ jobs:
             hkpokyapzarefrgqzkos|uigxsboqeruxflgzqztl|"") echo "::error::prod/shared-staging/empty ref forbidden"; exit 2 ;;
           esac
           node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+          node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
           node scripts/phase18scale/secret-pii-scan.mjs
           node scripts/phase18scale/production-safety-probe.mjs
       - name: Isolation and cost gate
@@ -161,30 +166,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.APP_SHA }}
-      - name: Observability completeness gate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Cloud DB connectivity + pg_stat observability probe
         run: |
-          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
-          cat > docs/rc/phase18scale/evidence/ci-jobs/observability-check.json <<EOF
-          {
-            "job": "observability-check",
-            "CLOUD_OBSERVABILITY_COMPLETE": "PARTIAL",
-            "TIMESTAMP_ALIGNMENT": "PASS",
-            "MISSING_CRITICAL_METRICS": 0,
-            "note": "Supabase dashboard + app /api/health + pg_stat_activity probes required before 100k waves",
-            "exact_SHA": "${APP_SHA}",
-            "exit_code": 0,
-            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          }
-          EOF
+          set -euo pipefail
+          node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
+          node scripts/phase18scale/observability-pg-probe.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: phase18-job-observability-check
-          path: docs/rc/phase18scale/evidence/ci-jobs/
+          path: docs/rc/phase18scale/evidence/
 
   synthetic-seed:
     needs: observability-check
@@ -210,6 +214,8 @@ jobs:
       - run: npm ci
       - name: Resolve isolated keys
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
+        run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
       - run: node scripts/phase18scale/seed-scale-matrix.mjs
       - name: Ensure ACTIVE agreements
         run: node scripts/phase18scale/ensure-agreements.mjs
@@ -336,7 +342,7 @@ jobs:
 
   smoke-500:
     needs: smoke-100
-    if: success()
+    if: success() && inputs.continue_past_smoke100 == 'YES'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: load-cert

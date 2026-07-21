@@ -1,6 +1,9 @@
 /**
  * Fail-closed Phase 18 Postgres target resolver.
  * Never falls back to ambient DATABASE_URL from .env.local.
+ *
+ * Cloud load-cert (PHASE18_LOADCERT=1) requires Supavisor session pooler (IPv4).
+ * Direct db.<ref>.supabase.co is rejected (IPv6-only from GitHub-hosted runners).
  */
 import { execFileSync } from "node:child_process";
 import { PROD_REF, STAGING_REF } from "../load-env.mjs";
@@ -8,17 +11,19 @@ import { PROD_REF, STAGING_REF } from "../load-env.mjs";
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
 const LOCAL_PORT = 54322;
 
-function redactIdentity(parsed, classification, source) {
+export function redactIdentity(parsed, classification, source, extra = {}) {
   return {
     host: parsed.hostname,
     port: parsed.port || (parsed.protocol === "postgresql:" ? "5432" : ""),
     database: (parsed.pathname || "/").replace(/^\//, "") || "postgres",
+    username: String(decodeURIComponent(parsed.username || "")).replace(/:.*/, ""),
     classification,
     source,
+    ...extra,
   };
 }
 
-function parseDbUrl(url) {
+export function parseDbUrl(url) {
   let u;
   try {
     u = new URL(url);
@@ -57,14 +62,18 @@ function assertLocalPostgresUrl(url, source) {
   parsed.searchParams.set("sslmode", "disable");
   const normalized = parsed.toString();
   const identity = redactIdentity(
-    { hostname: host, port: String(port), pathname: `/${db}`, protocol: "postgresql:" },
+    { hostname: host, port: String(port), pathname: `/${db}`, protocol: "postgresql:", username: parsed.username },
     "local",
     source,
   );
   return { connectionString: normalized, identity, ssl: false };
 }
 
-function assertIsolatedCloudPostgresUrl(url, source) {
+/**
+ * Isolated cloud Postgres via Supavisor session pooler only.
+ * Rejects direct IPv6 db.<ref>.supabase.co and any prod/staging/local target.
+ */
+export function assertIsolatedCloudPostgresUrl(url, source) {
   const ref = String(process.env.PHASE18_LOAD_REF || "").trim();
   if (!ref) throw new Error("PHASE18_LOAD_REF_REQUIRED_FOR_CLOUD_DB");
   if (ref === PROD_REF || ref === STAGING_REF) {
@@ -77,26 +86,57 @@ function assertIsolatedCloudPostgresUrl(url, source) {
 
   const parsed = parseDbUrl(url);
   const host = String(parsed.hostname || "").toLowerCase();
-  const allowed = new Set([
-    `db.${ref}.supabase.co`,
-    `aws-0-eu-west-1.pooler.supabase.com`,
-    `aws-0-eu-central-1.pooler.supabase.com`,
-  ]);
-  const poolerUserOk =
-    host.includes("pooler.supabase.com") &&
-    String(decodeURIComponent(parsed.username || "")).includes(ref);
-  if (!allowed.has(host) && host !== `db.${ref}.supabase.co` && !poolerUserOk) {
-    throw new Error(`PHASE18_CLOUD_DB_HOST_FORBIDDEN: ${host}`);
-  }
-  if (host.includes(PROD_REF) || host.includes(STAGING_REF) || String(url).includes(PROD_REF) || String(url).includes(STAGING_REF)) {
+  const user = String(decodeURIComponent(parsed.username || ""));
+  const db = (parsed.pathname || "/postgres").replace(/^\//, "") || "postgres";
+  const port = String(parsed.port || "5432");
+  const raw = String(url);
+
+  if (raw.includes(PROD_REF) || host.includes(PROD_REF) || user.includes(PROD_REF)) {
     throw new Error("PRODUCTION_OR_STAGING_CLOUD_DB_FORBIDDEN");
   }
+  if (raw.includes(STAGING_REF) || host.includes(STAGING_REF) || user.includes(STAGING_REF)) {
+    throw new Error("PRODUCTION_OR_STAGING_CLOUD_DB_FORBIDDEN");
+  }
+  if (LOCAL_HOSTS.has(host) || host === "0.0.0.0" || /localhost/i.test(host)) {
+    throw new Error("PHASE18_CLOUD_DB_LOCALHOST_FORBIDDEN");
+  }
+  if (host === `db.${ref}.supabase.co` || /^db\.[a-z0-9]+\.supabase\.co$/i.test(host)) {
+    throw new Error(
+      "PHASE18_CLOUD_DB_DIRECT_IPV6_FORBIDDEN: use Supavisor session pooler (aws-0-<region>.pooler.supabase.com:5432)",
+    );
+  }
+  if (!host.includes("pooler.supabase.com")) {
+    throw new Error(`PHASE18_CLOUD_DB_HOST_FORBIDDEN: ${host}`);
+  }
+  if (!/^aws-0-[a-z0-9-]+\.pooler\.supabase\.com$/i.test(host) && !/^aws-[a-z0-9-]+\.pooler\.supabase\.com$/i.test(host)) {
+    throw new Error(`PHASE18_CLOUD_DB_POOLER_HOST_FORBIDDEN: ${host}`);
+  }
+  if (user !== `postgres.${ref}`) {
+    throw new Error(`PHASE18_CLOUD_DB_USER_FORBIDDEN: expected postgres.${ref}`);
+  }
+  if (db !== "postgres") {
+    throw new Error(`PHASE18_CLOUD_DB_NAME_FORBIDDEN: ${db}`);
+  }
+  if (port !== "5432" && port !== "6543") {
+    throw new Error(`PHASE18_CLOUD_DB_PORT_FORBIDDEN: ${port}`);
+  }
+
   parsed.searchParams.set("sslmode", "require");
-  const db = (parsed.pathname || "/postgres").replace(/^\//, "") || "postgres";
   const identity = redactIdentity(
-    { hostname: host, port: String(parsed.port || "5432"), pathname: `/${db}`, protocol: "postgresql:" },
+    {
+      hostname: host,
+      port,
+      pathname: `/${db}`,
+      protocol: "postgresql:",
+      username: user,
+    },
     "isolated_cloud",
     source,
+    {
+      connection_method: "supavisor_session_pooler_ipv4",
+      project_ref: ref,
+      tls: "sslmode=require,rejectUnauthorized=true",
+    },
   );
   return {
     connectionString: parsed.toString(),
@@ -163,7 +203,7 @@ function fromSupabaseStatus() {
 }
 
 /**
- * Resolve local Phase 18 DB target.
+ * Resolve Phase 18 DB target.
  * Priority: PHASE18_DATABASE_URL → SUPABASE_LOCAL_DB_URL → supabase status → fail closed.
  * Explicitly ignores DATABASE_URL / SUPABASE_POSTGRES_URL from ambient .env.local.
  */
@@ -224,11 +264,14 @@ export function resolvePhase18DatabaseUrl(opts = {}) {
   return resolved;
 }
 
-export function createPhase18PgClient(pg) {
-  const { connectionString, ssl, identity } = resolvePhase18DatabaseUrl();
+export function createPhase18PgClient(pg, opts = {}) {
+  const { connectionString, ssl, identity } = resolvePhase18DatabaseUrl({
+    print: opts.print !== false,
+  });
   const client = new pg.Client({
     connectionString,
-    ssl: ssl === false ? false : ssl,
+    ssl: ssl === false ? false : ssl || { rejectUnauthorized: true },
+    connectionTimeoutMillis: opts.connectionTimeoutMillis ?? 15000,
   });
-  return { client, identity };
+  return { client, identity, ssl };
 }

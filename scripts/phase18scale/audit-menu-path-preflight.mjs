@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { loadPhase18Env, MARK, assertNotProduction, PROD_REF, STAGING_REF } from "./load-env.mjs";
-import { resolvePhase18DatabaseUrl } from "./lib/local-db.mjs";
+import { createPhase18PgClient } from "./lib/local-db.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
@@ -243,11 +243,7 @@ async function auditIdentity(admin, identity, serviceDate, opNumber = null) {
 }
 
 async function auditCompaniesSql(serviceDate, ref) {
-  const db = resolvePhase18DatabaseUrl();
-  const client = new pg.Client({
-    connectionString: db.connectionString,
-    ssl: db.ssl === false ? false : db.ssl || { rejectUnauthorized: false },
-  });
+  const { client, identity: db } = createPhase18PgClient(pg);
   await client.connect();
   try {
     const { rows } = await client.query(
@@ -339,7 +335,7 @@ async function auditCompaniesSql(serviceDate, ref) {
         )
       `,
     );
-    return { results, missingEnt: Number(ent.rows[0]?.missing_ent || 0), ref, dbClass: db.identity?.classification };
+    return { results, missingEnt: Number(ent.rows[0]?.missing_ent || 0), ref, dbClass: db?.classification };
   } finally {
     await client.end();
   }

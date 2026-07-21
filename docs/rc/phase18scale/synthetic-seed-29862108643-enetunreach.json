@@ -1,0 +1,21 @@
+{
+  "run_id": 29862108643,
+  "job": "synthetic-seed",
+  "job_id": 88741636484,
+  "engine_sha": "dd456b691f04b37e28c883a3372d9b960cbd8aa2",
+  "step": "Align menu path offered prices to agreement tiers",
+  "command": "node scripts/phase18scale/ensure-menu-path-price-alignment.mjs",
+  "error_code": "ENETUNREACH",
+  "destination_family": "IPv6",
+  "destination_port": 5432,
+  "redacted_host": "db.arstaxredytrjcmqcwhh.supabase.co",
+  "isolated_project": "arstaxredytrjcmqcwhh",
+  "url_from_logs": "***db.arstaxredytrjcmqcwhh.supabase.co:5432/postgres?sslmode=require",
+  "CLOUD_CERT_FAILED": "YES",
+  "CLOUD_DATABASE_NETWORK_FAILURE": "CONFIRMED",
+  "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "root_cause": "resolve-cloud-target built direct db.<ref>.supabase.co (IPv6-only AAAA). GitHub-hosted runners are IPv4-only → connect ENETUNREACH.",
+  "preserved_log": "docs/rc/phase18scale/synthetic-seed-29862108643.log",
+  "stamped_at": "2026-07-21T20:30:00.000Z"
+}

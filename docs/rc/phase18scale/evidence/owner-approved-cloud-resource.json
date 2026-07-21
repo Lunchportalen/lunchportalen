@@ -31,5 +31,11 @@
   "resource": "isolated non-production project",
   "CLOUD_PROJECT_CREATED": "YES",
   "smoke100_remediation_note": "GHA 29818328481 smoke-100 failed MENU_SERVICE_DAY_ITEM_NOT_FOUND due to null products.category_id; ensure-varmrett-product-categories + seed fix",
-  "smoke100_subset_root_cause": "offered_price_mismatch LUXUS/ENTERPRISE agreements vs BASIS-priced MSDI; repaired 888 items / 444 products"
+  "smoke100_subset_root_cause": "offered_price_mismatch LUXUS/ENTERPRISE agreements vs BASIS-priced MSDI; repaired 888 items / 444 products",
+  "network_failure_run_id": 29862108643,
+  "network_failure_root_cause": "direct db.<ref>.supabase.co IPv6-only ENETUNREACH from GitHub-hosted runner; remediated to Supavisor session pooler aws-0-eu-west-1.pooler.supabase.com:5432",
+  "CLOUD_DB_CONNECTION_METHOD": "supavisor_session_pooler_ipv4",
+  "elapsed_hours_at_remediation_stamp": 24.62,
+  "remaining_hours_at_remediation_stamp": 47.38,
+  "stamped_at": "2026-07-21T20:45:00.000Z"
 }

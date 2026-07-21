@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { createPhase18PgClient } from "./lib/local-db.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
@@ -70,14 +71,15 @@ function dockerHealthyLocal() {
 
 async function pgStats() {
   if (mode === "cloud") {
-    const url = process.env.PHASE18_DATABASE_URL;
-    if (!url) return { mode: "cloud", error: "PHASE18_DATABASE_URL_MISSING" };
-    const client = new pg.Client({
-      connectionString: url,
-      ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 8000,
-    });
+    if (!process.env.PHASE18_DATABASE_URL) {
+      return { mode: "cloud", error: "PHASE18_DATABASE_URL_MISSING" };
+    }
+    let client;
     try {
+      ({ client } = createPhase18PgClient(pg, {
+        print: false,
+        connectionTimeoutMillis: 8000,
+      }));
       await client.connect();
       const r = await client.query(
         `select count(*) filter (where state='active')::int as active,
@@ -85,12 +87,12 @@ async function pgStats() {
                 count(*)::int as total
          from pg_stat_activity where datname=current_database()`,
       );
-      return { mode: "cloud", source: "PHASE18_DATABASE_URL", ...r.rows[0] };
+      return { mode: "cloud", source: "PHASE18_DATABASE_URL_POOLER", ...r.rows[0] };
     } catch (e) {
-      return { mode: "cloud", source: "PHASE18_DATABASE_URL", error: String(e?.message || e).slice(0, 240) };
+      return { mode: "cloud", source: "PHASE18_DATABASE_URL_POOLER", error: String(e?.message || e).slice(0, 240) };
     } finally {
       try {
-        await client.end();
+        await client?.end();
       } catch {
         /* ignore */
       }

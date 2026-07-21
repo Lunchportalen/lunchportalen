@@ -14,7 +14,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { loadPhase18Env, MARK, assertNotProduction, PROD_REF, STAGING_REF } from "./load-env.mjs";
-import { resolvePhase18DatabaseUrl } from "./lib/local-db.mjs";
+import { createPhase18PgClient } from "./lib/local-db.mjs";
 import { buildPriceAlignmentSql } from "./lib/menu-path-sql.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,12 +51,8 @@ async function main() {
   const started = Date.now();
   const { url, ref } = loadPhase18Env();
   refuse(url, ref);
-  const db = resolvePhase18DatabaseUrl();
   const dates = resolveServiceDates();
-  const client = new pg.Client({
-    connectionString: db.connectionString,
-    ssl: db.ssl === false ? false : db.ssl || { rejectUnauthorized: false },
-  });
+  const { client, identity: dbIdentity } = createPhase18PgClient(pg);
   await client.connect();
   try {
     await client.query(`
@@ -131,7 +127,7 @@ async function main() {
       phase: "18SCALE",
       MARK,
       target_ref: ref,
-      db_classification: db.identity?.classification || null,
+      db_classification: dbIdentity?.classification || null,
       CLOUD_MENU_PATH_PRICE_ALIGNMENT: pass ? "PASS" : "FAIL",
       CLOUD_COMPANY_MENU_PATH_PREFLIGHT: `${v.valid_warm_path}/${v.companies}`,
       COMPANIES_WITHOUT_WARM_MENU_PATH: Number(v.companies) - Number(v.valid_warm_path),
