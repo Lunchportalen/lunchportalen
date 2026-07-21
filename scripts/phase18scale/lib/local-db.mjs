@@ -64,6 +64,47 @@ function assertLocalPostgresUrl(url, source) {
   return { connectionString: normalized, identity, ssl: false };
 }
 
+function assertIsolatedCloudPostgresUrl(url, source) {
+  const ref = String(process.env.PHASE18_LOAD_REF || "").trim();
+  if (!ref) throw new Error("PHASE18_LOAD_REF_REQUIRED_FOR_CLOUD_DB");
+  if (ref === PROD_REF || ref === STAGING_REF) {
+    throw new Error("PRODUCTION_OR_STAGING_CLOUD_DB_FORBIDDEN");
+  }
+  const loadCert = ["1", "true", "yes"].includes(
+    String(process.env.PHASE18_LOADCERT || "").toLowerCase(),
+  );
+  if (!loadCert) throw new Error("PHASE18_LOADCERT_REQUIRED_FOR_CLOUD_DB");
+
+  const parsed = parseDbUrl(url);
+  const host = String(parsed.hostname || "").toLowerCase();
+  const allowed = new Set([
+    `db.${ref}.supabase.co`,
+    `aws-0-eu-west-1.pooler.supabase.com`,
+    `aws-0-eu-central-1.pooler.supabase.com`,
+  ]);
+  const poolerUserOk =
+    host.includes("pooler.supabase.com") &&
+    String(decodeURIComponent(parsed.username || "")).includes(ref);
+  if (!allowed.has(host) && host !== `db.${ref}.supabase.co` && !poolerUserOk) {
+    throw new Error(`PHASE18_CLOUD_DB_HOST_FORBIDDEN: ${host}`);
+  }
+  if (host.includes(PROD_REF) || host.includes(STAGING_REF) || String(url).includes(PROD_REF) || String(url).includes(STAGING_REF)) {
+    throw new Error("PRODUCTION_OR_STAGING_CLOUD_DB_FORBIDDEN");
+  }
+  parsed.searchParams.set("sslmode", "require");
+  const db = (parsed.pathname || "/postgres").replace(/^\//, "") || "postgres";
+  const identity = redactIdentity(
+    { hostname: host, port: String(parsed.port || "5432"), pathname: `/${db}`, protocol: "postgresql:" },
+    "isolated_cloud",
+    source,
+  );
+  return {
+    connectionString: parsed.toString(),
+    identity,
+    ssl: { rejectUnauthorized: true },
+  };
+}
+
 function sh(command) {
   return execFileSync(command, {
     encoding: "utf8",
@@ -128,6 +169,9 @@ function fromSupabaseStatus() {
  */
 export function resolvePhase18DatabaseUrl(opts = {}) {
   const print = opts.print !== false;
+  const loadCert = ["1", "true", "yes"].includes(
+    String(process.env.PHASE18_LOADCERT || "").toLowerCase(),
+  );
   const candidates = [
     ["PHASE18_DATABASE_URL", process.env.PHASE18_DATABASE_URL],
     ["SUPABASE_LOCAL_DB_URL", process.env.SUPABASE_LOCAL_DB_URL],
@@ -136,23 +180,40 @@ export function resolvePhase18DatabaseUrl(opts = {}) {
   let resolved = null;
   for (const [source, value] of candidates) {
     if (!value || !String(value).trim()) continue;
-    resolved = assertLocalPostgresUrl(String(value).trim(), source);
+    const raw = String(value).trim();
+    if (loadCert) {
+      resolved = assertIsolatedCloudPostgresUrl(raw, source);
+    } else {
+      resolved = assertLocalPostgresUrl(raw, source);
+    }
     break;
   }
   if (!resolved) {
+    if (loadCert) {
+      throw new Error("PHASE18_CLOUD_DB_URL_REQUIRED");
+    }
     resolved = fromSupabaseStatus();
   }
 
-  // Publish for child processes — never publish remote DATABASE_URL.
+  // Publish for child processes — never publish ambient prod/staging DATABASE_URL.
   process.env.PHASE18_DATABASE_URL = resolved.connectionString;
-  process.env.SUPABASE_LOCAL_DB_URL = resolved.connectionString;
-  // Neutralize ambient remote URLs for this process tree.
-  if (process.env.DATABASE_URL && !/127\.0\.0\.1|localhost/i.test(process.env.DATABASE_URL)) {
-    delete process.env.DATABASE_URL;
+  if (resolved.identity.classification === "local") {
+    process.env.SUPABASE_LOCAL_DB_URL = resolved.connectionString;
+  }
+  if (process.env.DATABASE_URL) {
+    const ambient = process.env.DATABASE_URL;
+    if (
+      ambient.includes(PROD_REF) ||
+      ambient.includes(STAGING_REF) ||
+      (resolved.identity.classification === "local" && !/127\.0\.0\.1|localhost/i.test(ambient))
+    ) {
+      delete process.env.DATABASE_URL;
+    }
   }
   if (
     process.env.SUPABASE_POSTGRES_URL &&
-    !/127\.0\.0\.1|localhost/i.test(process.env.SUPABASE_POSTGRES_URL)
+    (process.env.SUPABASE_POSTGRES_URL.includes(PROD_REF) ||
+      process.env.SUPABASE_POSTGRES_URL.includes(STAGING_REF))
   ) {
     delete process.env.SUPABASE_POSTGRES_URL;
   }
@@ -167,7 +228,7 @@ export function createPhase18PgClient(pg) {
   const { connectionString, ssl, identity } = resolvePhase18DatabaseUrl();
   const client = new pg.Client({
     connectionString,
-    ssl: ssl ? undefined : false,
+    ssl: ssl === false ? false : ssl,
   });
   return { client, identity };
 }

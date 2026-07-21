@@ -4,6 +4,7 @@
  * then reconcile persisted gates against verified local Postgres only.
  */
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadPhase18Env } from "./load-env.mjs";
@@ -11,13 +12,30 @@ import { resolvePhase18DatabaseUrl } from "./lib/local-db.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
+const EVIDENCE = path.join(ROOT, "docs/rc/phase18scale/evidence");
 
 loadPhase18Env();
 resolvePhase18DatabaseUrl();
 
+function resolveServiceDate() {
+  if (process.env.PHASE18_SERVICE_DATE) return process.env.PHASE18_SERVICE_DATE;
+  try {
+    const dist = JSON.parse(
+      fs.readFileSync(path.join(EVIDENCE, "synthetic-distribution.json"), "utf8"),
+    );
+    if (dist.service_date) return String(dist.service_date);
+  } catch {
+    /* fall through */
+  }
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 const target = Number(process.env.PHASE18_HTTP_WAVE || 0);
 const concurrency = Number(process.env.PHASE18_HTTP_CONCURRENCY || 2);
-const date = process.env.PHASE18_SERVICE_DATE || "2026-07-21";
+const date = resolveServiceDate();
 const outName = process.env.PHASE18_HTTP_WAVE_OUT || `http-wave-${target}-c${concurrency}.json`;
 const skipHttp = ["1", "true", "yes"].includes(
   String(process.env.PHASE18_SKIP_HTTP || "").toLowerCase(),
@@ -44,14 +62,20 @@ function runNode(script, env = {}) {
 }
 
 async function main() {
-  console.log(JSON.stringify({ stage: "start", target, concurrency, outName, skipHttp }));
+  const loadCert = ["1", "true", "yes"].includes(
+    String(process.env.PHASE18_LOADCERT || "").toLowerCase(),
+  );
+  const modeEnv = loadCert
+    ? { PHASE18_LOADCERT: "1" }
+    : { PHASE18_FORCE_ISOLATED_LOCAL: "1" };
+  console.log(JSON.stringify({ stage: "start", target, concurrency, outName, skipHttp, loadCert }));
   if (!skipHttp) {
     await runNode(path.join(__dirname, "wave-watchdog.mjs"), {
       PHASE18_HTTP_WAVE: String(target),
       PHASE18_HTTP_CONCURRENCY: String(concurrency),
       PHASE18_HTTP_WAVE_OUT: outName,
-      PHASE18_FORCE_ISOLATED_LOCAL: "1",
       PHASE18_SERVICE_DATE: date,
+      ...modeEnv,
     });
   }
   await runNode(path.join(__dirname, "reconcile-stage-gates.mjs"), {
@@ -59,7 +83,7 @@ async function main() {
     PHASE18_HTTP_CONCURRENCY: String(concurrency),
     PHASE18_HTTP_WAVE_OUT: outName,
     PHASE18_SERVICE_DATE: date,
-    PHASE18_FORCE_ISOLATED_LOCAL: "1",
+    ...modeEnv,
   });
 }
 
