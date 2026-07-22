@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
  * HTTP cancel+set correctness wave (cookie sessions).
  * Records redacted per-operation evidence (no emails/tokens/secrets).
@@ -39,6 +39,21 @@ for await (const line of rl) {
   if (line.trim()) sessions.push(JSON.parse(line));
 }
 if (!sessions.length) throw new Error("no sessions");
+const allowWrap = ["1", "true", "yes"].includes(
+  String(process.env.PHASE18_ALLOW_SESSION_WRAP || "").toLowerCase(),
+);
+if (!allowWrap && sessions.length < target) {
+  throw new Error(
+    `SESSION_POOL_TOO_SMALL_FOR_STRICT_PERSISTED_EQUALITY sessions=${sessions.length} target=${target}`,
+  );
+}
+const uniqueUsers = new Set(sessions.map((s) => s.user_id).filter(Boolean));
+const uniqueEmails = new Set(sessions.map((s) => s.email).filter(Boolean));
+if (!allowWrap && (uniqueUsers.size < target || uniqueEmails.size < target)) {
+  throw new Error(
+    `SESSION_POOL_UNIQUE_TOO_SMALL users=${uniqueUsers.size} emails=${uniqueEmails.size} target=${target}`,
+  );
+}
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
@@ -94,7 +109,7 @@ async function resolveMenuPath(s) {
   try {
     const { data: prof } = await admin
       .from("profiles")
-      .select("company_id, location_id, provider_id")
+      .select("company_id, location_id")
       .eq("id", s.user_id)
       .maybeSingle();
     if (!prof) {
@@ -103,13 +118,13 @@ async function resolveMenuPath(s) {
       return row;
     }
     row.company_id = prof.company_id;
-    row.provider_id = prof.provider_id || row.provider_id;
     const { data: agr } = await admin
       .from("agreements")
       .select("id, tier, provider_id")
       .eq("company_id", prof.company_id)
+      .eq("location_id", prof.location_id)
       .eq("status", "ACTIVE")
-      .order("created_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!agr) {
@@ -118,6 +133,7 @@ async function resolveMenuPath(s) {
       return row;
     }
     row.agreement_id = agr.id;
+    row.provider_id = agr.provider_id || row.provider_id;
     row.package_tier = agr.tier || row.package_tier;
     row.provider_id = agr.provider_id || row.provider_id;
     const expect = PRICE[String(agr.tier || "").toUpperCase()] ?? null;
@@ -227,7 +243,8 @@ async function worker() {
     const idx = i;
     i += 1;
     if (idx >= target) return;
-    const s = sessions[idx % sessions.length];
+    const s = allowWrap ? sessions[idx % sessions.length] : sessions[idx];
+    if (!s) throw new Error(`SESSION_ROW_MISSING idx=${idx}`);
     const menuPath = await resolveMenuPath(s);
     const baseRec = {
       logical_operation_number: idx,

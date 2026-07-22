@@ -410,8 +410,17 @@ async function main() {
     });
     const sessions = await loadSessions();
     if (!sessions.length) throw new Error("no sessions");
+    const allowWrap = ["1", "true", "yes"].includes(
+      String(process.env.PHASE18_ALLOW_SESSION_WRAP || "").toLowerCase(),
+    );
+    if (!allowWrap && sessions.length < targetOps) {
+      throw new Error(
+        `SESSION_POOL_TOO_SMALL_FOR_STRICT_PERSISTED_EQUALITY sessions=${sessions.length} target=${targetOps}`,
+      );
+    }
     for (let op = 0; op < targetOps; op += 1) {
-      const s = sessions[op % sessions.length];
+      const s = allowWrap ? sessions[op % sessions.length] : sessions[op];
+      if (!s) throw new Error(`SESSION_ROW_MISSING op=${op}`);
       results.push(await auditIdentity(admin, s, serviceDate, op));
       if ((op + 1) % 25 === 0) console.log(`ops_audited ${op + 1}/${targetOps}`);
     }

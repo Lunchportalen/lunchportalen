@@ -1,0 +1,54 @@
+{
+  "run_id": 29876961728,
+  "run_number": 24,
+  "engine_sha": "a8f954c2fa6cd7ab44c7f77b66a8f2a4fd854e5a",
+  "CLOUD_SMOKE_HTTP": "PASS",
+  "CLOUD_RECONCILIATION_INTEGRITY": "PASS",
+  "CLOUD_SESSION_POOL_COVERAGE": "FAIL",
+  "APPLICATION_SCALE_FAILURE": "NO",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "FAIL_REASON": "SESSION_POOL_TOO_SMALL_FOR_STRICT_PERSISTED_EQUALITY",
+  "wave_unique_emails": 72,
+  "persisted_unique_active": 72,
+  "required_unique_identities": 100,
+  "pipeline_trace": {
+    "auth_users_in_isolated_project": 100000,
+    "auth_users_with_password": 100000,
+    "session_generation_strategy": "coverage",
+    "session_generation_selected_approx": 2200,
+    "successfully_issued_sessions": 72,
+    "failed_session_issuances": 2128,
+    "companies_covered": 70,
+    "manifest_export": "employee-manifest / sessions.ndjson via issue-auth-sessions",
+    "artifact_upload_download": "phase18-job-authenticated-session-pool → smoke-100",
+    "smoke_job_parsing": "http-correctness-wave loaded sessions.ndjson",
+    "stage_selection": "sessions[idx % sessions.length] wrap enabled implicitly"
+  },
+  "issue_auth_sessions": {
+    "strategy": "coverage",
+    "TOTAL_EMPLOYEE_PROFILES": 100000,
+    "ACTIVE_LOAD_SESSIONS": 72,
+    "failed": 2128,
+    "companies_covered": 70,
+    "selected_approx": 2200,
+    "note": "coverage = 1/company + hot extras (~2200). GoTrue rate/auth failures left 72 issued; script did not fail closed on underfill; HTTP wrapped sessions[i%len]."
+  },
+  "root_cause": "coverage strategy selected ~2200 identities; mass GoTrue issuance failures (2128) left ACTIVE_LOAD_SESSIONS=72; no hard underfill gate; smoke-100 wrapped 72 unique sessions across 100 logical ops → SESSION_POOL_TOO_SMALL_FOR_STRICT_PERSISTED_EQUALITY",
+  "remediation": {
+    "strategy": "stage_unique",
+    "stage_targets": {
+      "smoke-100": 100,
+      "smoke-500": 500,
+      "ramp-1000": 1000,
+      "ramp-5000": 5000,
+      "ramp-10000": 10000
+    },
+    "fail_closed_underfill": true,
+    "session_wrap_forbidden": true,
+    "preflight_before_http": true,
+    "overselect_candidates": true,
+    "checkpoint_resume": true,
+    "paginated_manifest_export": true
+  },
+  "stamped_at": "2026-07-22T11:45:00.000Z"
+}

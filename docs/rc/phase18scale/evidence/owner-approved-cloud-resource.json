@@ -40,5 +40,8 @@
   "elapsed_hours_at_remediation_stamp": 26.79,
   "remaining_hours_at_remediation_stamp": 45.21,
   "network_remediation_engine_sha": "61fcf5276f3b5a1990aea39f8e4525e297390c9a",
-  "smoke100_schema_remediation_engine_sha": "c9f53fde07f2c5c2664faa15c2e1cb5f413e19a3"
+  "smoke100_schema_remediation_engine_sha": "c9f53fde07f2c5c2664faa15c2e1cb5f413e19a3",
+  "smoke100_session_pool_truncation_run_id": 29876961728,
+  "smoke100_session_pool_truncation_root_cause": "coverage strategy issued only 72/2200 sessions (2128 GoTrue failures) without underfill fail-closed; HTTP wrapped 72 unique emails across 100 ops",
+  "smoke100_session_pool_remediation": "stage_unique manifests + hard preflight + SESSION_WRAP=false + overselect/checkpoint/paginated export; smoke-100 target remains 100"
 }
