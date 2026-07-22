@@ -12,8 +12,9 @@
   "CLOUD_ENVIRONMENT_ISOLATED": "YES",
   "project_name": "lunchportalen-phase18scale-loadcert",
   "AUTO_DELETE_SCHEDULED": "YES",
-  "PHASE18_CLOUD_ENGINE_SHA": "dc3a0b075a5b55cb2d5b8b8f16d565f58b0500af",
+  "PHASE18_CLOUD_ENGINE_SHA": "962eebd1eca4e37c9179b5fd6cc2c7165b30a1ba",
   "smoke100_session_pool_remediation_engine_sha": "dc3a0b075a5b55cb2d5b8b8f16d565f58b0500af",
+  "controlled_ramps_engine_sha": "962eebd1eca4e37c9179b5fd6cc2c7165b30a1ba",
   "ESTIMATED_BASE_COST": 10,
   "PRODUCTION_PARENT": "NO",
   "service": "Supabase",
@@ -44,5 +45,9 @@
   "smoke100_schema_remediation_engine_sha": "c9f53fde07f2c5c2664faa15c2e1cb5f413e19a3",
   "smoke100_session_pool_truncation_run_id": 29876961728,
   "smoke100_session_pool_truncation_root_cause": "coverage strategy issued only 72/2200 sessions (2128 GoTrue failures) without underfill fail-closed; HTTP wrapped 72 unique emails across 100 ops",
-  "smoke100_session_pool_remediation": "stage_unique manifests + hard preflight + SESSION_WRAP=false + overselect/checkpoint/paginated export; smoke-100 target remains 100"
+  "smoke100_session_pool_remediation": "stage_unique manifests + hard preflight + SESSION_WRAP=false + overselect/checkpoint/paginated export; smoke-100 target remains 100",
+  "smoke100_certified_run_id": 29919558749,
+  "smoke100_certified_run_number": 26,
+  "controlled_ramps_stop_after": "ramp-10000",
+  "controlled_ramps_note": "Dispatch continue_past_smoke100=YES with stop_after=ramp-10000; baseline/soak/100k gated until ramps green"
 }
