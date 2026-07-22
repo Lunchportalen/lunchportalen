@@ -146,6 +146,7 @@ function redactSession(row) {
     country: row.country || null,
     package: row.package || null,
     locale: row.locale || null,
+    index: row.index != null ? Number(row.index) : null,
     access_token: row.access_token,
     refresh_token: row.refresh_token || null,
     issued_at: row.issued_at || new Date().toISOString(),

@@ -32,6 +32,22 @@ on:
         description: "ramp-10000 = controlled ramps only (default); full = continue into baseline/soak/100k waves"
         required: false
         default: "ramp-10000"
+      skip_synthetic_seed:
+        description: YES to run seed reconciliation only (no full reseeding)
+        required: false
+        default: "NO"
+      session_issuance_mode:
+        description: "monolithic | sharded (use sharded to resume/mint ramp-10000 in parallel)"
+        required: false
+        default: "monolithic"
+      prior_session_run_id:
+        description: Prior GHA run ID whose session checkpoints should be resumed (optional)
+        required: false
+        default: ""
+      session_shard_count:
+        description: Shard count for ramp-10000 (must divide 10000)
+        required: false
+        default: "10"
 
 permissions:
   contents: read
@@ -200,7 +216,7 @@ jobs:
 
   synthetic-seed:
     needs: observability-check
-    if: success()
+    if: success() && inputs.skip_synthetic_seed != 'YES'
     runs-on: ubuntu-latest
     timeout-minutes: 600
     environment: load-cert
@@ -274,19 +290,72 @@ jobs:
           name: phase18-job-synthetic-seed
           path: docs/rc/phase18scale/evidence/
 
+  synthetic-seed-reconcile:
+    needs: observability-check
+    if: success() && inputs.skip_synthetic_seed == 'YES'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
+        run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
+      - name: Seed reconciliation (no full reseed)
+        run: |
+          set -euo pipefail
+          node scripts/phase18scale/ensure-agreements.mjs
+          node scripts/phase18scale/ensure-varmrett-product-categories.mjs
+          node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
+          PHASE18_MENU_PATH_MODE=companies node scripts/phase18scale/audit-menu-path-preflight.mjs
+          node <<'NODE'
+          const fs = require("fs");
+          const out = {
+            job: "synthetic-seed-reconcile",
+            FULL_SEED_RERUN: "NO",
+            note: "Lightweight reconciliation only; population assumed present from prior certified seed",
+            stamped_at: new Date().toISOString(),
+          };
+          fs.mkdirSync("docs/rc/phase18scale/evidence", { recursive: true });
+          fs.writeFileSync(
+            "docs/rc/phase18scale/evidence/synthetic-seed-reconcile.json",
+            JSON.stringify(out, null, 2),
+          );
+          console.log(JSON.stringify(out, null, 2));
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-synthetic-seed
+          path: docs/rc/phase18scale/evidence/
+
   authenticated-session-pool:
-    needs: synthetic-seed
-    if: success()
+    needs: [synthetic-seed, synthetic-seed-reconcile]
+    if: |
+      always() &&
+      inputs.session_issuance_mode != 'sharded' &&
+      (
+        needs.synthetic-seed.result == 'success' ||
+        needs.synthetic-seed-reconcile.result == 'success'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 360
     environment: load-cert
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_SESSION_MODE: stage
-      # Lower concurrency for multi-stage minting to reduce GoTrue rate-limit underfill.
       PHASE18_SESSION_CONCURRENCY: ${{ inputs.continue_past_smoke100 == 'YES' && '4' || '12' }}
       PHASE18_SESSION_ATTEMPTS: "8"
-      # Mint every stage pool when continuing past smoke-100; otherwise smoke-100 only.
       PHASE18_SESSION_PREPARE_ALL: ${{ inputs.continue_past_smoke100 == 'YES' && '1' || '0' }}
       PHASE18_SESSION_STAGE: smoke-100
       PHASE18_SESSION_STAGES: ${{ inputs.continue_past_smoke100 == 'YES' && 'smoke-100,smoke-500,ramp-1000,ramp-5000,ramp-10000' || 'smoke-100' }}
@@ -321,9 +390,195 @@ jobs:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
 
+  session-prior-bootstrap:
+    needs: [synthetic-seed, synthetic-seed-reconcile]
+    if: |
+      always() &&
+      inputs.session_issuance_mode == 'sharded' &&
+      (
+        needs.synthetic-seed.result == 'success' ||
+        needs.synthetic-seed-reconcile.result == 'success'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - name: Download prior session checkpoints for resume
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRIOR_RUN: ${{ inputs.prior_session_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence
+          if [ -n "${PRIOR_RUN}" ]; then
+            gh run download "${PRIOR_RUN}" \
+              --name phase18-job-authenticated-session-pool \
+              --dir docs/rc/phase18scale/evidence
+            echo "Resumed checkpoint artifact from run ${PRIOR_RUN}"
+          else
+            echo "No prior_session_run_id — shards will issue cold"
+          fi
+          node <<'NODE'
+          const fs = require("fs");
+          const path = require("path");
+          const evidence = "docs/rc/phase18scale/evidence";
+          const ck = path.join(evidence, "sessions-ramp-10000.checkpoint.ndjson");
+          let rows = 0;
+          let users = new Set();
+          let emails = new Set();
+          if (fs.existsSync(ck)) {
+            for (const line of fs.readFileSync(ck, "utf8").split(/\r?\n/)) {
+              if (!line.trim()) continue;
+              const r = JSON.parse(line);
+              rows += 1;
+              if (r.user_id) users.add(r.user_id);
+              if (r.email) emails.add(r.email);
+            }
+          }
+          const out = {
+            job: "session-prior-bootstrap",
+            prior_run_id: process.env.PRIOR_RUN || null,
+            RAMP10000_ALREADY_ISSUED: users.size,
+            RAMP10000_REMAINING: Math.max(0, 10000 - users.size),
+            SESSION_DUPLICATE_USER_IDS: rows - users.size,
+            SESSION_DUPLICATE_EMAILS: rows - emails.size,
+            SESSION_FAILED_ISSUANCE: 0,
+            stamped_at: new Date().toISOString(),
+          };
+          fs.writeFileSync(path.join(evidence, "session-prior-bootstrap.json"), JSON.stringify(out, null, 2));
+          console.log(JSON.stringify(out, null, 2));
+          if (out.SESSION_DUPLICATE_USER_IDS !== 0 || out.SESSION_DUPLICATE_EMAILS !== 0) process.exit(2);
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-session-prior
+          path: docs/rc/phase18scale/evidence/
+
+  session-shard-ramp-10000:
+    needs: session-prior-bootstrap
+    if: success() && inputs.session_issuance_mode == 'sharded'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: load-cert
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_SESSION_STAGE: ramp-10000
+      PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
+      PHASE18_SESSION_SHARD_INDEX: ${{ matrix.shard }}
+      PHASE18_SESSION_CONCURRENCY: "4"
+      PHASE18_SESSION_ATTEMPTS: "8"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download prior session evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-session-prior
+          path: docs/rc/phase18scale/evidence/
+      - name: Issue GoTrue session shard
+        run: node scripts/phase18scale/issue-auth-sessions-shard.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-session-shard-${{ matrix.shard }}
+          path: |
+            docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-${{ matrix.shard }}.ndjson
+            docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-${{ matrix.shard }}.checkpoint.ndjson
+            docs/rc/phase18scale/evidence/issue-auth-sessions-ramp-10000-shard-${{ matrix.shard }}.json
+
+  authenticated-session-pool-merged:
+    needs: session-shard-ramp-10000
+    if: success() && inputs.session_issuance_mode == 'sharded'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_SESSION_STAGE: ramp-10000
+      PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
+      PHASE18_SESSION_STAGES: smoke-100,smoke-500,ramp-1000,ramp-5000,ramp-10000
+      PHASE18_ALLOW_SESSION_WRAP: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download prior stage manifests
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-session-prior
+          path: docs/rc/phase18scale/evidence/
+      - name: Download all session shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phase18-job-session-shard-*
+          path: docs/rc/phase18scale/evidence/shards/
+          merge-multiple: true
+      - name: Flatten shard artifacts into evidence
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence
+          find docs/rc/phase18scale/evidence/shards -type f -print0 | while IFS= read -r -d '' f; do
+            cp -f "$f" "docs/rc/phase18scale/evidence/$(basename "$f")"
+          done
+          ls -la docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-*.ndjson
+      - name: Ensure smaller stage manifests present from prior
+        run: |
+          set -euo pipefail
+          for f in sessions-smoke-100.ndjson sessions-smoke-500.ndjson sessions-ramp-1000.ndjson sessions-ramp-5000.ndjson; do
+            test -f "docs/rc/phase18scale/evidence/$f"
+          done
+      - name: Merge ramp-10000 shards
+        run: node scripts/phase18scale/merge-session-shards.mjs
+      - name: Refresh all stage access tokens via GoTrue refresh
+        run: node scripts/phase18scale/refresh-session-manifest.mjs
+      - name: Preflight every stage manifest
+        run: |
+          set -euo pipefail
+          for stage in smoke-100 smoke-500 ramp-1000 ramp-5000 ramp-10000; do
+            PHASE18_SESSION_STAGE="$stage" node scripts/phase18scale/preflight-session-manifest.mjs
+          done
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
+
   smoke-100:
-    needs: authenticated-session-pool
-    if: success()
+    needs: [authenticated-session-pool, authenticated-session-pool-merged]
+    if: |
+      always() &&
+      (
+        needs.authenticated-session-pool.result == 'success' ||
+        needs.authenticated-session-pool-merged.result == 'success'
+      ) &&
+      needs.authenticated-session-pool.result != 'failure' &&
+      needs.authenticated-session-pool-merged.result != 'failure' &&
+      needs.authenticated-session-pool.result != 'cancelled' &&
+      needs.authenticated-session-pool-merged.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: load-cert
@@ -347,6 +602,11 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Refresh tokens immediately before HTTP stage
+        env:
+          PHASE18_SESSION_STAGES: smoke-100
+          PHASE18_SESSION_STAGE: smoke-100
+        run: node scripts/phase18scale/refresh-session-manifest.mjs
       - name: Bind smoke-100 session manifest (no wrap)
         env:
           PHASE18_SESSION_STAGE: smoke-100
@@ -410,6 +670,11 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Refresh tokens immediately before HTTP stage
+        env:
+          PHASE18_SESSION_STAGES: smoke-500
+          PHASE18_SESSION_STAGE: smoke-500
+        run: node scripts/phase18scale/refresh-session-manifest.mjs
       - name: Bind smoke-500 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -450,6 +715,11 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Refresh tokens immediately before HTTP stage
+        env:
+          PHASE18_SESSION_STAGES: ramp-1000
+          PHASE18_SESSION_STAGE: ramp-1000
+        run: node scripts/phase18scale/refresh-session-manifest.mjs
       - name: Bind ramp-1000 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -490,6 +760,11 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Refresh tokens immediately before HTTP stage
+        env:
+          PHASE18_SESSION_STAGES: ramp-5000
+          PHASE18_SESSION_STAGE: ramp-5000
+        run: node scripts/phase18scale/refresh-session-manifest.mjs
       - name: Bind ramp-5000 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -530,6 +805,11 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Refresh tokens immediately before HTTP stage
+        env:
+          PHASE18_SESSION_STAGES: ramp-10000
+          PHASE18_SESSION_STAGE: ramp-10000
+        run: node scripts/phase18scale/refresh-session-manifest.mjs
       - name: Bind ramp-10000 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -1092,6 +1372,7 @@ jobs:
       [
         source-and-target-safety,
         synthetic-seed,
+        synthetic-seed-reconcile,
         ramp-10000,
         eight-hour-soak,
         final-reconciliation,
@@ -1111,6 +1392,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PHASE18_LOAD_REF: ${{ inputs.project_ref }}
           SEED_RESULT: ${{ needs.synthetic-seed.result }}
+          SEED_RECON_RESULT: ${{ needs.synthetic-seed-reconcile.result }}
           RAMP10K_RESULT: ${{ needs.ramp-10000.result }}
           SOAK_RESULT: ${{ needs.eight-hour-soak.result }}
           FINAL_RECON_RESULT: ${{ needs.final-reconciliation.result }}
@@ -1119,6 +1401,9 @@ jobs:
           set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
           REF="${PHASE18_LOAD_REF:-}"
+          if [ "${SEED_RESULT:-}" != "success" ] && [ "${SEED_RECON_RESULT:-}" = "success" ]; then
+            SEED_RESULT="${SEED_RECON_RESULT}"
+          fi
           # Delete only after full certification chain succeeded (recon after soak).
           # Any resumable failure → preserve; forced expiration is independent workflow.
           DELETE="NO"

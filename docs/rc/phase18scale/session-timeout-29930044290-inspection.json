@@ -1,0 +1,32 @@
+{
+  "run_id": 29930044290,
+  "run_number": 27,
+  "job": "authenticated-session-pool",
+  "JOB_TIMEOUT_MINUTES": 360,
+  "conclusion": "cancelled",
+  "CLOUD_SESSION_ISSUANCE_TIMEOUT": "CONFIRMED",
+  "AUTH_CORRECTNESS_FAILURE": "NO",
+  "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
+  "CLOUD_RAMPS_COMPLETE": "NO",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "progress_log_issued_approx": 6575,
+  "artifact_checkpoint_truth": {
+    "RAMP10000_ALREADY_ISSUED": 6684,
+    "RAMP10000_REMAINING": 3316,
+    "SESSION_DUPLICATE_USER_IDS": 0,
+    "SESSION_DUPLICATE_EMAILS": 0,
+    "SESSION_FAILED_ISSUANCE": 0,
+    "with_refresh_token": 6684,
+    "access_tokens_expired_at_inspection": true
+  },
+  "completed_stage_manifests": {
+    "smoke-100": 100,
+    "smoke-500": 500,
+    "ramp-1000": 1000,
+    "ramp-5000": 5000,
+    "ramp-10000": "MISSING_FINAL_FILE_CHECKPOINT_ONLY"
+  },
+  "root_cause": "Single-job monolithic issuance hit timeout-minutes=360 while minting ramp-10000 after smaller stages; checkpoint retained 6684 unique refreshable sessions with zero duplicates/failures.",
+  "remediation": "Sharded issuance (10x1000) resume from prior checkpoint + merge/validate + GoTrue refresh before HTTP",
+  "stamped_at": "2026-07-22T23:20:00.000Z"
+}
