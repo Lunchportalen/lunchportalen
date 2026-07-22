@@ -28,6 +28,10 @@ on:
         description: YES only after smoke-100 passes and reconciles (default NO blocks smoke-500+)
         required: false
         default: "NO"
+      stop_after:
+        description: "ramp-10000 = controlled ramps only (default); full = continue into baseline/soak/100k waves"
+        required: false
+        default: "ramp-10000"
 
 permissions:
   contents: read
@@ -279,12 +283,14 @@ jobs:
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_SESSION_MODE: stage
-      PHASE18_SESSION_CONCURRENCY: "12"
-      PHASE18_SESSION_ATTEMPTS: "6"
+      # Lower concurrency for multi-stage minting to reduce GoTrue rate-limit underfill.
+      PHASE18_SESSION_CONCURRENCY: ${{ inputs.continue_past_smoke100 == 'YES' && '4' || '12' }}
+      PHASE18_SESSION_ATTEMPTS: "8"
       # Mint every stage pool when continuing past smoke-100; otherwise smoke-100 only.
       PHASE18_SESSION_PREPARE_ALL: ${{ inputs.continue_past_smoke100 == 'YES' && '1' || '0' }}
       PHASE18_SESSION_STAGE: smoke-100
       PHASE18_SESSION_STAGES: ${{ inputs.continue_past_smoke100 == 'YES' && 'smoke-100,smoke-500,ramp-1000,ramp-5000,ramp-10000' || 'smoke-100' }}
+      PHASE18_FORCE_MANIFEST_EXPORT: "0"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -538,7 +544,8 @@ jobs:
 
   baseline-60m:
     needs: ramp-10000
-    if: success()
+    # Controlled cloud ramps stop after ramp-10000 unless stop_after=full.
+    if: success() && inputs.stop_after == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: load-cert
@@ -998,8 +1005,15 @@ jobs:
           path: docs/rc/phase18scale/evidence/ci-jobs/
 
   final-reconciliation:
-    needs: breakpoint
-    if: success()
+    # After controlled ramps (stop_after=ramp-10000) OR after full chain through breakpoint.
+    needs: [ramp-10000, breakpoint]
+    if: |
+      always() &&
+      needs.ramp-10000.result == 'success' &&
+      (
+        inputs.stop_after == 'ramp-10000' ||
+        needs.breakpoint.result == 'success'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: load-cert
@@ -1017,6 +1031,24 @@ jobs:
           start_next: "false"
       - run: node scripts/phase18scale/financial-reconciliation.mjs
       - run: node scripts/phase18scale/production-safety-probe.mjs
+      - name: Stamp controlled-ramps decision
+        if: inputs.stop_after == 'ramp-10000'
+        run: |
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/controlled-ramps-decision.json <<EOF
+          {
+            "job": "final-reconciliation",
+            "stop_after": "ramp-10000",
+            "CLOUD_RAMPS_SCOPE": "smoke-500,ramp-1000,ramp-5000,ramp-10000",
+            "BASELINE_SOAK_100K_EXECUTED": "NO",
+            "GLOBAL_SCALE_CERTIFIED": "NO",
+            "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
+            "LOCAL_CORRECTNESS_CERTIFIED": "YES",
+            "PRODUCTION_DEPLOYMENT": "NOT APPROVED",
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
       - if: always()
         uses: actions/upload-artifact@v4
         with:

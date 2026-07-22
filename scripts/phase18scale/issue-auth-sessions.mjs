@@ -191,7 +191,12 @@ async function issueOne(anon, admin, row, password, attempts) {
     } catch (e) {
       lastErr = String(e?.message || e);
     }
-    await sleep(Math.min(8000, 250 * attempt * attempt));
+    const rateLimited = /rate limit|too many requests|over_request_rate/i.test(lastErr);
+    await sleep(
+      rateLimited
+        ? Math.min(30000, 1500 * attempt * attempt)
+        : Math.min(8000, 250 * attempt * attempt),
+    );
   }
   throw new Error(lastErr);
 }
