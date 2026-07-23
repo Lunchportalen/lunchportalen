@@ -54,8 +54,9 @@
       "followUpDueAt": "2026-07-23T00:38:01.461Z",
       "secondFollowUpDueAt": "2026-07-30T00:38:01.461Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_REMINDER_LOGGED",
+      "calendar": "business_days_mon_fri",
+      "firstReminderLoggedAt": "2026-07-23T04:05:12.219Z"
     },
     {
       "firmId": "bird-bird-privacy-legal",
@@ -108,5 +109,5 @@
       "calendar": "business_days_mon_fri"
     }
   ],
-  "lastCycleAt": "2026-07-23T00:34:14.933Z"
+  "lastCycleAt": "2026-07-23T04:05:12.222Z"
 }

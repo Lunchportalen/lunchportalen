@@ -6,8 +6,8 @@
     "cron": "0 */3 * * *",
     "enabled": true,
     "localTerminalDependency": "NONE",
-    "lastSuccessfulRun": "2026-07-23T00:34:14.935Z",
-    "nextScheduledRun": "2026-07-23T03:00:00.000Z"
+    "lastSuccessfulRun": "2026-07-23T04:05:12.225Z",
+    "nextScheduledRun": "2026-07-23T06:00:00.000Z"
   },
   "mailbox": {
     "imap": "PASS",
@@ -15,11 +15,6 @@
     "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
   },
   "dueFollowUps": [
-    {
-      "firmId": "azets-nordic",
-      "next": "2026-07-23T00:38:01.461Z",
-      "status": "SCHEDULED"
-    },
     {
       "firmId": "bird-bird-privacy-legal",
       "next": "2026-07-23T07:48:10.967Z",
@@ -64,6 +59,11 @@
       "firmId": "thomson-reuters-pagero",
       "next": "2026-07-30T00:20:58.752Z",
       "status": "FIRST_REMINDER_LOGGED"
+    },
+    {
+      "firmId": "azets-nordic",
+      "next": "2026-07-30T00:38:01.461Z",
+      "status": "FIRST_REMINDER_LOGGED"
     }
   ],
   "quotesWaiting": 1,
@@ -71,6 +71,6 @@
   "secretsExposed": 0,
   "productionLocks": "ACTIVE",
   "stripe": "OFF",
-  "updatedAt": "2026-07-23T00:34:14.942Z",
-  "runId": "29969388183"
+  "updatedAt": "2026-07-23T04:05:12.233Z",
+  "runId": "29978584782"
 }

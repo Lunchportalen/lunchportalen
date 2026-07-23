@@ -49,6 +49,17 @@
       ],
       "processedAt": "2026-07-20T10:04:45.452Z",
       "runId": "29733697169"
+    },
+    {
+      "firmId": "deloitte-global-indirect-tax",
+      "messageId": "<d1c29bd8f9cb4540ab3928b550fd6b1f@GV1PR85MB0597.NAMPRD85.PROD.OUTLOOK.COM>",
+      "subject": "RE: Automatic reply:   [Lunchportalen] Independent review RFP — Deloitte (Global Indirect Tax & Trade) — RC b88aaf99780e",
+      "from": "fvestli@DELOITTE.no",
+      "classification": "AUTO_REPLY",
+      "date": "2026-07-23T00:34:33.000Z",
+      "attachments": [],
+      "processedAt": "2026-07-23T04:05:12.062Z",
+      "runId": "29978584782"
     }
   ],
   "byMessageId": {
@@ -101,7 +112,18 @@
       ],
       "processedAt": "2026-07-20T10:04:45.452Z",
       "runId": "29733697169"
+    },
+    "<d1c29bd8f9cb4540ab3928b550fd6b1f@GV1PR85MB0597.NAMPRD85.PROD.OUTLOOK.COM>": {
+      "firmId": "deloitte-global-indirect-tax",
+      "messageId": "<d1c29bd8f9cb4540ab3928b550fd6b1f@GV1PR85MB0597.NAMPRD85.PROD.OUTLOOK.COM>",
+      "subject": "RE: Automatic reply:   [Lunchportalen] Independent review RFP — Deloitte (Global Indirect Tax & Trade) — RC b88aaf99780e",
+      "from": "fvestli@DELOITTE.no",
+      "classification": "AUTO_REPLY",
+      "date": "2026-07-23T00:34:33.000Z",
+      "attachments": [],
+      "processedAt": "2026-07-23T04:05:12.062Z",
+      "runId": "29978584782"
     }
   },
-  "lastPollAt": "2026-07-23T00:34:10.029Z"
+  "lastPollAt": "2026-07-23T04:05:12.217Z"
 }

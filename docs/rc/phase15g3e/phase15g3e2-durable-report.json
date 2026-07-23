@@ -1,15 +1,15 @@
 {
-  "writtenAt": "2026-07-23T00:34:14.995Z",
+  "writtenAt": "2026-07-23T04:05:12.284Z",
   "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "29969388183",
-    "started_at": "2026-07-23T00:33:39.530Z",
-    "completed_at": "2026-07-23T00:34:14.935Z",
-    "replies_found": 0,
-    "messages_classified": 0,
-    "follow_ups_sent": 3,
+    "runId": "29978584782",
+    "started_at": "2026-07-23T04:04:42.109Z",
+    "completed_at": "2026-07-23T04:05:12.225Z",
+    "replies_found": 1,
+    "messages_classified": 1,
+    "follow_ups_sent": 0,
     "failures": [],
-    "next_due_action": "2026-07-23T00:38:01.461Z",
+    "next_due_action": "2026-07-23T07:48:10.967Z",
     "secrets_exposed": 0,
     "mailbox": {
       "imap": "PASS",
@@ -40,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-07-23T00:34:14.935Z",
-      "nextScheduledRun": "2026-07-23T03:00:00.000Z"
+      "lastSuccessfulRun": "2026-07-23T04:05:12.225Z",
+      "nextScheduledRun": "2026-07-23T06:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -49,11 +49,6 @@
       "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
     },
     "dueFollowUps": [
-      {
-        "firmId": "azets-nordic",
-        "next": "2026-07-23T00:38:01.461Z",
-        "status": "SCHEDULED"
-      },
       {
         "firmId": "bird-bird-privacy-legal",
         "next": "2026-07-23T07:48:10.967Z",
@@ -98,6 +93,11 @@
         "firmId": "thomson-reuters-pagero",
         "next": "2026-07-30T00:20:58.752Z",
         "status": "FIRST_REMINDER_LOGGED"
+      },
+      {
+        "firmId": "azets-nordic",
+        "next": "2026-07-30T00:38:01.461Z",
+        "status": "FIRST_REMINDER_LOGGED"
       }
     ],
     "quotesWaiting": 1,
@@ -105,7 +105,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-07-23T00:34:14.942Z",
-    "runId": "29969388183"
+    "updatedAt": "2026-07-23T04:05:12.233Z",
+    "runId": "29978584782"
   }
 }
