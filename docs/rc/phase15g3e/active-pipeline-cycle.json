@@ -1,9 +1,9 @@
 {
-  "runId": "29978584782",
-  "started_at": "2026-07-23T04:04:42.109Z",
-  "completed_at": "2026-07-23T04:05:12.225Z",
-  "replies_found": 1,
-  "messages_classified": 1,
+  "runId": "29986410744",
+  "started_at": "2026-07-23T06:52:54.114Z",
+  "completed_at": "2026-07-23T06:53:21.243Z",
+  "replies_found": 0,
+  "messages_classified": 0,
   "follow_ups_sent": 0,
   "failures": [],
   "next_due_action": "2026-07-23T07:48:10.967Z",
@@ -31,12 +31,7 @@
   "Follow_up": {
     "dueNow": [],
     "sent": [],
-    "skipped": [
-      {
-        "firmId": "azets-nordic",
-        "reason": "WEB_FORM_REMINDER_LOGGED_NO_EMAIL"
-      }
-    ],
+    "skipped": [],
     "notDue": [
       {
         "firmId": "deloitte-global-indirect-tax",
@@ -53,6 +48,10 @@
       {
         "firmId": "thomson-reuters-pagero",
         "next": "2026-07-30T00:20:58.752Z"
+      },
+      {
+        "firmId": "azets-nordic",
+        "next": "2026-07-30T00:38:01.461Z"
       },
       {
         "firmId": "bird-bird-privacy-legal",
