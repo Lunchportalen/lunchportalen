@@ -2,6 +2,7 @@
  * Canonical Phase 18SCALE run-date contract.
  * No silent date invention. Fail closed when the run manifest is missing/disagreeing.
  */
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -124,8 +125,23 @@ export function writeRunDateManifest(opts, filePath = RUN_DATE_MANIFEST_PATH) {
     service_dates: secondary ? [primary, secondary] : [primary],
     generated_at: new Date().toISOString(),
     source: opts.source || "write-run-date-manifest",
+    workflow_run_id: opts.workflow_run_id || process.env.GITHUB_RUN_ID || null,
+    engine_sha: opts.engine_sha || process.env.APP_SHA || process.env.GITHUB_SHA || null,
+    project_ref: opts.project_ref || process.env.PHASE18_LOAD_REF || null,
     note: "Canonical run-date contract — no script may invent a different service date",
   };
+  body.checksum = crypto
+    .createHash("sha256")
+    .update(
+      JSON.stringify({
+        primary,
+        secondary,
+        workflow_run_id: body.workflow_run_id,
+        engine_sha: body.engine_sha,
+        project_ref: body.project_ref,
+      }),
+    )
+    .digest("hex");
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(body, null, 2));
   return body;

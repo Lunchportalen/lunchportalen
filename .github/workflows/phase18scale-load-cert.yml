@@ -1407,25 +1407,15 @@ jobs:
           path: docs/rc/phase18scale/evidence/ci-jobs/
 
   final-reconciliation:
-    # After seed-reconcile stop, after controlled ramps, or after full chain through breakpoint.
-    needs: [synthetic-seed, synthetic-seed-reconcile, ramp-10000, breakpoint]
+    # Runs only after HTTP load stages (never for seed-only stop_after=seed-reconcile).
+    needs: [ramp-10000, breakpoint]
     if: |
       always() &&
+      inputs.stop_after != 'seed-reconcile' &&
+      needs.ramp-10000.result == 'success' &&
       (
-        (
-          inputs.stop_after == 'seed-reconcile' &&
-          (
-            needs.synthetic-seed.result == 'success' ||
-            needs.synthetic-seed-reconcile.result == 'success'
-          )
-        ) ||
-        (
-          needs.ramp-10000.result == 'success' &&
-          (
-            inputs.stop_after == 'ramp-10000' ||
-            needs.breakpoint.result == 'success'
-          )
-        )
+        inputs.stop_after == 'ramp-10000' ||
+        needs.breakpoint.result == 'success'
       )
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -1442,6 +1432,13 @@ jobs:
       - uses: ./.github/actions/phase18-prepare-runtime
         with:
           start_next: "false"
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - run: node scripts/phase18scale/financial-reconciliation.mjs
       - run: node scripts/phase18scale/production-safety-probe.mjs
       - name: Stamp controlled-ramps decision
@@ -1452,7 +1449,7 @@ jobs:
           {
             "job": "final-reconciliation",
             "stop_after": "ramp-10000",
-            "CLOUD_RAMPS_SCOPE": "smoke-500,ramp-1000,ramp-5000,ramp-10000",
+            "CLOUD_RAMPS_SCOPE": "smoke-100,smoke-500,ramp-1000,ramp-5000,ramp-10000",
             "BASELINE_SOAK_100K_EXECUTED": "NO",
             "GLOBAL_SCALE_CERTIFIED": "NO",
             "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
@@ -1469,7 +1466,14 @@ jobs:
           path: docs/rc/phase18scale/evidence/
 
   final-report:
-    needs: [source-and-target-safety, final-reconciliation]
+    needs:
+      [
+        source-and-target-safety,
+        synthetic-seed,
+        synthetic-seed-reconcile,
+        ramp-10000,
+        final-reconciliation,
+      ]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -1477,15 +1481,52 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.APP_SHA }}
-      - name: Write final decision
+      - name: Write final decision (respects stop_after)
+        env:
+          STOP_AFTER: ${{ inputs.stop_after }}
+          SAFETY: ${{ needs.source-and-target-safety.result }}
+          SEED: ${{ needs.synthetic-seed.result }}
+          SEED_RECON: ${{ needs.synthetic-seed-reconcile.result }}
+          RAMP10K: ${{ needs.ramp-10000.result }}
+          FINAL_RECON: ${{ needs.final-reconciliation.result }}
+          SAFETY_DECISION: ${{ needs.source-and-target-safety.outputs.decision }}
         run: |
+          set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
-          DECISION="${{ needs.source-and-target-safety.outputs.decision }}"
-          if [ -z "$DECISION" ]; then DECISION="NO-GO"; fi
+          DECISION="${SAFETY_DECISION:-NO-GO}"
+          SCOPE_PASS="NO"
+          SEED_ONLY_FINAL_RECON="SKIPPED"
+          if [ "$STOP_AFTER" = "seed-reconcile" ]; then
+            SEED_ONLY_FINAL_RECON="SKIPPED"
+            if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; }; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="NO-GO"
+            fi
+          elif [ "$STOP_AFTER" = "ramp-10000" ]; then
+            if [ "$SAFETY" = "success" ] && [ "$RAMP10K" = "success" ] && [ "$FINAL_RECON" = "success" ]; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="NO-GO"
+            fi
+          else
+            if [ "$FINAL_RECON" = "success" ]; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="NO-GO"
+            fi
+          fi
           cat > docs/rc/phase18scale/evidence/ci-jobs/final-decision.json <<EOF
           {
             "job": "final-report",
+            "stop_after": "$STOP_AFTER",
             "decision": "$DECISION",
+            "SCOPE_PASS": "$SCOPE_PASS",
+            "SEED_ONLY_RUN_FINAL_RECONCILIATION": "$SEED_ONLY_FINAL_RECON",
+            "FINAL_REPORT_RESPECTS_STOP_AFTER": "YES",
             "GLOBAL_SCALE_CERTIFIED": "NO",
             "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
             "LOCAL_CORRECTNESS_CERTIFIED": "YES",
@@ -1494,6 +1535,8 @@ jobs:
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
+          cat docs/rc/phase18scale/evidence/ci-jobs/final-decision.json
+          if [ "$SCOPE_PASS" != "YES" ]; then exit 2; fi
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -1553,7 +1596,7 @@ jobs:
             "CLOUD_RESOURCE_DELETED": "PENDING_DISPATCH",
             "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "NO",
             "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
-            "RESOURCE_LIFETIME_MAX": "72 HOURS",
+            "RESOURCE_LIFETIME_MAX": "120 HOURS",
             "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "disposition": "DELETE_ON_SUCCESS",
             "PRODUCTION_MUTATIONS": 0,
@@ -1575,7 +1618,7 @@ jobs:
             "CLOUD_RESOURCE_DELETED": "NO",
             "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "YES",
             "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
-            "RESOURCE_LIFETIME_MAX": "72 HOURS",
+            "RESOURCE_LIFETIME_MAX": "120 HOURS",
             "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "disposition": "PRESERVED_FOR_REMEDIATION",
             "seed_result": "${SEED_RESULT:-}",
