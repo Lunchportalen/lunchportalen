@@ -1,10 +1,6 @@
 {
   "phase": "18SCALE",
-  "providers": 400,
-  "companies": 800,
-  "employees": 20000,
-  "hottest_provider_weight": 0.0972860880847204,
-  "top10_provider_weight": 0.3294168212327895,
-  "service_date": "2026-07-20",
-  "password_env": "PHASE18_SYNTH_PASSWORD"
+  "service_date": null,
+  "run_date_contract": "unbound",
+  "note": "Stale hardcoded service dates are forbidden. write-run-date-manifest.mjs binds PHASE18_PRIMARY_SERVICE_DATE at workflow start."
 }

@@ -29,9 +29,17 @@ on:
         required: false
         default: "NO"
       stop_after:
-        description: "ramp-10000 = controlled ramps only (default); full = continue into baseline/soak/100k waves"
+        description: "seed-reconcile | ramp-10000 (default) | full"
         required: false
         default: "ramp-10000"
+      primary_service_date:
+        description: Optional explicit future PHASE18_PRIMARY_SERVICE_DATE (YYYY-MM-DD). Empty = next weekday UTC.
+        required: false
+        default: ""
+      secondary_service_date:
+        description: Optional explicit PHASE18_SECONDARY_SERVICE_DATE. Empty = next weekday after primary.
+        required: false
+        default: ""
       skip_synthetic_seed:
         description: YES to run seed reconciliation only (no full reseeding)
         required: false
@@ -97,6 +105,14 @@ jobs:
           node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
       - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
         run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
+      - name: Write canonical Phase 18 run-date contract
+        env:
+          PHASE18_PRIMARY_SERVICE_DATE: ${{ inputs.primary_service_date }}
+          PHASE18_RUN_SERVICE_DATE: ${{ inputs.primary_service_date }}
+          PHASE18_SERVICE_DATE: ${{ inputs.primary_service_date }}
+          PHASE18_SECONDARY_SERVICE_DATE: ${{ inputs.secondary_service_date }}
+          PHASE18_REQUIRE_SECONDARY_SERVICE_DATE: "1"
+        run: node scripts/phase18scale/write-run-date-manifest.mjs
       - name: Secret/PII scan and production safety probe
         run: |
           set -euo pipefail
@@ -148,6 +164,13 @@ jobs:
         with:
           name: phase18-job-source-and-target-safety
           path: docs/rc/phase18scale/evidence/
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: |
+            docs/rc/phase18scale/evidence/phase18-run-date-manifest.json
+            docs/rc/phase18scale/evidence/synthetic-distribution.json
 
   schema-and-release-parity:
     needs: source-and-target-safety
@@ -294,7 +317,7 @@ jobs:
     needs: observability-check
     if: success() && inputs.skip_synthetic_seed == 'YES'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     environment: load-cert
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
@@ -309,24 +332,76 @@ jobs:
       - run: npm ci
       - name: Resolve isolated keys
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download canonical run-date manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
         run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
-      - name: Seed reconciliation (no full reseed)
+      - name: Seed reconciliation + canonical menu repair
         run: |
           set -euo pipefail
           node scripts/phase18scale/ensure-agreements.mjs
           node scripts/phase18scale/ensure-varmrett-product-categories.mjs
+          node scripts/phase18scale/ensure-published-menus.mjs
           node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
           PHASE18_MENU_PATH_MODE=companies node scripts/phase18scale/audit-menu-path-preflight.mjs
+      - name: Menu-path price alignment idempotency (second run)
+        run: |
+          set -euo pipefail
+          node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
           node <<'NODE'
           const fs = require("fs");
+          const report = JSON.parse(
+            fs.readFileSync("docs/rc/phase18scale/evidence/ensure-menu-path-price-alignment.json", "utf8"),
+          );
+          const verify = report.verify || {};
+          const ok =
+            report.CLOUD_MENU_PATH_PRICE_ALIGNMENT === "PASS" &&
+            Number(report.items_repaired || 0) === 0 &&
+            Number(report.products_repaired || 0) === 0 &&
+            Number(verify.missing_msd || 0) === 0 &&
+            Number(verify.missing_msdi || 0) === 0 &&
+            Number(verify.price_mismatch || 0) === 0 &&
+            Number(verify.provider_mismatch || 0) === 0 &&
+            Number(verify.valid_warm_path || 0) === Number(verify.companies || 0);
+          const out = {
+            MENU_PATH_REPAIR_IDEMPOTENCY: ok ? "PASS" : "FAIL",
+            items_repaired: report.items_repaired || 0,
+            products_repaired: report.products_repaired || 0,
+            verify,
+            stamped_at: new Date().toISOString(),
+          };
+          fs.writeFileSync(
+            "docs/rc/phase18scale/evidence/ensure-menu-path-price-alignment-idempotency.json",
+            JSON.stringify(out, null, 2),
+          );
+          console.log(JSON.stringify(out, null, 2));
+          if (!ok) process.exit(2);
+          NODE
+      - name: Run-date contract preflight
+        run: node scripts/phase18scale/preflight-run-date-contract.mjs
+      - name: Stamp seed reconciliation summary
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const align = JSON.parse(
+            fs.readFileSync("docs/rc/phase18scale/evidence/ensure-menu-path-price-alignment.json", "utf8"),
+          );
+          const dates = JSON.parse(
+            fs.readFileSync("docs/rc/phase18scale/evidence/phase18-run-date-manifest.json", "utf8"),
+          );
           const out = {
             job: "synthetic-seed-reconcile",
             FULL_SEED_RERUN: "NO",
-            note: "Lightweight reconciliation only; population assumed present from prior certified seed",
+            CLOUD_COMPANY_MENU_PATH_PREFLIGHT: align.CLOUD_COMPANY_MENU_PATH_PREFLIGHT,
+            PHASE18_PRIMARY_SERVICE_DATE: dates.PHASE18_PRIMARY_SERVICE_DATE,
+            PHASE18_SECONDARY_SERVICE_DATE: dates.PHASE18_SECONDARY_SERVICE_DATE,
             stamped_at: new Date().toISOString(),
           };
-          fs.mkdirSync("docs/rc/phase18scale/evidence", { recursive: true });
           fs.writeFileSync(
             "docs/rc/phase18scale/evidence/synthetic-seed-reconcile.json",
             JSON.stringify(out, null, 2),
@@ -343,6 +418,7 @@ jobs:
     needs: [synthetic-seed, synthetic-seed-reconcile]
     if: |
       always() &&
+      inputs.stop_after != 'seed-reconcile' &&
       inputs.session_issuance_mode != 'sharded' &&
       (
         needs.synthetic-seed.result == 'success' ||
@@ -394,6 +470,7 @@ jobs:
     needs: [synthetic-seed, synthetic-seed-reconcile]
     if: |
       always() &&
+      inputs.stop_after != 'seed-reconcile' &&
       inputs.session_issuance_mode == 'sharded' &&
       (
         needs.synthetic-seed.result == 'success' ||
@@ -421,6 +498,16 @@ jobs:
           else
             echo "No prior_session_run_id — shards will issue cold"
           fi
+      - name: Restore canonical run-date contract (do not trust prior-run dates)
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Inspect prior checkpoint uniqueness
+        env:
+          PRIOR_RUN: ${{ inputs.prior_session_run_id }}
+        run: |
+          set -euo pipefail
           node <<'NODE'
           const fs = require("fs");
           const path = require("path");
@@ -602,6 +689,13 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - name: Refresh tokens immediately before HTTP stage
         env:
           PHASE18_SESSION_STAGES: smoke-100
@@ -670,6 +764,13 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - name: Refresh tokens immediately before HTTP stage
         env:
           PHASE18_SESSION_STAGES: smoke-500
@@ -715,6 +816,13 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - name: Refresh tokens immediately before HTTP stage
         env:
           PHASE18_SESSION_STAGES: ramp-1000
@@ -760,6 +868,13 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - name: Refresh tokens immediately before HTTP stage
         env:
           PHASE18_SESSION_STAGES: ramp-5000
@@ -805,6 +920,13 @@ jobs:
         with:
           name: phase18-job-authenticated-session-pool
           path: docs/rc/phase18scale/evidence/
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - name: Refresh tokens immediately before HTTP stage
         env:
           PHASE18_SESSION_STAGES: ramp-10000
@@ -1285,14 +1407,25 @@ jobs:
           path: docs/rc/phase18scale/evidence/ci-jobs/
 
   final-reconciliation:
-    # After controlled ramps (stop_after=ramp-10000) OR after full chain through breakpoint.
-    needs: [ramp-10000, breakpoint]
+    # After seed-reconcile stop, after controlled ramps, or after full chain through breakpoint.
+    needs: [synthetic-seed, synthetic-seed-reconcile, ramp-10000, breakpoint]
     if: |
       always() &&
-      needs.ramp-10000.result == 'success' &&
       (
-        inputs.stop_after == 'ramp-10000' ||
-        needs.breakpoint.result == 'success'
+        (
+          inputs.stop_after == 'seed-reconcile' &&
+          (
+            needs.synthetic-seed.result == 'success' ||
+            needs.synthetic-seed-reconcile.result == 'success'
+          )
+        ) ||
+        (
+          needs.ramp-10000.result == 'success' &&
+          (
+            inputs.stop_after == 'ramp-10000' ||
+            needs.breakpoint.result == 'success'
+          )
+        )
       )
     runs-on: ubuntu-latest
     timeout-minutes: 45

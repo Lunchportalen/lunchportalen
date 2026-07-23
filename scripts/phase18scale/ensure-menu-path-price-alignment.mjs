@@ -16,6 +16,7 @@ import pg from "pg";
 import { loadPhase18Env, MARK, assertNotProduction, PROD_REF, STAGING_REF } from "./load-env.mjs";
 import { createPhase18PgClient } from "./lib/local-db.mjs";
 import { buildPriceAlignmentSql } from "./lib/menu-path-sql.mjs";
+import { requireServiceDates } from "./lib/run-service-date.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
@@ -29,22 +30,8 @@ function refuse(url, ref) {
 }
 
 function resolveServiceDates() {
-  if (process.env.PHASE18_SERVICE_DATE) return [String(process.env.PHASE18_SERVICE_DATE)];
-  try {
-    const dist = JSON.parse(fs.readFileSync(path.join(OUT, "synthetic-distribution.json"), "utf8"));
-    if (dist.service_date) {
-      // Repair common dual-day cloud seed set when primary date is known.
-      const primary = String(dist.service_date);
-      const d = new Date(`${primary}T12:00:00.000Z`);
-      d.setUTCDate(d.getUTCDate() - 1);
-      while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() - 1);
-      const prev = d.toISOString().slice(0, 10);
-      return [prev, primary];
-    }
-  } catch {
-    /* fall through */
-  }
-  return ["2026-07-21", "2026-07-22"];
+  // Canonical run-date contract only — never invent prior/stale dates.
+  return requireServiceDates();
 }
 
 async function main() {
@@ -111,7 +98,7 @@ async function main() {
             and msd_provider is not distinct from agr_provider
         )::int as valid_warm_path
       from path;
-    `, [dates[dates.length - 1]]);
+    `, [dates[0]]);
 
     const v = verify.rows[0];
     const pass =

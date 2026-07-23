@@ -9,6 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadPhase18Env } from "./load-env.mjs";
 import { resolvePhase18DatabaseUrl } from "./lib/local-db.mjs";
+import { requirePrimaryServiceDate } from "./lib/run-service-date.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
@@ -18,19 +19,7 @@ loadPhase18Env();
 resolvePhase18DatabaseUrl();
 
 function resolveServiceDate() {
-  if (process.env.PHASE18_SERVICE_DATE) return process.env.PHASE18_SERVICE_DATE;
-  try {
-    const dist = JSON.parse(
-      fs.readFileSync(path.join(EVIDENCE, "synthetic-distribution.json"), "utf8"),
-    );
-    if (dist.service_date) return String(dist.service_date);
-  } catch {
-    /* fall through */
-  }
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + 1);
-  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return requirePrimaryServiceDate();
 }
 
 const target = Number(process.env.PHASE18_HTTP_WAVE || 0);

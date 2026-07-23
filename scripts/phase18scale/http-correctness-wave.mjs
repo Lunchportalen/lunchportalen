@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { loadPhase18Env } from "./load-env.mjs";
 import { loginCookieJar } from "./lib/http-session.mjs";
+import { requirePrimaryServiceDate } from "./lib/run-service-date.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
@@ -21,7 +22,7 @@ const base = (process.env.PHASE18_BASE_URL || "http://127.0.0.1:3000").replace(/
 const password =
   process.env.PHASE18_SYNTH_PASSWORD ||
   `P18Scale-${crypto.createHash("sha256").update("phase18scale-v1").digest("hex").slice(0, 24)}`;
-const date = process.env.PHASE18_SERVICE_DATE || "2026-07-20";
+const date = requirePrimaryServiceDate();
 const target = Number(process.env.PHASE18_HTTP_WAVE || 10000);
 const concurrency = Number(process.env.PHASE18_HTTP_CONCURRENCY || 8);
 const timeoutMs = Number(process.env.PHASE18_HTTP_TIMEOUT_MS || 20000);

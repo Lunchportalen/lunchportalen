@@ -184,7 +184,16 @@ async function main() {
     fs.appendFileSync(process.env.GITHUB_ENV, `PHASE18_SYNTH_PASSWORD=${PASSWORD}\n`);
   }
 
-  const serviceDate = process.env.PHASE18_SERVICE_DATE || nextServiceDate(1);
+  // Prefer canonical run-date contract / env; only invent when bootstrapping a brand-new seed.
+  let serviceDate = process.env.PHASE18_PRIMARY_SERVICE_DATE || process.env.PHASE18_SERVICE_DATE || "";
+  if (!serviceDate) {
+    try {
+      const { requirePrimaryServiceDate } = await import("./lib/run-service-date.mjs");
+      serviceDate = requirePrimaryServiceDate();
+    } catch {
+      serviceDate = nextServiceDate(1);
+    }
+  }
   const report = {
     phase: "18SCALE",
     stamped_at: new Date().toISOString(),

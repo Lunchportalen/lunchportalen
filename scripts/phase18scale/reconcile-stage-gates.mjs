@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { loadPhase18Env } from "./load-env.mjs";
 import { createPhase18PgClient } from "./lib/local-db.mjs";
+import { requirePrimaryServiceDate } from "./lib/run-service-date.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EVIDENCE = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
@@ -16,7 +17,7 @@ const EVIDENCE = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
 loadPhase18Env();
 
 const outName = process.env.PHASE18_HTTP_WAVE_OUT;
-const date = process.env.PHASE18_SERVICE_DATE || "2026-07-21";
+const date = requirePrimaryServiceDate();
 const concurrency = Number(process.env.PHASE18_HTTP_CONCURRENCY || 2);
 
 if (!outName) {

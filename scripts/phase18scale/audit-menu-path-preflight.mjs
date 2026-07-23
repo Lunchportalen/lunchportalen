@@ -15,6 +15,7 @@ import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { loadPhase18Env, MARK, assertNotProduction, PROD_REF, STAGING_REF } from "./load-env.mjs";
 import { createPhase18PgClient } from "./lib/local-db.mjs";
+import { requirePrimaryServiceDate } from "./lib/run-service-date.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
@@ -29,17 +30,8 @@ function refuse(url, ref) {
 }
 
 function resolveServiceDate() {
-  if (process.env.PHASE18_SERVICE_DATE) return process.env.PHASE18_SERVICE_DATE;
-  try {
-    const dist = JSON.parse(fs.readFileSync(path.join(OUT, "synthetic-distribution.json"), "utf8"));
-    if (dist.service_date) return String(dist.service_date);
-  } catch {
-    /* fall through */
-  }
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + 1);
-  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
+  // Canonical run-date contract only — never invent or reuse stale distribution dates.
+  return requirePrimaryServiceDate();
 }
 
 function categorySlug(name) {

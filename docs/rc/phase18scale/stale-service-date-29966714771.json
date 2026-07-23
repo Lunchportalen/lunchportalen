@@ -1,0 +1,21 @@
+{
+  "run_id": 29966714771,
+  "run_number": 29,
+  "failed_job": "synthetic-seed-reconcile",
+  "CLOUD_CERT_FAILED": "YES",
+  "CLOUD_DB_CONNECTIVITY": "PASS",
+  "AGREEMENT_SEED": "PASS",
+  "VARMRETT_CATEGORY_LINK": "PASS",
+  "STALE_SERVICE_DATE_MISMATCH": "CONFIRMED",
+  "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "persisted_menu_service_dates_in_db": ["2026-07-21", "2026-07-22", "2026-07-23"],
+  "reconciliation_selected_dates": ["2026-07-17", "2026-07-20"],
+  "workflow_env_PHASE18_SERVICE_DATE": null,
+  "root_cause": {
+    "2026-07-20": "Committed docs/rc/phase18scale/evidence/synthetic-distribution.json service_date from an old seed; ensure-menu-path-price-alignment + audit-menu-path-preflight fell back to it because PHASE18_SERVICE_DATE was unset in the workflow.",
+    "2026-07-17": "ensure-menu-path-price-alignment.mjs derived previous weekday from the stale primary (2026-07-20 → 2026-07-17) when inventing a dual-day repair set."
+  },
+  "remediation": "Canonical phase18-run-date-manifest.json + fail-closed requirePrimaryServiceDate/requireServiceDates; no silent distribution/hardcoded fallbacks; ensure-published-menus for contract dates; stop_after=seed-reconcile available.",
+  "stamped_at": "2026-07-23T09:45:00.000Z"
+}
