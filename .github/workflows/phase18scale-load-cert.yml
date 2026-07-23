@@ -594,9 +594,13 @@ jobs:
           echo "ISOLATED_PRIOR_DOWNLOAD_WIPED=YES"
 
   session-shard-ramp-10000:
+    # Do NOT use bare success(): session-prior-bootstrap runs with always() after
+    # skipped synthetic-seed, and success() then falsely skips the shard matrix
+    # (GHA run 30035299568 / #33). Gate explicitly on bootstrap result.
     needs: session-prior-bootstrap
     if: |
-      success() &&
+      always() &&
+      needs.session-prior-bootstrap.result == 'success' &&
       inputs.session_issuance_mode == 'sharded' &&
       inputs.stop_after != 'session-bootstrap' &&
       inputs.stop_after != 'seed-reconcile'
@@ -644,7 +648,12 @@ jobs:
 
   authenticated-session-pool-merged:
     needs: session-shard-ramp-10000
-    if: success() && inputs.session_issuance_mode == 'sharded'
+    if: |
+      always() &&
+      needs.session-shard-ramp-10000.result == 'success' &&
+      inputs.session_issuance_mode == 'sharded' &&
+      inputs.stop_after != 'session-bootstrap' &&
+      inputs.stop_after != 'seed-reconcile'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     environment: load-cert
