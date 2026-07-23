@@ -1,12 +1,12 @@
 {
-  "runId": "29986410744",
-  "started_at": "2026-07-23T06:52:54.114Z",
-  "completed_at": "2026-07-23T06:53:21.243Z",
+  "runId": "29996889704",
+  "started_at": "2026-07-23T09:50:15.638Z",
+  "completed_at": "2026-07-23T09:50:40.345Z",
   "replies_found": 0,
   "messages_classified": 0,
   "follow_ups_sent": 0,
   "failures": [],
-  "next_due_action": "2026-07-23T07:48:10.967Z",
+  "next_due_action": "2026-07-29T22:47:30.786Z",
   "secrets_exposed": 0,
   "mailbox": {
     "imap": "PASS",
@@ -31,7 +31,28 @@
   "Follow_up": {
     "dueNow": [],
     "sent": [],
-    "skipped": [],
+    "skipped": [
+      {
+        "firmId": "bird-bird-privacy-legal",
+        "reason": "WEB_FORM_REMINDER_LOGGED_NO_EMAIL"
+      },
+      {
+        "firmId": "ncc-group-security",
+        "reason": "WEB_FORM_REMINDER_LOGGED_NO_EMAIL"
+      },
+      {
+        "firmId": "semantix-transperfect",
+        "reason": "WEB_FORM_REMINDER_LOGGED_NO_EMAIL"
+      },
+      {
+        "firmId": "transperfect-direct",
+        "reason": "WEB_FORM_REMINDER_LOGGED_NO_EMAIL"
+      },
+      {
+        "firmId": "ey-indirect-tax",
+        "reason": "WEB_FORM_REMINDER_LOGGED_NO_EMAIL"
+      }
+    ],
     "notDue": [
       {
         "firmId": "deloitte-global-indirect-tax",
@@ -52,26 +73,6 @@
       {
         "firmId": "azets-nordic",
         "next": "2026-07-30T00:38:01.461Z"
-      },
-      {
-        "firmId": "bird-bird-privacy-legal",
-        "next": "2026-07-23T07:48:10.967Z"
-      },
-      {
-        "firmId": "ncc-group-security",
-        "next": "2026-07-23T07:48:10.967Z"
-      },
-      {
-        "firmId": "semantix-transperfect",
-        "next": "2026-07-23T07:48:10.967Z"
-      },
-      {
-        "firmId": "transperfect-direct",
-        "next": "2026-07-23T07:48:10.967Z"
-      },
-      {
-        "firmId": "ey-indirect-tax",
-        "next": "2026-07-23T07:48:10.967Z"
       }
     ],
     "permanentFailures": []

@@ -1,15 +1,15 @@
 {
-  "writtenAt": "2026-07-23T06:53:21.300Z",
+  "writtenAt": "2026-07-23T09:50:40.412Z",
   "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "29986410744",
-    "started_at": "2026-07-23T06:52:54.114Z",
-    "completed_at": "2026-07-23T06:53:21.243Z",
+    "runId": "29996889704",
+    "started_at": "2026-07-23T09:50:15.638Z",
+    "completed_at": "2026-07-23T09:50:40.345Z",
     "replies_found": 0,
     "messages_classified": 0,
     "follow_ups_sent": 0,
     "failures": [],
-    "next_due_action": "2026-07-23T07:48:10.967Z",
+    "next_due_action": "2026-07-29T22:47:30.786Z",
     "secrets_exposed": 0,
     "mailbox": {
       "imap": "PASS",
@@ -40,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-07-23T06:53:21.243Z",
-      "nextScheduledRun": "2026-07-23T09:00:00.000Z"
+      "lastSuccessfulRun": "2026-07-23T09:50:40.345Z",
+      "nextScheduledRun": "2026-07-23T12:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -49,31 +49,6 @@
       "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
     },
     "dueFollowUps": [
-      {
-        "firmId": "bird-bird-privacy-legal",
-        "next": "2026-07-23T07:48:10.967Z",
-        "status": "SCHEDULED"
-      },
-      {
-        "firmId": "ncc-group-security",
-        "next": "2026-07-23T07:48:10.967Z",
-        "status": "SCHEDULED"
-      },
-      {
-        "firmId": "semantix-transperfect",
-        "next": "2026-07-23T07:48:10.967Z",
-        "status": "SCHEDULED"
-      },
-      {
-        "firmId": "transperfect-direct",
-        "next": "2026-07-23T07:48:10.967Z",
-        "status": "SCHEDULED"
-      },
-      {
-        "firmId": "ey-indirect-tax",
-        "next": "2026-07-23T07:48:10.967Z",
-        "status": "SCHEDULED"
-      },
       {
         "firmId": "deloitte-global-indirect-tax",
         "next": "2026-07-29T22:47:30.786Z",
@@ -98,6 +73,31 @@
         "firmId": "azets-nordic",
         "next": "2026-07-30T00:38:01.461Z",
         "status": "FIRST_REMINDER_LOGGED"
+      },
+      {
+        "firmId": "bird-bird-privacy-legal",
+        "next": "2026-07-30T07:48:10.967Z",
+        "status": "FIRST_REMINDER_LOGGED"
+      },
+      {
+        "firmId": "ncc-group-security",
+        "next": "2026-07-30T07:48:10.967Z",
+        "status": "FIRST_REMINDER_LOGGED"
+      },
+      {
+        "firmId": "semantix-transperfect",
+        "next": "2026-07-30T07:48:10.967Z",
+        "status": "FIRST_REMINDER_LOGGED"
+      },
+      {
+        "firmId": "transperfect-direct",
+        "next": "2026-07-30T07:48:10.967Z",
+        "status": "FIRST_REMINDER_LOGGED"
+      },
+      {
+        "firmId": "ey-indirect-tax",
+        "next": "2026-07-30T07:48:10.967Z",
+        "status": "FIRST_REMINDER_LOGGED"
       }
     ],
     "quotesWaiting": 1,
@@ -105,7 +105,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-07-23T06:53:21.250Z",
-    "runId": "29986410744"
+    "updatedAt": "2026-07-23T09:50:40.353Z",
+    "runId": "29996889704"
   }
 }

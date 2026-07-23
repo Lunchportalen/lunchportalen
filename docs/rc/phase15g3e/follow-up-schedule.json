@@ -65,8 +65,9 @@
       "followUpDueAt": "2026-07-23T07:48:10.967Z",
       "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_REMINDER_LOGGED",
+      "calendar": "business_days_mon_fri",
+      "firstReminderLoggedAt": "2026-07-23T09:50:40.340Z"
     },
     {
       "firmId": "ncc-group-security",
@@ -75,8 +76,9 @@
       "followUpDueAt": "2026-07-23T07:48:10.967Z",
       "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_REMINDER_LOGGED",
+      "calendar": "business_days_mon_fri",
+      "firstReminderLoggedAt": "2026-07-23T09:50:40.340Z"
     },
     {
       "firmId": "semantix-transperfect",
@@ -85,8 +87,9 @@
       "followUpDueAt": "2026-07-23T07:48:10.967Z",
       "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_REMINDER_LOGGED",
+      "calendar": "business_days_mon_fri",
+      "firstReminderLoggedAt": "2026-07-23T09:50:40.340Z"
     },
     {
       "firmId": "transperfect-direct",
@@ -95,8 +98,9 @@
       "followUpDueAt": "2026-07-23T07:48:10.967Z",
       "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_REMINDER_LOGGED",
+      "calendar": "business_days_mon_fri",
+      "firstReminderLoggedAt": "2026-07-23T09:50:40.340Z"
     },
     {
       "firmId": "ey-indirect-tax",
@@ -105,9 +109,10 @@
       "followUpDueAt": "2026-07-23T07:48:10.967Z",
       "secondFollowUpDueAt": "2026-07-30T07:48:10.967Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_REMINDER_LOGGED",
+      "calendar": "business_days_mon_fri",
+      "firstReminderLoggedAt": "2026-07-23T09:50:40.340Z"
     }
   ],
-  "lastCycleAt": "2026-07-23T06:53:21.241Z"
+  "lastCycleAt": "2026-07-23T09:50:40.342Z"
 }
