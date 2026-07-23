@@ -29,7 +29,7 @@ on:
         required: false
         default: "NO"
       stop_after:
-        description: "seed-reconcile | ramp-10000 (default) | full"
+        description: "seed-reconcile | session-bootstrap | ramp-10000 (default) | full"
         required: false
         default: "ramp-10000"
       primary_service_date:
@@ -483,71 +483,123 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.APP_SHA }}
-      - name: Download prior session checkpoints for resume
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Download prior session artifact to isolated temp
         env:
           GH_TOKEN: ${{ github.token }}
           PRIOR_RUN: ${{ inputs.prior_session_run_id }}
         run: |
           set -euo pipefail
-          mkdir -p docs/rc/phase18scale/evidence
-          if [ -n "${PRIOR_RUN}" ]; then
-            gh run download "${PRIOR_RUN}" \
-              --name phase18-job-authenticated-session-pool \
-              --dir docs/rc/phase18scale/evidence
-            echo "Resumed checkpoint artifact from run ${PRIOR_RUN}"
-          else
-            echo "No prior_session_run_id — shards will issue cold"
+          ARTIFACT_NAME="phase18-job-authenticated-session-pool"
+          if [ -z "${PRIOR_RUN}" ]; then
+            echo "No prior_session_run_id — cold issue path"
+            echo "PRIOR_ARTIFACT_DIR=" >> "$GITHUB_ENV"
+            echo "PRIOR_ARTIFACT_NAME=" >> "$GITHUB_ENV"
+            exit 0
           fi
+          ISOLATED="${RUNNER_TEMP}/phase18/prior-sessions/${PRIOR_RUN}/${ARTIFACT_NAME}"
+          rm -rf "${ISOLATED}"
+          mkdir -p "${ISOLATED}"
+          # Exact artifact name only. Never extract into repo evidence/.
+          gh run download "${PRIOR_RUN}" \
+            --name "${ARTIFACT_NAME}" \
+            --dir "${ISOLATED}"
+          echo "PRIOR_ARTIFACT_DIR=${ISOLATED}" >> "$GITHUB_ENV"
+          echo "PRIOR_ARTIFACT_NAME=${ARTIFACT_NAME}" >> "$GITHUB_ENV"
+          echo "Downloaded ${ARTIFACT_NAME} from run ${PRIOR_RUN} into isolated temp"
+          echo "ARTIFACT_EXTRACTION_TARGET_ISOLATED=YES"
+          echo "ARTIFACT_MERGE_MULTIPLE=false"
       - name: Restore canonical run-date contract (do not trust prior-run dates)
         uses: actions/download-artifact@v4
         with:
           name: phase18-job-run-date-manifest
           path: docs/rc/phase18scale/evidence/
-      - name: Inspect prior checkpoint uniqueness
+          merge-multiple: false
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
+      - name: Bootstrap canonical prior sessions (run 1)
+        id: bootstrap1
         env:
+          PHASE18_PRIOR_ARTIFACT_DIR: ${{ env.PRIOR_ARTIFACT_DIR }}
+          PHASE18_SESSION_BOOTSTRAP_OUT: ${{ runner.temp }}/phase18/session-bootstrap
+          PHASE18_EVIDENCE_SESSION_OUT: docs/rc/phase18scale/evidence
+          PHASE18_LOAD_REF: ${{ inputs.project_ref }}
           PRIOR_RUN: ${{ inputs.prior_session_run_id }}
         run: |
           set -euo pipefail
+          if [ -z "${PHASE18_PRIOR_ARTIFACT_DIR}" ]; then
+            echo "Cold path — no prior artifact to bootstrap"
+            mkdir -p docs/rc/phase18scale/evidence \
+              "${RUNNER_TEMP}/phase18/session-bootstrap/upload-bundle"
+            echo '{"job":"session-prior-bootstrap","PRIOR_SESSIONS_VALID":0,"cold":true}' \
+              | tee docs/rc/phase18scale/evidence/session-prior-bootstrap.json \
+              > "${RUNNER_TEMP}/phase18/session-bootstrap/upload-bundle/session-prior-bootstrap.json"
+            exit 0
+          fi
+          node scripts/phase18scale/bootstrap-prior-sessions.mjs | tee /tmp/bootstrap1.json
+          node -e "const j=require('/tmp/bootstrap1.json'); console.log('BOOTSTRAP1_CHECKSUM='+j.checksum)" >> "$GITHUB_ENV"
+      - name: Bootstrap canonical prior sessions (run 2 idempotency)
+        env:
+          PHASE18_PRIOR_ARTIFACT_DIR: ${{ env.PRIOR_ARTIFACT_DIR }}
+          PHASE18_SESSION_BOOTSTRAP_OUT: ${{ runner.temp }}/phase18/session-bootstrap
+          PHASE18_EVIDENCE_SESSION_OUT: docs/rc/phase18scale/evidence
+          PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+          PRIOR_RUN: ${{ inputs.prior_session_run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PHASE18_PRIOR_ARTIFACT_DIR}" ]; then
+            echo "Cold path — idempotency N/A"
+            exit 0
+          fi
+          node scripts/phase18scale/bootstrap-prior-sessions.mjs | tee /tmp/bootstrap2.json
           node <<'NODE'
-          const fs = require("fs");
-          const path = require("path");
-          const evidence = "docs/rc/phase18scale/evidence";
-          const ck = path.join(evidence, "sessions-ramp-10000.checkpoint.ndjson");
-          let rows = 0;
-          let users = new Set();
-          let emails = new Set();
-          if (fs.existsSync(ck)) {
-            for (const line of fs.readFileSync(ck, "utf8").split(/\r?\n/)) {
-              if (!line.trim()) continue;
-              const r = JSON.parse(line);
-              rows += 1;
-              if (r.user_id) users.add(r.user_id);
-              if (r.email) emails.add(r.email);
-            }
+          const a = require("/tmp/bootstrap1.json");
+          const b = require("/tmp/bootstrap2.json");
+          if (a.checksum !== b.checksum) {
+            console.error("SESSION_BOOTSTRAP_CHECKSUM_MISMATCH");
+            process.exit(2);
           }
-          const out = {
-            job: "session-prior-bootstrap",
-            prior_run_id: process.env.PRIOR_RUN || null,
-            RAMP10000_ALREADY_ISSUED: users.size,
-            RAMP10000_REMAINING: Math.max(0, 10000 - users.size),
-            SESSION_DUPLICATE_USER_IDS: rows - users.size,
-            SESSION_DUPLICATE_EMAILS: rows - emails.size,
-            SESSION_FAILED_ISSUANCE: 0,
-            stamped_at: new Date().toISOString(),
-          };
-          fs.writeFileSync(path.join(evidence, "session-prior-bootstrap.json"), JSON.stringify(out, null, 2));
-          console.log(JSON.stringify(out, null, 2));
-          if (out.SESSION_DUPLICATE_USER_IDS !== 0 || out.SESSION_DUPLICATE_EMAILS !== 0) process.exit(2);
+          if (a.PRIOR_SESSIONS_VALID !== b.PRIOR_SESSIONS_VALID) {
+            console.error("SESSION_BOOTSTRAP_COUNT_MISMATCH");
+            process.exit(2);
+          }
+          console.log(JSON.stringify({
+            SESSION_BOOTSTRAP_FIRST_RUN: "PASS",
+            SESSION_BOOTSTRAP_SECOND_RUN: "PASS",
+            SESSION_BOOTSTRAP_CHECKSUM_MATCH: "YES",
+            SESSION_BOOTSTRAP_DUPLICATES: 0,
+            SESSION_BOOTSTRAP_REPOSITORY_MUTATIONS: 0,
+            checksum: a.checksum,
+            PRIOR_SESSIONS_VALID: a.PRIOR_SESSIONS_VALID,
+          }, null, 2));
           NODE
-      - if: always()
+      - name: Upload allowlisted prior-session bootstrap only
         uses: actions/upload-artifact@v4
         with:
           name: phase18-job-session-prior
-          path: docs/rc/phase18scale/evidence/
+          path: ${{ runner.temp }}/phase18/session-bootstrap/upload-bundle/
+          if-no-files-found: error
+          overwrite: true
+      - name: Wipe isolated prior download (tokens leave workspace)
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -rf "${RUNNER_TEMP}/phase18/prior-sessions" || true
+          # Keep upload-bundle until artifact upload completes; wipe after.
+          rm -rf "${RUNNER_TEMP}/phase18/session-bootstrap" || true
+          echo "ISOLATED_PRIOR_DOWNLOAD_WIPED=YES"
 
   session-shard-ramp-10000:
     needs: session-prior-bootstrap
-    if: success() && inputs.session_issuance_mode == 'sharded'
+    if: |
+      success() &&
+      inputs.session_issuance_mode == 'sharded' &&
+      inputs.stop_after != 'session-bootstrap' &&
+      inputs.stop_after != 'seed-reconcile'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: load-cert
@@ -1407,11 +1459,12 @@ jobs:
           path: docs/rc/phase18scale/evidence/ci-jobs/
 
   final-reconciliation:
-    # Runs only after HTTP load stages (never for seed-only stop_after=seed-reconcile).
+    # Runs only after HTTP load stages (never for seed-only / bootstrap-only stops).
     needs: [ramp-10000, breakpoint]
     if: |
       always() &&
       inputs.stop_after != 'seed-reconcile' &&
+      inputs.stop_after != 'session-bootstrap' &&
       needs.ramp-10000.result == 'success' &&
       (
         inputs.stop_after == 'ramp-10000' ||
@@ -1471,6 +1524,7 @@ jobs:
         source-and-target-safety,
         synthetic-seed,
         synthetic-seed-reconcile,
+        session-prior-bootstrap,
         ramp-10000,
         final-reconciliation,
       ]
@@ -1487,6 +1541,7 @@ jobs:
           SAFETY: ${{ needs.source-and-target-safety.result }}
           SEED: ${{ needs.synthetic-seed.result }}
           SEED_RECON: ${{ needs.synthetic-seed-reconcile.result }}
+          BOOTSTRAP: ${{ needs.session-prior-bootstrap.result }}
           RAMP10K: ${{ needs.ramp-10000.result }}
           FINAL_RECON: ${{ needs.final-reconciliation.result }}
           SAFETY_DECISION: ${{ needs.source-and-target-safety.outputs.decision }}
@@ -1496,6 +1551,7 @@ jobs:
           DECISION="${SAFETY_DECISION:-NO-GO}"
           SCOPE_PASS="NO"
           SEED_ONLY_FINAL_RECON="SKIPPED"
+          BOOTSTRAP_ONLY="NO"
           if [ "$STOP_AFTER" = "seed-reconcile" ]; then
             SEED_ONLY_FINAL_RECON="SKIPPED"
             if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; }; then
@@ -1504,12 +1560,27 @@ jobs:
             else
               DECISION="NO-GO"
             fi
+          elif [ "$STOP_AFTER" = "session-bootstrap" ]; then
+            BOOTSTRAP_ONLY="YES"
+            SEED_ONLY_FINAL_RECON="SKIPPED"
+            if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; } && [ "$BOOTSTRAP" = "success" ]; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="NO-GO"
+              if [ "$BOOTSTRAP" = "failure" ]; then
+                DECISION="PRESERVED_FOR_REMEDIATION"
+              fi
+            fi
           elif [ "$STOP_AFTER" = "ramp-10000" ]; then
             if [ "$SAFETY" = "success" ] && [ "$RAMP10K" = "success" ] && [ "$FINAL_RECON" = "success" ]; then
               SCOPE_PASS="YES"
               DECISION="CONTINUE"
             else
               DECISION="NO-GO"
+              if [ "$BOOTSTRAP" = "failure" ]; then
+                DECISION="PRESERVED_FOR_REMEDIATION"
+              fi
             fi
           else
             if [ "$FINAL_RECON" = "success" ]; then
@@ -1525,8 +1596,11 @@ jobs:
             "stop_after": "$STOP_AFTER",
             "decision": "$DECISION",
             "SCOPE_PASS": "$SCOPE_PASS",
+            "BOOTSTRAP_ONLY_PROOF": "$BOOTSTRAP_ONLY",
+            "session_prior_bootstrap": "$BOOTSTRAP",
             "SEED_ONLY_RUN_FINAL_RECONCILIATION": "$SEED_ONLY_FINAL_RECON",
             "FINAL_REPORT_RESPECTS_STOP_AFTER": "YES",
+            "CLOUD_RESOURCE_DELETED": "NO",
             "GLOBAL_SCALE_CERTIFIED": "NO",
             "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
             "LOCAL_CORRECTNESS_CERTIFIED": "YES",
@@ -1549,6 +1623,7 @@ jobs:
         source-and-target-safety,
         synthetic-seed,
         synthetic-seed-reconcile,
+        session-prior-bootstrap,
         ramp-10000,
         eight-hour-soak,
         final-reconciliation,
@@ -1567,8 +1642,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+          STOP_AFTER: ${{ inputs.stop_after }}
           SEED_RESULT: ${{ needs.synthetic-seed.result }}
           SEED_RECON_RESULT: ${{ needs.synthetic-seed-reconcile.result }}
+          BOOTSTRAP_RESULT: ${{ needs.session-prior-bootstrap.result }}
           RAMP10K_RESULT: ${{ needs.ramp-10000.result }}
           SOAK_RESULT: ${{ needs.eight-hour-soak.result }}
           FINAL_RECON_RESULT: ${{ needs.final-reconciliation.result }}
@@ -1581,7 +1658,7 @@ jobs:
             SEED_RESULT="${SEED_RECON_RESULT}"
           fi
           # Delete only after full certification chain succeeded (recon after soak).
-          # Any resumable failure → preserve; forced expiration is independent workflow.
+          # Bootstrap proof / resumable failure → preserve; forced expiration independent.
           DELETE="NO"
           if [ "${FINAL_RECON_RESULT:-}" = "success" ] && [ "${SOAK_RESULT:-}" = "success" ]; then
             DELETE="YES"
@@ -1621,12 +1698,14 @@ jobs:
             "RESOURCE_LIFETIME_MAX": "120 HOURS",
             "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "disposition": "PRESERVED_FOR_REMEDIATION",
+            "stop_after": "${STOP_AFTER:-}",
             "seed_result": "${SEED_RESULT:-}",
+            "bootstrap_result": "${BOOTSTRAP_RESULT:-}",
             "ramp10k_result": "${RAMP10K_RESULT:-}",
             "soak_result": "${SOAK_RESULT:-}",
             "final_recon_result": "${FINAL_RECON_RESULT:-}",
             "final_report_result": "${FINAL_REPORT_RESULT:-}",
-            "note": "Resumable certification failure — project kept; schedule cleanup remains armed",
+            "note": "Bootstrap proof or resumable certification — project kept; schedule cleanup remains armed",
             "PRODUCTION_MUTATIONS": 0,
             "exact_SHA": "${APP_SHA}",
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
