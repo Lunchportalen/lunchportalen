@@ -32,7 +32,7 @@
   "CLOUD_ENVIRONMENT_ISOLATED": "YES",
   "project_name": "lunchportalen-phase18scale-loadcert",
   "AUTO_DELETE_SCHEDULED": "YES",
-  "PHASE18_CLOUD_ENGINE_SHA": "7584a498c9b63e4464dbcf574f8300dfd058963f",
+  "PHASE18_CLOUD_ENGINE_SHA": "4f27738df5113f7eb2186bd6bb7dc9f3d730315e",
   "run_date_contract_engine_sha": "7584a498c9b63e4464dbcf574f8300dfd058963f",
   "finalization_gating_remediation_engine_sha": "82d0486ca60affb479f314962bad48afdc51db61",
   "session_artifact_bootstrap_remediation_engine_sha": "7584a498c9b63e4464dbcf574f8300dfd058963f",
@@ -54,7 +54,7 @@
   "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "YES",
   "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
   "remediation_note": "GHA 29804791819 failed at Ensure package entitlements (FK organizations). Project preserved for entitlement seed fix; do not delete until success/abort/expire.",
-  "stamped_at": "2026-07-23T14:00:00.000Z",
+  "stamped_at": "2026-07-23T20:35:44.728Z",
   "previous_project_reference_deleted": "mvjmukgfslukgohkuqhr",
   "resource": "isolated non-production project",
   "CLOUD_PROJECT_CREATED": "YES",
@@ -83,5 +83,9 @@
     "forbidden_production_ref": "hkpokyapzarefrgqzkos",
     "forbidden_staging_ref": "uigxsboqeruxflgzqztl",
     "isolated_ref": "arstaxredytrjcmqcwhh"
-  }
+  },
+  "session_shard_gating_remediation_engine_sha": "4f27738df5113f7eb2186bd6bb7dc9f3d730315e",
+  "session_shard_gating_failure_run_id": 30035299568,
+  "session_shard_gating_failure_run_number": 33,
+  "session_shard_gating_root_cause": "session-shard-ramp-10000 skipped by if:success() after always() bootstrap over skipped synthetic-seed"
 }
