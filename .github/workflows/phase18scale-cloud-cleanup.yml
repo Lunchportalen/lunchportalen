@@ -35,6 +35,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load owner-approved resource contract (release tip)
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence
+          # Schedule runs from main, which historically lacks the evidence file.
+          # Always prefer the Phase 18 release-branch contract so forced expiration stays armed.
+          git fetch --depth=1 origin release/global-menu-universes-21
+          if git cat-file -e "FETCH_HEAD:docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json" 2>/dev/null; then
+            git show "FETCH_HEAD:docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json" \
+              > docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json
+            echo "Loaded owner-approved contract from release/global-menu-universes-21"
+          elif [ -f docs/rc/phase18scale/evidence/owner-approved-cloud-resource.json ]; then
+            echo "Using checkout-local owner-approved contract"
+          else
+            echo "No owner-approved contract available yet"
+          fi
+
       - name: Refuse production refs and require explicit delete intent
         env:
           INPUT_REF: ${{ inputs.project_ref || github.event.client_payload.project_ref }}
@@ -166,7 +183,7 @@ jobs:
             "CLOUD_RESOURCE_DELETED": "$DELETED",
             "BILLING_STOPPED": "${BILLING_STOPPED:-UNKNOWN}",
             "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
-            "RESOURCE_LIFETIME_MAX": "72 HOURS",
+            "RESOURCE_LIFETIME_MAX": "120 HOURS",
             "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "PRODUCTION_MUTATIONS": 0,
             "deletion_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
