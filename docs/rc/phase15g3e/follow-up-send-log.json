@@ -1,3 +1,40 @@
 {
-  "sent": []
+  "sent": [
+    {
+      "firmId": "deloitte-global-indirect-tax",
+      "round": 1,
+      "identity": "deloitte-global-indirect-tax:followup:1",
+      "to": "fvestli@deloitte.no",
+      "threadRef": "LP-15G3E-deloitte-global-indirect-tax-b88aaf99780e",
+      "status": "SENT",
+      "claimedAt": "2026-07-23T00:34:10.031Z",
+      "runId": "29969388183",
+      "messageId": "<2e870d54-38d4-29b2-6963-0ba32f8ad66a@lunchportalen.no>",
+      "sentAt": "2026-07-23T00:34:11.677Z"
+    },
+    {
+      "firmId": "bdo-dach-vat",
+      "round": 1,
+      "identity": "bdo-dach-vat:followup:1",
+      "to": "info@bdo.at",
+      "threadRef": "LP-15G3E-bdo-dach-vat-b88aaf99780e",
+      "status": "SENT",
+      "claimedAt": "2026-07-23T00:34:10.031Z",
+      "runId": "29969388183",
+      "messageId": "<f280578c-e4c9-ad49-b2bd-07c15abadab9@lunchportalen.no>",
+      "sentAt": "2026-07-23T00:34:13.303Z"
+    },
+    {
+      "firmId": "conta-as-peppol-no",
+      "round": 1,
+      "identity": "conta-as-peppol-no:followup:1",
+      "to": "peppol@conta.no",
+      "threadRef": "LP-15G3E-conta-as-peppol-no-b88aaf99780e",
+      "status": "SENT",
+      "claimedAt": "2026-07-23T00:34:10.031Z",
+      "runId": "29969388183",
+      "messageId": "<17430b8b-38f9-9a7d-f2eb-b1b86dd184cd@lunchportalen.no>",
+      "sentAt": "2026-07-23T00:34:14.931Z"
+    }
+  ]
 }

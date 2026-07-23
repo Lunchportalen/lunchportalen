@@ -21,3 +21,7 @@
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-22T15:34:30.871Z","runId":"29933923346"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-22T18:28:08.783Z","runId":"29946691925"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-22T21:26:23.713Z","runId":"29959114730"}
+{"type":"FOLLOWUP_SENT","identity":"deloitte-global-indirect-tax:followup:1","firmId":"deloitte-global-indirect-tax","round":1,"messageId":"<2e870d54-38d4-29b2-6963-0ba32f8ad66a@lunchportalen.no>","to":"fvestli@deloitte.no","at":"2026-07-23T00:34:11.677Z","runId":"29969388183"}
+{"type":"FOLLOWUP_SENT","identity":"bdo-dach-vat:followup:1","firmId":"bdo-dach-vat","round":1,"messageId":"<f280578c-e4c9-ad49-b2bd-07c15abadab9@lunchportalen.no>","to":"info@bdo.at","at":"2026-07-23T00:34:13.303Z","runId":"29969388183"}
+{"type":"FOLLOWUP_SENT","identity":"conta-as-peppol-no:followup:1","firmId":"conta-as-peppol-no","round":1,"messageId":"<17430b8b-38f9-9a7d-f2eb-b1b86dd184cd@lunchportalen.no>","to":"peppol@conta.no","at":"2026-07-23T00:34:14.931Z","runId":"29969388183"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":3,"at":"2026-07-23T00:34:14.943Z","runId":"29969388183"}

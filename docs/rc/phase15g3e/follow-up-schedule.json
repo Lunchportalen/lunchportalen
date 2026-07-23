@@ -10,8 +10,9 @@
       "followUpDueAt": "2026-07-22T22:47:30.786Z",
       "secondFollowUpDueAt": "2026-07-29T22:47:30.786Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_SENT",
+      "calendar": "business_days_mon_fri",
+      "followUp1SentAt": "2026-07-23T00:34:11.677Z"
     },
     {
       "firmId": "bdo-dach-vat",
@@ -20,8 +21,9 @@
       "followUpDueAt": "2026-07-22T22:47:30.955Z",
       "secondFollowUpDueAt": "2026-07-29T22:47:30.955Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_SENT",
+      "calendar": "business_days_mon_fri",
+      "followUp1SentAt": "2026-07-23T00:34:13.303Z"
     },
     {
       "firmId": "conta-as-peppol-no",
@@ -30,8 +32,9 @@
       "followUpDueAt": "2026-07-22T22:47:31.118Z",
       "secondFollowUpDueAt": "2026-07-29T22:47:31.118Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_SENT",
+      "calendar": "business_days_mon_fri",
+      "followUp1SentAt": "2026-07-23T00:34:14.931Z"
     },
     {
       "firmId": "thomson-reuters-pagero",
@@ -40,8 +43,9 @@
       "followUpDueAt": "2026-07-23T00:20:58.752Z",
       "secondFollowUpDueAt": "2026-07-30T00:20:58.752Z",
       "backupEscalationAfterSecond": true,
-      "status": "SCHEDULED",
-      "calendar": "business_days_mon_fri"
+      "status": "FIRST_REMINDER_LOGGED",
+      "calendar": "business_days_mon_fri",
+      "firstReminderLoggedAt": "2026-07-23T00:34:10.031Z"
     },
     {
       "firmId": "azets-nordic",
@@ -104,5 +108,5 @@
       "calendar": "business_days_mon_fri"
     }
   ],
-  "lastCycleAt": "2026-07-22T21:26:23.703Z"
+  "lastCycleAt": "2026-07-23T00:34:14.933Z"
 }

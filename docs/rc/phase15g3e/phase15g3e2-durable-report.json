@@ -1,15 +1,15 @@
 {
-  "writtenAt": "2026-07-22T21:26:23.763Z",
+  "writtenAt": "2026-07-23T00:34:14.995Z",
   "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "29959114730",
-    "started_at": "2026-07-22T21:25:54.988Z",
-    "completed_at": "2026-07-22T21:26:23.705Z",
+    "runId": "29969388183",
+    "started_at": "2026-07-23T00:33:39.530Z",
+    "completed_at": "2026-07-23T00:34:14.935Z",
     "replies_found": 0,
     "messages_classified": 0,
-    "follow_ups_sent": 0,
+    "follow_ups_sent": 3,
     "failures": [],
-    "next_due_action": "2026-07-22T22:47:30.786Z",
+    "next_due_action": "2026-07-23T00:38:01.461Z",
     "secrets_exposed": 0,
     "mailbox": {
       "imap": "PASS",
@@ -40,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-07-22T21:26:23.705Z",
-      "nextScheduledRun": "2026-07-23T00:00:00.000Z"
+      "lastSuccessfulRun": "2026-07-23T00:34:14.935Z",
+      "nextScheduledRun": "2026-07-23T03:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -49,26 +49,6 @@
       "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
     },
     "dueFollowUps": [
-      {
-        "firmId": "deloitte-global-indirect-tax",
-        "next": "2026-07-22T22:47:30.786Z",
-        "status": "SCHEDULED"
-      },
-      {
-        "firmId": "bdo-dach-vat",
-        "next": "2026-07-22T22:47:30.955Z",
-        "status": "SCHEDULED"
-      },
-      {
-        "firmId": "conta-as-peppol-no",
-        "next": "2026-07-22T22:47:31.118Z",
-        "status": "SCHEDULED"
-      },
-      {
-        "firmId": "thomson-reuters-pagero",
-        "next": "2026-07-23T00:20:58.752Z",
-        "status": "SCHEDULED"
-      },
       {
         "firmId": "azets-nordic",
         "next": "2026-07-23T00:38:01.461Z",
@@ -98,6 +78,26 @@
         "firmId": "ey-indirect-tax",
         "next": "2026-07-23T07:48:10.967Z",
         "status": "SCHEDULED"
+      },
+      {
+        "firmId": "deloitte-global-indirect-tax",
+        "next": "2026-07-29T22:47:30.786Z",
+        "status": "FIRST_SENT"
+      },
+      {
+        "firmId": "bdo-dach-vat",
+        "next": "2026-07-29T22:47:30.955Z",
+        "status": "FIRST_SENT"
+      },
+      {
+        "firmId": "conta-as-peppol-no",
+        "next": "2026-07-29T22:47:31.118Z",
+        "status": "FIRST_SENT"
+      },
+      {
+        "firmId": "thomson-reuters-pagero",
+        "next": "2026-07-30T00:20:58.752Z",
+        "status": "FIRST_REMINDER_LOGGED"
       }
     ],
     "quotesWaiting": 1,
@@ -105,7 +105,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-07-22T21:26:23.712Z",
-    "runId": "29959114730"
+    "updatedAt": "2026-07-23T00:34:14.942Z",
+    "runId": "29969388183"
   }
 }
