@@ -60,6 +60,26 @@
       "attachments": [],
       "processedAt": "2026-07-23T04:05:12.062Z",
       "runId": "29978584782"
+    },
+    {
+      "firmId": "deloitte-global-indirect-tax",
+      "messageId": "<AM9PR85MB0245876C542F606F7CD233FEA3CF2@AM9PR85MB0245.NAMPRD85.PROD.OUTLOOK.COM>",
+      "subject": "RE:    [Lunchportalen] Independent review RFP — Deloitte (Global Indirect Tax & Trade) — RC b88aaf99780e",
+      "from": "trexhaj@deloitte.no",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-07-24T06:01:31.000Z",
+      "attachments": [
+        {
+          "filename": "image001.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-24T06:53:44.533Z",
+      "runId": "30073592386"
     }
   ],
   "byMessageId": {
@@ -123,7 +143,27 @@
       "attachments": [],
       "processedAt": "2026-07-23T04:05:12.062Z",
       "runId": "29978584782"
+    },
+    "<AM9PR85MB0245876C542F606F7CD233FEA3CF2@AM9PR85MB0245.NAMPRD85.PROD.OUTLOOK.COM>": {
+      "firmId": "deloitte-global-indirect-tax",
+      "messageId": "<AM9PR85MB0245876C542F606F7CD233FEA3CF2@AM9PR85MB0245.NAMPRD85.PROD.OUTLOOK.COM>",
+      "subject": "RE:    [Lunchportalen] Independent review RFP — Deloitte (Global Indirect Tax & Trade) — RC b88aaf99780e",
+      "from": "trexhaj@deloitte.no",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-07-24T06:01:31.000Z",
+      "attachments": [
+        {
+          "filename": "image001.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-24T06:53:44.533Z",
+      "runId": "30073592386"
     }
   },
-  "lastPollAt": "2026-07-24T04:04:45.241Z"
+  "lastPollAt": "2026-07-24T06:53:44.859Z"
 }

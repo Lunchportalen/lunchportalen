@@ -1,7 +1,7 @@
 {
   "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
   "status": "READY_FOR_OWNER",
-  "createdAt": "2026-07-24T04:04:45.247Z",
+  "createdAt": "2026-07-24T06:53:44.864Z",
   "firms": [
     {
       "firm": "TransPerfect",
@@ -10,6 +10,49 @@
         "native-* backup"
       ],
       "countriesLocales": [],
+      "proposedReviewers": "PENDING",
+      "validatedCredentials": "PENDING",
+      "price": "SEE_EMAIL_THREAD",
+      "turnaround": "SEE_EMAIL_THREAD",
+      "contractRequirements": "UNKNOWN",
+      "paymentRequirements": "UNKNOWN",
+      "recommendation": "NEGOTIATE",
+      "ownerDecisionsNeeded": [
+        "supplier_selection",
+        "contract_signature",
+        "cost_payment_approval"
+      ]
+    },
+    {
+      "firm": "Deloitte (Global Indirect Tax & Trade)",
+      "firmId": "deloitte-global-indirect-tax",
+      "scope": [
+        "tax-* (21 countries via coordinated member firms)",
+        "invoice-* / e-invoice advisory overlap where engagement letter permits"
+      ],
+      "countriesLocales": [
+        "NO",
+        "SE",
+        "DK",
+        "FI",
+        "DE",
+        "AT",
+        "CH",
+        "NL",
+        "BE",
+        "FR",
+        "ES",
+        "IT",
+        "PT",
+        "GR",
+        "PL",
+        "RO",
+        "CZ",
+        "IE",
+        "GB",
+        "US",
+        "CA"
+      ],
       "proposedReviewers": "PENDING",
       "validatedCredentials": "PENDING",
       "price": "SEE_EMAIL_THREAD",

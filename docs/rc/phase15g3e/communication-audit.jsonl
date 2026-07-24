@@ -35,3 +35,5 @@
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-23T21:25:30.058Z","runId":"30046043554"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-24T00:30:50.721Z","runId":"30056343495"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-24T04:04:45.256Z","runId":"30065800248"}
+{"type":"INBOUND_CLASSIFIED","firmId":"deloitte-global-indirect-tax","messageId":"<AM9PR85MB0245876C542F606F7CD233FEA3CF2@AM9PR85MB0245.NAMPRD85.PROD.OUTLOOK.COM>","classification":"QUOTE_RECEIVED","attachmentCount":1,"at":"2026-07-24T06:53:44.533Z","runId":"30073592386"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-07-24T06:53:44.873Z","runId":"30073592386"}
