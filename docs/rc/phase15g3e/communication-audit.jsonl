@@ -38,3 +38,4 @@
 {"type":"INBOUND_CLASSIFIED","firmId":"deloitte-global-indirect-tax","messageId":"<AM9PR85MB0245876C542F606F7CD233FEA3CF2@AM9PR85MB0245.NAMPRD85.PROD.OUTLOOK.COM>","classification":"QUOTE_RECEIVED","attachmentCount":1,"at":"2026-07-24T06:53:44.533Z","runId":"30073592386"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-07-24T06:53:44.873Z","runId":"30073592386"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-24T09:49:37.390Z","runId":"30083917364"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-24T12:32:58.711Z","runId":"30093411397"}
