@@ -29,9 +29,13 @@ on:
         required: false
         default: "NO"
       stop_after:
-        description: "seed-reconcile | session-bootstrap | ramp-10000 (default) | full"
+        description: "seed-reconcile | session-bootstrap | session-refresh | ramp-10000 (default) | full"
         required: false
         default: "ramp-10000"
+      canonical_session_artifact_run_id:
+        description: Prior GHA run ID with phase18-job-authenticated-session-pool containing canonical 10k sessions
+        required: false
+        default: ""
       primary_service_date:
         description: Optional explicit future PHASE18_PRIMARY_SERVICE_DATE (YYYY-MM-DD). Empty = next weekday UTC.
         required: false
@@ -427,7 +431,10 @@ jobs:
     if: |
       always() &&
       inputs.stop_after != 'seed-reconcile' &&
+      inputs.stop_after != 'session-refresh' &&
       inputs.session_issuance_mode != 'sharded' &&
+      inputs.session_issuance_mode != 'repair-merge' &&
+      inputs.canonical_session_artifact_run_id == '' &&
       (
         needs.synthetic-seed.result == 'success' ||
         needs.synthetic-seed-reconcile.result == 'success'
@@ -661,6 +668,7 @@ jobs:
     if: |
       always() &&
       inputs.session_issuance_mode == 'repair-merge' &&
+      inputs.canonical_session_artifact_run_id == '' &&
       inputs.stop_after != 'seed-reconcile' &&
       inputs.stop_after != 'session-bootstrap' &&
       (
@@ -778,7 +786,7 @@ jobs:
           rm -rf "${RUNNER_TEMP}/phase18/session-repair-upload" || true
 
   authenticated-session-pool-merged:
-    needs: [session-shard-ramp-10000, session-shard-repair]
+    needs: [session-shard-ramp-10000, session-shard-repair, synthetic-seed-reconcile]
     if: |
       always() &&
       inputs.stop_after != 'session-bootstrap' &&
@@ -790,18 +798,29 @@ jobs:
         ) ||
         (
           inputs.session_issuance_mode == 'repair-merge' &&
+          inputs.canonical_session_artifact_run_id == '' &&
           needs.session-shard-repair.result == 'success'
+        ) ||
+        (
+          inputs.canonical_session_artifact_run_id != '' &&
+          (
+            needs.synthetic-seed-reconcile.result == 'success' ||
+            needs.synthetic-seed-reconcile.result == 'skipped'
+          )
         )
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
     environment: load-cert
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_SESSION_STAGE: ramp-10000
       PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
-      PHASE18_SESSION_STAGES: smoke-100,smoke-500,ramp-1000,ramp-5000,ramp-10000
       PHASE18_ALLOW_SESSION_WRAP: "0"
+      PHASE18_REFRESH_CONCURRENCY: "4"
+      PHASE18_REFRESH_CYCLES: "2"
+      PHASE18_REFRESH_FORCE_ALL: "1"
+      PHASE18_SOURCE_RUN_ID: ${{ inputs.prior_shard_run_id || inputs.canonical_session_artifact_run_id || github.run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -813,21 +832,27 @@ jobs:
       - run: npm ci
       - name: Resolve isolated keys
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+          merge-multiple: false
       - name: Download prior stage manifests (sharded path)
-        if: inputs.session_issuance_mode == 'sharded'
+        if: inputs.session_issuance_mode == 'sharded' && inputs.canonical_session_artifact_run_id == ''
         uses: actions/download-artifact@v4
         with:
           name: phase18-job-session-prior
           path: docs/rc/phase18scale/evidence/
       - name: Download all session shards (sharded path)
-        if: inputs.session_issuance_mode == 'sharded'
+        if: inputs.session_issuance_mode == 'sharded' && inputs.canonical_session_artifact_run_id == ''
         uses: actions/download-artifact@v4
         with:
           pattern: phase18-job-session-shard-*
           path: docs/rc/phase18scale/evidence/shards/
           merge-multiple: true
       - name: Flatten shard artifacts into evidence (sharded path)
-        if: inputs.session_issuance_mode == 'sharded'
+        if: inputs.session_issuance_mode == 'sharded' && inputs.canonical_session_artifact_run_id == ''
         run: |
           set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence
@@ -836,28 +861,114 @@ jobs:
           done
           ls -la docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-*.ndjson
       - name: Download repaired shard set (repair-merge path)
-        if: inputs.session_issuance_mode == 'repair-merge'
+        if: inputs.session_issuance_mode == 'repair-merge' && inputs.canonical_session_artifact_run_id == ''
         uses: actions/download-artifact@v4
         with:
           name: phase18-job-session-repair
           path: docs/rc/phase18scale/evidence/
           merge-multiple: false
-      - name: Merge ramp-10000 shards (+ derive stage manifests)
-        run: node scripts/phase18scale/merge-session-shards.mjs
-      - name: Ensure stage manifests exist after merge
+      - name: Download canonical session artifact from prior proof run
+        if: inputs.canonical_session_artifact_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRIOR_RUN: ${{ inputs.canonical_session_artifact_run_id }}
         run: |
           set -euo pipefail
-          for f in sessions-smoke-100.ndjson sessions-smoke-500.ndjson sessions-ramp-1000.ndjson sessions-ramp-5000.ndjson sessions-ramp-10000.ndjson; do
-            test -f "docs/rc/phase18scale/evidence/$f"
+          mkdir -p "$RUNNER_TEMP/canonical-prior" docs/rc/phase18scale/evidence
+          gh run download "$PRIOR_RUN" \
+            --name phase18-job-authenticated-session-pool \
+            --dir "$RUNNER_TEMP/canonical-prior"
+          # Allowlist: canonical store + meta + run-date; never overwrite unrelated tracked evidence.
+          for f in \
+            sessions-canonical-10000.ndjson \
+            sessions-canonical-10000.checkpoint.ndjson \
+            sessions-canonical-10000.meta.json \
+            session-refresh-canonical-summary.json \
+            phase18-run-date-manifest.json; do
+            if [ -f "$RUNNER_TEMP/canonical-prior/$f" ]; then
+              cp -f "$RUNNER_TEMP/canonical-prior/$f" "docs/rc/phase18scale/evidence/$f"
+            fi
           done
-      - name: Refresh all stage access tokens via GoTrue refresh
-        run: node scripts/phase18scale/refresh-session-manifest.mjs
-      - name: Preflight every stage manifest
+          test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson
+      - name: Merge ramp-10000 shards (+ derive stage manifests)
+        if: inputs.canonical_session_artifact_run_id == ''
+        run: node scripts/phase18scale/merge-session-shards.mjs
+      - name: Build canonical 10000-session token store
+        if: inputs.canonical_session_artifact_run_id == ''
+        run: node scripts/phase18scale/build-canonical-session-store.mjs
+      - name: Validate canonical session artifact
+        run: |
+          set -euo pipefail
+          test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson
+          ROWS=$(wc -l < docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson)
+          test "$ROWS" -eq 10000
+          node -e "
+            const fs=require('fs');
+            const p='docs/rc/phase18scale/evidence/sessions-canonical-10000.meta.json';
+            if (fs.existsSync(p)) {
+              const j=JSON.parse(fs.readFileSync(p,'utf8'));
+              if (j.CANONICAL_SESSION_ROWS != null && Number(j.CANONICAL_SESSION_ROWS) !== 10000) {
+                throw new Error('CANONICAL_SESSION_ROWS_GATE');
+              }
+            }
+            console.log(JSON.stringify({CANONICAL_SESSION_ROWS:10000,CANONICAL_VALIDATE:'PASS'}));
+          "
+      - name: Canonical refresh proof (unique user once per cycle × 2)
+        if: inputs.stop_after == 'session-refresh' || inputs.canonical_session_artifact_run_id == ''
+        env:
+          PHASE18_REFRESH_CYCLES: "2"
+          PHASE18_REFRESH_FORCE_ALL: "1"
+          PHASE18_DERIVE_STAGES_AFTER_REFRESH: "1"
+        run: |
+          set -euo pipefail
+          set +e
+          node scripts/phase18scale/refresh-canonical-sessions.mjs
+          RC=$?
+          set -e
+          if [ "$RC" -ne 0 ]; then
+            echo "Refresh cycle failed — attempting targeted reauth for invalid refresh tokens"
+            node scripts/phase18scale/reauth-canonical-sessions.mjs
+            node scripts/phase18scale/refresh-canonical-sessions.mjs
+          fi
+      - name: Derive stage manifests from prior canonical (ramp resume)
+        if: inputs.canonical_session_artifact_run_id != '' && inputs.stop_after != 'session-refresh'
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF'
+          import { loadNdjson, deriveStageManifestsFromCanonical, canonicalPath } from './scripts/phase18scale/lib/canonical-session-store.mjs';
+          import path from 'node:path';
+          const OUT = 'docs/rc/phase18scale/evidence';
+          const rows = await loadNdjson(canonicalPath(OUT));
+          if (rows.length !== 10000) throw new Error(`CANONICAL_ROWS=${rows.length}`);
+          const derived = deriveStageManifestsFromCanonical(OUT, rows);
+          console.log(JSON.stringify({ STAGE_MANIFESTS_DERIVED: derived }, null, 2));
+          EOF
+      - name: Preflight every derived stage manifest
         run: |
           set -euo pipefail
           for stage in smoke-100 smoke-500 ramp-1000 ramp-5000 ramp-10000; do
-            PHASE18_SESSION_STAGE="$stage" node scripts/phase18scale/preflight-session-manifest.mjs
+            PHASE18_SESSION_STAGE="$stage" PHASE18_ALLOW_SESSION_WRAP="0" \
+              node scripts/phase18scale/preflight-session-manifest.mjs
           done
+      - name: Stamp session-refresh proof decision
+        if: inputs.stop_after == 'session-refresh'
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/session-refresh-proof.json <<EOF
+          {
+            "job": "authenticated-session-pool-merged",
+            "stop_after": "session-refresh",
+            "SESSION_REFRESH_PROOF": "PASS",
+            "CANONICAL_SESSION_ROWS": 10000,
+            "HTTP_RAMPS_EXECUTED": "NO",
+            "GLOBAL_SCALE_CERTIFIED": "NO",
+            "CLOUD_RESOURCE_DELETED": "NO",
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          cat docs/rc/phase18scale/evidence/ci-jobs/session-refresh-proof.json
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -868,6 +979,9 @@ jobs:
     needs: [authenticated-session-pool, authenticated-session-pool-merged]
     if: |
       always() &&
+      inputs.stop_after != 'session-refresh' &&
+      inputs.stop_after != 'session-bootstrap' &&
+      inputs.stop_after != 'seed-reconcile' &&
       (
         needs.authenticated-session-pool.result == 'success' ||
         needs.authenticated-session-pool-merged.result == 'success'
@@ -906,11 +1020,11 @@ jobs:
           path: docs/rc/phase18scale/evidence/
       - name: Bind run-date contract into env
         run: node scripts/phase18scale/bind-run-date-env.mjs
-      - name: Refresh tokens immediately before HTTP stage
+      - name: Prepare smoke-100 runtime manifest from canonical (refresh once)
         env:
-          PHASE18_SESSION_STAGES: smoke-100
           PHASE18_SESSION_STAGE: smoke-100
-        run: node scripts/phase18scale/refresh-session-manifest.mjs
+          PHASE18_HTTP_WAVE: "100"
+        run: node scripts/phase18scale/prepare-stage-runtime-manifest.mjs
       - name: Bind smoke-100 session manifest (no wrap)
         env:
           PHASE18_SESSION_STAGE: smoke-100
@@ -969,10 +1083,10 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
-      - name: Download session pool
+      - name: Download canonical session state from prior stage
         uses: actions/download-artifact@v4
         with:
-          name: phase18-job-authenticated-session-pool
+          name: phase18-job-smoke-100
           path: docs/rc/phase18scale/evidence/
       - name: Restore canonical run-date contract
         uses: actions/download-artifact@v4
@@ -981,11 +1095,11 @@ jobs:
           path: docs/rc/phase18scale/evidence/
       - name: Bind run-date contract into env
         run: node scripts/phase18scale/bind-run-date-env.mjs
-      - name: Refresh tokens immediately before HTTP stage
+      - name: Prepare smoke-500 runtime manifest from canonical (refresh once)
         env:
-          PHASE18_SESSION_STAGES: smoke-500
           PHASE18_SESSION_STAGE: smoke-500
-        run: node scripts/phase18scale/refresh-session-manifest.mjs
+          PHASE18_HTTP_WAVE: "500"
+        run: node scripts/phase18scale/prepare-stage-runtime-manifest.mjs
       - name: Bind smoke-500 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -1021,10 +1135,10 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
-      - name: Download session pool
+      - name: Download canonical session state from prior stage
         uses: actions/download-artifact@v4
         with:
-          name: phase18-job-authenticated-session-pool
+          name: phase18-job-smoke-500
           path: docs/rc/phase18scale/evidence/
       - name: Restore canonical run-date contract
         uses: actions/download-artifact@v4
@@ -1033,11 +1147,11 @@ jobs:
           path: docs/rc/phase18scale/evidence/
       - name: Bind run-date contract into env
         run: node scripts/phase18scale/bind-run-date-env.mjs
-      - name: Refresh tokens immediately before HTTP stage
+      - name: Prepare ramp-1000 runtime manifest from canonical (refresh once)
         env:
-          PHASE18_SESSION_STAGES: ramp-1000
           PHASE18_SESSION_STAGE: ramp-1000
-        run: node scripts/phase18scale/refresh-session-manifest.mjs
+          PHASE18_HTTP_WAVE: "1000"
+        run: node scripts/phase18scale/prepare-stage-runtime-manifest.mjs
       - name: Bind ramp-1000 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -1073,10 +1187,10 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
-      - name: Download session pool
+      - name: Download canonical session state from prior stage
         uses: actions/download-artifact@v4
         with:
-          name: phase18-job-authenticated-session-pool
+          name: phase18-job-ramp-1000
           path: docs/rc/phase18scale/evidence/
       - name: Restore canonical run-date contract
         uses: actions/download-artifact@v4
@@ -1085,11 +1199,11 @@ jobs:
           path: docs/rc/phase18scale/evidence/
       - name: Bind run-date contract into env
         run: node scripts/phase18scale/bind-run-date-env.mjs
-      - name: Refresh tokens immediately before HTTP stage
+      - name: Prepare ramp-5000 runtime manifest from canonical (refresh once)
         env:
-          PHASE18_SESSION_STAGES: ramp-5000
           PHASE18_SESSION_STAGE: ramp-5000
-        run: node scripts/phase18scale/refresh-session-manifest.mjs
+          PHASE18_HTTP_WAVE: "5000"
+        run: node scripts/phase18scale/prepare-stage-runtime-manifest.mjs
       - name: Bind ramp-5000 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -1125,10 +1239,10 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/phase18-prepare-runtime
-      - name: Download session pool
+      - name: Download canonical session state from prior stage
         uses: actions/download-artifact@v4
         with:
-          name: phase18-job-authenticated-session-pool
+          name: phase18-job-ramp-5000
           path: docs/rc/phase18scale/evidence/
       - name: Restore canonical run-date contract
         uses: actions/download-artifact@v4
@@ -1137,11 +1251,11 @@ jobs:
           path: docs/rc/phase18scale/evidence/
       - name: Bind run-date contract into env
         run: node scripts/phase18scale/bind-run-date-env.mjs
-      - name: Refresh tokens immediately before HTTP stage
+      - name: Prepare ramp-10000 runtime manifest from canonical (refresh once)
         env:
-          PHASE18_SESSION_STAGES: ramp-10000
           PHASE18_SESSION_STAGE: ramp-10000
-        run: node scripts/phase18scale/refresh-session-manifest.mjs
+          PHASE18_HTTP_WAVE: "10000"
+        run: node scripts/phase18scale/prepare-stage-runtime-manifest.mjs
       - name: Bind ramp-10000 session manifest (no wrap)
         run: |
           set -euo pipefail
@@ -1617,12 +1731,13 @@ jobs:
           path: docs/rc/phase18scale/evidence/ci-jobs/
 
   final-reconciliation:
-    # Runs only after HTTP load stages (never for seed-only / bootstrap-only stops).
+    # Runs only after HTTP load stages (never for seed-only / bootstrap-only / session-refresh stops).
     needs: [ramp-10000, breakpoint]
     if: |
       always() &&
       inputs.stop_after != 'seed-reconcile' &&
       inputs.stop_after != 'session-bootstrap' &&
+      inputs.stop_after != 'session-refresh' &&
       needs.ramp-10000.result == 'success' &&
       (
         inputs.stop_after == 'ramp-10000' ||
@@ -1683,6 +1798,7 @@ jobs:
         synthetic-seed,
         synthetic-seed-reconcile,
         session-prior-bootstrap,
+        authenticated-session-pool-merged,
         ramp-10000,
         final-reconciliation,
       ]
@@ -1700,6 +1816,7 @@ jobs:
           SEED: ${{ needs.synthetic-seed.result }}
           SEED_RECON: ${{ needs.synthetic-seed-reconcile.result }}
           BOOTSTRAP: ${{ needs.session-prior-bootstrap.result }}
+          SESSION_MERGED: ${{ needs.authenticated-session-pool-merged.result }}
           RAMP10K: ${{ needs.ramp-10000.result }}
           FINAL_RECON: ${{ needs.final-reconciliation.result }}
           SAFETY_DECISION: ${{ needs.source-and-target-safety.outputs.decision }}
@@ -1710,6 +1827,7 @@ jobs:
           SCOPE_PASS="NO"
           SEED_ONLY_FINAL_RECON="SKIPPED"
           BOOTSTRAP_ONLY="NO"
+          SESSION_REFRESH_ONLY="NO"
           if [ "$STOP_AFTER" = "seed-reconcile" ]; then
             SEED_ONLY_FINAL_RECON="SKIPPED"
             if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; }; then
@@ -1730,13 +1848,22 @@ jobs:
                 DECISION="PRESERVED_FOR_REMEDIATION"
               fi
             fi
+          elif [ "$STOP_AFTER" = "session-refresh" ]; then
+            SESSION_REFRESH_ONLY="YES"
+            SEED_ONLY_FINAL_RECON="SKIPPED"
+            if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; } && [ "$SESSION_MERGED" = "success" ]; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="PRESERVED_FOR_REMEDIATION"
+            fi
           elif [ "$STOP_AFTER" = "ramp-10000" ]; then
             if [ "$SAFETY" = "success" ] && [ "$RAMP10K" = "success" ] && [ "$FINAL_RECON" = "success" ]; then
               SCOPE_PASS="YES"
               DECISION="CONTINUE"
             else
               DECISION="NO-GO"
-              if [ "$BOOTSTRAP" = "failure" ]; then
+              if [ "$BOOTSTRAP" = "failure" ] || [ "$SESSION_MERGED" = "failure" ]; then
                 DECISION="PRESERVED_FOR_REMEDIATION"
               fi
             fi
@@ -1755,7 +1882,9 @@ jobs:
             "decision": "$DECISION",
             "SCOPE_PASS": "$SCOPE_PASS",
             "BOOTSTRAP_ONLY_PROOF": "$BOOTSTRAP_ONLY",
+            "SESSION_REFRESH_ONLY_PROOF": "$SESSION_REFRESH_ONLY",
             "session_prior_bootstrap": "$BOOTSTRAP",
+            "authenticated_session_pool_merged": "$SESSION_MERGED",
             "SEED_ONLY_RUN_FINAL_RECONCILIATION": "$SEED_ONLY_FINAL_RECON",
             "FINAL_REPORT_RESPECTS_STOP_AFTER": "YES",
             "CLOUD_RESOURCE_DELETED": "NO",
@@ -1782,6 +1911,7 @@ jobs:
         synthetic-seed,
         synthetic-seed-reconcile,
         session-prior-bootstrap,
+        authenticated-session-pool-merged,
         ramp-10000,
         eight-hour-soak,
         final-reconciliation,

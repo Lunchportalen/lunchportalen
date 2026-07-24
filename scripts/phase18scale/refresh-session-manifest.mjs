@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 /**
- * Refresh expired access tokens using real GoTrue refresh tokens.
+ * Legacy per-stage refresh (nested stage copies — race-prone).
+ * Prefer refresh-canonical-sessions.mjs + prepare-stage-runtime-manifest.mjs.
  * Never prints tokens. Fail-closed if refresh fails for any required row.
+ *
+ * Hardening vs run #35:
+ * - checkpoints after every success (reduces TOKEN_ROTATION_STATE_LOSS)
+ * - records all failures (not only a 12-row sample)
+ * - classifies AUTH_RATE_LIMIT and respects longer backoff
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -77,27 +83,33 @@ async function main() {
     let reusedFresh = 0;
     let failed = 0;
     const failSample = [];
-    const outRows = new Array(rows.length);
+    const outRows = rows.map((r) => ({ ...r }));
     let cursor = 0;
+    const checkpointEvery = Number(process.env.PHASE18_REFRESH_CHECKPOINT_EVERY || 25);
+
+    async function persistPartial() {
+      const body = outRows.map((r) => JSON.stringify(r)).join("\n") + "\n";
+      fs.writeFileSync(stagePath, body);
+      fs.writeFileSync(path.join(OUT, `sessions-${stage}.checkpoint.ndjson`), body);
+    }
 
     async function worker() {
       while (cursor < rows.length) {
         const i = cursor;
         cursor += 1;
-        const row = rows[i];
+        const row = outRows[i];
         const exp = jwtExpMs(row.access_token);
         if (exp - Date.now() > skewMs) {
-          outRows[i] = row;
           reusedFresh += 1;
           continue;
         }
         if (!row.refresh_token) {
           failed += 1;
-          if (failSample.length < 12) failSample.push({ index: row.index, reason: "missing_refresh_token" });
+          failSample.push({ index: row.index, reason: "missing_refresh_token", class: "ANOTHER_EXACT_CAUSE" });
           continue;
         }
         let ok = false;
-        for (let attempt = 1; attempt <= 5; attempt += 1) {
+        for (let attempt = 1; attempt <= 8; attempt += 1) {
           try {
             const { data, error } = await anon.auth.refreshSession({ refresh_token: row.refresh_token });
             if (
@@ -110,40 +122,49 @@ async function main() {
                 ...row,
                 access_token: data.session.access_token,
                 refresh_token: data.session.refresh_token,
-                issued_at: new Date().toISOString(),
+                issued_at: row.issued_at || new Date().toISOString(),
                 refreshed_at: new Date().toISOString(),
               };
               refreshed += 1;
               ok = true;
+              if (refreshed % checkpointEvery === 0) await persistPartial();
               break;
             }
             const reason = error?.message || "refresh_failed";
-            if (attempt === 5) {
+            const rateLimited = /rate limit/i.test(reason);
+            if (attempt === 8) {
               failed += 1;
-              if (failSample.length < 12) failSample.push({ index: row.index, reason: String(reason).slice(0, 120) });
+              failSample.push({
+                index: row.index,
+                reason: String(reason).slice(0, 120),
+                class: rateLimited ? "AUTH_RATE_LIMIT" : "ANOTHER_EXACT_CAUSE",
+              });
             } else {
-              await sleep(Math.min(15000, 400 * attempt * attempt));
+              await sleep(Math.min(rateLimited ? 30000 : 15000, (rateLimited ? 800 : 400) * attempt * attempt));
             }
           } catch (e) {
-            if (attempt === 5) {
+            if (attempt === 8) {
               failed += 1;
-              if (failSample.length < 12) {
-                failSample.push({ index: row.index, reason: String(e?.message || e).slice(0, 120) });
-              }
+              failSample.push({
+                index: row.index,
+                reason: String(e?.message || e).slice(0, 120),
+                class: "NETWORK_TIMEOUT",
+              });
             } else {
               await sleep(Math.min(15000, 400 * attempt * attempt));
             }
           }
         }
-        if (!ok && !outRows[i]) {
-          /* counted in failed */
+        if (!ok) {
+          /* counted in failed; row left unchanged for remediation */
         }
       }
     }
 
     await Promise.all(Array.from({ length: Math.min(concurrency, rows.length) }, () => worker()));
+    await persistPartial();
 
-    const finalRows = outRows.filter(Boolean).slice(0, target);
+    const finalRows = outRows.slice(0, target);
     if (finalRows.length !== target || failed > 0) {
       const report = {
         stage,
@@ -154,16 +175,11 @@ async function main() {
         rows: finalRows.length,
         fail_sample: failSample,
         SESSION_REFRESH: "FAIL",
+        NOTE: "Prefer refresh-canonical-sessions.mjs to avoid nested-stage refresh races",
       };
       fs.writeFileSync(path.join(OUT, `session-refresh-${stage}.json`), JSON.stringify(report, null, 2));
       throw new Error(`PHASE18_SESSION_REFRESH_FAILED stage=${stage} failed=${failed} rows=${finalRows.length}`);
     }
-
-    fs.writeFileSync(stagePath, finalRows.map((r) => JSON.stringify(r)).join("\n") + "\n");
-    fs.writeFileSync(
-      path.join(OUT, `sessions-${stage}.checkpoint.ndjson`),
-      finalRows.map((r) => JSON.stringify(r)).join("\n") + "\n",
-    );
     const report = {
       stage,
       target,

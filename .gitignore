@@ -144,3 +144,5 @@ playwright-week-visual-report/
 .env.phase18.local
 docs/rc/phase18scale/evidence/*.ndjson
 docs/rc/phase18scale/evidence/sessions*.ndjson
+docs/rc/phase18scale/artifacts-*/
+docs/rc/phase18scale/artifacts-*/**

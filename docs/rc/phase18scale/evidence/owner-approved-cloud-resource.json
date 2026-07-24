@@ -97,5 +97,15 @@
     9095,
     9711
   ],
-  "session_repair_root_cause": "AUTH_RATE_LIMIT on 4 GoTrue issuances across shards 7/8/9"
+  "session_repair_root_cause": "AUTH_RATE_LIMIT on 4 GoTrue issuances across shards 7/8/9",
+  "session_refresh_failure_run_id": 30056192037,
+  "session_refresh_failure_run_number": 35,
+  "session_refresh_root_cause": "AUTH_RATE_LIMIT 29/100 on smoke-100 plus TOKEN_ROTATION_STATE_LOSS 71 (no per-success checkpoint) and parallel monolithic authenticated-session-pool racing repair-merge refresh; nested stage manifests held duplicate refresh-token copies",
+  "session_refresh_remediation": "canonical 10k session store; refresh each unique user once per cycle with atomic checkpoints; stop_after=session-refresh; exclude repair-merge from monolithic session pool; targeted reauth fallback; stage runtime prepare from canonical only",
+  "CLOUD_CERT_FAILED": "YES",
+  "SESSION_MANIFEST_MERGE_REACHED": "YES",
+  "SESSION_REFRESH_FAILURE": "CONFIRMED",
+  "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
+  "CLOUD_RAMPS_COMPLETE": "NO",
+  "GLOBAL_SCALE_CERTIFIED": "NO"
 }
