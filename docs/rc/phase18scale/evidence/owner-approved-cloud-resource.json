@@ -32,7 +32,7 @@
   "CLOUD_ENVIRONMENT_ISOLATED": "YES",
   "project_name": "lunchportalen-phase18scale-loadcert",
   "AUTO_DELETE_SCHEDULED": "YES",
-  "PHASE18_CLOUD_ENGINE_SHA": "c717faf7a022bb336d99badd22be394a3522e131",
+  "PHASE18_CLOUD_ENGINE_SHA": "f09c5538e05a5123faa0a5dae123add47a6dc930",
   "run_date_contract_engine_sha": "7584a498c9b63e4464dbcf574f8300dfd058963f",
   "finalization_gating_remediation_engine_sha": "82d0486ca60affb479f314962bad48afdc51db61",
   "session_artifact_bootstrap_remediation_engine_sha": "7584a498c9b63e4464dbcf574f8300dfd058963f",
@@ -54,7 +54,7 @@
   "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "YES",
   "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
   "remediation_note": "GHA 29804791819 failed at Ensure package entitlements (FK organizations). Project preserved for entitlement seed fix; do not delete until success/abort/expire.",
-  "stamped_at": "2026-07-24T08:59:51.005Z",
+  "stamped_at": "2026-07-24T17:41:15.774Z",
   "previous_project_reference_deleted": "mvjmukgfslukgohkuqhr",
   "resource": "isolated non-production project",
   "CLOUD_PROJECT_CREATED": "YES",
@@ -114,5 +114,6 @@
   "session_refresh_timeout_root_cause": "Single-job canonical refresh of 10000 users x2 cycles cancelled near six-hour job limit; 175/10000 cycle-1 rotations checkpointed",
   "session_refresh_sharded_remediation": "stop_after=session-refresh-sharded; 10x1000 refresh shards max-parallel 2; sequential cycle-1 then cycle-2 merges; AES-256-GCM artifacts; targeted reauth; no HTTP ramps until proof green",
   "CANONICAL_SESSION_SOURCE_RUN": 30081403524,
-  "CANONICAL_SESSION_SOURCE_CHECKSUM": "2a18d8a9311870c3dde97f6867c077c20d2b98c710cf1b4607e5e590b7341993"
+  "CANONICAL_SESSION_SOURCE_CHECKSUM": "2a18d8a9311870c3dde97f6867c077c20d2b98c710cf1b4607e5e590b7341993",
+  "session_refresh_sharded_engine_sha": "f09c5538e05a5123faa0a5dae123add47a6dc930"
 }
