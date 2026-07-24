@@ -1019,7 +1019,6 @@ jobs:
       PHASE18_REFRESH_CHECKPOINT_EVERY: "25"
       PHASE18_ALLOW_TARGETED_REAUTH: "1"
       PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
-      APP_SHA: ${{ env.APP_SHA }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1075,7 +1074,6 @@ jobs:
       PHASE18_REFRESH_CYCLE: "1"
       PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
       PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
-      APP_SHA: ${{ env.APP_SHA }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1141,7 +1139,6 @@ jobs:
       PHASE18_REFRESH_CHECKPOINT_EVERY: "25"
       PHASE18_ALLOW_TARGETED_REAUTH: "1"
       PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
-      APP_SHA: ${{ env.APP_SHA }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1202,7 +1199,6 @@ jobs:
       PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
       PHASE18_DERIVE_STAGES_AFTER_MERGE: "1"
       PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
-      APP_SHA: ${{ env.APP_SHA }}
     steps:
       - uses: actions/checkout@v4
         with:
