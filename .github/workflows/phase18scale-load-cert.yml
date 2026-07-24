@@ -45,11 +45,19 @@ on:
         required: false
         default: "NO"
       session_issuance_mode:
-        description: "monolithic | sharded (use sharded to resume/mint ramp-10000 in parallel)"
+        description: "monolithic | sharded | repair-merge (repair missing indices from prior_shard_run_id then merge)"
         required: false
         default: "monolithic"
       prior_session_run_id:
         description: Prior GHA run ID whose session checkpoints should be resumed (optional)
+        required: false
+        default: ""
+      prior_shard_run_id:
+        description: Prior GHA run ID with phase18-job-session-shard-* artifacts (required for repair-merge)
+        required: false
+        default: ""
+      repair_indices:
+        description: Comma-separated employee indices to repair (empty = auto-discover from shard underfill)
         required: false
         default: ""
       session_shard_count:
@@ -646,14 +654,145 @@ jobs:
             docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-${{ matrix.shard }}.checkpoint.ndjson
             docs/rc/phase18scale/evidence/issue-auth-sessions-ramp-10000-shard-${{ matrix.shard }}.json
 
-  authenticated-session-pool-merged:
-    needs: session-shard-ramp-10000
+  session-shard-repair:
+    # Repair only missing indices from a prior underfilled shard run (e.g. #34).
+    # Does not re-issue the 9,996 successful sessions.
+    needs: [synthetic-seed, synthetic-seed-reconcile]
     if: |
       always() &&
-      needs.session-shard-ramp-10000.result == 'success' &&
-      inputs.session_issuance_mode == 'sharded' &&
+      inputs.session_issuance_mode == 'repair-merge' &&
+      inputs.stop_after != 'seed-reconcile' &&
       inputs.stop_after != 'session-bootstrap' &&
-      inputs.stop_after != 'seed-reconcile'
+      (
+        needs.synthetic-seed.result == 'success' ||
+        needs.synthetic-seed-reconcile.result == 'success'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_SESSION_STAGE: ramp-10000
+      PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
+      PHASE18_SESSION_ATTEMPTS: "20"
+      PHASE18_REPAIR_INDICES: ${{ inputs.repair_indices }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+          merge-multiple: false
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
+      - name: Download prior shard artifacts into isolated temp
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRIOR_SHARD_RUN: ${{ inputs.prior_shard_run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PRIOR_SHARD_RUN}" ]; then
+            echo "::error::prior_shard_run_id required for repair-merge"
+            exit 2
+          fi
+          ISOLATED="${RUNNER_TEMP}/phase18/prior-shards/${PRIOR_SHARD_RUN}"
+          rm -rf "${ISOLATED}"
+          mkdir -p "${ISOLATED}" docs/rc/phase18scale/evidence
+          for s in 0 1 2 3 4 5 6 7 8 9; do
+            mkdir -p "${ISOLATED}/shard-${s}"
+            gh run download "${PRIOR_SHARD_RUN}" \
+              --name "phase18-job-session-shard-${s}" \
+              --dir "${ISOLATED}/shard-${s}"
+            # Copy allowlisted session shard files only into evidence.
+            find "${ISOLATED}/shard-${s}" -type f \( -name 'sessions-*.ndjson' -o -name 'issue-auth-sessions-*.json' \) -print0 \
+              | while IFS= read -r -d '' f; do
+                  cp -f "$f" "docs/rc/phase18scale/evidence/$(basename "$f")"
+                done
+          done
+          echo "PRIOR_SHARD_RUN=${PRIOR_SHARD_RUN}" >> "$GITHUB_ENV"
+          echo "Downloaded shard artifacts 0-9 from run ${PRIOR_SHARD_RUN}"
+      - name: Repair missing sessions (pass 1)
+        env:
+          PHASE18_REPAIR_PASS: "1"
+        run: node scripts/phase18scale/repair-missing-sessions.mjs
+      - name: Repair missing sessions (pass 2 idempotency)
+        env:
+          PHASE18_REPAIR_PASS: "2"
+        run: |
+          set -euo pipefail
+          node scripts/phase18scale/repair-missing-sessions.mjs | tee /tmp/repair2.json
+          node <<'NODE'
+          const fs = require("fs");
+          const a = JSON.parse(fs.readFileSync("docs/rc/phase18scale/evidence/session-repair-1.json", "utf8"));
+          const b = JSON.parse(fs.readFileSync("docs/rc/phase18scale/evidence/session-repair-2.json", "utf8"));
+          if (Number(b.REPAIR_SESSIONS_ISSUED || 0) !== 0) {
+            console.error("REPAIR_SECOND_PASS_ISSUED_NONZERO");
+            process.exit(2);
+          }
+          if (Number(b.REPAIR_FAILURES || 0) !== 0) {
+            console.error("REPAIR_SECOND_PASS_FAILURES");
+            process.exit(2);
+          }
+          console.log(JSON.stringify({
+            SESSION_REPAIR_FIRST_RUN: a.SESSION_REPAIR || "PASS",
+            SESSION_REPAIR_SECOND_RUN: b.SESSION_REPAIR || "PASS",
+            REPAIR_SESSIONS_ISSUED_PASS1: a.REPAIR_SESSIONS_ISSUED,
+            REPAIR_REUSED_EXISTING_PASS2: b.REPAIR_REUSED_EXISTING,
+            REPAIR_FAILURES: 0,
+          }, null, 2));
+          NODE
+      - name: Stage allowlisted repair upload bundle
+        run: |
+          set -euo pipefail
+          BUNDLE="${RUNNER_TEMP}/phase18/session-repair-upload"
+          rm -rf "$BUNDLE"
+          mkdir -p "$BUNDLE"
+          cp -f docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-*.ndjson "$BUNDLE/"
+          cp -f docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-*.checkpoint.ndjson "$BUNDLE/" || true
+          cp -f docs/rc/phase18scale/evidence/sessions-ramp-10000.checkpoint.ndjson "$BUNDLE/"
+          cp -f docs/rc/phase18scale/evidence/session-repair-*.json "$BUNDLE/"
+          cp -f docs/rc/phase18scale/evidence/phase18-run-date-manifest.json "$BUNDLE/"
+          ls -la "$BUNDLE"
+          echo "REPAIR_UPLOAD_BUNDLE=$BUNDLE" >> "$GITHUB_ENV"
+      - name: Upload repaired shard set
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-session-repair
+          path: ${{ env.REPAIR_UPLOAD_BUNDLE }}
+          if-no-files-found: error
+          overwrite: true
+      - name: Wipe isolated prior shard download
+        if: always()
+        run: |
+          rm -rf "${RUNNER_TEMP}/phase18/prior-shards" || true
+          rm -rf "${RUNNER_TEMP}/phase18/session-repair-upload" || true
+
+  authenticated-session-pool-merged:
+    needs: [session-shard-ramp-10000, session-shard-repair]
+    if: |
+      always() &&
+      inputs.stop_after != 'session-bootstrap' &&
+      inputs.stop_after != 'seed-reconcile' &&
+      (
+        (
+          inputs.session_issuance_mode == 'sharded' &&
+          needs.session-shard-ramp-10000.result == 'success'
+        ) ||
+        (
+          inputs.session_issuance_mode == 'repair-merge' &&
+          needs.session-shard-repair.result == 'success'
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 180
     environment: load-cert
@@ -674,18 +813,21 @@ jobs:
       - run: npm ci
       - name: Resolve isolated keys
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
-      - name: Download prior stage manifests
+      - name: Download prior stage manifests (sharded path)
+        if: inputs.session_issuance_mode == 'sharded'
         uses: actions/download-artifact@v4
         with:
           name: phase18-job-session-prior
           path: docs/rc/phase18scale/evidence/
-      - name: Download all session shards
+      - name: Download all session shards (sharded path)
+        if: inputs.session_issuance_mode == 'sharded'
         uses: actions/download-artifact@v4
         with:
           pattern: phase18-job-session-shard-*
           path: docs/rc/phase18scale/evidence/shards/
           merge-multiple: true
-      - name: Flatten shard artifacts into evidence
+      - name: Flatten shard artifacts into evidence (sharded path)
+        if: inputs.session_issuance_mode == 'sharded'
         run: |
           set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence
@@ -693,14 +835,21 @@ jobs:
             cp -f "$f" "docs/rc/phase18scale/evidence/$(basename "$f")"
           done
           ls -la docs/rc/phase18scale/evidence/sessions-ramp-10000.shard-*.ndjson
-      - name: Ensure smaller stage manifests present from prior
+      - name: Download repaired shard set (repair-merge path)
+        if: inputs.session_issuance_mode == 'repair-merge'
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-session-repair
+          path: docs/rc/phase18scale/evidence/
+          merge-multiple: false
+      - name: Merge ramp-10000 shards (+ derive stage manifests)
+        run: node scripts/phase18scale/merge-session-shards.mjs
+      - name: Ensure stage manifests exist after merge
         run: |
           set -euo pipefail
-          for f in sessions-smoke-100.ndjson sessions-smoke-500.ndjson sessions-ramp-1000.ndjson sessions-ramp-5000.ndjson; do
+          for f in sessions-smoke-100.ndjson sessions-smoke-500.ndjson sessions-ramp-1000.ndjson sessions-ramp-5000.ndjson sessions-ramp-10000.ndjson; do
             test -f "docs/rc/phase18scale/evidence/$f"
           done
-      - name: Merge ramp-10000 shards
-        run: node scripts/phase18scale/merge-session-shards.mjs
       - name: Refresh all stage access tokens via GoTrue refresh
         run: node scripts/phase18scale/refresh-session-manifest.mjs
       - name: Preflight every stage manifest

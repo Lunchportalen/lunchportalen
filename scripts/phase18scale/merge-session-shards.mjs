@@ -80,6 +80,24 @@ async function main() {
   fs.writeFileSync(ckPath, finalRows.map((r) => JSON.stringify(r)).join("\n") + "\n");
   fs.copyFileSync(outPath, path.join(OUT, "sessions.ndjson"));
 
+  // Derive smaller stage manifests from the merged unique set (no re-issuance).
+  const stageTargets = [
+    ["smoke-100", 100],
+    ["smoke-500", 500],
+    ["ramp-1000", 1000],
+    ["ramp-5000", 5000],
+    ["ramp-10000", 10000],
+  ];
+  const derived = {};
+  for (const [stg, n] of stageTargets) {
+    const slice = finalRows.slice(0, n);
+    const p = stageSessionsPath(OUT, stg);
+    const ckp = path.join(OUT, `sessions-${stg}.checkpoint.ndjson`);
+    fs.writeFileSync(p, slice.map((r) => JSON.stringify(r)).join("\n") + "\n");
+    fs.writeFileSync(ckp, slice.map((r) => JSON.stringify(r)).join("\n") + "\n");
+    derived[stg] = slice.length;
+  }
+
   const report = {
     phase: "18SCALE",
     stage,
@@ -96,6 +114,7 @@ async function main() {
     SESSION_COMPANY_RELATION_MISSING: missingCompany,
     SESSION_PROVIDER_PATH_MISSING: missingProvider,
     SESSION_WRAP: finalRows.length < target,
+    derived_stage_manifests: derived,
     reused_from_prior_checkpoint: priorRows.filter((r) => byUser.has(r.user_id)).length,
     stamped_at: new Date().toISOString(),
   };
