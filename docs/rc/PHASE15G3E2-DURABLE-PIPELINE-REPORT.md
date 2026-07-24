@@ -5,15 +5,15 @@
 - Workflow/job: phase15g3e-response-pipeline.yml / pipeline
 - Cadence: every 3 hours (cron: 0 */3 * * *)
 - Enabled: YES
-- Last run: 2026-07-24T06:53:44.865Z
-- Next run: 2026-07-24T09:00:00.000Z
+- Last run: 2026-07-24T09:49:37.382Z
+- Next run: 2026-07-24T12:00:00.000Z
 - Local terminal dependency: NONE
 
 ## Mailbox
 - IMAP: PASS
 - SMTP: PASS
 - Secret source: env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD
-- Replies (last run): 1
+- Replies (last run): 0
 - Failures: []
 
 ## Follow-ups
@@ -37,7 +37,7 @@
 
 ## Idempotency
 - Distributed lock: pipeline-lock.json + Actions concurrency group
-- Run ID: 30073592386
+- Run ID: 30083917364
 - Message-ID dedupe: reply-message-ids.json
 - Follow-up identity: firmId:followup:round
 - Duplicate send guard: claim-before-send
