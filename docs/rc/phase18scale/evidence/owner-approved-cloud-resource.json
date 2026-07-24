@@ -32,7 +32,7 @@
   "CLOUD_ENVIRONMENT_ISOLATED": "YES",
   "project_name": "lunchportalen-phase18scale-loadcert",
   "AUTO_DELETE_SCHEDULED": "YES",
-  "PHASE18_CLOUD_ENGINE_SHA": "1076b5ba10c807a2b067072420ad665a038e4f1f",
+  "PHASE18_CLOUD_ENGINE_SHA": "c717faf7a022bb336d99badd22be394a3522e131",
   "run_date_contract_engine_sha": "7584a498c9b63e4464dbcf574f8300dfd058963f",
   "finalization_gating_remediation_engine_sha": "82d0486ca60affb479f314962bad48afdc51db61",
   "session_artifact_bootstrap_remediation_engine_sha": "7584a498c9b63e4464dbcf574f8300dfd058963f",
@@ -54,7 +54,7 @@
   "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "YES",
   "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
   "remediation_note": "GHA 29804791819 failed at Ensure package entitlements (FK organizations). Project preserved for entitlement seed fix; do not delete until success/abort/expire.",
-  "stamped_at": "2026-07-24T00:16:02.303Z",
+  "stamped_at": "2026-07-24T08:59:51.005Z",
   "previous_project_reference_deleted": "mvjmukgfslukgohkuqhr",
   "resource": "isolated non-production project",
   "CLOUD_PROJECT_CREATED": "YES",
@@ -107,5 +107,6 @@
   "SESSION_REFRESH_FAILURE": "CONFIRMED",
   "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
   "CLOUD_RAMPS_COMPLETE": "NO",
-  "GLOBAL_SCALE_CERTIFIED": "NO"
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "session_refresh_remediation_engine_sha": "c717faf7a022bb336d99badd22be394a3522e131"
 }
