@@ -98,7 +98,25 @@ async function main() {
   }
 
   const derived = deriveStageManifestsFromCanonical(OUT, finalRows);
-  const out = { ...report, derived_stage_manifests: derived, STAGE_MANIFESTS_DERIVED: "YES" };
+  let encryption = null;
+  if (!["0", "false", "no"].includes(String(process.env.PHASE18_ENCRYPT_CANONICAL || "1").toLowerCase())) {
+    const { encryptFileTo, resolveArtifactKey } = await import("./lib/session-artifact-crypto.mjs");
+    const { key, source } = resolveArtifactKey();
+    const plainPath = path.join(OUT, "sessions-canonical-10000.ndjson");
+    const encPath = path.join(OUT, "sessions-canonical-10000.ndjson.aes");
+    encryption = {
+      algorithm: "aes-256-gcm",
+      key_source: source,
+      ...encryptFileTo(plainPath, encPath, key),
+      artifact: "sessions-canonical-10000.ndjson.aes",
+    };
+  }
+  const out = {
+    ...report,
+    derived_stage_manifests: derived,
+    STAGE_MANIFESTS_DERIVED: "YES",
+    encryption,
+  };
   fs.writeFileSync(path.join(OUT, CANONICAL_META_FILE), JSON.stringify(out, null, 2));
   console.log(JSON.stringify(out, null, 2));
 }

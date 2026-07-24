@@ -29,7 +29,7 @@ on:
         required: false
         default: "NO"
       stop_after:
-        description: "seed-reconcile | session-bootstrap | session-refresh | ramp-10000 (default) | full"
+        description: "seed-reconcile | session-bootstrap | session-refresh | session-refresh-sharded | ramp-10000 (default) | full"
         required: false
         default: "ramp-10000"
       canonical_session_artifact_run_id:
@@ -432,6 +432,7 @@ jobs:
       always() &&
       inputs.stop_after != 'seed-reconcile' &&
       inputs.stop_after != 'session-refresh' &&
+      inputs.stop_after != 'session-refresh-sharded' &&
       inputs.session_issuance_mode != 'sharded' &&
       inputs.session_issuance_mode != 'repair-merge' &&
       inputs.canonical_session_artifact_run_id == '' &&
@@ -881,6 +882,7 @@ jobs:
           # Allowlist: canonical store + meta + run-date; never overwrite unrelated tracked evidence.
           for f in \
             sessions-canonical-10000.ndjson \
+            sessions-canonical-10000.ndjson.aes \
             sessions-canonical-10000.checkpoint.ndjson \
             sessions-canonical-10000.meta.json \
             session-refresh-canonical-summary.json \
@@ -889,7 +891,8 @@ jobs:
               cp -f "$RUNNER_TEMP/canonical-prior/$f" "docs/rc/phase18scale/evidence/$f"
             fi
           done
-          test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson
+          test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson || \
+            test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson.aes
       - name: Merge ramp-10000 shards (+ derive stage manifests)
         if: inputs.canonical_session_artifact_run_id == ''
         run: node scripts/phase18scale/merge-session-shards.mjs
@@ -897,8 +900,13 @@ jobs:
         if: inputs.canonical_session_artifact_run_id == ''
         run: node scripts/phase18scale/build-canonical-session-store.mjs
       - name: Validate canonical session artifact
+        env:
+          PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
         run: |
           set -euo pipefail
+          if [ ! -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson ]; then
+            PHASE18_REFRESH_CYCLE=1 node scripts/phase18scale/materialize-canonical-input.mjs
+          fi
           test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson
           ROWS=$(wc -l < docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson)
           test "$ROWS" -eq 10000
@@ -913,8 +921,11 @@ jobs:
             }
             console.log(JSON.stringify({CANONICAL_SESSION_ROWS:10000,CANONICAL_VALIDATE:'PASS'}));
           "
-      - name: Canonical refresh proof (unique user once per cycle × 2)
-        if: inputs.stop_after == 'session-refresh' || inputs.canonical_session_artifact_run_id == ''
+      - name: Canonical refresh proof (legacy single-job — disabled for sharded stop)
+        if: |
+          inputs.stop_after != 'session-refresh' &&
+          inputs.stop_after != 'session-refresh-sharded' &&
+          inputs.canonical_session_artifact_run_id == ''
         env:
           PHASE18_REFRESH_CYCLES: "2"
           PHASE18_REFRESH_FORCE_ALL: "1"
@@ -931,12 +942,14 @@ jobs:
             node scripts/phase18scale/refresh-canonical-sessions.mjs
           fi
       - name: Derive stage manifests from prior canonical (ramp resume)
-        if: inputs.canonical_session_artifact_run_id != '' && inputs.stop_after != 'session-refresh'
+        if: |
+          inputs.canonical_session_artifact_run_id != '' &&
+          inputs.stop_after != 'session-refresh' &&
+          inputs.stop_after != 'session-refresh-sharded'
         run: |
           set -euo pipefail
           node --input-type=module <<'EOF'
           import { loadNdjson, deriveStageManifestsFromCanonical, canonicalPath } from './scripts/phase18scale/lib/canonical-session-store.mjs';
-          import path from 'node:path';
           const OUT = 'docs/rc/phase18scale/evidence';
           const rows = await loadNdjson(canonicalPath(OUT));
           if (rows.length !== 10000) throw new Error(`CANONICAL_ROWS=${rows.length}`);
@@ -944,26 +957,309 @@ jobs:
           console.log(JSON.stringify({ STAGE_MANIFESTS_DERIVED: derived }, null, 2));
           EOF
       - name: Preflight every derived stage manifest
+        if: |
+          inputs.stop_after != 'session-refresh' &&
+          inputs.stop_after != 'session-refresh-sharded'
         run: |
           set -euo pipefail
           for stage in smoke-100 smoke-500 ramp-1000 ramp-5000 ramp-10000; do
             PHASE18_SESSION_STAGE="$stage" PHASE18_ALLOW_SESSION_WRAP="0" \
               node scripts/phase18scale/preflight-session-manifest.mjs
           done
-      - name: Stamp session-refresh proof decision
-        if: inputs.stop_after == 'session-refresh'
+      - name: Stamp canonical-ready for sharded refresh proof
+        if: inputs.stop_after == 'session-refresh' || inputs.stop_after == 'session-refresh-sharded'
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson.aes || \
+            test -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson
+          cat > docs/rc/phase18scale/evidence/ci-jobs/canonical-ready-for-sharded-refresh.json <<EOF
+          {
+            "job": "authenticated-session-pool-merged",
+            "stop_after": "${{ inputs.stop_after }}",
+            "CANONICAL_READY": "YES",
+            "SHARDED_REFRESH_NEXT": "YES",
+            "HTTP_RAMPS_EXECUTED": "NO",
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          cat docs/rc/phase18scale/evidence/ci-jobs/canonical-ready-for-sharded-refresh.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
+
+  refresh-cycle-1-shard:
+    needs: [authenticated-session-pool-merged]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'session-refresh-sharded' ||
+        inputs.stop_after == 'session-refresh'
+      ) &&
+      needs.authenticated-session-pool-merged.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: load-cert
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_REFRESH_CYCLE: "1"
+      PHASE18_REFRESH_SHARD: ${{ matrix.shard }}
+      PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
+      PHASE18_REFRESH_CONCURRENCY: "1"
+      PHASE18_REFRESH_MIN_INTERVAL_MS: "700"
+      PHASE18_REFRESH_ATTEMPTS: "8"
+      PHASE18_REFRESH_CHECKPOINT_EVERY: "25"
+      PHASE18_ALLOW_TARGETED_REAUTH: "1"
+      PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
+      APP_SHA: ${{ env.APP_SHA }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download canonical session pool
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
+      - name: Materialize cycle-1 canonical input
+        env:
+          PHASE18_REFRESH_CYCLE: "1"
+        run: node scripts/phase18scale/materialize-canonical-input.mjs
+      - name: Refresh canonical shard (cycle 1)
+        run: node scripts/phase18scale/refresh-canonical-shard.mjs
+      - name: Wipe plaintext shard checkpoint before upload
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.shard-${{ matrix.shard }}.checkpoint.ndjson
+          rm -f docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.shard-${{ matrix.shard }}.ndjson
+          rm -f docs/rc/phase18scale/evidence/sessions-canonical-10000.ndjson
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-refresh-cycle-1-shard-${{ matrix.shard }}
+          path: |
+            docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.shard-${{ matrix.shard }}.ndjson.aes
+            docs/rc/phase18scale/evidence/session-refresh-cycle-1-shard-${{ matrix.shard }}.json
+          if-no-files-found: warn
+
+  merge-refresh-cycle-one:
+    needs: [refresh-cycle-1-shard]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'session-refresh-sharded' ||
+        inputs.stop_after == 'session-refresh'
+      ) &&
+      needs.refresh-cycle-1-shard.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_REFRESH_CYCLE: "1"
+      PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
+      PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
+      APP_SHA: ${{ env.APP_SHA }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download all cycle-1 shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phase18-job-refresh-cycle-1-shard-*
+          path: docs/rc/phase18scale/evidence/cycle1-shards/
+          merge-multiple: true
+      - name: Flatten cycle-1 shard artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence
+          find docs/rc/phase18scale/evidence/cycle1-shards -type f -print0 | while IFS= read -r -d '' f; do
+            cp -f "$f" "docs/rc/phase18scale/evidence/$(basename "$f")"
+          done
+          ls -la docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.shard-*.ndjson.aes
+      - name: Merge refresh cycle one
+        run: node scripts/phase18scale/merge-refresh-cycle.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-refresh-cycle-1-merged
+          path: |
+            docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.ndjson.aes
+            docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.meta.json
+            docs/rc/phase18scale/evidence/session-refresh-cycle-1-merge.json
+          if-no-files-found: warn
+
+  refresh-cycle-2-shard:
+    needs: [merge-refresh-cycle-one]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'session-refresh-sharded' ||
+        inputs.stop_after == 'session-refresh'
+      ) &&
+      needs.merge-refresh-cycle-one.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: load-cert
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_REFRESH_CYCLE: "2"
+      PHASE18_REFRESH_SHARD: ${{ matrix.shard }}
+      PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
+      PHASE18_REFRESH_CONCURRENCY: "1"
+      PHASE18_REFRESH_MIN_INTERVAL_MS: "700"
+      PHASE18_REFRESH_ATTEMPTS: "8"
+      PHASE18_REFRESH_CHECKPOINT_EVERY: "25"
+      PHASE18_ALLOW_TARGETED_REAUTH: "1"
+      PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
+      APP_SHA: ${{ env.APP_SHA }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download cycle-1 merged canonical
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-refresh-cycle-1-merged
+          path: docs/rc/phase18scale/evidence/
+      - name: Materialize cycle-2 input from cycle-1 merge
+        env:
+          PHASE18_REFRESH_CYCLE: "2"
+          PHASE18_CANONICAL_CIPHER: sessions-canonical-cycle-1.ndjson.aes
+          PHASE18_CANONICAL_INPUT: sessions-canonical-cycle-1.ndjson
+        run: node scripts/phase18scale/materialize-canonical-input.mjs
+      - name: Refresh canonical shard (cycle 2)
+        env:
+          PHASE18_CANONICAL_INPUT: docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.ndjson
+        run: node scripts/phase18scale/refresh-canonical-shard.mjs
+      - name: Wipe plaintext before upload
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f docs/rc/phase18scale/evidence/sessions-canonical-cycle-2.shard-${{ matrix.shard }}.checkpoint.ndjson
+          rm -f docs/rc/phase18scale/evidence/sessions-canonical-cycle-2.shard-${{ matrix.shard }}.ndjson
+          rm -f docs/rc/phase18scale/evidence/sessions-canonical-cycle-1.ndjson
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-refresh-cycle-2-shard-${{ matrix.shard }}
+          path: |
+            docs/rc/phase18scale/evidence/sessions-canonical-cycle-2.shard-${{ matrix.shard }}.ndjson.aes
+            docs/rc/phase18scale/evidence/session-refresh-cycle-2-shard-${{ matrix.shard }}.json
+          if-no-files-found: warn
+
+  merge-refresh-cycle-two:
+    needs: [refresh-cycle-2-shard]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'session-refresh-sharded' ||
+        inputs.stop_after == 'session-refresh'
+      ) &&
+      needs.refresh-cycle-2-shard.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_REFRESH_CYCLE: "2"
+      PHASE18_SESSION_SHARD_COUNT: ${{ inputs.session_shard_count }}
+      PHASE18_DERIVE_STAGES_AFTER_MERGE: "1"
+      PHASE18_SESSION_ARTIFACT_KEY: ${{ secrets.PHASE18_SESSION_ARTIFACT_KEY }}
+      APP_SHA: ${{ env.APP_SHA }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download all cycle-2 shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phase18-job-refresh-cycle-2-shard-*
+          path: docs/rc/phase18scale/evidence/cycle2-shards/
+          merge-multiple: true
+      - name: Flatten cycle-2 shard artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence
+          find docs/rc/phase18scale/evidence/cycle2-shards -type f -print0 | while IFS= read -r -d '' f; do
+            cp -f "$f" "docs/rc/phase18scale/evidence/$(basename "$f")"
+          done
+          ls -la docs/rc/phase18scale/evidence/sessions-canonical-cycle-2.shard-*.ndjson.aes
+      - name: Restore run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+          merge-multiple: false
+      - name: Merge refresh cycle two + derive stage manifests
+        run: node scripts/phase18scale/merge-refresh-cycle.mjs
+      - name: Preflight every derived stage manifest
+        run: |
+          set -euo pipefail
+          for stage in smoke-100 smoke-500 ramp-1000 ramp-5000 ramp-10000; do
+            PHASE18_SESSION_STAGE="$stage" PHASE18_ALLOW_SESSION_WRAP="0" \
+              node scripts/phase18scale/preflight-session-manifest.mjs
+          done
+      - name: Stamp session-refresh sharded proof
         run: |
           set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
           cat > docs/rc/phase18scale/evidence/ci-jobs/session-refresh-proof.json <<EOF
           {
-            "job": "authenticated-session-pool-merged",
-            "stop_after": "session-refresh",
+            "job": "merge-refresh-cycle-two",
+            "stop_after": "${{ inputs.stop_after }}",
             "SESSION_REFRESH_PROOF": "PASS",
             "CANONICAL_SESSION_ROWS": 10000,
+            "REFRESH_CYCLE_ONE": "10000/10000",
+            "REFRESH_CYCLE_TWO": "10000/10000",
             "HTTP_RAMPS_EXECUTED": "NO",
+            "CLOUD_RAMPS_COMPLETE": "NO",
             "GLOBAL_SCALE_CERTIFIED": "NO",
             "CLOUD_RESOURCE_DELETED": "NO",
+            "PRESERVED_FOR_REMEDIATION": "YES",
             "exact_SHA": "${APP_SHA}",
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
@@ -972,14 +1268,16 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: phase18-job-authenticated-session-pool
+          name: phase18-job-refresh-cycle-2-merged
           path: docs/rc/phase18scale/evidence/
+          if-no-files-found: warn
 
   smoke-100:
     needs: [authenticated-session-pool, authenticated-session-pool-merged]
     if: |
       always() &&
       inputs.stop_after != 'session-refresh' &&
+      inputs.stop_after != 'session-refresh-sharded' &&
       inputs.stop_after != 'session-bootstrap' &&
       inputs.stop_after != 'seed-reconcile' &&
       (
@@ -1738,6 +2036,7 @@ jobs:
       inputs.stop_after != 'seed-reconcile' &&
       inputs.stop_after != 'session-bootstrap' &&
       inputs.stop_after != 'session-refresh' &&
+      inputs.stop_after != 'session-refresh-sharded' &&
       needs.ramp-10000.result == 'success' &&
       (
         inputs.stop_after == 'ramp-10000' ||
@@ -1799,6 +2098,7 @@ jobs:
         synthetic-seed-reconcile,
         session-prior-bootstrap,
         authenticated-session-pool-merged,
+        merge-refresh-cycle-two,
         ramp-10000,
         final-reconciliation,
       ]
@@ -1817,6 +2117,7 @@ jobs:
           SEED_RECON: ${{ needs.synthetic-seed-reconcile.result }}
           BOOTSTRAP: ${{ needs.session-prior-bootstrap.result }}
           SESSION_MERGED: ${{ needs.authenticated-session-pool-merged.result }}
+          REFRESH_PROOF: ${{ needs.merge-refresh-cycle-two.result }}
           RAMP10K: ${{ needs.ramp-10000.result }}
           FINAL_RECON: ${{ needs.final-reconciliation.result }}
           SAFETY_DECISION: ${{ needs.source-and-target-safety.outputs.decision }}
@@ -1848,10 +2149,10 @@ jobs:
                 DECISION="PRESERVED_FOR_REMEDIATION"
               fi
             fi
-          elif [ "$STOP_AFTER" = "session-refresh" ]; then
+          elif [ "$STOP_AFTER" = "session-refresh" ] || [ "$STOP_AFTER" = "session-refresh-sharded" ]; then
             SESSION_REFRESH_ONLY="YES"
             SEED_ONLY_FINAL_RECON="SKIPPED"
-            if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; } && [ "$SESSION_MERGED" = "success" ]; then
+            if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; } && [ "$SESSION_MERGED" = "success" ] && [ "$REFRESH_PROOF" = "success" ]; then
               SCOPE_PASS="YES"
               DECISION="CONTINUE"
             else
@@ -1912,6 +2213,7 @@ jobs:
         synthetic-seed-reconcile,
         session-prior-bootstrap,
         authenticated-session-pool-merged,
+        merge-refresh-cycle-two,
         ramp-10000,
         eight-hour-soak,
         final-reconciliation,

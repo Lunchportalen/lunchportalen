@@ -108,5 +108,11 @@
   "APPLICATION_SCALE_FAILURE": "NOT_PROVEN",
   "CLOUD_RAMPS_COMPLETE": "NO",
   "GLOBAL_SCALE_CERTIFIED": "NO",
-  "session_refresh_remediation_engine_sha": "c717faf7a022bb336d99badd22be394a3522e131"
+  "session_refresh_remediation_engine_sha": "c717faf7a022bb336d99badd22be394a3522e131",
+  "session_refresh_timeout_run_id": 30081403524,
+  "session_refresh_timeout_run_number": 36,
+  "session_refresh_timeout_root_cause": "Single-job canonical refresh of 10000 users x2 cycles cancelled near six-hour job limit; 175/10000 cycle-1 rotations checkpointed",
+  "session_refresh_sharded_remediation": "stop_after=session-refresh-sharded; 10x1000 refresh shards max-parallel 2; sequential cycle-1 then cycle-2 merges; AES-256-GCM artifacts; targeted reauth; no HTTP ramps until proof green",
+  "CANONICAL_SESSION_SOURCE_RUN": 30081403524,
+  "CANONICAL_SESSION_SOURCE_CHECKSUM": "2a18d8a9311870c3dde97f6867c077c20d2b98c710cf1b4607e5e590b7341993"
 }
