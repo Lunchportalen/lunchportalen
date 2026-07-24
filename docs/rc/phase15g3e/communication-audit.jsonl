@@ -39,3 +39,5 @@
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-07-24T06:53:44.873Z","runId":"30073592386"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-24T09:49:37.390Z","runId":"30083917364"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-24T12:32:58.711Z","runId":"30093411397"}
+{"type":"INBOUND_CLASSIFIED","firmId":"transperfect-direct","messageId":"<6b752a1b39874798ab3a184055c1d990@transperfect.com>","classification":"QUOTE_RECEIVED","attachmentCount":1,"at":"2026-07-24T15:32:00.056Z","runId":"30105603572"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-07-24T15:32:00.216Z","runId":"30105603572"}

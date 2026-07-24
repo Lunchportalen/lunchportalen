@@ -80,6 +80,26 @@
       ],
       "processedAt": "2026-07-24T06:53:44.533Z",
       "runId": "30073592386"
+    },
+    {
+      "firmId": "transperfect-direct",
+      "messageId": "<6b752a1b39874798ab3a184055c1d990@transperfect.com>",
+      "subject": "RE: Lunchportalen - Localization Review",
+      "from": "jeppe.jordoson@transperfect.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-07-24T12:31:56.000Z",
+      "attachments": [
+        {
+          "filename": "image001.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-24T15:32:00.056Z",
+      "runId": "30105603572"
     }
   ],
   "byMessageId": {
@@ -163,7 +183,27 @@
       ],
       "processedAt": "2026-07-24T06:53:44.533Z",
       "runId": "30073592386"
+    },
+    "<6b752a1b39874798ab3a184055c1d990@transperfect.com>": {
+      "firmId": "transperfect-direct",
+      "messageId": "<6b752a1b39874798ab3a184055c1d990@transperfect.com>",
+      "subject": "RE: Lunchportalen - Localization Review",
+      "from": "jeppe.jordoson@transperfect.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-07-24T12:31:56.000Z",
+      "attachments": [
+        {
+          "filename": "image001.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-24T15:32:00.056Z",
+      "runId": "30105603572"
     }
   },
-  "lastPollAt": "2026-07-24T12:32:58.695Z"
+  "lastPollAt": "2026-07-24T15:32:00.200Z"
 }

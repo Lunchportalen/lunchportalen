@@ -1,8 +1,14 @@
 {
   "notifyOwner": true,
-  "runId": "30093411397",
-  "at": "2026-07-24T12:32:58.701Z",
+  "runId": "30105603572",
+  "at": "2026-07-24T15:32:00.207Z",
   "events": [
+    {
+      "kind": "QUOTE_RECEIVED",
+      "firmId": "transperfect-direct",
+      "messageId": "<6b752a1b39874798ab3a184055c1d990@transperfect.com>",
+      "subject": "RE: Lunchportalen - Localization Review"
+    },
     {
       "kind": "OWNER_CONTRACT_PAYMENT_BATCH_READY",
       "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
