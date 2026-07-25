@@ -325,11 +325,11 @@ jobs:
           name: phase18-job-synthetic-seed
           path: docs/rc/phase18scale/evidence/
 
-  synthetic-seed-reconcile:
+  synthetic-seed-reconcile-base:
     needs: observability-check
     if: success() && inputs.skip_synthetic_seed == 'YES'
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
     environment: load-cert
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
@@ -353,12 +353,85 @@ jobs:
         run: node scripts/phase18scale/bind-run-date-env.mjs
       - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
         run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
-      - name: Seed reconciliation + canonical menu repair
+      - name: Ensure ACTIVE agreements
+        run: node scripts/phase18scale/ensure-agreements.mjs
+      - name: Ensure varmrett product categories
+        run: node scripts/phase18scale/ensure-varmrett-product-categories.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-synthetic-seed-base
+          path: docs/rc/phase18scale/evidence/
+
+  synthetic-seed-reconcile-menus:
+    needs: synthetic-seed-reconcile-base
+    if: |
+      always() &&
+      inputs.skip_synthetic_seed == 'YES' &&
+      needs.synthetic-seed-reconcile-base.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download base seed evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-synthetic-seed-base
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
+      - name: Ensure published menus (retry + fail samples)
+        run: node scripts/phase18scale/ensure-published-menus.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-synthetic-seed-menus
+          path: docs/rc/phase18scale/evidence/
+
+  synthetic-seed-reconcile-align:
+    needs: synthetic-seed-reconcile-menus
+    if: |
+      always() &&
+      inputs.skip_synthetic_seed == 'YES' &&
+      needs.synthetic-seed-reconcile-menus.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download menus evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-synthetic-seed-menus
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
+      - name: Align menu-path prices
         run: |
           set -euo pipefail
-          node scripts/phase18scale/ensure-agreements.mjs
-          node scripts/phase18scale/ensure-varmrett-product-categories.mjs
-          node scripts/phase18scale/ensure-published-menus.mjs
           node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
           PHASE18_MENU_PATH_MODE=companies node scripts/phase18scale/audit-menu-path-preflight.mjs
       - name: Menu-path price alignment idempotency (second run)
