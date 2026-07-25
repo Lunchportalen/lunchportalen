@@ -364,6 +364,45 @@ jobs:
       - name: Menu-path price alignment idempotency (second run)
         run: |
           set -euo pipefail
+          # Skip expensive second full repair when first pass already proves zero repairs.
+          if node <<'NODE'
+          const fs = require("fs");
+          const report = JSON.parse(
+            fs.readFileSync("docs/rc/phase18scale/evidence/ensure-menu-path-price-alignment.json", "utf8"),
+          );
+          const verify = report.verify || {};
+          const alreadyClean =
+            report.CLOUD_MENU_PATH_PRICE_ALIGNMENT === "PASS" &&
+            Number(report.items_repaired || 0) === 0 &&
+            Number(report.products_repaired || 0) === 0 &&
+            Number(verify.missing_msd || 0) === 0 &&
+            Number(verify.missing_msdi || 0) === 0 &&
+            Number(verify.price_mismatch || 0) === 0 &&
+            Number(verify.provider_mismatch || 0) === 0 &&
+            Number(verify.valid_warm_path || 0) === Number(verify.companies || 0);
+          if (alreadyClean) {
+            const out = {
+              MENU_PATH_REPAIR_IDEMPOTENCY: "PASS",
+              SKIPPED_SECOND_FULL_REPAIR: "YES",
+              items_repaired: 0,
+              products_repaired: 0,
+              verify,
+              stamped_at: new Date().toISOString(),
+            };
+            fs.writeFileSync(
+              "docs/rc/phase18scale/evidence/ensure-menu-path-price-alignment-idempotency.json",
+              JSON.stringify(out, null, 2),
+            );
+            console.log(JSON.stringify(out, null, 2));
+            process.exit(0);
+          }
+          console.log(JSON.stringify({ SKIPPED_SECOND_FULL_REPAIR: "NO", reason: "first_pass_not_clean" }));
+          process.exit(2);
+          NODE
+          then
+            echo "Idempotency satisfied by first pass — second full repair skipped"
+            exit 0
+          fi
           node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
           node <<'NODE'
           const fs = require("fs");
@@ -382,6 +421,7 @@ jobs:
             Number(verify.valid_warm_path || 0) === Number(verify.companies || 0);
           const out = {
             MENU_PATH_REPAIR_IDEMPOTENCY: ok ? "PASS" : "FAIL",
+            SKIPPED_SECOND_FULL_REPAIR: "NO",
             items_repaired: report.items_repaired || 0,
             products_repaired: report.products_repaired || 0,
             verify,

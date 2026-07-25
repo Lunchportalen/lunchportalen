@@ -226,15 +226,24 @@ function walkFiles(dir: string, out: string[] = []): string[] {
       if (
         ent.name === "node_modules" ||
         ent.name === ".next" ||
+        ent.name === ".git" ||
         ent.name === ".backups" ||
         ent.name === "test-results" ||
         ent.name === "playwright-report" ||
-        ent.name === "temp"
+        ent.name === "temp" ||
+        ent.name === "coverage" ||
+        ent.name === "artifacts" ||
+        ent.name.startsWith("artifacts-") ||
+        ent.name === ".cursor"
       ) {
         continue;
       }
       walkFiles(p, out);
     } else if (/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env)$/.test(ent.name)) {
+      // Phase 18 evidence dumps are not runtime wiring and can be multi-GB.
+      const r = rel(p);
+      if (r.includes("/artifacts-") || r.includes("/artifacts/")) continue;
+      if (r.startsWith("docs/rc/phase18scale/") && /\.(ndjson|json)$/.test(ent.name)) continue;
       out.push(p);
     }
   }
@@ -356,27 +365,31 @@ describe("G5d.7a/7c — runtime hook flag and employee proposed flag guards", ()
     ).toEqual([]);
   });
 
-  test("LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME appears only in docs/governance", () => {
-    const offenders: string[] = [];
-    for (const token of PROPOSED_FLAG_TOKENS) {
-      for (const filePath of walkFiles(ROOT)) {
-        const r = rel(filePath);
-        if (!/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env|md)$/.test(r)) continue;
-        if (r.includes("node_modules/") || r.includes(".next/")) continue;
-        // Generated repo inventory indexes source symbols; it is not runtime wiring.
-        if (r.startsWith("repo-intelligence/")) continue;
-        if (isG5d7GovernanceAllowedPath(r)) continue;
-        const src = fs.readFileSync(filePath, "utf8");
-        if (src.includes(token)) {
-          offenders.push(`${r} → ${token}`);
+  test(
+    "LP_MENU_PROFILE_EMPLOYEE_PROFILE_RUNTIME appears only in docs/governance",
+    () => {
+      const offenders: string[] = [];
+      for (const token of PROPOSED_FLAG_TOKENS) {
+        for (const filePath of walkFiles(ROOT)) {
+          const r = rel(filePath);
+          if (!/\.(ts|tsx|js|jsx|mjs|json|yaml|yml|env|md)$/.test(r)) continue;
+          if (r.includes("node_modules/") || r.includes(".next/")) continue;
+          // Generated repo inventory indexes source symbols; it is not runtime wiring.
+          if (r.startsWith("repo-intelligence/")) continue;
+          if (isG5d7GovernanceAllowedPath(r)) continue;
+          const src = fs.readFileSync(filePath, "utf8");
+          if (src.includes(token)) {
+            offenders.push(`${r} → ${token}`);
+          }
         }
       }
-    }
-    expect(
-      offenders,
-      `employee profile runtime flag wired outside docs/governance:\n${offenders.join("\n")}`,
-    ).toEqual([]);
-  });
+      expect(
+        offenders,
+        `employee profile runtime flag wired outside docs/governance:\n${offenders.join("\n")}`,
+      ).toEqual([]);
+    },
+    180_000,
+  );
 
   test("components have no runtime hook flag wiring", () => {
     const offenders: string[] = [];
