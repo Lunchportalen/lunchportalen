@@ -115,5 +115,17 @@
   "session_refresh_sharded_remediation": "stop_after=session-refresh-sharded; 10x1000 refresh shards max-parallel 2; sequential cycle-1 then cycle-2 merges; AES-256-GCM artifacts; targeted reauth; no HTTP ramps until proof green",
   "CANONICAL_SESSION_SOURCE_RUN": 30081403524,
   "CANONICAL_SESSION_SOURCE_CHECKSUM": "2a18d8a9311870c3dde97f6867c077c20d2b98c710cf1b4607e5e590b7341993",
-  "session_refresh_sharded_engine_sha": "f09c5538e05a5123faa0a5dae123add47a6dc930"
+  "session_refresh_sharded_engine_sha": "f09c5538e05a5123faa0a5dae123add47a6dc930",
+  "AUTH_SESSION_COVERAGE_CERTIFIED": "NO",
+  "BUSINESS_OPERATION_SCALE_CERTIFIED": "NO",
+  "CUTOFF_FREEZE_CERTIFIED": "NO",
+  "FINANCIAL_LOAD_RECONCILIATION_CERTIFIED": "NO",
+  "CONCURRENT_100K_UNIQUE_AUTH_SESSIONS_CERTIFIED": "NO",
+  "business_realistic_model": {
+    "ACTIVE_LOAD_SESSIONS_TARGET": 5000,
+    "AUTH_REFRESH_COVERAGE": "2000x2",
+    "AUTH_CONCURRENT_CANARY": 500,
+    "LOGICAL_RAMPS": [100, 500, 1000, 5000, 10000],
+    "NOTE": "Logical ops may reuse sessions; uniqueness via logical_operation_id/idempotency_key"
+  }
 }

@@ -249,6 +249,8 @@ async function worker() {
     const menuPath = await resolveMenuPath(s);
     const baseRec = {
       logical_operation_number: idx,
+      logical_operation_id: `p18-lop-${date}-${idx}`,
+      session_user_id: s.user_id,
       ...menuPath,
       idempotency_key_cancel: `p18-wave-c-${idx}`,
       idempotency_key_set: `p18-wave-s-${idx}`,

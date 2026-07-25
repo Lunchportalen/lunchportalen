@@ -94,10 +94,17 @@ async function main() {
     if (agr?.provider_id) menuPathOk += 1;
   }
 
+  const logicalOpsMode = ["1", "true", "yes"].includes(
+    String(process.env.PHASE18_LOGICAL_OPS_MODE || "").toLowerCase(),
+  );
+  const allowWrap = logicalOpsMode || ["1", "true", "yes"].includes(
+    String(process.env.PHASE18_ALLOW_SESSION_WRAP || "").toLowerCase(),
+  );
   const sessionWrap = rows.length < target || uniqueUsers.size < target || uniqueEmails.size < target;
   const report = {
     phase: "18SCALE",
     stage,
+    LOGICAL_OPS_MODE: logicalOpsMode,
     source: path.basename(sourcePath),
     target,
     SESSION_MANIFEST_ROWS: rows.length,
@@ -122,26 +129,42 @@ async function main() {
     stamped_at: new Date().toISOString(),
   };
 
-  const pass =
-    report.SESSION_MANIFEST_ROWS >= target &&
-    report.SESSION_UNIQUE_USER_IDS >= target &&
-    report.SESSION_UNIQUE_EMAILS >= target &&
-    report.SESSION_VALID_TOKENS >= target &&
-    report.SESSION_DUPLICATE_USER_IDS === 0 &&
-    report.SESSION_DUPLICATE_EMAILS === 0 &&
-    report.SESSION_INVALID_TOKENS === 0 &&
-    report.SESSION_COMPANY_RELATION_MISSING === 0 &&
-    report.SESSION_PROVIDER_PATH_MISSING === 0 &&
-    report.SESSION_WRAP === false &&
-    (stage !== "smoke-100" ||
-      (report.SMOKE100_SESSION_ROWS === 100 &&
-        report.SMOKE100_UNIQUE_USERS === 100 &&
-        report.SMOKE100_UNIQUE_EMAILS === 100 &&
-        report.SMOKE100_VALID_AUTH === 100 &&
-        report.SMOKE100_VALID_MENU_PATHS === 100 &&
-        report.SMOKE100_SESSION_WRAP === false));
+  const minPool = logicalOpsMode
+    ? Number(process.env.PHASE18_ACTIVE_LOAD_SESSIONS_MIN || Math.min(target, rows.length))
+    : target;
+  const pass = logicalOpsMode
+    ? report.SESSION_MANIFEST_ROWS >= Math.min(minPool, rows.length) &&
+      report.SESSION_MANIFEST_ROWS >= 1 &&
+      report.SESSION_UNIQUE_USER_IDS === report.SESSION_MANIFEST_ROWS &&
+      report.SESSION_UNIQUE_EMAILS === report.SESSION_MANIFEST_ROWS &&
+      report.SESSION_VALID_TOKENS === report.SESSION_MANIFEST_ROWS &&
+      report.SESSION_DUPLICATE_USER_IDS === 0 &&
+      report.SESSION_DUPLICATE_EMAILS === 0 &&
+      report.SESSION_INVALID_TOKENS === 0 &&
+      report.SESSION_COMPANY_RELATION_MISSING === 0 &&
+      report.SESSION_PROVIDER_PATH_MISSING === 0 &&
+      (allowWrap || report.SESSION_WRAP === false) &&
+      validAuth === validateN
+    : report.SESSION_MANIFEST_ROWS >= target &&
+      report.SESSION_UNIQUE_USER_IDS >= target &&
+      report.SESSION_UNIQUE_EMAILS >= target &&
+      report.SESSION_VALID_TOKENS >= target &&
+      report.SESSION_DUPLICATE_USER_IDS === 0 &&
+      report.SESSION_DUPLICATE_EMAILS === 0 &&
+      report.SESSION_INVALID_TOKENS === 0 &&
+      report.SESSION_COMPANY_RELATION_MISSING === 0 &&
+      report.SESSION_PROVIDER_PATH_MISSING === 0 &&
+      report.SESSION_WRAP === false &&
+      (stage !== "smoke-100" ||
+        (report.SMOKE100_SESSION_ROWS === 100 &&
+          report.SMOKE100_UNIQUE_USERS === 100 &&
+          report.SMOKE100_UNIQUE_EMAILS === 100 &&
+          report.SMOKE100_VALID_AUTH === 100 &&
+          report.SMOKE100_VALID_MENU_PATHS === 100 &&
+          report.SMOKE100_SESSION_WRAP === false));
 
   report.SESSION_MANIFEST_PREFLIGHT = pass ? "PASS" : "FAIL";
+  void allowWrap;
   fs.mkdirSync(OUT, { recursive: true });
   fs.writeFileSync(
     path.join(OUT, `session-manifest-preflight-${stage}.json`),

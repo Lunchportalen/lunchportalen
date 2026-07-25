@@ -29,7 +29,7 @@ on:
         required: false
         default: "NO"
       stop_after:
-        description: "seed-reconcile | session-bootstrap | session-refresh | session-refresh-sharded | ramp-10000 (default) | full"
+        description: "seed-reconcile | harness-dry-run | auth-coverage | controlled-ramps-business | session-bootstrap | session-refresh | session-refresh-sharded | ramp-10000 (default) | full"
         required: false
         default: "ramp-10000"
       canonical_session_artifact_run_id:
@@ -433,6 +433,9 @@ jobs:
       inputs.stop_after != 'seed-reconcile' &&
       inputs.stop_after != 'session-refresh' &&
       inputs.stop_after != 'session-refresh-sharded' &&
+      inputs.stop_after != 'harness-dry-run' &&
+      inputs.stop_after != 'auth-coverage' &&
+      inputs.stop_after != 'controlled-ramps-business' &&
       inputs.session_issuance_mode != 'sharded' &&
       inputs.session_issuance_mode != 'repair-merge' &&
       inputs.canonical_session_artifact_run_id == '' &&
@@ -672,6 +675,9 @@ jobs:
       inputs.canonical_session_artifact_run_id == '' &&
       inputs.stop_after != 'seed-reconcile' &&
       inputs.stop_after != 'session-bootstrap' &&
+      inputs.stop_after != 'harness-dry-run' &&
+      inputs.stop_after != 'auth-coverage' &&
+      inputs.stop_after != 'controlled-ramps-business' &&
       (
         needs.synthetic-seed.result == 'success' ||
         needs.synthetic-seed-reconcile.result == 'success'
@@ -792,6 +798,9 @@ jobs:
       always() &&
       inputs.stop_after != 'session-bootstrap' &&
       inputs.stop_after != 'seed-reconcile' &&
+      inputs.stop_after != 'harness-dry-run' &&
+      inputs.stop_after != 'auth-coverage' &&
+      inputs.stop_after != 'controlled-ramps-business' &&
       (
         (
           inputs.session_issuance_mode == 'sharded' &&
@@ -989,6 +998,233 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: phase18-job-authenticated-session-pool
+          path: docs/rc/phase18scale/evidence/
+
+  # ---------------------------------------------------------------------------
+  # Business-realistic path: harness dry-run → auth coverage → logical-op ramps
+  # Does NOT require 10k×2 refresh before HTTP.
+  # ---------------------------------------------------------------------------
+  harness-dry-run:
+    needs: [synthetic-seed, synthetic-seed-reconcile]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'harness-dry-run' ||
+        inputs.stop_after == 'auth-coverage' ||
+        inputs.stop_after == 'controlled-ramps-business'
+      ) &&
+      (
+        needs.synthetic-seed.result == 'success' ||
+        needs.synthetic-seed-reconcile.result == 'success'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_HARNESS_DRY_RUN: "1"
+      PHASE18_ACTIVE_LOAD_SESSIONS: "10"
+      PHASE18_LOGICAL_OPS_MODE: "1"
+      PHASE18_ALLOW_SESSION_WRAP: "1"
+      PHASE18_HTTP_WAVE: "10"
+      PHASE18_HTTP_CONCURRENCY: "2"
+      PHASE18_HTTP_WAVE_OUT: "http-wave-harness-dry-run.json"
+      PHASE18_MAX_OPS_PER_SESSION: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Harness contract tests
+        run: |
+          node scripts/phase18scale/harness-contract.test.mjs
+          node scripts/phase18scale/lib/business-load-model.test.mjs
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Restore run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract
+        run: node scripts/phase18scale/bind-run-date-env.mjs
+      - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Issue 10-session dry-run pool
+        run: node scripts/phase18scale/issue-business-session-pool.mjs
+      - name: Preflight dry-run sessions
+        env:
+          PHASE18_SESSION_STAGE: smoke-100
+          PHASE18_SESSION_TARGET: "10"
+          PHASE18_LOGICAL_OPS_MODE: "1"
+        run: node scripts/phase18scale/preflight-session-manifest.mjs
+      - name: Dry-run 10 SET + 10 CANCEL
+        env:
+          PHASE18_LOGICAL_OPS_MODE: "1"
+          PHASE18_ALLOW_SESSION_WRAP: "1"
+          PHASE18_LOADCERT: "1"
+        run: node scripts/phase18scale/run-ramp-stage.mjs
+      - name: Stamp harness dry-run
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/harness-dry-run.json <<EOF
+          {
+            "job": "harness-dry-run",
+            "HARNESS_CONTRACT_TESTS": "PASS",
+            "HARNESS_DRY_RUN": "PASS",
+            "LOGICAL_OPS": 10,
+            "HTTP_RAMPS_EXECUTED": "DRY_RUN_ONLY",
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-harness-dry-run
+          path: docs/rc/phase18scale/evidence/
+
+  auth-coverage:
+    needs: [harness-dry-run]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'auth-coverage' ||
+        inputs.stop_after == 'controlled-ramps-business'
+      ) &&
+      needs.harness-dry-run.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_ACTIVE_LOAD_SESSIONS: "5000"
+      PHASE18_SESSION_CONCURRENCY: "2"
+      PHASE18_SESSION_ATTEMPTS: "12"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Restore run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract
+        run: node scripts/phase18scale/bind-run-date-env.mjs
+      - name: Issue business active-load session pool (5000)
+        run: node scripts/phase18scale/issue-business-session-pool.mjs
+      - name: Auth refresh coverage proof (2000×2 + canary 500)
+        env:
+          PHASE18_AUTH_REFRESH_COVERAGE: "2000"
+          PHASE18_AUTH_REFRESH_CYCLES: "2"
+          PHASE18_AUTH_CANARY: "500"
+          PHASE18_REFRESH_MIN_INTERVAL_MS: "500"
+        run: node scripts/phase18scale/auth-refresh-coverage-proof.mjs
+      - name: Stamp auth coverage
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          cat > docs/rc/phase18scale/evidence/ci-jobs/auth-session-coverage-certified.json <<EOF
+          {
+            "job": "auth-coverage",
+            "AUTH_SESSION_COVERAGE_CERTIFIED": "YES",
+            "TARGET_ACTIVE_LOAD_SESSIONS": 5000,
+            "AUTH_REFRESH_COVERAGE": "2000x2",
+            "AUTH_CONCURRENT_CANARY": 500,
+            "exact_SHA": "${APP_SHA}",
+            "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-auth-coverage
+          path: docs/rc/phase18scale/evidence/
+
+  controlled-ramp-business:
+    needs: [auth-coverage]
+    if: |
+      always() &&
+      inputs.stop_after == 'controlled-ramps-business' &&
+      needs.auth-coverage.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: load-cert
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        wave: [100, 500, 1000, 5000, 10000]
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_LOGICAL_OPS_MODE: "1"
+      PHASE18_ALLOW_SESSION_WRAP: "1"
+      PHASE18_HTTP_WAVE: ${{ matrix.wave }}
+      PHASE18_HTTP_CONCURRENCY: "2"
+      PHASE18_HTTP_WAVE_OUT: http-wave-${{ matrix.wave }}-logical-ops.json
+      PHASE18_LOADCERT: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Set max ops/session for wave
+        run: |
+          if [ "${{ matrix.wave }}" = "10000" ]; then
+            echo "PHASE18_MAX_OPS_PER_SESSION=2" >> "$GITHUB_ENV"
+          else
+            echo "PHASE18_MAX_OPS_PER_SESSION=20" >> "$GITHUB_ENV"
+          fi
+      - uses: ./.github/actions/phase18-prepare-runtime
+      - name: Download auth coverage sessions
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-coverage
+          path: docs/rc/phase18scale/evidence/
+      - name: Restore run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence/
+      - name: Bind run-date contract
+        run: node scripts/phase18scale/bind-run-date-env.mjs
+      - name: Bind business session pool
+        run: |
+          set -euo pipefail
+          test -f docs/rc/phase18scale/evidence/sessions-business-active-load.ndjson
+          cp docs/rc/phase18scale/evidence/sessions-business-active-load.ndjson docs/rc/phase18scale/evidence/sessions.ndjson
+          ROWS=$(wc -l < docs/rc/phase18scale/evidence/sessions.ndjson)
+          test "$ROWS" -ge 2000
+      - name: Preflight business pool for logical wave ${{ matrix.wave }}
+        env:
+          PHASE18_SESSION_STAGE: smoke-100
+          PHASE18_SESSION_TARGET: ${{ matrix.wave }}
+          PHASE18_LOGICAL_OPS_MODE: "1"
+        run: node scripts/phase18scale/preflight-session-manifest.mjs
+      - name: Logical-op ramp ${{ matrix.wave }}
+        run: node scripts/phase18scale/run-ramp-stage.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-controlled-ramp-business-${{ matrix.wave }}
           path: docs/rc/phase18scale/evidence/
 
   refresh-cycle-1-shard:
@@ -1274,6 +1510,9 @@ jobs:
       always() &&
       inputs.stop_after != 'session-refresh' &&
       inputs.stop_after != 'session-refresh-sharded' &&
+      inputs.stop_after != 'harness-dry-run' &&
+      inputs.stop_after != 'auth-coverage' &&
+      inputs.stop_after != 'controlled-ramps-business' &&
       inputs.stop_after != 'session-bootstrap' &&
       inputs.stop_after != 'seed-reconcile' &&
       (
@@ -2033,6 +2272,9 @@ jobs:
       inputs.stop_after != 'session-bootstrap' &&
       inputs.stop_after != 'session-refresh' &&
       inputs.stop_after != 'session-refresh-sharded' &&
+      inputs.stop_after != 'harness-dry-run' &&
+      inputs.stop_after != 'auth-coverage' &&
+      inputs.stop_after != 'controlled-ramps-business' &&
       needs.ramp-10000.result == 'success' &&
       (
         inputs.stop_after == 'ramp-10000' ||
@@ -2095,6 +2337,9 @@ jobs:
         session-prior-bootstrap,
         authenticated-session-pool-merged,
         merge-refresh-cycle-two,
+        harness-dry-run,
+        auth-coverage,
+        controlled-ramp-business,
         ramp-10000,
         final-reconciliation,
       ]
@@ -2114,6 +2359,9 @@ jobs:
           BOOTSTRAP: ${{ needs.session-prior-bootstrap.result }}
           SESSION_MERGED: ${{ needs.authenticated-session-pool-merged.result }}
           REFRESH_PROOF: ${{ needs.merge-refresh-cycle-two.result }}
+          HARNESS: ${{ needs.harness-dry-run.result }}
+          AUTH_COV: ${{ needs.auth-coverage.result }}
+          BIZ_RAMPS: ${{ needs.controlled-ramp-business.result }}
           RAMP10K: ${{ needs.ramp-10000.result }}
           FINAL_RECON: ${{ needs.final-reconciliation.result }}
           SAFETY_DECISION: ${{ needs.source-and-target-safety.outputs.decision }}
@@ -2132,6 +2380,27 @@ jobs:
               DECISION="CONTINUE"
             else
               DECISION="NO-GO"
+            fi
+          elif [ "$STOP_AFTER" = "harness-dry-run" ]; then
+            if [ "$SAFETY" = "success" ] && { [ "$SEED" = "success" ] || [ "$SEED_RECON" = "success" ]; } && [ "$HARNESS" = "success" ]; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="PRESERVED_FOR_REMEDIATION"
+            fi
+          elif [ "$STOP_AFTER" = "auth-coverage" ]; then
+            if [ "$SAFETY" = "success" ] && [ "$HARNESS" = "success" ] && [ "$AUTH_COV" = "success" ]; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="PRESERVED_FOR_REMEDIATION"
+            fi
+          elif [ "$STOP_AFTER" = "controlled-ramps-business" ]; then
+            if [ "$SAFETY" = "success" ] && [ "$HARNESS" = "success" ] && [ "$AUTH_COV" = "success" ] && [ "$BIZ_RAMPS" = "success" ]; then
+              SCOPE_PASS="YES"
+              DECISION="CONTINUE"
+            else
+              DECISION="PRESERVED_FOR_REMEDIATION"
             fi
           elif [ "$STOP_AFTER" = "session-bootstrap" ]; then
             BOOTSTRAP_ONLY="YES"
