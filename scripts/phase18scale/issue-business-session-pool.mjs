@@ -225,24 +225,55 @@ async function main() {
     throw new Error(`PHASE18_PROVIDER_COVERAGE_FAIL covered=${providers} need=${PROVIDERS_TARGET}`);
   }
 
-  const outPath = path.join(OUT, "sessions-business-active-load.ndjson");
-  const ckPath = path.join(OUT, "sessions-business-active-load.checkpoint.ndjson");
+  const shardCount = Number(process.env.PHASE18_SESSION_SHARD_COUNT || 0);
+  const shardIndex = Number(process.env.PHASE18_SESSION_SHARD_INDEX || 0);
+  const sharded = shardCount > 0;
+  const shardSlice = sharded
+    ? picked.filter((_, idx) => idx % shardCount === shardIndex)
+    : picked;
+  if (sharded && shardSlice.length === 0) {
+    throw new Error(`PHASE18_SESSION_SHARD_EMPTY index=${shardIndex} count=${shardCount}`);
+  }
+
+  const outPath = sharded
+    ? path.join(OUT, `sessions-business-active-load.shard-${shardIndex}.ndjson`)
+    : path.join(OUT, "sessions-business-active-load.ndjson");
+  const ckPath = sharded
+    ? path.join(OUT, `sessions-business-active-load.shard-${shardIndex}.checkpoint.ndjson`)
+    : path.join(OUT, "sessions-business-active-load.checkpoint.ndjson");
+  const prior = await loadNdjson(ckPath);
   const issued = [];
+  const seen = new Set();
+  for (const row of prior) {
+    if (!row?.user_id || !row?.access_token || !row?.refresh_token) continue;
+    if (seen.has(row.user_id)) continue;
+    issued.push(row);
+    seen.add(row.user_id);
+  }
   const failSample = [];
   let cursor = 0;
   let failed = 0;
+  const todo = shardSlice.filter((r) => !seen.has(r.user_id));
 
   async function worker() {
-    while (cursor < picked.length) {
+    while (cursor < todo.length) {
       const i = cursor;
       cursor += 1;
-      const row = picked[i];
+      const row = todo[i];
       try {
         const packed = await issueOne(anon, row, password, attempts);
         issued.push(packed);
+        seen.add(packed.user_id);
         if (issued.length % 25 === 0) {
           fs.writeFileSync(ckPath, issued.map((r) => JSON.stringify(r)).join("\n") + "\n");
-          console.log(JSON.stringify({ issued: issued.length, target: picked.length, failed }));
+          console.log(
+            JSON.stringify({
+              shard: sharded ? shardIndex : null,
+              issued: issued.length,
+              target: shardSlice.length,
+              failed,
+            }),
+          );
         }
       } catch (e) {
         failed += 1;
@@ -256,15 +287,17 @@ async function main() {
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(concurrency, picked.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(todo.length, 1)) }, () => worker()));
   issued.sort((a, b) => a.index - b.index);
   fs.writeFileSync(outPath, issued.map((r) => JSON.stringify(r)).join("\n") + "\n");
   fs.writeFileSync(ckPath, issued.map((r) => JSON.stringify(r)).join("\n") + "\n");
-  // Also publish as sessions.ndjson + smoke-sized aliases for dry-run/ramps.
-  fs.copyFileSync(outPath, path.join(OUT, "sessions.ndjson"));
+  if (!sharded) {
+    fs.copyFileSync(outPath, path.join(OUT, "sessions.ndjson"));
+  }
 
   const companySet = new Set(issued.map((r) => r.company_id));
   const providerSet = new Set(issued.map((r) => r.provider_id));
+  const shardOk = !sharded || (failed === 0 && issued.length >= shardSlice.length);
   const report = {
     phase: "18SCALE",
     AUTH_USERS_EXIST: allRows.length,
@@ -272,7 +305,10 @@ async function main() {
     COMPANIES_COVERED_BY_ACTIVE_SESSION: `${companySet.size}/${COMPANIES_TARGET}`,
     PROVIDERS_COVERED_BY_ACTIVE_SESSION: `${providerSet.size}/${PROVIDERS_TARGET}`,
     ACTIVE_LOAD_SESSIONS: issued.length,
-    TARGET_ACTIVE_LOAD_SESSIONS: target,
+    TARGET_ACTIVE_LOAD_SESSIONS: sharded ? shardSlice.length : target,
+    SHARD_INDEX: sharded ? shardIndex : null,
+    SHARD_COUNT: sharded ? shardCount : null,
+    SHARD_TARGET: sharded ? shardSlice.length : null,
     SERVICE_ROLE_AS_EMPLOYEE: 0,
     SESSION_DUPLICATE_USER_IDS: issued.length - new Set(issued.map((r) => r.user_id)).size,
     SESSION_INVALID_COMPANY_RELATIONS: issued.filter((r) => !r.company_id).length,
@@ -280,16 +316,22 @@ async function main() {
     failed,
     fail_sample: failSample,
     HARNESS_DRY_RUN: dryRun,
-    AUTH_SESSION_COVERAGE:
-      issued.length >= minRequired &&
-      failed === 0 &&
-      (!requireFullCoverage ||
-        (companySet.size >= COMPANIES_TARGET && providerSet.size >= PROVIDERS_TARGET))
+    AUTH_SESSION_COVERAGE: sharded
+      ? shardOk
+        ? "PASS"
+        : "FAIL"
+      : issued.length >= minRequired &&
+          failed === 0 &&
+          (!requireFullCoverage ||
+            (companySet.size >= COMPANIES_TARGET && providerSet.size >= PROVIDERS_TARGET))
         ? "PASS"
         : "FAIL",
     stamped_at: new Date().toISOString(),
   };
-  fs.writeFileSync(path.join(OUT, "auth-session-coverage.json"), JSON.stringify(report, null, 2));
+  const reportPath = sharded
+    ? path.join(OUT, `auth-session-coverage.shard-${shardIndex}.json`)
+    : path.join(OUT, "auth-session-coverage.json");
+  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
   if (report.AUTH_SESSION_COVERAGE !== "PASS") {
     throw new Error(`PHASE18_AUTH_SESSION_COVERAGE_FAIL sessions=${issued.length} failed=${failed}`);

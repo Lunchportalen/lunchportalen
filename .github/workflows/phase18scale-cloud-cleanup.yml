@@ -183,7 +183,7 @@ jobs:
             "CLOUD_RESOURCE_DELETED": "$DELETED",
             "BILLING_STOPPED": "${BILLING_STOPPED:-UNKNOWN}",
             "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
-            "RESOURCE_LIFETIME_MAX": "120 HOURS",
+            "RESOURCE_LIFETIME_MAX": "192 HOURS",
             "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "PRODUCTION_MUTATIONS": 0,
             "deletion_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",

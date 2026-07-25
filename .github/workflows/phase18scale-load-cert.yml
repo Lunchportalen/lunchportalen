@@ -1088,7 +1088,8 @@ jobs:
           name: phase18-job-harness-dry-run
           path: docs/rc/phase18scale/evidence/
 
-  auth-coverage:
+  # Checkpoint A — durable Auth coverage (sharded issue + separate refresh/canary).
+  auth-session-issue-shard:
     needs: [harness-dry-run]
     if: |
       always() &&
@@ -1100,11 +1101,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: load-cert
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0, 1, 2, 3, 4]
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_ACTIVE_LOAD_SESSIONS: "5000"
       PHASE18_SESSION_CONCURRENCY: "2"
       PHASE18_SESSION_ATTEMPTS: "12"
+      PHASE18_SESSION_SHARD_COUNT: "5"
+      PHASE18_SESSION_SHARD_INDEX: ${{ matrix.shard }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1123,30 +1131,157 @@ jobs:
           path: docs/rc/phase18scale/evidence/
       - name: Bind run-date contract
         run: node scripts/phase18scale/bind-run-date-env.mjs
-      - name: Issue business active-load session pool (5000)
+      - name: Issue business session shard
         run: node scripts/phase18scale/issue-business-session-pool.mjs
-      - name: Auth refresh coverage proof (2000×2 + canary 500)
-        env:
-          PHASE18_AUTH_REFRESH_COVERAGE: "2000"
-          PHASE18_AUTH_REFRESH_CYCLES: "2"
-          PHASE18_AUTH_CANARY: "500"
-          PHASE18_REFRESH_MIN_INTERVAL_MS: "500"
-        run: node scripts/phase18scale/auth-refresh-coverage-proof.mjs
-      - name: Stamp auth coverage
+      - name: Stamp shard heartbeat
+        if: always()
         run: |
           set -euo pipefail
           mkdir -p docs/rc/phase18scale/evidence/ci-jobs
-          cat > docs/rc/phase18scale/evidence/ci-jobs/auth-session-coverage-certified.json <<EOF
+          cat > "docs/rc/phase18scale/evidence/ci-jobs/auth-session-issue-shard-${{ matrix.shard }}.json" <<EOF
           {
-            "job": "auth-coverage",
-            "AUTH_SESSION_COVERAGE_CERTIFIED": "YES",
-            "TARGET_ACTIVE_LOAD_SESSIONS": 5000,
-            "AUTH_REFRESH_COVERAGE": "2000x2",
-            "AUTH_CONCURRENT_CANARY": 500,
+            "job": "auth-session-issue-shard",
+            "shard": ${{ matrix.shard }},
             "exact_SHA": "${APP_SHA}",
+            "target_ref": "${{ inputs.project_ref }}",
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-auth-session-shard-${{ matrix.shard }}
+          path: docs/rc/phase18scale/evidence/
+
+  auth-session-merge:
+    needs: [auth-session-issue-shard]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'auth-coverage' ||
+        inputs.stop_after == 'controlled-ramps-business'
+      ) &&
+      needs.auth-session-issue-shard.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_ACTIVE_LOAD_SESSIONS: "5000"
+      PHASE18_ACTIVE_LOAD_SESSIONS_MIN: "2000"
+      PHASE18_SESSION_SHARD_COUNT: "5"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Download shard 0
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-session-shard-0
+          path: docs/rc/phase18scale/evidence/
+      - name: Download shard 1
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-session-shard-1
+          path: docs/rc/phase18scale/evidence/
+      - name: Download shard 2
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-session-shard-2
+          path: docs/rc/phase18scale/evidence/
+      - name: Download shard 3
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-session-shard-3
+          path: docs/rc/phase18scale/evidence/
+      - name: Download shard 4
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-session-shard-4
+          path: docs/rc/phase18scale/evidence/
+      - name: Merge business session shards
+        run: node scripts/phase18scale/merge-business-session-shards.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-auth-session-merge
+          path: docs/rc/phase18scale/evidence/
+
+  auth-coverage:
+    needs: [auth-session-merge]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'auth-coverage' ||
+        inputs.stop_after == 'controlled-ramps-business'
+      ) &&
+      needs.auth-session-merge.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_AUTH_REFRESH_COVERAGE: "2000"
+      PHASE18_AUTH_REFRESH_CYCLES: "2"
+      PHASE18_AUTH_CANARY: "500"
+      PHASE18_REFRESH_MIN_INTERVAL_MS: "500"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download merged active-load sessions
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-session-merge
+          path: docs/rc/phase18scale/evidence/
+      - name: Auth refresh coverage proof (2000×2 + canary 500)
+        run: node scripts/phase18scale/auth-refresh-coverage-proof.mjs
+      - name: Overlay rotated tokens into business pool
+        run: node scripts/phase18scale/merge-refreshed-into-business-pool.mjs
+      - name: Stamp auth coverage checkpoint A
+        run: |
+          set -euo pipefail
+          mkdir -p docs/rc/phase18scale/evidence/ci-jobs
+          node <<'NODE'
+          const fs = require("fs");
+          const cov = JSON.parse(fs.readFileSync("docs/rc/phase18scale/evidence/auth-session-coverage.json", "utf8"));
+          const proof = JSON.parse(fs.readFileSync("docs/rc/phase18scale/evidence/auth-refresh-coverage-proof.json", "utf8"));
+          const out = {
+            job: "auth-coverage",
+            checkpoint: "A",
+            AUTH_SESSION_COVERAGE_CERTIFIED:
+              cov.AUTH_SESSION_COVERAGE === "PASS" && proof.AUTH_REFRESH_PROOF === "PASS" ? "YES" : "NO",
+            TARGET_ACTIVE_LOAD_SESSIONS: cov.TARGET_ACTIVE_LOAD_SESSIONS,
+            ACTIVE_LOAD_SESSIONS: cov.ACTIVE_LOAD_SESSIONS,
+            COMPANIES_COVERED_BY_ACTIVE_SESSION: cov.COMPANIES_COVERED_BY_ACTIVE_SESSION,
+            PROVIDERS_COVERED_BY_ACTIVE_SESSION: cov.PROVIDERS_COVERED_BY_ACTIVE_SESSION,
+            AUTH_REFRESH_COVERAGE: "2000x2",
+            AUTH_REFRESH_CYCLE_ONE: proof.AUTH_REFRESH_CYCLE_ONE,
+            AUTH_REFRESH_CYCLE_TWO: proof.AUTH_REFRESH_CYCLE_TWO,
+            AUTH_CONCURRENT_CANARY: proof.AUTH_CONCURRENT_CANARY,
+            AUTH_CANARY_FINAL_SUCCESS: proof.AUTH_CANARY_FINAL_SUCCESS,
+            exact_SHA: process.env.APP_SHA,
+            stamped_at: new Date().toISOString(),
+          };
+          fs.writeFileSync(
+            "docs/rc/phase18scale/evidence/ci-jobs/auth-session-coverage-certified.json",
+            JSON.stringify(out, null, 2),
+          );
+          console.log(JSON.stringify(out, null, 2));
+          if (out.AUTH_SESSION_COVERAGE_CERTIFIED !== "YES") process.exit(2);
+          NODE
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -2338,6 +2473,8 @@ jobs:
         authenticated-session-pool-merged,
         merge-refresh-cycle-two,
         harness-dry-run,
+        auth-session-issue-shard,
+        auth-session-merge,
         auth-coverage,
         controlled-ramp-business,
         ramp-10000,
@@ -2360,6 +2497,8 @@ jobs:
           SESSION_MERGED: ${{ needs.authenticated-session-pool-merged.result }}
           REFRESH_PROOF: ${{ needs.merge-refresh-cycle-two.result }}
           HARNESS: ${{ needs.harness-dry-run.result }}
+          AUTH_ISSUE: ${{ needs.auth-session-issue-shard.result }}
+          AUTH_MERGE: ${{ needs.auth-session-merge.result }}
           AUTH_COV: ${{ needs.auth-coverage.result }}
           BIZ_RAMPS: ${{ needs.controlled-ramp-business.result }}
           RAMP10K: ${{ needs.ramp-10000.result }}
@@ -2389,14 +2528,14 @@ jobs:
               DECISION="PRESERVED_FOR_REMEDIATION"
             fi
           elif [ "$STOP_AFTER" = "auth-coverage" ]; then
-            if [ "$SAFETY" = "success" ] && [ "$HARNESS" = "success" ] && [ "$AUTH_COV" = "success" ]; then
+            if [ "$SAFETY" = "success" ] && [ "$HARNESS" = "success" ] && [ "$AUTH_ISSUE" = "success" ] && [ "$AUTH_MERGE" = "success" ] && [ "$AUTH_COV" = "success" ]; then
               SCOPE_PASS="YES"
               DECISION="CONTINUE"
             else
               DECISION="PRESERVED_FOR_REMEDIATION"
             fi
           elif [ "$STOP_AFTER" = "controlled-ramps-business" ]; then
-            if [ "$SAFETY" = "success" ] && [ "$HARNESS" = "success" ] && [ "$AUTH_COV" = "success" ] && [ "$BIZ_RAMPS" = "success" ]; then
+            if [ "$SAFETY" = "success" ] && [ "$HARNESS" = "success" ] && [ "$AUTH_ISSUE" = "success" ] && [ "$AUTH_MERGE" = "success" ] && [ "$AUTH_COV" = "success" ] && [ "$BIZ_RAMPS" = "success" ]; then
               SCOPE_PASS="YES"
               DECISION="CONTINUE"
             else
@@ -2528,7 +2667,7 @@ jobs:
             "CLOUD_RESOURCE_DELETED": "PENDING_DISPATCH",
             "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "NO",
             "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
-            "RESOURCE_LIFETIME_MAX": "120 HOURS",
+            "RESOURCE_LIFETIME_MAX": "192 HOURS",
             "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "disposition": "DELETE_ON_SUCCESS",
             "PRODUCTION_MUTATIONS": 0,
@@ -2550,7 +2689,7 @@ jobs:
             "CLOUD_RESOURCE_DELETED": "NO",
             "CLOUD_RESOURCE_PRESERVED_FOR_REMEDIATION": "YES",
             "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
-            "RESOURCE_LIFETIME_MAX": "120 HOURS",
+            "RESOURCE_LIFETIME_MAX": "192 HOURS",
             "TOTAL_APPROVED_COST_MAX": "USD 10.00",
             "disposition": "PRESERVED_FOR_REMEDIATION",
             "stop_after": "${STOP_AFTER:-}",
