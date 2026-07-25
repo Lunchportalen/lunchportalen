@@ -1,0 +1,264 @@
+{
+  "phase": "18SCALE",
+  "inventory_stamped_at": "2026-07-25T12:22:00.000Z",
+  "PHASE18_CURRENT_SHA": "35af77da3b41077c7c915024327702c2ec33e48e",
+  "PHASE18_REMOTE_SHA": "35af77da3b41077c7c915024327702c2ec33e48e",
+  "LOCAL_REMOTE_SHA_MATCH": "YES",
+  "LATEST_PHASE18_SUCCESS_RUN": 30152072255,
+  "LATEST_PHASE18_SUCCESS_RUN_NUMBER": 39,
+  "LATEST_PHASE18_SUCCESS_SHA": "35af77da3b41077c7c915024327702c2ec33e48e",
+  "LATEST_PHASE18_SUCCESS_STOP_AFTER": "harness-dry-run",
+  "PROJECT_REF": "arstaxredytrjcmqcwhh",
+  "PROJECT_STATUS": "ACTIVE_HEALTHY",
+  "PROJECT_CREATED_AT": "2026-07-20T20:15:41.536915Z",
+  "PROJECT_EXPIRATION_AT": "2026-07-25T20:15:41.536915Z",
+  "PROJECT_REMAINING_HOURS_AT_INVENTORY": 7.91,
+  "ESTIMATED_TOTAL_COST_USD": 10,
+  "TOTAL_APPROVED_COST_MAX_USD": 10,
+  "FORCED_CLEANUP_STATUS": "ARMED_PRESERVED_FOR_REMEDIATION",
+  "CLOUD_RESOURCE_DELETED": "NO",
+  "RESOURCE_WINDOW_SUFFICIENT": "NO",
+  "RAW_REMAINING_CERT_BUDGET_HOURS": 31.9,
+  "REQUIRED_WITH_30PCT_BUFFER_HOURS": 41.47,
+  "SHORTFALL_HOURS": 33.56,
+  "GLOBAL_MENU_UNIVERSES_TECHNICAL_PASS": "YES",
+  "LOCAL_CORRECTNESS_CERTIFIED": "YES",
+  "GLOBAL_SCALE_CERTIFIED": "NO",
+  "AUTH_SESSION_COVERAGE_CERTIFIED": "NO",
+  "BUSINESS_OPERATION_SCALE_CERTIFIED": "NO",
+  "CLOUD_RAMPS_COMPLETE": "NO",
+  "CUTOFF_FREEZE_CERTIFIED": "NO",
+  "FINANCIAL_LOAD_RECONCILIATION_CERTIFIED": "NO",
+  "PRODUCTION_DEPLOYMENT": "NOT APPROVED",
+  "NATIVE_CULINARY_APPROVED": "0/21",
+  "LOCALE_NATIVE_APPROVED": "0/24",
+  "NOTE": "Skipped jobs are not PASS. Stale repo-copied wave JSON inside artifacts is not cloud-executed proof for this SHA. Run #39 proves harness-dry-run only.",
+  "gates": {
+    "production_safety": {
+      "status": "PASS_WITH_MEASURED_EVIDENCE",
+      "evidence_run": 30152072255,
+      "notes": "source-and-target-safety CONTINUE; target arstaxredytrjcmqcwhh; forbidden prod/staging refs enforced"
+    },
+    "schema_and_release_parity": {
+      "status": "PASS_WITH_MEASURED_EVIDENCE",
+      "evidence_run": 30152072255
+    },
+    "observability_check_job": {
+      "status": "PASS_WITH_MEASURED_EVIDENCE",
+      "evidence_run": 30152072255,
+      "notes": "Preflight observability job only; not CLOUD_OBSERVABILITY_COMPLETE for 100k/50k waves"
+    },
+    "synthetic_seed_reconcile": {
+      "status": "PASS_WITH_MEASURED_EVIDENCE",
+      "evidence_run": 30152072255,
+      "notes": "skip_synthetic_seed=YES; reconcile success"
+    },
+    "harness_contract_proof": {
+      "status": "PASS_WITH_MEASURED_EVIDENCE",
+      "evidence_run": 30152072255,
+      "measured": {
+        "HARNESS_CONTRACT_TESTS": "PASS",
+        "HARNESS_DRY_RUN": "PASS",
+        "SET_OK": 10,
+        "CANCEL_OK": 10,
+        "PERSISTED_MISSING": 0,
+        "PERSISTED_DUPLICATES": 0,
+        "UNKNOWN_OUTCOMES": 0,
+        "PRODUCTION_DIFFERENCE": 0,
+        "FINANCIAL_DIFFERENCE": 0,
+        "FINAL_REPORT_FALSE_FAILURES": 0,
+        "FINAL_REPORT_RESPECTS_STOP_AFTER": "YES"
+      }
+    },
+    "auth_user_population": {
+      "status": "PASS_WITH_MEASURED_EVIDENCE",
+      "evidence_run": 30152072255,
+      "measured": {
+        "AUTH_USERS_EXIST": 100000,
+        "EMPLOYEE_PROFILES_EXIST": 100000
+      },
+      "notes": "Population verified during harness dry-run auth coverage stamp"
+    },
+    "active_session_coverage_5k": {
+      "status": "NOT_RUN",
+      "evidence_run": 30152072255,
+      "measured": {
+        "ACTIVE_LOAD_SESSIONS": 10,
+        "COMPANIES_COVERED_BY_ACTIVE_SESSION": "10/2000",
+        "PROVIDERS_COVERED_BY_ACTIVE_SESSION": "10/1000",
+        "TARGET_ACTIVE_LOAD_SESSIONS": 5000
+      },
+      "notes": "Dry-run issued 10 sessions only; auth-coverage job skipped by stop_after"
+    },
+    "auth_refresh_proof_2000x2": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255,
+      "notes": "auth-coverage job skipped; prior 10k×2 refresh runs cancelled/failed and are not accepted as this gate"
+    },
+    "auth_concurrent_canary_500": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "smoke_100": {
+      "status": "STALE",
+      "evidence_run": 29919558749,
+      "evidence_sha": "a82f5338c131c19b0e9fc7bcfb8cbf7da6ec93d8",
+      "notes": "Historical PASS on older engine SHA; not re-proven on 35af77da; run #39 skipped smoke-100 by design"
+    },
+    "smoke_500": {
+      "status": "SKIPPED",
+      "notes": "Skipped in run #26 and run #39"
+    },
+    "ramp_100_logical": {
+      "status": "NOT_RUN",
+      "notes": "controlled-ramp-business skipped in run #39"
+    },
+    "ramp_500_logical": {
+      "status": "NOT_RUN"
+    },
+    "ramp_1000_logical": {
+      "status": "NOT_RUN"
+    },
+    "ramp_5000_logical": {
+      "status": "NOT_RUN"
+    },
+    "ramp_10000_logical": {
+      "status": "NOT_RUN"
+    },
+    "final_controlled_ramp_reconciliation": {
+      "status": "NOT_RUN"
+    },
+    "baseline_60m": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "orders_100k_30m": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "orders_100k_15m": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "cancels_50k_10m": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "cancels_50k_5m": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "cancels_50k_60s_stress": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "cutoff_geographic": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "cutoff_compressed": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "hot_provider": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "hot_company": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "production_freeze": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "financial_reconciliation_load": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255,
+      "notes": "Per-wave financial difference=0 proven only for harness dry-run 10/10; full load reconciliation NOT_RUN"
+    },
+    "queue_backpressure": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "failure_injection": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "regional_latency": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "eight_hour_soak": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "breakpoint_and_safe_ceiling": {
+      "status": "SKIPPED",
+      "evidence_run": 30152072255
+    },
+    "cloud_observability_complete": {
+      "status": "INSUFFICIENT_EVIDENCE",
+      "notes": "Observability preflight job passed; timestamp-aligned app/db/queue metrics for scale waves not collected"
+    },
+    "cleanup_proof": {
+      "status": "PASS_WITH_MEASURED_EVIDENCE",
+      "evidence_run": 30152072255,
+      "measured": {
+        "CLOUD_RESOURCE_DELETED": "NO",
+        "disposition": "PRESERVED_FOR_REMEDIATION",
+        "FORCED_EXPIRATION_CLEANUP_ARMED": "YES",
+        "PRODUCTION_MUTATIONS": 0
+      },
+      "notes": "Preserve path verified; deletion intentionally deferred until final completion/abort/expire"
+    },
+    "stale_repo_wave_json_in_artifacts": {
+      "status": "INSUFFICIENT_EVIDENCE",
+      "notes": "http-wave-*-c2-ramp*.json present under evidence folders are not treated as PASS for current SHA; not executed by run #39"
+    }
+  },
+  "owner_resource_request": {
+    "classification": "OWNER_RESOURCE_APPROVAL_REQUIRED",
+    "service": "Supabase",
+    "resource_class": "Isolated non-production project (organization default) arstaxredytrjcmqcwhh eu-west-1",
+    "do_not_create_another_project": true,
+    "current_lifetime_max_hours": 120,
+    "current_expiration_at": "2026-07-25T20:15:41.536915Z",
+    "remaining_hours_at_inventory": 7.91,
+    "required_additional_lifetime_hours_min": 42,
+    "recommended_additional_lifetime_hours": 72,
+    "recommended_new_expiration_at": "2026-07-28T20:15:41.536915Z",
+    "accumulated_estimated_cost_usd": 10,
+    "approved_cost_ceiling_usd": 10,
+    "additional_cost_usd_if_same_monthly_micro_no_upgrade": 0,
+    "additional_cost_notes": "Stay on existing project without compute/disk upgrade. Regional multi-origin runners and any paid GHA/self-hosted capacity are separate and must be itemized if needed after central gates.",
+    "blocked_gates": [
+      "active_session_coverage_5k",
+      "auth_refresh_proof_2000x2",
+      "auth_concurrent_canary_500",
+      "ramp_100_logical",
+      "ramp_500_logical",
+      "ramp_1000_logical",
+      "ramp_5000_logical",
+      "ramp_10000_logical",
+      "baseline_60m",
+      "orders_100k_30m",
+      "orders_100k_15m",
+      "cancels_50k_10m",
+      "cancels_50k_5m",
+      "cancels_50k_60s_stress",
+      "cutoff_geographic",
+      "cutoff_compressed",
+      "hot_provider",
+      "hot_company",
+      "production_freeze",
+      "financial_reconciliation_load",
+      "queue_backpressure",
+      "failure_injection",
+      "regional_latency",
+      "eight_hour_soak",
+      "breakpoint_and_safe_ceiling",
+      "GLOBAL_SCALE_CERTIFIED"
+    ]
+  }
+}

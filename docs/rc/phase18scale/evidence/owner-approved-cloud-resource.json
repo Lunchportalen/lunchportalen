@@ -127,5 +127,17 @@
     "AUTH_CONCURRENT_CANARY": 500,
     "LOGICAL_RAMPS": [100, 500, 1000, 5000, 10000],
     "NOTE": "Logical ops may reuse sessions; uniqueness via logical_operation_id/idempotency_key"
+  },
+  "gate_inventory_path": "docs/rc/phase18scale/PHASE18-CURRENT-GATE-INVENTORY.json",
+  "harness_dry_run_pass_run_id": 30152072255,
+  "harness_dry_run_pass_run_number": 39,
+  "RESOURCE_WINDOW_SUFFICIENT": "NO",
+  "OWNER_RESOURCE_APPROVAL_REQUIRED_AT": "2026-07-25T12:22:00.000Z",
+  "OWNER_RESOURCE_REQUEST": {
+    "required_additional_lifetime_hours_min": 42,
+    "recommended_additional_lifetime_hours": 72,
+    "recommended_new_expiration_at": "2026-07-28T20:15:41.536915Z",
+    "additional_cost_usd_if_same_monthly_micro_no_upgrade": 0,
+    "blocked_reason": "Remaining project lifetime cannot fit remaining certification budget with 30% buffer; eight-hour soak alone exceeds remaining window"
   }
 }
