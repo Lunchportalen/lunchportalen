@@ -140,17 +140,32 @@ async function ensureOneMenu(admin, co, day, pkg, categoryId, attempts = 4) {
         last = "missing_product";
         continue;
       }
-      await admin.from("menu_service_day_items").delete().eq("menu_service_day_id", msd.id);
-      const { error: msdiErr } = await admin.from("menu_service_day_items").insert({
-        menu_service_day_id: msd.id,
-        product_id: productId,
-        product_name_snapshot: "Varmrett",
-        unit_name_snapshot: "porsjon",
-        offered_price_cents_ex_vat: pkg === "BASIS" ? 9000 : pkg === "LUXUS" ? 13000 : 17000,
-        vat_rate_snapshot: 0.15,
-        sort_order: 0,
-      });
+      const price = pkg === "BASIS" ? 9000 : pkg === "LUXUS" ? 13000 : 17000;
+      // Upsert avoids flaky delete+insert races on
+      // menu_service_day_items_menu_service_day_id_product_id_key (run #42: 10 fails).
+      const { error: msdiErr } = await admin.from("menu_service_day_items").upsert(
+        {
+          menu_service_day_id: msd.id,
+          product_id: productId,
+          product_name_snapshot: "Varmrett",
+          unit_name_snapshot: "porsjon",
+          offered_price_cents_ex_vat: price,
+          vat_rate_snapshot: 0.15,
+          sort_order: 0,
+        },
+        { onConflict: "menu_service_day_id,product_id" },
+      );
       if (msdiErr) {
+        // Idempotent success if the unique row already exists with this product.
+        if (/duplicate key|unique constraint/i.test(msdiErr.message || "")) {
+          const { data: existing } = await admin
+            .from("menu_service_day_items")
+            .select("id")
+            .eq("menu_service_day_id", msd.id)
+            .eq("product_id", productId)
+            .maybeSingle();
+          if (existing?.id) return { ok: true };
+        }
         last = `msdi:${msdiErr.message}`;
         await sleep(200 * attempt);
         continue;
