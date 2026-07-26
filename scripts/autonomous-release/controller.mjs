@@ -66,13 +66,16 @@ function fingerprint(parts) {
 
 function classifyFromText(blob) {
   const s = String(blob || "");
-  if (/SECURITY|secret.?expos|critical finding/i.test(s)) return "SECURITY_INCIDENT";
+  // Pooler / network markers must win before broad security keyword scans (logs often mention "security" tooling).
   if (
     /PHASE18_POOLER_AUTH_PROBE_FAILED|phase18_pooler_probe_retry|timeout expired|ECONNRESET|ECONNREFUSED|pooler/i.test(
       s,
     )
   ) {
     return "NETWORK_OR_POOLER_ERROR";
+  }
+  if (/\bSECURITY_INCIDENT\b|secret.?expos(?:ed|ure)|critical security finding/i.test(s)) {
+    return "SECURITY_INCIDENT";
   }
   if (/rate limit|AUTH_RATE_LIMIT|429/i.test(s)) return "RATE_LIMIT_ERROR";
   if (/The operation was canceled|timeout-minutes|WORKFLOW_TIMEOUT/i.test(s)) return "WORKFLOW_TIMEOUT";
