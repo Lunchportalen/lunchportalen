@@ -76,12 +76,12 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          git config user.name "lunchportalen-autonomous-controller"
-          git config user.email "261239180+Lunchportalen@users.noreply.github.com"
           WORK="$(pwd)"
           TMP="$(mktemp -d)"
           cd "$TMP"
           git init -b "$STATE_BRANCH"
+          git config user.name "lunchportalen-autonomous-controller"
+          git config user.email "261239180+Lunchportalen@users.noreply.github.com"
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
           git fetch origin "$STATE_BRANCH" || true
           if git show-ref --verify --quiet "refs/remotes/origin/$STATE_BRANCH"; then
