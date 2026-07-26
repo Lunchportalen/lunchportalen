@@ -95,7 +95,7 @@ Classification: PASS | FAIL | NOT_RUN | STALE | OWNER_APPROVAL_REQUIRED
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Checkpoint A Auth coverage | FAIL | Run 30175133631 — `auth-session-issue-shard (3)` `PHASE18_POOLER_AUTH_PROBE_FAILED: timeout expired` (NETWORK_OR_POOLER_ERROR). Menus/harness PASS. Fix: retry transients; rotate only on auth failure. |
+| Checkpoint A Auth coverage | FAIL | Run 30190595423 — `auth-coverage` `PHASE18_AUTH_REFRESH_FAIL cycle=1` after 191/2000 under concurrency=4 (RATE_LIMIT_ERROR / AUTH_OR_SESSION_ERROR). Prior 30181676498 WORKFLOW_TIMEOUT at 120m. Fix: 4×500 shards ≤90m, sequential per shard, rate-limit pause+retry, merge+canary. |
 | Controlled ramps 100–10k | NOT_RUN | After Auth coverage |
 | GLOBAL_SCALE_CERTIFIED | NOT_RUN | Remaining hard gates |
 

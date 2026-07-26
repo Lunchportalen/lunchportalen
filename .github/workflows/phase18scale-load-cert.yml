@@ -1248,7 +1248,9 @@ jobs:
           name: phase18-job-auth-session-merge
           path: docs/rc/phase18scale/evidence/
 
-  auth-coverage:
+  # Checkpoint A refresh: 4×500 shards (≤90m each) then merge+canary.
+  # Run 30181676498 timed out at 120m monolithic; 30190595423 failed under concurrency=4 (rate limit).
+  auth-refresh-coverage-shard:
     needs: [auth-session-merge]
     if: |
       always() &&
@@ -1258,16 +1260,22 @@ jobs:
       ) &&
       needs.auth-session-merge.result == 'success'
     runs-on: ubuntu-latest
-    # Run 30181676498: job cancelled at exactly 120m during cycle2 (1625/2000, 0 failures).
-    timeout-minutes: 240
+    timeout-minutes: 90
     environment: load-cert
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard: [0, 1, 2, 3]
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_AUTH_MODE: "shard"
+      PHASE18_AUTH_SHARD: ${{ matrix.shard }}
+      PHASE18_AUTH_SHARD_COUNT: "4"
       PHASE18_AUTH_REFRESH_COVERAGE: "2000"
       PHASE18_AUTH_REFRESH_CYCLES: "2"
-      PHASE18_AUTH_CANARY: "500"
       PHASE18_REFRESH_MIN_INTERVAL_MS: "500"
-      PHASE18_AUTH_REFRESH_CONCURRENCY: "4"
+      PHASE18_REFRESH_ATTEMPTS: "10"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1284,7 +1292,60 @@ jobs:
         with:
           name: phase18-job-auth-session-merge
           path: docs/rc/phase18scale/evidence/
-      - name: Auth refresh coverage proof (2000×2 + canary 500)
+      - name: Auth refresh coverage shard (500×2)
+        run: node scripts/phase18scale/auth-refresh-coverage-proof.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-job-auth-refresh-coverage-shard-${{ matrix.shard }}
+          path: |
+            docs/rc/phase18scale/evidence/sessions-auth-refresh-coverage.shard-${{ matrix.shard }}.ndjson
+            docs/rc/phase18scale/evidence/sessions-auth-refresh-coverage.shard-${{ matrix.shard }}.checkpoint.ndjson
+            docs/rc/phase18scale/evidence/auth-refresh-coverage-proof.shard-${{ matrix.shard }}.json
+          if-no-files-found: warn
+
+  auth-coverage:
+    needs: [auth-refresh-coverage-shard]
+    if: |
+      always() &&
+      (
+        inputs.stop_after == 'auth-coverage' ||
+        inputs.stop_after == 'controlled-ramps-business'
+      ) &&
+      needs.auth-refresh-coverage-shard.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: load-cert
+    env:
+      PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+      PHASE18_AUTH_MODE: "merge"
+      PHASE18_AUTH_SHARD_COUNT: "4"
+      PHASE18_AUTH_REFRESH_COVERAGE: "2000"
+      PHASE18_AUTH_CANARY: "500"
+      PHASE18_REFRESH_MIN_INTERVAL_MS: "500"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_SHA }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Resolve isolated keys
+        run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
+      - name: Download auth-session-merge coverage stamp
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-auth-session-merge
+          path: docs/rc/phase18scale/evidence/
+      - name: Download all refresh coverage shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phase18-job-auth-refresh-coverage-shard-*
+          path: docs/rc/phase18scale/evidence/
+          merge-multiple: true
+      - name: Merge shards + Auth canary 500
         run: node scripts/phase18scale/auth-refresh-coverage-proof.mjs
       - name: Overlay rotated tokens into business pool
         run: node scripts/phase18scale/merge-refreshed-into-business-pool.mjs
@@ -1306,6 +1367,7 @@ jobs:
             COMPANIES_COVERED_BY_ACTIVE_SESSION: cov.COMPANIES_COVERED_BY_ACTIVE_SESSION,
             PROVIDERS_COVERED_BY_ACTIVE_SESSION: cov.PROVIDERS_COVERED_BY_ACTIVE_SESSION,
             AUTH_REFRESH_COVERAGE: "2000x2",
+            AUTH_REFRESH_SHARDS: 4,
             AUTH_REFRESH_CYCLE_ONE: proof.AUTH_REFRESH_CYCLE_ONE,
             AUTH_REFRESH_CYCLE_TWO: proof.AUTH_REFRESH_CYCLE_TWO,
             AUTH_CONCURRENT_CANARY: proof.AUTH_CONCURRENT_CANARY,
@@ -2513,6 +2575,7 @@ jobs:
         harness-dry-run,
         auth-session-issue-shard,
         auth-session-merge,
+        auth-refresh-coverage-shard,
         auth-coverage,
         controlled-ramp-business,
         ramp-10000,
