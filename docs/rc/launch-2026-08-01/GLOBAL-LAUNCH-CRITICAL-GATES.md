@@ -1,10 +1,13 @@
 # Global launch-critical gates — MULTI_GLOBAL 2026-08-01
 
-Stamped: 2026-07-26T00:30:00Z  
+Stamped: 2026-07-26T00:55:00Z  
 Release branch: `release/global-menu-universes-21`  
-Candidate release SHA: `ed01ac63de1add0022ac5ad6c57645fe07bdf4ab`  
+Candidate release SHA: `c4fd2edb2159165647ef2b95f9e070e33641b2fe`  
 Isolated scale project: `arstaxredytrjcmqcwhh` (eu-west-1)  
-Production refs forbidden in Phase 18: `hkpokyapzarefrgqzkos`, `uigxsboqeruxflgzqztl`
+Production refs forbidden in Phase 18: `hkpokyapzarefrgqzkos`, `uigxsboqeruxflgzqztl`  
+Shared staging project `uigxsboqeruxflgzqztl`: **GONE** (Management API NotFound)  
+Production auto-deploy lock: **ACTIVE** (Vercel `commandForIgnoringBuildStep`)  
+Vercel CLI credentials in agent environment: **MISSING** → production exact-SHA deploy needs `OWNER_AUTHENTICATION_REQUIRED`
 
 Owner decisions recorded in prompt (2026-07-26):
 - `MULTI_GLOBAL_RELEASE_DATE = 2026-08-01`
