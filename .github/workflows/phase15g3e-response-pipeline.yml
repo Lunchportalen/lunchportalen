@@ -126,24 +126,126 @@ jobs:
           git commit -m "chore(rc): phase15g3e durable pipeline state run ${GITHUB_RUN_ID}"
           git push -u origin "HEAD:$PIPELINE_STATE_BRANCH"
 
-      - name: Owner material notification issue
+      - name: Upsert canonical owner-action Issue (max one)
         if: steps.pipeline.outputs.notify_owner == 'true'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
+            const crypto = require('crypto');
             const bodyPath = 'docs/rc/PHASE15G3E-OWNER-MATERIAL-NOTIFICATION.md';
-            const body = fs.existsSync(bodyPath)
+            const canonicalPath = 'docs/rc/phase15g3e/OWNER-ACTIONS-CANONICAL.md';
+            const material = fs.existsSync(bodyPath)
               ? fs.readFileSync(bodyPath, 'utf8')
               : 'Material owner event — see pipeline artifacts.';
-            const title = `[15G.3E] Owner action required — run ${process.env.GITHUB_RUN_ID}`;
-            await github.rest.issues.create({
+            const canonical = fs.existsSync(canonicalPath)
+              ? fs.readFileSync(canonicalPath, 'utf8')
+              : '';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = '[15G.3E] Owner action required';
+            const fingerprint = crypto
+              .createHash('sha256')
+              .update(material.replace(/Run:\s*\d+/g, 'Run: CANONICAL').replace(/At:\s*\S+/g, 'At: CANONICAL'))
+              .digest('hex')
+              .slice(0, 16);
+            const body =
+              `${canonical.trim()}\n\n---\n\n## Latest material notification\n\n` +
+              `${material.trim()}\n\n` +
+              `CONTENT_FINGERPRINT: ${fingerprint}\n` +
+              `Latest workflow run: ${runUrl}\n` +
+              `Updated at: ${new Date().toISOString()}\n`;
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'owner-action-required',
+              per_page: 100,
+            });
+            const matches = open.filter((i) =>
+              !i.pull_request && (
+                i.title === title ||
+                /^\[15G\.3E\] Owner action required/.test(i.title || '')
+              )
+            );
+            matches.sort((a, b) => a.number - b.number);
+            const primary = matches[0];
+            for (const dup of matches.slice(1)) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: dup.number,
+                state: 'closed',
+                state_reason: 'not_planned',
+              });
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: dup.number,
+                body:
+                  'Closed as duplicate or superseded. The current owner-action status is maintained in docs/rc/phase15g3e/OWNER-ACTIONS-CANONICAL.md and canonical Issue #' +
+                  (primary ? primary.number : 'pending') +
+                  '. This Issue does not represent a separate product defect.',
+              });
+            }
+            if (primary) {
+              const prev = String(primary.body || '');
+              const prevFp = (prev.match(/CONTENT_FINGERPRINT:\s*([a-f0-9]+)/i) || [])[1];
+              if (prevFp === fingerprint) {
+                core.info(`Canonical Issue #${primary.number} unchanged fingerprint=${fingerprint}; no update`);
+                return;
+              }
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: primary.number,
+                title,
+                body,
+                labels: ['phase15g3e', 'owner-action-required'],
+              });
+              core.info(`Updated canonical Issue #${primary.number}`);
+              return;
+            }
+            const created = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title,
-              body: body + `\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n`,
+              body,
               labels: ['phase15g3e', 'owner-action-required'],
             });
+            core.info(`Created canonical Issue #${created.data.number}`);
+
+      - name: Close canonical owner-action Issue when resolved
+        if: steps.pipeline.outputs.notify_owner != 'true' && steps.pipeline.outputs.decision == 'DURABLE_PIPELINE_ACTIVE'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Only close when pipeline reports no material owner dependency this run.
+            const title = '[15G.3E] Owner action required';
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'owner-action-required',
+              per_page: 100,
+            });
+            for (const issue of open) {
+              if (issue.pull_request) continue;
+              if (issue.title !== title && !/^\[15G\.3E\] Owner action required/.test(issue.title || '')) continue;
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `No material owner action in run ${context.runId} (decision=DURABLE_PIPELINE_ACTIVE). Closing canonical owner-action Issue.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+            }
 
       - name: Upload run evidence (no secrets)
         if: always()
