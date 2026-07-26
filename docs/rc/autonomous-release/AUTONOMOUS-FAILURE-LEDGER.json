@@ -11,7 +11,18 @@
       "error": "PHASE18_POOLER_AUTH_PROBE_FAILED: timeout expired",
       "fingerprint": "fddb814701650929",
       "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-07-26T17:06:35.937Z",
+      "run_id": 30198105720,
+      "sha": "d7c4442e774a8b0e884ccc2b996aaa99ddbbb601",
+      "job": "schema-and-release-parity",
+      "step": "Resolve keys",
+      "class": "SECURITY_INCIDENT",
+      "error": "PHASE18_POOLER_AUTH_PROBE_FAILED: timeout expired",
+      "fingerprint": "fddb814701650929",
+      "action": "skip_duplicate_autofix"
     }
   ],
-  "updated_at": "2026-07-26T17:05:54.118Z"
+  "updated_at": "2026-07-26T17:06:37.160Z"
 }

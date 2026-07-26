@@ -1,7 +1,7 @@
 {
   "controller": "phase18-autonomous-global-release",
   "version": 1,
-  "state": "FAILED_REQUIRES_AUTOFIX",
+  "state": "AUTH_COVERAGE",
   "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
   "release_sha": "6d2617a1f2a97ebc7fafbe1953c2efaa992cf9aa",
@@ -22,11 +22,11 @@
     "global_staging": "PENDING"
   },
   "counters": {
-    "controller_ticks": 1,
+    "controller_ticks": 2,
     "autofix_dispatches": 1,
-    "phase18_dispatches": 0,
+    "phase18_dispatches": 1,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-26T17:05:48.396Z"
+  "updated_at": "2026-07-26T17:06:32.653Z"
 }
