@@ -20,6 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { isAuthFailure, isTransientPoolerError } from "./lib/pooler-auth-errors.mjs";
 
 const PROD = "hkpokyapzarefrgqzkos";
 const STAGING = "uigxsboqeruxflgzqztl";
@@ -78,7 +79,8 @@ async function probePoolerAuth(databaseUrl) {
   const client = new pg.Client({
     connectionString: parsed.toString(),
     ssl: { rejectUnauthorized: true, ca, minVersion: "TLSv1.2" },
-    connectionTimeoutMillis: 10000,
+    // Concurrent auth shards contend for pooler; 10s was flaky (run #43 shard 3).
+    connectionTimeoutMillis: 30000,
   });
   try {
     await client.connect();
@@ -94,6 +96,29 @@ async function probePoolerAuth(databaseUrl) {
       /* ignore */
     }
   }
+}
+
+async function probePoolerAuthWithRetries(databaseUrl, { attempts = 6, label = "probe" } = {}) {
+  let last = { ok: false, error: "not_probed" };
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    last = await probePoolerAuth(databaseUrl);
+    if (last.ok) return last;
+    if (isAuthFailure(last.error)) return last;
+    if (!isTransientPoolerError(last.error) && attempt >= 2) return last;
+    console.error(
+      JSON.stringify({
+        phase18_pooler_probe_retry: {
+          label,
+          attempt,
+          attempts,
+          error: last.error,
+          transient: isTransientPoolerError(last.error),
+        },
+      }),
+    );
+    await new Promise((r) => setTimeout(r, 1000 * attempt));
+  }
+  return last;
 }
 
 async function rotateDatabasePassword(password) {
@@ -172,8 +197,17 @@ const forceRotate = ["1", "true", "yes"].includes(
   String(process.env.PHASE18_ROTATE_DB_PASSWORD || "").toLowerCase(),
 );
 
-let probe = await probePoolerAuth(databaseUrl);
-if (!probe.ok || forceRotate) {
+// Retry transient pooler timeouts before any Management API password rotate.
+// Concurrent auth-session-issue shards (run #43 shard 3) hit "timeout expired";
+// rotating on timeout races other shards and worsens pooler auth.
+let probe = await probePoolerAuthWithRetries(databaseUrl, {
+  attempts: 6,
+  label: "initial",
+});
+const shouldRotate =
+  forceRotate || (!probe.ok && isAuthFailure(probe.error));
+
+if (shouldRotate) {
   const pwRes = await rotateDatabasePassword(dbPassword);
   if (!pwRes.ok) {
     console.error(`database/password HTTP ${pwRes.status}`);
@@ -182,12 +216,10 @@ if (!probe.ok || forceRotate) {
   passwordAction = forceRotate ? "forced_rotate" : "rotated_after_auth_fail";
   databaseUrl = buildDatabaseUrl(user, dbPassword, poolerHost);
 
-  probe = { ok: false, error: "not_probed" };
-  for (let attempt = 1; attempt <= 8; attempt++) {
-    await new Promise((r) => setTimeout(r, 1500 * attempt));
-    probe = await probePoolerAuth(databaseUrl);
-    if (probe.ok) break;
-  }
+  probe = await probePoolerAuthWithRetries(databaseUrl, {
+    attempts: 8,
+    label: "post_rotate",
+  });
 }
 
 if (!probe.ok) {
