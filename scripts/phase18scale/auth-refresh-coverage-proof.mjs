@@ -172,8 +172,8 @@ async function runCycle(anon, admin, rows, cycle, opts) {
     let result = await refreshOne(anon, row, opts.attempts, opts.minIntervalMs);
     if (!result.ok && result.class === "AUTH_RATE_LIMIT") {
       rateLimitPauses += 1;
-      console.log(JSON.stringify({ cycle, index: row.index, rate_limit_pause_ms: 90000, rateLimitPauses }));
-      await sleep(90000);
+      console.log(JSON.stringify({ cycle, index: row.index, rate_limit_pause_ms: 120000, rateLimitPauses }));
+      await sleep(120000);
       continue; // retry same index
     }
     if (!result.ok && result.reauth) {
