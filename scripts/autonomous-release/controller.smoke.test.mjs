@@ -16,6 +16,21 @@ assert.equal(
 );
 assert.equal(classifyFromText("PHASE18_AUTH_REFRESH_FAIL cycle=1"), "AUTH_OR_SESSION_ERROR");
 assert.equal(classifyFromText("AUTH_RATE_LIMIT pause"), "RATE_LIMIT_ERROR");
+assert.equal(
+  classifyFromText("PHASE18_ALLOW_PROVISION: YES\n##[error]Process completed with exit code 2."),
+  "TEST_HARNESS_ERROR",
+);
+{
+  const blob = [
+    "PHASE18_ALLOW_PROVISION: YES",
+    ' {"phase18_pooler_probe_retry":{"error":"timeout expired"}}',
+    "PHASE18_POOLER_AUTH_PROBE_FAILED: timeout expired",
+    "##[error]Process completed with exit code 2.",
+  ].join("\n");
+  const m = blob.match(/PHASE18_[A-Z0-9_]*FAIL[A-Z0-9_]*[^\n]*/i);
+  assert.ok(m && /POOLER_AUTH_PROBE_FAILED/.test(m[0]));
+  assert.equal(classifyFromText(m[0]), "NETWORK_OR_POOLER_ERROR");
+}
 
 const require = createRequire(import.meta.url);
 assert.ok(require("fs").existsSync(new URL("../../.github/workflows/phase18-autonomous-controller.yml", import.meta.url)));
