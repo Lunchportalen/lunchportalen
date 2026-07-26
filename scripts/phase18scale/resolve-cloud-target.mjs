@@ -79,8 +79,8 @@ async function probePoolerAuth(databaseUrl) {
   const client = new pg.Client({
     connectionString: parsed.toString(),
     ssl: { rejectUnauthorized: true, ca, minVersion: "TLSv1.2" },
-    // Concurrent auth shards contend for pooler; 10s was flaky (run #43 shard 3).
-    connectionTimeoutMillis: 30000,
+    // Concurrent jobs + intermittent pooler stalls (run 30198105720: 6× timeout).
+    connectionTimeoutMillis: 45000,
   });
   try {
     await client.connect();
@@ -98,7 +98,7 @@ async function probePoolerAuth(databaseUrl) {
   }
 }
 
-async function probePoolerAuthWithRetries(databaseUrl, { attempts = 6, label = "probe" } = {}) {
+async function probePoolerAuthWithRetries(databaseUrl, { attempts = 10, label = "probe" } = {}) {
   let last = { ok: false, error: "not_probed" };
   for (let attempt = 1; attempt <= attempts; attempt++) {
     last = await probePoolerAuth(databaseUrl);
@@ -116,7 +116,7 @@ async function probePoolerAuthWithRetries(databaseUrl, { attempts = 6, label = "
         },
       }),
     );
-    await new Promise((r) => setTimeout(r, 1000 * attempt));
+    await new Promise((r) => setTimeout(r, 2500 * attempt));
   }
   return last;
 }
@@ -201,7 +201,7 @@ const forceRotate = ["1", "true", "yes"].includes(
 // Concurrent auth-session-issue shards (run #43 shard 3) hit "timeout expired";
 // rotating on timeout races other shards and worsens pooler auth.
 let probe = await probePoolerAuthWithRetries(databaseUrl, {
-  attempts: 6,
+  attempts: 10,
   label: "initial",
 });
 const shouldRotate =

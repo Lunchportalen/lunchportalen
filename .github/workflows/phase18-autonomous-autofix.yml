@@ -1,0 +1,101 @@
+# Deterministic autofix lane for the permanent release controller.
+name: phase18-autonomous-autofix
+
+on:
+  workflow_dispatch:
+    inputs:
+      failing_run_id:
+        required: true
+        type: string
+      failing_job:
+        required: true
+        type: string
+      failing_step:
+        required: true
+        type: string
+      failing_sha:
+        required: true
+        type: string
+      error_class:
+        required: true
+        type: string
+      fingerprint:
+        required: true
+        type: string
+      normalized_error:
+        required: false
+        type: string
+        default: ""
+
+concurrency:
+  group: phase18-autonomous-autofix
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+  RELEASE_BRANCH: release/global-menu-universes-21
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_BRANCH }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Apply deterministic autofix
+        id: fix
+        env:
+          AUTOFIX_RUN_ID: ${{ inputs.failing_run_id }}
+          AUTOFIX_ERROR_CLASS: ${{ inputs.error_class }}
+          AUTOFIX_FINGERPRINT: ${{ inputs.fingerprint }}
+          AUTOFIX_JOB: ${{ inputs.failing_job }}
+          AUTOFIX_STEP: ${{ inputs.failing_step }}
+          AUTOFIX_SHA: ${{ inputs.failing_sha }}
+          AUTOFIX_ERROR: ${{ inputs.normalized_error }}
+        run: node scripts/autonomous-release/autofix.mjs
+
+      - name: ci:guard (focused)
+        if: steps.fix.outputs.changed == 'true'
+        run: npm run ci:guard
+
+      - name: Commit and push autofix to release branch
+        if: steps.fix.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "lunchportalen-autonomous-autofix"
+          git config user.email "261239180+Lunchportalen@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No file changes after autofix"
+            exit 0
+          fi
+          git commit -m "fix(18scale): autonomous autofix ${{ inputs.error_class }} fp=${{ inputs.fingerprint }}"
+          git push origin "HEAD:$RELEASE_BRANCH"
+
+      - name: Upload autofix evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-autofix-${{ github.run_id }}
+          path: docs/rc/autonomous-release/
+          if-no-files-found: warn
