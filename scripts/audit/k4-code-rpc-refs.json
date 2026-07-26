@@ -13,12 +13,24 @@
     "lp_agreement_create_pending": [
       "lib/server/superadmin/createAgreementDraftFromRegistration.ts"
     ],
+    "lp_agreement_materialize_plan": [
+      "app/api/superadmin/agreements/[agreementId]/approve/route.ts"
+    ],
     "lp_agreement_pause_ledger_active": [
       "lib/server/agreements/ledgerAgreementApproval.ts"
     ],
     "lp_agreement_reject_pending": [
       "app/api/superadmin/agreements/[agreementId]/reject/route.ts",
       "lib/server/agreements/ledgerAgreementApproval.ts"
+    ],
+    "lp_agreement_resume": [
+      "app/api/superadmin/agreements/[agreementId]/resume/route.ts"
+    ],
+    "lp_agreement_suspend": [
+      "app/api/superadmin/agreements/[agreementId]/suspend/route.ts"
+    ],
+    "lp_agreement_terminate": [
+      "app/api/superadmin/agreements/[agreementId]/terminate/route.ts"
     ],
     "lp_apply_tripletex_paid_status": [
       "lib/integrations/tripletex/agreementWebhookHandlers.ts"
@@ -30,11 +42,38 @@
       "lib/billing/stripePaymentWebhook.ts",
       "lib/billing/stripeProviderCharge.ts"
     ],
+    "lp_billing_create_commission_invoice": [
+      "lib/billing/commissionSettlement.ts"
+    ],
+    "lp_billing_invoice_close_dry_run": [
+      "lib/billing/commissionSettlement.ts"
+    ],
+    "lp_billing_post_negative_commission_for_order": [
+      "lib/orders/orderWriteSideEffects.ts"
+    ],
     "lp_billing_stripe_charge_dry_run": [
       "lib/billing/stripeProviderCharge.ts"
     ],
     "lp_capture_lead": [
       "app/api/public/leads/capture/route.ts"
+    ],
+    "lp_commission_invoice_create_credit": [
+      "lib/billing/commissionSettlement.ts"
+    ],
+    "lp_commission_invoice_issue": [
+      "lib/billing/commissionSettlement.ts"
+    ],
+    "lp_commission_invoice_refresh_overdue": [
+      "lib/billing/commissionSettlement.ts"
+    ],
+    "lp_commission_invoice_register_payment": [
+      "lib/billing/commissionSettlement.ts"
+    ],
+    "lp_company_admin_invite_accept": [
+      "app/api/auth/register-company-admin/route.ts"
+    ],
+    "lp_company_cutoff_context": [
+      "app/admin/agreement/page.tsx"
     ],
     "lp_company_order_summary": [
       "app/api/admin/company/[companyId]/summary/route.ts",
@@ -52,6 +91,9 @@
     ],
     "lp_company_registration_reject_provider": [
       "app/leverandor/registreringer/actions.ts"
+    ],
+    "lp_employee_invite_accept": [
+      "app/api/auth/accept-invite/route.ts"
     ],
     "lp_generate_agreement_invoices_for_period": [
       "app/api/superadmin/invoices/generate/route.ts"
@@ -71,7 +113,16 @@
     "lp_insert_page_version": [
       "lib/backoffice/content/pageVersionsRepo.ts"
     ],
+    "lp_market_approval_transition": [
+      "lib/markets/marketApprovals.ts"
+    ],
+    "lp_market_commercially_active": [
+      "lib/markets/marketApprovals.ts"
+    ],
     "lp_match_provider_by_postal_code": [
+      "app/api/public/coverage/check/route.ts"
+    ],
+    "lp_match_providers_by_postal_code": [
       "app/api/public/coverage/check/route.ts"
     ],
     "lp_membership_get": [
@@ -99,6 +150,9 @@
     ],
     "lp_pgrst_reload_schema": [
       "lib/supabase/ensureRpc.ts"
+    ],
+    "lp_provider_admin_invite_accept": [
+      "app/api/auth/register-provider-admin/route.ts"
     ],
     "lp_provider_apply_connection_health_check": [
       "app/api/cron/tripletex-connection-health-daily/route.ts"
@@ -138,6 +192,15 @@
     "lp_provider_purge_disconnected_vault": [
       "app/api/cron/tripletex-connection-health-daily/route.ts"
     ],
+    "lp_provider_registration_approve": [
+      "app/api/superadmin/provider-registrations/[id]/approve/route.ts"
+    ],
+    "lp_provider_registration_create": [
+      "app/api/public/provider-registration/route.ts"
+    ],
+    "lp_provider_registration_reject": [
+      "app/api/superadmin/provider-registrations/[id]/reject/route.ts"
+    ],
     "lp_provider_rotate_webhook_secret": [
       "app/leverandor/innstillinger/tripletex/koble-til/actions.ts"
     ],
@@ -160,31 +223,48 @@
       "app/leverandor/omrader/actions.ts"
     ]
   },
-  "count": 49,
+  "count": 70,
   "rpcs": [
     "claim_ai_jobs",
     "claim_repair_jobs",
     "lp_agreement_approve_active",
     "lp_agreement_create_pending",
+    "lp_agreement_materialize_plan",
     "lp_agreement_pause_ledger_active",
     "lp_agreement_reject_pending",
+    "lp_agreement_resume",
+    "lp_agreement_suspend",
+    "lp_agreement_terminate",
     "lp_apply_tripletex_paid_status",
     "lp_batch_transition_and_sync_orders",
     "lp_billing_apply_payment_recovery_policy",
+    "lp_billing_create_commission_invoice",
+    "lp_billing_invoice_close_dry_run",
+    "lp_billing_post_negative_commission_for_order",
     "lp_billing_stripe_charge_dry_run",
     "lp_capture_lead",
+    "lp_commission_invoice_create_credit",
+    "lp_commission_invoice_issue",
+    "lp_commission_invoice_refresh_overdue",
+    "lp_commission_invoice_register_payment",
+    "lp_company_admin_invite_accept",
+    "lp_company_cutoff_context",
     "lp_company_order_summary",
     "lp_company_register",
     "lp_company_registration_approve_provider",
     "lp_company_registration_create",
     "lp_company_registration_reject_provider",
+    "lp_employee_invite_accept",
     "lp_generate_agreement_invoices_for_period",
     "lp_generate_saas_invoices_for_period",
     "lp_idem_begin",
     "lp_idem_complete",
     "lp_idem_fail",
     "lp_insert_page_version",
+    "lp_market_approval_transition",
+    "lp_market_commercially_active",
     "lp_match_provider_by_postal_code",
+    "lp_match_providers_by_postal_code",
     "lp_membership_get",
     "lp_order_advance_status",
     "lp_order_set",
@@ -193,6 +273,7 @@
     "lp_outbox_reset_stale",
     "lp_outbox_retry_event",
     "lp_pgrst_reload_schema",
+    "lp_provider_admin_invite_accept",
     "lp_provider_apply_connection_health_check",
     "lp_provider_complete_onboarding_provisioning",
     "lp_provider_complete_tripletex_connection",
@@ -204,6 +285,9 @@
     "lp_provider_load_tripletex_credentials",
     "lp_provider_load_webhook_secret",
     "lp_provider_purge_disconnected_vault",
+    "lp_provider_registration_approve",
+    "lp_provider_registration_create",
+    "lp_provider_registration_reject",
     "lp_provider_rotate_webhook_secret",
     "lp_provider_set_subscription",
     "lp_provider_test_tripletex_token",

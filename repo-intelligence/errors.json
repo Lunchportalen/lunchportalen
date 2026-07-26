@@ -1,10 +1,61 @@
 {
   "gaps": [
     {
+      "description": "Table \"provider_invites\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/(auth)/registrer-leverandor/page.tsx",
+        "app/api/auth/register-provider-admin/route.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
       "description": "Table \"employee_notification_preferences\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
         "app/api/employee/notification-preferences/route.ts",
         "lib/notifications/menuWeekOpeningNotify.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"provider_settings\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/provider/invoices/export/route.ts",
+        "lib/menu-publish/msdiLocalizedItemSnapshot.ts",
+        "lib/provider-onboarding/createLiveReadAdapters.ts",
+        "lib/provider-onboarding/createLiveWriteAdapters.ts",
+        "lib/providers/loadProviderOperationalSettings.ts",
+        "lib/providers/loadProviderSettingsMenuProfile.ts",
+        "lib/providers/orderStatusNotifications.ts",
+        "lib/providers/providerNotificationRecipients.ts",
+        "lib/providers/saveProviderOperationalSettings.ts",
+        "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"provider_registrations\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/public/provider-registration/route.ts",
+        "app/api/superadmin/provider-registrations/[id]/approve/route.ts",
+        "app/api/superadmin/provider-registrations/route.ts",
+        "app/superadmin/oversettelser/page.tsx",
+        "app/superadmin/provider-registrations/page.tsx"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"market_approval_events\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/superadmin/markets/route.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"superadmin_translation_events\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/api/superadmin/translations/route.ts",
+        "app/superadmin/oversettelser/page.tsx",
+        "lib/i18n/superadminTranslation.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -28,6 +79,17 @@
       "files": [
         "app/leverandor/innstillinger/tripletex/status/actions.ts",
         "lib/integrations/tripletex/webhookSubscriptions.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"agreement_invoices\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "app/superadmin/agreement-invoices/page.tsx",
+        "lib/accounting/tripletexAdapter.ts",
+        "lib/billing/invoiceLifecycle.ts",
+        "lib/billing/providerInvoiceGuard.ts",
+        "lib/integrations/tripletex/agreementInvoiceSync.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -82,6 +144,28 @@
       "type": "table_not_in_database_ts"
     },
     {
+      "description": "Table \"billing_readiness_events\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/billing/commissionSettlement.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"agreement_invoice_lines\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/billing/invoiceLifecycle.ts",
+        "lib/integrations/tripletex/agreementInvoiceSync.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"invoice_payments\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/billing/invoiceLifecycle.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
       "description": "Table \"${tbl}\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
         "lib/evolution/analyze.ts"
@@ -96,30 +180,65 @@
       "type": "table_not_in_database_ts"
     },
     {
-      "description": "Table \"agreement_invoice_lines\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "description": "Table \"superadmin_translations\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/integrations/tripletex/agreementInvoiceSync.ts"
+        "lib/i18n/superadminTranslation.ts"
       ],
       "type": "table_not_in_database_ts"
     },
     {
-      "description": "Table \"agreement_invoices\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "description": "Table \"legal_acceptances\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/integrations/tripletex/agreementInvoiceSync.ts"
+        "lib/legal/norwayAcceptanceGate.ts"
       ],
       "type": "table_not_in_database_ts"
     },
     {
-      "description": "Table \"provider_settings\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "description": "Table \"market_approvals\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/menu-publish/msdiLocalizedItemSnapshot.ts",
-        "lib/provider-onboarding/createLiveReadAdapters.ts",
-        "lib/provider-onboarding/createLiveWriteAdapters.ts",
-        "lib/providers/loadProviderOperationalSettings.ts",
-        "lib/providers/loadProviderSettingsMenuProfile.ts",
-        "lib/providers/providerNotificationRecipients.ts",
-        "lib/providers/saveProviderOperationalSettings.ts",
-        "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts"
+        "lib/markets/marketApprovals.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"country_production_activation\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/markets/norwayMvaController.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"norway_mva_invoice_holds\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/markets/norwayMvaController.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"norway_mva_registration_checks\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/markets/norwayMvaController.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"norway_mva_threshold_audit\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/markets/norwayMvaController.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"norway_mva_threshold_config\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/markets/norwayMvaController.ts"
+      ],
+      "type": "table_not_in_database_ts"
+    },
+    {
+      "description": "Table \"norway_mva_threshold_warnings\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "files": [
+        "lib/markets/norwayMvaController.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -174,19 +293,20 @@
       "type": "table_not_in_database_ts"
     },
     {
-      "description": "Table \"provider_price_rules\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "description": "Table \"order_items\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/providers/providerMenuPriceConfig.ts",
-        "lib/providers/providerMenuPricePreview.ts"
+        "lib/providers/packingList.ts",
+        "lib/providers/providerOrderEnrichment.ts",
+        "lib/superadmin/loadPilotControlCenter.ts",
+        "scripts/smoke/_first-menu-order-smoke.mjs"
       ],
       "type": "table_not_in_database_ts"
     },
     {
-      "description": "Table \"order_items\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
+      "description": "Table \"provider_price_rules\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
-        "lib/providers/providerOrderEnrichment.ts",
-        "lib/superadmin/loadPilotControlCenter.ts",
-        "scripts/smoke/_first-menu-order-smoke.mjs"
+        "lib/providers/providerMenuPriceConfig.ts",
+        "lib/providers/providerMenuPricePreview.ts"
       ],
       "type": "table_not_in_database_ts"
     },
@@ -207,6 +327,7 @@
     {
       "description": "Table \"company_memberships\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
+        "scripts/e2e/seed-e2e-role-users.mjs",
         "scripts/smoke/seed-e2e-users.mjs"
       ],
       "type": "table_not_in_database_ts"
@@ -214,6 +335,7 @@
     {
       "description": "Table \"location_memberships\" appears in .from() but is not listed in lib/types/database.ts PUBLIC_TABLE_NAMES (or parse failed).",
       "files": [
+        "scripts/e2e/seed-e2e-role-users.mjs",
         "scripts/smoke/seed-e2e-users.mjs"
       ],
       "type": "table_not_in_database_ts"
