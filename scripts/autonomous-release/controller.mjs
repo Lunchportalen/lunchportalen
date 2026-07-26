@@ -66,19 +66,48 @@ function fingerprint(parts) {
 
 function classifyFromText(blob) {
   const s = String(blob || "");
-  if (/SECURITY|secret.?expos|critical finding/i.test(s)) return "SECURITY_INCIDENT";
-  if (/PHASE18_POOLER_AUTH_PROBE_FAILED|timeout expired|ECONNRESET|pooler/i.test(s)) {
+  // Pooler / network markers must win before broad security keyword scans (logs often mention "security" tooling).
+  if (
+    /PHASE18_POOLER_AUTH_PROBE_FAILED|phase18_pooler_probe_retry|timeout expired|ECONNRESET|ECONNREFUSED|pooler/i.test(
+      s,
+    )
+  ) {
     return "NETWORK_OR_POOLER_ERROR";
+  }
+  if (/\bSECURITY_INCIDENT\b|secret.?expos(?:ed|ure)|critical security finding/i.test(s)) {
+    return "SECURITY_INCIDENT";
   }
   if (/rate limit|AUTH_RATE_LIMIT|429/i.test(s)) return "RATE_LIMIT_ERROR";
   if (/The operation was canceled|timeout-minutes|WORKFLOW_TIMEOUT/i.test(s)) return "WORKFLOW_TIMEOUT";
   if (/AUTH_REFRESH_FAIL|refresh_token|session/i.test(s)) return "AUTH_OR_SESSION_ERROR";
   if (/msdi:|menu_service_day|menus_fail|MENU_OR_SEED/i.test(s)) return "MENU_OR_SEED_DATA_ERROR";
   if (/RLS|tenant isolation|cross-tenant/i.test(s)) return "RLS_OR_TENANT_ERROR";
-  if (/artifact|download-artifact|handoff/i.test(s)) return "ARTIFACT_HANDOFF_ERROR";
-  if (/yaml|workflow|Invalid workflow/i.test(s)) return "CI_WORKFLOW_ERROR";
-  if (/RESOURCE|project not found|INACTIVE|expired/i.test(s)) return "RESOURCE_EXPIRATION";
+  if (/Unable to download|download-artifact|Artifact .* not found|handoff failed/i.test(s)) {
+    return "ARTIFACT_HANDOFF_ERROR";
+  }
+  if (/Invalid workflow|workflow file|YAML|Unexpected value/i.test(s)) return "CI_WORKFLOW_ERROR";
+  if (/project not found|INACTIVE|RESOURCE_EXPIR|credential.?expired/i.test(s)) return "RESOURCE_EXPIRATION";
   return "TEST_HARNESS_ERROR";
+}
+
+function pickErrorLine(logHint) {
+  const text = String(logHint || "");
+  // Prefer precise Phase18 failure markers anywhere in the blob (not only the tail).
+  const failMarker = text.match(/PHASE18_[A-Z0-9_]*FAIL[A-Z0-9_]*[^\n]*/i);
+  if (failMarker) return failMarker[0].replace(/^.*?(PHASE18_)/i, "$1").slice(0, 300);
+  const probe = text.match(/phase18_pooler_probe_retry[^\n]*/i);
+  if (probe) return probe[0].slice(0, 300);
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const preferred =
+    lines.find((l) => /##\[error\].*(PHASE18_|timeout|pooler|ECONN)/i.test(l)) ||
+    [...lines].reverse().find((l) => /PHASE18_[A-Z0-9_]+/.test(l) && !/ALLOW_PROVISION|EVIDENCE|LOAD_REF|SOAK_HOURS|MAX_COST/.test(l)) ||
+    lines.find((l) => /timeout expired|ECONNRESET|ECONNREFUSED/i.test(l)) ||
+    lines.find((l) => /##\[error\]/.test(l)) ||
+    "unknown_error";
+  return String(preferred)
+    .replace(/^.*?##\[error\]\s*/, "")
+    .replace(/^.*?\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z\s*/, "")
+    .slice(0, 300);
 }
 
 function listPhase18Runs(limit = 8) {
@@ -282,27 +311,33 @@ function inspectFailedRun(runId) {
     const failed = jobs.filter((j) => j.conclusion === "failure" || j.conclusion === "cancelled");
     const primary = failed.find((j) => j.name !== "final-report") || failed[0];
     let logHint = "";
-    if (primary?.databaseId || primary?.id) {
+    // Prefer whole-run failed logs (job-scoped --log-failed can truncate to env echo only).
+    try {
+      logHint = sh("gh", ["run", "view", String(runId), "--log-failed"], {
+        maxBuffer: 12 * 1024 * 1024,
+      });
+    } catch {
+      logHint = "";
+    }
+    if ((!logHint || logHint.length < 200) && (primary?.databaseId || primary?.id)) {
       const jobId = primary.databaseId || primary.id;
       try {
         logHint = sh("gh", ["run", "view", String(runId), "--job", String(jobId), "--log-failed"], {
-          maxBuffer: 8 * 1024 * 1024,
-        }).slice(-4000);
+          maxBuffer: 12 * 1024 * 1024,
+        });
       } catch {
-        logHint = "";
+        /* keep prior */
       }
     }
-    const errorClass = classifyFromText(`${primary?.name || ""}\n${logHint}`);
-    const errLine =
-      (logHint.match(/PHASE18_[A-Z0-9_]+[^\n]*/)?.[0] ||
-        logHint.match(/##\[error\][^\n]*/)?.[0] ||
-        "unknown_error").slice(0, 300);
+    const errLine = pickErrorLine(logHint);
+    const logTail = logHint.slice(-12000);
+    const errorClass = classifyFromText(`${primary?.name || ""}\n${errLine}\n${logTail}`);
     return {
       job: primary?.name || "unknown",
       step: (primary?.steps || []).find((s) => s.conclusion === "failure")?.name || "unknown",
       errorClass,
       error: errLine,
-      logTail: logHint.slice(-800),
+      logTail: logTail.slice(-800),
     };
   } catch (e) {
     return {
