@@ -111,28 +111,45 @@ async function runCycle(anon, admin, rows, cycle, opts) {
   let reauthUsers = 0;
   let reauthSuccess = 0;
   const failSample = [];
-  for (let i = 0; i < order.length; i += 1) {
-    const row = byUser.get(order[i].user_id);
-    let result = await refreshOne(anon, row, opts.attempts, opts.minIntervalMs);
-    if (!result.ok && result.reauth) {
-      reauthUsers += 1;
-      result = await reauthOne(anon, admin, row, opts.password, opts.attempts, opts.minIntervalMs);
-      if (result.ok) reauthSuccess += 1;
-    }
-    if (result.ok) {
-      byUser.set(row.user_id, result.row);
-      success += 1;
-      if (success % 25 === 0) {
-        const body = [...byUser.values()].map((r) => JSON.stringify(r)).join("\n") + "\n";
-        fs.writeFileSync(path.join(OUT, `sessions-auth-refresh-coverage.checkpoint.ndjson`), body);
-        console.log(JSON.stringify({ cycle, success, target: order.length, failures }));
+  let cursor = 0;
+  let stop = false;
+  const concurrency = Math.max(1, Math.min(Number(opts.concurrency || 1) || 1, 16));
+  let checkpointChain = Promise.resolve();
+
+  async function worker() {
+    while (!stop) {
+      const i = cursor;
+      cursor += 1;
+      if (i >= order.length) return;
+      const row = byUser.get(order[i].user_id);
+      let result = await refreshOne(anon, row, opts.attempts, opts.minIntervalMs);
+      if (!result.ok && result.reauth) {
+        reauthUsers += 1;
+        result = await reauthOne(anon, admin, row, opts.password, opts.attempts, opts.minIntervalMs);
+        if (result.ok) reauthSuccess += 1;
       }
-    } else {
-      failures += 1;
-      failSample.push({ index: row.index, class: result.class });
-      break;
+      if (result.ok) {
+        byUser.set(row.user_id, result.row);
+        success += 1;
+        if (success % 25 === 0) {
+          const snapSuccess = success;
+          checkpointChain = checkpointChain.then(() => {
+            const body = [...byUser.values()].map((r) => JSON.stringify(r)).join("\n") + "\n";
+            fs.writeFileSync(path.join(OUT, "sessions-auth-refresh-coverage.checkpoint.ndjson"), body);
+            console.log(JSON.stringify({ cycle, success: snapSuccess, target: order.length, failures, concurrency }));
+          });
+        }
+      } else {
+        failures += 1;
+        failSample.push({ index: row.index, class: result.class });
+        stop = true;
+        return;
+      }
     }
   }
+
+  await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  await checkpointChain;
   const out = [...byUser.values()].sort((a, b) => a.index - b.index);
   fs.writeFileSync(
     path.join(OUT, "sessions-auth-refresh-coverage.ndjson"),
@@ -146,6 +163,7 @@ async function runCycle(anon, admin, rows, cycle, opts) {
     reauthUsers,
     reauthSuccess,
     failSample,
+    concurrency,
     rows: out,
     PASS: failures === 0 && success === order.length,
   };
@@ -206,6 +224,7 @@ async function main() {
   const canaryN = Number(process.env.PHASE18_AUTH_CANARY || AUTH_CONCURRENT_CANARY);
   const minIntervalMs = Number(process.env.PHASE18_REFRESH_MIN_INTERVAL_MS || 500);
   const attempts = Number(process.env.PHASE18_REFRESH_ATTEMPTS || 8);
+  const concurrency = Number(process.env.PHASE18_AUTH_REFRESH_CONCURRENCY || 1);
   const password = synthPassword();
   process.env.PHASE18_SYNTH_PASSWORD = password;
 
@@ -230,7 +249,12 @@ async function main() {
 
   const cycleReports = [];
   for (let cycle = 1; cycle <= cycles; cycle += 1) {
-    const rep = await runCycle(anon, admin, rows, cycle, { attempts, minIntervalMs, password });
+    const rep = await runCycle(anon, admin, rows, cycle, {
+      attempts,
+      minIntervalMs,
+      password,
+      concurrency,
+    });
     cycleReports.push(rep);
     rows = rep.rows;
     if (!rep.PASS) {

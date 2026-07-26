@@ -1258,7 +1258,8 @@ jobs:
       ) &&
       needs.auth-session-merge.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    # Run 30181676498: job cancelled at exactly 120m during cycle2 (1625/2000, 0 failures).
+    timeout-minutes: 240
     environment: load-cert
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
@@ -1266,6 +1267,7 @@ jobs:
       PHASE18_AUTH_REFRESH_CYCLES: "2"
       PHASE18_AUTH_CANARY: "500"
       PHASE18_REFRESH_MIN_INTERVAL_MS: "500"
+      PHASE18_AUTH_REFRESH_CONCURRENCY: "4"
     steps:
       - uses: actions/checkout@v4
         with:
