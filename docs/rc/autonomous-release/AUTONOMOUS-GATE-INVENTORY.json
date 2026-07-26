@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "release_date": "2026-08-01",
+  "gates": {
+    "source_sha_parity": "NOT_RUN",
+    "phase18_source_safety": "STALE",
+    "phase18_schema_parity": "FAIL",
+    "phase18_harness_dry_run": "STALE",
+    "phase18_auth_coverage": "FAIL",
+    "phase18_controlled_ramps": "NOT_RUN",
+    "global_staging_candidate": "NOT_RUN",
+    "production_preflight": "NOT_RUN",
+    "production_canary": "NOT_RUN",
+    "country_wave_1": "NOT_RUN",
+    "country_wave_2": "NOT_RUN",
+    "country_wave_3": "NOT_RUN",
+    "country_wave_4": "NOT_RUN",
+    "global_live_verify": "NOT_RUN",
+    "global_scale_certified": "NOT_RUN"
+  },
+  "notes": {
+    "phase18_schema_parity": "Run 30198105720: PHASE18_POOLER_AUTH_PROBE_FAILED timeout expired (NETWORK_OR_POOLER_ERROR)",
+    "phase18_auth_coverage": "Run 30190595423: refresh fail cycle1 191/2000 under concurrency=4; sharded fix on d7c4442e not yet re-proven",
+    "production_deploy": "WAITING_OWNER_AUTH — Vercel credentials missing; PRODUCTION_AUTO_DEPLOY_LOCK ACTIVE",
+    "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved"
+  },
+  "updated_at": null
+}

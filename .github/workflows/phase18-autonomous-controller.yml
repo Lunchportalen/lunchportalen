@@ -1,0 +1,116 @@
+# Permanent multi-global release controller (survives Cursor close).
+# Scheduled + workflow_run triggers require this file on the default branch (main).
+name: phase18-autonomous-controller
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Manual tick reason"
+        required: false
+        default: "operator-dispatch"
+  schedule:
+    # Every 15 minutes UTC
+    - cron: "*/15 * * * *"
+  workflow_run:
+    workflows:
+      - phase18scale-load-cert
+      - phase18-autonomous-autofix
+    types: [completed]
+
+concurrency:
+  group: phase18-autonomous-global-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pull-requests: write
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+  STATE_BRANCH: rc/autonomous-release-state
+  RELEASE_BRANCH: release/global-menu-universes-21
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: load-cert
+    steps:
+      - name: Checkout release branch (code + scripts)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_BRANCH }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install deps (minimal — controller uses gh + node stdlib)
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Restore durable controller state branch
+        run: |
+          set -euo pipefail
+          git fetch origin "$STATE_BRANCH" || echo "state branch not yet created"
+          if git show-ref --verify --quiet "refs/remotes/origin/$STATE_BRANCH"; then
+            git checkout origin/"$STATE_BRANCH" -- docs/rc/autonomous-release docs/rc/launch-2026-08-01/GLOBAL-LIVE-STATE.json || true
+          fi
+
+      - name: Run autonomous controller tick
+        id: controller
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/autonomous-release/controller.mjs
+
+      - name: Persist durable state to state branch
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "lunchportalen-autonomous-controller"
+          git config user.email "261239180+Lunchportalen@users.noreply.github.com"
+          WORK="$(pwd)"
+          TMP="$(mktemp -d)"
+          cd "$TMP"
+          git init -b "$STATE_BRANCH"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          git fetch origin "$STATE_BRANCH" || true
+          if git show-ref --verify --quiet "refs/remotes/origin/$STATE_BRANCH"; then
+            git checkout -B "$STATE_BRANCH" "origin/$STATE_BRANCH"
+          else
+            git checkout -B "$STATE_BRANCH"
+          fi
+          mkdir -p docs/rc/autonomous-release docs/rc/launch-2026-08-01 docs/rc/phase15g3e
+          cp -f "$WORK"/docs/rc/autonomous-release/*.json docs/rc/autonomous-release/ || true
+          cp -f "$WORK"/docs/rc/launch-2026-08-01/GLOBAL-LIVE-STATE.json docs/rc/launch-2026-08-01/ || true
+          if [ -f "$WORK"/docs/rc/phase15g3e/OWNER-ACTIONS-CANONICAL.md ]; then
+            cp -f "$WORK"/docs/rc/phase15g3e/OWNER-ACTIONS-CANONICAL.md docs/rc/phase15g3e/ || true
+          fi
+          git add docs/rc
+          if git diff --cached --quiet; then
+            echo "No state changes to persist"
+            exit 0
+          fi
+          git commit -m "chore(rc): autonomous release state tick ${{ github.run_id }}"
+          git push -u origin "HEAD:$STATE_BRANCH"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload tick summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-controller-tick-${{ github.run_id }}
+          path: |
+            docs/rc/autonomous-release/
+            docs/rc/launch-2026-08-01/GLOBAL-LIVE-STATE.json
+          if-no-files-found: warn
