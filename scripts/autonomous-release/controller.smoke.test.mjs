@@ -14,6 +14,10 @@ assert.equal(
   classifyFromText("PHASE18_POOLER_AUTH_PROBE_FAILED: timeout expired"),
   "NETWORK_OR_POOLER_ERROR",
 );
+assert.equal(
+  classifyFromText("secret scan\nPHASE18_POOLER_AUTH_PROBE_FAILED: timeout expired"),
+  "NETWORK_OR_POOLER_ERROR",
+);
 assert.equal(classifyFromText("PHASE18_AUTH_REFRESH_FAIL cycle=1"), "AUTH_OR_SESSION_ERROR");
 assert.equal(classifyFromText("AUTH_RATE_LIMIT pause"), "RATE_LIMIT_ERROR");
 assert.equal(
