@@ -25,5 +25,5 @@
     "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved",
     "phase18_last_failure": "NETWORK_OR_POOLER_ERROR: PHASE18_POOLER_AUTH_PROBE_FAILED: timeout expired"
   },
-  "updated_at": "2026-07-27T20:05:03.308Z"
+  "updated_at": "2026-07-27T20:44:25.119Z"
 }
