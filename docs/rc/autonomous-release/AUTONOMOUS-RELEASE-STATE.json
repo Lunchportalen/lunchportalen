@@ -7,8 +7,8 @@
   "release_sha": "65e9bdd31ba32ed14604bdf3f2f71fef297fd55b",
   "phase18_project_ref": "arstaxredytrjcmqcwhh",
   "stop_after": "auth-coverage",
-  "active_phase18_run_id": 30248014372,
-  "last_phase18_run_id": 30232630139,
+  "active_phase18_run_id": null,
+  "last_phase18_run_id": 30248014372,
   "last_phase18_conclusion": "failure",
   "last_failure_fingerprint": "10724cb3a62b3ec8",
   "owner_wait": "WAITING_OWNER_AUTH",
@@ -22,11 +22,11 @@
     "global_staging": "PENDING"
   },
   "counters": {
-    "controller_ticks": 26,
+    "controller_ticks": 27,
     "autofix_dispatches": 2,
-    "phase18_dispatches": 4,
+    "phase18_dispatches": 5,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-27T11:42:13.508Z"
+  "updated_at": "2026-07-27T12:46:09.069Z"
 }
