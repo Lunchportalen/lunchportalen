@@ -23,7 +23,7 @@
     "phase18_auth_coverage": "Run 30190595423: refresh fail cycle1 191/2000 under concurrency=4; sharded fix on d7c4442e not yet re-proven",
     "production_deploy": "WAITING_OWNER_AUTH — Vercel credentials missing; PRODUCTION_AUTO_DEPLOY_LOCK ACTIVE",
     "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved",
-    "phase18_last_failure": "AUTH_OR_SESSION_ERROR: PHASE18_AUTH_REFRESH_PROOF_FAIL"
+    "phase18_last_failure": "RATE_LIMIT_ERROR: PHASE18_AUTH_REFRESH_PROOF_FAIL"
   },
-  "updated_at": "2026-07-28T20:03:24.726Z"
+  "updated_at": "2026-07-28T20:39:05.986Z"
 }

@@ -143,7 +143,18 @@
       "error": "PHASE18_AUTH_REFRESH_PROOF_FAIL",
       "fingerprint": "10724cb3a62b3ec8",
       "action": "skip_duplicate_autofix"
+    },
+    {
+      "at": "2026-07-28T20:39:04.669Z",
+      "run_id": 30375809049,
+      "sha": "65e9bdd31ba32ed14604bdf3f2f71fef297fd55b",
+      "job": "auth-coverage",
+      "step": "Merge shards + Auth canary 500",
+      "class": "RATE_LIMIT_ERROR",
+      "error": "PHASE18_AUTH_REFRESH_PROOF_FAIL",
+      "fingerprint": "bd22bac110df7da4",
+      "action": "dispatch_autofix"
     }
   ],
-  "updated_at": "2026-07-28T20:03:24.726Z"
+  "updated_at": "2026-07-28T20:39:05.986Z"
 }
