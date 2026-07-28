@@ -5,25 +5,25 @@
 - Workflow/job: phase15g3e-response-pipeline.yml / pipeline
 - Cadence: every 3 hours (cron: 0 */3 * * *)
 - Enabled: YES
-- Last run: 2026-07-28T04:06:20.005Z
-- Next run: 2026-07-28T03:00:00.000Z
+- Last run: 2026-07-28T06:55:14.836Z
+- Next run: 2026-07-28T09:00:00.000Z
 - Local terminal dependency: NONE
 
 ## Mailbox
 - IMAP: PASS
 - SMTP: PASS
 - Secret source: env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD
-- Replies (last run): n/a
-- Failures: [{"type":"IMAP_AUTH_FAIL","detail":"Connection timeout"}]
+- Replies (last run): 0
+- Failures: []
 
 ## Follow-ups
-- First due: 2026-07-22 (verified: CHECK)
-- Second due: 2026-07-29 (verified: CHECK)
+- First due: 2026-07-22 (verified: YES)
+- Second due: 2026-07-29 (verified: YES)
 - Scheduled: 10
 - Sent: 3
 - Duplicate sends: 0
 - Calendar: business_days_mon_fri
-- Thread retention: In-Reply-To / References
+- Thread retention: same thread via In-Reply-To / References
 - Backup escalation: only after second cadence
 
 ## Safety
@@ -37,7 +37,7 @@
 
 ## Idempotency
 - Distributed lock: pipeline-lock.json + Actions concurrency group
-- Run ID: 30327585999
+- Run ID: 30336399082
 - Message-ID dedupe: reply-message-ids.json
 - Follow-up identity: firmId:followup:round
 - Duplicate send guard: claim-before-send
@@ -46,4 +46,4 @@
 - Immutable audit: communication-audit.jsonl
 
 ## Decision
-**NO-GO**
+**OWNER_ACTION_REQUIRED**
