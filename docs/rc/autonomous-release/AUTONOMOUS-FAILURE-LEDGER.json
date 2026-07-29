@@ -524,7 +524,37 @@
       "fingerprint": "3900ba0b35880f24",
       "action": "dispatch_replacement_phase18",
       "replacement_run_id": 30474722947
+    },
+    {
+      "at": "2026-07-29T18:33:46.587Z",
+      "run_id": 30477652774,
+      "sha": "d7bbb11f600138eef13e1df2226857c2fb2847d6",
+      "job": "synthetic-seed",
+      "step": "Company menu-path preflight (2000)",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "error": "\"MARK\": \"PHASE18_SCALE_SYNTHETIC\",",
+      "fingerprint": "22dd3caabe4b8fb3",
+      "logic_key": "5ce416440bbf53ad",
+      "action": "detect_unhandled_failure"
+    },
+    {
+      "at": "2026-07-29T18:33:48.099Z",
+      "run_id": 30477652774,
+      "sha": "d7bbb11f600138eef13e1df2226857c2fb2847d6",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "fingerprint": "22dd3caabe4b8fb3",
+      "logic_key": "5ce416440bbf53ad",
+      "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-07-29T18:34:38.546Z",
+      "run_id": 30477652774,
+      "sha": "d7bbb11f600138eef13e1df2226857c2fb2847d6",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "fingerprint": "22dd3caabe4b8fb3",
+      "action": "dispatch_replacement_phase18",
+      "replacement_run_id": 30480551651
     }
   ],
-  "updated_at": "2026-07-29T18:16:05.290Z"
+  "updated_at": "2026-07-29T18:34:38.546Z"
 }
