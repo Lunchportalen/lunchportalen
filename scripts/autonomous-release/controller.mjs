@@ -30,7 +30,7 @@ const PHASE18_WORKFLOW = "phase18scale-load-cert.yml";
 const AUTOFIX_WORKFLOW = "phase18-autonomous-autofix.yml";
 const PROD_REF = "hkpokyapzarefrgqzkos";
 const STAGING_REF = "uigxsboqeruxflgzqztl";
-const LOAD_REF = "arstaxredytrjcmqcwhh";
+const LOAD_REF = "lenajhsfrqdqcdzhcuao";
 const MAX_AUTOFIX_WAIT_MS = 8 * 60 * 1000;
 const AUTOFIX_POLL_MS = 15_000;
 
@@ -488,6 +488,13 @@ async function main() {
   state.release_branch = RELEASE_BRANCH;
   state.phase18_project_ref = LOAD_REF;
   state.lanes = state.lanes || {};
+
+  // Owner approved NEW_ISOLATED_SUPABASE_PROJECT — clear stale resource wait for the new ref.
+  if (state.owner_wait === "WAITING_OWNER_RESOURCE" && LOAD_REF === "lenajhsfrqdqcdzhcuao") {
+    state.owner_wait = null;
+    state.status = "AUTONOMOUS_CONTROLLER_RUNNING";
+    state.lanes.global_staging = "ACTIVE";
+  }
 
   const sha = releaseSha();
   state.release_sha = sha;

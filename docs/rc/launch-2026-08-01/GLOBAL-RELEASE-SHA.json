@@ -1,0 +1,21 @@
+{
+  "GLOBAL_RELEASE_SHA": "3332efe4cb48ea91544b1acb636babf496577e3f",
+  "release_branch": "release/global-menu-universes-21",
+  "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
+  "phase18_project_region": "eu-west-1",
+  "phase18_project_cost_usd_monthly": 10,
+  "phase18_project_max_lifetime_hours": 72,
+  "phase18_project_expires_at": "2026-08-01T12:26:44.628Z",
+  "AUTO_DELETE_AFTER_RELEASE_VERIFICATION": "REQUIRED",
+  "STRIPE": "OFF",
+  "invoice_only": true,
+  "note": "Frozen release tip after isolated project wire-up; staging/production must use this SHA.",
+  "updated_at": "2026-07-29T12:39:13.551Z",
+  "frozen_at": "2026-07-29T12:39:13.551Z",
+  "source_gates": {
+    "ci:guard": "PASS",
+    "secret_pii_scan": "PASS",
+    "focused_phase18_tests": "PASS",
+    "preflight_push": "PASS"
+  }
+}
