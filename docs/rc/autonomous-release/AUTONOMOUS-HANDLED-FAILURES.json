@@ -251,7 +251,36 @@
       "replacement_phase18_run_id": 30467343671,
       "resolution": "replacement_dispatched",
       "last_checked_at": "2026-07-29T15:44:26.383Z"
+    },
+    {
+      "detected_at": "2026-07-29T17:17:37.226Z",
+      "failed_run_id": 30467343671,
+      "failed_sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "job": "synthetic-seed-reconcile",
+      "step": "Align menu-path prices",
+      "error_class": "RATE_LIMIT_ERROR",
+      "error": "\"MARK\": \"PHASE18_SCALE_SYNTHETIC\",",
+      "fingerprint": "3900ba0b35880f24",
+      "logic_key": "0ec06b3096eacf9f",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-29T17:17:37.226Z"
+    },
+    {
+      "detected_at": "2026-07-29T17:18:30.591Z",
+      "failed_run_id": 30467343671,
+      "failed_sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "job": "synthetic-seed-reconcile",
+      "step": "Align menu-path prices",
+      "error_class": "RATE_LIMIT_ERROR",
+      "error": "\"MARK\": \"PHASE18_SCALE_SYNTHETIC\",",
+      "fingerprint": "3900ba0b35880f24",
+      "logic_key": "0ec06b3096eacf9f",
+      "autofix_run_id": 30474659609,
+      "fix_sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "replacement_phase18_run_id": 30474722947,
+      "resolution": "replacement_dispatched",
+      "last_checked_at": "2026-07-29T17:18:30.591Z"
     }
   ],
-  "updated_at": "2026-07-29T15:44:26.383Z"
+  "updated_at": "2026-07-29T17:18:30.591Z"
 }
