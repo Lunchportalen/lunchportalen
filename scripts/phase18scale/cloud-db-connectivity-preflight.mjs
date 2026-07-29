@@ -154,7 +154,12 @@ async function main() {
        where slug like 'p18scale-prov-%'`,
     );
     markerCount = Number(marker.rows[0]?.n || 0);
-    if (markerCount < 1) {
+    // Fresh isolated projects have schema but no seed yet; source-and-target-safety
+    // runs before synthetic-seed. Allow empty marker when explicitly bootstrapping.
+    const allowEmptyMarker = ["1", "true", "yes"].includes(
+      String(process.env.PHASE18_ALLOW_EMPTY_SYNTHETIC_MARKER || "").toLowerCase(),
+    );
+    if (markerCount < 1 && !allowEmptyMarker) {
       throw new Error("PHASE18_SYNTHETIC_MARKER_MISSING: expected p18scale-prov-%");
     }
   } finally {

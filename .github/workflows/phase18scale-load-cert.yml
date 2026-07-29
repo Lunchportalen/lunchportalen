@@ -118,6 +118,9 @@ jobs:
           # GITHUB_ENV is only visible to subsequent steps — keep resolve alone here.
           node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
       - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
+        env:
+          # Fresh isolated projects are schema-ready before synthetic-seed; marker lands in later jobs.
+          PHASE18_ALLOW_EMPTY_SYNTHETIC_MARKER: "1"
         run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
       - name: Write canonical Phase 18 run-date contract
         env:
