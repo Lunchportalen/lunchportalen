@@ -100,6 +100,34 @@
       ],
       "processedAt": "2026-07-24T15:32:00.056Z",
       "runId": "30105603572"
+    },
+    {
+      "firmId": "transperfect-direct",
+      "messageId": "<17002c20f73a4cca85b5dc4a3d709579@transperfect.com>",
+      "subject": "RE: Lunchportalen - LP-15G3E-transperfect-b88aaf99780e",
+      "from": "jeppe.jordoson@transperfect.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-07-29T08:53:15.000Z",
+      "attachments": [
+        {
+          "filename": "image001.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        },
+        {
+          "filename": "Lunchportalen - LP-15G3E-transperfect-b88aaf99780e.docx",
+          "disposition": "attachment",
+          "ext": ".docx",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-29T09:55:24.105Z",
+      "runId": "30441529723"
     }
   ],
   "byMessageId": {
@@ -203,7 +231,35 @@
       ],
       "processedAt": "2026-07-24T15:32:00.056Z",
       "runId": "30105603572"
+    },
+    "<17002c20f73a4cca85b5dc4a3d709579@transperfect.com>": {
+      "firmId": "transperfect-direct",
+      "messageId": "<17002c20f73a4cca85b5dc4a3d709579@transperfect.com>",
+      "subject": "RE: Lunchportalen - LP-15G3E-transperfect-b88aaf99780e",
+      "from": "jeppe.jordoson@transperfect.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-07-29T08:53:15.000Z",
+      "attachments": [
+        {
+          "filename": "image001.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        },
+        {
+          "filename": "Lunchportalen - LP-15G3E-transperfect-b88aaf99780e.docx",
+          "disposition": "attachment",
+          "ext": ".docx",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-29T09:55:24.105Z",
+      "runId": "30441529723"
     }
   },
-  "lastPollAt": "2026-07-29T06:56:43.597Z"
+  "lastPollAt": "2026-07-29T09:55:24.337Z"
 }

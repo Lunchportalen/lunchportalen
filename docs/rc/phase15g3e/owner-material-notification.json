@@ -1,8 +1,14 @@
 {
   "notifyOwner": true,
-  "runId": "30429798069",
-  "at": "2026-07-29T06:56:43.603Z",
+  "runId": "30441529723",
+  "at": "2026-07-29T09:55:24.343Z",
   "events": [
+    {
+      "kind": "QUOTE_RECEIVED",
+      "firmId": "transperfect-direct",
+      "messageId": "<17002c20f73a4cca85b5dc4a3d709579@transperfect.com>",
+      "subject": "RE: Lunchportalen - LP-15G3E-transperfect-b88aaf99780e"
+    },
     {
       "kind": "OWNER_CONTRACT_PAYMENT_BATCH_READY",
       "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
