@@ -323,7 +323,37 @@
       "fingerprint": "66a7a781896314e2",
       "logic_key": "6ca8c55c72a1217b",
       "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-07-29T12:52:38.088Z",
+      "run_id": 30453277067,
+      "sha": "177ce2cd76b0bcec6c87f266c7f6b850b9ad55bb",
+      "job": "source-and-target-safety",
+      "step": "Refuse production targets and resolve isolated keys",
+      "class": "NETWORK_OR_POOLER_ERROR",
+      "error": "PHASE18_POOLER_AUTH_PROBE_FAILED: password authentication failed for user \"postgres\"",
+      "fingerprint": "0b93cebb38186b78",
+      "logic_key": "21fd7e4c9ca40701",
+      "action": "detect_unhandled_failure"
+    },
+    {
+      "at": "2026-07-29T12:52:39.787Z",
+      "run_id": 30453277067,
+      "sha": "177ce2cd76b0bcec6c87f266c7f6b850b9ad55bb",
+      "class": "NETWORK_OR_POOLER_ERROR",
+      "fingerprint": "0b93cebb38186b78",
+      "logic_key": "21fd7e4c9ca40701",
+      "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-07-29T12:53:31.116Z",
+      "run_id": 30453277067,
+      "sha": "177ce2cd76b0bcec6c87f266c7f6b850b9ad55bb",
+      "class": "NETWORK_OR_POOLER_ERROR",
+      "fingerprint": "0b93cebb38186b78",
+      "action": "dispatch_replacement_phase18",
+      "replacement_run_id": 30453534158
     }
   ],
-  "updated_at": "2026-07-29T12:50:46.752Z"
+  "updated_at": "2026-07-29T12:53:31.116Z"
 }
