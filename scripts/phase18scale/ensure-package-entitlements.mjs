@@ -32,7 +32,10 @@ const CHECKPOINT_PATH = path.join(OUT, "ensure-package-entitlements.checkpoint.j
 const REPORT_PATH = path.join(OUT, "ensure-package-entitlements.json");
 
 const ENTITLEMENTS_PER_PROVIDER = expectedEntitlementsPerProvider();
-const EXPECTED_ROWS = PROVIDER_COUNT * ENTITLEMENTS_PER_PROVIDER;
+const expectedProviderCount = Number(
+  process.env.PHASE18_SEED_PROVIDERS || process.env.PHASE18_PROVIDERS || PROVIDER_COUNT,
+);
+const EXPECTED_ROWS = expectedProviderCount * ENTITLEMENTS_PER_PROVIDER;
 
 const ORG_BATCH = Number(process.env.PHASE18_ENTITLEMENT_ORG_BATCH || 100);
 const ENT_BATCH = Number(process.env.PHASE18_ENTITLEMENT_BATCH || 200);
@@ -134,17 +137,21 @@ async function pageProviders(admin) {
     providers.push(...(data ?? []));
     if ((data ?? []).length < 1000) break;
   }
-  return providers.map((p) => {
-    const m = String(p.slug || "").match(/p18scale-prov-(\d+)$/);
-    const index = m ? Number(m[1]) : -1;
-    return {
-      id: p.id,
-      slug: p.slug,
-      name: p.name || `P18 ${p.slug}`,
-      index,
-      country: index >= 0 ? countryForProviderIndex(index) : "NO",
-    };
-  });
+  // Numeric matrix slugs only — ignore bootstrap markers like p18scale-prov-bootstrap.
+  return providers
+    .map((p) => {
+      const m = String(p.slug || "").match(/^p18scale-prov-(\d+)$/);
+      if (!m) return null;
+      const index = Number(m[1]);
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name || `P18 ${p.slug}`,
+        index,
+        country: countryForProviderIndex(index),
+      };
+    })
+    .filter(Boolean);
 }
 
 async function ensureOrganizations(admin, providers) {
@@ -277,8 +284,10 @@ async function main() {
   });
 
   const providers = await pageProviders(admin);
-  if (providers.length !== PROVIDER_COUNT) {
-    throw new Error(`PROVIDER_COUNT_MISMATCH: got=${providers.length} expected=${PROVIDER_COUNT}`);
+  if (providers.length !== expectedProviderCount) {
+    throw new Error(
+      `PROVIDER_COUNT_MISMATCH: got=${providers.length} expected=${expectedProviderCount}`,
+    );
   }
 
   console.log(
