@@ -7,10 +7,10 @@
   "release_sha": "43bcf2553a1235ac5a54a4543cff67478b115504",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "stop_after": "auth-coverage",
-  "active_phase18_run_id": 30480963875,
+  "active_phase18_run_id": null,
   "last_phase18_run_id": 30480963875,
-  "last_phase18_conclusion": "",
-  "last_failure_fingerprint": "22dd3caabe4b8fb3",
+  "last_phase18_conclusion": "failure",
+  "last_failure_fingerprint": "be5e090b36501d8c",
   "owner_wait": "WAITING_OWNER_AUTH",
   "owner_wait_recorded_at": "2026-07-29T12:50:44.501Z",
   "lanes": {
@@ -22,11 +22,11 @@
     "global_staging": "ACTIVE"
   },
   "counters": {
-    "controller_ticks": 109,
-    "autofix_dispatches": 17,
-    "phase18_dispatches": 25,
+    "controller_ticks": 110,
+    "autofix_dispatches": 18,
+    "phase18_dispatches": 26,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-29T19:12:30.721Z"
+  "updated_at": "2026-07-29T19:13:44.196Z"
 }

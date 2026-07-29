@@ -309,7 +309,36 @@
       "replacement_phase18_run_id": 30480551651,
       "resolution": "replacement_dispatched",
       "last_checked_at": "2026-07-29T18:34:38.546Z"
+    },
+    {
+      "detected_at": "2026-07-29T19:13:50.657Z",
+      "failed_run_id": 30480963875,
+      "failed_sha": "43bcf2553a1235ac5a54a4543cff67478b115504",
+      "job": "synthetic-seed",
+      "step": "Ensure package entitlements",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "PHASE18_SYNTH_PASSWORD: P18Scale-6c325dc8e0bfdbc81ee446b9",
+      "fingerprint": "be5e090b36501d8c",
+      "logic_key": "369fb14de435bf3a",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-29T19:13:50.657Z"
+    },
+    {
+      "detected_at": "2026-07-29T19:14:41.780Z",
+      "failed_run_id": 30480963875,
+      "failed_sha": "43bcf2553a1235ac5a54a4543cff67478b115504",
+      "job": "synthetic-seed",
+      "step": "Ensure package entitlements",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "PHASE18_SYNTH_PASSWORD: P18Scale-6c325dc8e0bfdbc81ee446b9",
+      "fingerprint": "be5e090b36501d8c",
+      "logic_key": "369fb14de435bf3a",
+      "autofix_run_id": 30483477496,
+      "fix_sha": "43bcf2553a1235ac5a54a4543cff67478b115504",
+      "replacement_phase18_run_id": 30483536934,
+      "resolution": "replacement_dispatched",
+      "last_checked_at": "2026-07-29T19:14:41.780Z"
     }
   ],
-  "updated_at": "2026-07-29T18:34:38.546Z"
+  "updated_at": "2026-07-29T19:14:41.780Z"
 }
