@@ -8,7 +8,7 @@
   "phase18_project_ref": "arstaxredytrjcmqcwhh",
   "stop_after": "auth-coverage",
   "active_phase18_run_id": null,
-  "last_phase18_run_id": 30427328011,
+  "last_phase18_run_id": 30434171158,
   "last_phase18_conclusion": "failure",
   "last_failure_fingerprint": "b3307a8ffe0e6550",
   "owner_wait": "WAITING_OWNER_AUTH",
@@ -22,11 +22,11 @@
     "global_staging": "PENDING"
   },
   "counters": {
-    "controller_ticks": 84,
+    "controller_ticks": 85,
     "autofix_dispatches": 6,
-    "phase18_dispatches": 15,
+    "phase18_dispatches": 16,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-29T08:06:12.379Z"
+  "updated_at": "2026-07-29T09:12:50.485Z"
 }
