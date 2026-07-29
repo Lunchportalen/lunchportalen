@@ -6,7 +6,7 @@
     "phase18_source_safety": "FAIL",
     "phase18_schema_parity": "FAIL",
     "phase18_harness_dry_run": "STALE",
-    "phase18_auth_coverage": "FAIL",
+    "phase18_auth_coverage": "PASS",
     "phase18_controlled_ramps": "NOT_RUN",
     "global_staging_candidate": "NOT_RUN",
     "production_preflight": "NOT_RUN",
@@ -25,5 +25,5 @@
     "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved",
     "phase18_last_failure": "AUTH_OR_SESSION_ERROR: PHASE18_SYNTH_PASSWORD: P18Scale-6c325dc8e0bfdbc81ee446b9"
   },
-  "updated_at": "2026-07-29T20:17:07.937Z"
+  "updated_at": "2026-07-29T20:18:06.666Z"
 }

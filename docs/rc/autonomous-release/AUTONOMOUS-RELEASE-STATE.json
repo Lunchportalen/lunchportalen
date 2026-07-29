@@ -1,20 +1,20 @@
 {
   "controller": "phase18-autonomous-global-release",
   "version": 1,
-  "state": "AUTH_COVERAGE",
+  "state": "CONTROLLED_RAMPS",
   "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
   "release_sha": "76fcbd5fdf079b256db8b983484d9668a3c1588b",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
-  "stop_after": "auth-coverage",
-  "active_phase18_run_id": 30484135862,
+  "stop_after": "controlled-ramps-business",
+  "active_phase18_run_id": null,
   "last_phase18_run_id": 30484135862,
-  "last_phase18_conclusion": "",
+  "last_phase18_conclusion": "success",
   "last_failure_fingerprint": "be5e090b36501d8c",
   "owner_wait": "WAITING_OWNER_AUTH",
   "owner_wait_recorded_at": "2026-07-29T12:50:44.501Z",
   "lanes": {
-    "phase18_auth_coverage": "ACTIVE",
+    "phase18_auth_coverage": "PASS",
     "github_hygiene": "ACTIVE",
     "launch_gates_docs": "ACTIVE",
     "production_deploy": "BLOCKED_WAITING_OWNER_AUTH",
@@ -22,11 +22,11 @@
     "global_staging": "ACTIVE"
   },
   "counters": {
-    "controller_ticks": 112,
+    "controller_ticks": 113,
     "autofix_dispatches": 18,
-    "phase18_dispatches": 26,
+    "phase18_dispatches": 27,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-29T20:17:06.349Z"
+  "updated_at": "2026-07-29T20:18:02.756Z"
 }
