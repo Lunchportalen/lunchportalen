@@ -1,41 +1,59 @@
 # MULTI-GLOBAL LIVE RELEASE REPORT — 2026-08-01
 
-Draft stamp: 2026-07-26T01:00:00Z  
-Overall status at stamp: **LIVE_RUN_CONTINUING** (not LIVE)
+Stamp: 2026-07-29T17:57:00Z  
+Overall status: **LIVE_RUN_CONTINUING** (not LIVE)
 
 ## Identities
 
 | Field | Value |
 |---|---|
 | Release branch | `release/global-menu-universes-21` |
-| Release tip SHA | `ed9470c0672d020f31156160a1f4b743a188fe3f` |
-| Phase 18 app SHA under test | `c4fd2edb2159165647ef2b95f9e070e33641b2fe` |
-| Phase 18 run | [30181676498](https://github.com/Lunchportalen/lunchportalen/actions/runs/30181676498) |
-| Isolated project | `arstaxredytrjcmqcwhh` |
-| Production project | `hkpokyapzarefrgqzkos` |
-| Last known Production deployment SHA (GitHub) | `5cf96d7457292976faac4a6decc8763baf0aa48f` (2026-07-15) |
-| Shared staging `uigxsboqeruxflgzqztl` | GONE |
+| GLOBAL_RELEASE_SHA | `d7bbb11f600138eef13e1df2226857c2fb2847d6` |
+| Isolated Supabase project | `lenajhsfrqdqcdzhcuao` (eu-west-1, USD 10/mo, expires 2026-08-01T12:26:44Z) |
+| Previous dead isolated project | `arstaxredytrjcmqcwhh` (gone) |
+| Production project | `hkpokyapzarefrgqzkos` (never targeted by Phase 18) |
+| Shared staging | `uigxsboqeruxflgzqztl` GONE |
+| Active Phase 18 run | [30477652774](https://github.com/Lunchportalen/lunchportalen/actions/runs/30477652774) (`stop_after=harness-dry-run`, seed 1000/2000/420) |
+
+## Locked commercial model
+
+- invoice_only · Stripe OFF · provider invoices customer · Lunchportalen invoices provider
+- exact 5% commission · customer tax excluded from commission base
+- provider-owned prices · country=market config · locale=presentation
+
+## Progress (measured)
+
+| Gate | Status | Evidence |
+|---|---|---|
+| Isolated project restored ≤ USD 10 | PASS | `lenajhsfrqdqcdzhcuao` ACTIVE_HEALTHY |
+| Pooler auth on new project | PASS | Forced rotate + post-rotate auth retry (settle) |
+| Source safety / schema parity / observability | PASS | Run 30458298483 |
+| Synthetic matrix seed | PASS | 1000 providers (+bootstrap), 2000 companies, 420 auth users, 21 company countries |
+| Menu-path alignment | FIX LANDED | Prior fail `PHASE18_RUN_DATE_MANIFEST_MISSING` — synthetic-seed now downloads run-date artifact |
+| Markets / locales / currencies registry | PASS | `verify-21-country-markets.mjs` → 21/21, 24/24 |
+| GLOBAL_STAGING_RELEASE_CANDIDATE | IN_PROGRESS | Harness dry-run after seed resume |
+| GLOBAL_SCALE_CERTIFIED | NO | Full 100k/50k deferred per owner §9 |
+| Production deploy | BLOCKED | `OWNER_AUTHENTICATION_REQUIRED` (no `VERCEL_TOKEN`) |
+| Legal/tax activation | BLOCKED | `OWNER_LEGAL_TAX_DECISION_REQUIRED` (not forged) |
+| MULTI_GLOBAL_CUSTOMER_RELEASE | NOT_LIVE | Requires measured 21/21 canary + waves |
+
+## Owner-only blockers (independent lanes continue)
+
+1. **OWNER_AUTHENTICATION_REQUIRED** — production exact-SHA deploy / Vercel credentials
+2. **OWNER_LEGAL_TAX_DECISION_REQUIRED** — native tax/legal approvals; model/text changes forbidden
 
 ## GitHub hygiene
 
 | Metric | Value |
 |---|---|
-| Open Issues | 1 (`#560` canonical 15G.3E owner commercial action) |
-| Automation noise Issues | 0 (closed `#562`, `#563`; PR `#564` merged to main) |
-| Open PRs | 0 |
-| Genuine defects remaining | Security audit failure on main (triage); legal/tax human approvals |
-
-## Production path blockers (honest)
-
-1. **OWNER_AUTHENTICATION_REQUIRED** — Vercel CLI has no credentials; `PRODUCTION_AUTO_DEPLOY_LOCK` ACTIVE. Cannot exact-SHA production deploy from this agent environment.
-2. **OWNER_LEGAL_TAX_DECISION_REQUIRED** — `evaluateGlobal21Ready` remains `BUILT_BUT_NOT_LEGALLY_APPROVED` (`TAX_APPROVED`/`LEGAL_APPROVED` not forged; model/text changes forbidden).
-3. Phase 18 Auth coverage — in progress on pooler-retry SHA (prior run failed on shard-3 pooler timeout).
+| Open PRs | 0 (autofix #572 merged to main) |
+| Canonical owner Issue | #560 |
+| Automation noise Issues | 0 |
+| ACTIVE_PHASE18_RUNS target | ≤ 1 |
 
 ## Not claimed
 
-- `MULTI_GLOBAL_CUSTOMER_RELEASE_LIVE` — not verified
-- `GLOBAL_SCALE_CERTIFIED` — NO
-- Stripe — OFF (policy)
-- Destructive migrations — 0
-
-See also: `GLOBAL-LAUNCH-CRITICAL-GATES.md`.
+- `MULTI_GLOBAL_CUSTOMER_RELEASE_LIVE`
+- `GLOBAL_SCALE_CERTIFIED`
+- Stripe active
+- Destructive migrations

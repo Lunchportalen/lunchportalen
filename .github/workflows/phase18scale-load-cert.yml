@@ -306,10 +306,6 @@ jobs:
         run: node scripts/phase18scale/ensure-varmrett-product-categories.mjs
       - name: Align menu path offered prices to agreement tiers
         run: node scripts/phase18scale/ensure-menu-path-price-alignment.mjs
-      - name: Company menu-path preflight (2000)
-        env:
-          PHASE18_MENU_PATH_MODE: companies
-        run: node scripts/phase18scale/audit-menu-path-preflight.mjs
       - name: Ensure package entitlements
         run: node scripts/phase18scale/ensure-package-entitlements.mjs
       - name: Entitlement seed idempotency (second run)
@@ -343,6 +339,10 @@ jobs:
           console.log(JSON.stringify(out, null, 2));
           if (!ok) process.exit(2);
           NODE
+      - name: Company menu-path preflight (2000)
+        env:
+          PHASE18_MENU_PATH_MODE: companies
+        run: node scripts/phase18scale/audit-menu-path-preflight.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
