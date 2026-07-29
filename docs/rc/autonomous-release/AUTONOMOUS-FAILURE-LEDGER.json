@@ -464,7 +464,37 @@
       "fingerprint": "095f78f8c1f09bc5",
       "action": "dispatch_replacement_phase18",
       "replacement_run_id": 30458133935
+    },
+    {
+      "at": "2026-07-29T15:43:04.629Z",
+      "run_id": 30458298483,
+      "sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "job": "synthetic-seed",
+      "step": "Align menu path offered prices to agreement tiers",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "error": "Error: PHASE18_RUN_DATE_MANIFEST_MISSING",
+      "fingerprint": "5373c1464544b8c8",
+      "logic_key": "09b0b97e872f8b84",
+      "action": "detect_unhandled_failure"
+    },
+    {
+      "at": "2026-07-29T15:43:05.912Z",
+      "run_id": 30458298483,
+      "sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "fingerprint": "5373c1464544b8c8",
+      "logic_key": "09b0b97e872f8b84",
+      "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-07-29T15:44:26.383Z",
+      "run_id": 30458298483,
+      "sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "fingerprint": "5373c1464544b8c8",
+      "action": "dispatch_replacement_phase18",
+      "replacement_run_id": 30467343671
     }
   ],
-  "updated_at": "2026-07-29T15:39:14.540Z"
+  "updated_at": "2026-07-29T15:44:26.383Z"
 }

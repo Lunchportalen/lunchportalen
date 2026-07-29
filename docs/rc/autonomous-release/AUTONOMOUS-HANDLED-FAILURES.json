@@ -222,7 +222,36 @@
       "replacement_phase18_run_id": 30458133935,
       "resolution": "replacement_dispatched",
       "last_checked_at": "2026-07-29T13:53:26.605Z"
+    },
+    {
+      "detected_at": "2026-07-29T15:43:04.629Z",
+      "failed_run_id": 30458298483,
+      "failed_sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "job": "synthetic-seed",
+      "step": "Align menu path offered prices to agreement tiers",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "Error: PHASE18_RUN_DATE_MANIFEST_MISSING",
+      "fingerprint": "5373c1464544b8c8",
+      "logic_key": "09b0b97e872f8b84",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-29T15:43:04.629Z"
+    },
+    {
+      "detected_at": "2026-07-29T15:44:26.383Z",
+      "failed_run_id": 30458298483,
+      "failed_sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "job": "synthetic-seed",
+      "step": "Align menu path offered prices to agreement tiers",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "Error: PHASE18_RUN_DATE_MANIFEST_MISSING",
+      "fingerprint": "5373c1464544b8c8",
+      "logic_key": "09b0b97e872f8b84",
+      "autofix_run_id": 30467232270,
+      "fix_sha": "61a6466713c16f118eb508729a0bc4f510384c86",
+      "replacement_phase18_run_id": 30467343671,
+      "resolution": "replacement_dispatched",
+      "last_checked_at": "2026-07-29T15:44:26.383Z"
     }
   ],
-  "updated_at": "2026-07-29T13:53:26.605Z"
+  "updated_at": "2026-07-29T15:44:26.383Z"
 }
