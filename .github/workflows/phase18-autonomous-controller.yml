@@ -1,5 +1,8 @@
 # Permanent multi-global release controller (survives Cursor close).
 # Scheduled + workflow_run triggers require this file on the default branch (main).
+# NOTE: GITHUB_TOKEN-dispatched child workflows do NOT trigger workflow_run
+# (GitHub recursion protection). The */5 schedule + in-tick autofix wait are
+# the guaranteed reaction paths (CONTROLLER_MAX_REACTION_TIME = 10 minutes).
 name: phase18-autonomous-controller
 
 on:
@@ -10,8 +13,8 @@ on:
         required: false
         default: "operator-dispatch"
   schedule:
-    # Every 15 minutes UTC
-    - cron: "*/15 * * * *"
+    # Every 5 minutes UTC — guaranteed fallback independent of workflow_run
+    - cron: "*/5 * * * *"
   workflow_run:
     workflows:
       - phase18scale-load-cert
@@ -36,15 +39,19 @@ env:
 jobs:
   tick:
     runs-on: ubuntu-latest
+    # Allow in-tick autofix wait (up to ~8m) + dispatch + persist
     timeout-minutes: 25
     environment: load-cert
     steps:
-      - name: Checkout release branch (code + scripts)
+      - name: Checkout controller code from main (authoritative)
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.RELEASE_BRANCH }}
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch release tip for app SHA
+        run: git fetch origin "$RELEASE_BRANCH" --depth=1
 
       - name: Setup Node
         uses: actions/setup-node@v4

@@ -1,4 +1,5 @@
 # Deterministic autofix lane for the permanent release controller.
+# Checkout scripts from main; apply patches and push to the release branch.
 name: phase18-autonomous-autofix
 
 on:
@@ -46,12 +47,18 @@ jobs:
     timeout-minutes: 45
     environment: load-cert
     steps:
-      - name: Checkout release branch
+      - name: Checkout release branch (apply + push surface)
         uses: actions/checkout@v4
         with:
           ref: ${{ env.RELEASE_BRANCH }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Overlay autofix scripts from main
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          git checkout origin/main -- scripts/autonomous-release/autofix.mjs scripts/autonomous-release/controller.mjs || true
 
       - name: Setup Node
         uses: actions/setup-node@v4
