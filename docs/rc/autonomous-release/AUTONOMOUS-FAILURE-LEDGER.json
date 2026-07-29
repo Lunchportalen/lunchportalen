@@ -242,7 +242,37 @@
       "error": "Process completed with exit code 2.",
       "fingerprint": "c08b47e08c00c580",
       "action": "skip_duplicate_autofix"
+    },
+    {
+      "at": "2026-07-29T10:01:09.755Z",
+      "run_id": 30438706368,
+      "sha": "65e9bdd31ba32ed14604bdf3f2f71fef297fd55b",
+      "job": "source-and-target-safety",
+      "step": "Refuse production targets and resolve isolated keys",
+      "class": "RESOURCE_EXPIRATION",
+      "error": "api-keys HTTP 400",
+      "fingerprint": "1c57acea7244e76d",
+      "logic_key": "1e81a493a532db07",
+      "action": "detect_unhandled_failure"
+    },
+    {
+      "at": "2026-07-29T10:01:12.098Z",
+      "run_id": 30438706368,
+      "sha": "65e9bdd31ba32ed14604bdf3f2f71fef297fd55b",
+      "class": "RESOURCE_EXPIRATION",
+      "fingerprint": "1c57acea7244e76d",
+      "logic_key": "1e81a493a532db07",
+      "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-07-29T10:02:17.520Z",
+      "run_id": 30438706368,
+      "sha": "579d7f8ba6915abaea35c1f46f23095388000c62",
+      "class": "RESOURCE_EXPIRATION",
+      "fingerprint": "1c57acea7244e76d",
+      "action": "dispatch_replacement_phase18",
+      "replacement_run_id": 30442066075
     }
   ],
-  "updated_at": "2026-07-29T09:12:55.027Z"
+  "updated_at": "2026-07-29T10:02:17.520Z"
 }

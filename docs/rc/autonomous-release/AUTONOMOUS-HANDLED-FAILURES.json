@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "detected_at": "2026-07-29T10:01:09.755Z",
+      "failed_run_id": 30438706368,
+      "failed_sha": "65e9bdd31ba32ed14604bdf3f2f71fef297fd55b",
+      "job": "source-and-target-safety",
+      "step": "Refuse production targets and resolve isolated keys",
+      "error_class": "RESOURCE_EXPIRATION",
+      "error": "api-keys HTTP 400",
+      "fingerprint": "1c57acea7244e76d",
+      "logic_key": "1e81a493a532db07",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-29T10:01:09.755Z"
+    },
+    {
+      "detected_at": "2026-07-29T10:02:17.520Z",
+      "failed_run_id": 30438706368,
+      "failed_sha": "65e9bdd31ba32ed14604bdf3f2f71fef297fd55b",
+      "job": "source-and-target-safety",
+      "step": "Refuse production targets and resolve isolated keys",
+      "error_class": "RESOURCE_EXPIRATION",
+      "error": "api-keys HTTP 400",
+      "fingerprint": "1c57acea7244e76d",
+      "logic_key": "1e81a493a532db07",
+      "autofix_run_id": 30441992883,
+      "fix_sha": "579d7f8ba6915abaea35c1f46f23095388000c62",
+      "replacement_phase18_run_id": 30442066075,
+      "resolution": "replacement_dispatched",
+      "last_checked_at": "2026-07-29T10:02:17.520Z"
+    }
+  ],
+  "updated_at": "2026-07-29T10:02:17.520Z"
+}
