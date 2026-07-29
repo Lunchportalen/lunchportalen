@@ -58,7 +58,31 @@
       "replacement_phase18_run_id": 30442397404,
       "resolution": "replacement_dispatched",
       "last_checked_at": "2026-07-29T10:07:06.037Z"
+    },
+    {
+      "detected_at": "2026-07-29T10:59:28.774Z",
+      "failed_run_id": 30442397404,
+      "failed_sha": "579d7f8ba6915abaea35c1f46f23095388000c62",
+      "job": "source-and-target-safety",
+      "step": "Refuse production targets and resolve isolated keys",
+      "error_class": "RESOURCE_EXPIRATION",
+      "error": "project HTTP 400",
+      "fingerprint": "66a7a781896314e2",
+      "logic_key": "6ca8c55c72a1217b",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-29T10:59:28.774Z"
+    },
+    {
+      "detected_at": "2026-07-29T11:00:20.264Z",
+      "failed_run_id": 30442397404,
+      "failed_sha": "579d7f8ba6915abaea35c1f46f23095388000c62",
+      "fingerprint": "66a7a781896314e2",
+      "logic_key": "6ca8c55c72a1217b",
+      "autofix_run_id": 30445808528,
+      "fix_sha": "579d7f8ba6915abaea35c1f46f23095388000c62",
+      "resolution": "duplicate_replacement_suppressed",
+      "last_checked_at": "2026-07-29T11:00:20.264Z"
     }
   ],
-  "updated_at": "2026-07-29T10:07:06.037Z"
+  "updated_at": "2026-07-29T11:00:20.264Z"
 }

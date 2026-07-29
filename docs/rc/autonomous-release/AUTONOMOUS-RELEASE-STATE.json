@@ -1,16 +1,16 @@
 {
   "controller": "phase18-autonomous-global-release",
   "version": 1,
-  "state": "AUTH_COVERAGE",
-  "status": "AUTONOMOUS_CONTROLLER_RUNNING",
+  "state": "FAILED_REQUIRES_AUTOFIX",
+  "status": "WAITING_OWNER_RESOURCE",
   "release_branch": "release/global-menu-universes-21",
   "release_sha": "579d7f8ba6915abaea35c1f46f23095388000c62",
   "phase18_project_ref": "arstaxredytrjcmqcwhh",
   "stop_after": "auth-coverage",
   "active_phase18_run_id": null,
-  "last_phase18_run_id": 30442066075,
+  "last_phase18_run_id": 30442397404,
   "last_phase18_conclusion": "failure",
-  "last_failure_fingerprint": "8f1e22e941549aef",
+  "last_failure_fingerprint": "66a7a781896314e2",
   "owner_wait": "WAITING_OWNER_RESOURCE",
   "owner_wait_recorded_at": "2026-07-26T17:05:49.360Z",
   "lanes": {
@@ -22,11 +22,11 @@
     "global_staging": "PENDING"
   },
   "counters": {
-    "controller_ticks": 87,
-    "autofix_dispatches": 8,
+    "controller_ticks": 88,
+    "autofix_dispatches": 9,
     "phase18_dispatches": 18,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-29T10:06:07.801Z"
+  "updated_at": "2026-07-29T10:59:23.444Z"
 }
