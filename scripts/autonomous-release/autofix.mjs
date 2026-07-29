@@ -18,13 +18,13 @@ function sh(cmd, args) {
 }
 
 function bumpPoolerRetries() {
-  let src = fs.readFileSync(RESOLVE, "utf8");
+  let src = fs.readFileSync(RESOLVE, "utf8").replace(/\r\n/g, "\n");
   if (!src.includes("probePoolerAuthWithRetries")) {
     throw new Error("resolve-cloud-target missing probePoolerAuthWithRetries");
   }
   let changed = false;
-  if (src.includes('attempts: 6,\n  label: "initial"')) {
-    src = src.replace('attempts: 6,\n  label: "initial"', 'attempts: 10,\n  label: "initial"');
+  if (src.includes('attempts: 6,\n    label: "initial"')) {
+    src = src.replace('attempts: 6,\n    label: "initial"', 'attempts: 10,\n    label: "initial"');
     changed = true;
   }
   if (src.includes("connectionTimeoutMillis: 30000")) {
@@ -35,6 +35,31 @@ function bumpPoolerRetries() {
     src = src.replace(
       "await new Promise((r) => setTimeout(r, 1000 * attempt));",
       "await new Promise((r) => setTimeout(r, 2500 * attempt));",
+    );
+    changed = true;
+  }
+  // Post-rotate auth can lag; failing closed on first 28P01 leaves new projects stuck.
+  if (!src.includes("retryAuthFailures")) {
+    src = src.replace(
+      "async function probePoolerAuthWithRetries(databaseUrl, { attempts = 10, label = \"probe\" } = {}) {",
+      "async function probePoolerAuthWithRetries(\n  databaseUrl,\n  { attempts = 10, label = \"probe\", retryAuthFailures = false } = {},\n) {",
+    );
+    src = src.replace(
+      "if (isAuthFailure(last.error)) return last;",
+      "const authFail = isAuthFailure(last.error);\n    if (authFail && !retryAuthFailures) return last;",
+    );
+    if (src.includes('label: "post_rotate"') && !src.includes("retryAuthFailures: true")) {
+      src = src.replace(
+        /label:\s*"post_rotate",?\n(\s*)\}/,
+        'label: "post_rotate",\n$1  retryAuthFailures: true,\n$1}',
+      );
+    }
+    changed = true;
+  }
+  if (!src.includes("phase18_password_rotate_settle_ms: settleMs") && src.includes("phase18_password_rotate_settle_ms\": 8000")) {
+    src = src.replace(
+      'console.error(JSON.stringify({ phase18_password_rotate_settle_ms: 8000, action: passwordAction }));\n  await new Promise((r) => setTimeout(r, 8000));',
+      'const settleMs = forceRotate ? 25000 : 12000;\n  console.error(JSON.stringify({ phase18_password_rotate_settle_ms: settleMs, action: passwordAction }));\n  await new Promise((r) => setTimeout(r, settleMs));',
     );
     changed = true;
   }
