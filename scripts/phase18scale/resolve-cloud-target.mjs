@@ -220,16 +220,19 @@ let databaseUrl = buildDatabaseUrl(user, dbPassword, poolerHost);
 let passwordAction = "reused_existing";
 
 const forceRotate = ["1", "true", "yes"].includes(
-  String(process.env.PHASE18_ROTATE_DB_PASSWORD || "").toLowerCase(),
+  String(process.env.PHASE18_ROTATE_DB_PASSWORD || process.env.PHASE18_FORCE_INITIAL_ROTATE || "").toLowerCase(),
 );
 
 // Retry transient pooler timeouts before any Management API password rotate.
 // Concurrent auth-session-issue shards (run #43 shard 3) hit "timeout expired";
 // rotating on timeout races other shards and worsens pooler auth.
-let probe = await probePoolerAuthWithRetries(databaseUrl, {
-  attempts: 10,
-  label: "initial",
-});
+let probe = { ok: false, error: "not_probed" };
+if (!forceRotate) {
+  probe = await probePoolerAuthWithRetries(databaseUrl, {
+    attempts: 10,
+    label: "initial",
+  });
+}
 const shouldRotate =
   forceRotate || (!probe.ok && isAuthFailure(probe.error));
 
@@ -241,9 +244,12 @@ if (shouldRotate) {
   }
   passwordAction = forceRotate ? "forced_rotate" : "rotated_after_auth_fail";
   databaseUrl = buildDatabaseUrl(user, dbPassword, poolerHost);
+  // New projects / Management API rotates need a short settle before Supavisor accepts the password.
+  console.error(JSON.stringify({ phase18_password_rotate_settle_ms: 8000, action: passwordAction }));
+  await new Promise((r) => setTimeout(r, 8000));
 
   probe = await probePoolerAuthWithRetries(databaseUrl, {
-    attempts: 8,
+    attempts: 12,
     label: "post_rotate",
   });
 }

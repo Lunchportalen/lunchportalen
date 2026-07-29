@@ -108,6 +108,8 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PHASE18_LOAD_REF: ${{ inputs.project_ref }}
+          # New isolated projects start with a provider-generated DB password; align to deterministic loadcert password.
+          PHASE18_FORCE_INITIAL_ROTATE: "1"
         run: |
           set -euo pipefail
           case "${PHASE18_LOAD_REF:-}" in
