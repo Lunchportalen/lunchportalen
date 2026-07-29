@@ -1,5 +1,5 @@
 {
-  "GLOBAL_RELEASE_SHA": "3616c98fa35687b704cd858481f6daa60c441dc3",
+  "GLOBAL_RELEASE_SHA": "cd332416bb8b6341c5d008f55e88b87cd37fb817",
   "release_branch": "release/global-menu-universes-21",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "phase18_project_region": "eu-west-1",
@@ -10,8 +10,8 @@
   "STRIPE": "OFF",
   "invoice_only": true,
   "note": "Frozen after post-rotate pooler auth propagation fix; staging/production must use this SHA.",
-  "updated_at": "2026-07-29T13:04:11.271Z",
-  "frozen_at": "2026-07-29T13:04:11.271Z",
+  "updated_at": "2026-07-29T13:09:00.915Z",
+  "frozen_at": "2026-07-29T13:09:00.915Z",
   "source_gates": {
     "ci:guard": "PASS",
     "secret_pii_scan": "PASS",
