@@ -4,12 +4,12 @@
   "state": "AUTH_COVERAGE",
   "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
-  "release_sha": "d7bbb11f600138eef13e1df2226857c2fb2847d6",
+  "release_sha": "43bcf2553a1235ac5a54a4543cff67478b115504",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "stop_after": "auth-coverage",
-  "active_phase18_run_id": null,
-  "last_phase18_run_id": 30477652774,
-  "last_phase18_conclusion": "failure",
+  "active_phase18_run_id": 30480963875,
+  "last_phase18_run_id": 30480963875,
+  "last_phase18_conclusion": "",
   "last_failure_fingerprint": "22dd3caabe4b8fb3",
   "owner_wait": "WAITING_OWNER_AUTH",
   "owner_wait_recorded_at": "2026-07-29T12:50:44.501Z",
@@ -22,11 +22,11 @@
     "global_staging": "ACTIVE"
   },
   "counters": {
-    "controller_ticks": 107,
+    "controller_ticks": 108,
     "autofix_dispatches": 17,
     "phase18_dispatches": 25,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-29T18:33:41.336Z"
+  "updated_at": "2026-07-29T18:41:37.106Z"
 }
