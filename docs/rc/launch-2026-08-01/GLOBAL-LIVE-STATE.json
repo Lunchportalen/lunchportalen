@@ -15,8 +15,7 @@
   "commission_bps": 500,
   "owner_blockers": [
     "WAITING_OWNER_AUTH",
-    "WAITING_OWNER_LEGAL_TAX",
-    "WAITING_OWNER_RESOURCE"
+    "WAITING_OWNER_LEGAL_TAX"
   ],
-  "updated_at": "2026-07-29T12:33:15.672Z"
+  "updated_at": "2026-07-29T12:50:46.752Z"
 }

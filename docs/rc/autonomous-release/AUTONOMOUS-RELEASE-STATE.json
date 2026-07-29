@@ -1,32 +1,32 @@
 {
   "controller": "phase18-autonomous-global-release",
   "version": 1,
-  "state": "FAILED_REQUIRES_AUTOFIX",
-  "status": "WAITING_OWNER_RESOURCE",
+  "state": "AUTH_COVERAGE",
+  "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
-  "release_sha": "579d7f8ba6915abaea35c1f46f23095388000c62",
-  "phase18_project_ref": "arstaxredytrjcmqcwhh",
+  "release_sha": "177ce2cd76b0bcec6c87f266c7f6b850b9ad55bb",
+  "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "stop_after": "auth-coverage",
-  "active_phase18_run_id": null,
-  "last_phase18_run_id": 30442397404,
-  "last_phase18_conclusion": "failure",
+  "active_phase18_run_id": 30453277067,
+  "last_phase18_run_id": 30453277067,
+  "last_phase18_conclusion": "",
   "last_failure_fingerprint": "66a7a781896314e2",
-  "owner_wait": "WAITING_OWNER_RESOURCE",
-  "owner_wait_recorded_at": "2026-07-26T17:05:49.360Z",
+  "owner_wait": "WAITING_OWNER_AUTH",
+  "owner_wait_recorded_at": "2026-07-29T12:50:44.501Z",
   "lanes": {
     "phase18_auth_coverage": "ACTIVE",
     "github_hygiene": "ACTIVE",
     "launch_gates_docs": "ACTIVE",
     "production_deploy": "BLOCKED_WAITING_OWNER_AUTH",
     "legal_tax_activation": "BLOCKED_WAITING_OWNER_LEGAL_TAX",
-    "global_staging": "PENDING"
+    "global_staging": "ACTIVE"
   },
   "counters": {
-    "controller_ticks": 90,
+    "controller_ticks": 91,
     "autofix_dispatches": 9,
     "phase18_dispatches": 18,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-29T12:33:13.104Z"
+  "updated_at": "2026-07-29T12:50:43.877Z"
 }
