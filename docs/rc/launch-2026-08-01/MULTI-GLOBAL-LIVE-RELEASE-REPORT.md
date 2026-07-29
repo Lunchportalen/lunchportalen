@@ -1,59 +1,80 @@
 # MULTI-GLOBAL LIVE RELEASE REPORT — 2026-08-01
 
-Stamp: 2026-07-29T17:57:00Z  
-Overall status: **LIVE_RUN_CONTINUING** (not LIVE)
+Stamp: 2026-07-29T22:20:00Z  
+Terminal status for this cycle: **OWNER_AUTHENTICATION_REQUIRED**  
+(Independent staging technical lane: **GLOBAL_STAGING_RELEASE_CANDIDATE = PASS**)
 
 ## Identities
 
 | Field | Value |
 |---|---|
 | Release branch | `release/global-menu-universes-21` |
-| GLOBAL_RELEASE_SHA | `d7bbb11f600138eef13e1df2226857c2fb2847d6` |
-| Isolated Supabase project | `lenajhsfrqdqcdzhcuao` (eu-west-1, USD 10/mo, expires 2026-08-01T12:26:44Z) |
-| Previous dead isolated project | `arstaxredytrjcmqcwhh` (gone) |
-| Production project | `hkpokyapzarefrgqzkos` (never targeted by Phase 18) |
+| GLOBAL_RELEASE_SHA | `35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c` |
+| Isolated Supabase | `lenajhsfrqdqcdzhcuao` (eu-west-1, USD 10/mo, expires 2026-08-01T12:26:44Z) |
+| Global staging run | [30488712254](https://github.com/Lunchportalen/lunchportalen/actions/runs/30488712254) |
+| Prior harness seed run | [30484135862](https://github.com/Lunchportalen/lunchportalen/actions/runs/30484135862) |
+| Production project | `hkpokyapzarefrgqzkos` (never Phase 18 target) |
 | Shared staging | `uigxsboqeruxflgzqztl` GONE |
-| Active Phase 18 run | [30477652774](https://github.com/Lunchportalen/lunchportalen/actions/runs/30477652774) (`stop_after=harness-dry-run`, seed 1000/2000/420) |
 
-## Locked commercial model
+## Locked model (unchanged)
 
-- invoice_only · Stripe OFF · provider invoices customer · Lunchportalen invoices provider
-- exact 5% commission · customer tax excluded from commission base
-- provider-owned prices · country=market config · locale=presentation
+invoice_only · Stripe OFF · provider invoices customer · Lunchportalen invoices provider · exact 5% commission · customer tax excluded from commission base · provider-owned prices · country=market · locale=presentation
 
-## Progress (measured)
+## Global staging (measured PASS)
 
-| Gate | Status | Evidence |
-|---|---|---|
-| Isolated project restored ≤ USD 10 | PASS | `lenajhsfrqdqcdzhcuao` ACTIVE_HEALTHY |
-| Pooler auth on new project | PASS | Forced rotate + post-rotate auth retry (settle) |
-| Source safety / schema parity / observability | PASS | Run 30458298483 |
-| Synthetic matrix seed | PASS | 1000 providers (+bootstrap), 2000 companies, 420 auth users, 21 company countries |
-| Menu-path alignment | FIX LANDED | Prior fail `PHASE18_RUN_DATE_MANIFEST_MISSING` — synthetic-seed now downloads run-date artifact |
-| Markets / locales / currencies registry | PASS | `verify-21-country-markets.mjs` → 21/21, 24/24 |
-| GLOBAL_STAGING_RELEASE_CANDIDATE | IN_PROGRESS | Harness dry-run after seed resume |
-| GLOBAL_SCALE_CERTIFIED | NO | Full 100k/50k deferred per owner §9 |
-| Production deploy | BLOCKED | `OWNER_AUTHENTICATION_REQUIRED` (no `VERCEL_TOKEN`) |
-| Legal/tax activation | BLOCKED | `OWNER_LEGAL_TAX_DECISION_REQUIRED` (not forged) |
-| MULTI_GLOBAL_CUSTOMER_RELEASE | NOT_LIVE | Requires measured 21/21 canary + waves |
+| Metric | Result |
+|---|---|
+| GLOBAL_STAGING_COUNTRIES | 21/21 |
+| GLOBAL_STAGING_LOCALES | 24/24 (registry) |
+| GLOBAL_STAGING_CURRENCIES | 11/11 (registry) |
+| ORDER_FLOWS | 21/21 SET_OK |
+| CANCELLATION_FLOWS | 21/21 CANCEL_OK |
+| CROSS_TENANT_FAILURES | 0 |
+| WRONG_PROVIDER_FAILURES | 0 |
+| PRODUCTION_DIFFERENCE | 0 |
+| FINANCIAL_DIFFERENCE | 0 |
+| STRIPE_CALLS | 0 |
+| Countries in ops | AT BE CA CH CZ DE DK ES FI FR GB GR IE IT NL NO PL PT RO SE US |
 
-## Owner-only blockers (independent lanes continue)
+Evidence: `docs/rc/phase18scale/evidence/global-staging-21-country-order-coverage.json` + harness gates from run 30488712254.
 
-1. **OWNER_AUTHENTICATION_REQUIRED** — production exact-SHA deploy / Vercel credentials
-2. **OWNER_LEGAL_TAX_DECISION_REQUIRED** — native tax/legal approvals; model/text changes forbidden
+## Production path
+
+| Gate | Status |
+|---|---|
+| GLOBAL_PRODUCTION_PREFLIGHT | NOT RUN — blocked |
+| INTERNAL_GLOBAL_CANARY | NOT RUN |
+| Country waves 1–4 | NOT RUN |
+| MULTI_GLOBAL_CUSTOMER_RELEASE | NOT_LIVE |
+
+### OWNER_AUTHENTICATION_REQUIRED
+
+Vercel / production deploy credentials are not available to the autonomous controller (`VERCEL_TOKEN` missing in controller env). Exact-SHA production deploy, canary, and country activation cannot proceed until owner provides production authentication.
+
+Independent lanes continue: staging evidence, source gates, controller hygiene, docs.
+
+### OWNER_LEGAL_TAX_DECISION_REQUIRED
+
+Tax/legal approvals remain fail-closed (`BUILT_BUT_NOT_LEGALLY_APPROVED`). Not forged. Model/text changes forbidden.
+
+## Scale certification (does not block launch path)
+
+| Gate | Status |
+|---|---|
+| GLOBAL_SCALE_CERTIFIED | NO |
+| 100k orders / 50k cancels / soak | Deferred after launch per owner §9 |
 
 ## GitHub hygiene
 
 | Metric | Value |
 |---|---|
-| Open PRs | 0 (autofix #572 merged to main) |
+| Open PRs | 0 |
 | Canonical owner Issue | #560 |
-| Automation noise Issues | 0 |
 | ACTIVE_PHASE18_RUNS target | ≤ 1 |
 
 ## Not claimed
 
 - `MULTI_GLOBAL_CUSTOMER_RELEASE_LIVE`
 - `GLOBAL_SCALE_CERTIFIED`
+- Production canary 21/21
 - Stripe active
-- Destructive migrations

@@ -1,5 +1,5 @@
 {
-  "GLOBAL_RELEASE_SHA": "61a6466713c16f118eb508729a0bc4f510384c86",
+  "GLOBAL_RELEASE_SHA": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
   "release_branch": "release/global-menu-universes-21",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "phase18_project_region": "eu-west-1",
@@ -9,15 +9,18 @@
   "AUTO_DELETE_AFTER_RELEASE_VERIFICATION": "REQUIRED",
   "STRIPE": "OFF",
   "invoice_only": true,
-  "note": "Frozen after pooler post-rotate auth retry + lean seed knobs for launch staging.",
-  "updated_at": "2026-07-29T13:56:00.000Z",
-  "frozen_at": "2026-07-29T13:56:00.000Z",
-  "active_phase18_run": "30458298483",
+  "GLOBAL_STAGING_RELEASE_CANDIDATE": "PASS",
+  "global_staging_run": "30488712254",
+  "ORDER_FLOWS": "21/21",
+  "CANCELLATION_FLOWS": "21/21",
+  "note": "Frozen after isolated global staging harness: 21/21 country SET+CANCEL, zero integrity deltas.",
+  "updated_at": "2026-07-29T22:20:00.000Z",
+  "frozen_at": "2026-07-29T22:20:00.000Z",
   "source_gates": {
     "ci:guard": "PASS",
     "secret_pii_scan": "PASS",
-    "focused_phase18_tests": "PASS",
     "preflight_push": "PASS",
-    "markets_21": "PASS"
+    "markets_21": "PASS",
+    "harness_dry_run_21": "PASS"
   }
 }
