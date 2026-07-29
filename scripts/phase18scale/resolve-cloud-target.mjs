@@ -137,13 +137,20 @@ async function probePoolerAuth(databaseUrl) {
   }
 }
 
-async function probePoolerAuthWithRetries(databaseUrl, { attempts = 10, label = "probe" } = {}) {
+async function probePoolerAuthWithRetries(
+  databaseUrl,
+  { attempts = 10, label = "probe", retryAuthFailures = false } = {},
+) {
   let last = { ok: false, error: "not_probed" };
   for (let attempt = 1; attempt <= attempts; attempt++) {
     last = await probePoolerAuth(databaseUrl);
     if (last.ok) return last;
-    if (isAuthFailure(last.error)) return last;
-    if (!isTransientPoolerError(last.error) && attempt >= 2) return last;
+    const authFail = isAuthFailure(last.error);
+    // Auth failures are terminal for normal probes (that triggers rotate).
+    // After Management API rotate, Supavisor can keep serving the old password
+    // for tens of seconds — retry auth there instead of failing closed on attempt 1.
+    if (authFail && !retryAuthFailures) return last;
+    if (!authFail && !isTransientPoolerError(last.error) && attempt >= 2) return last;
     console.error(
       JSON.stringify({
         phase18_pooler_probe_retry: {
@@ -151,11 +158,14 @@ async function probePoolerAuthWithRetries(databaseUrl, { attempts = 10, label = 
           attempt,
           attempts,
           error: last.error,
+          auth_failure: authFail,
           transient: isTransientPoolerError(last.error),
+          retry_auth: retryAuthFailures,
         },
       }),
     );
-    await new Promise((r) => setTimeout(r, 2500 * attempt));
+    // Cap auth backoff so post-rotate settle stays inside the job timeout.
+    await new Promise((r) => setTimeout(r, authFail ? Math.min(8000, 3000 * attempt) : 2500 * attempt));
   }
   return last;
 }
@@ -244,14 +254,34 @@ if (shouldRotate) {
   }
   passwordAction = forceRotate ? "forced_rotate" : "rotated_after_auth_fail";
   databaseUrl = buildDatabaseUrl(user, dbPassword, poolerHost);
-  // New projects / Management API rotates need a short settle before Supavisor accepts the password.
-  console.error(JSON.stringify({ phase18_password_rotate_settle_ms: 8000, action: passwordAction }));
-  await new Promise((r) => setTimeout(r, 8000));
+  // New projects restart DB auth after Management API rotate; Supavisor lag is common.
+  const settleMs = forceRotate ? 25000 : 12000;
+  console.error(JSON.stringify({ phase18_password_rotate_settle_ms: settleMs, action: passwordAction }));
+  await new Promise((r) => setTimeout(r, settleMs));
 
   probe = await probePoolerAuthWithRetries(databaseUrl, {
-    attempts: 12,
+    attempts: 16,
     label: "post_rotate",
+    retryAuthFailures: true,
   });
+
+  // One more rotate+settle if the first password still has not propagated.
+  if (!probe.ok && isAuthFailure(probe.error)) {
+    const pwRes2 = await rotateDatabasePassword(dbPassword);
+    if (!pwRes2.ok) {
+      console.error(`database/password HTTP ${pwRes2.status} (second rotate)`);
+      process.exit(2);
+    }
+    passwordAction = `${passwordAction}+retry_rotate`;
+    databaseUrl = buildDatabaseUrl(user, dbPassword, poolerHost);
+    console.error(JSON.stringify({ phase18_password_rotate_settle_ms: 30000, action: passwordAction }));
+    await new Promise((r) => setTimeout(r, 30000));
+    probe = await probePoolerAuthWithRetries(databaseUrl, {
+      attempts: 16,
+      label: "post_rotate_retry",
+      retryAuthFailures: true,
+    });
+  }
 }
 
 if (!probe.ok) {

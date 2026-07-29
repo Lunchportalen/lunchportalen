@@ -1,5 +1,5 @@
 {
-  "GLOBAL_RELEASE_SHA": "3332efe4cb48ea91544b1acb636babf496577e3f",
+  "GLOBAL_RELEASE_SHA": "PENDING_PUSH",
   "release_branch": "release/global-menu-universes-21",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "phase18_project_region": "eu-west-1",
@@ -9,13 +9,13 @@
   "AUTO_DELETE_AFTER_RELEASE_VERIFICATION": "REQUIRED",
   "STRIPE": "OFF",
   "invoice_only": true,
-  "note": "Frozen release tip after isolated project wire-up; staging/production must use this SHA.",
-  "updated_at": "2026-07-29T12:39:13.551Z",
-  "frozen_at": "2026-07-29T12:39:13.551Z",
+  "note": "Frozen after post-rotate pooler auth propagation fix; staging/production must use this SHA.",
+  "updated_at": "2026-07-29T13:05:00.000Z",
+  "frozen_at": "2026-07-29T13:05:00.000Z",
   "source_gates": {
     "ci:guard": "PASS",
     "secret_pii_scan": "PASS",
     "focused_phase18_tests": "PASS",
-    "preflight_push": "PASS"
+    "preflight_push": "PENDING"
   }
 }
