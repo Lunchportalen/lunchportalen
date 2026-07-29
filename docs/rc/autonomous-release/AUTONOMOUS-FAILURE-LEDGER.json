@@ -187,7 +187,18 @@
       "error": "Process completed with exit code 2.",
       "fingerprint": "8c057487751539fb",
       "action": "skip_duplicate_autofix"
+    },
+    {
+      "at": "2026-07-29T05:01:43.960Z",
+      "run_id": 30420673374,
+      "sha": "65e9bdd31ba32ed14604bdf3f2f71fef297fd55b",
+      "job": "source-and-target-safety",
+      "step": "Refuse production targets and resolve isolated keys",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "error": "Process completed with exit code 2.",
+      "fingerprint": "c08b47e08c00c580",
+      "action": "dispatch_autofix"
     }
   ],
-  "updated_at": "2026-07-29T03:51:14.927Z"
+  "updated_at": "2026-07-29T05:01:45.394Z"
 }
