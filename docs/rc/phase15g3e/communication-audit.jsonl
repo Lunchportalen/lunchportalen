@@ -84,3 +84,4 @@
 {"type":"INBOUND_CLASSIFIED","firmId":"azets-nordic","messageId":"<LO2P265MB428553B01B9415BD1912FF69EACA2@LO2P265MB4285.GBRP265.PROD.OUTLOOK.COM>","classification":"CREDENTIALS_RECEIVED","attachmentCount":1,"at":"2026-07-29T15:38:59.438Z","runId":"30466800636"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-07-29T15:39:01.687Z","runId":"30466800636"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-29T18:22:36.146Z","runId":"30479555328"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-07-29T21:20:30.233Z","runId":"30491904247"}
