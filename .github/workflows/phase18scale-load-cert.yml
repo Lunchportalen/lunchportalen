@@ -292,6 +292,13 @@ jobs:
         run: node scripts/phase18scale/resolve-cloud-target.mjs >> "$GITHUB_ENV"
       - name: Cloud DB connectivity preflight (pooler IPv4 + TLS)
         run: node scripts/phase18scale/cloud-db-connectivity-preflight.mjs
+      - name: Restore canonical run-date contract
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-job-run-date-manifest
+          path: docs/rc/phase18scale/evidence
+      - name: Bind run-date contract into env
+        run: node scripts/phase18scale/bind-run-date-env.mjs
       - run: node scripts/phase18scale/seed-scale-matrix.mjs
       - name: Ensure ACTIVE agreements
         run: node scripts/phase18scale/ensure-agreements.mjs
