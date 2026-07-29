@@ -1083,10 +1083,12 @@ jobs:
     env:
       PHASE18_LOAD_REF: ${{ inputs.project_ref }}
       PHASE18_HARNESS_DRY_RUN: "1"
-      PHASE18_ACTIVE_LOAD_SESSIONS: "10"
+      # One authenticated SET+CANCEL per launch country (21/21 market coverage).
+      PHASE18_ACTIVE_LOAD_SESSIONS: "21"
+      PHASE18_ACTIVE_LOAD_SESSIONS_MIN: "21"
       PHASE18_LOGICAL_OPS_MODE: "1"
       PHASE18_ALLOW_SESSION_WRAP: "1"
-      PHASE18_HTTP_WAVE: "10"
+      PHASE18_HTTP_WAVE: "21"
       PHASE18_HTTP_CONCURRENCY: "2"
       PHASE18_HTTP_WAVE_OUT: "http-wave-harness-dry-run.json"
       PHASE18_MAX_OPS_PER_SESSION: "1"
@@ -1113,20 +1115,45 @@ jobs:
       - name: Bind run-date contract
         run: node scripts/phase18scale/bind-run-date-env.mjs
       - uses: ./.github/actions/phase18-prepare-runtime
-      - name: Issue 10-session dry-run pool
+      - name: Issue 21-country dry-run session pool
         run: node scripts/phase18scale/issue-business-session-pool.mjs
       - name: Preflight dry-run sessions
         env:
           PHASE18_SESSION_STAGE: smoke-100
-          PHASE18_SESSION_TARGET: "10"
+          PHASE18_SESSION_TARGET: "21"
           PHASE18_LOGICAL_OPS_MODE: "1"
         run: node scripts/phase18scale/preflight-session-manifest.mjs
-      - name: Dry-run 10 SET + 10 CANCEL
+      - name: Dry-run 21 SET + 21 CANCEL (one per country)
         env:
           PHASE18_LOGICAL_OPS_MODE: "1"
           PHASE18_ALLOW_SESSION_WRAP: "1"
           PHASE18_LOADCERT: "1"
         run: node scripts/phase18scale/run-ramp-stage.mjs
+      - name: Assert 21/21 country coverage in harness ops
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const path = "docs/rc/phase18scale/evidence/http-wave-harness-dry-run.ops.ndjson";
+          const expected = ["NO","SE","DK","FI","GB","DE","FR","ES","IT","NL","BE","CH","AT","IE","PL","RO","CZ","PT","GR","US","CA"];
+          const lines = fs.readFileSync(path, "utf8").trim().split(/\n+/).filter(Boolean).map((l) => JSON.parse(l));
+          const sets = lines.filter((o) => o.action === "set" || o.persisted_result === "SET_OK");
+          const countries = [...new Set(sets.map((o) => o.country).filter(Boolean))].sort();
+          const missing = expected.filter((c) => !countries.includes(c));
+          const report = {
+            ORDER_FLOWS_COUNTRIES: `${countries.length}/21`,
+            countries,
+            missing,
+            SET_OK: sets.filter((o) => o.persisted_result === "SET_OK" || o.http_status === 200).length,
+            pass: missing.length === 0 && countries.length === 21,
+            stamped_at: new Date().toISOString(),
+          };
+          fs.writeFileSync(
+            "docs/rc/phase18scale/evidence/global-staging-21-country-order-coverage.json",
+            JSON.stringify(report, null, 2),
+          );
+          console.log(JSON.stringify(report, null, 2));
+          if (!report.pass) process.exit(2);
+          NODE
       - name: Stamp harness dry-run
         run: |
           set -euo pipefail
@@ -1136,7 +1163,8 @@ jobs:
             "job": "harness-dry-run",
             "HARNESS_CONTRACT_TESTS": "PASS",
             "HARNESS_DRY_RUN": "PASS",
-            "LOGICAL_OPS": 10,
+            "LOGICAL_OPS": 21,
+            "ORDER_FLOWS_COUNTRIES": "21/21",
             "HTTP_RAMPS_EXECUTED": "DRY_RUN_ONLY",
             "exact_SHA": "${APP_SHA}",
             "stamped_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
