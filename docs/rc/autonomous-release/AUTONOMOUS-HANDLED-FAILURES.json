@@ -193,7 +193,36 @@
       "replacement_phase18_run_id": 30455458458,
       "resolution": "replacement_dispatched",
       "last_checked_at": "2026-07-29T13:19:13.470Z"
+    },
+    {
+      "detected_at": "2026-07-29T13:52:20.388Z",
+      "failed_run_id": 30455606108,
+      "failed_sha": "54cca8321b34828f26d45a0b80e0566f9fefe4a5",
+      "job": "synthetic-seed",
+      "step": "unknown",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "Process completed with exit code 2.",
+      "fingerprint": "095f78f8c1f09bc5",
+      "logic_key": "3784d952d23b655c",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-29T13:52:20.388Z"
+    },
+    {
+      "detected_at": "2026-07-29T13:53:26.605Z",
+      "failed_run_id": 30455606108,
+      "failed_sha": "54cca8321b34828f26d45a0b80e0566f9fefe4a5",
+      "job": "synthetic-seed",
+      "step": "unknown",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "Process completed with exit code 2.",
+      "fingerprint": "095f78f8c1f09bc5",
+      "logic_key": "3784d952d23b655c",
+      "autofix_run_id": 30458047935,
+      "fix_sha": "54cca8321b34828f26d45a0b80e0566f9fefe4a5",
+      "replacement_phase18_run_id": 30458133935,
+      "resolution": "replacement_dispatched",
+      "last_checked_at": "2026-07-29T13:53:26.605Z"
     }
   ],
-  "updated_at": "2026-07-29T13:19:13.470Z"
+  "updated_at": "2026-07-29T13:53:26.605Z"
 }
