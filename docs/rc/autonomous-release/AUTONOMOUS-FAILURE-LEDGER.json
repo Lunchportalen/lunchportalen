@@ -383,7 +383,28 @@
       "fingerprint": "523651439bb74f5b",
       "action": "dispatch_replacement_phase18",
       "replacement_run_id": 30454139506
+    },
+    {
+      "at": "2026-07-29T13:15:31.997Z",
+      "run_id": 30454954647,
+      "sha": "808644b3d91fe208334e43772e0ab25b2e2599fb",
+      "job": "source-and-target-safety",
+      "step": "Cloud DB connectivity preflight (pooler IPv4 + TLS)",
+      "class": "RATE_LIMIT_ERROR",
+      "error": "PHASE18_SYNTHETIC_MARKER_MISSING: expected p18scale-prov-%",
+      "fingerprint": "92ae243713455801",
+      "logic_key": "2b56d2de3355de04",
+      "action": "detect_unhandled_failure"
+    },
+    {
+      "at": "2026-07-29T13:15:33.643Z",
+      "run_id": 30454954647,
+      "sha": "808644b3d91fe208334e43772e0ab25b2e2599fb",
+      "class": "RATE_LIMIT_ERROR",
+      "fingerprint": "92ae243713455801",
+      "logic_key": "2b56d2de3355de04",
+      "action": "dispatch_autofix"
     }
   ],
-  "updated_at": "2026-07-29T13:14:41.527Z"
+  "updated_at": "2026-07-29T13:16:22.826Z"
 }
