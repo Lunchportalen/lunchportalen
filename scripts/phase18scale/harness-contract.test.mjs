@@ -16,7 +16,7 @@ const WF = path.join(ROOT, ".github/workflows/phase18scale-load-cert.yml");
 const wf = fs.readFileSync(WF, "utf8");
 assert.match(wf, /stop_after:/);
 assert.match(wf, /session-refresh-sharded|harness-dry-run|auth-coverage|controlled-ramps-business/);
-assert.match(wf, /arstaxredytrjcmqcwhh/);
+assert.match(wf, /lenajhsfrqdqcdzhcuao/);
 // Production/staging refs may appear only in deny-lists, never as defaults/targets.
 assert.match(wf, /hkpokyapzarefrgqzkos\|uigxsboqeruxflgzqztl/);
 assert.doesNotMatch(wf, /default:\s*"hkpokyapzarefrgqzkos"/);

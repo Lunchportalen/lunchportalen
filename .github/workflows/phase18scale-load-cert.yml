@@ -11,7 +11,7 @@ on:
       project_ref:
         description: Isolated Supabase project ref (never production/staging)
         required: true
-        default: "arstaxredytrjcmqcwhh"
+        default: "lenajhsfrqdqcdzhcuao"
       soak_hours:
         description: Soak duration hours (8-24)
         required: false

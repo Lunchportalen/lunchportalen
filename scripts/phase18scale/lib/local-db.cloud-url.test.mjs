@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { assertIsolatedCloudPostgresUrl } from "./local-db.mjs";
 
-const REF = "arstaxredytrjcmqcwhh";
+const REF = "lenajhsfrqdqcdzhcuao";
 process.env.PHASE18_LOAD_REF = REF;
 process.env.PHASE18_LOADCERT = "1";
 
@@ -44,7 +44,7 @@ expectThrow(
 expectThrow(
   () =>
     assertIsolatedCloudPostgresUrl(
-      "postgresql://postgres.arstaxredytrjcmqcwhh:x@127.0.0.1:5432/postgres?sslmode=require",
+      "postgresql://postgres.lenajhsfrqdqcdzhcuao:x@127.0.0.1:5432/postgres?sslmode=require",
       "t",
     ),
   /LOCALHOST_FORBIDDEN/,

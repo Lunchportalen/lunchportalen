@@ -16,7 +16,7 @@ export function resolveArtifactKey(env = process.env) {
   }
   const service = String(env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
   if (!service) throw new Error("PHASE18_SESSION_ARTIFACT_KEY_MISSING");
-  const ref = String(env.PHASE18_LOAD_REF || "arstaxredytrjcmqcwhh");
+  const ref = String(env.PHASE18_LOAD_REF || "lenajhsfrqdqcdzhcuao");
   const key = Buffer.from(
     crypto.hkdfSync(
       "sha256",

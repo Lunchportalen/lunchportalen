@@ -8,7 +8,7 @@ on:
       project_ref:
         description: Isolated Phase 18 project ref
         required: true
-        default: "arstaxredytrjcmqcwhh"
+        default: "lenajhsfrqdqcdzhcuao"
       app_sha:
         description: Engine SHA to check out for migrations
         required: false

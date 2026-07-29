@@ -17,11 +17,11 @@ import {
   parseDbUrl,
   resolvePhase18DatabaseUrl,
 } from "./lib/local-db.mjs";
+import { LOADCERT_REF as EXPECTED_REF } from "./lib/loadcert-ref.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
 const OUT = path.join(ROOT, "docs/rc/phase18scale/evidence");
-const EXPECTED_REF = "arstaxredytrjcmqcwhh";
 
 function countProductionTargetReferences(url, ref) {
   const hay = `${url}\n${ref}`;

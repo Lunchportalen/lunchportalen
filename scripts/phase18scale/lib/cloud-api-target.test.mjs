@@ -3,17 +3,17 @@ import { assertPhase18ApiTarget, isLoadCertMode } from "./cloud-api-target.mjs";
 
 const loadEnv = {
   PHASE18_LOADCERT: "1",
-  PHASE18_LOAD_REF: "arstaxredytrjcmqcwhh",
+  PHASE18_LOAD_REF: "lenajhsfrqdqcdzhcuao",
 };
 
 assert.equal(isLoadCertMode(loadEnv), true);
 
 const cloud = assertPhase18ApiTarget(
-  "https://arstaxredytrjcmqcwhh.supabase.co",
+  "https://lenajhsfrqdqcdzhcuao.supabase.co",
   loadEnv,
 );
 assert.equal(cloud.mode, "cloud");
-assert.equal(cloud.ref, "arstaxredytrjcmqcwhh");
+assert.equal(cloud.ref, "lenajhsfrqdqcdzhcuao");
 
 assert.throws(
   () => assertPhase18ApiTarget("http://127.0.0.1:54321", loadEnv),
@@ -28,7 +28,7 @@ assert.throws(
   () =>
     assertPhase18ApiTarget("https://uigxsboqeruxflgzqztl.supabase.co", {
       ...loadEnv,
-      PHASE18_LOAD_REF: "arstaxredytrjcmqcwhh",
+      PHASE18_LOAD_REF: "lenajhsfrqdqcdzhcuao",
     }),
   /SHARED_STAGING_API_TARGET_FORBIDDEN/,
 );

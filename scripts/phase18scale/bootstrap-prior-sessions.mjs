@@ -17,7 +17,7 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_EVIDENCE = path.join(__dirname, "../../docs/rc/phase18scale/evidence");
-const LOADCERT_REF = "arstaxredytrjcmqcwhh";
+const LOADCERT_REF = "lenajhsfrqdqcdzhcuao";
 const EMAIL_RE = /^p18scale-emp-\d+@load\.lunchportalen\.test$/i;
 
 /** Basename allowlist for prior-session inputs (exact or glob-like suffix). */

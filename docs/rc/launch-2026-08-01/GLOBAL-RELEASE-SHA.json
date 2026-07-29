@@ -1,0 +1,14 @@
+{
+  "GLOBAL_RELEASE_SHA": null,
+  "release_branch": "release/global-menu-universes-21",
+  "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
+  "phase18_project_region": "eu-west-1",
+  "phase18_project_cost_usd_monthly": 10,
+  "phase18_project_max_lifetime_hours": 72,
+  "phase18_project_expires_at": "2026-08-01T12:26:44.628Z",
+  "AUTO_DELETE_AFTER_RELEASE_VERIFICATION": "REQUIRED",
+  "STRIPE": "OFF",
+  "invoice_only": true,
+  "note": "GLOBAL_RELEASE_SHA is set after source freeze gates pass on the release tip.",
+  "updated_at": "2026-07-29T12:30:00.000Z"
+}

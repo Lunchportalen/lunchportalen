@@ -12,7 +12,7 @@ import { SESSION_STAGE_TARGETS, stageSessionsPath } from "./session-stages.mjs";
 export const CANONICAL_SESSIONS_FILE = "sessions-canonical-10000.ndjson";
 export const CANONICAL_META_FILE = "sessions-canonical-10000.meta.json";
 export const CANONICAL_CHECKPOINT_FILE = "sessions-canonical-10000.checkpoint.ndjson";
-export const LOADCERT_REF = "arstaxredytrjcmqcwhh";
+export const LOADCERT_REF = "lenajhsfrqdqcdzhcuao";
 
 export function redactIdentity(email) {
   const s = String(email || "");

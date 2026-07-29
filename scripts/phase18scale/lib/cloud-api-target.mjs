@@ -3,8 +3,7 @@
  * Localhost required for local mode; isolated project required for PHASE18_LOADCERT=1.
  */
 import { PROD_REF, STAGING_REF } from "../load-env.mjs";
-
-const LOADCERT_REF = "arstaxredytrjcmqcwhh";
+import { approvedLoadCertRef } from "./loadcert-ref.mjs";
 
 export function isLoadCertMode(env = process.env) {
   return ["1", "true", "yes"].includes(String(env.PHASE18_LOADCERT || "").toLowerCase());
@@ -20,15 +19,16 @@ export function assertPhase18ApiTarget(url, env = process.env) {
 
   const local = /127\.0\.0\.1|localhost|0\.0\.0\.0|:54321/i.test(u);
   if (isLoadCertMode(env)) {
+    const expected = approvedLoadCertRef(env);
     const ref = String(env.PHASE18_LOAD_REF || "").trim();
-    if (ref !== LOADCERT_REF) {
-      throw new Error(`CLOUD_API_TARGET_REF_FORBIDDEN: expected ${LOADCERT_REF} got ${ref || "empty"}`);
+    if (ref !== expected) {
+      throw new Error(`CLOUD_API_TARGET_REF_FORBIDDEN: expected ${expected} got ${ref || "empty"}`);
     }
     if (local) throw new Error("CLOUD_API_TARGET_LOCALHOST_FORBIDDEN");
-    if (!u.includes(`${LOADCERT_REF}.supabase.co`)) {
+    if (!u.includes(`${expected}.supabase.co`)) {
       throw new Error(`CLOUD_API_TARGET_HOST_MISMATCH: ${u}`);
     }
-    return { mode: "cloud", ref: LOADCERT_REF, url: u };
+    return { mode: "cloud", ref: expected, url: u };
   }
 
   if (!local) {
