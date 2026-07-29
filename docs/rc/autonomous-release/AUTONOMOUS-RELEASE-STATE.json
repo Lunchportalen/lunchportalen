@@ -4,7 +4,7 @@
   "state": "AUTH_COVERAGE",
   "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
-  "release_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+  "release_sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "stop_after": "controlled-ramps-business",
   "active_phase18_run_id": 30495693289,
@@ -22,11 +22,11 @@
     "global_staging": "ACTIVE"
   },
   "counters": {
-    "controller_ticks": 119,
+    "controller_ticks": 120,
     "autofix_dispatches": 18,
     "phase18_dispatches": 28,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-29T22:24:42.266Z"
+  "updated_at": "2026-07-29T22:48:16.670Z"
 }
