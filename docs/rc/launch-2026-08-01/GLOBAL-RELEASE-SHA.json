@@ -1,5 +1,5 @@
 {
-  "GLOBAL_RELEASE_SHA": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+  "GLOBAL_RELEASE_SHA": "07750bd9b9f1226871a7bacdfd598ac04766229c",
   "release_branch": "release/global-menu-universes-21",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "phase18_project_region": "eu-west-1",
@@ -14,7 +14,7 @@
   "ORDER_FLOWS": "21/21",
   "CANCELLATION_FLOWS": "21/21",
   "note": "Frozen after isolated global staging harness: 21/21 country SET+CANCEL, zero integrity deltas.",
-  "updated_at": "2026-07-29T22:20:00.000Z",
+  "updated_at": "2026-07-29T22:36:54.426Z",
   "frozen_at": "2026-07-29T22:20:00.000Z",
   "source_gates": {
     "ci:guard": "PASS",
@@ -22,5 +22,6 @@
     "preflight_push": "PASS",
     "markets_21": "PASS",
     "harness_dry_run_21": "PASS"
-  }
+  },
+  "staging_proof_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c"
 }
