@@ -164,7 +164,36 @@
       "fix_sha": "808644b3d91fe208334e43772e0ab25b2e2599fb",
       "resolution": "autofix_only",
       "last_checked_at": "2026-07-29T13:16:22.826Z"
+    },
+    {
+      "detected_at": "2026-07-29T13:18:20.349Z",
+      "failed_run_id": 30455183398,
+      "failed_sha": "808644b3d91fe208334e43772e0ab25b2e2599fb",
+      "job": "source-and-target-safety",
+      "step": "Cloud DB connectivity preflight (pooler IPv4 + TLS)",
+      "error_class": "RATE_LIMIT_ERROR",
+      "error": "PHASE18_SYNTHETIC_MARKER_MISSING: expected p18scale-prov-%",
+      "fingerprint": "3ac2af75fd378c74",
+      "logic_key": "2b56d2de3355de04",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-29T13:18:20.349Z"
+    },
+    {
+      "detected_at": "2026-07-29T13:19:13.470Z",
+      "failed_run_id": 30455183398,
+      "failed_sha": "808644b3d91fe208334e43772e0ab25b2e2599fb",
+      "job": "source-and-target-safety",
+      "step": "Cloud DB connectivity preflight (pooler IPv4 + TLS)",
+      "error_class": "RATE_LIMIT_ERROR",
+      "error": "PHASE18_SYNTHETIC_MARKER_MISSING: expected p18scale-prov-%",
+      "fingerprint": "3ac2af75fd378c74",
+      "logic_key": "2b56d2de3355de04",
+      "autofix_run_id": 30455395561,
+      "fix_sha": "808644b3d91fe208334e43772e0ab25b2e2599fb",
+      "replacement_phase18_run_id": 30455458458,
+      "resolution": "replacement_dispatched",
+      "last_checked_at": "2026-07-29T13:19:13.470Z"
     }
   ],
-  "updated_at": "2026-07-29T13:16:22.826Z"
+  "updated_at": "2026-07-29T13:19:13.470Z"
 }
