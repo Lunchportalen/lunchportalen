@@ -25,5 +25,5 @@
     "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved",
     "phase18_last_failure": "NETWORK_OR_POOLER_ERROR: PHASE18_POOLER_AUTH_PROBE_FAILED: password authentication failed for user \"postgres\""
   },
-  "updated_at": "2026-07-29T12:53:31.116Z"
+  "updated_at": "2026-07-29T13:01:33.952Z"
 }
