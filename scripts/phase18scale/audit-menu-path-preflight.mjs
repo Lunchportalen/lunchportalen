@@ -433,10 +433,13 @@ async function main() {
   const entitlementMismatches = causes.entitlement_mismatch || missingEnt || 0;
   const unclassified = causes.unclassified || 0;
 
+  const expectedCompanies = Number(
+    process.env.PHASE18_SEED_COMPANIES || process.env.PHASE18_COMPANIES || 2000,
+  );
   const passCompanies =
     mode === "companies" &&
-    results.length === 2000 &&
-    valid === 2000 &&
+    results.length === expectedCompanies &&
+    valid === expectedCompanies &&
     invalid === 0 &&
     missingEnt === 0 &&
     unclassified === 0;

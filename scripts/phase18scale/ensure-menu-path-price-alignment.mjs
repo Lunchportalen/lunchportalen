@@ -101,9 +101,12 @@ async function main() {
     `, [dates[0]]);
 
     const v = verify.rows[0];
+    const expectedCompanies = Number(
+      process.env.PHASE18_SEED_COMPANIES || process.env.PHASE18_COMPANIES || 2000,
+    );
     const pass =
-      Number(v.companies) === 2000 &&
-      Number(v.valid_warm_path) === 2000 &&
+      Number(v.companies) === expectedCompanies &&
+      Number(v.valid_warm_path) === expectedCompanies &&
       Number(v.price_mismatch) === 0 &&
       Number(v.missing_msd) === 0 &&
       Number(v.missing_msdi) === 0 &&
