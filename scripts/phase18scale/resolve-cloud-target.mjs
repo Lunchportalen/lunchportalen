@@ -47,6 +47,45 @@ if (ref.includes(PROD) || ref.includes(STAGING)) {
   process.exit(2);
 }
 
+
+async function fetchProjectOrThrow() {
+  const projRes = await fetchJson(`https://api.supabase.com/v1/projects/${ref}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!projRes.ok) {
+    if (projRes.status === 404 || projRes.status === 400) {
+      console.error(`PHASE18_PROJECT_NOT_FOUND: project HTTP ${projRes.status}`);
+    } else {
+      console.error(`project HTTP ${projRes.status}`);
+    }
+    process.exit(2);
+  }
+  const status = String(projRes.body?.status || "").toLowerCase();
+  if (status && !["active_healthy", "active_unhealthy", "coming_up"].includes(status)) {
+    console.error(`PHASE18_PROJECT_NOT_ACTIVE: status=${status || "unknown"}`);
+    process.exit(2);
+  }
+  return projRes;
+}
+
+async function fetchApiKeysWithRetry() {
+  let last = { ok: false, status: 0, body: null };
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    last = await fetchJson(`https://api.supabase.com/v1/projects/${ref}/api-keys`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (last.ok) return last;
+    if (last.status === 404 || (last.status === 400 && attempt >= 2)) {
+      console.error(`PHASE18_PROJECT_NOT_FOUND: api-keys HTTP ${last.status}`);
+      process.exit(2);
+    }
+    console.error(JSON.stringify({ phase18_api_keys_retry: { attempt, status: last.status } }));
+    await new Promise((r) => setTimeout(r, 1500 * attempt));
+  }
+  console.error(`api-keys HTTP ${last.status}`);
+  process.exit(2);
+}
+
 async function fetchJson(url, init) {
   const res = await fetch(url, init);
   const text = await res.text();
@@ -133,26 +172,13 @@ async function rotateDatabasePassword(password) {
   return pwRes;
 }
 
-const keysRes = await fetchJson(`https://api.supabase.com/v1/projects/${ref}/api-keys`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
-if (!keysRes.ok) {
-  console.error(`api-keys HTTP ${keysRes.status}`);
-  process.exit(2);
-}
+const projRes = await fetchProjectOrThrow();
+const keysRes = await fetchApiKeysWithRetry();
 const keys = Array.isArray(keysRes.body) ? keysRes.body : [];
 const anon = keys.find((k) => k.name === "anon" || k.name === "publishable");
 const service = keys.find((k) => k.name === "service_role" || k.name === "secret");
 if (!anon?.api_key || !service?.api_key) {
   console.error("missing anon/service_role keys");
-  process.exit(2);
-}
-
-const projRes = await fetchJson(`https://api.supabase.com/v1/projects/${ref}`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
-if (!projRes.ok) {
-  console.error(`project HTTP ${projRes.status}`);
   process.exit(2);
 }
 const region = String(projRes.body?.region || "").trim();
