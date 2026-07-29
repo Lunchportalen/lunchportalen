@@ -128,6 +128,26 @@
       ],
       "processedAt": "2026-07-29T09:55:24.105Z",
       "runId": "30441529723"
+    },
+    {
+      "firmId": "azets-nordic",
+      "messageId": "<LO2P265MB428553B01B9415BD1912FF69EACA2@LO2P265MB4285.GBRP265.PROD.OUTLOOK.COM>",
+      "subject": "Azets - compliance services",
+      "from": "ole.solvang@azets.com",
+      "classification": "CREDENTIALS_RECEIVED",
+      "date": "2026-07-29T12:43:15.000Z",
+      "attachments": [
+        {
+          "filename": "image.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-29T15:38:59.438Z",
+      "runId": "30466800636"
     }
   ],
   "byMessageId": {
@@ -259,7 +279,27 @@
       ],
       "processedAt": "2026-07-29T09:55:24.105Z",
       "runId": "30441529723"
+    },
+    "<LO2P265MB428553B01B9415BD1912FF69EACA2@LO2P265MB4285.GBRP265.PROD.OUTLOOK.COM>": {
+      "firmId": "azets-nordic",
+      "messageId": "<LO2P265MB428553B01B9415BD1912FF69EACA2@LO2P265MB4285.GBRP265.PROD.OUTLOOK.COM>",
+      "subject": "Azets - compliance services",
+      "from": "ole.solvang@azets.com",
+      "classification": "CREDENTIALS_RECEIVED",
+      "date": "2026-07-29T12:43:15.000Z",
+      "attachments": [
+        {
+          "filename": "image.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-07-29T15:38:59.438Z",
+      "runId": "30466800636"
     }
   },
-  "lastPollAt": "2026-07-29T12:43:42.960Z"
+  "lastPollAt": "2026-07-29T15:39:01.640Z"
 }

@@ -1,0 +1,16 @@
+{
+  "messageId": "<LO2P265MB428553B01B9415BD1912FF69EACA2@LO2P265MB4285.GBRP265.PROD.OUTLOOK.COM>",
+  "firmId": "azets-nordic",
+  "subject": "Azets - compliance services",
+  "attachments": [
+    {
+      "filename": "image.png",
+      "disposition": "inline",
+      "ext": ".png",
+      "safeToOpen": true,
+      "quarantine": false,
+      "action": "METADATA_ONLY"
+    }
+  ],
+  "note": "No attachment bytes executed or opened"
+}

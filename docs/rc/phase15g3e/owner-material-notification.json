@@ -1,8 +1,14 @@
 {
   "notifyOwner": true,
-  "runId": "30452718738",
-  "at": "2026-07-29T12:43:43.012Z",
+  "runId": "30466800636",
+  "at": "2026-07-29T15:39:01.646Z",
   "events": [
+    {
+      "kind": "CREDENTIALS_RECEIVED",
+      "firmId": "azets-nordic",
+      "messageId": "<LO2P265MB428553B01B9415BD1912FF69EACA2@LO2P265MB4285.GBRP265.PROD.OUTLOOK.COM>",
+      "subject": "Azets - compliance services"
+    },
     {
       "kind": "OWNER_CONTRACT_PAYMENT_BATCH_READY",
       "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
