@@ -1,0 +1,116 @@
+# Norway enterprise production acceptance — controlled internal operational proof.
+# workflow_dispatch only. Production environment protection. Max one active run.
+name: norway-enterprise-production-acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Dispatch reason"
+        required: false
+        default: "norway-enterprise-production-acceptance"
+      resume_from_checkpoint:
+        description: "Optional checkpoint id to resume (preflight|provision|sanity|orders|cancel|kitchen|auth|cleanup)"
+        required: false
+        default: "preflight"
+
+concurrency:
+  group: norway-enterprise-production-acceptance
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: Production
+    outputs:
+      run_id: ${{ steps.meta.outputs.run_id }}
+      production_sha: ${{ steps.meta.outputs.production_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Build acceptance run id
+        id: meta
+        env:
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          PROD_BASE_URL: ${{ secrets.APP_BASE_URL }}
+        run: |
+          set -euo pipefail
+          BASE="${PROD_BASE_URL:-https://app.lunchportalen.no}"
+          BODY=$(curl -fsS "$BASE/api/health")
+          SHA=$(node -e "const j=JSON.parse(process.argv[1]); process.stdout.write(String(j?.data?.version||''))" "$BODY")
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::production SHA missing/invalid"
+            exit 1
+          fi
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          RUN_ID="norway-enterprise-acceptance-${TS}-${SHA:0:8}"
+          echo "production_sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "NORWAY_ACCEPTANCE_RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+          echo "GLOBAL_RELEASE_SHA=$SHA" >> "$GITHUB_ENV"
+          echo "run_id=$RUN_ID"
+
+      - name: Preflight + full acceptance
+        env:
+          NORWAY_ACCEPTANCE_RUN_ID: ${{ steps.meta.outputs.run_id }}
+          GLOBAL_RELEASE_SHA: ${{ steps.meta.outputs.production_sha }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          PROD_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          SUPABASE_PROD_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: https://hkpokyapzarefrgqzkos.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          K6_PROD_PASSWORD: ${{ secrets.K6_PROD_PASSWORD }}
+          K6_PROD_SUPABASE_URL: https://hkpokyapzarefrgqzkos.supabase.co
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+          NODE_TLS_REJECT_UNAUTHORIZED: "0"
+        run: node scripts/autonomous-release/norway-enterprise-production-acceptance.mjs
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: norway-enterprise-production-acceptance-${{ steps.meta.outputs.run_id || github.run_id }}
+          path: |
+            docs/rc/launch-2026-08-01/NORWAY-ENTERPRISE-PRODUCTION-ACCEPTANCE.md
+            docs/rc/launch-2026-08-01/evidence/
+          if-no-files-found: warn
+
+  # Keep job graph restart-safe: evidence-only finalize when preflight artifact exists.
+  finalize:
+    needs: [preflight]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Summarize
+        run: |
+          set -euo pipefail
+          echo "workflow_run_id=${{ github.run_id }}"
+          echo "acceptance_run_id=${{ needs.preflight.outputs.run_id }}"
+          echo "production_sha=${{ needs.preflight.outputs.production_sha }}"
+          echo "preflight_result=${{ needs.preflight.result }}"
