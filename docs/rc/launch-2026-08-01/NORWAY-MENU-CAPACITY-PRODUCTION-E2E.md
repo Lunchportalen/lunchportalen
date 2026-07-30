@@ -3,8 +3,11 @@
 **Status:** `NORWAY_MENU_CAPACITY_PRODUCTION_E2E_PASS`
 **Acceptance run:** `norway-menu-capacity-e2e-20260730T221016Z-35925d0f`
 **Production SHA tested:** `35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c`
-**Migration head:** `20260909120200`
-**Workflow run:** `local`
+**Final app SHA (pre-UI-deploy):** `35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c`
+**Code SHAs:** `f0dd15cd` (capacity model) · `566bc9f3` (typefix) · PR [#585](https://github.com/Lunchportalen/lunchportalen/pull/585)
+**Migration head before:** `20260904120000`
+**Migration head after:** `20260909120200`
+**Workflow run:** durable YAML ready; dispatch requires merge to default branch (GitHub limitation). Production-environment approval may then be required.
 
 ## Capacity
 
