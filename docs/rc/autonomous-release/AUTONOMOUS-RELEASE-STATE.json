@@ -1,16 +1,16 @@
 {
   "controller": "phase18-autonomous-global-release",
   "version": 1,
-  "state": "AUTH_COVERAGE",
+  "state": "FAILED_REQUIRES_AUTOFIX",
   "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
   "release_sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "stop_after": "controlled-ramps-business",
-  "active_phase18_run_id": 30526308347,
+  "active_phase18_run_id": null,
   "last_phase18_run_id": 30526308347,
-  "last_phase18_conclusion": "",
-  "last_failure_fingerprint": "863f38c691c6f1e3",
+  "last_phase18_conclusion": "failure",
+  "last_failure_fingerprint": "d75d3235f24cbcd7",
   "owner_wait": "WAITING_OWNER_AUTH",
   "owner_wait_recorded_at": "2026-07-29T12:50:44.501Z",
   "lanes": {
@@ -22,11 +22,11 @@
     "global_staging": "ACTIVE"
   },
   "counters": {
-    "controller_ticks": 133,
-    "autofix_dispatches": 23,
+    "controller_ticks": 134,
+    "autofix_dispatches": 24,
     "phase18_dispatches": 33,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-30T09:17:51.512Z"
+  "updated_at": "2026-07-30T10:08:33.138Z"
 }
