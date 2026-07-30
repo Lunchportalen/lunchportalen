@@ -150,7 +150,7 @@ async function inspectDb(databaseUrl) {
         (select count(*)::int from public.orders) as orders_count,
         (select count(*)::int from public.orders where status = 'CANCELLED') as cancelled_orders_count,
         (select count(*)::int from public.commission_ledger) as commission_ledger_count,
-        (select count(*)::int from public.orders where coalesce(country_code,'NO') = 'NO') as no_orders_count
+        (select count(*)::int from public.orders where status in ('ACTIVE','PREPARED','DELIVERED','CANCELLED')) as orders_status_readable
     `);
     return {
       migration_head: head.rows[0]?.version || null,
@@ -260,6 +260,22 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(JSON.stringify({ fatal: String(e?.message || e).slice(0, 240) }));
+  const fatal = String(e?.message || e).slice(0, 240);
+  try {
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    fs.writeFileSync(
+      path.join(OUT_DIR, "GLOBAL-PRODUCTION-POST-PROMOTE-VERIFY.json"),
+      `${JSON.stringify({
+        gate: "GLOBAL_PRODUCTION_POST_PROMOTE_VERIFY",
+        result: "FAIL",
+        fatal,
+        stamped_at: new Date().toISOString(),
+      }, null, 2)}\n`,
+      "utf8",
+    );
+  } catch {
+    /* ignore */
+  }
+  console.error(JSON.stringify({ fatal }));
   process.exit(2);
 });

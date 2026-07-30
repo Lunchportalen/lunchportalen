@@ -31,6 +31,7 @@ const AUTOFIX_WORKFLOW = "phase18-autonomous-autofix.yml";
 const PREFLIGHT_WORKFLOW = "global-production-preflight.yml";
 const DEPLOY_WORKFLOW = "global-production-deploy.yml";
 const CANARY_WORKFLOW = "global-internal-canary.yml";
+const POST_PROMOTE_VERIFY_WORKFLOW = "global-production-post-promote-verify.yml";
 const FROZEN_RELEASE_SHA_FALLBACK = "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c";
 const PROD_REF = "hkpokyapzarefrgqzkos";
 const STAGING_REF = "uigxsboqeruxflgzqztl";
@@ -115,6 +116,9 @@ function classifyFromText(blob) {
     return "ARTIFACT_HANDOFF_ERROR";
   }
   if (/Invalid workflow|workflow file|YAML|Unexpected value/i.test(s)) return "CI_WORKFLOW_ERROR";
+  if (/column\s+"[^"]+"\s+does not exist|VERIFIER_SCHEMA_MISMATCH/i.test(s)) {
+    return "VERIFIER_SCHEMA_MISMATCH";
+  }
   return "TEST_HARNESS_ERROR";
 }
 
@@ -431,6 +435,149 @@ function dispatchGlobalProductionPreflight(releaseSha) {
     "-f",
     "reason=controller-production-preflight",
   ]);
+}
+
+function dispatchPostPromoteVerify(releaseSha, priorDeployRunId = "30558735412") {
+  sh("gh", [
+    "workflow",
+    "run",
+    POST_PROMOTE_VERIFY_WORKFLOW,
+    "--ref",
+    "main",
+    "-f",
+    `release_sha=${releaseSha}`,
+    "-f",
+    `prior_deploy_run_id=${priorDeployRunId}`,
+    "-f",
+    "reason=controller-post-promote-verify-replacement",
+  ]);
+}
+
+/**
+ * React to failed global-production-post-promote-verify runs.
+ * Phase18 autofix is the wrong tool for verifier SQL defects — classify,
+ * ledger, and redispatch only after a newer main SHA lands (fix already pushed).
+ * Returns action string or null when no reaction.
+ */
+function reactToPostPromoteVerifyFailure(state, handled, ledger, gates, live, freezeSha) {
+  const runs = listWorkflowRuns(POST_PROMOTE_VERIFY_WORKFLOW, 8);
+  const latest = runs[0] || null;
+  if (!latest) return null;
+
+  if (latest.conclusion === "success") {
+    state.lanes.post_promote_verify = "PASS";
+    gates.gates = gates.gates || {};
+    gates.gates.post_promote_verify = "PASS";
+    live.GLOBAL_PRODUCTION_POST_PROMOTE_VERIFY = "PASS";
+    return null;
+  }
+
+  if (!isFailedConclusion(latest.conclusion)) {
+    if (latest.status === "in_progress" || latest.status === "queued") {
+      state.lanes.post_promote_verify = "ACTIVE";
+      return "monitor_post_promote_verify";
+    }
+    return null;
+  }
+
+  state.lanes.post_promote_verify = "FAIL";
+  gates.gates = gates.gates || {};
+  gates.gates.post_promote_verify = "FAIL";
+  live.GLOBAL_PRODUCTION_POST_PROMOTE_VERIFY = "FAIL";
+
+  if (wasRunHandled(handled, latest.databaseId)) {
+    // If tip moved past the failing verifier SHA, dispatch one replacement.
+    let tip = "";
+    try {
+      tip = sh("gh", ["api", "repos/{owner}/{repo}/commits/main", "--jq", ".sha"]);
+    } catch {
+      tip = "";
+    }
+    const alreadyReplacement =
+      Boolean(state.post_promote_verify_redispatched_for_failure) ||
+      runs.some(
+        (r) =>
+          (r.status === "in_progress" || r.status === "queued" || r.conclusion === "success") &&
+          r.databaseId !== latest.databaseId &&
+          Number(r.databaseId) > Number(latest.databaseId),
+      );
+    if (tip && tip !== (latest.headSha || "") && !alreadyReplacement) {
+      try {
+        dispatchPostPromoteVerify(freezeSha);
+        state.post_promote_verify_redispatched_for_failure = latest.databaseId;
+        state.counters.post_promote_verify_dispatches =
+          Number(state.counters.post_promote_verify_dispatches || 0) + 1;
+        return "redispatch_post_promote_verify_after_fix";
+      } catch (e) {
+        console.error(
+          JSON.stringify({
+            post_promote_redispatch_failed: String(e?.message || e).slice(0, 160),
+          }),
+        );
+        return "post_promote_verify_redispatch_failed";
+      }
+    }
+    return "post_promote_verify_fail_handled";
+  }
+
+  const detail = inspectFailedRun(latest.databaseId);
+  const errorClass =
+    detail.errorClass === "TEST_HARNESS_ERROR" &&
+    /column\s+"[^"]+"\s+does not exist/i.test(detail.error || "")
+      ? "VERIFIER_SCHEMA_MISMATCH"
+      : detail.errorClass;
+  const logicKey = dedupeKey({
+    job: detail.job,
+    step: detail.step,
+    errorClass,
+    error: detail.error,
+    sha: latest.headSha || freezeSha,
+    workflow: POST_PROMOTE_VERIFY_WORKFLOW,
+  });
+  const runFp = fingerprint([
+    POST_PROMOTE_VERIFY_WORKFLOW,
+    latest.databaseId,
+    latest.headSha,
+    detail.job,
+    detail.step,
+    errorClass,
+    normalizeError(detail.error),
+  ]);
+
+  markHandled(handled, {
+    detected_at: nowIso(),
+    failed_run_id: latest.databaseId,
+    failed_sha: latest.headSha,
+    workflow: POST_PROMOTE_VERIFY_WORKFLOW,
+    job: detail.job,
+    step: detail.step,
+    error_class: errorClass,
+    error: detail.error,
+    fingerprint: runFp,
+    logic_key: logicKey,
+    resolution: "classified_post_promote_verify_failure",
+  });
+
+  gates.notes = gates.notes || {};
+  gates.notes.post_promote_verify_last_failure = `${errorClass}: ${detail.error}`;
+
+  ledger.entries.push({
+    at: nowIso(),
+    run_id: latest.databaseId,
+    sha: latest.headSha,
+    workflow: POST_PROMOTE_VERIFY_WORKFLOW,
+    job: detail.job,
+    step: detail.step,
+    class: errorClass,
+    error: detail.error,
+    fingerprint: runFp,
+    logic_key: logicKey,
+    action: "detect_post_promote_verify_failure",
+  });
+
+  // Verifier SQL/schema mismatches need a code fix on main — do not use Phase18 autofix.
+  // Next controller tick after tip advances will redispatch replacement verify.
+  return "classified_post_promote_verify_failure";
 }
 
 function dispatchPhase18(sha, stopAfter = "auth-coverage") {
@@ -788,6 +935,16 @@ async function main() {
       if (state.preflight_dispatched_run_id === "pending") {
         state.preflight_dispatched_run_id = recentPass.databaseId;
       }
+      // Do not ignore post-promote verify failures while sitting on preflight PASS.
+      const ppvAction = reactToPostPromoteVerifyFailure(
+        state,
+        handled,
+        ledger,
+        gates,
+        live,
+        freezeSha,
+      );
+      if (ppvAction) action = ppvAction;
     }
     void passPf;
   } else if (latest && latest.conclusion === "success" && latest.headSha === sha) {
@@ -1058,6 +1215,7 @@ async function main() {
     vercel_team_slug: vercelAuth.team_slug || null,
     vercel_project_name: vercelAuth.project_name || null,
     production_preflight: state.lanes?.production_preflight || null,
+    post_promote_verify: state.lanes?.post_promote_verify || null,
     closed_prs: closedPrs,
     closed_issues: closedIssues,
     github_token_recursion_note:
