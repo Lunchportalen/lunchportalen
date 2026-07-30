@@ -1,0 +1,73 @@
+# Internal global canary 21/21 after exact-SHA production deploy.
+name: global-internal-canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: "Deployed GLOBAL_RELEASE_SHA (40-char)"
+        required: true
+        type: string
+      reason:
+        description: "Dispatch reason"
+        required: false
+        default: "internal-global-canary-21"
+
+concurrency:
+  group: global-internal-canary
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: load-cert
+    steps:
+      - name: Validate SHA
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::invalid release_sha"
+            exit 1
+          fi
+          echo "GLOBAL_RELEASE_SHA=$RELEASE_SHA" >> "$GITHUB_ENV"
+
+      - name: Checkout workflow ref for canary runner
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Run internal global canary 21/21
+        env:
+          GLOBAL_RELEASE_SHA: ${{ env.GLOBAL_RELEASE_SHA }}
+          SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          SUPABASE_PROD_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          PROD_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+        run: node scripts/autonomous-release/global-internal-canary.mjs
+
+      - name: Upload canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-internal-canary-${{ github.run_id }}
+          path: docs/rc/launch-2026-08-01/INTERNAL-GLOBAL-CANARY.json
+          if-no-files-found: warn

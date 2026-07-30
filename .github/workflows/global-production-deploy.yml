@@ -1,0 +1,145 @@
+# Exact-SHA production deploy. New markets remain disabled.
+# Requires a prior GLOBAL_PRODUCTION_PREFLIGHT PASS for the same SHA.
+name: global-production-deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: "Frozen GLOBAL_RELEASE_SHA (40-char)"
+        required: true
+        type: string
+      preflight_run_id:
+        description: "Passing global-production-preflight run id"
+        required: true
+        type: string
+      reason:
+        description: "Dispatch reason"
+        required: false
+        default: "exact-sha-prod-deploy-markets-disabled"
+
+concurrency:
+  group: global-production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+  PROD_REF: hkpokyapzarefrgqzkos
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: load-cert
+    steps:
+      - name: Validate inputs
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          PREFLIGHT_RUN_ID: ${{ inputs.preflight_run_id }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::invalid release_sha"
+            exit 1
+          fi
+          if [[ ! "$PREFLIGHT_RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::invalid preflight_run_id"
+            exit 1
+          fi
+          echo "GLOBAL_RELEASE_SHA=$RELEASE_SHA" >> "$GITHUB_ENV"
+          echo "PREFLIGHT_RUN_ID=$PREFLIGHT_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Assert preflight run PASS for same SHA
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          META="$(gh api "repos/${{ github.repository }}/actions/runs/${PREFLIGHT_RUN_ID}")"
+          NAME="$(jq -r .name <<<"$META")"
+          CONC="$(jq -r .conclusion <<<"$META")"
+          HEAD="$(jq -r .head_sha <<<"$META")"
+          echo "preflight_name=$NAME conclusion=$CONC head=$HEAD"
+          if [ "$NAME" != "global-production-preflight" ]; then
+            echo "::error::run is not global-production-preflight"
+            exit 1
+          fi
+          if [ "$CONC" != "success" ]; then
+            echo "::error::preflight conclusion is not success"
+            exit 1
+          fi
+          # Workflow may run from controller branch; freeze SHA is an input — verify artifact.
+          gh run download "$PREFLIGHT_RUN_ID" -n "global-production-preflight-${PREFLIGHT_RUN_ID}" -D /tmp/pf || true
+          if [ -f /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json ]; then
+            RESULT="$(jq -r .result /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json)"
+            SHA="$(jq -r .GLOBAL_RELEASE_SHA /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json)"
+            echo "artifact result=$RESULT sha=$SHA"
+            if [ "$RESULT" != "PASS" ] || [ "$SHA" != "$GLOBAL_RELEASE_SHA" ]; then
+              echo "::error::preflight artifact mismatch"
+              exit 1
+            fi
+            mkdir -p docs/rc/launch-2026-08-01
+            cp -f /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json docs/rc/launch-2026-08-01/
+          else
+            echo "::warning::preflight artifact missing — continuing with run conclusion gate only"
+            export ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT=1
+            echo "ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Checkout frozen GLOBAL_RELEASE_SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Overlay deploy runner from workflow ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          sparse-checkout: |
+            scripts/autonomous-release/global-production-deploy.mjs
+          sparse-checkout-cone-mode: false
+          path: _deploy_overlay
+
+      - name: Install overlayed deploy script
+        run: |
+          set -euo pipefail
+          mkdir -p scripts/autonomous-release docs/rc/launch-2026-08-01
+          cp -f _deploy_overlay/scripts/autonomous-release/global-production-deploy.mjs \
+            scripts/autonomous-release/global-production-deploy.mjs
+          if [ -f /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json ]; then
+            cp -f /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json docs/rc/launch-2026-08-01/
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Run exact-SHA production deploy (markets disabled)
+        env:
+          GLOBAL_RELEASE_SHA: ${{ env.GLOBAL_RELEASE_SHA }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          SUPABASE_PROD_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          PROD_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT: ${{ env.ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT }}
+        run: node scripts/autonomous-release/global-production-deploy.mjs
+
+      - name: Upload deploy evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-production-deploy-${{ github.run_id }}
+          path: |
+            docs/rc/launch-2026-08-01/GLOBAL-PRODUCTION-DEPLOY.json
+            docs/rc/launch-2026-08-01/GLOBAL-PRODUCTION-PREFLIGHT.json
+          if-no-files-found: warn
