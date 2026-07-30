@@ -10,9 +10,18 @@
       "followUpDueAt": "2026-07-22T22:47:30.786Z",
       "secondFollowUpDueAt": "2026-07-29T22:47:30.786Z",
       "backupEscalationAfterSecond": true,
-      "status": "FIRST_SENT",
+      "status": "BACKUP_ESCALATION_READY",
       "calendar": "business_days_mon_fri",
-      "followUp1SentAt": "2026-07-23T00:34:11.677Z"
+      "followUp1SentAt": "2026-07-23T00:34:11.677Z",
+      "followUp2SentAt": "2026-07-30T00:31:37.310Z",
+      "backupEscalation": {
+        "primaryFirmId": "deloitte-global-indirect-tax",
+        "backupFirmId": "ey-indirect-tax",
+        "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
+        "status": "BACKUP_CANDIDATE_IDENTIFIED",
+        "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+        "runId": "30502886991"
+      }
     },
     {
       "firmId": "bdo-dach-vat",
@@ -21,9 +30,18 @@
       "followUpDueAt": "2026-07-22T22:47:30.955Z",
       "secondFollowUpDueAt": "2026-07-29T22:47:30.955Z",
       "backupEscalationAfterSecond": true,
-      "status": "FIRST_SENT",
+      "status": "BACKUP_ESCALATION_READY",
       "calendar": "business_days_mon_fri",
-      "followUp1SentAt": "2026-07-23T00:34:13.303Z"
+      "followUp1SentAt": "2026-07-23T00:34:13.303Z",
+      "followUp2SentAt": "2026-07-30T00:31:38.272Z",
+      "backupEscalation": {
+        "primaryFirmId": "bdo-dach-vat",
+        "backupFirmId": "ey-indirect-tax",
+        "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
+        "status": "BACKUP_CANDIDATE_IDENTIFIED",
+        "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+        "runId": "30502886991"
+      }
     },
     {
       "firmId": "conta-as-peppol-no",
@@ -32,9 +50,18 @@
       "followUpDueAt": "2026-07-22T22:47:31.118Z",
       "secondFollowUpDueAt": "2026-07-29T22:47:31.118Z",
       "backupEscalationAfterSecond": true,
-      "status": "FIRST_SENT",
+      "status": "BACKUP_ESCALATION_READY",
       "calendar": "business_days_mon_fri",
-      "followUp1SentAt": "2026-07-23T00:34:14.931Z"
+      "followUp1SentAt": "2026-07-23T00:34:14.931Z",
+      "followUp2SentAt": "2026-07-30T00:31:39.244Z",
+      "backupEscalation": {
+        "primaryFirmId": "conta-as-peppol-no",
+        "backupFirmId": null,
+        "backupChannel": null,
+        "status": "NO_BACKUP_IN_REGISTRY",
+        "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+        "runId": "30502886991"
+      }
     },
     {
       "firmId": "thomson-reuters-pagero",
@@ -43,9 +70,17 @@
       "followUpDueAt": "2026-07-23T00:20:58.752Z",
       "secondFollowUpDueAt": "2026-07-30T00:20:58.752Z",
       "backupEscalationAfterSecond": true,
-      "status": "FIRST_REMINDER_LOGGED",
+      "status": "BACKUP_ESCALATION_READY",
       "calendar": "business_days_mon_fri",
-      "firstReminderLoggedAt": "2026-07-23T00:34:10.031Z"
+      "firstReminderLoggedAt": "2026-07-23T00:34:10.031Z",
+      "backupEscalation": {
+        "primaryFirmId": "thomson-reuters-pagero",
+        "backupFirmId": "conta-as-peppol-no",
+        "backupChannel": "peppol@conta.no (listed on OpenPeppol certified providers page) · https://www.conta.no",
+        "status": "BACKUP_CANDIDATE_IDENTIFIED",
+        "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+        "runId": "30502886991"
+      }
     },
     {
       "firmId": "azets-nordic",
@@ -114,5 +149,5 @@
       "firstReminderLoggedAt": "2026-07-23T09:50:40.340Z"
     }
   ],
-  "lastCycleAt": "2026-07-29T21:20:30.225Z"
+  "lastCycleAt": "2026-07-30T00:31:39.249Z"
 }

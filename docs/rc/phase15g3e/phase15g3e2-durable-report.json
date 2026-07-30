@@ -1,15 +1,15 @@
 {
-  "writtenAt": "2026-07-29T21:20:30.274Z",
+  "writtenAt": "2026-07-30T00:31:39.318Z",
   "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "30491904247",
-    "started_at": "2026-07-29T21:20:00.516Z",
-    "completed_at": "2026-07-29T21:20:30.226Z",
+    "runId": "30502886991",
+    "started_at": "2026-07-30T00:31:17.596Z",
+    "completed_at": "2026-07-30T00:31:39.252Z",
     "replies_found": 0,
     "messages_classified": 0,
-    "follow_ups_sent": 0,
+    "follow_ups_sent": 3,
     "failures": [],
-    "next_due_action": "2026-07-29T22:47:30.786Z",
+    "next_due_action": "2026-07-22T22:47:30.786Z",
     "secrets_exposed": 0,
     "mailbox": {
       "imap": "PASS",
@@ -40,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-07-29T21:20:30.226Z",
-      "nextScheduledRun": "2026-07-30T00:00:00.000Z"
+      "lastSuccessfulRun": "2026-07-30T00:31:39.252Z",
+      "nextScheduledRun": "2026-07-30T03:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -49,26 +49,6 @@
       "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
     },
     "dueFollowUps": [
-      {
-        "firmId": "deloitte-global-indirect-tax",
-        "next": "2026-07-29T22:47:30.786Z",
-        "status": "FIRST_SENT"
-      },
-      {
-        "firmId": "bdo-dach-vat",
-        "next": "2026-07-29T22:47:30.955Z",
-        "status": "FIRST_SENT"
-      },
-      {
-        "firmId": "conta-as-peppol-no",
-        "next": "2026-07-29T22:47:31.118Z",
-        "status": "FIRST_SENT"
-      },
-      {
-        "firmId": "thomson-reuters-pagero",
-        "next": "2026-07-30T00:20:58.752Z",
-        "status": "FIRST_REMINDER_LOGGED"
-      },
       {
         "firmId": "azets-nordic",
         "next": "2026-07-30T00:38:01.461Z",
@@ -105,7 +85,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-07-29T21:20:30.232Z",
-    "runId": "30491904247"
+    "updatedAt": "2026-07-30T00:31:39.264Z",
+    "runId": "30502886991"
   }
 }

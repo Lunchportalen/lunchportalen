@@ -5,8 +5,8 @@
 - Workflow/job: phase15g3e-response-pipeline.yml / pipeline
 - Cadence: every 3 hours (cron: 0 */3 * * *)
 - Enabled: YES
-- Last run: 2026-07-29T21:20:30.226Z
-- Next run: 2026-07-30T00:00:00.000Z
+- Last run: 2026-07-30T00:31:39.252Z
+- Next run: 2026-07-30T03:00:00.000Z
 - Local terminal dependency: NONE
 
 ## Mailbox
@@ -20,7 +20,7 @@
 - First due: 2026-07-22 (verified: YES)
 - Second due: 2026-07-29 (verified: YES)
 - Scheduled: 10
-- Sent: 3
+- Sent: 6
 - Duplicate sends: 0
 - Calendar: business_days_mon_fri
 - Thread retention: same thread via In-Reply-To / References
@@ -37,7 +37,7 @@
 
 ## Idempotency
 - Distributed lock: pipeline-lock.json + Actions concurrency group
-- Run ID: 30491904247
+- Run ID: 30502886991
 - Message-ID dedupe: reply-message-ids.json
 - Follow-up identity: firmId:followup:round
 - Duplicate send guard: claim-before-send
