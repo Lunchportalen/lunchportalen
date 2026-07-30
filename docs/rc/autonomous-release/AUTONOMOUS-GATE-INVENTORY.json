@@ -9,7 +9,7 @@
     "phase18_auth_coverage": "FAIL",
     "phase18_controlled_ramps": "NOT_RUN",
     "global_staging_candidate": "NOT_RUN",
-    "production_preflight": "ACTIVE",
+    "production_preflight": "PASS",
     "production_canary": "NOT_RUN",
     "country_wave_1": "NOT_RUN",
     "country_wave_2": "NOT_RUN",
@@ -27,5 +27,5 @@
     "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved",
     "phase18_last_failure": "RATE_LIMIT_ERROR: PHASE18_AUTH_USERS_UNDERFILLED exported=420"
   },
-  "updated_at": "2026-07-30T13:36:26.129Z"
+  "updated_at": "2026-07-30T14:28:49.896Z"
 }

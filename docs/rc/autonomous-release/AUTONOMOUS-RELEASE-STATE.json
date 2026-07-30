@@ -20,16 +20,16 @@
     "production_deploy": "PRODUCTION_PREFLIGHT",
     "legal_tax_activation": "BLOCKED_WAITING_OWNER_LEGAL_TAX",
     "global_staging": "ACTIVE",
-    "production_preflight": "ACTIVE"
+    "production_preflight": "PASS"
   },
   "counters": {
-    "controller_ticks": 141,
+    "controller_ticks": 142,
     "autofix_dispatches": 24,
     "phase18_dispatches": 33,
-    "advances": 3
+    "advances": 4
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-30T13:36:23.697Z",
+  "updated_at": "2026-07-30T14:28:46.611Z",
   "vercel_auth": {
     "ok": true,
     "vercel_auth": "PASS",
@@ -42,5 +42,7 @@
     "reason": null
   },
   "owner_wait_cleared_at": "2026-07-30T12:22:41.464Z",
-  "owner_wait_clear_reason": "VERCEL_TOKEN_PRESENT"
+  "owner_wait_clear_reason": "VERCEL_TOKEN_PRESENT",
+  "global_release_sha": "3332efe4cb48ea91544b1acb636babf496577e3f",
+  "last_preflight_run_id": 30550087050
 }
