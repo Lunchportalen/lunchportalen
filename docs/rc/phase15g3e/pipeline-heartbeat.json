@@ -6,8 +6,8 @@
     "cron": "0 */3 * * *",
     "enabled": true,
     "localTerminalDependency": "NONE",
-    "lastSuccessfulRun": "2026-07-30T00:31:39.252Z",
-    "nextScheduledRun": "2026-07-30T03:00:00.000Z"
+    "lastSuccessfulRun": "2026-07-30T04:02:44.101Z",
+    "nextScheduledRun": "2026-07-30T06:00:00.000Z"
   },
   "mailbox": {
     "imap": "PASS",
@@ -15,11 +15,6 @@
     "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
   },
   "dueFollowUps": [
-    {
-      "firmId": "azets-nordic",
-      "next": "2026-07-30T00:38:01.461Z",
-      "status": "FIRST_REMINDER_LOGGED"
-    },
     {
       "firmId": "bird-bird-privacy-legal",
       "next": "2026-07-30T07:48:10.967Z",
@@ -51,6 +46,6 @@
   "secretsExposed": 0,
   "productionLocks": "ACTIVE",
   "stripe": "OFF",
-  "updatedAt": "2026-07-30T00:31:39.264Z",
-  "runId": "30502886991"
+  "updatedAt": "2026-07-30T04:02:44.108Z",
+  "runId": "30512730512"
 }

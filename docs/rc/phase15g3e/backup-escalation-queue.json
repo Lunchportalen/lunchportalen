@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-30T00:31:39.251Z",
+  "updatedAt": "2026-07-30T04:02:44.100Z",
   "items": [
     {
       "primaryFirmId": "deloitte-global-indirect-tax",
@@ -7,7 +7,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
     },
     {
       "primaryFirmId": "bdo-dach-vat",
@@ -15,7 +15,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
     },
     {
       "primaryFirmId": "conta-as-peppol-no",
@@ -23,7 +23,7 @@
       "backupChannel": null,
       "status": "NO_BACKUP_IN_REGISTRY",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
     },
     {
       "primaryFirmId": "thomson-reuters-pagero",
@@ -31,7 +31,15 @@
       "backupChannel": "peppol@conta.no (listed on OpenPeppol certified providers page) · https://www.conta.no",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
+    },
+    {
+      "primaryFirmId": "azets-nordic",
+      "backupFirmId": "ey-indirect-tax",
+      "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
+      "status": "BACKUP_CANDIDATE_IDENTIFIED",
+      "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+      "runId": "30512730512"
     }
   ]
 }

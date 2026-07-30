@@ -1,10 +1,10 @@
 {
-  "runId": "30502886991",
-  "started_at": "2026-07-30T00:31:17.596Z",
-  "completed_at": "2026-07-30T00:31:39.252Z",
+  "runId": "30512730512",
+  "started_at": "2026-07-30T04:02:14.823Z",
+  "completed_at": "2026-07-30T04:02:44.101Z",
   "replies_found": 0,
   "messages_classified": 0,
-  "follow_ups_sent": 3,
+  "follow_ups_sent": 0,
   "failures": [],
   "next_due_action": "2026-07-22T22:47:30.786Z",
   "secrets_exposed": 0,
@@ -29,71 +29,26 @@
   "duplicate_sends": 0,
   "Decision": "OWNER_ACTION_REQUIRED",
   "Follow_up": {
-    "dueNow": [
-      {
-        "firmId": "deloitte-global-indirect-tax",
-        "round": 2,
-        "identity": "deloitte-global-indirect-tax:followup:2"
-      },
-      {
-        "firmId": "bdo-dach-vat",
-        "round": 2,
-        "identity": "bdo-dach-vat:followup:2"
-      },
-      {
-        "firmId": "conta-as-peppol-no",
-        "round": 2,
-        "identity": "conta-as-peppol-no:followup:2"
-      }
-    ],
-    "sent": [
-      {
-        "firmId": "deloitte-global-indirect-tax",
-        "round": 2,
-        "identity": "deloitte-global-indirect-tax:followup:2",
-        "to": "fvestli@deloitte.no",
-        "threadRef": "LP-15G3E-deloitte-global-indirect-tax-b88aaf99780e",
-        "status": "SENT",
-        "claimedAt": "2026-07-30T00:31:36.333Z",
-        "runId": "30502886991",
-        "messageId": "<454c1b44-4e21-c5b1-4a8f-f3c18f3afcb8@lunchportalen.no>",
-        "sentAt": "2026-07-30T00:31:37.310Z"
-      },
-      {
-        "firmId": "bdo-dach-vat",
-        "round": 2,
-        "identity": "bdo-dach-vat:followup:2",
-        "to": "info@bdo.at",
-        "threadRef": "LP-15G3E-bdo-dach-vat-b88aaf99780e",
-        "status": "SENT",
-        "claimedAt": "2026-07-30T00:31:36.333Z",
-        "runId": "30502886991",
-        "messageId": "<25fe6cc5-0f44-60e6-fb5d-8dcb13381ede@lunchportalen.no>",
-        "sentAt": "2026-07-30T00:31:38.272Z"
-      },
-      {
-        "firmId": "conta-as-peppol-no",
-        "round": 2,
-        "identity": "conta-as-peppol-no:followup:2",
-        "to": "peppol@conta.no",
-        "threadRef": "LP-15G3E-conta-as-peppol-no-b88aaf99780e",
-        "status": "SENT",
-        "claimedAt": "2026-07-30T00:31:36.333Z",
-        "runId": "30502886991",
-        "messageId": "<6fcf9933-b48b-5e49-8488-4d82b4708851@lunchportalen.no>",
-        "sentAt": "2026-07-30T00:31:39.244Z"
-      }
-    ],
+    "dueNow": [],
+    "sent": [],
     "skipped": [
       {
-        "firmId": "thomson-reuters-pagero",
+        "firmId": "azets-nordic",
         "reason": "WEB_FORM_NO_SMTP_THREAD_BACKUP_READY"
       }
     ],
     "notDue": [
       {
-        "firmId": "azets-nordic",
-        "next": "2026-07-30T00:38:01.461Z"
+        "firmId": "deloitte-global-indirect-tax",
+        "next": "2026-07-22T22:47:30.786Z"
+      },
+      {
+        "firmId": "bdo-dach-vat",
+        "next": "2026-07-22T22:47:30.955Z"
+      },
+      {
+        "firmId": "conta-as-peppol-no",
+        "next": "2026-07-22T22:47:31.118Z"
       },
       {
         "firmId": "bird-bird-privacy-legal",
@@ -125,7 +80,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
     },
     {
       "primaryFirmId": "bdo-dach-vat",
@@ -133,7 +88,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
     },
     {
       "primaryFirmId": "conta-as-peppol-no",
@@ -141,7 +96,7 @@
       "backupChannel": null,
       "status": "NO_BACKUP_IN_REGISTRY",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
     },
     {
       "primaryFirmId": "thomson-reuters-pagero",
@@ -149,7 +104,15 @@
       "backupChannel": "peppol@conta.no (listed on OpenPeppol certified providers page) · https://www.conta.no",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30502886991"
+      "runId": "30512730512"
+    },
+    {
+      "primaryFirmId": "azets-nordic",
+      "backupFirmId": "ey-indirect-tax",
+      "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
+      "status": "BACKUP_CANDIDATE_IDENTIFIED",
+      "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+      "runId": "30512730512"
     }
   ]
 }
