@@ -31,6 +31,8 @@ const SERVICE_ROLE_ALLOW_PREFIXES = [
   "scripts/smoke/_first-menu-order-smoke.mjs",
   // Norway enterprise production acceptance (controlled internal QA tenant; workflow_dispatch only).
   "scripts/autonomous-release/norway-enterprise-production-acceptance.mjs",
+  "scripts/autonomous-release/norway-menu-capacity-production-e2e.mjs",
+  "scripts/db/apply-migration-file.mjs",
   // #92 standing authz gate — validates staging integration env before vitest (no service-role usage here).
   "scripts/ci/run-suspend-rpc-integration.mjs",
   // E2E self-heal probe — admin password-sync invalidates session (uigx only).

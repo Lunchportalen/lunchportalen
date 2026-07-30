@@ -17,6 +17,7 @@ type NavLabelKey =
   | "customers"
   | "registrations"
   | "menu"
+  | "capacity"
   | "areas"
   | "invoices"
   | "settings"
@@ -39,6 +40,7 @@ const NAV_ITEMS_BASE: NavItem[] = [
   { href: "/leverandor/kunder", labelKey: "customers", icon: "users" },
   { href: "/leverandor/registreringer", labelKey: "registrations", icon: "document" },
   { href: "/leverandor/meny", labelKey: "menu", icon: "document" },
+  { href: "/leverandor/kapasitet", labelKey: "capacity", icon: "orders", adminOnly: true },
   { href: "/leverandor/omrader", labelKey: "areas", icon: "pin", adminOnly: true },
   { href: "/leverandor/faktura", labelKey: "invoices", icon: "billing", adminOnly: true },
   { href: "/leverandor/innstillinger", labelKey: "settings", icon: "settings" },
