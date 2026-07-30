@@ -104,6 +104,35 @@ function resolveVercelBin() {
   return "vercel";
 }
 
+async function resolveVercelTeamAndProject(token) {
+  const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
+  const teamsRes = await fetch("https://api.vercel.com/v2/teams", { headers });
+  if (!teamsRes.ok) throw new Error(`VERCEL_TEAMS_HTTP_${teamsRes.status}`);
+  const teamsBody = await teamsRes.json();
+  const teams = Array.isArray(teamsBody?.teams) ? teamsBody.teams : [];
+  // Prefer real team id over slug — username "lunchportalen" collides with team slug.
+  const team =
+    teams.find((t) => String(t?.slug || "").toLowerCase() === "lunchportalen") ||
+    teams.find((t) => /lunchportalen/i.test(String(t?.name || ""))) ||
+    null;
+  if (!team?.id) throw new Error("VERCEL_TEAM_ID_NOT_FOUND");
+
+  const qs = new URLSearchParams({ teamId: team.id, limit: "20" });
+  const projRes = await fetch(`https://api.vercel.com/v9/projects?${qs}`, { headers });
+  if (!projRes.ok) throw new Error(`VERCEL_PROJECTS_HTTP_${projRes.status}`);
+  const projBody = await projRes.json();
+  const projects = Array.isArray(projBody?.projects) ? projBody.projects : [];
+  const project =
+    projects.find((p) => String(p?.name || "").toLowerCase() === "lunchportalen") || null;
+  if (!project?.id) throw new Error("VERCEL_PROJECT_ID_NOT_FOUND");
+  return {
+    teamId: String(team.id),
+    teamSlug: String(team.slug || ""),
+    projectId: String(project.id),
+    projectName: String(project.name || ""),
+  };
+}
+
 async function main() {
   const releaseSha = String(process.env.GLOBAL_RELEASE_SHA || "").trim().toLowerCase();
   if (!/^[0-9a-f]{40}$/.test(releaseSha)) throw new Error("GLOBAL_RELEASE_SHA required");
@@ -136,11 +165,23 @@ async function main() {
   // Link-less production deploy from working tree. This path is NOT subject to
   // Git Integration commandForIgnoringBuildStep cancellation.
   const vercelBin = resolveVercelBin();
+  const ids = await resolveVercelTeamAndProject(token);
+  // Use team id (team_...) — slug "lunchportalen" collides with personal account.
   const deployEnv = {
     VERCEL_TOKEN: token,
-    VERCEL_ORG_ID: process.env.VERCEL_ORG_ID || "",
-    VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID || "",
+    VERCEL_ORG_ID: ids.teamId,
+    VERCEL_PROJECT_ID: ids.projectId,
   };
+  console.log(
+    JSON.stringify({
+      vercel_scope: {
+        team_id_prefix: `${ids.teamId.slice(0, 10)}…`,
+        team_slug: ids.teamSlug,
+        project_id_prefix: `${ids.projectId.slice(0, 10)}…`,
+        project_name: ids.projectName,
+      },
+    }),
+  );
 
   // Ensure project linkage for non-interactive CI.
   try {
@@ -152,9 +193,9 @@ async function main() {
         "--token",
         token,
         "--scope",
-        "lunchportalen",
+        ids.teamId,
         "--project",
-        "lunchportalen",
+        ids.projectName,
       ],
       { env: deployEnv },
     );
@@ -177,7 +218,7 @@ async function main() {
         "--token",
         token,
         "--scope",
-        "lunchportalen",
+        ids.teamId,
         "--build-env",
         `APP_VERSION=${releaseSha}`,
         "--build-env",
