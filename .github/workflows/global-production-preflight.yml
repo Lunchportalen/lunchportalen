@@ -1,0 +1,110 @@
+# GLOBAL_PRODUCTION_PREFLIGHT — read-only production readiness on frozen SHA.
+# Does NOT mutate production. Does NOT enable markets. Does NOT forge legal/tax.
+name: global-production-preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: "Frozen GLOBAL_RELEASE_SHA (40-char)"
+        required: true
+        type: string
+      reason:
+        description: "Dispatch reason"
+        required: false
+        default: "production-preflight"
+
+concurrency:
+  group: global-production-preflight
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+  PROD_REF: hkpokyapzarefrgqzkos
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: load-cert
+    steps:
+      - name: Validate frozen SHA input
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::release_sha must be a 40-char hex SHA"
+            exit 1
+          fi
+          echo "GLOBAL_RELEASE_SHA=$RELEASE_SHA" >> "$GITHUB_ENV"
+
+      - name: Checkout frozen GLOBAL_RELEASE_SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Overlay preflight runner from workflow ref (main-capable)
+        # Frozen SHA may predate this script/workflow. Overlay from the dispatch ref.
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          sparse-checkout: |
+            scripts/autonomous-release/global-production-preflight.mjs
+            .github/workflows/global-production-preflight.yml
+          sparse-checkout-cone-mode: false
+          path: _preflight_overlay
+
+      - name: Install overlayed preflight script
+        run: |
+          set -euo pipefail
+          mkdir -p scripts/autonomous-release
+          cp -f _preflight_overlay/scripts/autonomous-release/global-production-preflight.mjs \
+            scripts/autonomous-release/global-production-preflight.mjs
+          test -f scripts/autonomous-release/global-production-preflight.mjs
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Assert prod project ref secret
+        env:
+          SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          if [ "${SUPABASE_PROD_PROJECT_REF}" != "${PROD_REF}" ]; then
+            echo "::error::SUPABASE_PROD_PROJECT_REF must be ${PROD_REF}"
+            exit 1
+          fi
+          echo "prod_ref_ok=true"
+
+      - name: Run GLOBAL_PRODUCTION_PREFLIGHT
+        id: preflight
+        env:
+          GLOBAL_RELEASE_SHA: ${{ env.GLOBAL_RELEASE_SHA }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          SUPABASE_PROD_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          PROD_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+        run: node scripts/autonomous-release/global-production-preflight.mjs
+
+      - name: Upload preflight evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-production-preflight-${{ github.run_id }}
+          path: |
+            docs/rc/launch-2026-08-01/GLOBAL-PRODUCTION-PREFLIGHT.json
+          if-no-files-found: warn

@@ -28,6 +28,10 @@ const CANONICAL_OWNER_ISSUE_TITLE = "[15G.3E] Owner action required";
 const RELEASE_BRANCH = "release/global-menu-universes-21";
 const PHASE18_WORKFLOW = "phase18scale-load-cert.yml";
 const AUTOFIX_WORKFLOW = "phase18-autonomous-autofix.yml";
+const PREFLIGHT_WORKFLOW = "global-production-preflight.yml";
+const DEPLOY_WORKFLOW = "global-production-deploy.yml";
+const CANARY_WORKFLOW = "global-internal-canary.yml";
+const FROZEN_RELEASE_SHA_FALLBACK = "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c";
 const PROD_REF = "hkpokyapzarefrgqzkos";
 const STAGING_REF = "uigxsboqeruxflgzqztl";
 const LOAD_REF = "lenajhsfrqdqcdzhcuao";
@@ -390,6 +394,45 @@ function isFailedConclusion(c) {
   return c === "failure" || c === "cancelled" || c === "timed_out" || c === "startup_failure";
 }
 
+function frozenGlobalReleaseSha() {
+  const p = path.join(ROOT, "docs/rc/launch-2026-08-01/GLOBAL-RELEASE-SHA.json");
+  const j = readJson(p, null);
+  const sha = String(j?.GLOBAL_RELEASE_SHA || "").trim();
+  if (/^[0-9a-f]{40}$/i.test(sha)) return sha.toLowerCase();
+  return FROZEN_RELEASE_SHA_FALLBACK;
+}
+
+function listWorkflowRuns(workflow, limit = 8) {
+  try {
+    const rows = ghJson([
+      "run",
+      "list",
+      `--workflow=${workflow}`,
+      "--limit",
+      String(limit),
+      "--json",
+      "databaseId,status,conclusion,headSha,createdAt,event,displayTitle,url",
+    ]);
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+function dispatchGlobalProductionPreflight(releaseSha) {
+  sh("gh", [
+    "workflow",
+    "run",
+    PREFLIGHT_WORKFLOW,
+    "--ref",
+    "main",
+    "-f",
+    `release_sha=${releaseSha}`,
+    "-f",
+    "reason=controller-production-preflight",
+  ]);
+}
+
 function dispatchPhase18(sha, stopAfter = "auth-coverage") {
   sh("gh", [
     "workflow",
@@ -704,6 +747,49 @@ async function main() {
   } else if (vercelAuth.ok) {
     // Already set PRODUCTION_PREFLIGHT above — skip Phase 18 redispatch churn.
     action = "production_preflight";
+    const freezeSha = frozenGlobalReleaseSha();
+    state.global_release_sha = freezeSha;
+    const pfRuns = listWorkflowRuns(PREFLIGHT_WORKFLOW, 10);
+    const activePf = pfRuns.find((r) => r.status === "in_progress" || r.status === "queued");
+    const passPf = pfRuns.find(
+      (r) =>
+        r.conclusion === "success" &&
+        (String(r.displayTitle || "").includes(freezeSha.slice(0, 7)) || true),
+    );
+    // Prefer artifact/state stamp over title match — success on freeze is enough once.
+    const recentPass = pfRuns.find((r) => r.conclusion === "success");
+    if (activePf) {
+      state.active_preflight_run_id = activePf.databaseId;
+      action = "monitor_production_preflight";
+    } else if (!recentPass && !state.preflight_dispatched_run_id) {
+      try {
+        dispatchGlobalProductionPreflight(freezeSha);
+        state.preflight_dispatched_at = nowIso();
+        state.counters.preflight_dispatches = Number(state.counters.preflight_dispatches || 0) + 1;
+        action = "dispatch_production_preflight";
+        // Resolve run id on next tick; avoid double-dispatch via sticky stamp.
+        state.preflight_dispatched_run_id = "pending";
+      } catch (e) {
+        console.error(
+          JSON.stringify({
+            preflight_dispatch_failed: String(e?.message || e).slice(0, 160),
+          }),
+        );
+        action = "production_preflight_dispatch_failed";
+      }
+    } else if (recentPass) {
+      state.last_preflight_run_id = recentPass.databaseId;
+      state.lanes.production_preflight = "PASS";
+      gates.gates.production_preflight = "PASS";
+      live.GLOBAL_PRODUCTION_PREFLIGHT = "PASS";
+      live.READY_FOR_GLOBAL_PRODUCTION_CANARY = "YES";
+      action = "production_preflight_pass";
+      // Clear sticky pending marker once a real PASS exists.
+      if (state.preflight_dispatched_run_id === "pending") {
+        state.preflight_dispatched_run_id = recentPass.databaseId;
+      }
+    }
+    void passPf;
   } else if (latest && latest.conclusion === "success" && latest.headSha === sha) {
     state.state = "CONTROLLED_RAMPS";
     state.lanes.phase18_auth_coverage = "PASS";

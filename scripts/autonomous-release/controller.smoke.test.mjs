@@ -57,6 +57,8 @@ assert.match(ctrl, /CONTROLLER_MAX_REACTION_TIME|5m schedule|in-tick autofix wai
 assert.match(ctrl, /verifyVercelAuthentication/);
 assert.match(ctrl, /PRODUCTION_PREFLIGHT/);
 assert.match(ctrl, /owner_wait_clear_reason/);
+assert.match(ctrl, /global-production-preflight\.yml/);
+assert.match(ctrl, /dispatchGlobalProductionPreflight|frozenGlobalReleaseSha/);
 
 const require = createRequire(import.meta.url);
 assert.ok(require("fs").existsSync(path.join(ROOT, ".github/workflows/phase18-autonomous-controller.yml")));
