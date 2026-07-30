@@ -6,46 +6,20 @@
     "cron": "0 */3 * * *",
     "enabled": true,
     "localTerminalDependency": "NONE",
-    "lastSuccessfulRun": "2026-07-30T06:55:40.448Z",
-    "nextScheduledRun": "2026-07-30T09:00:00.000Z"
+    "lastSuccessfulRun": "2026-07-30T09:52:04.749Z",
+    "nextScheduledRun": "2026-07-30T12:00:00.000Z"
   },
   "mailbox": {
     "imap": "PASS",
     "smtp": "PASS",
     "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
   },
-  "dueFollowUps": [
-    {
-      "firmId": "bird-bird-privacy-legal",
-      "next": "2026-07-30T07:48:10.967Z",
-      "status": "FIRST_REMINDER_LOGGED"
-    },
-    {
-      "firmId": "ncc-group-security",
-      "next": "2026-07-30T07:48:10.967Z",
-      "status": "FIRST_REMINDER_LOGGED"
-    },
-    {
-      "firmId": "semantix-transperfect",
-      "next": "2026-07-30T07:48:10.967Z",
-      "status": "FIRST_REMINDER_LOGGED"
-    },
-    {
-      "firmId": "transperfect-direct",
-      "next": "2026-07-30T07:48:10.967Z",
-      "status": "FIRST_REMINDER_LOGGED"
-    },
-    {
-      "firmId": "ey-indirect-tax",
-      "next": "2026-07-30T07:48:10.967Z",
-      "status": "FIRST_REMINDER_LOGGED"
-    }
-  ],
+  "dueFollowUps": [],
   "quotesWaiting": 2,
   "failuresRequiringAction": [],
   "secretsExposed": 0,
   "productionLocks": "ACTIVE",
   "stripe": "OFF",
-  "updatedAt": "2026-07-30T06:55:40.457Z",
-  "runId": "30521106246"
+  "updatedAt": "2026-07-30T09:52:04.749Z",
+  "runId": "30532336528"
 }

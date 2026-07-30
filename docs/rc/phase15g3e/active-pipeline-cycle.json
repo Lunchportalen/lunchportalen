@@ -1,7 +1,7 @@
 {
-  "runId": "30521106246",
-  "started_at": "2026-07-30T06:55:21.512Z",
-  "completed_at": "2026-07-30T06:55:40.448Z",
+  "runId": "30532336528",
+  "started_at": "2026-07-30T09:51:42.727Z",
+  "completed_at": "2026-07-30T09:52:04.749Z",
   "replies_found": 0,
   "messages_classified": 0,
   "follow_ups_sent": 0,
@@ -31,7 +31,28 @@
   "Follow_up": {
     "dueNow": [],
     "sent": [],
-    "skipped": [],
+    "skipped": [
+      {
+        "firmId": "bird-bird-privacy-legal",
+        "reason": "WEB_FORM_NO_SMTP_THREAD_BACKUP_READY"
+      },
+      {
+        "firmId": "ncc-group-security",
+        "reason": "WEB_FORM_NO_SMTP_THREAD_BACKUP_READY"
+      },
+      {
+        "firmId": "semantix-transperfect",
+        "reason": "WEB_FORM_NO_SMTP_THREAD_BACKUP_READY"
+      },
+      {
+        "firmId": "transperfect-direct",
+        "reason": "WEB_FORM_NO_SMTP_THREAD_BACKUP_READY"
+      },
+      {
+        "firmId": "ey-indirect-tax",
+        "reason": "WEB_FORM_NO_SMTP_THREAD_BACKUP_READY"
+      }
+    ],
     "notDue": [
       {
         "firmId": "deloitte-global-indirect-tax",
@@ -44,26 +65,6 @@
       {
         "firmId": "conta-as-peppol-no",
         "next": "2026-07-22T22:47:31.118Z"
-      },
-      {
-        "firmId": "bird-bird-privacy-legal",
-        "next": "2026-07-30T07:48:10.967Z"
-      },
-      {
-        "firmId": "ncc-group-security",
-        "next": "2026-07-30T07:48:10.967Z"
-      },
-      {
-        "firmId": "semantix-transperfect",
-        "next": "2026-07-30T07:48:10.967Z"
-      },
-      {
-        "firmId": "transperfect-direct",
-        "next": "2026-07-30T07:48:10.967Z"
-      },
-      {
-        "firmId": "ey-indirect-tax",
-        "next": "2026-07-30T07:48:10.967Z"
       }
     ],
     "permanentFailures": []
@@ -75,7 +76,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30521106246"
+      "runId": "30532336528"
     },
     {
       "primaryFirmId": "bdo-dach-vat",
@@ -83,7 +84,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30521106246"
+      "runId": "30532336528"
     },
     {
       "primaryFirmId": "conta-as-peppol-no",
@@ -91,7 +92,7 @@
       "backupChannel": null,
       "status": "NO_BACKUP_IN_REGISTRY",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30521106246"
+      "runId": "30532336528"
     },
     {
       "primaryFirmId": "thomson-reuters-pagero",
@@ -99,7 +100,7 @@
       "backupChannel": "peppol@conta.no (listed on OpenPeppol certified providers page) · https://www.conta.no",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30521106246"
+      "runId": "30532336528"
     },
     {
       "primaryFirmId": "azets-nordic",
@@ -107,7 +108,47 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30521106246"
+      "runId": "30532336528"
+    },
+    {
+      "primaryFirmId": "bird-bird-privacy-legal",
+      "backupFirmId": null,
+      "backupChannel": null,
+      "status": "NO_BACKUP_IN_REGISTRY",
+      "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+      "runId": "30532336528"
+    },
+    {
+      "primaryFirmId": "ncc-group-security",
+      "backupFirmId": null,
+      "backupChannel": null,
+      "status": "NO_BACKUP_IN_REGISTRY",
+      "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+      "runId": "30532336528"
+    },
+    {
+      "primaryFirmId": "semantix-transperfect",
+      "backupFirmId": "transperfect-direct",
+      "backupChannel": "https://www.transperfect.com/contact · +1 212.689.5555 (NY HQ public)",
+      "status": "BACKUP_CANDIDATE_IDENTIFIED",
+      "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+      "runId": "30532336528"
+    },
+    {
+      "primaryFirmId": "transperfect-direct",
+      "backupFirmId": null,
+      "backupChannel": null,
+      "status": "NO_BACKUP_IN_REGISTRY",
+      "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+      "runId": "30532336528"
+    },
+    {
+      "primaryFirmId": "ey-indirect-tax",
+      "backupFirmId": "bdo-dach-vat",
+      "backupChannel": "DE: https://www.bdo.de/en-gb/services-en/tax-legal/value-added-tax · AT: info@bdo.at / https://www.bdo.at/en-gb/contact · CH: https://www.ch-acc.bdo.global/en-gb/services/tax/vat",
+      "status": "BACKUP_CANDIDATE_IDENTIFIED",
+      "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
+      "runId": "30532336528"
     }
   ]
 }
