@@ -72,12 +72,17 @@ async function waitForHealthSha(baseUrl, expectedSha, attempts = 48) {
   const url = `${baseUrl.replace(/\/$/, "")}/api/health`;
   let last = null;
   for (let i = 0; i < attempts; i++) {
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    const body = await res.json().catch(() => ({}));
-    const version = String(body?.data?.version || body?.data?.release?.git_sha || "");
-    last = version;
-    if (res.ok && body?.ok && version === expectedSha) {
-      return { ok: true, version, attempt: i + 1 };
+    try {
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      const body = await res.json().catch(() => ({}));
+      const version = String(body?.data?.version || body?.data?.release?.git_sha || "");
+      last = version;
+      if (res.ok && body?.ok && version === expectedSha) {
+        return { ok: true, version, attempt: i + 1 };
+      }
+    } catch (e) {
+      // Transient runner DNS/network blips must not fail a completed promote.
+      last = `fetch_error:${String(e?.message || e).slice(0, 80)}`;
     }
     await new Promise((r) => setTimeout(r, 10_000));
   }
