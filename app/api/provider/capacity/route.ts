@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
   const to = isoDate(url.searchParams.get("to")) ?? from;
   const choiceKey = String(url.searchParams.get("choiceKey") ?? "").trim() || null;
 
-  const admin = supabaseAdmin();
+  const admin = supabaseAdmin() as any;
   const { data: policyRow, error: policyErr } = await admin
     .from("provider_capacity_policy")
     .select("provider_id,country_code,timezone,default_mode,default_capacity_limit,migration_decision")
@@ -187,7 +187,7 @@ export async function PUT(req: NextRequest) {
     return jsonErr(rid, "LIMITED krever et heltallig capacityLimit >= 0.", 422, "INVALID_LIMIT");
   }
 
-  const admin = supabaseAdmin();
+  const admin = supabaseAdmin() as any;
   const { data, error } = await admin.rpc("lp_capacity_upsert_day", {
     p_provider_id: provider.id,
     p_service_date: serviceDate,
