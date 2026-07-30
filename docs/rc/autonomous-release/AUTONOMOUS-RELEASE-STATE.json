@@ -7,10 +7,10 @@
   "release_sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
   "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "stop_after": "controlled-ramps-business",
-  "active_phase18_run_id": 30514320020,
+  "active_phase18_run_id": null,
   "last_phase18_run_id": 30514320020,
-  "last_phase18_conclusion": "",
-  "last_failure_fingerprint": "9c6649753571d1e8",
+  "last_phase18_conclusion": "failure",
+  "last_failure_fingerprint": "90185200ff33a40e",
   "owner_wait": "WAITING_OWNER_AUTH",
   "owner_wait_recorded_at": "2026-07-29T12:50:44.501Z",
   "lanes": {
@@ -22,11 +22,11 @@
     "global_staging": "ACTIVE"
   },
   "counters": {
-    "controller_ticks": 129,
-    "autofix_dispatches": 21,
-    "phase18_dispatches": 31,
+    "controller_ticks": 130,
+    "autofix_dispatches": 22,
+    "phase18_dispatches": 32,
     "advances": 0
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-30T05:33:54.698Z"
+  "updated_at": "2026-07-30T06:29:44.007Z"
 }
