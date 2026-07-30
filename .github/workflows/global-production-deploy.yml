@@ -123,6 +123,14 @@ jobs:
       - name: Install deps
         run: npm ci --omit=optional --no-audit --no-fund
 
+      - name: Install Vercel CLI (absolute path for Node spawn)
+        run: |
+          set -euo pipefail
+          npm install -g vercel@39.4.2
+          echo "VERCEL_BIN=$(command -v vercel)" >> "$GITHUB_ENV"
+          command -v vercel
+          vercel --version
+
       - name: Run exact-SHA production deploy (markets disabled)
         env:
           GLOBAL_RELEASE_SHA: ${{ env.GLOBAL_RELEASE_SHA }}
@@ -132,7 +140,9 @@ jobs:
           PROD_BASE_URL: ${{ secrets.APP_BASE_URL }}
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
           ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT: ${{ env.ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT }}
+          VERCEL_BIN: ${{ env.VERCEL_BIN }}
         run: node scripts/autonomous-release/global-production-deploy.mjs
+        timeout-minutes: 35
 
       - name: Upload deploy evidence
         if: always()
