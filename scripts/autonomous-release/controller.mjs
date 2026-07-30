@@ -305,6 +305,87 @@ function vercelCredsPresent() {
   return Boolean(process.env.VERCEL_TOKEN && String(process.env.VERCEL_TOKEN).trim());
 }
 
+/**
+ * Verify Vercel token against API without printing the secret.
+ * Prefer Lunchportalen team + lunchportalen project when discoverable.
+ */
+async function verifyVercelAuthentication() {
+  const token = String(process.env.VERCEL_TOKEN || "").trim();
+  if (!token) {
+    return { ok: false, reason: "VERCEL_TOKEN_MISSING", vercel_auth: "FAIL" };
+  }
+  const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
+  try {
+    const userRes = await fetch("https://api.vercel.com/v2/user", { headers });
+    if (!userRes.ok) {
+      return {
+        ok: false,
+        reason: `VERCEL_USER_HTTP_${userRes.status}`,
+        vercel_auth: "FAIL",
+        token_present: true,
+      };
+    }
+    const userBody = await userRes.json();
+    const username = String(userBody?.user?.username || userBody?.username || "").slice(0, 80);
+
+    const teamsRes = await fetch("https://api.vercel.com/v2/teams", { headers });
+    if (!teamsRes.ok) {
+      return {
+        ok: false,
+        reason: `VERCEL_TEAMS_HTTP_${teamsRes.status}`,
+        vercel_auth: "FAIL",
+        token_present: true,
+        username: username || null,
+      };
+    }
+    const teamsBody = await teamsRes.json();
+    const teams = Array.isArray(teamsBody?.teams) ? teamsBody.teams : [];
+    const team =
+      teams.find((t) => /lunchportalen/i.test(String(t?.slug || t?.name || ""))) || teams[0] || null;
+    const teamId = team?.id ? String(team.id) : null;
+    const teamSlug = team?.slug ? String(team.slug) : null;
+
+    let projectName = null;
+    let projectId = null;
+    if (teamId) {
+      const qs = new URLSearchParams({ teamId, limit: "20" });
+      const projRes = await fetch(`https://api.vercel.com/v9/projects?${qs}`, { headers });
+      if (projRes.ok) {
+        const projBody = await projRes.json();
+        const projects = Array.isArray(projBody?.projects) ? projBody.projects : [];
+        const project =
+          projects.find((p) => String(p?.name || "").toLowerCase() === "lunchportalen") ||
+          projects.find((p) => /lunchportalen/i.test(String(p?.name || ""))) ||
+          null;
+        if (project) {
+          projectName = String(project.name || "").slice(0, 80);
+          projectId = project.id ? String(project.id) : null;
+        }
+      }
+    }
+
+    const ok = Boolean(username || teamId);
+    return {
+      ok,
+      vercel_auth: ok ? "PASS" : "FAIL",
+      token_present: true,
+      username: username || null,
+      team_slug: teamSlug,
+      team_id: teamId ? `${teamId.slice(0, 8)}…` : null,
+      project_name: projectName,
+      project_id: projectId ? `${String(projectId).slice(0, 8)}…` : null,
+      reason: ok ? null : "VERCEL_IDENTITY_UNRESOLVED",
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      vercel_auth: "FAIL",
+      token_present: true,
+      reason: `VERCEL_AUTH_EXCEPTION:${String(e?.message || e).slice(0, 120)}`,
+    };
+  }
+}
+
 function isFailedConclusion(c) {
   return c === "failure" || c === "cancelled" || c === "timed_out" || c === "startup_failure";
 }
@@ -505,6 +586,7 @@ async function main() {
   const closedIssues = closeDuplicate15g3eIssues(issues, ledger);
 
   const waits = [];
+  let vercelAuth = { ok: false, vercel_auth: "NOT_RUN", token_present: vercelCredsPresent() };
   if (!vercelCredsPresent()) {
     waits.push("WAITING_OWNER_AUTH");
     state.lanes.production_deploy = "BLOCKED_WAITING_OWNER_AUTH";
@@ -523,6 +605,43 @@ async function main() {
           "",
           "Independent lanes continue: Phase 18, hygiene, staging prep, docs.",
         ].join("\n"),
+      );
+    }
+  } else {
+    // Token present — clear stale WAITING_OWNER_AUTH from durable state and verify identity.
+    vercelAuth = await verifyVercelAuthentication();
+    state.vercel_auth = vercelAuth;
+    writeJson(path.join(STATE_DIR, "VERCEL-AUTH-LAST.json"), {
+      ...vercelAuth,
+      stamped_at: nowIso(),
+      // Never persist token material.
+      token_present: true,
+    });
+    if (state.owner_wait === "WAITING_OWNER_AUTH") {
+      state.owner_wait = null;
+      state.owner_wait_cleared_at = nowIso();
+      state.owner_wait_clear_reason = "VERCEL_TOKEN_PRESENT";
+    }
+    if (vercelAuth.ok) {
+      state.lanes.production_deploy = "PRODUCTION_PREFLIGHT";
+      state.lanes.production_preflight = "ACTIVE";
+      gates.gates = gates.gates || {};
+      gates.gates.vercel_authentication = "PASS";
+      gates.gates.owner_authentication_required = "CLEARED";
+    } else {
+      waits.push("WAITING_OWNER_AUTH");
+      state.owner_wait = "WAITING_OWNER_AUTH";
+      state.lanes.production_deploy = "BLOCKED_WAITING_OWNER_AUTH";
+      state.lanes.production_preflight = "BLOCKED_VERCEL_AUTH_FAIL";
+      gates.gates = gates.gates || {};
+      gates.gates.vercel_authentication = "FAIL";
+      console.error(
+        JSON.stringify({
+          vercel_auth_failed: {
+            reason: vercelAuth.reason,
+            token_present: true,
+          },
+        }),
       );
     }
   }
@@ -561,10 +680,30 @@ async function main() {
   let autofixRunId = null;
   let fixSha = null;
 
-  if (active) {
-    state.state = "AUTH_COVERAGE";
+  // When Vercel auth is green, enter PRODUCTION_PREFLIGHT immediately.
+  // Do not leave OWNER_AUTHENTICATION_REQUIRED sticky, and do not wait for
+  // another owner prompt. Phase 18 scale failures must not block this lane.
+  if (vercelAuth.ok) {
+    state.state = "PRODUCTION_PREFLIGHT";
     state.status = "AUTONOMOUS_CONTROLLER_RUNNING";
-    action = "monitor_active_run";
+    state.lanes.production_preflight = "ACTIVE";
+    state.lanes.production_deploy = "PRODUCTION_PREFLIGHT";
+    action = "production_preflight";
+    state.counters.advances = Number(state.counters.advances || 0) + 1;
+    gates.gates = gates.gates || {};
+    gates.gates.production_preflight = "ACTIVE";
+    live.PRODUCTION_PREFLIGHT = "ACTIVE";
+    live.OWNER_AUTHENTICATION_REQUIRED = "CLEARED";
+  }
+
+  if (active) {
+    // Keep observing the single active Phase 18 run; do not start another.
+    state.state = vercelAuth.ok ? "PRODUCTION_PREFLIGHT" : "AUTH_COVERAGE";
+    state.status = "AUTONOMOUS_CONTROLLER_RUNNING";
+    action = vercelAuth.ok ? "production_preflight_monitor_phase18" : "monitor_active_run";
+  } else if (vercelAuth.ok) {
+    // Already set PRODUCTION_PREFLIGHT above — skip Phase 18 redispatch churn.
+    action = "production_preflight";
   } else if (latest && latest.conclusion === "success" && latest.headSha === sha) {
     state.state = "CONTROLLED_RAMPS";
     state.lanes.phase18_auth_coverage = "PASS";
@@ -828,6 +967,11 @@ async function main() {
     replacement_phase18_run_id: replacementRun?.databaseId || null,
     replacement_status: replacementRun?.status || null,
     owner_wait: state.owner_wait,
+    owner_authentication_required: vercelAuth.ok ? "CLEARED" : "WAITING_OWNER_AUTH",
+    vercel_auth: vercelAuth.vercel_auth,
+    vercel_team_slug: vercelAuth.team_slug || null,
+    vercel_project_name: vercelAuth.project_name || null,
+    production_preflight: state.lanes?.production_preflight || null,
     closed_prs: closedPrs,
     closed_issues: closedIssues,
     github_token_recursion_note:
