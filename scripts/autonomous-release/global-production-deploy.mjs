@@ -111,29 +111,45 @@ async function main() {
   const head = sh("git", ["rev-parse", "HEAD"]);
   if (head !== releaseSha) throw new Error(`CHECKOUT_NOT_FREEZE:${head}`);
 
-  // Ensure vercel CLI present.
+  // Prefer PATH `vercel`, then local bin, then `npm exec` (never rely on bare `npx`
+  // under execFileSync — runners often resolve it as ENOENT).
+  const localVercel = path.join(ROOT, "node_modules", ".bin", "vercel");
+  const vercelBin = fs.existsSync(localVercel) ? localVercel : "vercel";
+  let deployOut = "";
+  const vercelArgs = [
+    "deploy",
+    "--prod",
+    "--yes",
+    "--token",
+    token,
+    "--scope",
+    "lunchportalen",
+    "--meta",
+    `githubCommitSha=${releaseSha}`,
+  ];
   try {
-    sh("npx", ["vercel", "--version"]);
-  } catch {
-    throw new Error("VERCEL_CLI_MISSING");
+    deployOut = sh(vercelBin, vercelArgs, {
+      env: {
+        VERCEL_TOKEN: token,
+        VERCEL_ORG_ID: process.env.VERCEL_ORG_ID || "",
+        VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID || "",
+      },
+    });
+  } catch (e1) {
+    try {
+      deployOut = sh("npm", ["exec", "--yes", "--", "vercel", ...vercelArgs], {
+        env: {
+          VERCEL_TOKEN: token,
+          VERCEL_ORG_ID: process.env.VERCEL_ORG_ID || "",
+          VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID || "",
+        },
+      });
+    } catch (e2) {
+      throw new Error(
+        `VERCEL_DEPLOY_FAIL:${String(e2?.stderr || e2?.message || e1?.message || e2).slice(0, 300)}`,
+      );
+    }
   }
-
-  const deployOut = sh(
-    "npx",
-    [
-      "vercel",
-      "deploy",
-      "--prod",
-      "--yes",
-      "--token",
-      token,
-      "--scope",
-      "lunchportalen",
-      "--meta",
-      `githubCommitSha=${releaseSha}`,
-    ],
-    { env: { VERCEL_TOKEN: token, VERCEL_ORG_ID: process.env.VERCEL_ORG_ID || "", VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID || "" } },
-  );
 
   const health = await waitForHealthSha(baseUrl, releaseSha);
   await assertMarketsDisabled(databaseUrl);
