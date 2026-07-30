@@ -1,7 +1,7 @@
 {
-  "runId": "30512730512",
-  "started_at": "2026-07-30T04:02:14.823Z",
-  "completed_at": "2026-07-30T04:02:44.101Z",
+  "runId": "30521106246",
+  "started_at": "2026-07-30T06:55:21.512Z",
+  "completed_at": "2026-07-30T06:55:40.448Z",
   "replies_found": 0,
   "messages_classified": 0,
   "follow_ups_sent": 0,
@@ -31,12 +31,7 @@
   "Follow_up": {
     "dueNow": [],
     "sent": [],
-    "skipped": [
-      {
-        "firmId": "azets-nordic",
-        "reason": "WEB_FORM_NO_SMTP_THREAD_BACKUP_READY"
-      }
-    ],
+    "skipped": [],
     "notDue": [
       {
         "firmId": "deloitte-global-indirect-tax",
@@ -80,7 +75,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30512730512"
+      "runId": "30521106246"
     },
     {
       "primaryFirmId": "bdo-dach-vat",
@@ -88,7 +83,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30512730512"
+      "runId": "30521106246"
     },
     {
       "primaryFirmId": "conta-as-peppol-no",
@@ -96,7 +91,7 @@
       "backupChannel": null,
       "status": "NO_BACKUP_IN_REGISTRY",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30512730512"
+      "runId": "30521106246"
     },
     {
       "primaryFirmId": "thomson-reuters-pagero",
@@ -104,7 +99,7 @@
       "backupChannel": "peppol@conta.no (listed on OpenPeppol certified providers page) · https://www.conta.no",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30512730512"
+      "runId": "30521106246"
     },
     {
       "primaryFirmId": "azets-nordic",
@@ -112,7 +107,7 @@
       "backupChannel": "https://www.ey.com/en_nl/services/tax/vat-gst-sales-taxes (local EY member firm intake)",
       "status": "BACKUP_CANDIDATE_IDENTIFIED",
       "note": "Pack prepared only — no auto-send without APPROVE_ALL covering backup firm.",
-      "runId": "30512730512"
+      "runId": "30521106246"
     }
   ]
 }
