@@ -54,6 +54,9 @@ const ctrl = fs.readFileSync(path.join(ROOT, "scripts/autonomous-release/control
 assert.match(ctrl, /wasRunHandled/);
 assert.match(ctrl, /autofix_then_redispatch_phase18|dispatch_replacement_phase18|waitForNewAutofixRun/);
 assert.match(ctrl, /CONTROLLER_MAX_REACTION_TIME|5m schedule|in-tick autofix wait/);
+assert.match(ctrl, /verifyVercelAuthentication/);
+assert.match(ctrl, /PRODUCTION_PREFLIGHT/);
+assert.match(ctrl, /owner_wait_clear_reason/);
 
 const require = createRequire(import.meta.url);
 assert.ok(require("fs").existsSync(path.join(ROOT, ".github/workflows/phase18-autonomous-controller.yml")));
