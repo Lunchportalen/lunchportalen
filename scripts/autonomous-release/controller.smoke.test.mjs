@@ -24,6 +24,9 @@ function classifyFromText(blob) {
   }
   if (/rate limit|AUTH_RATE_LIMIT|429/i.test(s)) return "RATE_LIMIT_ERROR";
   if (/AUTH_REFRESH_FAIL/i.test(s)) return "AUTH_OR_SESSION_ERROR";
+  if (/column\s+"[^"]+"\s+does not exist|VERIFIER_SCHEMA_MISMATCH/i.test(s)) {
+    return "VERIFIER_SCHEMA_MISMATCH";
+  }
   return "TEST_HARNESS_ERROR";
 }
 
@@ -59,6 +62,13 @@ assert.match(ctrl, /PRODUCTION_PREFLIGHT/);
 assert.match(ctrl, /owner_wait_clear_reason/);
 assert.match(ctrl, /global-production-preflight\.yml/);
 assert.match(ctrl, /dispatchGlobalProductionPreflight|frozenGlobalReleaseSha/);
+assert.match(ctrl, /global-production-post-promote-verify\.yml/);
+assert.match(ctrl, /reactToPostPromoteVerifyFailure/);
+assert.match(ctrl, /VERIFIER_SCHEMA_MISMATCH/);
+assert.equal(
+  classifyFromText('column "country_code" does not exist'),
+  "VERIFIER_SCHEMA_MISMATCH",
+);
 
 const require = createRequire(import.meta.url);
 assert.ok(require("fs").existsSync(path.join(ROOT, ".github/workflows/phase18-autonomous-controller.yml")));
