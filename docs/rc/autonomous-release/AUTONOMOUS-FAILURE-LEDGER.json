@@ -614,7 +614,37 @@
       "fingerprint": "7510061794084374",
       "action": "dispatch_replacement_phase18",
       "replacement_run_id": 30501713654
+    },
+    {
+      "at": "2026-07-30T02:16:45.617Z",
+      "run_id": 30501713654,
+      "sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
+      "job": "auth-session-issue-shard (4)",
+      "step": "Issue business session shard",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "error": "PHASE18_AUTH_USERS_UNDERFILLED exported=420",
+      "fingerprint": "81d6f523883e934e",
+      "logic_key": "1396962fa6f48323",
+      "action": "detect_unhandled_failure"
+    },
+    {
+      "at": "2026-07-30T02:16:46.921Z",
+      "run_id": 30501713654,
+      "sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "fingerprint": "81d6f523883e934e",
+      "logic_key": "1396962fa6f48323",
+      "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-07-30T02:17:37.968Z",
+      "run_id": 30501713654,
+      "sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
+      "class": "AUTH_OR_SESSION_ERROR",
+      "fingerprint": "81d6f523883e934e",
+      "action": "dispatch_replacement_phase18",
+      "replacement_run_id": 30508054075
     }
   ],
-  "updated_at": "2026-07-30T01:24:25.344Z"
+  "updated_at": "2026-07-30T02:17:37.968Z"
 }
