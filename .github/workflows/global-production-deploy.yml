@@ -1,4 +1,4 @@
-# Exact-SHA production deploy. New markets remain disabled.
+﻿# Exact-SHA production deploy. New markets remain disabled.
 # Requires a prior GLOBAL_PRODUCTION_PREFLIGHT PASS for the same SHA.
 name: global-production-deploy
 
@@ -71,7 +71,7 @@ jobs:
             echo "::error::preflight conclusion is not success"
             exit 1
           fi
-          # Workflow may run from controller branch; freeze SHA is an input — verify artifact.
+          # Workflow may run from controller branch; freeze SHA is an input â€” verify artifact.
           gh run download "$PREFLIGHT_RUN_ID" -n "global-production-preflight-${PREFLIGHT_RUN_ID}" -D /tmp/pf || true
           if [ -f /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json ]; then
             RESULT="$(jq -r .result /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json)"
@@ -84,7 +84,7 @@ jobs:
             mkdir -p docs/rc/launch-2026-08-01
             cp -f /tmp/pf/GLOBAL-PRODUCTION-PREFLIGHT.json docs/rc/launch-2026-08-01/
           else
-            echo "::warning::preflight artifact missing — continuing with run conclusion gate only"
+            echo "::warning::preflight artifact missing â€” continuing with run conclusion gate only"
             export ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT=1
             echo "ALLOW_DEPLOY_WITHOUT_LOCAL_PREFLIGHT=1" >> "$GITHUB_ENV"
           fi
@@ -126,7 +126,7 @@ jobs:
       - name: Install Vercel CLI (absolute path for Node spawn)
         run: |
           set -euo pipefail
-          npm install -g vercel@39.4.2
+          npm install -g vercel@47.2.2
           echo "VERCEL_BIN=$(command -v vercel)" >> "$GITHUB_ENV"
           command -v vercel
           vercel --version
