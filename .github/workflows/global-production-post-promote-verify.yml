@@ -1,0 +1,88 @@
+# Post-promote verification only (no redeploy). Uses #581 health retry semantics.
+name: global-production-post-promote-verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: "Frozen GLOBAL_RELEASE_SHA (40-char)"
+        required: true
+        type: string
+      prior_deploy_run_id:
+        description: "Deploy run to classify (default 30558735412)"
+        required: false
+        default: "30558735412"
+        type: string
+      reason:
+        description: "Dispatch reason"
+        required: false
+        default: "post-promote-verify-no-redeploy"
+
+concurrency:
+  group: global-production-post-promote-verify
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+  PROD_REF: hkpokyapzarefrgqzkos
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: load-cert
+    steps:
+      - name: Validate inputs
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          PRIOR_DEPLOY_RUN_ID: ${{ inputs.prior_deploy_run_id }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::invalid release_sha"
+            exit 1
+          fi
+          if [[ ! "$PRIOR_DEPLOY_RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::invalid prior_deploy_run_id"
+            exit 1
+          fi
+          echo "GLOBAL_RELEASE_SHA=$RELEASE_SHA" >> "$GITHUB_ENV"
+          echo "PRIOR_DEPLOY_RUN_ID=$PRIOR_DEPLOY_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Checkout workflow ref (verify runner from main/#581+)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Post-promote verify (no redeploy)
+        env:
+          GLOBAL_RELEASE_SHA: ${{ env.GLOBAL_RELEASE_SHA }}
+          PRIOR_DEPLOY_RUN_ID: ${{ env.PRIOR_DEPLOY_RUN_ID }}
+          SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          SUPABASE_PROD_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          PROD_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          HEALTH_VERIFY_ATTEMPTS: "12"
+        run: node scripts/autonomous-release/global-production-post-promote-verify.mjs
+
+      - name: Upload verify evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-production-post-promote-verify-${{ github.run_id }}
+          path: docs/rc/launch-2026-08-01/GLOBAL-PRODUCTION-POST-PROMOTE-VERIFY.json
+          if-no-files-found: warn
