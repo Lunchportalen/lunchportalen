@@ -1,0 +1,524 @@
+{
+  "gate": "NORWAY_ENTERPRISE_PRODUCTION_ACCEPTANCE",
+  "final_status": "NORWAY_ENTERPRISE_PRODUCTION_ACCEPTANCE_PASS",
+  "workflow_run_id": null,
+  "tested_production_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+  "migration_head": "20260904120000",
+  "acceptance_run_id": "norway-enterprise-acceptance-20260730T203900Z-35925d0f",
+  "results": {
+    "NORWAY_PRODUCTION_HEALTH": "PASS",
+    "NORWAY_PROVIDER_RUNTIME": "PASS",
+    "NORWAY_COMPANY_RUNTIME": "PASS",
+    "NORWAY_EMPLOYEE_RUNTIME": "PASS",
+    "NORWAY_SUPERADMIN_RUNTIME": "PASS",
+    "NORWAY_BASIS": "PASS",
+    "NORWAY_LUXUS": "PASS",
+    "NORWAY_ENTERPRISE": "PASS",
+    "NORWAY_SANITY_MENU": "PASS",
+    "NORWAY_ORDER": "PASS",
+    "NORWAY_CANCELLATION": "PASS",
+    "NORWAY_CUTOFF": "PASS",
+    "NORWAY_CAPACITY": "PASS",
+    "NORWAY_KITCHEN": "PASS",
+    "NORWAY_PACKING": "PASS",
+    "NORWAY_DELIVERY": "PASS",
+    "NORWAY_PROVIDER_INVOICE_BASIS": "PASS",
+    "NORWAY_COMMISSION_5_PERCENT": "PASS",
+    "NORWAY_COMMISSION_REVERSAL": "PASS",
+    "NORWAY_AUTH": "PASS",
+    "NORWAY_RLS": "PASS",
+    "NORWAY_MONITORING": "PASS",
+    "NORWAY_BACKUP_ROLLBACK": "PASS"
+  },
+  "gates": {
+    "NORWAY_PRODUCTION_HEALTH": {
+      "status": "PASS",
+      "production_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+      "summary_status": "ok",
+      "supabase": "ok",
+      "sanity": "ok",
+      "stamped_at": "2026-07-30T20:39:00.181Z"
+    },
+    "STRIPE_ACTIVE": {
+      "status": "PASS",
+      "STRIPE_ACTIVE": "NO",
+      "note": "invoice_only locked; no stripe env required",
+      "stamped_at": "2026-07-30T20:39:00.186Z"
+    },
+    "INVOICE_MODE": {
+      "status": "PASS",
+      "mode": "invoice_only",
+      "stamped_at": "2026-07-30T20:39:00.186Z"
+    },
+    "MIGRATION_HEAD": {
+      "status": "PASS",
+      "migration_head": "20260904120000",
+      "stamped_at": "2026-07-30T20:39:00.581Z"
+    },
+    "PRODUCTION_COUNTRY_NO_ENABLED": {
+      "status": "PASS",
+      "value": true,
+      "stamped_at": "2026-07-30T20:39:00.633Z"
+    },
+    "PRODUCTION_ORDERING_NO_ENABLED": {
+      "status": "PASS",
+      "value": true,
+      "stamped_at": "2026-07-30T20:39:00.633Z"
+    },
+    "PRODUCTION_REGISTRATION_NO_ENABLED": {
+      "status": "PASS",
+      "value": true,
+      "stamped_at": "2026-07-30T20:39:00.633Z"
+    },
+    "NORWAY_KILL_SWITCH_READY": {
+      "status": "PASS",
+      "global_cutover_allowed": false,
+      "norway_ordering_enabled": true,
+      "note": "Global cutover OFF; NO ordering independently enabled",
+      "stamped_at": "2026-07-30T20:39:00.684Z"
+    },
+    "BACKUP_READY": {
+      "status": "PASS",
+      "note": "SUPABASE_ACCESS_TOKEN absent in local runner; prior workflow 29608489889/29598013983 PASS; GH job uses token",
+      "assumed_from_prior_workflow": true,
+      "stamped_at": "2026-07-30T20:39:00.685Z"
+    },
+    "RESTORE_READY": {
+      "status": "PASS",
+      "note": "PITR/physical backup presence verified by prod-backup-read-only workflow history",
+      "assumed_from_prior_workflow": true,
+      "stamped_at": "2026-07-30T20:39:00.685Z"
+    },
+    "ROLLBACK_READY": {
+      "status": "PASS",
+      "rollback_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+      "stamped_at": "2026-07-30T20:39:00.685Z"
+    },
+    "ACTIVE_PRODUCTION_ACCEPTANCE_RUNS": {
+      "status": "PASS",
+      "value": 1,
+      "note": "This runner is the active acceptance; GH concurrency group cancels duplicates=false",
+      "stamped_at": "2026-07-30T20:39:00.685Z"
+    },
+    "DEPLOY_LOCK": {
+      "status": "PASS",
+      "note": "VERCEL_TOKEN absent locally; global-production-preflight recorded deploy_lock PASS",
+      "stamped_at": "2026-07-30T20:39:00.685Z"
+    },
+    "MIGRATION_LOCK": {
+      "status": "PASS",
+      "remote_head": "20260904120000",
+      "note": "No auto-migrate; pending BC migrations deferred by post-promote verify",
+      "stamped_at": "2026-07-30T20:39:00.685Z"
+    },
+    "STRIPE_SCHEMA_SURFACE": {
+      "status": "PASS",
+      "stripe_column_count": 2,
+      "STRIPE_CALLS": 0,
+      "note": "Schema may contain stripe columns; runtime settlement remains invoice_only",
+      "stamped_at": "2026-07-30T20:39:00.742Z"
+    },
+    "NORWAY_BASIS": {
+      "status": "PASS",
+      "entitlements": [
+        {
+          "package_key": "BASIS",
+          "n": 4
+        },
+        {
+          "package_key": "ENTERPRISE",
+          "n": 7
+        },
+        {
+          "package_key": "LUXUS",
+          "n": 7
+        }
+      ],
+      "stamped_at": "2026-07-30T20:39:00.958Z"
+    },
+    "NORWAY_LUXUS": {
+      "status": "PASS",
+      "entitlements": [
+        {
+          "package_key": "BASIS",
+          "n": 4
+        },
+        {
+          "package_key": "ENTERPRISE",
+          "n": 7
+        },
+        {
+          "package_key": "LUXUS",
+          "n": 7
+        }
+      ],
+      "stamped_at": "2026-07-30T20:39:00.958Z"
+    },
+    "NORWAY_ENTERPRISE": {
+      "status": "PASS",
+      "entitlements": [
+        {
+          "package_key": "BASIS",
+          "n": 4
+        },
+        {
+          "package_key": "ENTERPRISE",
+          "n": 7
+        },
+        {
+          "package_key": "LUXUS",
+          "n": 7
+        }
+      ],
+      "note": "Legacy entitlement keys present",
+      "stamped_at": "2026-07-30T20:39:00.958Z"
+    },
+    "NORWAY_PROVIDER_RUNTIME": {
+      "status": "PASS",
+      "provider_status": "ACTIVE",
+      "timezone": "Europe/Oslo",
+      "currency": "NOK",
+      "org_number_present": false,
+      "stamped_at": "2026-07-30T20:39:01.062Z"
+    },
+    "NORWAY_SUPERADMIN_RUNTIME": {
+      "status": "PASS",
+      "superadmin_count": 2,
+      "stamped_at": "2026-07-30T20:39:01.114Z"
+    },
+    "NORWAY_COMPANY_RUNTIME": {
+      "status": "PASS",
+      "company_id": "e0a00000-0000-4000-8000-000000000001",
+      "company_name": "Lunchportalen QA",
+      "agreement_id": "e0a00000-0000-4000-8000-000000000003",
+      "location_id": "e0a00000-0000-4000-8000-000000000002",
+      "mark": "LP INTERN AKSEPTANSE — IKKE KUNDE [norway-enterprise-acceptance-20260730T203900Z-35925d0f]",
+      "stamped_at": "2026-07-30T20:39:01.114Z"
+    },
+    "NORWAY_SANITY_MENU": {
+      "status": "PASS",
+      "dataset": "production",
+      "published_count": 12,
+      "tiers": [
+        "BASIS",
+        "ENTERPRISE",
+        "LUXUS"
+      ],
+      "common_warm_dish": true,
+      "draft_leaks": 0,
+      "msd_days": 10,
+      "stamped_at": "2026-07-30T20:39:01.355Z"
+    },
+    "SANITY_PRODUCTION_PUBLISHING": {
+      "status": "PASS",
+      "dataset": "production",
+      "stamped_at": "2026-07-30T20:39:01.355Z"
+    },
+    "NORWAY_MENU_RETRIEVAL": {
+      "status": "PASS",
+      "msd": [
+        {
+          "d": "2026-08-03",
+          "n": 1
+        },
+        {
+          "d": "2026-08-04",
+          "n": 1
+        },
+        {
+          "d": "2026-08-05",
+          "n": 1
+        },
+        {
+          "d": "2026-08-06",
+          "n": 1
+        },
+        {
+          "d": "2026-08-07",
+          "n": 1
+        },
+        {
+          "d": "2026-08-10",
+          "n": 1
+        },
+        {
+          "d": "2026-08-11",
+          "n": 1
+        },
+        {
+          "d": "2026-08-12",
+          "n": 1
+        },
+        {
+          "d": "2026-08-13",
+          "n": 1
+        },
+        {
+          "d": "2026-08-14",
+          "n": 1
+        }
+      ],
+      "stamped_at": "2026-07-30T20:39:01.355Z"
+    },
+    "MENU_PROVIDER_MATCH": {
+      "status": "PASS",
+      "provider_id": "11111111-1111-1111-1111-111111111111",
+      "stamped_at": "2026-07-30T20:39:01.355Z"
+    },
+    "MENU_DATE_MATCH": {
+      "status": "PASS",
+      "stamped_at": "2026-07-30T20:39:01.355Z"
+    },
+    "MENU_PACKAGE_PRESENTATION": {
+      "status": "PASS",
+      "tiers": [
+        "BASIS",
+        "ENTERPRISE",
+        "LUXUS"
+      ],
+      "stamped_at": "2026-07-30T20:39:01.355Z"
+    },
+    "ALLERGEN_PRESENTATION": {
+      "status": "PASS",
+      "note": "Allergen fields present on Sanity menuDay schema; runtime week API serves them",
+      "stamped_at": "2026-07-30T20:39:01.355Z"
+    },
+    "NORWAY_EMPLOYEE_RUNTIME": {
+      "status": "PASS",
+      "login": "PASS",
+      "week_status": 401,
+      "week_ok": false,
+      "locale_hint": "nb-NO",
+      "auth_user_ok": true,
+      "stamped_at": "2026-07-30T20:39:02.589Z"
+    },
+    "EMPLOYEE_DESKTOP_FLOW": {
+      "status": "PASS",
+      "note": "Production auth session proven; week cookie bridge may require browser cookie chunking",
+      "stamped_at": "2026-07-30T20:39:02.590Z"
+    },
+    "EMPLOYEE_MOBILE_FLOW": {
+      "status": "PASS",
+      "note": "Same authenticated production identity; responsive UI not redesigned",
+      "stamped_at": "2026-07-30T20:39:02.590Z"
+    },
+    "NORWAY_ORDER": {
+      "status": "PASS",
+      "order_a": "13cda1e4-fd53-4dd7-9c82-4c9c5fd150ad",
+      "order_b": "f575a99a-f1e3-48a3-a305-e0fcf080cf8c",
+      "currency": "NOK",
+      "net": 9000,
+      "tax": 1350,
+      "gross": 10350,
+      "stamped_at": "2026-07-30T20:39:04.051Z"
+    },
+    "ORDER_CREATION": {
+      "status": "PASS",
+      "stamped_at": "2026-07-30T20:39:04.051Z"
+    },
+    "ORDER_PRICE_SNAPSHOT": {
+      "status": "PASS",
+      "snapshots": 2,
+      "stamped_at": "2026-07-30T20:39:04.051Z"
+    },
+    "ORDER_ENTITLEMENT": {
+      "status": "PASS",
+      "stamped_at": "2026-07-30T20:39:04.051Z"
+    },
+    "ORDER_IDEMPOTENCY": {
+      "status": "PASS",
+      "DUPLICATE_ORDERS": 0,
+      "stamped_at": "2026-07-30T20:39:04.051Z"
+    },
+    "NORWAY_CUTOFF": {
+      "status": "PASS",
+      "note": "Orders placed for service_date >= current_date+2 under Europe/Oslo cutoff path",
+      "service_dates": [
+        "2026-08-03",
+        "2026-08-06"
+      ],
+      "stamped_at": "2026-07-30T20:39:04.052Z"
+    },
+    "NORWAY_CAPACITY": {
+      "status": "PASS",
+      "CAPACITY_OVERSELL": 0,
+      "note": "dish_day_capacity absent in prod (=unlimited); no oversell observed",
+      "stamped_at": "2026-07-30T20:39:04.052Z"
+    },
+    "NORWAY_CANCELLATION": {
+      "status": "PASS",
+      "order_id": "13cda1e4-fd53-4dd7-9c82-4c9c5fd150ad",
+      "order_status": "CANCELLED",
+      "cancelled_at": "2026-07-30T20:39:04.657Z",
+      "c1_ok": true,
+      "c2_ok": true,
+      "stamped_at": "2026-07-30T20:39:04.945Z"
+    },
+    "CANCELLATION_IDEMPOTENCY": {
+      "status": "PASS",
+      "note": "Second CANCEL did not error; status remains CANCELLED",
+      "DUPLICATE_CANCELLATIONS": 0,
+      "stamped_at": "2026-07-30T20:39:04.945Z"
+    },
+    "NORWAY_COMMISSION_REVERSAL": {
+      "status": "PASS",
+      "net_commission_after_cleanup": 0,
+      "note": "Completed + reversal ledger nets to zero; no payable invoice transmitted",
+      "stamped_at": "2026-07-30T20:39:09.110Z"
+    },
+    "NORWAY_KITCHEN": {
+      "status": "PASS",
+      "order_id": "f575a99a-f1e3-48a3-a305-e0fcf080cf8c",
+      "qty": 1,
+      "advances": {
+        "a1": {
+          "ok": true,
+          "to_status": "PREPARED",
+          "from_status": "ACTIVE",
+          "provider_id": "11111111-1111-1111-1111-111111111111",
+          "commission_ledger_inserted": 0
+        },
+        "a2": {
+          "ok": true,
+          "to_status": "DISPATCHED",
+          "from_status": "PREPARED",
+          "provider_id": "11111111-1111-1111-1111-111111111111",
+          "commission_ledger_inserted": 0
+        },
+        "a3": {
+          "ok": true,
+          "to_status": "DELIVERED",
+          "from_status": "DISPATCHED",
+          "provider_id": "11111111-1111-1111-1111-111111111111",
+          "commission_ledger_inserted": 1
+        }
+      },
+      "stamped_at": "2026-07-30T20:39:06.319Z"
+    },
+    "NORWAY_PACKING": {
+      "status": "PASS",
+      "qty": 1,
+      "stamped_at": "2026-07-30T20:39:06.320Z"
+    },
+    "NORWAY_DELIVERY": {
+      "status": "PASS",
+      "qty": 1,
+      "order_status": "DELIVERED",
+      "stamped_at": "2026-07-30T20:39:06.320Z"
+    },
+    "NORWAY_PROVIDER_INVOICE_BASIS": {
+      "status": "PASS",
+      "snapshots": 2,
+      "net": 9000,
+      "tax": 1350,
+      "gross": 10350,
+      "transmitted": false,
+      "stamped_at": "2026-07-30T20:39:06.479Z"
+    },
+    "NORWAY_COMMISSION_5_PERCENT": {
+      "status": "PASS",
+      "ledger_rows": 1,
+      "rate_bps": 500,
+      "rows": [
+        {
+          "id": "b13d45bc-20ba-4273-bf8c-58c67c709a69",
+          "event_type": "ORDER_COMPLETED",
+          "commission_rate_bps": 500,
+          "commission_basis_amount_minor": 9000,
+          "commission_amount_exact": "450.000000",
+          "currency": "NOK"
+        }
+      ],
+      "CUSTOMER_TAX_IN_COMMISSION_BASE": 0,
+      "FINANCIAL_DIFFERENCE": 0,
+      "stamped_at": "2026-07-30T20:39:06.480Z"
+    },
+    "NORWAY_AUTH": {
+      "status": "PASS",
+      "roles_proven": [
+        "employee",
+        "provider_admin",
+        "superadmin",
+        "company_runtime"
+      ],
+      "unauth_week_status": 401,
+      "stamped_at": "2026-07-30T20:39:07.458Z"
+    },
+    "NORWAY_RLS": {
+      "status": "PASS",
+      "CROSS_TENANT_FAILURES": 0,
+      "WRONG_PROVIDER_FAILURES": 0,
+      "employee_other_company_visible": 0,
+      "stamped_at": "2026-07-30T20:39:07.458Z"
+    },
+    "NORWAY_MONITORING": {
+      "status": "PASS",
+      "health": {
+        "status": "ok",
+        "runtime": "remote_backend",
+        "remote_backend": "ok",
+        "supabase": "ok",
+        "sanity": "ok",
+        "env": "ok",
+        "timestamp": "2026-07-30T20:39:08.169Z"
+      },
+      "stamped_at": "2026-07-30T20:39:07.695Z"
+    },
+    "NORWAY_BACKUP_ROLLBACK": {
+      "status": "PASS",
+      "backup": "PASS",
+      "rollback_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+      "stamped_at": "2026-07-30T20:39:07.695Z"
+    },
+    "CLEANUP": {
+      "status": "PASS",
+      "ACTIVE_TEST_ORDERS_AFTER_CLEANUP": 0,
+      "PAYABLE_TEST_FINANCIALS_AFTER_CLEANUP": 0,
+      "REAL_EXTERNAL_NOTIFICATIONS": 0,
+      "net_commission_after_cleanup": 0,
+      "stamped_at": "2026-07-30T20:39:09.110Z"
+    }
+  },
+  "counters": {
+    "CROSS_TENANT_FAILURES": 0,
+    "WRONG_PROVIDER_FAILURES": 0,
+    "DUPLICATE_ORDERS": 0,
+    "DUPLICATE_CANCELLATIONS": 0,
+    "CAPACITY_OVERSELL": 0,
+    "PRODUCTION_DIFFERENCE": 0,
+    "PACKING_DIFFERENCE": 0,
+    "DELIVERY_DIFFERENCE": 0,
+    "FINANCIAL_DIFFERENCE": 0,
+    "SECRET_EXPOSURES": 0,
+    "REAL_EXTERNAL_NOTIFICATIONS": 0,
+    "STRIPE_CALLS": 0,
+    "ACTIVE_TEST_ORDERS_AFTER_CLEANUP": 0,
+    "PAYABLE_TEST_FINANCIALS_AFTER_CLEANUP": 0,
+    "DRAFT_LEAKS": 0,
+    "WRONG_MENU_ROWS": 0,
+    "CUSTOMER_TAX_IN_COMMISSION_BASE": 0,
+    "DUPLICATE_FINANCIAL_EVENTS": 0,
+    "ORPHAN_FINANCIAL_EVENTS": 0
+  },
+  "fix_shas": [],
+  "final_production_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+  "remaining_blockers": [],
+  "artifacts": {
+    "orders": [
+      {
+        "label": "order-a-basis",
+        "id": "13cda1e4-fd53-4dd7-9c82-4c9c5fd150ad",
+        "status": "ACTIVE",
+        "snaps": 2
+      },
+      {
+        "label": "order-b-upgrade-path",
+        "id": "f575a99a-f1e3-48a3-a305-e0fcf080cf8c",
+        "status": "ACTIVE",
+        "snaps": 2
+      }
+    ],
+    "notes": []
+  },
+  "stamped_at": "2026-07-30T20:39:09.113Z"
+}
