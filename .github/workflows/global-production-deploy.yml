@@ -126,7 +126,7 @@ jobs:
       - name: Install Vercel CLI (absolute path for Node spawn)
         run: |
           set -euo pipefail
-          npm install -g vercel@47.2.2
+          npm install -g vercel@latest
           echo "VERCEL_BIN=$(command -v vercel)" >> "$GITHUB_ENV"
           command -v vercel
           vercel --version
