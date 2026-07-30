@@ -20,16 +20,17 @@
     "production_deploy": "PRODUCTION_PREFLIGHT",
     "legal_tax_activation": "BLOCKED_WAITING_OWNER_LEGAL_TAX",
     "global_staging": "ACTIVE",
-    "production_preflight": "PASS"
+    "production_preflight": "PASS",
+    "post_promote_verify": "PASS"
   },
   "counters": {
-    "controller_ticks": 148,
+    "controller_ticks": 149,
     "autofix_dispatches": 24,
     "phase18_dispatches": 33,
-    "advances": 10
+    "advances": 11
   },
   "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-07-30T18:23:14.242Z",
+  "updated_at": "2026-07-30T18:57:13.957Z",
   "vercel_auth": {
     "ok": true,
     "vercel_auth": "PASS",

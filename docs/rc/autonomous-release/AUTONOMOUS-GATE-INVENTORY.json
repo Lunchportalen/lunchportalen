@@ -18,7 +18,8 @@
     "global_live_verify": "NOT_RUN",
     "global_scale_certified": "NOT_RUN",
     "vercel_authentication": "PASS",
-    "owner_authentication_required": "CLEARED"
+    "owner_authentication_required": "CLEARED",
+    "post_promote_verify": "PASS"
   },
   "notes": {
     "phase18_schema_parity": "Run 30198105720: PHASE18_POOLER_AUTH_PROBE_FAILED timeout expired (NETWORK_OR_POOLER_ERROR)",
@@ -27,5 +28,5 @@
     "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved",
     "phase18_last_failure": "RATE_LIMIT_ERROR: PHASE18_AUTH_USERS_UNDERFILLED exported=420"
   },
-  "updated_at": "2026-07-30T18:23:18.865Z"
+  "updated_at": "2026-07-30T18:57:17.163Z"
 }
