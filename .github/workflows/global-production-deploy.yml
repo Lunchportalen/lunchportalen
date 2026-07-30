@@ -123,6 +123,9 @@ jobs:
       - name: Install deps
         run: npm ci --omit=optional --no-audit --no-fund
 
+      - name: Install Vercel CLI
+        run: npm install -g vercel@39.4.2
+
       - name: Run exact-SHA production deploy (markets disabled)
         env:
           GLOBAL_RELEASE_SHA: ${{ env.GLOBAL_RELEASE_SHA }}
