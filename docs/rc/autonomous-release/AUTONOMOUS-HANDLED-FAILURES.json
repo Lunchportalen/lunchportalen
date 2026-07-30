@@ -338,7 +338,36 @@
       "replacement_phase18_run_id": 30483536934,
       "resolution": "replacement_dispatched",
       "last_checked_at": "2026-07-29T19:14:41.780Z"
+    },
+    {
+      "detected_at": "2026-07-30T00:06:48.465Z",
+      "failed_run_id": 30495693289,
+      "failed_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+      "job": "auth-session-issue-shard (1)",
+      "step": "Issue business session shard",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "PHASE18_AUTH_USERS_UNDERFILLED exported=420",
+      "fingerprint": "7510061794084374",
+      "logic_key": "34ca2e91fec307fa",
+      "resolution": "detected",
+      "last_checked_at": "2026-07-30T00:06:48.465Z"
+    },
+    {
+      "detected_at": "2026-07-30T00:07:41.315Z",
+      "failed_run_id": 30495693289,
+      "failed_sha": "35925d0ffe5ab72d7d35c17a9dc8381d2eccdc3c",
+      "job": "auth-session-issue-shard (1)",
+      "step": "Issue business session shard",
+      "error_class": "AUTH_OR_SESSION_ERROR",
+      "error": "PHASE18_AUTH_USERS_UNDERFILLED exported=420",
+      "fingerprint": "7510061794084374",
+      "logic_key": "34ca2e91fec307fa",
+      "autofix_run_id": 30501670133,
+      "fix_sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
+      "replacement_phase18_run_id": 30501713654,
+      "resolution": "replacement_dispatched",
+      "last_checked_at": "2026-07-30T00:07:41.315Z"
     }
   ],
-  "updated_at": "2026-07-29T19:14:41.780Z"
+  "updated_at": "2026-07-30T00:07:41.315Z"
 }
