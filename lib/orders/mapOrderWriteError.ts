@@ -173,6 +173,51 @@ export function mapOrderWriteError(err: PostgresRpcError): MappedOrderWriteError
       logLevel: "warn",
     };
   }
+  if (mUpper.includes("CAPACITY_EXCEEDED")) {
+    return {
+      status: 409,
+      code: "CAPACITY_EXCEEDED",
+      message: "Kapasiteten for denne retten er fullbooket for valgt dag.",
+      errorType: "rpc",
+      logLevel: "warn",
+    };
+  }
+  if (mUpper.includes("CAPACITY_CLOSED")) {
+    return {
+      status: 409,
+      code: "CAPACITY_CLOSED",
+      message: "Bestilling er stengt for valgt dag.",
+      errorType: "rpc",
+      logLevel: "warn",
+    };
+  }
+  if (mUpper.includes("CAPACITY_POLICY_MISSING")) {
+    return {
+      status: 409,
+      code: "CAPACITY_POLICY_MISSING",
+      message: "Kapasitet er ikke konfigurert for leverandøren. Bestilling er midlertidig stengt.",
+      errorType: "rpc",
+      logLevel: "warn",
+    };
+  }
+  if (mUpper.includes("CAPACITY_QTY_INVALID")) {
+    return {
+      status: 400,
+      code: "CAPACITY_QTY_INVALID",
+      message: "Ugyldig antall for kapasitetsreservasjon.",
+      errorType: "rpc",
+      logLevel: "warn",
+    };
+  }
+  if (mUpper.includes("CAPACITY_BELOW_RESERVED")) {
+    return {
+      status: 409,
+      code: "CAPACITY_BELOW_RESERVED",
+      message: "Kan ikke sette kapasitet under allerede reserverte bestillinger.",
+      errorType: "rpc",
+      logLevel: "warn",
+    };
+  }
   if (mUpper.includes("PROFILE_MISSING") || mUpper.includes("SCOPE_FORBIDDEN")) {
     return {
       status: 403,

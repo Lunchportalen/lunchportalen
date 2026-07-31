@@ -507,12 +507,16 @@ async function verifyProviderConfigFoundation() {
     [melhusId],
   );
   const byPkg = Object.fromEntries(entCount.map((r) => [r.package_key, Number(r.c)]));
-  if (byPkg.BASIS !== 4 || byPkg.LUXUS !== 7 || byPkg.ENTERPRISE !== 7) {
+  // Floor (not exact): Melhus entitlements grow as categories/items are added on staging/prod.
+  // Golden-path seed minimums remain BASIS>=4, LUXUS>=7, ENTERPRISE>=7.
+  if ((byPkg.BASIS ?? 0) < 4 || (byPkg.LUXUS ?? 0) < 7 || (byPkg.ENTERPRISE ?? 0) < 7) {
     throw new Error(
-      `provider_package_entitlements Melhus seed mismatch: expected BASIS=4 LUXUS=7 ENTERPRISE=7, got ${JSON.stringify(byPkg)}`,
+      `provider_package_entitlements Melhus seed mismatch: expected BASIS>=4 LUXUS>=7 ENTERPRISE>=7, got ${JSON.stringify(byPkg)}`,
     );
   }
-  console.log("OK: provider_package_entitlements Melhus seed (BASIS=4, LUXUS=7, ENTERPRISE=7)");
+  console.log(
+    `OK: provider_package_entitlements Melhus seed (BASIS>=4, LUXUS>=7, ENTERPRISE>=7; actual ${JSON.stringify(byPkg)})`,
+  );
 }
 
 async function verifySpinePhase2AuthHookShadow() {

@@ -81,6 +81,13 @@ export default async function LeverandorInnstillingerPage() {
         </section>
       ) : null}
       <section className="ds-section">
+        <h2 className="ds-h3">Kapasitet</h2>
+        <p className="ds-body">Sett ubegrenset, begrenset eller stengt kapasitet per servicedag.</p>
+        <Link className="ds-btn ds-btn--primary" href="/leverandor/kapasitet">
+          Åpne kapasitet
+        </Link>
+      </section>
+      <section className="ds-section">
         <h2 className="ds-h3">{t("accountingSection")}</h2>
         <p className="ds-body">{t("accountingIntro")}</p>
         <Link className="ds-btn ds-btn--primary" href="/leverandor/innstillinger/tripletex/koble-til">
