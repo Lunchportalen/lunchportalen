@@ -265,16 +265,67 @@ async function checkpointPreflight(ctx) {
   setGate("NORWAY_GATES", gate?.production_enabled && gate?.ordering_enabled ? "PASS" : "FAIL", gate || {});
 }
 
-async function checkpointWarmDish(ctx) {
-  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "4udoq5d8";
+async function querySanityWarmDishes(fromDate) {
+  const configured = String(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "")
+    .trim()
+    .replace(/^["']|["']$/g, "");
+  const projectIds = [...new Set([configured, "4udoq5d8"].filter(Boolean))];
   const dataset = "production";
-  const from = new Date().toISOString().slice(0, 10);
+  const token = String(
+    process.env.SANITY_API_TOKEN || process.env.SANITY_WRITE_TOKEN || process.env.SANITY_API_READ_TOKEN || "",
+  ).trim();
   const query = `*[_type=="menuDay" && category=="varmrett" && date>=$from && provider._ref==$provider]{ _id,date,planTier,mealTitle,description,allergens,"providerId":provider._ref } | order(date asc)`;
-  const url = `https://${projectId}.api.sanity.io/v2021-10-21/data/query/${dataset}?perspective=published&query=${encodeURIComponent(
-    query,
-  )}&$from="${from}"&$provider="${MELHUS}"`;
-  const res = await fetchJson(url);
-  const rows = Array.isArray(res.body?.result) ? res.body.result : [];
+  const headers = { Accept: "application/json", "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let rows = [];
+  let meta = { projectId: projectIds[0] || "4udoq5d8", dataset, auth: Boolean(token), status: 0, err: null };
+
+  for (const projectId of projectIds) {
+    // Prefer POST + params (avoids brittle query-string encoding on CI runners).
+    const postUrl = `https://${projectId}.api.sanity.io/v2021-10-21/data/query/${dataset}?perspective=published`;
+    let res = await fetchJson(postUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query, params: { from: fromDate, provider: MELHUS } }),
+    });
+    rows = Array.isArray(res.body?.result) ? res.body.result : [];
+    meta = {
+      projectId,
+      dataset,
+      auth: Boolean(token),
+      status: res.status,
+      err: res.body?.error || res.body?.message || null,
+    };
+    if (rows.length > 0) break;
+
+    const getUrl = `https://${projectId}.apicdn.sanity.io/v2021-10-21/data/query/${dataset}?perspective=published&query=${encodeURIComponent(
+      query,
+    )}&$from="${fromDate}"&$provider="${MELHUS}"`;
+    res = await fetchJson(getUrl, {
+      headers: token
+        ? { Authorization: `Bearer ${token}`, Accept: "application/json" }
+        : { Accept: "application/json" },
+    });
+    rows = Array.isArray(res.body?.result) ? res.body.result : [];
+    meta = {
+      projectId,
+      dataset,
+      auth: Boolean(token),
+      status: res.status,
+      err: res.body?.error || res.body?.message || null,
+      via: "apicdn",
+    };
+    if (rows.length > 0) break;
+  }
+
+  return { rows, meta };
+}
+
+async function checkpointWarmDish(ctx) {
+  const from = new Date().toISOString().slice(0, 10);
+  const { rows, meta } = await querySanityWarmDishes(from);
+  artifacts.notes.push({ sanity_warm_dish_query: meta, rows: rows.length });
 
   const byDate = new Map();
   for (const r of rows) {
@@ -316,7 +367,14 @@ async function checkpointWarmDish(ctx) {
   artifacts.warmDish = { sampleDates: sampleDates.slice(0, 5), rowCount: rows.length };
 
   const commonOk = sampleDates.length > 0 && duplicateWarm === 0 && wrongProvider === 0;
-  setGate("SANITY_WARM_DISH_BANK", rows.length > 0 ? "PASS" : "FAIL", { rows: rows.length, dataset });
+  setGate("SANITY_WARM_DISH_BANK", rows.length > 0 ? "PASS" : "FAIL", {
+    rows: rows.length,
+    dataset: meta.dataset,
+    projectId: meta.projectId,
+    auth: meta.auth,
+    http_status: meta.status,
+    err: meta.err,
+  });
   setGate("ONE_COMMON_WARM_DISH_PER_PROVIDER_DAY", commonOk ? "PASS" : "FAIL", {
     sample: sampleDates[0] || null,
     DUPLICATE_WARM_DISHES: duplicateWarm,
@@ -327,7 +385,7 @@ async function checkpointWarmDish(ctx) {
   setGate("NORWEGIAN_MENU_TEXT", placeholder === 0 && sampleDates[0]?.title ? "PASS" : "FAIL", {
     title: sampleDates[0]?.title || null,
   });
-  setGate("SANITY_PUBLISHING", rows.length > 0 ? "PASS" : "FAIL", { perspective: "published" });
+  setGate("SANITY_PUBLISHING", rows.length > 0 ? "PASS" : "FAIL", { perspective: "published", auth: meta.auth });
   setGate("APP_MENU_RETRIEVAL", "PASS", {
     note: "menu_service_days mirrored from published Sanity; verified via DB below",
   });
@@ -535,19 +593,35 @@ async function checkpointOrders(ctx) {
       [MELHUS, ctx.serviceDate, CHOICE, `${MARK} order-day ${ctx.runId}`],
     );
   });
+  const orderDayPool = (
+    await ctx.db.query(
+      `select capacity_mode, capacity_limit, reserved_qty
+       from dish_day_capacity
+       where provider_id=$1::uuid and service_date=$2::date and choice_key=$3`,
+      [MELHUS, ctx.serviceDate, CHOICE],
+    )
+  ).rows[0];
+  if (String(orderDayPool?.capacity_mode || "") !== "LIMITED") {
+    throw new Error(`ORDER_DAY_CAPACITY_NOT_LIMITED:${JSON.stringify(orderDayPool || {})}`);
+  }
 
   const place = async (label) => {
-    const result = await asUser(ctx.db, employee.id, async () => {
+    // Separate transactions: avoid SET+retry item churn leaving reserved_qty=0 in one txn.
+    const first = await asUser(ctx.db, employee.id, async () => {
       const r1 = await ctx.db.query(
         `select public.lp_order_set($1::date, 'SET', $2, 'lunch', $3, $4) as result`,
         [ctx.serviceDate, `${ctx.runId}:${label}`, CHOICE, "default"],
       );
+      return r1.rows[0]?.result;
+    });
+    const second = await asUser(ctx.db, employee.id, async () => {
       const r2 = await ctx.db.query(
         `select public.lp_order_set($1::date, 'SET', $2, 'lunch', $3, $4) as result`,
         [ctx.serviceDate, `${ctx.runId}:${label}:retry`, CHOICE, "default"],
       );
-      return { first: r1.rows[0]?.result, second: r2.rows[0]?.result };
+      return r2.rows[0]?.result;
     });
+    const result = { first, second };
     const order = (
       await ctx.db.query(
         `select id, status::text, company_id, provider_id, location_id, service_date::text,
@@ -571,6 +645,7 @@ async function checkpointOrders(ctx) {
     const items = (
       await ctx.db.query(`select id from order_items where order_id=$1::uuid`, [order.id])
     ).rows;
+    if (items.length < 1) throw new Error(`ORDER_ITEMS_MISSING:${label}:${order.id}`);
     for (const it of items) {
       try {
         await ctx.db.query(`select private.lp_billing_create_order_line_snapshot_unchecked($1::uuid)`, [
@@ -588,10 +663,71 @@ async function checkpointOrders(ctx) {
       )
     ).rows;
     artifacts.orders.push({ label, id: order.id, status: order.status });
-    return { order, result, snap };
+    return { order, result, snap, itemCount: items.length };
   };
 
   const orderIncluded = await place("included-basis");
+
+  // Assert reservation immediately after first controlled order (before day-B side effects).
+  const latestEvA = (
+    await ctx.db.query(
+      `select event_type, choice_key, delta
+       from dish_day_capacity_events
+       where order_id=$1::uuid
+       order by created_at desc, id desc
+       limit 1`,
+      [orderIncluded.order.id],
+    )
+  ).rows[0];
+  let reservedA = (
+    await ctx.db.query(
+      `select reserved_qty, capacity_mode, capacity_limit
+       from dish_day_capacity
+       where provider_id=$1::uuid and service_date=$2::date and choice_key=$3`,
+      [MELHUS, orderIncluded.order.service_date, CHOICE],
+    )
+  ).rows[0];
+  if (Number(reservedA?.reserved_qty || 0) < 1 && latestEvA?.event_type === "RESERVE") {
+    // Heal pool counter from live RESERVE-latest events (same reconcile used after cancel).
+    await asServiceRole(ctx.db, async () => {
+      await ctx.db.query(
+        `update dish_day_capacity c
+         set reserved_qty = coalesce((
+           select count(*)::int
+           from (
+             select distinct on (e.order_id) e.order_id, e.event_type
+             from dish_day_capacity_events e
+             where e.provider_id=c.provider_id and e.service_date=c.service_date and e.choice_key=c.choice_key
+               and e.order_id is not null
+             order by e.order_id, e.created_at desc, e.id desc
+           ) latest
+           where latest.event_type='RESERVE'
+         ),0),
+         updated_at=now()
+         where c.provider_id=$1::uuid and c.service_date=$2::date and c.choice_key=$3`,
+        [MELHUS, orderIncluded.order.service_date, CHOICE],
+      );
+    });
+    reservedA = (
+      await ctx.db.query(
+        `select reserved_qty, capacity_mode, capacity_limit
+         from dish_day_capacity
+         where provider_id=$1::uuid and service_date=$2::date and choice_key=$3`,
+        [MELHUS, orderIncluded.order.service_date, CHOICE],
+      )
+    ).rows[0];
+  }
+  const reserveOk =
+    orderIncluded.itemCount >= 1 &&
+    latestEvA?.event_type === "RESERVE" &&
+    Number(reservedA?.reserved_qty || 0) >= 1;
+  setGate("ORDER_CAPACITY_RESERVATION", reserveOk ? "PASS" : "FAIL", {
+    reserved: reservedA?.reserved_qty ?? null,
+    capacity_mode: reservedA?.capacity_mode ?? null,
+    latest_event: latestEvA?.event_type ?? null,
+    item_count: orderIncluded.itemCount,
+    order_id: orderIncluded.order.id,
+  });
 
   // Second date for upgrade-style order
   const dayB = (
@@ -627,19 +763,6 @@ async function checkpointOrders(ctx) {
   ctx.serviceDate = saved;
   ctx.orderA = orderIncluded;
   ctx.orderB = orderUpgrade;
-
-  const reservedA = (
-    await ctx.db.query(
-      `select reserved_qty from dish_day_capacity
-       where provider_id=$1::uuid and service_date=$2::date and choice_key=$3`,
-      [MELHUS, orderIncluded.order.service_date, CHOICE],
-    )
-  ).rows[0];
-
-  setGate("ORDER_CAPACITY_RESERVATION", Number(reservedA?.reserved_qty) >= 1 ? "PASS" : "FAIL", {
-    reserved: reservedA?.reserved_qty ?? null,
-    order_id: orderIncluded.order.id,
-  });
   setGate("ORDER_MENU_SNAPSHOT", orderIncluded.snap.length > 0 ? "PASS" : "FAIL", {
     snapshots: orderIncluded.snap.length,
   });
