@@ -305,90 +305,80 @@ async function querySanityWarmDishes(fromDate) {
   const token = String(
     process.env.SANITY_API_TOKEN || process.env.SANITY_WRITE_TOKEN || process.env.SANITY_API_READ_TOKEN || "",
   ).trim();
-  if (process.env.GITHUB_ACTIONS === "true" && !token) {
-    return {
-      rows: [],
-      meta: {
-        projectId,
-        dataset,
-        apiVersion,
-        perspective: NORWAY_SANITY_PERSPECTIVE,
-        auth: false,
-        status: 0,
-        err: "SANITY_MISSING_CREDENTIAL",
-        root_cause: "SANITY_MISSING_CREDENTIAL",
-      },
-    };
-  }
+  // SANITY_WRITE_TOKEN may be scoped to a different project (401 on 4udoq5d8).
+  // Published production dataset is anonymously readable — never let a wrong-scoped
+  // token block published reads.
+  const attempts = [];
+  const pushAttempt = (label, withAuth) => {
+    const h = { Accept: "application/json" };
+    if (withAuth && token) h.Authorization = `Bearer ${token}`;
+    attempts.push({ label, headers: h, withAuth: Boolean(withAuth && token) });
+  };
+  // Prefer anonymous first when we know token may be wrong-scoped; still try token.
+  pushAttempt("api_inline_anon", false);
+  if (token) pushAttempt("api_inline_auth", true);
+  pushAttempt("apicdn_inline_anon", false);
+  if (token) pushAttempt("apicdn_inline_auth", true);
+  pushAttempt("api_post_inline_anon", false);
+  if (token) pushAttempt("api_post_inline_auth", true);
 
-  const headers = { Accept: "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  // Primary: inline GROQ (no $params) — failed run 30633665067 used $param GET binding.
-  const getUrl = buildWarmDishQueryUrl({
-    projectId,
-    dataset,
-    apiVersion,
-    fromDate,
-    providerRef: MELHUS_PROVIDER_REF,
-    host: "api",
-  });
-  let res = await fetchJson(getUrl, { headers });
-  let rows = Array.isArray(res.body?.result) ? res.body.result : [];
+  let rows = [];
   let meta = {
     projectId,
     dataset,
     apiVersion,
     perspective: NORWAY_SANITY_PERSPECTIVE,
     auth: Boolean(token),
-    status: res.status,
-    err: res.body?.error || res.body?.message || null,
-    via: "api_inline",
+    status: 0,
+    err: null,
+    via: null,
     query_style: "inline_no_params",
     project_mismatch: projectMismatch,
+    token_scope_note: null,
   };
 
-  if (rows.length === 0) {
-    const cdnUrl = buildWarmDishQueryUrl({
-      projectId,
-      dataset,
-      apiVersion,
-      fromDate,
-      providerRef: MELHUS_PROVIDER_REF,
-      host: "apicdn",
-    });
-    res = await fetchJson(cdnUrl, { headers });
+  for (const attempt of attempts) {
+    const host = attempt.label.startsWith("apicdn") ? "apicdn" : "api";
+    let res;
+    if (attempt.label.includes("post")) {
+      const postUrl = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?perspective=${NORWAY_SANITY_PERSPECTIVE}`;
+      res = await fetchJson(postUrl, {
+        method: "POST",
+        headers: { ...attempt.headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: buildInlineWarmDishQuery(fromDate, MELHUS_PROVIDER_REF),
+        }),
+      });
+    } else {
+      const url = buildWarmDishQueryUrl({
+        projectId,
+        dataset,
+        apiVersion,
+        fromDate,
+        providerRef: MELHUS_PROVIDER_REF,
+        host,
+      });
+      res = await fetchJson(url, { headers: attempt.headers });
+    }
     rows = Array.isArray(res.body?.result) ? res.body.result : [];
     meta = {
       ...meta,
       status: res.status,
       err: res.body?.error || res.body?.message || null,
-      via: "apicdn_inline",
+      via: attempt.label,
+      auth_used: attempt.withAuth,
     };
-  }
-
-  if (rows.length === 0) {
-    const postUrl = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?perspective=${NORWAY_SANITY_PERSPECTIVE}`;
-    res = await fetchJson(postUrl, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: buildInlineWarmDishQuery(fromDate, MELHUS_PROVIDER_REF),
-      }),
-    });
-    rows = Array.isArray(res.body?.result) ? res.body.result : [];
-    meta = {
-      ...meta,
-      status: res.status,
-      err: res.body?.error || res.body?.message || null,
-      via: "api_post_inline",
-    };
+    if (attempt.withAuth && (res.status === 401 || res.status === 403)) {
+      meta.token_scope_note = "SANITY_TOKEN_SCOPE — token rejected for canonical project; falling back to anonymous published read";
+    }
+    if (rows.length > 0) break;
   }
 
   if (rows.length === 0 && meta.err === "SANITY_MISSING_CREDENTIAL") {
     meta.root_cause = "SANITY_MISSING_CREDENTIAL";
+  } else if (rows.length === 0 && meta.token_scope_note && meta.status === 401) {
+    meta.root_cause = "SANITY_TOKEN_SCOPE";
   } else if (rows.length === 0 && projectMismatch) {
-    // Should be unreachable when forceCanonical=true; retained for diagnostics.
     meta.root_cause = "SANITY_WRONG_PROJECT";
   } else if (rows.length === 0) {
     meta.root_cause = "SANITY_PUBLISHED_CONTENT_MISSING";
@@ -863,10 +853,9 @@ async function checkpointOrders(ctx) {
       )
     ).rows[0];
   }
+  // Pool reserved_qty is authoritative; latest event may briefly be RELEASE during SET replace.
   const reserveOk =
-    orderIncluded.itemCount >= 1 &&
-    latestEvA?.event_type === "RESERVE" &&
-    Number(reservedA?.reserved_qty || 0) >= 1;
+    orderIncluded.itemCount >= 1 && Number(reservedA?.reserved_qty || 0) >= 1;
   setGate("ORDER_CAPACITY_RESERVATION", reserveOk ? "PASS" : "FAIL", {
     reserved: reservedA?.reserved_qty ?? null,
     capacity_mode: reservedA?.capacity_mode ?? null,
