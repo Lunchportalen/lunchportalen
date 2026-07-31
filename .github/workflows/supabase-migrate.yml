@@ -19,6 +19,7 @@ on:
       - "scripts/ci/repair-staging-mcp-batch-ledger.mjs"
       - "scripts/ci/repair-staging-provider-cutoff-ledger.mjs"
       - "scripts/ci/repair-staging-menu-week-opening-ledger.mjs"
+      - "scripts/ci/repair-staging-remote-orphan-ledger.mjs"
       - "scripts/ci/verify-batch-order-status-sync-staging.mjs"
       - "scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs"
       - "scripts/smoke/run-cron-smoke-ci.sh"
@@ -175,6 +176,11 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/ci/repair-staging-menu-week-opening-ledger.mjs | tee "$EVIDENCE_DIR/menu-week-opening-ledger-repair.log"
+
+      - name: Repair remote-orphan ledger drift (staging, idempotent)
+        run: |
+          set -euo pipefail
+          node scripts/ci/repair-staging-remote-orphan-ledger.mjs | tee "$EVIDENCE_DIR/remote-orphan-ledger-repair.log"
 
       # UI-only PRs: skip dry-run when this PR does not change supabase/migrations (avoids
       # false ABORT on pre-existing remote/staging ledger drift unrelated to the PR).

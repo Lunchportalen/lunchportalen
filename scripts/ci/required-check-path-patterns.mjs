@@ -25,6 +25,7 @@ export const SUPABASE_MIGRATE_CI_PATHS = [
   "scripts/ci/repair-staging-mcp-batch-ledger.mjs",
   "scripts/ci/repair-staging-provider-cutoff-ledger.mjs",
   "scripts/ci/repair-staging-menu-week-opening-ledger.mjs",
+  "scripts/ci/repair-staging-remote-orphan-ledger.mjs",
   "scripts/ci/verify-batch-order-status-sync-staging.mjs",
   "scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs",
   "scripts/smoke/run-cron-smoke-ci.sh",
