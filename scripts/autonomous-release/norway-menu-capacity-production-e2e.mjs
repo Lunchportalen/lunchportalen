@@ -23,6 +23,7 @@ import {
   evaluateMirrorTraceability,
   evaluateWarmDishCanonical,
   resolveSanityProjectId,
+  sanityProjectIdMismatchNote,
 } from "./norway-sanity-warm-dish-contract.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -291,7 +292,11 @@ async function checkpointPreflight(ctx) {
 }
 
 async function querySanityWarmDishes(fromDate) {
-  const projectId = resolveSanityProjectId(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID);
+  const projectMismatch = sanityProjectIdMismatchNote(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID);
+  // Always canonical production project — never trust a wrong-but-valid GH secret.
+  const projectId = resolveSanityProjectId(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID, {
+    forceCanonical: true,
+  });
   const dataset = NORWAY_SANITY_DATASET;
   const apiVersionRaw = String(process.env.NEXT_PUBLIC_SANITY_API_VERSION || NORWAY_SANITY_API_VERSION)
     .trim()
@@ -340,6 +345,7 @@ async function querySanityWarmDishes(fromDate) {
     err: res.body?.error || res.body?.message || null,
     via: "api_inline",
     query_style: "inline_no_params",
+    project_mismatch: projectMismatch,
   };
 
   if (rows.length === 0) {
@@ -379,12 +385,13 @@ async function querySanityWarmDishes(fromDate) {
     };
   }
 
-  if (rows.length === 0 && projectId !== NORWAY_SANITY_PROJECT_ID) {
-    meta.root_cause = "SANITY_WRONG_PROJECT";
-  } else if (rows.length === 0 && meta.err === "SANITY_MISSING_CREDENTIAL") {
+  if (rows.length === 0 && meta.err === "SANITY_MISSING_CREDENTIAL") {
     meta.root_cause = "SANITY_MISSING_CREDENTIAL";
+  } else if (rows.length === 0 && projectMismatch) {
+    // Should be unreachable when forceCanonical=true; retained for diagnostics.
+    meta.root_cause = "SANITY_WRONG_PROJECT";
   } else if (rows.length === 0) {
-    meta.root_cause = "E2E_QUERY_DEFECT_OR_SANITY_PUBLISHED_CONTENT_MISSING";
+    meta.root_cause = "SANITY_PUBLISHED_CONTENT_MISSING";
   }
 
   return { rows, meta };

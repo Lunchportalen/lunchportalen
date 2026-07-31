@@ -12,13 +12,33 @@ export const VARMRETT_TIERS = ["BASIS", "LUXUS", "ENTERPRISE"];
 export const MENU_DAY_TYPE = "menuDay";
 export const VARMRETT_CATEGORY = "varmrett";
 
-/** Sanitize env project id; never accept empty/quoted garbage as authoritative. */
-export function resolveSanityProjectId(envProjectId) {
+/**
+ * Norway production E2E always uses canonical project `4udoq5d8`.
+ * A well-formed but wrong secret (HTTP 200 + empty result) caused run 30633665067 / 30643545837.
+ */
+export function resolveSanityProjectId(envProjectId, { forceCanonical = true } = {}) {
   const raw = String(envProjectId || "")
     .trim()
-    .replace(/^["']|["']$/g, "");
-  if (/^[a-z0-9]{6,12}$/i.test(raw)) return raw.toLowerCase();
+    .replace(/^["']|["']$/g, "")
+    .toLowerCase();
+  if (forceCanonical) return NORWAY_SANITY_PROJECT_ID;
+  if (raw === NORWAY_SANITY_PROJECT_ID) return NORWAY_SANITY_PROJECT_ID;
+  if (/^[a-z0-9]{6,12}$/i.test(raw)) return raw;
   return NORWAY_SANITY_PROJECT_ID;
+}
+
+export function sanityProjectIdMismatchNote(envProjectId) {
+  const raw = String(envProjectId || "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .toLowerCase();
+  if (!raw || raw === NORWAY_SANITY_PROJECT_ID) return null;
+  return {
+    env_project_ignored: true,
+    env_project_looks_valid: /^[a-z0-9]{6,12}$/i.test(raw),
+    canonical: NORWAY_SANITY_PROJECT_ID,
+    root_cause_if_used: "SANITY_WRONG_PROJECT",
+  };
 }
 
 export function menuDayDocId(date, tier) {

@@ -84,9 +84,10 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           K6_PROD_PASSWORD: ${{ secrets.K6_PROD_PASSWORD }}
           K6_PROD_SUPABASE_URL: https://hkpokyapzarefrgqzkos.supabase.co
-          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          # Canonical Norway production Sanity project (do not use a wrong GH secret project id).
+          NEXT_PUBLIC_SANITY_PROJECT_ID: "4udoq5d8"
           NEXT_PUBLIC_SANITY_DATASET: production
-          NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+          NEXT_PUBLIC_SANITY_API_VERSION: "2021-10-21"
           SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
           SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
         run: |
@@ -96,6 +97,10 @@ jobs:
             exit 1
           fi
           : "${SANITY_API_TOKEN:?Missing SANITY_WRITE_TOKEN secret (mapped to SANITY_API_TOKEN)}"
+          if [[ "${NEXT_PUBLIC_SANITY_PROJECT_ID}" != "4udoq5d8" ]]; then
+            echo "::error::SANITY_WRONG_PROJECT — expected 4udoq5d8"
+            exit 1
+          fi
           node scripts/autonomous-release/norway-menu-capacity-production-e2e.mjs
 
       - name: Upload evidence

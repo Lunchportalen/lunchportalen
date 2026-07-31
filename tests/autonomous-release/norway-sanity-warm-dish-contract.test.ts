@@ -13,11 +13,14 @@ import {
 } from "../../scripts/autonomous-release/norway-sanity-warm-dish-contract.mjs";
 
 describe("norway-sanity-warm-dish-contract", () => {
-  test("resolves canonical project id and rejects quoted garbage", () => {
+  test("resolves canonical project id and ignores wrong-but-valid secrets", () => {
     expect(resolveSanityProjectId("4udoq5d8")).toBe(NORWAY_SANITY_PROJECT_ID);
     expect(resolveSanityProjectId('"4udoq5d8"')).toBe(NORWAY_SANITY_PROJECT_ID);
     expect(resolveSanityProjectId("")).toBe(NORWAY_SANITY_PROJECT_ID);
     expect(resolveSanityProjectId("not a project")).toBe(NORWAY_SANITY_PROJECT_ID);
+    // Well-formed wrong project must not win for Norway production E2E.
+    expect(resolveSanityProjectId("abcdef12")).toBe(NORWAY_SANITY_PROJECT_ID);
+    expect(resolveSanityProjectId("abcdef12", { forceCanonical: false })).toBe("abcdef12");
   });
 
   test("inline GROQ embeds provider and date (no $params)", () => {
