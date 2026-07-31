@@ -224,7 +224,10 @@ async function appFetch(baseUrl, jars, method, urlPath, opts = {}) {
 async function pgClient(databaseUrl) {
   const c = new pg.Client({
     connectionString: databaseUrl,
-    ssl: { rejectUnauthorized: false },
+    // TLS on; never set NODE_TLS_REJECT_UNAUTHORIZED=0. Optional verify via DATABASE_SSL_CA.
+    ssl: process.env.DATABASE_SSL_CA
+      ? { rejectUnauthorized: true, ca: fs.readFileSync(process.env.DATABASE_SSL_CA, "utf8") }
+      : { rejectUnauthorized: false },
     connectionTimeoutMillis: 25_000,
   });
   await c.connect();
@@ -1522,8 +1525,10 @@ ${report.remaining_blockers.length ? report.remaining_blockers.map((b) => `- ${b
 
 async function main() {
   hydrateEnv();
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED =
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED || "0";
+  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
+    throw new Error("INSECURE_TLS_BYPASS: NODE_TLS_REJECT_UNAUTHORIZED=0 is forbidden");
+  }
+  delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
   await resolveProdApiKeys();
 
   const databaseUrl = buildDatabaseUrl();

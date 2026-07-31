@@ -87,8 +87,13 @@ jobs:
           K6_PROD_SUPABASE_URL: https://hkpokyapzarefrgqzkos.supabase.co
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
           NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
-          NODE_TLS_REJECT_UNAUTHORIZED: "0"
-        run: node scripts/autonomous-release/norway-enterprise-production-acceptance.mjs
+        run: |
+          set -euo pipefail
+          if [[ "${NODE_TLS_REJECT_UNAUTHORIZED:-}" == "0" ]]; then
+            echo "::error::INSECURE_TLS_BYPASS — NODE_TLS_REJECT_UNAUTHORIZED=0 is forbidden"
+            exit 1
+          fi
+          node scripts/autonomous-release/norway-enterprise-production-acceptance.mjs
 
       - name: Upload evidence
         if: always()
