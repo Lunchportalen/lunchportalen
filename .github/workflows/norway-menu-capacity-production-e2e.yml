@@ -89,8 +89,14 @@ jobs:
           NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
           SANITY_API_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
           SANITY_WRITE_TOKEN: ${{ secrets.SANITY_WRITE_TOKEN }}
-          NODE_TLS_REJECT_UNAUTHORIZED: "0"
-        run: node scripts/autonomous-release/norway-menu-capacity-production-e2e.mjs
+        run: |
+          set -euo pipefail
+          if [[ "${NODE_TLS_REJECT_UNAUTHORIZED:-}" == "0" ]]; then
+            echo "::error::INSECURE_TLS_BYPASS — NODE_TLS_REJECT_UNAUTHORIZED=0 is forbidden"
+            exit 1
+          fi
+          : "${SANITY_API_TOKEN:?Missing SANITY_WRITE_TOKEN secret (mapped to SANITY_API_TOKEN)}"
+          node scripts/autonomous-release/norway-menu-capacity-production-e2e.mjs
 
       - name: Upload evidence
         if: always()

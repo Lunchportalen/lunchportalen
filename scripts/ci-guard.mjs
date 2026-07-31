@@ -371,5 +371,33 @@ runSanityProjectIdRegressionGuard(files);
 
 runMojibakeMarkdownGuard();
 
+/** Production workflows/scripts must never assign NODE_TLS_REJECT_UNAUTHORIZED to 0. */
+function runInsecureTlsBypassGuard(trackedFiles) {
+  // YAML env assignment or JS env write/default — not fail-closed string mentions.
+  const yamlAssign = /^\s*NODE_TLS_REJECT_UNAUTHORIZED\s*:\s*["']?0["']?\s*$/m;
+  // Match assignment (`=` / `||=`) but not equality checks (`==` / `===`).
+  const jsAssign =
+    /process\.env\.NODE_TLS_REJECT_UNAUTHORIZED\s*=(?!=)\s*[^\n;]*["']0["']|NODE_TLS_REJECT_UNAUTHORIZED\s*\|\|\s*["']0["']/;
+  const violations = [];
+  for (const rel of trackedFiles) {
+    if (!(rel.startsWith(".github/workflows/") || rel.startsWith("scripts/autonomous-release/"))) {
+      continue;
+    }
+    const content = readTrackedFileSafe(rel);
+    if (content == null) continue;
+    if (yamlAssign.test(content) || jsAssign.test(content)) violations.push(rel);
+  }
+  if (!violations.length) return;
+  console.error("\nCI GUARD FAILED - insecure TLS bypass:\n");
+  for (const rel of violations) {
+    console.error(
+      `[INSECURE_TLS_BYPASS] ${rel} — NODE_TLS_REJECT_UNAUTHORIZED=0 is forbidden. Use valid CA verification.\n`,
+    );
+  }
+  process.exit(1);
+}
+
+runInsecureTlsBypassGuard(files);
+
 console.log("CI GUARD PASSED - ingen policy-brudd funnet.");
 process.exit(0);

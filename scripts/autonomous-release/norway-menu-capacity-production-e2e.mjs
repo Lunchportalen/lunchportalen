@@ -12,6 +12,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
+import {
+  MELHUS_PROVIDER_REF,
+  NORWAY_SANITY_API_VERSION,
+  NORWAY_SANITY_DATASET,
+  NORWAY_SANITY_PERSPECTIVE,
+  NORWAY_SANITY_PROJECT_ID,
+  buildInlineWarmDishQuery,
+  buildWarmDishQueryUrl,
+  evaluateMirrorTraceability,
+  evaluateWarmDishCanonical,
+  resolveSanityProjectId,
+} from "./norway-sanity-warm-dish-contract.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
@@ -131,10 +143,23 @@ async function fetchJson(url, init = {}) {
   return { ok: res.ok, status: res.status, body, text };
 }
 
+function pgSslOptions() {
+  // TLS is always used for Supabase pooler. Never set process.env.NODE_TLS_REJECT_UNAUTHORIZED=0.
+  // Prefer verify-full when a CA bundle is provided; otherwise encrypt without global TLS bypass.
+  const caPath = String(process.env.DATABASE_SSL_CA || "").trim();
+  if (caPath && fs.existsSync(caPath)) {
+    return { rejectUnauthorized: true, ca: fs.readFileSync(caPath, "utf8") };
+  }
+  if (process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "1") {
+    return { rejectUnauthorized: true };
+  }
+  return { rejectUnauthorized: false };
+}
+
 async function pgClient(databaseUrl) {
   const c = new pg.Client({
     connectionString: databaseUrl,
-    ssl: { rejectUnauthorized: false },
+    ssl: pgSslOptions(),
     connectionTimeoutMillis: 25_000,
   });
   await c.connect();
@@ -266,57 +291,100 @@ async function checkpointPreflight(ctx) {
 }
 
 async function querySanityWarmDishes(fromDate) {
-  const configured = String(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "")
+  const projectId = resolveSanityProjectId(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID);
+  const dataset = NORWAY_SANITY_DATASET;
+  const apiVersionRaw = String(process.env.NEXT_PUBLIC_SANITY_API_VERSION || NORWAY_SANITY_API_VERSION)
     .trim()
     .replace(/^["']|["']$/g, "");
-  const projectIds = [...new Set([configured, "4udoq5d8"].filter(Boolean))];
-  const dataset = "production";
+  const apiVersion = apiVersionRaw || NORWAY_SANITY_API_VERSION;
   const token = String(
     process.env.SANITY_API_TOKEN || process.env.SANITY_WRITE_TOKEN || process.env.SANITY_API_READ_TOKEN || "",
   ).trim();
-  const query = `*[_type=="menuDay" && category=="varmrett" && date>=$from && provider._ref==$provider]{ _id,date,planTier,mealTitle,description,allergens,"providerId":provider._ref } | order(date asc)`;
-  const headers = { Accept: "application/json", "Content-Type": "application/json" };
+  if (process.env.GITHUB_ACTIONS === "true" && !token) {
+    return {
+      rows: [],
+      meta: {
+        projectId,
+        dataset,
+        apiVersion,
+        perspective: NORWAY_SANITY_PERSPECTIVE,
+        auth: false,
+        status: 0,
+        err: "SANITY_MISSING_CREDENTIAL",
+        root_cause: "SANITY_MISSING_CREDENTIAL",
+      },
+    };
+  }
+
+  const headers = { Accept: "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  let rows = [];
-  let meta = { projectId: projectIds[0] || "4udoq5d8", dataset, auth: Boolean(token), status: 0, err: null };
+  // Primary: inline GROQ (no $params) — failed run 30633665067 used $param GET binding.
+  const getUrl = buildWarmDishQueryUrl({
+    projectId,
+    dataset,
+    apiVersion,
+    fromDate,
+    providerRef: MELHUS_PROVIDER_REF,
+    host: "api",
+  });
+  let res = await fetchJson(getUrl, { headers });
+  let rows = Array.isArray(res.body?.result) ? res.body.result : [];
+  let meta = {
+    projectId,
+    dataset,
+    apiVersion,
+    perspective: NORWAY_SANITY_PERSPECTIVE,
+    auth: Boolean(token),
+    status: res.status,
+    err: res.body?.error || res.body?.message || null,
+    via: "api_inline",
+    query_style: "inline_no_params",
+  };
 
-  for (const projectId of projectIds) {
-    // Prefer POST + params (avoids brittle query-string encoding on CI runners).
-    const postUrl = `https://${projectId}.api.sanity.io/v2021-10-21/data/query/${dataset}?perspective=published`;
-    let res = await fetchJson(postUrl, {
+  if (rows.length === 0) {
+    const cdnUrl = buildWarmDishQueryUrl({
+      projectId,
+      dataset,
+      apiVersion,
+      fromDate,
+      providerRef: MELHUS_PROVIDER_REF,
+      host: "apicdn",
+    });
+    res = await fetchJson(cdnUrl, { headers });
+    rows = Array.isArray(res.body?.result) ? res.body.result : [];
+    meta = {
+      ...meta,
+      status: res.status,
+      err: res.body?.error || res.body?.message || null,
+      via: "apicdn_inline",
+    };
+  }
+
+  if (rows.length === 0) {
+    const postUrl = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?perspective=${NORWAY_SANITY_PERSPECTIVE}`;
+    res = await fetchJson(postUrl, {
       method: "POST",
-      headers,
-      body: JSON.stringify({ query, params: { from: fromDate, provider: MELHUS } }),
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: buildInlineWarmDishQuery(fromDate, MELHUS_PROVIDER_REF),
+      }),
     });
     rows = Array.isArray(res.body?.result) ? res.body.result : [];
     meta = {
-      projectId,
-      dataset,
-      auth: Boolean(token),
+      ...meta,
       status: res.status,
       err: res.body?.error || res.body?.message || null,
+      via: "api_post_inline",
     };
-    if (rows.length > 0) break;
+  }
 
-    const getUrl = `https://${projectId}.apicdn.sanity.io/v2021-10-21/data/query/${dataset}?perspective=published&query=${encodeURIComponent(
-      query,
-    )}&$from="${fromDate}"&$provider="${MELHUS}"`;
-    res = await fetchJson(getUrl, {
-      headers: token
-        ? { Authorization: `Bearer ${token}`, Accept: "application/json" }
-        : { Accept: "application/json" },
-    });
-    rows = Array.isArray(res.body?.result) ? res.body.result : [];
-    meta = {
-      projectId,
-      dataset,
-      auth: Boolean(token),
-      status: res.status,
-      err: res.body?.error || res.body?.message || null,
-      via: "apicdn",
-    };
-    if (rows.length > 0) break;
+  if (rows.length === 0 && projectId !== NORWAY_SANITY_PROJECT_ID) {
+    meta.root_cause = "SANITY_WRONG_PROJECT";
+  } else if (rows.length === 0 && meta.err === "SANITY_MISSING_CREDENTIAL") {
+    meta.root_cause = "SANITY_MISSING_CREDENTIAL";
+  } else if (rows.length === 0) {
+    meta.root_cause = "E2E_QUERY_DEFECT_OR_SANITY_PUBLISHED_CONTENT_MISSING";
   }
 
   return { rows, meta };
@@ -325,98 +393,169 @@ async function querySanityWarmDishes(fromDate) {
 async function checkpointWarmDish(ctx) {
   const from = new Date().toISOString().slice(0, 10);
   const { rows, meta } = await querySanityWarmDishes(from);
-  artifacts.notes.push({ sanity_warm_dish_query: meta, rows: rows.length });
-
-  const byDate = new Map();
-  for (const r of rows) {
-    const d = String(r.date).slice(0, 10);
-    if (!byDate.has(d)) byDate.set(d, []);
-    byDate.get(d).push(r);
-  }
-
-  let duplicateWarm = 0;
-  let wrongProvider = 0;
-  let packageMismatch = 0;
-  let placeholder = 0;
-  const sampleDates = [];
-
-  for (const [date, list] of byDate) {
-    const titles = new Set(list.map((x) => String(x.mealTitle || "").trim()));
-    if (titles.size > 1) {
-      duplicateWarm += 1;
-      packageMismatch += 1;
-    }
-    if (list.some((x) => x.providerId !== MELHUS)) wrongProvider += 1;
-    if (list.some((x) => /TODO|placeholder|lorem|FIXME/i.test(String(x.mealTitle || x.description || "")))) {
-      placeholder += 1;
-    }
-    const tiers = new Set(list.map((x) => String(x.planTier || "").toUpperCase()));
-    if (tiers.has("BASIS") && tiers.has("LUXUS") && tiers.has("ENTERPRISE") && titles.size === 1) {
-      sampleDates.push({
-        date,
-        title: [...titles][0],
-        ids: list.map((x) => x._id),
-        tiers: [...tiers],
-      });
-    }
-  }
-
-  counters.DUPLICATE_WARM_DISHES = duplicateWarm;
-  counters.WRONG_PROVIDER_MENU = wrongProvider;
-  counters.PLACEHOLDER_CONTENT = placeholder;
-  artifacts.warmDish = { sampleDates: sampleDates.slice(0, 5), rowCount: rows.length };
-
-  const commonOk = sampleDates.length > 0 && duplicateWarm === 0 && wrongProvider === 0;
-  setGate("SANITY_WARM_DISH_BANK", rows.length > 0 ? "PASS" : "FAIL", {
+  artifacts.notes.push({
+    sanity_warm_dish_query: {
+      ...meta,
+      // never include token
+      token_present: Boolean(
+        process.env.SANITY_API_TOKEN || process.env.SANITY_WRITE_TOKEN || process.env.SANITY_API_READ_TOKEN,
+      ),
+    },
     rows: rows.length,
+  });
+
+  const evaluated = evaluateWarmDishCanonical(rows, MELHUS_PROVIDER_REF);
+  counters.DUPLICATE_WARM_DISHES = evaluated.duplicateWarm;
+  counters.WRONG_PROVIDER_MENU = evaluated.wrongProvider;
+  counters.PLACEHOLDER_CONTENT = evaluated.placeholder;
+  counters.DRAFT_LEAKS = evaluated.draftLeaks;
+  artifacts.warmDish = {
+    sampleDates: evaluated.sampleDates.slice(0, 5),
+    rowCount: evaluated.rowCount,
+    identity: "sanity_document_id",
+  };
+
+  const bankOk = evaluated.rowCount > 0;
+  const commonOk = evaluated.commonOk;
+  setGate("SANITY_WARM_DISH_BANK", bankOk ? "PASS" : "FAIL", {
+    rows: evaluated.rowCount,
     dataset: meta.dataset,
     projectId: meta.projectId,
+    apiVersion: meta.apiVersion,
+    perspective: meta.perspective,
     auth: meta.auth,
     http_status: meta.status,
+    via: meta.via,
     err: meta.err,
+    root_cause: bankOk ? null : meta.root_cause || "SANITY_PUBLISHED_CONTENT_MISSING",
   });
   setGate("ONE_COMMON_WARM_DISH_PER_PROVIDER_DAY", commonOk ? "PASS" : "FAIL", {
-    sample: sampleDates[0] || null,
-    DUPLICATE_WARM_DISHES: duplicateWarm,
+    sample: evaluated.sampleDates[0] || null,
+    DUPLICATE_WARM_DISHES: evaluated.duplicateWarm,
+    identity: "sanity_document_id",
   });
-  setGate("BASIS_MENU_PRESENTATION", commonOk ? "PASS" : "FAIL", { via: "same_canonical_title" });
-  setGate("LUXUS_MENU_PRESENTATION", commonOk ? "PASS" : "FAIL", { via: "same_canonical_title" });
-  setGate("ENTERPRISE_MENU_PRESENTATION", commonOk ? "PASS" : "FAIL", { via: "same_canonical_title" });
-  setGate("NORWEGIAN_MENU_TEXT", placeholder === 0 && sampleDates[0]?.title ? "PASS" : "FAIL", {
-    title: sampleDates[0]?.title || null,
+  setGate("BASIS_MENU_PRESENTATION", commonOk ? "PASS" : "FAIL", {
+    via: "canonical_sanity_document_id",
   });
-  setGate("SANITY_PUBLISHING", rows.length > 0 ? "PASS" : "FAIL", { perspective: "published", auth: meta.auth });
-  setGate("APP_MENU_RETRIEVAL", "PASS", {
-    note: "menu_service_days mirrored from published Sanity; verified via DB below",
+  setGate("LUXUS_MENU_PRESENTATION", commonOk ? "PASS" : "FAIL", {
+    via: "canonical_sanity_document_id",
   });
-  setGate("WARM_DISH_GENERATOR", "PASS", {
-    entry_point: "lib/provider-menu/varmrettSharedWrite.ts + lib/menu-publish/generateWeekMenu.ts",
-    note: "shared write mirrors BASIS/LUXUS/ENTERPRISE; measured equality on published docs",
+  setGate("ENTERPRISE_MENU_PRESENTATION", commonOk ? "PASS" : "FAIL", {
+    via: "canonical_sanity_document_id",
   });
-  setGate("GENERATOR_IDEMPOTENCY", "PASS", {
-    note: "deterministic document ids menuDay-{date}-{tier}-varmrett; no divergent titles observed",
-  });
-  setGate("GENERATOR_REVISION_CONTROL", "PASS", {
-    note: "Sanity document history + provider write path reject uncontrolled overwrite of locked dates",
+  setGate(
+    "NORWEGIAN_MENU_TEXT",
+    evaluated.placeholder === 0 && evaluated.sampleDates[0]?.title ? "PASS" : "FAIL",
+    { title: evaluated.sampleDates[0]?.title || null },
+  );
+  setGate("SANITY_PUBLISHING", bankOk && evaluated.draftLeaks === 0 ? "PASS" : "FAIL", {
+    perspective: NORWAY_SANITY_PERSPECTIVE,
+    auth: meta.auth,
+    draft_leaks: evaluated.draftLeaks,
   });
 
-  // Pick future service date with published MSD for QA company
-  const day = (
+  // Real APP_MENU_RETRIEVAL + mirror traceability (never hardcode PASS).
+  const mirrorDays = (
     await ctx.db.query(
-      `select d.id, d.service_date::text as service_date
+      `select d.id, d.service_date::text as service_date, d.provider_id::text as provider_id, d.state
        from menu_service_days d
        where d.provider_id = $1::uuid and d.company_id = $2::uuid and d.location_id = $3::uuid
-         and d.state = 'published' and d.service_date >= (current_date + 2)
-         and not exists (
-           select 1 from orders o
-           where o.user_id = 'e0b00000-0000-4000-8000-000000000001'::uuid
-             and o.service_date = d.service_date
-             and o.status::text <> 'CANCELLED'
-         )
-       order by d.service_date limit 1`,
+         and d.state = 'published' and d.service_date >= current_date
+       order by d.service_date
+       limit 30`,
       [MELHUS, QA_COMPANY, QA_LOCATION],
     )
-  ).rows[0];
+  ).rows;
+
+  const varmrettSnapshotsByDate = {};
+  for (const md of mirrorDays.slice(0, 15)) {
+    const item = (
+      await ctx.db.query(
+        `select product_name_snapshot
+         from menu_service_day_items
+         where menu_service_day_id = $1::uuid
+           and lower(product_name_snapshot) like '%varmrett%'
+         order by sort_order nulls last
+         limit 1`,
+        [md.id],
+      )
+    ).rows[0];
+    // Snapshot product name is often the category label "Varmrett" — use Sanity title for stale check only when snapshot is a dish title.
+    if (item?.product_name_snapshot && !/^varmrett$/i.test(String(item.product_name_snapshot).trim())) {
+      varmrettSnapshotsByDate[md.service_date] = String(item.product_name_snapshot).trim();
+    }
+  }
+
+  const mirror = evaluateMirrorTraceability({
+    mirrorDates: mirrorDays,
+    sanityRows: rows,
+    varmrettSnapshotsByDate,
+    providerRef: MELHUS_PROVIDER_REF,
+  });
+  artifacts.notes.push({
+    mirror_traceability: {
+      ORPHANED_MENU_MIRRORS: mirror.ORPHANED_MENU_MIRRORS,
+      STALE_MENU_MIRRORS: mirror.STALE_MENU_MIRRORS,
+      WRONG_PROVIDER_MIRRORS: mirror.WRONG_PROVIDER_MIRRORS,
+      WRONG_DATE_MIRRORS: mirror.WRONG_DATE_MIRRORS,
+      details: mirror.details,
+      contradiction:
+        bankOk && mirror.ok
+          ? "A_VALID_MIRROR_AND_PUBLISHED_SANITY"
+          : !bankOk && mirrorDays.length > 0
+            ? "C_E2E_QUERY_OR_CREDENTIAL_DEFECT_WHILE_MIRRORS_EXIST"
+            : !bankOk
+              ? "D_OR_C_NO_SANITY_ROWS"
+              : "B_STALE_OR_ORPHAN_MIRRORS",
+    },
+  });
+
+  setGate("APP_MENU_RETRIEVAL", bankOk && mirror.ok && mirrorDays.length > 0 ? "PASS" : "FAIL", {
+    mirror_days: mirrorDays.length,
+    ORPHANED_MENU_MIRRORS: mirror.ORPHANED_MENU_MIRRORS,
+    STALE_MENU_MIRRORS: mirror.STALE_MENU_MIRRORS,
+    WRONG_PROVIDER_MIRRORS: mirror.WRONG_PROVIDER_MIRRORS,
+    WRONG_DATE_MIRRORS: mirror.WRONG_DATE_MIRRORS,
+    note: "traceability: menu_service_days ↔ published Sanity menuDay-{date}-{tier}-varmrett",
+  });
+
+  setGate("WARM_DISH_GENERATOR", commonOk ? "PASS" : "FAIL", {
+    entry_point: "lib/provider-menu/varmrettSharedWrite.ts + lib/menu-publish/runMenuWeekRolloutCore.ts",
+    note: "deterministic Melhus ids menuDay-{date}-{tier}-varmrett; shared write across BASIS/LUXUS/ENTERPRISE",
+  });
+  setGate("GENERATOR_IDEMPOTENCY", commonOk ? "PASS" : "FAIL", {
+    note: "deterministic document ids; measured via canonical sanity_document_id identity",
+  });
+  setGate("GENERATOR_REVISION_CONTROL", commonOk ? "PASS" : "FAIL", {
+    note: "published _rev captured per tier doc; provider write path rejects uncontrolled overwrite of locked dates",
+    sample_revs: evaluated.sampleDates[0]?.revs || [],
+  });
+
+  // Prefer a service date that has both published MSD and Sanity warm-dish bank coverage.
+  const preferredDate = evaluated.sampleDates.find((s) =>
+    mirrorDays.some((m) => m.service_date === s.date),
+  )?.date;
+
+  const pickDay = async (exactDate) =>
+    (
+      await ctx.db.query(
+        `select d.id, d.service_date::text as service_date
+         from menu_service_days d
+         where d.provider_id = $1::uuid and d.company_id = $2::uuid and d.location_id = $3::uuid
+           and d.state = 'published' and d.service_date >= (current_date + 2)
+           and ($4::text is null or d.service_date = $4::date)
+           and not exists (
+             select 1 from orders o
+             where o.user_id = 'e0b00000-0000-4000-8000-000000000001'::uuid
+               and o.service_date = d.service_date
+               and o.status::text <> 'CANCELLED'
+           )
+         order by d.service_date limit 1`,
+        [MELHUS, QA_COMPANY, QA_LOCATION, exactDate || null],
+      )
+    ).rows[0];
+
+  const day = (preferredDate ? await pickDay(preferredDate) : null) || (await pickDay(null));
   if (!day) throw new Error("NO_PUBLISHED_SERVICE_DAY");
   ctx.serviceDate = day.service_date;
   ctx.menuServiceDayId = day.id;
@@ -1261,7 +1400,35 @@ ${final.failed.length ? final.failed.map((f) => `- ${f}`).join("\n") : "_none_"}
 }
 
 async function main() {
+  // Fail closed: never disable TLS certificate verification for production E2E.
+  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
+    console.error(
+      JSON.stringify({
+        gate: "TLS_CERTIFICATE_VERIFICATION",
+        status: "FAIL",
+        INSECURE_TLS_BYPASS: 1,
+        message: "NODE_TLS_REJECT_UNAUTHORIZED=0 is forbidden",
+      }),
+    );
+    process.exit(1);
+  }
+  delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+
   hydrateEnv();
+  // Re-assert after hydrate (local .env must not reintroduce bypass).
+  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
+    delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    console.error(
+      JSON.stringify({
+        gate: "TLS_CERTIFICATE_VERIFICATION",
+        status: "FAIL",
+        INSECURE_TLS_BYPASS: 1,
+        message: "NODE_TLS_REJECT_UNAUTHORIZED=0 found in hydrated env",
+      }),
+    );
+    process.exit(1);
+  }
+
   await resolveProdApiKeys();
   const databaseUrl = buildDatabaseUrl();
   if (!databaseUrl) {
