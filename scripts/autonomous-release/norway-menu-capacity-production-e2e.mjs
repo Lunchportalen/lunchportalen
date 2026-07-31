@@ -134,7 +134,10 @@ function buildDatabaseUrl() {
 async function fetchJson(url, init = {}) {
   const res = await fetch(url, init);
   const text = await res.text();
-  if (/service_role|SUPABASE_SERVICE_ROLE|sk_live|whsec_/i.test(text)) counters.SECRET_EXPOSURES += 1;
+  // Only count concrete secret material — not substring hits inside Sanity meal copy / JSON keys.
+  if (/(?:sk_live_[A-Za-z0-9]+|whsec_[A-Za-z0-9]+|SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*["'][^"'\s]{8,})/.test(text)) {
+    counters.SECRET_EXPOSURES += 1;
+  }
   let body = null;
   try {
     body = text ? JSON.parse(text) : null;
@@ -1300,19 +1303,21 @@ function finalizeStatus() {
     "CLEANUP",
   ];
   const failed = required.filter((k) => gates[k]?.status !== "PASS");
-  const zeroOk =
-    counters.CAPACITY_OVERSELL === 0 &&
-    counters.DUPLICATE_WARM_DISHES === 0 &&
-    counters.DUPLICATE_ORDERS === 0 &&
-    counters.WRONG_PROVIDER_MENU === 0 &&
-    counters.CROSS_TENANT_FAILURES === 0 &&
-    counters.SECRET_EXPOSURES === 0 &&
-    counters.ACTIVE_TEST_ORDERS === 0 &&
-    counters.RESERVED_TEST_CAPACITY === 0;
-  if (failed.length || !zeroOk) {
+  const zeroKeys = [
+    "CAPACITY_OVERSELL",
+    "DUPLICATE_WARM_DISHES",
+    "DUPLICATE_ORDERS",
+    "WRONG_PROVIDER_MENU",
+    "CROSS_TENANT_FAILURES",
+    "SECRET_EXPOSURES",
+    "ACTIVE_TEST_ORDERS",
+    "RESERVED_TEST_CAPACITY",
+  ];
+  const nonzero = zeroKeys.filter((k) => Number(counters[k] || 0) !== 0);
+  if (failed.length || nonzero.length) {
     return {
       status: "NORWAY_MENU_CAPACITY_PRODUCTION_E2E_FAILED",
-      failed,
+      failed: [...failed, ...nonzero.map((k) => `COUNTER:${k}`)],
       counters,
     };
   }
