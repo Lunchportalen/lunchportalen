@@ -45,12 +45,23 @@ export function buildInlineWarmDishQuery(fromDate, providerRef = MELHUS_PROVIDER
   );
 }
 
+/**
+ * @param {{
+ *   projectId?: string,
+ *   dataset?: string,
+ *   apiVersion?: string,
+ *   perspective?: string,
+ *   fromDate: string,
+ *   providerRef?: string,
+ *   host?: string,
+ * }} [opts]
+ */
 export function buildWarmDishQueryUrl({
   projectId = NORWAY_SANITY_PROJECT_ID,
   dataset = NORWAY_SANITY_DATASET,
   apiVersion = NORWAY_SANITY_API_VERSION,
   perspective = NORWAY_SANITY_PERSPECTIVE,
-  fromDate,
+  fromDate = "",
   providerRef = MELHUS_PROVIDER_REF,
   host = "api",
 } = {}) {
