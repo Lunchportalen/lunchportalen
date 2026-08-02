@@ -755,7 +755,14 @@
       "fingerprint": "d75d3235f24cbcd7",
       "logic_key": "5d7a66b75708bb56",
       "action": "dispatch_autofix"
+    },
+    {
+      "at": "2026-08-02T05:17:52.682Z",
+      "class": "AUTOMATION_NOISE",
+      "action": "close_pr",
+      "pr": 591,
+      "title": "chore: weekly repo-intelligence refresh"
     }
   ],
-  "updated_at": "2026-08-02T04:04:37.392Z"
+  "updated_at": "2026-08-02T05:17:54.983Z"
 }
