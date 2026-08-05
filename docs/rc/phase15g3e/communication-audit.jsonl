@@ -140,3 +140,5 @@
 {"type":"RUN_FAILED","error":"IMAP_AUTH_FAIL","at":"2026-08-05T05:46:45.274Z","runId":"30978939957"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-08-05T08:30:41.600Z","runId":"30989250656"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-08-05T11:18:33.850Z","runId":"31000849694"}
+{"type":"INBOUND_CLASSIFIED","firmId":"azets-nordic","messageId":"<CWXP265MB4274ACBDAFE5B1B0C3EB2C54EAD32@CWXP265MB4274.GBRP265.PROD.OUTLOOK.COM>","classification":"CREDENTIALS_RECEIVED","attachmentCount":2,"at":"2026-08-05T14:00:58.490Z","runId":"31012921817"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-08-05T14:00:58.782Z","runId":"31012921817"}

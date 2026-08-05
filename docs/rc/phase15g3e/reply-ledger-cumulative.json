@@ -148,6 +148,34 @@
       ],
       "processedAt": "2026-07-29T15:38:59.438Z",
       "runId": "30466800636"
+    },
+    {
+      "firmId": "azets-nordic",
+      "messageId": "<CWXP265MB4274ACBDAFE5B1B0C3EB2C54EAD32@CWXP265MB4274.GBRP265.PROD.OUTLOOK.COM>",
+      "subject": "Sv: Azets - compliance services",
+      "from": "ole.solvang@azets.com",
+      "classification": "CREDENTIALS_RECEIVED",
+      "date": "2026-08-05T13:07:02.000Z",
+      "attachments": [
+        {
+          "filename": "image.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        },
+        {
+          "filename": "image.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-08-05T14:00:58.490Z",
+      "runId": "31012921817"
     }
   ],
   "byMessageId": {
@@ -299,7 +327,35 @@
       ],
       "processedAt": "2026-07-29T15:38:59.438Z",
       "runId": "30466800636"
+    },
+    "<CWXP265MB4274ACBDAFE5B1B0C3EB2C54EAD32@CWXP265MB4274.GBRP265.PROD.OUTLOOK.COM>": {
+      "firmId": "azets-nordic",
+      "messageId": "<CWXP265MB4274ACBDAFE5B1B0C3EB2C54EAD32@CWXP265MB4274.GBRP265.PROD.OUTLOOK.COM>",
+      "subject": "Sv: Azets - compliance services",
+      "from": "ole.solvang@azets.com",
+      "classification": "CREDENTIALS_RECEIVED",
+      "date": "2026-08-05T13:07:02.000Z",
+      "attachments": [
+        {
+          "filename": "image.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        },
+        {
+          "filename": "image.png",
+          "disposition": "inline",
+          "ext": ".png",
+          "safeToOpen": true,
+          "quarantine": false,
+          "action": "METADATA_ONLY"
+        }
+      ],
+      "processedAt": "2026-08-05T14:00:58.490Z",
+      "runId": "31012921817"
     }
   },
-  "lastPollAt": "2026-08-05T11:18:33.842Z"
+  "lastPollAt": "2026-08-05T14:00:58.776Z"
 }

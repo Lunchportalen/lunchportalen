@@ -1,0 +1,24 @@
+{
+  "messageId": "<CWXP265MB4274ACBDAFE5B1B0C3EB2C54EAD32@CWXP265MB4274.GBRP265.PROD.OUTLOOK.COM>",
+  "firmId": "azets-nordic",
+  "subject": "Sv: Azets - compliance services",
+  "attachments": [
+    {
+      "filename": "image.png",
+      "disposition": "inline",
+      "ext": ".png",
+      "safeToOpen": true,
+      "quarantine": false,
+      "action": "METADATA_ONLY"
+    },
+    {
+      "filename": "image.png",
+      "disposition": "inline",
+      "ext": ".png",
+      "safeToOpen": true,
+      "quarantine": false,
+      "action": "METADATA_ONLY"
+    }
+  ],
+  "note": "No attachment bytes executed or opened"
+}
