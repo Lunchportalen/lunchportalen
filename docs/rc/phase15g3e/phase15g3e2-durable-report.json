@@ -1,36 +1,15 @@
 {
-  "writtenAt": "2026-08-06T02:12:59.261Z",
-  "decision": "OWNER_ACTION_REQUIRED",
+  "writtenAt": "2026-08-06T05:46:19.201Z",
+  "decision": "NO-GO",
   "last": {
-    "runId": "31064926945",
-    "started_at": "2026-08-06T02:12:39.975Z",
-    "completed_at": "2026-08-06T02:12:59.209Z",
-    "replies_found": 0,
-    "messages_classified": 0,
-    "follow_ups_sent": 0,
+    "runId": "31075068598",
+    "started_at": "2026-08-06T05:45:55.280Z",
+    "completed_at": "2026-08-06T05:46:19.118Z",
+    "status": "FAILED",
+    "error": "Connection not available",
     "failures": [],
-    "next_due_action": "2026-07-22T22:47:30.786Z",
     "secrets_exposed": 0,
-    "mailbox": {
-      "imap": "PASS",
-      "smtp": "PASS",
-      "error": null
-    },
-    "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
-    "quotes_waiting": 2,
-    "owner_batch": "READY_FOR_OWNER",
-    "notify_owner": true,
-    "follow_up_dates": {
-      "firstDueVerified": true,
-      "secondDueVerified": true,
-      "firstDue": "2026-07-22",
-      "secondDue": "2026-07-29",
-      "calendar": "business_days_mon_fri",
-      "emailThreadRetention": "same thread via In-Reply-To / References",
-      "backupAfterSecondOnly": true
-    },
-    "duplicate_sends": 0,
-    "Decision": "OWNER_ACTION_REQUIRED"
+    "Decision": "NO-GO"
   },
   "heartbeat": {
     "scheduler": {
