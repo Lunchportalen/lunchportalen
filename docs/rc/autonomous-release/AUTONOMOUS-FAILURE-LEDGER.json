@@ -762,7 +762,14 @@
       "action": "close_pr",
       "pr": 591,
       "title": "chore: weekly repo-intelligence refresh"
+    },
+    {
+      "at": "2026-08-09T04:06:30.094Z",
+      "class": "AUTOMATION_NOISE",
+      "action": "close_pr",
+      "pr": 592,
+      "title": "chore: weekly repo-intelligence refresh"
     }
   ],
-  "updated_at": "2026-08-09T02:50:31.164Z"
+  "updated_at": "2026-08-09T04:06:32.478Z"
 }
