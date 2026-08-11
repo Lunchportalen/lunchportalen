@@ -1,36 +1,20 @@
 {
-  "writtenAt": "2026-08-11T07:00:53.332Z",
-  "decision": "OWNER_ACTION_REQUIRED",
+  "writtenAt": "2026-08-11T09:57:54.345Z",
+  "decision": "NO-GO",
   "last": {
-    "runId": "31467180045",
-    "started_at": "2026-08-11T07:00:28.765Z",
-    "completed_at": "2026-08-11T07:00:53.293Z",
-    "replies_found": 0,
-    "messages_classified": 0,
-    "follow_ups_sent": 0,
-    "failures": [],
-    "next_due_action": "2026-07-22T22:47:30.786Z",
+    "runId": "31479999721",
+    "started_at": "2026-08-11T09:57:43.631Z",
+    "completed_at": "2026-08-11T09:57:54.297Z",
+    "status": "FAILED",
+    "error": "IMAP_AUTH_FAIL",
+    "failures": [
+      {
+        "type": "IMAP_AUTH_FAIL",
+        "detail": "Invalid login: 535 Incorrect authentication data"
+      }
+    ],
     "secrets_exposed": 0,
-    "mailbox": {
-      "imap": "PASS",
-      "smtp": "PASS",
-      "error": null
-    },
-    "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
-    "quotes_waiting": 2,
-    "owner_batch": "READY_FOR_OWNER",
-    "notify_owner": true,
-    "follow_up_dates": {
-      "firstDueVerified": true,
-      "secondDueVerified": true,
-      "firstDue": "2026-07-22",
-      "secondDue": "2026-07-29",
-      "calendar": "business_days_mon_fri",
-      "emailThreadRetention": "same thread via In-Reply-To / References",
-      "backupAfterSecondOnly": true
-    },
-    "duplicate_sends": 0,
-    "Decision": "OWNER_ACTION_REQUIRED"
+    "Decision": "NO-GO"
   },
   "heartbeat": {
     "scheduler": {
