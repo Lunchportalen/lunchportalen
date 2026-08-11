@@ -1,20 +1,36 @@
 {
-  "writtenAt": "2026-08-11T09:57:54.345Z",
-  "decision": "NO-GO",
+  "writtenAt": "2026-08-11T12:56:20.654Z",
+  "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "31479999721",
-    "started_at": "2026-08-11T09:57:43.631Z",
-    "completed_at": "2026-08-11T09:57:54.297Z",
-    "status": "FAILED",
-    "error": "IMAP_AUTH_FAIL",
-    "failures": [
-      {
-        "type": "IMAP_AUTH_FAIL",
-        "detail": "Invalid login: 535 Incorrect authentication data"
-      }
-    ],
+    "runId": "31493554404",
+    "started_at": "2026-08-11T12:55:52.322Z",
+    "completed_at": "2026-08-11T12:56:20.609Z",
+    "replies_found": 0,
+    "messages_classified": 0,
+    "follow_ups_sent": 0,
+    "failures": [],
+    "next_due_action": "2026-07-22T22:47:30.786Z",
     "secrets_exposed": 0,
-    "Decision": "NO-GO"
+    "mailbox": {
+      "imap": "PASS",
+      "smtp": "PASS",
+      "error": null
+    },
+    "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
+    "quotes_waiting": 2,
+    "owner_batch": "READY_FOR_OWNER",
+    "notify_owner": true,
+    "follow_up_dates": {
+      "firstDueVerified": true,
+      "secondDueVerified": true,
+      "firstDue": "2026-07-22",
+      "secondDue": "2026-07-29",
+      "calendar": "business_days_mon_fri",
+      "emailThreadRetention": "same thread via In-Reply-To / References",
+      "backupAfterSecondOnly": true
+    },
+    "duplicate_sends": 0,
+    "Decision": "OWNER_ACTION_REQUIRED"
   },
   "heartbeat": {
     "scheduler": {
@@ -24,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-08-11T07:00:53.293Z",
-      "nextScheduledRun": "2026-08-11T09:00:00.000Z"
+      "lastSuccessfulRun": "2026-08-11T12:56:20.609Z",
+      "nextScheduledRun": "2026-08-11T15:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -38,7 +54,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-08-11T07:00:53.294Z",
-    "runId": "31467180045"
+    "updatedAt": "2026-08-11T12:56:20.610Z",
+    "runId": "31493554404"
   }
 }
