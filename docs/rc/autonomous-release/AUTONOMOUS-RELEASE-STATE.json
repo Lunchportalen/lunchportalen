@@ -1,49 +1,32 @@
 {
   "controller": "phase18-autonomous-global-release",
   "version": 1,
-  "state": "PRODUCTION_PREFLIGHT",
+  "state": "INVENTORY",
   "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
-  "release_sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
-  "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
-  "stop_after": "controlled-ramps-business",
+  "release_sha": null,
+  "phase18_project_ref": "arstaxredytrjcmqcwhh",
+  "stop_after": "auth-coverage",
   "active_phase18_run_id": null,
-  "last_phase18_run_id": 30526308347,
-  "last_phase18_conclusion": "failure",
-  "last_failure_fingerprint": "d75d3235f24cbcd7",
+  "last_phase18_run_id": null,
+  "last_phase18_conclusion": null,
+  "last_failure_fingerprint": null,
   "owner_wait": null,
-  "owner_wait_recorded_at": "2026-07-29T12:50:44.501Z",
+  "owner_wait_recorded_at": null,
   "lanes": {
-    "phase18_auth_coverage": "PASS",
+    "phase18_auth_coverage": "ACTIVE",
     "github_hygiene": "ACTIVE",
     "launch_gates_docs": "ACTIVE",
-    "production_deploy": "PRODUCTION_PREFLIGHT",
+    "production_deploy": "BLOCKED_WAITING_OWNER_AUTH",
     "legal_tax_activation": "BLOCKED_WAITING_OWNER_LEGAL_TAX",
-    "global_staging": "ACTIVE",
-    "production_preflight": "PASS",
-    "post_promote_verify": "PASS"
+    "global_staging": "PENDING"
   },
   "counters": {
-    "controller_ticks": 629,
-    "autofix_dispatches": 24,
-    "phase18_dispatches": 33,
-    "advances": 491
+    "controller_ticks": 0,
+    "autofix_dispatches": 0,
+    "phase18_dispatches": 0,
+    "advances": 0
   },
-  "stamped_at": "2026-07-26T17:05:48.396Z",
-  "updated_at": "2026-08-16T15:42:04.874Z",
-  "vercel_auth": {
-    "ok": true,
-    "vercel_auth": "PASS",
-    "token_present": true,
-    "username": "lunchportalen",
-    "team_slug": "lunchportalen",
-    "team_id": "team_xF0…",
-    "project_name": "lunchportalen",
-    "project_id": "prj_AJZz…",
-    "reason": null
-  },
-  "owner_wait_cleared_at": "2026-07-30T12:22:41.464Z",
-  "owner_wait_clear_reason": "VERCEL_TOKEN_PRESENT",
-  "global_release_sha": "3332efe4cb48ea91544b1acb636babf496577e3f",
-  "last_preflight_run_id": 30633654593
+  "stamped_at": null,
+  "updated_at": null
 }
