@@ -225,3 +225,4 @@
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-08-15T21:17:54.968Z","runId":"31908997363"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-08-16T01:05:12.507Z","runId":"31918722463"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-08-16T03:45:07.305Z","runId":"31924949833"}
+{"type":"RUN_FAILED","error":"IMAP_AUTH_FAIL","at":"2026-08-16T06:38:22.872Z","runId":"31931687454"}
