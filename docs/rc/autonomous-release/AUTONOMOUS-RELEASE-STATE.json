@@ -1,15 +1,15 @@
 {
   "controller": "phase18-autonomous-global-release",
   "version": 1,
-  "state": "INVENTORY",
+  "state": "PRODUCTION_PREFLIGHT",
   "status": "AUTONOMOUS_CONTROLLER_RUNNING",
   "release_branch": "release/global-menu-universes-21",
-  "release_sha": null,
-  "phase18_project_ref": "arstaxredytrjcmqcwhh",
+  "release_sha": "6a9fdf55eaa7ec6b608e9ea5c5b74e625987a48a",
+  "phase18_project_ref": "lenajhsfrqdqcdzhcuao",
   "stop_after": "auth-coverage",
   "active_phase18_run_id": null,
-  "last_phase18_run_id": null,
-  "last_phase18_conclusion": null,
+  "last_phase18_run_id": 30526308347,
+  "last_phase18_conclusion": "failure",
   "last_failure_fingerprint": null,
   "owner_wait": null,
   "owner_wait_recorded_at": null,
@@ -17,16 +17,31 @@
     "phase18_auth_coverage": "ACTIVE",
     "github_hygiene": "ACTIVE",
     "launch_gates_docs": "ACTIVE",
-    "production_deploy": "BLOCKED_WAITING_OWNER_AUTH",
+    "production_deploy": "PRODUCTION_PREFLIGHT",
     "legal_tax_activation": "BLOCKED_WAITING_OWNER_LEGAL_TAX",
-    "global_staging": "PENDING"
+    "global_staging": "PENDING",
+    "production_preflight": "PASS",
+    "post_promote_verify": "PASS"
   },
   "counters": {
-    "controller_ticks": 0,
+    "controller_ticks": 1,
     "autofix_dispatches": 0,
     "phase18_dispatches": 0,
-    "advances": 0
+    "advances": 1
   },
-  "stamped_at": null,
-  "updated_at": null
+  "stamped_at": "2026-08-16T16:34:06.818Z",
+  "updated_at": "2026-08-16T16:34:06.817Z",
+  "vercel_auth": {
+    "ok": true,
+    "vercel_auth": "PASS",
+    "token_present": true,
+    "username": "lunchportalen",
+    "team_slug": "lunchportalen",
+    "team_id": "team_xF0…",
+    "project_name": "lunchportalen",
+    "project_id": "prj_AJZz…",
+    "reason": null
+  },
+  "global_release_sha": "3332efe4cb48ea91544b1acb636babf496577e3f",
+  "last_preflight_run_id": 30633654593
 }
