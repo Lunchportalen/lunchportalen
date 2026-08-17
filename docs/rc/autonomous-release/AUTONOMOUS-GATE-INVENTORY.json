@@ -27,5 +27,5 @@
     "production_deploy": "WAITING_OWNER_AUTH — Vercel credentials missing; PRODUCTION_AUTO_DEPLOY_LOCK ACTIVE",
     "legal_tax": "WAITING_OWNER_LEGAL_TAX — BUILT_BUT_NOT_LEGALLY_APPROVED; fail-closed preserved"
   },
-  "updated_at": "2026-08-17T17:01:57.314Z"
+  "updated_at": "2026-08-17T17:37:50.353Z"
 }
