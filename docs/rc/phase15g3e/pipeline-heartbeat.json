@@ -6,8 +6,8 @@
     "cron": "0 */3 * * *",
     "enabled": true,
     "localTerminalDependency": "NONE",
-    "lastSuccessfulRun": "2026-08-17T21:22:44.836Z",
-    "nextScheduledRun": "2026-08-18T00:00:00.000Z"
+    "lastSuccessfulRun": "2026-08-18T01:01:05.454Z",
+    "nextScheduledRun": "2026-08-18T03:00:00.000Z"
   },
   "mailbox": {
     "imap": "PASS",
@@ -20,6 +20,6 @@
   "secretsExposed": 0,
   "productionLocks": "ACTIVE",
   "stripe": "OFF",
-  "updatedAt": "2026-08-17T21:22:44.837Z",
-  "runId": "32070678877"
+  "updatedAt": "2026-08-18T01:01:05.454Z",
+  "runId": "32086599700"
 }
