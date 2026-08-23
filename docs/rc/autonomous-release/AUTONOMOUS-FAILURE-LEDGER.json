@@ -1,5 +1,13 @@
 {
   "version": 1,
-  "entries": [],
-  "updated_at": "2026-08-23T03:02:31.307Z"
+  "entries": [
+    {
+      "at": "2026-08-23T03:57:32.609Z",
+      "class": "AUTOMATION_NOISE",
+      "action": "close_pr",
+      "pr": 594,
+      "title": "chore: weekly repo-intelligence refresh"
+    }
+  ],
+  "updated_at": "2026-08-23T03:57:34.688Z"
 }
