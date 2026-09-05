@@ -1,7 +1,7 @@
 {
   "notifyOwner": true,
-  "runId": "33926817207",
-  "at": "2026-09-04T22:46:34.824Z",
+  "runId": "33940035572",
+  "at": "2026-09-05T02:47:56.965Z",
   "events": [
     {
       "kind": "OWNER_CONTRACT_PAYMENT_BATCH_READY",
