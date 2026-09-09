@@ -1,7 +1,7 @@
 {
   "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
   "status": "READY_FOR_OWNER",
-  "createdAt": "2026-09-09T07:51:27.698Z",
+  "createdAt": "2026-09-09T13:22:12.610Z",
   "firms": [
     {
       "firm": "TransPerfect",
@@ -52,6 +52,28 @@
         "GB",
         "US",
         "CA"
+      ],
+      "proposedReviewers": "PENDING",
+      "validatedCredentials": "PENDING",
+      "price": "SEE_EMAIL_THREAD",
+      "turnaround": "SEE_EMAIL_THREAD",
+      "contractRequirements": "UNKNOWN",
+      "paymentRequirements": "UNKNOWN",
+      "recommendation": "NEGOTIATE",
+      "ownerDecisionsNeeded": [
+        "supplier_selection",
+        "contract_signature",
+        "cost_payment_approval"
+      ]
+    },
+    {
+      "firm": "NCC Group",
+      "firmId": "ncc-group-security",
+      "scope": [
+        "security-global"
+      ],
+      "countriesLocales": [
+        "ALL"
       ],
       "proposedReviewers": "PENDING",
       "validatedCredentials": "PENDING",

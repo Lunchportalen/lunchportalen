@@ -6,8 +6,8 @@
     "cron": "0 */3 * * *",
     "enabled": true,
     "localTerminalDependency": "NONE",
-    "lastSuccessfulRun": "2026-09-09T07:51:27.698Z",
-    "nextScheduledRun": "2026-09-09T09:00:00.000Z"
+    "lastSuccessfulRun": "2026-09-09T13:22:12.611Z",
+    "nextScheduledRun": "2026-09-09T15:00:00.000Z"
   },
   "mailbox": {
     "imap": "PASS",
@@ -15,11 +15,11 @@
     "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
   },
   "dueFollowUps": [],
-  "quotesWaiting": 2,
+  "quotesWaiting": 3,
   "failuresRequiringAction": [],
   "secretsExposed": 0,
   "productionLocks": "ACTIVE",
   "stripe": "OFF",
-  "updatedAt": "2026-09-09T07:51:27.699Z",
-  "runId": "34325892282"
+  "updatedAt": "2026-09-09T13:22:12.611Z",
+  "runId": "34356521715"
 }

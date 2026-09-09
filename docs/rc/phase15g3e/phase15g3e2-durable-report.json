@@ -1,12 +1,12 @@
 {
-  "writtenAt": "2026-09-09T07:51:27.749Z",
+  "writtenAt": "2026-09-09T13:22:12.653Z",
   "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "34325892282",
-    "started_at": "2026-09-09T07:50:55.493Z",
-    "completed_at": "2026-09-09T07:51:27.698Z",
-    "replies_found": 0,
-    "messages_classified": 0,
+    "runId": "34356521715",
+    "started_at": "2026-09-09T13:21:46.298Z",
+    "completed_at": "2026-09-09T13:22:12.611Z",
+    "replies_found": 1,
+    "messages_classified": 1,
     "follow_ups_sent": 0,
     "failures": [],
     "next_due_action": "2026-07-22T22:47:30.786Z",
@@ -17,7 +17,7 @@
       "error": null
     },
     "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
-    "quotes_waiting": 2,
+    "quotes_waiting": 3,
     "owner_batch": "READY_FOR_OWNER",
     "notify_owner": true,
     "follow_up_dates": {
@@ -40,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-09-09T07:51:27.698Z",
-      "nextScheduledRun": "2026-09-09T09:00:00.000Z"
+      "lastSuccessfulRun": "2026-09-09T13:22:12.611Z",
+      "nextScheduledRun": "2026-09-09T15:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -49,12 +49,12 @@
       "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD"
     },
     "dueFollowUps": [],
-    "quotesWaiting": 2,
+    "quotesWaiting": 3,
     "failuresRequiringAction": [],
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-09-09T07:51:27.699Z",
-    "runId": "34325892282"
+    "updatedAt": "2026-09-09T13:22:12.611Z",
+    "runId": "34356521715"
   }
 }
