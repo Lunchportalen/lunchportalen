@@ -1,10 +1,10 @@
 {
-  "writtenAt": "2026-09-13T20:15:50.731Z",
+  "writtenAt": "2026-09-13T22:50:57.069Z",
   "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "34780166203",
-    "started_at": "2026-09-13T20:15:29.788Z",
-    "completed_at": "2026-09-13T20:15:50.680Z",
+    "runId": "34787936553",
+    "started_at": "2026-09-13T22:50:29.422Z",
+    "completed_at": "2026-09-13T22:50:57.027Z",
     "replies_found": 0,
     "messages_classified": 0,
     "follow_ups_sent": 0,
@@ -40,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-09-13T20:15:50.680Z",
-      "nextScheduledRun": "2026-09-13T21:00:00.000Z"
+      "lastSuccessfulRun": "2026-09-13T22:50:57.027Z",
+      "nextScheduledRun": "2026-09-14T00:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -54,7 +54,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-09-13T20:15:50.680Z",
-    "runId": "34780166203"
+    "updatedAt": "2026-09-13T22:50:57.028Z",
+    "runId": "34787936553"
   }
 }
