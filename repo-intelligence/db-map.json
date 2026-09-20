@@ -48,11 +48,16 @@
     },
     "agreement_invoice_lines": {
       "used_in": [
+        "lib/billing/invoiceLifecycle.ts",
         "lib/integrations/tripletex/agreementInvoiceSync.ts"
       ]
     },
     "agreement_invoices": {
       "used_in": [
+        "app/superadmin/agreement-invoices/page.tsx",
+        "lib/accounting/tripletexAdapter.ts",
+        "lib/billing/invoiceLifecycle.ts",
+        "lib/billing/providerInvoiceGuard.ts",
         "lib/integrations/tripletex/agreementInvoiceSync.ts"
       ]
     },
@@ -67,6 +72,7 @@
         "app/api/auth/post-login/route.ts",
         "app/api/cron/invoices/generate/route.ts",
         "app/api/superadmin/agreements/[agreementId]/activate/route.ts",
+        "app/api/superadmin/agreements/[agreementId]/resume/route.ts",
         "app/api/superadmin/agreements/list/route.ts",
         "app/api/superadmin/companies/[companyId]/route.ts",
         "app/api/week/route.ts",
@@ -388,6 +394,11 @@
         "lib/integrations/tripletex/client.ts"
       ]
     },
+    "billing_readiness_events": {
+      "used_in": [
+        "lib/billing/commissionSettlement.ts"
+      ]
+    },
     "billing_tax_codes": {
       "used_in": [
         "app/api/system/outbox/process/route.ts",
@@ -413,11 +424,25 @@
         "lib/server/superadmin/loadProductionReadiness.ts"
       ]
     },
+    "commission_ledger": {
+      "used_in": [
+        "app/api/cron/commission-settlement/route.ts",
+        "lib/billing/commissionSettlement.ts",
+        "lib/markets/norwayMvaController.ts"
+      ]
+    },
+    "commission_periods": {
+      "used_in": [
+        "app/api/superadmin/commission/route.ts",
+        "app/superadmin/provisjon/page.tsx"
+      ]
+    },
     "companies": {
       "used_in": [
         "app/(app)/week/page.tsx",
         "app/admin/layout.tsx",
         "app/api/admin/agreement/route.ts",
+        "app/api/admin/company/billing/route.ts",
         "app/api/admin/dashboard/route.ts",
         "app/api/admin/demand-insights/route.ts",
         "app/api/admin/employees/invite/route.ts",
@@ -435,6 +460,7 @@
         "app/api/agreements/my-latest/route.ts",
         "app/api/ai/usage/route.ts",
         "app/api/cron/daily-order-summary/route.ts",
+        "app/api/cron/invoices/generate/route.ts",
         "app/api/driver/stops/route.ts",
         "app/api/driver/today/route.ts",
         "app/api/kitchen/companies/route.ts",
@@ -442,7 +468,6 @@
         "app/api/kitchen/demand-forecast/route.ts",
         "app/api/kitchen/route.ts",
         "app/api/onboarding/complete/route.ts",
-        "app/api/order/bulk-set/route.ts",
         "app/api/order/window/route.ts",
         "app/api/orders/[orderId]/cancel/route.ts",
         "app/api/orders/[orderId]/toggle/route.ts",
@@ -485,8 +510,10 @@
         "app/api/superadmin/users/set-scope/route.ts",
         "app/api/system/outbox/process/route.ts",
         "app/driver/csv/route.ts",
+        "app/leverandor/fakturaer/page.tsx",
         "app/leverandor/kunder/actions.ts",
         "app/onboarding/complete/route.ts",
+        "app/superadmin/agreement-invoices/page.tsx",
         "app/superadmin/firms/[companyId]/actions.ts",
         "app/superadmin/firms/[companyId]/employees/page.tsx",
         "app/superadmin/firms/[companyId]/page.tsx",
@@ -507,9 +534,12 @@
         "lib/auth/getScopeServer.ts",
         "lib/auth/scope.ts",
         "lib/billing/enforcementEngine.ts",
+        "lib/billing/invoiceLifecycle.ts",
         "lib/cms/backoffice/loadControlPlaneRuntimeSnapshot.ts",
         "lib/cms/backoffice/loadDomainRuntimeOverview.ts",
+        "lib/email/recipientLocale.ts",
         "lib/guards/assertCompanyActive.ts",
+        "lib/i18n/profileLocale.ts",
         "lib/integrations/tripletex/companyCustomerSync.ts",
         "lib/integrations/tripletex/onboardingSync.ts",
         "lib/invites/createEmployeeSingleInvite.ts",
@@ -528,6 +558,7 @@
         "lib/providers/loadProviderCustomerDetail.ts",
         "lib/providers/loadProviderCustomers.ts",
         "lib/providers/loadProviderDashboard.ts",
+        "lib/providers/packingList.ts",
         "lib/saas/billing.ts",
         "lib/saas/onboarding.ts",
         "lib/server/agreements/ledgerAgreementApproval.ts",
@@ -598,7 +629,6 @@
         "app/(auth)/registrer-bruker/page.tsx",
         "app/api/admin/invites/create/route.ts",
         "app/api/admin/invites/lookup/route.ts",
-        "app/api/admin/invites/register/route.ts",
         "app/api/admin/invites/revoke/route.ts",
         "app/api/auth/register-company-admin/route.ts",
         "app/api/superadmin/agreements/[agreementId]/approve/route.ts"
@@ -620,10 +650,10 @@
         "app/api/driver/bulk-set/route.ts",
         "app/api/driver/stops/route.ts",
         "app/api/driver/today/route.ts",
+        "app/api/kitchen/batch/assign-driver/route.ts",
         "app/api/kitchen/batch/get/route.ts",
         "app/api/kitchen/batch/list/route.ts",
         "app/api/kitchen/batch/reset/route.ts",
-        "app/api/kitchen/batch/route.ts",
         "app/api/kitchen/batch/set/route.ts",
         "app/api/kitchen/batch/start/route.ts",
         "app/api/kitchen/company/route.ts",
@@ -635,6 +665,7 @@
         "app/api/superadmin/enterprise/[groupId]/route.ts",
         "app/api/superadmin/invoices/csv/route.ts",
         "app/api/superadmin/profiles/assign/route.ts",
+        "app/api/superadmin/profiles/link-company/route.ts",
         "app/api/superadmin/system/flow/diagnostics/route.ts",
         "app/api/superadmin/users/set-company-admin/route.ts",
         "app/api/superadmin/users/set-scope/route.ts",
@@ -643,6 +674,7 @@
         "app/superadmin/firms/[companyId]/page.tsx",
         "lib/admin/fetchAgreementPageDataServer.ts",
         "lib/admin/loadAdminContext.ts",
+        "lib/billing/invoiceLifecycle.ts",
         "lib/cms/backoffice/loadControlPlaneRuntimeSnapshot.ts",
         "lib/cms/backoffice/loadDomainRuntimeOverview.ts",
         "lib/invites/createEmployeeSingleInvite.ts",
@@ -655,6 +687,7 @@
         "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
         "lib/orders/backupContext.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
+        "lib/providers/packingList.ts",
         "lib/providers/providerOrderEnrichment.ts",
         "lib/server/admin/loadCompanyOperationalBrief.ts",
         "lib/server/admin/loadCompanyOperativeDayRoster.ts",
@@ -670,6 +703,7 @@
     },
     "company_memberships": {
       "used_in": [
+        "scripts/e2e/seed-e2e-role-users.mjs",
         "scripts/smoke/seed-e2e-users.mjs"
       ]
     },
@@ -677,6 +711,7 @@
       "used_in": [
         "app/api/public/register-company/route.ts",
         "app/api/superadmin/companies/[companyId]/route.ts",
+        "app/leverandor/registreringer/actions.ts",
         "lib/orderBackup/admin.ts",
         "lib/providers/loadProviderRegistrations.ts",
         "lib/server/agreements/ledgerAgreementApproval.ts",
@@ -758,6 +793,7 @@
         "lib/experiments/createAiAbcTrafficExperimentCore.ts",
         "lib/experiments/createHomeTrafficExperimentCore.ts",
         "lib/experiments/validateWinnerAppliedToProd.ts",
+        "scripts/e2e/seed-e2e-content-fixture.mjs",
         "scripts/seedAppOverlaysFromHardcoded.ts",
         "scripts/seedCmsHomeAndOverlays.ts"
       ]
@@ -793,6 +829,7 @@
         "lib/experiments/publicLayoutExperiment.ts",
         "lib/moo/pageImpact.ts",
         "lib/moo/safety.ts",
+        "scripts/e2e/seed-e2e-content-fixture.mjs",
         "scripts/seedAppOverlaysFromHardcoded.ts",
         "scripts/seedCmsHomeAndOverlays.ts"
       ]
@@ -812,6 +849,11 @@
     "content_workflow_state": {
       "used_in": [
         "lib/backoffice/content/workflowRepo.ts"
+      ]
+    },
+    "country_production_activation": {
+      "used_in": [
+        "lib/markets/norwayMvaController.ts"
       ]
     },
     "cron_runs": {
@@ -837,8 +879,6 @@
       "used_in": [
         "app/api/admin/demand-insights/route.ts",
         "app/api/admin/operations-tower/route.ts",
-        "app/api/order/bulk-set/route.ts",
-        "app/api/order/cancel/route.ts",
         "app/api/order/window/route.ts",
         "lib/kitchen/dayData.ts",
         "lib/provider-menu/providerMenuOrderLock.ts",
@@ -852,15 +892,20 @@
         "lib/superadmin/queries.ts"
       ]
     },
-    "delivery_batches": {
-      "used_in": [
-        "app/api/kitchen/batch/route.ts"
-      ]
-    },
     "delivery_confirmations": {
       "used_in": [
         "app/api/superadmin/system/flow/diagnostics/route.ts",
         "app/api/superadmin/system/repairs/run/route.ts"
+      ]
+    },
+    "dish_day_capacity": {
+      "used_in": [
+        "app/api/provider/capacity/route.ts"
+      ]
+    },
+    "dish_day_capacity_audit": {
+      "used_in": [
+        "app/api/provider/capacity/route.ts"
       ]
     },
     "email_outbox": {
@@ -879,8 +924,6 @@
     "employee_invites": {
       "used_in": [
         "app/admin/employees/invites/bulk/route.ts",
-        "app/api/accept-invite/complete/route.ts",
-        "app/api/admin/accept-invite/complete/route.ts",
         "app/api/admin/employees/invite/route.ts",
         "app/api/admin/employees/invites/link/route.ts",
         "app/api/admin/employees/invites/resend/route.ts",
@@ -1029,6 +1072,13 @@
         "lib/observability/incident.ts"
       ]
     },
+    "invoice_deliveries": {
+      "used_in": [
+        "app/api/superadmin/commission/route.ts",
+        "app/superadmin/provisjon/page.tsx",
+        "lib/billing/commissionSettlement.ts"
+      ]
+    },
     "invoice_lines": {
       "used_in": [
         "app/api/superadmin/invoices/exports/retry/route.ts",
@@ -1036,6 +1086,11 @@
         "app/api/superadmin/invoices/runs/[runId]/route.ts",
         "lib/superadmin/invoiceMonthlyDb.ts",
         "lib/superadmin/tripletexExportByRun.ts"
+      ]
+    },
+    "invoice_payments": {
+      "used_in": [
+        "lib/billing/invoiceLifecycle.ts"
       ]
     },
     "invoice_periods": {
@@ -1076,6 +1131,7 @@
       "used_in": [
         "app/api/cron/check-deviations/route.ts",
         "app/api/driver/stops/route.ts",
+        "app/api/kitchen/batch/assign-driver/route.ts",
         "app/api/kitchen/companies/route.ts",
         "app/api/kitchen/company/route.ts",
         "app/api/superadmin/deviations/route.ts"
@@ -1107,6 +1163,11 @@
         "scripts/testSocialFlow.ts"
       ]
     },
+    "legal_acceptances": {
+      "used_in": [
+        "lib/legal/norwayAcceptanceGate.ts"
+      ]
+    },
     "lifecycle_audit_log": {
       "used_in": [
         "app/api/cron/tripletex-agreements-daily/route.ts",
@@ -1133,13 +1194,31 @@
     },
     "location_memberships": {
       "used_in": [
+        "scripts/e2e/seed-e2e-role-users.mjs",
         "scripts/smoke/seed-e2e-users.mjs"
       ]
     },
     "lp_user_allergens": {
       "used_in": [
         "app/api/kitchen/route.ts",
-        "app/api/me/user-allergens/route.ts"
+        "app/api/me/user-allergens/route.ts",
+        "lib/providers/packingList.ts"
+      ]
+    },
+    "market_approval_events": {
+      "used_in": [
+        "app/api/superadmin/markets/route.ts"
+      ]
+    },
+    "market_approvals": {
+      "used_in": [
+        "lib/markets/marketApprovals.ts"
+      ]
+    },
+    "markets": {
+      "used_in": [
+        "app/api/superadmin/markets/route.ts",
+        "app/superadmin/markeder/page.tsx"
       ]
     },
     "media_items": {
@@ -1185,6 +1264,31 @@
         "lib/notifications/menuWeekOpeningNotify.ts"
       ]
     },
+    "norway_mva_invoice_holds": {
+      "used_in": [
+        "lib/markets/norwayMvaController.ts"
+      ]
+    },
+    "norway_mva_registration_checks": {
+      "used_in": [
+        "lib/markets/norwayMvaController.ts"
+      ]
+    },
+    "norway_mva_threshold_audit": {
+      "used_in": [
+        "lib/markets/norwayMvaController.ts"
+      ]
+    },
+    "norway_mva_threshold_config": {
+      "used_in": [
+        "lib/markets/norwayMvaController.ts"
+      ]
+    },
+    "norway_mva_threshold_warnings": {
+      "used_in": [
+        "lib/markets/norwayMvaController.ts"
+      ]
+    },
     "ops_events": {
       "used_in": [
         "app/api/superadmin/system/flow/diagnostics/route.ts",
@@ -1197,6 +1301,7 @@
     },
     "order_items": {
       "used_in": [
+        "lib/providers/packingList.ts",
         "lib/providers/providerOrderEnrichment.ts",
         "lib/superadmin/loadPilotControlCenter.ts",
         "scripts/smoke/_first-menu-order-smoke.mjs"
@@ -1227,7 +1332,6 @@
         "app/api/kitchen/company/route.ts",
         "app/api/kitchen/demand-forecast/route.ts",
         "app/api/kitchen/orders/batch-status/route.ts",
-        "app/api/order/cancel/route.ts",
         "app/api/order/week-demand-hints/route.ts",
         "app/api/order/window/route.ts",
         "app/api/orders/[orderId]/cancel/route.ts",
@@ -1278,6 +1382,7 @@
         "lib/metrics/live.ts",
         "lib/mvo/runMvoEvaluation.ts",
         "lib/observability/graphMetrics.ts",
+        "lib/orders/orderWriteSideEffects.ts",
         "lib/orders/readers/getOrderForScopedUser.ts",
         "lib/platform/engine.ts",
         "lib/predictive/data.ts",
@@ -1285,6 +1390,8 @@
         "lib/providers/loadKitchenOrders.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
         "lib/providers/loadProviderDashboard.ts",
+        "lib/providers/orderStatusNotifications.ts",
+        "lib/providers/packingList.ts",
         "lib/providers/providerCustomerCounts.ts",
         "lib/revenue/applyLeadPipelineOrderAttribution.ts",
         "lib/revenue/collect.ts",
@@ -1302,6 +1409,8 @@
     },
     "organization_billing_profiles": {
       "used_in": [
+        "app/superadmin/provisjon/page.tsx",
+        "lib/billing/invoiceLifecycle.ts",
         "lib/billing/stripeProviderCharge.ts",
         "lib/billing/stripeProviderSetup.ts"
       ]
@@ -1317,12 +1426,20 @@
       "used_in": [
         "app/api/cron/check-deviations/route.ts",
         "app/api/cron/daily-order-summary/route.ts",
+        "app/api/public/provider-registration/route.ts",
         "app/api/superadmin/agreements/[agreementId]/approve/route.ts",
         "app/api/superadmin/agreements/[agreementId]/reject/route.ts",
         "app/api/superadmin/company/[companyId]/activate/route.ts",
         "app/api/superadmin/outbox/resend/route.ts",
+        "app/api/superadmin/provider-registrations/[id]/approve/route.ts",
         "app/api/system/outbox/process/route.ts",
+        "app/leverandor/registreringer/actions.ts",
+        "app/registrer/actions.ts",
+        "lib/accounting/tripletexAdapter.ts",
+        "lib/billing/commissionSettlement.ts",
+        "lib/billing/invoiceLifecycle.ts",
         "lib/kitchen/batchPackedOutbox.ts",
+        "lib/markets/norwayMvaController.ts",
         "lib/orderBackup/admin.ts",
         "lib/orderBackup/outbox.ts",
         "lib/outbox/invoiceReady.ts",
@@ -1367,6 +1484,7 @@
     "profiles": {
       "used_in": [
         "app/(app)/home/page.tsx",
+        "app/(app)/week/allergenprofil/page.tsx",
         "app/(app)/week/bestillingsprofil/page.tsx",
         "app/(app)/week/min-dag/page.tsx",
         "app/(app)/week/mine-lunsjendringer/page.tsx",
@@ -1376,12 +1494,11 @@
         "app/(app)/week/tidligere-lunsjdager/page.tsx",
         "app/admin/audit/page.tsx",
         "app/admin/companies/page.tsx",
+        "app/admin/dashboard/page.tsx",
         "app/admin/employees/invites/bulk/route.ts",
         "app/admin/invite/actions.ts",
         "app/admin/menus/page.tsx",
         "app/admin/orders/page.tsx",
-        "app/api/accept-invite/complete/route.ts",
-        "app/api/admin/accept-invite/complete/route.ts",
         "app/api/admin/agreement/route.ts",
         "app/api/admin/auth/route.ts",
         "app/api/admin/dashboard/route.ts",
@@ -1397,7 +1514,6 @@
         "app/api/admin/insight/route.ts",
         "app/api/admin/insights/route.ts",
         "app/api/admin/invite/route.ts",
-        "app/api/admin/invites/register/route.ts",
         "app/api/admin/invites/route.ts",
         "app/api/admin/me/route.ts",
         "app/api/admin/people/route.ts",
@@ -1405,12 +1521,13 @@
         "app/api/agreements/my-latest/route.ts",
         "app/api/auth/accept-invite/route.ts",
         "app/api/auth/register-company-admin/route.ts",
+        "app/api/auth/register-provider-admin/route.ts",
         "app/api/backoffice/users/route.ts",
         "app/api/cron/daily-order-summary/route.ts",
         "app/api/cron/daily-sanity/route.ts",
         "app/api/health/route.ts",
+        "app/api/kitchen/batch/assign-driver/route.ts",
         "app/api/kitchen/batch/reset/route.ts",
-        "app/api/kitchen/batch/route.ts",
         "app/api/kitchen/company/route.ts",
         "app/api/kitchen/day/route.ts",
         "app/api/kitchen/demand-forecast/route.ts",
@@ -1420,7 +1537,6 @@
         "app/api/me/user-allergens/route.ts",
         "app/api/observability/route.ts",
         "app/api/onboarding/complete/route.ts",
-        "app/api/order/cancel/route.ts",
         "app/api/orders/[orderId]/cancel/route.ts",
         "app/api/orders/[orderId]/toggle/route.ts",
         "app/api/outbox/process/route.ts",
@@ -1475,6 +1591,7 @@
         "lib/auth/membershipLookup.ts",
         "lib/auth/requireRole.ts",
         "lib/db/profileLookup.ts",
+        "lib/email/recipientLocale.ts",
         "lib/guards/requireSuperadmin.ts",
         "lib/i18n/profileLocale.ts",
         "lib/invites/createEmployeeSingleInvite.ts",
@@ -1488,6 +1605,8 @@
         "lib/provider-onboarding/createLiveReadAdapters.ts",
         "lib/provider-onboarding/createLiveWriteAdapters.ts",
         "lib/providers/loadProviderCustomerDetail.ts",
+        "lib/providers/orderStatusNotifications.ts",
+        "lib/providers/packingList.ts",
         "lib/providers/providerCustomerCounts.ts",
         "lib/providers/providerOrderEnrichment.ts",
         "lib/saas/onboarding.ts",
@@ -1496,20 +1615,35 @@
         "lib/server/admin/loadCompanyOperativeRecentHistory.ts",
         "lib/server/superadmin/executeCompanyRemoval.ts",
         "lib/server/superadmin/loadSuperadminProviderDetail.ts",
+        "lib/superadmin/auth.ts",
         "lib/superadmin/loadPilotControlCenter.ts",
         "lib/superadmin/queries.ts",
         "lib/system/health.ts",
         "lib/system/systemHealthAggregator.ts",
+        "scripts/e2e/seed-e2e-role-users.mjs",
         "scripts/k6/diag-prod-pool-access.mjs",
         "scripts/smoke/seed-e2e-users.mjs",
         "scripts/system-test/steps/createEmployee.ts",
         "scripts/system-test/utils/cleanup.ts"
       ]
     },
+    "provider_capacity_policy": {
+      "used_in": [
+        "app/api/provider/capacity/route.ts"
+      ]
+    },
     "provider_commission_invoices": {
       "used_in": [
+        "lib/billing/commissionSettlement.ts",
         "lib/billing/stripePaymentWebhook.ts",
-        "lib/billing/stripeProviderCharge.ts"
+        "lib/billing/stripeProviderCharge.ts",
+        "lib/markets/norwayMvaController.ts"
+      ]
+    },
+    "provider_invites": {
+      "used_in": [
+        "app/(auth)/registrer-leverandor/page.tsx",
+        "app/api/auth/register-provider-admin/route.ts"
       ]
     },
     "provider_invoices": {
@@ -1522,6 +1656,7 @@
     },
     "provider_memberships": {
       "used_in": [
+        "app/api/legal/norway/accept/route.ts",
         "lib/auth/getAuthContext.ts",
         "lib/auth/provider.ts",
         "lib/provider-onboarding/createLiveReadAdapters.ts",
@@ -1537,6 +1672,15 @@
         "lib/providers/providerMenuPricePreview.ts"
       ]
     },
+    "provider_registrations": {
+      "used_in": [
+        "app/api/public/provider-registration/route.ts",
+        "app/api/superadmin/provider-registrations/[id]/approve/route.ts",
+        "app/api/superadmin/provider-registrations/route.ts",
+        "app/superadmin/oversettelser/page.tsx",
+        "app/superadmin/provider-registrations/page.tsx"
+      ]
+    },
     "provider_service_areas": {
       "used_in": [
         "app/api/public/coverage/check/route.ts",
@@ -1545,11 +1689,13 @@
     },
     "provider_settings": {
       "used_in": [
+        "app/api/provider/invoices/export/route.ts",
         "lib/menu-publish/msdiLocalizedItemSnapshot.ts",
         "lib/provider-onboarding/createLiveReadAdapters.ts",
         "lib/provider-onboarding/createLiveWriteAdapters.ts",
         "lib/providers/loadProviderOperationalSettings.ts",
         "lib/providers/loadProviderSettingsMenuProfile.ts",
+        "lib/providers/orderStatusNotifications.ts",
         "lib/providers/providerNotificationRecipients.ts",
         "lib/providers/saveProviderOperationalSettings.ts",
         "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts"
@@ -1589,10 +1735,14 @@
     "providers": {
       "used_in": [
         "app/api/webhooks/tripletex-provider/[providerId]/route.ts",
+        "app/superadmin/agreement-invoices/page.tsx",
         "app/superadmin/providers/[id]/billing/page.tsx",
+        "app/superadmin/provisjon/page.tsx",
         "lib/admin/loadDashboardCompanyMeta.ts",
         "lib/auth/providerContext.ts",
+        "lib/billing/invoiceLifecycle.ts",
         "lib/cms/syncProviderToSanity.ts",
+        "lib/cms/syncProviderToSanityDraft.ts",
         "lib/integrations/tripletex/providerCustomerSync.ts",
         "lib/invites/createEmployeeSingleInvite.ts",
         "lib/invites/resolveEmployeeInviteContext.ts",
@@ -1671,6 +1821,18 @@
     "superadmin_audit_log": {
       "used_in": [
         "app/api/superadmin/quality/update/route.ts"
+      ]
+    },
+    "superadmin_translation_events": {
+      "used_in": [
+        "app/api/superadmin/translations/route.ts",
+        "app/superadmin/oversettelser/page.tsx",
+        "lib/i18n/superadminTranslation.ts"
+      ]
+    },
+    "superadmin_translations": {
+      "used_in": [
+        "lib/i18n/superadminTranslation.ts"
       ]
     },
     "support_reports": {
