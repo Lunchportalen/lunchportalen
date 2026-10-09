@@ -1,8 +1,14 @@
 {
   "notifyOwner": true,
-  "runId": "37914686494",
-  "at": "2026-10-09T09:59:27.593Z",
+  "runId": "37969652387",
+  "at": "2026-10-09T17:56:14.597Z",
   "events": [
+    {
+      "kind": "QUOTE_RECEIVED",
+      "firmId": "ncc-group-security",
+      "messageId": "<9986c238-bc60-4b16-99a7-16b076123170@atl1s11mta0016.xt.local>",
+      "subject": "💻 Join our webinar: Is your identity strategy ready for the new digital workforce?"
+    },
     {
       "kind": "OWNER_CONTRACT_PAYMENT_BATCH_READY",
       "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
