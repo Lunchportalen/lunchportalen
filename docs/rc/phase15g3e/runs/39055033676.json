@@ -1,0 +1,31 @@
+{
+  "runId": "39055033676",
+  "started_at": "2026-10-17T17:44:38.111Z",
+  "completed_at": "2026-10-17T17:45:05.553Z",
+  "replies_found": 0,
+  "messages_classified": 0,
+  "follow_ups_sent": 0,
+  "failures": [],
+  "next_due_action": "2026-07-22T22:47:30.786Z",
+  "secrets_exposed": 0,
+  "mailbox": {
+    "imap": "PASS",
+    "smtp": "PASS",
+    "error": null
+  },
+  "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
+  "quotes_waiting": 3,
+  "owner_batch": "READY_FOR_OWNER",
+  "notify_owner": true,
+  "follow_up_dates": {
+    "firstDueVerified": true,
+    "secondDueVerified": true,
+    "firstDue": "2026-07-22",
+    "secondDue": "2026-07-29",
+    "calendar": "business_days_mon_fri",
+    "emailThreadRetention": "same thread via In-Reply-To / References",
+    "backupAfterSecondOnly": true
+  },
+  "duplicate_sends": 0,
+  "Decision": "OWNER_ACTION_REQUIRED"
+}
