@@ -5,8 +5,8 @@
 - Workflow/job: phase15g3e-response-pipeline.yml / pipeline
 - Cadence: every 3 hours (cron: 0 */3 * * *)
 - Enabled: YES
-- Last run: 2026-10-25T20:21:14.061Z
-- Next run: 2026-10-25T21:00:00.000Z
+- Last run: 2026-10-25T23:00:56.222Z
+- Next run: 2026-10-26T00:00:00.000Z
 - Local terminal dependency: NONE
 
 ## Mailbox
@@ -37,7 +37,7 @@
 
 ## Idempotency
 - Distributed lock: pipeline-lock.json + Actions concurrency group
-- Run ID: 40230274805
+- Run ID: 40242710557
 - Message-ID dedupe: reply-message-ids.json
 - Follow-up identity: firmId:followup:round
 - Duplicate send guard: claim-before-send
