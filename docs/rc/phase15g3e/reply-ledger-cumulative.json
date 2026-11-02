@@ -209,6 +209,17 @@
       "attachments": [],
       "processedAt": "2026-10-27T15:06:31.412Z",
       "runId": "40527542373"
+    },
+    {
+      "firmId": "ncc-group-security",
+      "messageId": "<5d6faef1-71ac-4b1d-969e-b44887338396@atl1s11mta0160.xt.local>",
+      "subject": "Don't miss our webinar tomorrow: Governing the new digital workforce 🤖💻",
+      "from": "response@nccgroup.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-11-02T13:31:25.000Z",
+      "attachments": [],
+      "processedAt": "2026-11-02T21:22:11.475Z",
+      "runId": "41527526357"
     }
   ],
   "byMessageId": {
@@ -421,7 +432,18 @@
       "attachments": [],
       "processedAt": "2026-10-27T15:06:31.412Z",
       "runId": "40527542373"
+    },
+    "<5d6faef1-71ac-4b1d-969e-b44887338396@atl1s11mta0160.xt.local>": {
+      "firmId": "ncc-group-security",
+      "messageId": "<5d6faef1-71ac-4b1d-969e-b44887338396@atl1s11mta0160.xt.local>",
+      "subject": "Don't miss our webinar tomorrow: Governing the new digital workforce 🤖💻",
+      "from": "response@nccgroup.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-11-02T13:31:25.000Z",
+      "attachments": [],
+      "processedAt": "2026-11-02T21:22:11.475Z",
+      "runId": "41527526357"
     }
   },
-  "lastPollAt": "2026-11-02T10:30:11.870Z"
+  "lastPollAt": "2026-11-02T21:22:12.568Z"
 }
