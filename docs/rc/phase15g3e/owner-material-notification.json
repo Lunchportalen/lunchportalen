@@ -1,14 +1,8 @@
 {
   "notifyOwner": true,
-  "runId": "41527526357",
-  "at": "2026-11-02T21:22:12.576Z",
+  "runId": "41582446599",
+  "at": "2026-11-03T05:12:26.750Z",
   "events": [
-    {
-      "kind": "QUOTE_RECEIVED",
-      "firmId": "ncc-group-security",
-      "messageId": "<5d6faef1-71ac-4b1d-969e-b44887338396@atl1s11mta0160.xt.local>",
-      "subject": "Don't miss our webinar tomorrow: Governing the new digital workforce 🤖💻"
-    },
     {
       "kind": "OWNER_CONTRACT_PAYMENT_BATCH_READY",
       "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
