@@ -79,6 +79,29 @@
       "fetch_urls": [],
       "file": "app/admin/dashboard/page.tsx",
       "url_path": "/admin/dashboard",
+      "uses_tables": [
+        "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/admin/fakturaer/page.tsx",
+      "url_path": "/admin/fakturaer",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/admin/fakturaer/[invoiceId]/page.tsx",
+      "url_path": "/admin/fakturaer/[invoiceId]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/admin/fakturering/page.tsx",
+      "url_path": "/admin/fakturering",
       "uses_tables": []
     },
     {
@@ -864,6 +887,13 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/(auth)/bli-leverandor/page.tsx",
+      "url_path": "/bli-leverandor",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/(app)/dashboard/page.tsx",
       "url_path": "/dashboard",
       "uses_tables": []
@@ -943,6 +973,22 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/leverandor/fakturaer/page.tsx",
+      "url_path": "/leverandor/fakturaer",
+      "uses_tables": [
+        "companies"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/fakturaer/[invoiceId]/page.tsx",
+      "url_path": "/leverandor/fakturaer/[invoiceId]",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/leverandor/innstillinger/page.tsx",
       "url_path": "/leverandor/innstillinger",
       "uses_tables": []
@@ -959,6 +1005,13 @@
       "fetch_urls": [],
       "file": "app/leverandor/innstillinger/tripletex/status/page.tsx",
       "url_path": "/leverandor/innstillinger/tripletex/status",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/kapasitet/page.tsx",
+      "url_path": "/leverandor/kapasitet",
       "uses_tables": []
     },
     {
@@ -1008,6 +1061,20 @@
       "fetch_urls": [],
       "file": "app/leverandor/ordrer/page.tsx",
       "url_path": "/leverandor/ordrer",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/pakkeliste/page.tsx",
+      "url_path": "/leverandor/pakkeliste",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/leverandor/provisjon/page.tsx",
+      "url_path": "/leverandor/provisjon",
       "uses_tables": []
     },
     {
@@ -1124,6 +1191,15 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/(auth)/registrer-leverandor/page.tsx",
+      "url_path": "/registrer-leverandor",
+      "uses_tables": [
+        "provider_invites"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/registrer/takk/page.tsx",
       "url_path": "/registrer/takk",
       "uses_tables": []
@@ -1190,6 +1266,17 @@
       "file": "app/superadmin/page.tsx",
       "url_path": "/superadmin",
       "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/agreement-invoices/page.tsx",
+      "url_path": "/superadmin/agreement-invoices",
+      "uses_tables": [
+        "agreement_invoices",
+        "companies",
+        "providers"
+      ]
     },
     {
       "confidence": "confirmed",
@@ -1346,6 +1433,13 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/superadmin/global-compliance/page.tsx",
+      "url_path": "/superadmin/global-compliance",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/growth/social/page.tsx",
       "url_path": "/superadmin/growth/social",
       "uses_tables": []
@@ -1381,8 +1475,31 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/superadmin/legal/norway/page.tsx",
+      "url_path": "/superadmin/legal/norway",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/markeder/page.tsx",
+      "url_path": "/superadmin/markeder",
+      "uses_tables": [
+        "markets"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/menu-profiles/page.tsx",
       "url_path": "/superadmin/menu-profiles",
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/mva-terskel/page.tsx",
+      "url_path": "/superadmin/mva-terskel",
       "uses_tables": []
     },
     {
@@ -1405,6 +1522,16 @@
       "file": "app/superadmin/outbox/page.tsx",
       "url_path": "/superadmin/outbox",
       "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/oversettelser/page.tsx",
+      "url_path": "/superadmin/oversettelser",
+      "uses_tables": [
+        "provider_registrations",
+        "superadmin_translation_events"
+      ]
     },
     {
       "confidence": "confirmed",
@@ -1439,6 +1566,15 @@
     {
       "confidence": "confirmed",
       "fetch_urls": [],
+      "file": "app/superadmin/provider-registrations/page.tsx",
+      "url_path": "/superadmin/provider-registrations",
+      "uses_tables": [
+        "provider_registrations"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
       "file": "app/superadmin/providers/page.tsx",
       "url_path": "/superadmin/providers",
       "uses_tables": []
@@ -1449,6 +1585,18 @@
       "file": "app/superadmin/providers/[id]/billing/page.tsx",
       "url_path": "/superadmin/providers/[id]/billing",
       "uses_tables": [
+        "providers"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "fetch_urls": [],
+      "file": "app/superadmin/provisjon/page.tsx",
+      "url_path": "/superadmin/provisjon",
+      "uses_tables": [
+        "commission_periods",
+        "invoice_deliveries",
+        "organization_billing_profiles",
         "providers"
       ]
     },
@@ -1604,7 +1752,9 @@
       "fetch_urls": [],
       "file": "app/(app)/week/allergenprofil/page.tsx",
       "url_path": "/week/allergenprofil",
-      "uses_tables": []
+      "uses_tables": [
+        "profiles"
+      ]
     },
     {
       "confidence": "confirmed",

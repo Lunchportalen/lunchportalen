@@ -37,20 +37,6 @@
     },
     {
       "confidence": "confirmed",
-      "file": "app/api/accept-invite/complete/route.ts",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "route": "/api/accept-invite/complete",
-      "rpc_calls": [],
-      "uses_tables": [
-        "employee_invites",
-        "profiles"
-      ]
-    },
-    {
-      "confidence": "confirmed",
       "file": "app/api/acquire/route.ts",
       "methods": [
         "GET"
@@ -88,20 +74,6 @@
       "route": "/api/address/search",
       "rpc_calls": [],
       "uses_tables": []
-    },
-    {
-      "confidence": "confirmed",
-      "file": "app/api/admin/accept-invite/complete/route.ts",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "route": "/api/admin/accept-invite/complete",
-      "rpc_calls": [],
-      "uses_tables": [
-        "employee_invites",
-        "profiles"
-      ]
     },
     {
       "confidence": "confirmed",
@@ -198,6 +170,19 @@
         "lp_company_order_summary"
       ],
       "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/admin/company/billing/route.ts",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "route": "/api/admin/company/billing",
+      "rpc_calls": [],
+      "uses_tables": [
+        "companies"
+      ]
     },
     {
       "confidence": "confirmed",
@@ -537,19 +522,6 @@
     },
     {
       "confidence": "confirmed",
-      "file": "app/api/admin/invites/register/route.ts",
-      "methods": [
-        "POST"
-      ],
-      "route": "/api/admin/invites/register",
-      "rpc_calls": [],
-      "uses_tables": [
-        "company_invites",
-        "profiles"
-      ]
-    },
-    {
-      "confidence": "confirmed",
       "file": "app/api/admin/invites/resend/route.ts",
       "methods": [
         "POST"
@@ -585,6 +557,26 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/admin/invoices/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/admin/invoices",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/admin/invoices/[invoiceId]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/admin/invoices/[invoiceId]",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/admin/invoices/csv/route.ts",
       "methods": [
         "GET"
@@ -602,7 +594,9 @@
       "confidence": "confirmed",
       "file": "app/api/admin/locations/route.ts",
       "methods": [
-        "GET"
+        "GET",
+        "PATCH",
+        "POST"
       ],
       "route": "/api/admin/locations",
       "rpc_calls": [],
@@ -1063,7 +1057,9 @@
         "POST"
       ],
       "route": "/api/auth/accept-invite",
-      "rpc_calls": [],
+      "rpc_calls": [
+        "lp_employee_invite_accept"
+      ],
       "uses_tables": [
         "employee_invites",
         "profiles"
@@ -1181,10 +1177,27 @@
         "POST"
       ],
       "route": "/api/auth/register-company-admin",
-      "rpc_calls": [],
+      "rpc_calls": [
+        "lp_company_admin_invite_accept"
+      ],
       "uses_tables": [
         "company_invites",
         "profiles"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/auth/register-provider-admin/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/auth/register-provider-admin",
+      "rpc_calls": [
+        "lp_provider_admin_invite_accept"
+      ],
+      "uses_tables": [
+        "profiles",
+        "provider_invites"
       ]
     },
     {
@@ -2476,6 +2489,18 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/cron/commission-settlement/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/cron/commission-settlement",
+      "rpc_calls": [],
+      "uses_tables": [
+        "commission_ledger"
+      ]
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/cron/daily-order-summary/route.ts",
       "methods": [
         "UNKNOWN"
@@ -2543,6 +2568,7 @@
       "rpc_calls": [],
       "uses_tables": [
         "agreements",
+        "companies",
         "invoice_periods",
         "orders"
       ]
@@ -2604,6 +2630,17 @@
         "GET"
       ],
       "route": "/api/cron/monitoring",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/cron/norway-mva-threshold/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/cron/norway-mva-threshold",
       "rpc_calls": [],
       "uses_tables": []
     },
@@ -3197,9 +3234,19 @@
       ],
       "route": "/api/kitchen/batch",
       "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/kitchen/batch/assign-driver/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/kitchen/batch/assign-driver",
+      "rpc_calls": [],
       "uses_tables": [
         "company_locations",
-        "delivery_batches",
+        "kitchen_batches",
         "profiles"
       ]
     },
@@ -3412,6 +3459,48 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/legal/norway/accept/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/legal/norway/accept",
+      "rpc_calls": [],
+      "uses_tables": [
+        "provider_memberships"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/legal/norway/documents/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/legal/norway/documents",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/legal/norway/documents/[type]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/legal/norway/documents/[type]",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/legal/norway/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/legal/norway/status",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/market/route.ts",
       "methods": [
         "GET"
@@ -3559,10 +3648,7 @@
       ],
       "route": "/api/order/bulk-set",
       "rpc_calls": [],
-      "uses_tables": [
-        "companies",
-        "day_choices"
-      ]
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",
@@ -3572,11 +3658,7 @@
       ],
       "route": "/api/order/cancel",
       "rpc_calls": [],
-      "uses_tables": [
-        "day_choices",
-        "orders",
-        "profiles"
-      ]
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",
@@ -3789,6 +3871,16 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/orders/week-bulk/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/orders/week-bulk",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/outbound/generate/route.ts",
       "methods": [
         "POST"
@@ -3935,6 +4027,23 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/provider/capacity/route.ts",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "route": "/api/provider/capacity",
+      "rpc_calls": [
+        "lp_capacity_upsert_day"
+      ],
+      "uses_tables": [
+        "dish_day_capacity",
+        "dish_day_capacity_audit",
+        "provider_capacity_policy"
+      ]
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/provider/customers/[companyId]/agreement/route.ts",
       "methods": [
         "GET",
@@ -3964,6 +4073,99 @@
       "route": "/api/provider/customers/[companyId]/restore",
       "rpc_calls": [],
       "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/provider/invoices",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/[invoiceId]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/provider/invoices/[invoiceId]",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/[invoiceId]/credit-note/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/invoices/[invoiceId]/credit-note",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/[invoiceId]/finalize/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/invoices/[invoiceId]/finalize",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/[invoiceId]/lines/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/invoices/[invoiceId]/lines",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/[invoiceId]/payments/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/invoices/[invoiceId]/payments",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/[invoiceId]/send/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/invoices/[invoiceId]/send",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/[invoiceId]/void/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/provider/invoices/[invoiceId]/void",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/provider/invoices/export/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/provider/invoices/export",
+      "rpc_calls": [],
+      "uses_tables": [
+        "provider_settings"
+      ]
     },
     {
       "confidence": "confirmed",
@@ -4133,6 +4335,16 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/provider/packing-list/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/provider/packing-list",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/public/ai-demo-cta/assign/route.ts",
       "methods": [
         "POST"
@@ -4164,7 +4376,8 @@
       ],
       "route": "/api/public/coverage/check",
       "rpc_calls": [
-        "lp_match_provider_by_postal_code"
+        "lp_match_provider_by_postal_code",
+        "lp_match_providers_by_postal_code"
       ],
       "uses_tables": [
         "provider_service_areas"
@@ -4239,6 +4452,21 @@
         "lp_company_register"
       ],
       "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/public/provider-registration/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/public/provider-registration",
+      "rpc_calls": [
+        "lp_provider_registration_create"
+      ],
+      "uses_tables": [
+        "outbox",
+        "provider_registrations"
+      ]
     },
     {
       "confidence": "confirmed",
@@ -4886,7 +5114,8 @@
       ],
       "route": "/api/superadmin/agreements/[agreementId]/approve",
       "rpc_calls": [
-        "lp_agreement_approve_active"
+        "lp_agreement_approve_active",
+        "lp_agreement_materialize_plan"
       ],
       "uses_tables": [
         "companies",
@@ -4961,11 +5190,38 @@
         "PUT"
       ],
       "route": "/api/superadmin/agreements/[agreementId]/resume",
-      "rpc_calls": [],
+      "rpc_calls": [
+        "lp_agreement_resume"
+      ],
       "uses_tables": [
+        "agreements",
         "companies",
         "company_agreements"
       ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/agreements/[agreementId]/suspend/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/superadmin/agreements/[agreementId]/suspend",
+      "rpc_calls": [
+        "lp_agreement_suspend"
+      ],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/agreements/[agreementId]/terminate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/superadmin/agreements/[agreementId]/terminate",
+      "rpc_calls": [
+        "lp_agreement_terminate"
+      ],
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",
@@ -5134,6 +5390,20 @@
       "uses_tables": [
         "companies",
         "orders"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/commission/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/superadmin/commission",
+      "rpc_calls": [],
+      "uses_tables": [
+        "commission_periods",
+        "invoice_deliveries"
       ]
     },
     {
@@ -5786,6 +6056,30 @@
     },
     {
       "confidence": "confirmed",
+      "file": "app/api/superadmin/legal/norway/acceptances/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/superadmin/legal/norway/acceptances",
+      "rpc_calls": [],
+      "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/markets/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/superadmin/markets",
+      "rpc_calls": [],
+      "uses_tables": [
+        "market_approval_events",
+        "markets"
+      ]
+    },
+    {
+      "confidence": "confirmed",
       "file": "app/api/superadmin/menu-profiles/route.ts",
       "methods": [
         "GET"
@@ -5917,6 +6211,7 @@
       "uses_tables": [
         "audit_events",
         "companies",
+        "company_locations",
         "profiles"
       ]
     },
@@ -5943,6 +6238,45 @@
       "uses_tables": [
         "profiles"
       ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/provider-registrations/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "route": "/api/superadmin/provider-registrations",
+      "rpc_calls": [],
+      "uses_tables": [
+        "provider_registrations"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/provider-registrations/[id]/approve/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/superadmin/provider-registrations/[id]/approve",
+      "rpc_calls": [
+        "lp_provider_registration_approve"
+      ],
+      "uses_tables": [
+        "outbox",
+        "provider_registrations"
+      ]
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/provider-registrations/[id]/reject/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "route": "/api/superadmin/provider-registrations/[id]/reject",
+      "rpc_calls": [
+        "lp_provider_registration_reject"
+      ],
+      "uses_tables": []
     },
     {
       "confidence": "confirmed",
@@ -6162,6 +6496,19 @@
       "route": "/api/superadmin/system/status",
       "rpc_calls": [],
       "uses_tables": []
+    },
+    {
+      "confidence": "confirmed",
+      "file": "app/api/superadmin/translations/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "route": "/api/superadmin/translations",
+      "rpc_calls": [],
+      "uses_tables": [
+        "superadmin_translation_events"
+      ]
     },
     {
       "confidence": "confirmed",
