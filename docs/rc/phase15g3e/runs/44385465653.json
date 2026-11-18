@@ -1,0 +1,15 @@
+{
+  "runId": "44385465653",
+  "started_at": "2026-11-18T19:55:41.576Z",
+  "completed_at": "2026-11-18T19:59:11.811Z",
+  "status": "FAILED",
+  "error": "IMAP_AUTH_FAIL",
+  "failures": [
+    {
+      "type": "IMAP_AUTH_FAIL",
+      "detail": "Connection timeout"
+    }
+  ],
+  "secrets_exposed": 0,
+  "Decision": "NO-GO"
+}
