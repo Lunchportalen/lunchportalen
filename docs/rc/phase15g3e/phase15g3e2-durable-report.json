@@ -1,20 +1,36 @@
 {
-  "writtenAt": "2026-11-19T02:17:47.579Z",
-  "decision": "NO-GO",
+  "writtenAt": "2026-11-19T11:04:55.045Z",
+  "decision": "OWNER_ACTION_REQUIRED",
   "last": {
-    "runId": "44442733942",
-    "started_at": "2026-11-19T02:14:17.464Z",
-    "completed_at": "2026-11-19T02:17:47.542Z",
-    "status": "FAILED",
-    "error": "IMAP_AUTH_FAIL",
-    "failures": [
-      {
-        "type": "IMAP_AUTH_FAIL",
-        "detail": "Connection timeout"
-      }
-    ],
+    "runId": "44511344753",
+    "started_at": "2026-11-19T11:04:24.734Z",
+    "completed_at": "2026-11-19T11:04:54.992Z",
+    "replies_found": 0,
+    "messages_classified": 0,
+    "follow_ups_sent": 0,
+    "failures": [],
+    "next_due_action": "2026-07-22T22:47:30.786Z",
     "secrets_exposed": 0,
-    "Decision": "NO-GO"
+    "mailbox": {
+      "imap": "PASS",
+      "smtp": "PASS",
+      "error": null
+    },
+    "secretSource": "env:LUNCHPORTALEN_POST_MAILBOX_PASSWORD",
+    "quotes_waiting": 3,
+    "owner_batch": "READY_FOR_OWNER",
+    "notify_owner": true,
+    "follow_up_dates": {
+      "firstDueVerified": true,
+      "secondDueVerified": true,
+      "firstDue": "2026-07-22",
+      "secondDue": "2026-07-29",
+      "calendar": "business_days_mon_fri",
+      "emailThreadRetention": "same thread via In-Reply-To / References",
+      "backupAfterSecondOnly": true
+    },
+    "duplicate_sends": 0,
+    "Decision": "OWNER_ACTION_REQUIRED"
   },
   "heartbeat": {
     "scheduler": {
@@ -24,8 +40,8 @@
       "cron": "0 */3 * * *",
       "enabled": true,
       "localTerminalDependency": "NONE",
-      "lastSuccessfulRun": "2026-11-18T11:04:06.136Z",
-      "nextScheduledRun": "2026-11-18T12:00:00.000Z"
+      "lastSuccessfulRun": "2026-11-19T11:04:54.992Z",
+      "nextScheduledRun": "2026-11-19T12:00:00.000Z"
     },
     "mailbox": {
       "imap": "PASS",
@@ -38,7 +54,7 @@
     "secretsExposed": 0,
     "productionLocks": "ACTIVE",
     "stripe": "OFF",
-    "updatedAt": "2026-11-18T11:04:06.136Z",
-    "runId": "44291091034"
+    "updatedAt": "2026-11-19T11:04:54.993Z",
+    "runId": "44511344753"
   }
 }
