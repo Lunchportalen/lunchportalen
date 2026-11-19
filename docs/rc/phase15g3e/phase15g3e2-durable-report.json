@@ -1,10 +1,10 @@
 {
-  "writtenAt": "2026-11-18T19:59:11.867Z",
+  "writtenAt": "2026-11-19T02:17:47.579Z",
   "decision": "NO-GO",
   "last": {
-    "runId": "44385465653",
-    "started_at": "2026-11-18T19:55:41.576Z",
-    "completed_at": "2026-11-18T19:59:11.811Z",
+    "runId": "44442733942",
+    "started_at": "2026-11-19T02:14:17.464Z",
+    "completed_at": "2026-11-19T02:17:47.542Z",
     "status": "FAILED",
     "error": "IMAP_AUTH_FAIL",
     "failures": [
