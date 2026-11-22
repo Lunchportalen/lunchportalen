@@ -23,6 +23,7 @@
     ],
     "app/(app)/week/EmployeeWeekClient.tsx": [
       "components/employee/WeekAllergenProfileCard.tsx",
+      "components/week/WeekBulkOrderCard.tsx",
       "components/week/WeekMenuNotificationToggle.tsx",
       "lib/cms/menuDayContract.ts",
       "lib/date/format.ts",
@@ -104,12 +105,14 @@
     ],
     "app/(app)/week/page.tsx": [
       "app/(app)/week/EmployeeWeekClient.tsx",
+      "components/legal/EmployeeNorwayLegalGate.tsx",
       "lib/agreements/requireActiveAgreement.ts",
       "lib/auth/devBypass.ts",
       "lib/auth/role.ts",
       "lib/cms/menuDay.ts",
       "lib/date/format.ts",
       "lib/date/week.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts",
       "lib/supabase/ssrSessionCookies.ts",
@@ -127,17 +130,20 @@
       "lib/supabase/ssrSessionCookies.ts",
       "lib/system/emails.ts"
     ],
-    "app/(auth)/accept-invite/AcceptInviteClient.tsx": [
-      "lib/types/database.ts"
+    "app/(auth)/accept-invite/page.tsx": [],
+    "app/(auth)/bli-leverandor/ProviderRegistrationForm.tsx": [
+      "components/legal/NorwayLegalClickwrap.tsx"
     ],
-    "app/(auth)/accept-invite/page.tsx": [
-      "app/(auth)/accept-invite/AcceptInviteClient.tsx"
+    "app/(auth)/bli-leverandor/page.tsx": [
+      "app/(auth)/bli-leverandor/ProviderRegistrationForm.tsx",
+      "lib/markets/supportedMarkets.ts"
     ],
     "app/(auth)/forgot-password/page.tsx": [
       "components/auth/AuthShell.tsx"
     ],
     "app/(auth)/layout.tsx": [],
     "app/(auth)/login/LoginForm.tsx": [
+      "lib/auth/postLoginNav.ts",
       "lib/config/env-public.ts"
     ],
     "app/(auth)/login/page.tsx": [
@@ -153,6 +159,7 @@
       "components/auth/LogoutClient.tsx"
     ],
     "app/(auth)/register/employee/RegisterEmployeeClient.tsx": [
+      "lib/auth/postLoginNav.ts",
       "lib/onboarding/employeeActivationCopy.ts",
       "lib/types/database.ts"
     ],
@@ -167,11 +174,20 @@
     ],
     "app/(auth)/register/page.tsx": [],
     "app/(auth)/registrer-bruker/RegisterCompanyAdminClient.tsx": [
+      "lib/auth/postLoginNav.ts",
       "lib/types/database.ts"
     ],
     "app/(auth)/registrer-bruker/page.tsx": [
       "app/(auth)/registrer-bruker/RegisterCompanyAdminClient.tsx",
       "components/PageShell.tsx",
+      "lib/supabase/admin.ts"
+    ],
+    "app/(auth)/registrer-leverandor/RegisterProviderAdminClient.tsx": [
+      "lib/auth/postLoginNav.ts",
+      "lib/types/database.ts"
+    ],
+    "app/(auth)/registrer-leverandor/page.tsx": [
+      "app/(auth)/registrer-leverandor/RegisterProviderAdminClient.tsx",
       "lib/supabase/admin.ts"
     ],
     "app/(auth)/registrering/mottatt/page.tsx": [],
@@ -2167,7 +2183,8 @@
       "lib/admin/fetchAgreementPageDataServer.ts",
       "lib/admin/loadAdminContext.ts",
       "lib/admin/loadDashboardCompanyMeta.ts",
-      "lib/date/format.ts"
+      "lib/date/format.ts",
+      "lib/supabase/admin.ts"
     ],
     "app/admin/audit/AuditClient.tsx": [
       "lib/date/format.ts"
@@ -2220,11 +2237,32 @@
       "lib/ui/motionTokens.ts"
     ],
     "app/admin/employees/invites/bulk/route.ts": [
+      "lib/invites/employeeInviteConstants.ts",
       "lib/invites/employeeInviteUrl.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
     "app/admin/error.tsx": [],
+    "app/admin/fakturaer/[invoiceId]/page.tsx": [
+      "components/admin/BlockedState.tsx",
+      "components/billing/InvoiceDocument.tsx",
+      "lib/admin/loadAdminContext.ts",
+      "lib/billing/invoiceLifecycle.ts"
+    ],
+    "app/admin/fakturaer/page.tsx": [
+      "components/admin/AdminPageShell.tsx",
+      "components/admin/BlockedState.tsx",
+      "components/billing/InvoiceDocument.tsx",
+      "lib/admin/loadAdminContext.ts",
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/date/format.ts"
+    ],
+    "app/admin/fakturering/page.tsx": [
+      "components/admin/AdminPageShell.tsx",
+      "components/admin/BillingProfileForm.tsx",
+      "components/admin/BlockedState.tsx",
+      "lib/admin/loadAdminContext.ts"
+    ],
     "app/admin/firma-onboarding/page.tsx": [
       "components/admin/AdminPageShell.tsx",
       "components/onboarding/FirmaOnboardingWizard.tsx",
@@ -2402,10 +2440,6 @@
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts"
     ],
-    "app/api/accept-invite/complete/route.ts": [
-      "lib/http/respond.ts",
-      "lib/supabase/admin.ts"
-    ],
     "app/api/acquire/route.ts": [
       "lib/acquire/buyers.ts",
       "lib/acquire/targets.ts",
@@ -2424,14 +2458,12 @@
       "lib/ops/log.ts"
     ],
     "app/api/address/resolve/route.ts": [
-      "lib/http/respond.ts"
+      "lib/http/respond.ts",
+      "lib/security/rateLimit.ts"
     ],
     "app/api/address/search/route.ts": [
-      "lib/http/respond.ts"
-    ],
-    "app/api/admin/accept-invite/complete/route.ts": [
       "lib/http/respond.ts",
-      "lib/supabase/admin.ts"
+      "lib/security/rateLimit.ts"
     ],
     "app/api/admin/agreement/change-requests/[requestId]/cancel/route.ts": [
       "lib/agreements/changeRequestService.ts",
@@ -2480,6 +2512,12 @@
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
       "lib/supabase/server.ts"
+    ],
+    "app/api/admin/company/billing/route.ts": [
+      "lib/audit/log.ts",
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts",
+      "lib/supabase/admin.ts"
     ],
     "app/api/admin/company/status/set/route.ts": [
       "lib/http/respond.ts",
@@ -2538,6 +2576,7 @@
     "app/api/admin/employees/invite/route.ts": [
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/invites/employeeInviteConstants.ts",
       "lib/invites/employeeInviteUrl.ts",
       "lib/supabase/admin.ts",
       "lib/system/emails.ts"
@@ -2546,12 +2585,14 @@
       "lib/audit/actions.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/invites/employeeInviteConstants.ts",
       "lib/invites/employeeInviteUrl.ts",
       "lib/supabase/admin.ts"
     ],
     "app/api/admin/employees/invites/resend/route.ts": [
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/invites/employeeInviteConstants.ts",
       "lib/invites/employeeInviteUrl.ts",
       "lib/supabase/admin.ts"
     ],
@@ -2608,6 +2649,7 @@
       "lib/audit/actions.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/invites/employeeInviteConstants.ts",
       "lib/invites/employeeInviteUrl.ts",
       "lib/supabase/admin.ts",
       "lib/system/emails.ts"
@@ -2616,6 +2658,7 @@
       "lib/email/send.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/invites/employeeInviteConstants.ts",
       "lib/invites/employeeInviteUrl.ts",
       "lib/supabase/admin.ts",
       "lib/url/appUrl.ts"
@@ -2627,10 +2670,6 @@
       "lib/url/appUrl.ts"
     ],
     "app/api/admin/invites/lookup/route.ts": [
-      "lib/http/respond.ts",
-      "lib/supabase/admin.ts"
-    ],
-    "app/api/admin/invites/register/route.ts": [
       "lib/http/respond.ts",
       "lib/supabase/admin.ts"
     ],
@@ -2654,10 +2693,16 @@
     "app/api/admin/invites/route.ts": [
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/invites/employeeInviteConstants.ts",
       "lib/invites/employeeInviteUrl.ts",
       "lib/supabase/admin.ts",
       "lib/system/emails.ts",
       "lib/url/appUrl.ts"
+    ],
+    "app/api/admin/invoices/[invoiceId]/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts"
     ],
     "app/api/admin/invoices/csv/route.ts": [
       "lib/agreements/normalizeAgreement.ts",
@@ -2667,6 +2712,11 @@
       "lib/http/routeGuard.ts",
       "lib/pricing/priceForDate.ts",
       "lib/supabase/admin.ts"
+    ],
+    "app/api/admin/invoices/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts"
     ],
     "app/api/admin/locations/audit/route.ts": [
       "lib/http/respond.ts",
@@ -2680,6 +2730,7 @@
       "lib/supabase/admin.ts"
     ],
     "app/api/admin/locations/route.ts": [
+      "lib/audit/log.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
       "lib/supabase/admin.ts"
@@ -2930,6 +2981,7 @@
       "lib/http/withApiAiEntrypoint.ts"
     ],
     "app/api/auth/accept-invite/route.ts": [
+      "lib/audit/log.ts",
       "lib/http/respond.ts",
       "lib/supabase/admin.ts"
     ],
@@ -2944,6 +2996,7 @@
     "app/api/auth/forgot-password/route.ts": [
       "lib/auth/recoveryActionLink.ts",
       "lib/email/passwordResetMail.ts",
+      "lib/email/recipientLocale.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
       "lib/ops/log.ts",
@@ -3007,6 +3060,12 @@
       "lib/http/respond.ts"
     ],
     "app/api/auth/register-company-admin/route.ts": [
+      "lib/audit/log.ts",
+      "lib/http/respond.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "app/api/auth/register-provider-admin/route.ts": [
+      "lib/audit/log.ts",
       "lib/http/respond.ts",
       "lib/supabase/admin.ts"
     ],
@@ -3997,6 +4056,13 @@
       "lib/http/respond.ts",
       "lib/supabase/admin.ts"
     ],
+    "app/api/cron/commission-settlement/route.ts": [
+      "lib/billing/commissionSettlement.ts",
+      "lib/http/cronAuth.ts",
+      "lib/http/cronObservability.ts",
+      "lib/http/respond.ts",
+      "lib/supabase/admin.ts"
+    ],
     "app/api/cron/daily-order-summary/route.ts": [
       "lib/http/cronAuth.ts",
       "lib/http/cronObservability.ts",
@@ -4045,7 +4111,8 @@
       "lib/http/cronAuth.ts",
       "lib/http/respond.ts",
       "lib/outbox/invoiceReady.ts",
-      "lib/supabase/admin.ts"
+      "lib/supabase/admin.ts",
+      "lib/system/opsKillSwitch.ts"
     ],
     "app/api/cron/kitchen-print/route.ts": [
       "lib/date/oslo.ts",
@@ -4097,6 +4164,12 @@
       "lib/monitoring/run.ts",
       "lib/ops/log.ts",
       "lib/selfheal/run.ts"
+    ],
+    "app/api/cron/norway-mva-threshold/route.ts": [
+      "lib/http/cronAuth.ts",
+      "lib/http/cronObservability.ts",
+      "lib/http/respond.ts",
+      "lib/markets/norwayMvaController.ts"
     ],
     "app/api/cron/outbox/route.ts": [
       "lib/http/cronAuth.ts",
@@ -4431,7 +4504,8 @@
       "lib/env/system.ts",
       "lib/http/respond.ts",
       "lib/localRuntime/runtime.ts",
-      "lib/supabase/admin.ts"
+      "lib/supabase/admin.ts",
+      "lib/version/releaseIdentity.ts"
     ],
     "app/api/integrations/execute/route.ts": [
       "lib/business/revenue.ts",
@@ -4471,6 +4545,12 @@
       "lib/ipo/report.ts",
       "lib/ops/log.ts"
     ],
+    "app/api/kitchen/batch/assign-driver/route.ts": [
+      "lib/audit/log.ts",
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts",
+      "lib/supabase/admin.ts"
+    ],
     "app/api/kitchen/batch/get/route.ts": [
       "lib/date/oslo.ts",
       "lib/db/profileLookup.ts",
@@ -4496,10 +4576,7 @@
       "lib/supabase/server.ts"
     ],
     "app/api/kitchen/batch/route.ts": [
-      "lib/date/oslo.ts",
-      "lib/http/respond.ts",
-      "lib/http/routeGuard.ts",
-      "lib/supabase/admin.ts"
+      "lib/http/respond.ts"
     ],
     "app/api/kitchen/batch/set/route.ts": [
       "lib/audit/auditWrite.ts",
@@ -4625,6 +4702,31 @@
       "lib/date/oslo.ts",
       "lib/http/respond.ts"
     ],
+    "app/api/legal/norway/accept/route.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/http/respond.ts",
+      "lib/legal/legalDocumentRegistry.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
+      "lib/legal/norwayClientMeta.ts",
+      "lib/legal/norwayDocuments.ts",
+      "lib/server/auth/requireUser.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "app/api/legal/norway/documents/[type]/route.ts": [
+      "lib/http/respond.ts",
+      "lib/legal/legalDocumentRegistry.ts",
+      "lib/legal/norwayDocuments.ts"
+    ],
+    "app/api/legal/norway/documents/route.ts": [
+      "lib/http/respond.ts",
+      "lib/legal/norwayDocuments.ts"
+    ],
+    "app/api/legal/norway/status/route.ts": [
+      "lib/http/respond.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
+      "lib/legal/norwayDocuments.ts",
+      "lib/server/auth/requireUser.ts"
+    ],
     "app/api/market/domination/route.ts": [
       "lib/core/audit.ts",
       "lib/core/timeout.ts",
@@ -4674,6 +4776,9 @@
     "app/api/onboarding/complete/route.ts": [
       "lib/growth/growthAbCookie.ts",
       "lib/http/respond.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
+      "lib/legal/norwayAcceptanceValidate.ts",
+      "lib/legal/norwayClientMeta.ts",
       "lib/menu-publish/tierPricing.ts",
       "lib/phone/no.ts",
       "lib/pipeline/upsertLead.ts",
@@ -4682,7 +4787,8 @@
       "lib/supabase/admin.ts"
     ],
     "app/api/onboarding/terms-pdf/route.ts": [
-      "lib/http/respond.ts"
+      "lib/http/respond.ts",
+      "lib/security/rateLimit.ts"
     ],
     "app/api/ops/global/route.ts": [
       "lib/http/respond.ts",
@@ -4695,20 +4801,10 @@
       "lib/ops/signals.ts"
     ],
     "app/api/order/bulk-set/route.ts": [
-      "lib/auth/scope.ts",
-      "lib/guards/assertCompanyActive.ts",
-      "lib/http/respond.ts",
-      "lib/supabase/admin.ts"
+      "lib/http/respond.ts"
     ],
     "app/api/order/cancel/route.ts": [
-      "lib/guards/assertCompanyActiveApi.ts",
-      "lib/http/respond.ts",
-      "lib/orderBackup/outbox.ts",
-      "lib/orders/companyOrderEligibility.ts",
-      "lib/orders/orderWriteGuard.ts",
-      "lib/orders/rpcWrite.ts",
-      "lib/supabase/admin.ts",
-      "lib/types/database.ts"
+      "lib/http/respond.ts"
     ],
     "app/api/order/route.ts": [
       "app/api/orders/route.ts",
@@ -4845,6 +4941,7 @@
       "lib/orders/companyOrderEligibility.ts",
       "lib/orders/mapOrderWriteError.ts",
       "lib/orders/orderWriteGuard.ts",
+      "lib/orders/orderWriteSideEffects.ts",
       "lib/orders/resolveOrderDayItemPersist.ts",
       "lib/orders/rpcWrite.ts",
       "lib/revenue/applyLeadPipelineOrderAttribution.ts",
@@ -4895,6 +4992,11 @@
       "lib/orders/rpcWrite.ts",
       "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
+    ],
+    "app/api/orders/week-bulk/route.ts": [
+      "app/api/orders/route.ts",
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts"
     ],
     "app/api/orders/week/route.ts": [
       "lib/api/orderResponse.ts",
@@ -4999,6 +5101,14 @@
       "lib/billing/stripeProviderSetup.ts",
       "lib/http/respond.ts"
     ],
+    "app/api/provider/capacity/route.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/capacity/providerCapacity.ts",
+      "lib/http/respond.ts",
+      "lib/supabase/admin.ts"
+    ],
     "app/api/provider/customers/[companyId]/agreement/route.ts": [
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
@@ -5018,6 +5128,53 @@
       "lib/http/routeGuard.ts",
       "lib/server/provider/providerCustomerRestore.ts",
       "lib/server/provider/providerCustomerRouteAuth.ts"
+    ],
+    "app/api/provider/invoices/[invoiceId]/credit-note/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/provider/invoices/[invoiceId]/finalize/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/provider/invoices/[invoiceId]/lines/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/provider/invoices/[invoiceId]/payments/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/provider/invoices/[invoiceId]/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/provider/invoices/[invoiceId]/send/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/provider/invoices/[invoiceId]/void/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
+    ],
+    "app/api/provider/invoices/export/route.ts": [
+      "lib/accounting/registry.ts",
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "app/api/provider/invoices/route.ts": [
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/billing/providerInvoiceGuard.ts",
+      "lib/http/respond.ts"
     ],
     "app/api/provider/menu-catalog/route.ts": [
       "lib/auth/getAuthContext.ts",
@@ -5205,6 +5362,14 @@
       "lib/http/respond.ts",
       "lib/smart-menu/providerTranslationSources.ts"
     ],
+    "app/api/provider/packing-list/route.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/date/oslo.ts",
+      "lib/http/respond.ts",
+      "lib/providers/packingList.ts"
+    ],
     "app/api/public/ai-demo-cta/assign/route.ts": [
       "lib/http/respond.ts",
       "lib/pos/eventHandler.ts",
@@ -5263,8 +5428,20 @@
       "lib/http/respond.ts",
       "lib/supabase/admin.ts"
     ],
+    "app/api/public/provider-registration/route.ts": [
+      "lib/http/respond.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
+      "lib/legal/norwayAcceptanceValidate.ts",
+      "lib/legal/norwayClientMeta.ts",
+      "lib/public/providerRegistrationSchema.ts",
+      "lib/security/rateLimit.ts",
+      "lib/supabase/admin.ts"
+    ],
     "app/api/public/register-company/route.ts": [
       "lib/http/respond.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
+      "lib/legal/norwayAcceptanceValidate.ts",
+      "lib/legal/norwayClientMeta.ts",
       "lib/registration/weekdayMealTiers.ts",
       "lib/supabase/admin.ts"
     ],
@@ -5687,9 +5864,11 @@
       "lib/supabase/admin.ts"
     ],
     "app/api/superadmin/agreements/[agreementId]/approve/route.ts": [
+      "lib/email/recipientLocale.ts",
       "lib/email/templates/companyApproved.ts",
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
+      "lib/invites/employeeInviteConstants.ts",
       "lib/supabase/admin.ts"
     ],
     "app/api/superadmin/agreements/[agreementId]/close/route.ts": [
@@ -5727,6 +5906,16 @@
       "lib/auth/scope.ts",
       "lib/http/respond.ts",
       "lib/ops/log.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "app/api/superadmin/agreements/[agreementId]/suspend/route.ts": [
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "app/api/superadmin/agreements/[agreementId]/terminate/route.ts": [
+      "lib/http/respond.ts",
+      "lib/http/routeGuard.ts",
       "lib/supabase/admin.ts"
     ],
     "app/api/superadmin/agreements/list/route.ts": [
@@ -5824,6 +6013,12 @@
       "lib/http/routeGuard.ts",
       "lib/observability/incident.ts",
       "lib/supabase/admin.ts"
+    ],
+    "app/api/superadmin/commission/route.ts": [
+      "lib/billing/commissionSettlement.ts",
+      "lib/http/respond.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/api/superadmin/companies/[companyId]/activate/route.ts": [
       "app/api/superadmin/companies/set-status/route.ts",
@@ -6097,7 +6292,7 @@
     "app/api/superadmin/invoices/export/route.ts": [
       "lib/http/noStore.ts",
       "lib/http/respond.ts",
-      "lib/supabase/server.ts",
+      "lib/superadmin/auth.ts",
       "lib/superadmin/tripletexExportByRun.ts"
     ],
     "app/api/superadmin/invoices/exports/retry/route.ts": [
@@ -6122,7 +6317,7 @@
       "lib/db/missingRelation.ts",
       "lib/http/respond.ts",
       "lib/supabase/admin.ts",
-      "lib/supabase/server.ts"
+      "lib/superadmin/auth.ts"
     ],
     "app/api/superadmin/invoices/mapping/route.ts": [
       "lib/http/respond.ts"
@@ -6143,19 +6338,32 @@
       "lib/db/missingRelation.ts",
       "lib/http/respond.ts",
       "lib/supabase/admin.ts",
-      "lib/supabase/server.ts"
+      "lib/superadmin/auth.ts"
     ],
     "app/api/superadmin/invoices/runs/[runId]/route.ts": [
       "lib/db/missingRelation.ts",
       "lib/http/respond.ts",
       "lib/supabase/admin.ts",
-      "lib/supabase/server.ts",
+      "lib/superadmin/auth.ts",
       "lib/superadmin/invoiceRunDb.ts"
     ],
     "app/api/superadmin/invoices/runs/route.ts": [
       "lib/http/respond.ts",
       "lib/supabase/server.ts",
+      "lib/superadmin/auth.ts",
       "lib/superadmin/invoiceRunDb.ts"
+    ],
+    "app/api/superadmin/legal/norway/acceptances/route.ts": [
+      "lib/http/respond.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
+      "lib/legal/norwayDocuments.ts",
+      "lib/superadmin/auth.ts"
+    ],
+    "app/api/superadmin/markets/route.ts": [
+      "lib/http/respond.ts",
+      "lib/markets/marketApprovals.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/api/superadmin/menu-profiles/[providerId]/route.ts": [
       "lib/http/respond.ts",
@@ -6233,6 +6441,27 @@
       "lib/http/respond.ts",
       "lib/http/routeGuard.ts",
       "lib/supabase/admin.ts"
+    ],
+    "app/api/superadmin/provider-registrations/[id]/approve/route.ts": [
+      "lib/audit/log.ts",
+      "lib/cms/syncProviderToSanityDraft.ts",
+      "lib/email/templates/providerAdminInvite.ts",
+      "lib/http/respond.ts",
+      "lib/invites/employeeInviteConstants.ts",
+      "lib/providers/providerRegistrationSlug.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
+    ],
+    "app/api/superadmin/provider-registrations/[id]/reject/route.ts": [
+      "lib/audit/log.ts",
+      "lib/http/respond.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
+    ],
+    "app/api/superadmin/provider-registrations/route.ts": [
+      "lib/http/respond.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/api/superadmin/quality/route.ts": [
       "lib/auth/requireRole.ts",
@@ -6332,6 +6561,12 @@
       "lib/observability/statusAggregator.ts",
       "lib/ops/log.ts",
       "lib/supabase/admin.ts"
+    ],
+    "app/api/superadmin/translations/route.ts": [
+      "lib/http/respond.ts",
+      "lib/i18n/superadminTranslation.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/api/superadmin/tripletex/outbox/retry/route.ts": [
       "lib/http/respond.ts",
@@ -6523,15 +6758,18 @@
       "lib/menu-publish/syncMenuServiceDaysFromMenuDay.ts",
       "lib/ops/log.ts",
       "lib/sanity/verifySanityWebhookSignature.ts",
-      "lib/supabase/admin.ts"
+      "lib/supabase/admin.ts",
+      "lib/system/opsKillSwitch.ts"
     ],
     "app/api/webhooks/stripe-billing-payments/route.ts": [
       "lib/billing/stripePaymentWebhook.ts",
-      "lib/http/respond.ts"
+      "lib/http/respond.ts",
+      "lib/system/opsKillSwitch.ts"
     ],
     "app/api/webhooks/stripe-provider-setup/route.ts": [
       "lib/billing/stripeProviderSetup.ts",
-      "lib/http/respond.ts"
+      "lib/http/respond.ts",
+      "lib/system/opsKillSwitch.ts"
     ],
     "app/api/webhooks/tripletex-provider/[providerId]/route.ts": [
       "lib/http/respond.ts",
@@ -6558,6 +6796,7 @@
       "lib/date/oslo.ts",
       "lib/date/week.ts",
       "lib/http/respond.ts",
+      "lib/legal/norwayAcceptanceGate.ts",
       "lib/menu-profile/weekRuntimeCompatibilityHook.server.ts",
       "lib/menu/providerMenuScope.ts",
       "lib/ops/log.ts",
@@ -6717,6 +6956,24 @@
       "lib/auth/providerContext.ts",
       "lib/providers/loadProviderBilling.ts"
     ],
+    "app/leverandor/fakturaer/[invoiceId]/page.tsx": [
+      "components/billing/InvoiceDetailActions.tsx",
+      "components/billing/InvoiceDocument.tsx",
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/billing/invoiceLifecycle.ts"
+    ],
+    "app/leverandor/fakturaer/page.tsx": [
+      "components/billing/BuildInvoiceDraftForm.tsx",
+      "components/billing/InvoiceDocument.tsx",
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/billing/invoiceLifecycle.ts",
+      "lib/date/format.ts",
+      "lib/supabase/admin.ts"
+    ],
     "app/leverandor/innstillinger/page.tsx": [
       "components/providers/ProviderBrandColor.tsx",
       "components/providers/ProviderLogoUploader.tsx",
@@ -6770,6 +7027,12 @@
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
       "lib/integrations/tripletex/tripletexActionErrors.ts"
+    ],
+    "app/leverandor/kapasitet/page.tsx": [
+      "components/providers/ProviderCapacityPanel.tsx",
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts"
     ],
     "app/leverandor/kunder/[id]/page.tsx": [
       "components/providers/CustomerDetailClient.tsx",
@@ -6855,6 +7118,7 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/providers/kitchenOrderStatus.ts",
+      "lib/providers/orderStatusNotifications.ts",
       "lib/providers/providerOrdersActionErrors.ts",
       "lib/supabase/server.ts"
     ],
@@ -6875,11 +7139,27 @@
       "lib/providers/providerDashboardActivity.ts",
       "lib/providers/providerDashboardKpis.ts"
     ],
+    "app/leverandor/pakkeliste/page.tsx": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/date/format.ts",
+      "lib/date/oslo.ts",
+      "lib/providers/packingList.ts"
+    ],
+    "app/leverandor/provisjon/page.tsx": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/billing/commissionSettlement.ts",
+      "lib/date/format.ts"
+    ],
     "app/leverandor/registreringer/actions.ts": [
       "lib/auth/getAuthContext.ts",
       "lib/auth/provider.ts",
       "lib/auth/providerContext.ts",
       "lib/providers/providerRegistrationActionErrors.ts",
+      "lib/supabase/admin.ts",
       "lib/supabase/server.ts"
     ],
     "app/leverandor/registreringer/page.tsx": [
@@ -6931,6 +7211,7 @@
       "lib/ai/rateLimit.ts",
       "lib/providers/registrationSchema.ts",
       "lib/security/rateLimit.ts",
+      "lib/supabase/admin.ts",
       "lib/supabase/anonServer.ts"
     ],
     "app/registrer/layout.tsx": [],
@@ -7014,6 +7295,12 @@
     "app/superadmin/_guard.tsx": [
       "lib/auth/isSuperadminProfile.ts",
       "lib/supabase/server.ts"
+    ],
+    "app/superadmin/agreement-invoices/page.tsx": [
+      "components/billing/InvoiceDocument.tsx",
+      "lib/date/format.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/superadmin/agreements/[id]/agreement-detail-client.tsx": [
       "app/superadmin/agreements/actions.ts",
@@ -7215,7 +7502,10 @@
     ],
     "app/superadmin/firms/[companyId]/ChangeCompanyAdmin.tsx": [],
     "app/superadmin/firms/[companyId]/actions.ts": [
+      "lib/auth/isSuperadminProfile.ts",
       "lib/http/respond.ts",
+      "lib/ops/logOpsEvent.ts",
+      "lib/server/superadmin/companyLifecycleStatusApply.ts",
       "lib/supabase/server.ts"
     ],
     "app/superadmin/firms/[companyId]/employees/page.tsx": [
@@ -7242,6 +7532,18 @@
       "lib/supabase/server.ts",
       "lib/superadmin/queries.ts",
       "lib/superadmin/types.ts"
+    ],
+    "app/superadmin/global-compliance/page.tsx": [
+      "lib/invoice/eInvoiceAdapters.ts",
+      "lib/invoice/eInvoiceRegistry.ts",
+      "lib/legal/legalDocumentRegistry.ts",
+      "lib/markets/globalActivationGate.ts",
+      "lib/markets/marketplaceLegalModel.ts",
+      "lib/markets/technicalCompletionGate.ts",
+      "lib/superadmin/auth.ts",
+      "lib/tax/packs/countryTaxPacks.ts",
+      "lib/tax/providers/testFixtureProvider.ts",
+      "lib/tax/rules/technicallyConfiguredRules.ts"
     ],
     "app/superadmin/global/GlobalControlTowerClient.tsx": [
       "components/superadmin/DataTrustBadge.tsx",
@@ -7352,6 +7654,20 @@
       "lib/auth/getAuthContext.ts",
       "lib/auth/roleHome.ts"
     ],
+    "app/superadmin/legal/norway/NorwayLegalInspectionClient.tsx": [],
+    "app/superadmin/legal/norway/page.tsx": [
+      "app/superadmin/legal/norway/NorwayLegalInspectionClient.tsx",
+      "lib/legal/norwayDocuments.ts",
+      "lib/superadmin/auth.ts"
+    ],
+    "app/superadmin/markeder/page.tsx": [
+      "components/billing/MarketApprovalClient.tsx",
+      "lib/accounting/registry.ts",
+      "lib/markets/marketApprovals.ts",
+      "lib/markets/supportedMarkets.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
+    ],
     "app/superadmin/menu-profiles/MenuProfilesClient.tsx": [
       "components/superadmin/shell/SuperadminShell.tsx",
       "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts"
@@ -7359,6 +7675,11 @@
     "app/superadmin/menu-profiles/page.tsx": [
       "app/superadmin/menu-profiles/MenuProfilesClient.tsx",
       "lib/server/superadmin/loadSuperadminMenuProfileOverview.ts"
+    ],
+    "app/superadmin/mva-terskel/page.tsx": [
+      "lib/markets/norwayMvaController.ts",
+      "lib/markets/norwayMvaTurnover.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/superadmin/operations/error.tsx": [
       "components/superadmin/shell/SuperadminShell.tsx"
@@ -7376,6 +7697,14 @@
     ],
     "app/superadmin/outbox/page.tsx": [
       "app/superadmin/outbox/outbox-client.tsx"
+    ],
+    "app/superadmin/oversettelser/page.tsx": [
+      "components/superadmin/TranslationReviewClient.tsx",
+      "lib/i18n/languageReviewStatus.ts",
+      "lib/i18n/localeRegistry.ts",
+      "lib/i18n/superadminTranslation.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/superadmin/overview/page.tsx": [
       "app/superadmin/superadmin-client.tsx",
@@ -7411,6 +7740,12 @@
       "lib/date/oslo.ts",
       "lib/server/superadmin/loadProductionReadiness.ts"
     ],
+    "app/superadmin/provider-registrations/ProviderRegistrationDecision.tsx": [],
+    "app/superadmin/provider-registrations/page.tsx": [
+      "app/superadmin/provider-registrations/ProviderRegistrationDecision.tsx",
+      "lib/date/format.ts",
+      "lib/superadmin/auth.ts"
+    ],
     "app/superadmin/providers/[id]/billing/page.tsx": [
       "components/superadmin/SubscriptionEditor.tsx",
       "lib/auth/getRoleForUser.ts",
@@ -7429,6 +7764,13 @@
       "lib/auth/roles.ts",
       "lib/providers/loadProviderBilling.ts",
       "lib/supabase/server.ts"
+    ],
+    "app/superadmin/provisjon/page.tsx": [
+      "components/billing/CommissionControlClient.tsx",
+      "lib/billing/commissionSettlement.ts",
+      "lib/date/format.ts",
+      "lib/supabase/admin.ts",
+      "lib/superadmin/auth.ts"
     ],
     "app/superadmin/registrations/RegistrationDecisionActions.tsx": [],
     "app/superadmin/registrations/[companyId]/CreateAgreementDraftButton.tsx": [
@@ -7632,6 +7974,7 @@
       "lib/server/admin/loadCompanyOperationalBrief.ts",
       "lib/tiers/displayLabels.ts"
     ],
+    "components/admin/BillingProfileForm.tsx": [],
     "components/admin/BlockedState.tsx": [],
     "components/admin/CommandCenterKpis.tsx": [],
     "components/admin/CompanyOperationalBriefPanel.tsx": [
@@ -7717,6 +8060,7 @@
       "lib/auth/getAuthContext.ts"
     ],
     "components/auth/CompanyRegistrationForm.tsx": [
+      "components/legal/NorwayLegalClickwrap.tsx",
       "lib/registration/weekdayMealTiers.ts",
       "lib/tiers/displayLabels.ts"
     ],
@@ -7785,6 +8129,14 @@
       "lib/cms/backofficeWorkspaceContextModel.ts"
     ],
     "components/backoffice/backofficeEntityActionStyles.ts": [],
+    "components/billing/BuildInvoiceDraftForm.tsx": [],
+    "components/billing/CommissionControlClient.tsx": [],
+    "components/billing/InvoiceDetailActions.tsx": [],
+    "components/billing/InvoiceDocument.tsx": [
+      "lib/billing/invoiceCopy.ts",
+      "lib/billing/invoiceLifecycle.ts"
+    ],
+    "components/billing/MarketApprovalClient.tsx": [],
     "components/blocks/AccordionTabsBlock.tsx": [
       "components/ui/Section.tsx",
       "components/ui/TextBlock.tsx",
@@ -8402,6 +8754,12 @@
       "lib/ui/footerVariants.ts",
       "lib/ui/headerVariants.ts"
     ],
+    "components/legal/EmployeeNorwayLegalGate.tsx": [
+      "components/legal/NorwayLegalClickwrap.tsx"
+    ],
+    "components/legal/NorwayLegalClickwrap.tsx": [
+      "lib/legal/norwayDocuments.ts"
+    ],
     "components/nav/AuthSlot.tsx": [
       "lib/auth/scope.ts"
     ],
@@ -8581,6 +8939,7 @@
       "lib/providers/providerSettingsActionErrors.ts",
       "lib/providers/saveProviderLogo.ts"
     ],
+    "components/providers/ProviderCapacityPanel.tsx": [],
     "components/providers/ProviderCustomerAgreementEditDialog.tsx": [
       "lib/agreements/normalize.ts",
       "lib/providers/providerCustomerActionErrors.ts",
@@ -8923,6 +9282,7 @@
     "components/superadmin/SystemHealth.tsx": [
       "lib/superadmin/queries.ts"
     ],
+    "components/superadmin/TranslationReviewClient.tsx": [],
     "components/superadmin/controlTower/AlertEdgeFrame.tsx": [],
     "components/superadmin/controlTower/CategoryDominancePanel.tsx": [],
     "components/superadmin/controlTower/ControlTowerInsightActions.tsx": [
@@ -9045,11 +9405,26 @@
       "lib/ui/motionTokens.ts"
     ],
     "components/ui/tooltip.tsx": [],
+    "components/week/WeekBulkOrderCard.tsx": [],
     "components/week/WeekMenuNotificationToggle.tsx": [],
     "components/week/WeekMenuReadOnly.tsx": [
       "lib/date/format.ts",
       "lib/http/unwrapClientJson.ts",
       "lib/tiers/displayLabels.ts"
+    ],
+    "lib/accounting/adapter.ts": [],
+    "lib/accounting/csvAdapter.ts": [
+      "lib/accounting/adapter.ts"
+    ],
+    "lib/accounting/registry.ts": [
+      "lib/accounting/adapter.ts",
+      "lib/accounting/csvAdapter.ts",
+      "lib/accounting/tripletexAdapter.ts"
+    ],
+    "lib/accounting/tripletexAdapter.ts": [
+      "lib/accounting/adapter.ts",
+      "lib/integrations/config.ts",
+      "lib/supabase/admin.ts"
     ],
     "lib/acquire/buyers.ts": [],
     "lib/acquire/strategy.ts": [
@@ -10399,6 +10774,7 @@
     ],
     "lib/auth/membershipLookup.ts": [],
     "lib/auth/postLoginClient.ts": [],
+    "lib/auth/postLoginNav.ts": [],
     "lib/auth/postResetRedirect.ts": [],
     "lib/auth/provider.ts": [
       "lib/auth/isSuperadminProfile.ts",
@@ -10465,7 +10841,6 @@
     "lib/auth/routeByUser.ts": [
       "lib/auth/getScopeServer.ts",
       "lib/auth/redirect.ts",
-      "lib/auth/role.ts",
       "lib/system/emails.ts"
     ],
     "lib/auth/scope.ts": [
@@ -10762,6 +11137,17 @@
       "lib/backoffice/experiments/model.ts"
     ],
     "lib/backoffice/experiments/model.ts": [],
+    "lib/billing/commissionSettlement.ts": [
+      "lib/markets/norwayFirstActivation.ts",
+      "lib/markets/norwayMvaController.ts",
+      "lib/ops/log.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/billing/commissionTaxSnapshot.ts": [
+      "lib/markets/supportedMarkets.ts",
+      "lib/money/minorUnits.ts",
+      "lib/tax/engine/resolver.ts"
+    ],
     "lib/billing/creditRiskEngine.ts": [
       "lib/integrations/tripletexStatusEngine.ts"
     ],
@@ -10772,11 +11158,25 @@
       "lib/supabase/admin.ts"
     ],
     "lib/billing/globalCommission.ts": [],
+    "lib/billing/globalInvoiceFlow.ts": [
+      "lib/billing/commissionTaxSnapshot.ts",
+      "lib/invoice/countryInvoicePacks.ts",
+      "lib/markets/supportedMarkets.ts",
+      "lib/money/minorUnits.ts",
+      "lib/tax/engine/resolver.ts",
+      "lib/tax/providers/registry.ts",
+      "lib/tax/rules/technicallyConfiguredRules.ts"
+    ],
+    "lib/billing/invoiceCopy.ts": [],
     "lib/billing/invoiceEngine.ts": [
       "lib/date/oslo.ts",
       "lib/integrations/tripletexEngine.ts",
       "lib/ops/log.ts",
       "lib/supabase/admin.ts"
+    ],
+    "lib/billing/invoiceLifecycle.ts": [
+      "lib/supabase/admin.ts",
+      "lib/tax/invoiceLegalFields.ts"
     ],
     "lib/billing/paymentPolicy.ts": [],
     "lib/billing/period.ts": [
@@ -10785,11 +11185,19 @@
     "lib/billing/periodYm.ts": [],
     "lib/billing/pricing.ts": [],
     "lib/billing/providerBillingEngineSurface.ts": [],
+    "lib/billing/providerInvoiceGuard.ts": [
+      "lib/auth/getAuthContext.ts",
+      "lib/auth/provider.ts",
+      "lib/auth/providerContext.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/billing/settlementPolicy.ts": [],
     "lib/billing/stripePaymentWebhook.ts": [
       "lib/billing/stripeProviderSetup.ts",
       "lib/supabase/admin.ts"
     ],
     "lib/billing/stripeProviderCharge.ts": [
+      "lib/billing/settlementPolicy.ts",
       "lib/billing/stripeProviderSetup.ts",
       "lib/supabase/admin.ts"
     ],
@@ -10834,6 +11242,7 @@
     "lib/campaign/track.ts": [
       "lib/ops/log.ts"
     ],
+    "lib/capacity/providerCapacity.ts": [],
     "lib/ceo/actions.ts": [
       "lib/ceo/opportunities.ts"
     ],
@@ -11327,6 +11736,11 @@
       "lib/sanity/client.ts",
       "lib/supabase/server.ts"
     ],
+    "lib/cms/syncProviderToSanityDraft.ts": [
+      "lib/providers/types.ts",
+      "lib/sanity/client.ts",
+      "lib/supabase/admin.ts"
+    ],
     "lib/cms/treeRouteSchema.ts": [
       "lib/cms/contentTreePageKey.ts"
     ],
@@ -11597,8 +12011,19 @@
     "lib/edge/withEdge.ts": [
       "lib/edge/cache.ts"
     ],
+    "lib/email/i18n/emailCopy.ts": [
+      "lib/i18n/middlewareLocale.ts",
+      "lib/onboarding/employeeActivationCopy.ts"
+    ],
     "lib/email/mailer.ts": [],
-    "lib/email/passwordResetMail.ts": [],
+    "lib/email/passwordResetMail.ts": [
+      "lib/email/i18n/emailCopy.ts",
+      "lib/i18n/middlewareLocale.ts"
+    ],
+    "lib/email/recipientLocale.ts": [
+      "lib/i18n/middlewareLocale.ts",
+      "lib/i18n/resolveAppLocale.ts"
+    ],
     "lib/email/send.ts": [
       "lib/ai/rateLimit.ts",
       "lib/email/track.ts",
@@ -11607,9 +12032,16 @@
       "lib/ops/log.ts",
       "lib/system/emails.ts"
     ],
-    "lib/email/templates/companyApproved.ts": [],
+    "lib/email/templates/companyApproved.ts": [
+      "lib/email/i18n/emailCopy.ts",
+      "lib/i18n/middlewareLocale.ts"
+    ],
     "lib/email/templates/employeeInvite.ts": [
-      "lib/onboarding/employeeActivationCopy.ts"
+      "lib/email/i18n/emailCopy.ts",
+      "lib/i18n/middlewareLocale.ts"
+    ],
+    "lib/email/templates/providerAdminInvite.ts": [
+      "lib/i18n/middlewareLocale.ts"
     ],
     "lib/email/track.ts": [
       "lib/ops/log.ts"
@@ -12375,6 +12807,7 @@
     ],
     "lib/http/rid.ts": [],
     "lib/http/routeGuard.ts": [
+      "lib/audit/log.ts",
       "lib/auth/scope.ts",
       "lib/http/respond.ts",
       "lib/supabase/server.ts",
@@ -12426,33 +12859,50 @@
       "lib/date/oslo.ts",
       "lib/i18n/middlewareLocale.ts"
     ],
+    "lib/i18n/languageReviewStatus.ts": [],
     "lib/i18n/localeRegistry.ts": [],
+    "lib/i18n/marketLocaleRuntime.ts": [
+      "lib/i18n/localeRegistry.ts"
+    ],
     "lib/i18n/messages.ts": [
       "lib/i18n/middlewareLocale.ts",
+      "messages/cs.json",
       "messages/da.json",
       "messages/de.json",
+      "messages/el.json",
       "messages/en.json",
       "messages/es.json",
       "messages/fi.json",
       "messages/fr.json",
       "messages/it.json",
       "messages/nb.json",
+      "messages/nl.json",
+      "messages/pl.json",
+      "messages/pt.json",
+      "messages/ro.json",
       "messages/sv.json"
     ],
     "lib/i18n/middlewareLocale.ts": [
       "lib/i18n/localeRegistry.ts"
     ],
+    "lib/i18n/notificationCopy.ts": [],
     "lib/i18n/profileLocale.ts": [
       "lib/i18n/middlewareLocale.ts",
       "lib/supabase/server.ts"
     ],
     "lib/i18n/resolveAppLocale.ts": [
+      "lib/i18n/localeRegistry.ts",
       "lib/i18n/middlewareLocale.ts"
     ],
     "lib/i18n/routing.ts": [
       "lib/i18n/middlewareLocale.ts"
     ],
     "lib/i18n/startCopy.ts": [],
+    "lib/i18n/superadminTranslation.ts": [
+      "lib/ai/getClient.ts",
+      "lib/ops/log.ts",
+      "lib/supabase/admin.ts"
+    ],
     "lib/i18n/translate.ts": [],
     "lib/iconRegistry.tsx": [
       "lib/icons.tsx"
@@ -12499,6 +12949,7 @@
     "lib/integrations/alertEmailEngine.ts": [
       "lib/ops/log.ts"
     ],
+    "lib/integrations/brreg/enhetsregisteret.ts": [],
     "lib/integrations/config.ts": [],
     "lib/integrations/crm.ts": [
       "lib/ops/log.ts"
@@ -12517,6 +12968,7 @@
       "lib/integrations/config.ts",
       "lib/ops/log.ts"
     ],
+    "lib/integrations/globalComplianceSnapshots.ts": [],
     "lib/integrations/hubspot/client.ts": [
       "lib/core/errors.ts",
       "lib/integrations/hubspot/env.ts"
@@ -12624,6 +13076,7 @@
     ],
     "lib/invites/createEmployeeSingleInvite.ts": [
       "lib/audit/actions.ts",
+      "lib/email/recipientLocale.ts",
       "lib/email/send.ts",
       "lib/email/templates/employeeInvite.ts",
       "lib/invites/employeeInviteConstants.ts",
@@ -12635,6 +13088,17 @@
     "lib/invites/employeeInviteUrl.ts": [],
     "lib/invites/resolveEmployeeInviteContext.ts": [
       "lib/supabase/admin.ts"
+    ],
+    "lib/invoice/countryInvoicePacks.ts": [
+      "lib/invoice/eInvoiceRegistry.ts",
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/invoice/eInvoiceAdapters.ts": [
+      "lib/invoice/eInvoiceRegistry.ts",
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/invoice/eInvoiceRegistry.ts": [
+      "lib/markets/supportedMarkets.ts"
     ],
     "lib/ipo/governance.ts": [
       "lib/ops/log.ts",
@@ -12725,6 +13189,32 @@
     "lib/learning/update.ts": [
       "lib/experiment/measure.ts"
     ],
+    "lib/legal/legalAcceptance.ts": [
+      "lib/legal/legalDocumentRegistry.ts"
+    ],
+    "lib/legal/legalDocumentRegistry.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/legal/legalPackRegistry.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/legal/norwayAcceptanceGate.ts": [
+      "lib/audit/log.ts",
+      "lib/http/respond.ts",
+      "lib/legal/legalAcceptance.ts",
+      "lib/legal/legalDocumentRegistry.ts",
+      "lib/legal/norwayDocuments.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/legal/norwayAcceptanceValidate.ts": [
+      "lib/legal/legalAcceptance.ts",
+      "lib/legal/legalDocumentRegistry.ts",
+      "lib/legal/norwayDocuments.ts"
+    ],
+    "lib/legal/norwayClientMeta.ts": [],
+    "lib/legal/norwayDocuments.ts": [
+      "lib/legal/legalDocumentRegistry.ts"
+    ],
     "lib/live/campaignStats.ts": [
       "lib/ops/log.ts"
     ],
@@ -12783,6 +13273,55 @@
     ],
     "lib/market/trends.ts": [
       "lib/market/signalExtract.ts"
+    ],
+    "lib/markets/buildReadiness.ts": [],
+    "lib/markets/commercialModel.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/markets/commercialModelInvariant.ts": [
+      "lib/billing/globalCommission.ts",
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/markets/complianceStatus.ts": [],
+    "lib/markets/globalActivationGate.ts": [
+      "lib/invoice/eInvoiceRegistry.ts",
+      "lib/legal/legalDocumentRegistry.ts",
+      "lib/markets/marketplaceLegalModel.ts",
+      "lib/money/minorUnits.ts",
+      "lib/tax/jurisdictions/canadaProvinces.ts",
+      "lib/tax/jurisdictions/usStates.ts",
+      "lib/tax/packs/countryTaxPacks.ts",
+      "lib/tax/rules/researchedCountryRules.ts"
+    ],
+    "lib/markets/marketApprovals.ts": [
+      "lib/supabase/admin.ts"
+    ],
+    "lib/markets/marketplaceLegalModel.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/markets/norwayFirstActivation.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/markets/norwayMvaController.ts": [
+      "lib/integrations/brreg/enhetsregisteret.ts",
+      "lib/markets/norwayMvaTurnover.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/markets/norwayMvaEvidencePacket.ts": [
+      "lib/markets/norwayMvaController.ts",
+      "lib/markets/norwayMvaTurnover.ts"
+    ],
+    "lib/markets/norwayMvaTurnover.ts": [],
+    "lib/markets/supportedMarkets.ts": [],
+    "lib/markets/technicalCompletionGate.ts": [
+      "lib/invoice/countryInvoicePacks.ts",
+      "lib/invoice/eInvoiceAdapters.ts",
+      "lib/legal/legalDocumentRegistry.ts",
+      "lib/markets/globalActivationGate.ts",
+      "lib/markets/supportedMarkets.ts",
+      "lib/money/minorUnits.ts",
+      "lib/tax/providers/testFixtureProvider.ts",
+      "lib/tax/rules/technicallyConfiguredRules.ts"
     ],
     "lib/media/displayName.ts": [
       "lib/media/types.ts"
@@ -13330,6 +13869,9 @@
       "lib/ml/saveModel.ts",
       "lib/ops/log.ts"
     ],
+    "lib/money/minorUnits.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
     "lib/monitoring/alerts.ts": [
       "lib/ai/logging/aiActivityLogRow.ts",
       "lib/monitoring/types.ts",
@@ -13747,6 +14289,13 @@
       "lib/agreement/requireRule.ts",
       "lib/date/weekdayKeyFromIso.ts",
       "lib/ops/log.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/orders/orderWriteSideEffects.ts": [
+      "lib/audit/log.ts",
+      "lib/ops/log.ts",
+      "lib/orderBackup/emailContent.ts",
+      "lib/orderBackup/outbox.ts",
       "lib/supabase/admin.ts"
     ],
     "lib/orders/pickCanonicalOrderPerDate.ts": [],
@@ -14448,6 +14997,17 @@
     "lib/providers/operationalSettingsShared.ts": [
       "lib/i18n/localeRegistry.ts"
     ],
+    "lib/providers/orderStatusNotifications.ts": [
+      "lib/i18n/notificationCopy.ts",
+      "lib/ops/log.ts",
+      "lib/orderBackup/emailContent.ts",
+      "lib/orderBackup/outbox.ts",
+      "lib/providers/providerNotificationRecipients.ts",
+      "lib/supabase/admin.ts"
+    ],
+    "lib/providers/packingList.ts": [
+      "lib/supabase/admin.ts"
+    ],
     "lib/providers/providerBillingActionErrors.ts": [],
     "lib/providers/providerBillingShared.ts": [],
     "lib/providers/providerBillingSurface.ts": [
@@ -14541,6 +15101,7 @@
       "lib/providers/operationalSettingsShared.ts"
     ],
     "lib/providers/providerRegistrationActionErrors.ts": [],
+    "lib/providers/providerRegistrationSlug.ts": [],
     "lib/providers/providerRegistrationsSurface.ts": [
       "lib/providers/operationalSettingsShared.ts"
     ],
@@ -14657,6 +15218,9 @@
     "lib/public/leadsSalesAlert.ts": [
       "lib/ops/log.ts",
       "lib/system/emails.ts"
+    ],
+    "lib/public/providerRegistrationSchema.ts": [
+      "lib/markets/supportedMarkets.ts"
     ],
     "lib/public/resolveCityFromPostal.ts": [],
     "lib/queue/jobs.ts": [
@@ -14843,6 +15407,7 @@
     "lib/revenue/winners.ts": [
       "lib/revenue/model.ts"
     ],
+    "lib/review/reviewWorkflow.ts": [],
     "lib/rl/engine.ts": [],
     "lib/runtime/mode.ts": [],
     "lib/runtime/nextOutput.ts": [],
@@ -16099,6 +16664,10 @@
       "lib/settings/enforce.ts",
       "lib/system/settings.ts"
     ],
+    "lib/system/opsKillSwitch.ts": [
+      "lib/ops/log.ts",
+      "lib/system/settings.ts"
+    ],
     "lib/system/orchestrator.ts": [
       "lib/autonomy/orchestrator.ts",
       "lib/sales/engine.ts",
@@ -16122,6 +16691,50 @@
     ],
     "lib/system/systemSettingsSchema.ts": [],
     "lib/system/types.ts": [],
+    "lib/tax/engine/resolver.ts": [
+      "lib/markets/supportedMarkets.ts",
+      "lib/money/minorUnits.ts"
+    ],
+    "lib/tax/invoiceLegalFields.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/tax/jurisdictions/canadaProvinces.ts": [],
+    "lib/tax/jurisdictions/canadaTaxComponents.ts": [
+      "lib/money/minorUnits.ts",
+      "lib/tax/jurisdictions/canadaProvinces.ts"
+    ],
+    "lib/tax/jurisdictions/usAddressResolver.ts": [
+      "lib/tax/jurisdictions/usStates.ts"
+    ],
+    "lib/tax/jurisdictions/usStates.ts": [],
+    "lib/tax/packs/countryTaxPacks.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
+    "lib/tax/providers/registry.ts": [
+      "lib/tax/providers/testFixtureProvider.ts",
+      "lib/tax/providers/types.ts"
+    ],
+    "lib/tax/providers/testFixtureProvider.ts": [
+      "lib/tax/jurisdictions/canadaProvinces.ts",
+      "lib/tax/jurisdictions/usStates.ts",
+      "lib/tax/providers/types.ts"
+    ],
+    "lib/tax/providers/types.ts": [],
+    "lib/tax/rules/researchedCountryRules.ts": [
+      "lib/markets/supportedMarkets.ts",
+      "lib/tax/engine/resolver.ts"
+    ],
+    "lib/tax/rules/technicallyConfiguredRules.ts": [
+      "lib/markets/supportedMarkets.ts",
+      "lib/tax/engine/resolver.ts"
+    ],
+    "lib/tax/sources/allowedOfficialDomains.ts": [],
+    "lib/tax/sources/sourceEvidencePipeline.ts": [
+      "lib/tax/sources/allowedOfficialDomains.ts"
+    ],
+    "lib/tax/taxIdValidation.ts": [
+      "lib/markets/supportedMarkets.ts"
+    ],
     "lib/tenant/context.ts": [],
     "lib/tenant/guard.ts": [],
     "lib/theme/ThemeProvider.tsx": [],
@@ -16158,6 +16771,7 @@
     "lib/validation/withValidation.ts": [
       "lib/http/respond.ts"
     ],
+    "lib/version/releaseIdentity.ts": [],
     "lib/video/captions.ts": [
       "lib/video/script.ts",
       "lib/video/structure.ts"
@@ -16300,6 +16914,21 @@
       "lib/ops/log.ts",
       "lib/supabase/admin.ts"
     ],
+    "scripts/autonomous-release/autofix.mjs": [],
+    "scripts/autonomous-release/controller.mjs": [],
+    "scripts/autonomous-release/controller.smoke.test.mjs": [],
+    "scripts/autonomous-release/global-activation-waves.mjs": [],
+    "scripts/autonomous-release/global-country-legal-tax-matrix.mjs": [],
+    "scripts/autonomous-release/global-internal-canary.mjs": [],
+    "scripts/autonomous-release/global-production-deploy.mjs": [],
+    "scripts/autonomous-release/global-production-post-promote-verify.mjs": [],
+    "scripts/autonomous-release/global-production-post-promote-verify.smoke.test.mjs": [],
+    "scripts/autonomous-release/global-production-preflight.mjs": [],
+    "scripts/autonomous-release/norway-enterprise-production-acceptance.mjs": [],
+    "scripts/autonomous-release/norway-menu-capacity-production-e2e.mjs": [
+      "scripts/autonomous-release/norway-sanity-warm-dish-contract.mjs"
+    ],
+    "scripts/autonomous-release/norway-sanity-warm-dish-contract.mjs": [],
     "scripts/buildTasks.ts": [],
     "scripts/check-admin-no-hardcoded-text.mjs": [],
     "scripts/check-ai-internal-provider.mjs": [],
@@ -16318,6 +16947,7 @@
     "scripts/ci/assert-db-target.test.mjs": [
       "scripts/ci/assert-db-target.mjs"
     ],
+    "scripts/ci/billing-prod-sim-verify.mjs": [],
     "scripts/ci/cms-integrity.mjs": [],
     "scripts/ci/commercial-hardcodes-guard.mjs": [],
     "scripts/ci/commercial-hardcodes-guard.test.mjs": [
@@ -16358,9 +16988,17 @@
       "scripts/ci/required-check-path-patterns.mjs",
       "scripts/ci/verify-required-check-path-drift.mjs"
     ],
+    "scripts/ci/phase16no-commercial-gates.mjs": [],
+    "scripts/ci/phase16no4-mva-threshold-gates.mjs": [],
+    "scripts/ci/post-migration-verify.mjs": [],
+    "scripts/ci/production-migration-preflight.mjs": [],
+    "scripts/ci/rc-orchestrator-behavior.test.mjs": [
+      "scripts/verify/rcOrchestratorCore.mjs"
+    ],
     "scripts/ci/repair-staging-mcp-batch-ledger.mjs": [],
     "scripts/ci/repair-staging-menu-week-opening-ledger.mjs": [],
     "scripts/ci/repair-staging-provider-cutoff-ledger.mjs": [],
+    "scripts/ci/repair-staging-remote-orphan-ledger.mjs": [],
     "scripts/ci/required-check-path-patterns.mjs": [],
     "scripts/ci/run-suspend-rpc-integration.mjs": [],
     "scripts/ci/run-suspend-rpc-integration.test.mjs": [
@@ -16368,12 +17006,15 @@
     ],
     "scripts/ci/status-code-guard.mjs": [],
     "scripts/ci/ui-clickable-div.mjs": [],
+    "scripts/ci/verify-21-country-markets.mjs": [],
+    "scripts/ci/verify-21-language-e2e.mjs": [],
     "scripts/ci/verify-batch-order-status-sync-staging.mjs": [
       "scripts/smoke/fixtures/stage4-realistic.constants.mjs",
       "scripts/smoke/resolve-staging-database-url.mjs"
     ],
     "scripts/ci/verify-fundament-spine-phase1.mjs": [],
     "scripts/ci/verify-fundament-spine-phase2-auth-hook.mjs": [],
+    "scripts/ci/verify-language-content.mjs": [],
     "scripts/ci/verify-required-check-path-drift.mjs": [
       "scripts/ci/parse-workflow-pr-paths.mjs",
       "scripts/ci/required-check-path-patterns.mjs"
@@ -16390,6 +17031,9 @@
     ],
     "scripts/css-audit-lp-classes.mjs": [],
     "scripts/css-audit-lp-missing.mjs": [],
+    "scripts/db/apply-migration-file.mjs": [
+      "scripts/ci/assert-db-target.mjs"
+    ],
     "scripts/db/guarded-db-push.mjs": [
       "scripts/ci/assert-db-target.mjs"
     ],
@@ -16419,8 +17063,15 @@
     "scripts/e2e/gen-steg8-icon-review-surface.mjs": [],
     "scripts/e2e/invalidate-employee-session.mjs": [],
     "scripts/e2e/seed-e2e-auth-sync.mjs": [],
+    "scripts/e2e/seed-e2e-content-fixture.mjs": [],
     "scripts/e2e/seed-e2e-provider-kitchen-access.mjs": [
       "scripts/smoke/seed-e2e-users.mjs"
+    ],
+    "scripts/e2e/seed-e2e-role-users.mjs": [
+      "scripts/e2e/seed-e2e-auth-sync.mjs"
+    ],
+    "scripts/e2e/verify-e2e-users.mjs": [
+      "scripts/e2e/seed-e2e-auth-sync.mjs"
     ],
     "scripts/enterprise-build.ts": [],
     "scripts/enterprise-proof-load.mjs": [],
@@ -16483,10 +17134,17 @@
       "lib/provider-onboarding/phaseCOnboardCli.ts",
       "lib/provider-onboarding/providerOnboardingTypes.ts"
     ],
+    "scripts/phase18scale/lib/loadcert-ref.mjs": [],
     "scripts/postdeploy-lib.mjs": [],
     "scripts/postdeploy.mjs": [
       "scripts/postdeploy-lib.mjs"
     ],
+    "scripts/rc/export-country-evidence-pack.mjs": [],
+    "scripts/rc/phase15g3e-durable-pipeline.mjs": [],
+    "scripts/rc/phase15g3e2-write-durable-report.mjs": [],
+    "scripts/rc/phase16no-prod-migrate.mjs": [],
+    "scripts/rc/phase16no-record-accountant-confirmation.mjs": [],
+    "scripts/rc/phase16no4-canary-scenarios.mjs": [],
     "scripts/rls/absorb-private-functions-from-staging.mjs": [
       "scripts/rls/golden-snapshot-lib.mjs",
       "scripts/smoke/resolve-staging-database-url.mjs"
@@ -16585,6 +17243,7 @@
     ],
     "scripts/smoke/forensics-4.5c.mjs": [],
     "scripts/smoke/forside-track1-screenshots.mjs": [],
+    "scripts/smoke/global-launch-smoke.mjs": [],
     "scripts/smoke/merge-env-local.mjs": [],
     "scripts/smoke/merge-vercel-staging-env.mjs": [
       "scripts/smoke/merge-env-local.mjs"
@@ -16621,6 +17280,19 @@
       "scripts/smoke/fixtures/stage4-realistic.constants.mjs",
       "scripts/smoke/resolve-staging-database-url.mjs"
     ],
+    "scripts/smoke/staging-cron-outbox-battery.mjs": [
+      "scripts/test/staging-edge-access.mjs"
+    ],
+    "scripts/smoke/staging-health-probes.mjs": [
+      "scripts/test/staging-edge-access.mjs"
+    ],
+    "scripts/smoke/staging-runtime-preflight.mjs": [
+      "scripts/test/staging-edge-access.mjs"
+    ],
+    "scripts/smoke/staging-wait-for-health-sha.mjs": [
+      "scripts/test/staging-edge-access.mjs"
+    ],
+    "scripts/smoke/sync-staging-cron-secret.mjs": [],
     "scripts/smoke/write-baseline-migration.mjs": [],
     "scripts/staging/verify-main-to-staging-fast-forward.mjs": [],
     "scripts/system-test/context.ts": [],
@@ -16678,6 +17350,7 @@
     "scripts/system-test/utils/supabaseAdmin.ts": [
       "lib/types/database.ts"
     ],
+    "scripts/test/staging-edge-access.mjs": [],
     "scripts/testSocialFlow.ts": [
       "lib/ai/logging/aiActivityLogRow.ts",
       "lib/social/socialPostContent.ts",
@@ -16692,6 +17365,18 @@
     "scripts/verify-control-coverage.mjs": [],
     "scripts/verify-production-public-cms.mjs": [],
     "scripts/verify/decode-jwt-claims.mjs": [],
+    "scripts/verify/generate-release-manifest.mjs": [],
+    "scripts/verify/phase12-21-country-staging.mjs": [],
+    "scripts/verify/phase13-21-country-rc-proof.mjs": [
+      "scripts/smoke/resolve-staging-database-url.mjs",
+      "scripts/verify/rcOrchestratorCore.mjs"
+    ],
+    "scripts/verify/phase15g2-local-technical-matrix.mjs": [],
+    "scripts/verify/phase15g2-staging-failclosed-matrix.mjs": [
+      "scripts/smoke/resolve-staging-database-url.mjs"
+    ],
+    "scripts/verify/phase15g2b-staging-golden-matrix.mjs": [],
+    "scripts/verify/rcOrchestratorCore.mjs": [],
     "scripts/visual-qa/capture-provider-meny.mjs": []
   }
 }
