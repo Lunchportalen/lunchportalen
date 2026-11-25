@@ -675,3 +675,5 @@
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-11-24T08:14:56.192Z","runId":"45354295028"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-11-24T19:55:20.593Z","runId":"45475112434"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-11-25T03:56:42.046Z","runId":"45543266496"}
+{"type":"INBOUND_CLASSIFIED","firmId":"ncc-group-security","messageId":"<1330f701-2009-4bf4-942e-5523bbe7c638@atl1s11mta0161.xt.local>","classification":"QUOTE_RECEIVED","attachmentCount":0,"at":"2026-11-25T16:45:05.785Z","runId":"45657085649"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-11-25T16:45:06.102Z","runId":"45657085649"}

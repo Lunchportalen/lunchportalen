@@ -231,6 +231,17 @@
       "attachments": [],
       "processedAt": "2026-11-17T18:07:18.568Z",
       "runId": "44144134872"
+    },
+    {
+      "firmId": "ncc-group-security",
+      "messageId": "<1330f701-2009-4bf4-942e-5523bbe7c638@atl1s11mta0161.xt.local>",
+      "subject": "1 week to go: Resilient or just compliant?",
+      "from": "response@nccgroup.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-11-25T11:04:24.000Z",
+      "attachments": [],
+      "processedAt": "2026-11-25T16:45:05.785Z",
+      "runId": "45657085649"
     }
   ],
   "byMessageId": {
@@ -465,7 +476,18 @@
       "attachments": [],
       "processedAt": "2026-11-17T18:07:18.568Z",
       "runId": "44144134872"
+    },
+    "<1330f701-2009-4bf4-942e-5523bbe7c638@atl1s11mta0161.xt.local>": {
+      "firmId": "ncc-group-security",
+      "messageId": "<1330f701-2009-4bf4-942e-5523bbe7c638@atl1s11mta0161.xt.local>",
+      "subject": "1 week to go: Resilient or just compliant?",
+      "from": "response@nccgroup.com",
+      "classification": "QUOTE_RECEIVED",
+      "date": "2026-11-25T11:04:24.000Z",
+      "attachments": [],
+      "processedAt": "2026-11-25T16:45:05.785Z",
+      "runId": "45657085649"
     }
   },
-  "lastPollAt": "2026-11-25T03:56:42.037Z"
+  "lastPollAt": "2026-11-25T16:45:06.092Z"
 }
