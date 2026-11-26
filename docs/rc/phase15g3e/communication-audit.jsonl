@@ -678,3 +678,4 @@
 {"type":"INBOUND_CLASSIFIED","firmId":"ncc-group-security","messageId":"<1330f701-2009-4bf4-942e-5523bbe7c638@atl1s11mta0161.xt.local>","classification":"QUOTE_RECEIVED","attachmentCount":0,"at":"2026-11-25T16:45:05.785Z","runId":"45657085649"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":1,"followUpsSent":0,"at":"2026-11-25T16:45:06.102Z","runId":"45657085649"}
 {"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-11-26T01:30:25.132Z","runId":"45736109270"}
+{"type":"RUN_COMPLETE","decision":"OWNER_ACTION_REQUIRED","replies":0,"followUpsSent":0,"at":"2026-11-26T11:51:24.089Z","runId":"45814193311"}
