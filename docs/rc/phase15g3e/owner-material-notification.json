@@ -1,14 +1,8 @@
 {
   "notifyOwner": true,
-  "runId": "45657085649",
-  "at": "2026-11-25T16:45:06.100Z",
+  "runId": "45736109270",
+  "at": "2026-11-26T01:30:25.130Z",
   "events": [
-    {
-      "kind": "QUOTE_RECEIVED",
-      "firmId": "ncc-group-security",
-      "messageId": "<1330f701-2009-4bf4-942e-5523bbe7c638@atl1s11mta0161.xt.local>",
-      "subject": "1 week to go: Resilient or just compliant?"
-    },
     {
       "kind": "OWNER_CONTRACT_PAYMENT_BATCH_READY",
       "batchId": "OWNER_CONTRACT_PAYMENT_BATCH_15G3E",
